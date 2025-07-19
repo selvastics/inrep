@@ -28,7 +28,7 @@
       "     launch_study(config, bfi_items)  # Requires Shiny environment\n",
       "   \n",
       "   Citation:\n",
-      "     Selva, C. (2025). inrep: Instant Report for Adaptive\n",
+      "     Selva, C. (2025). inrep: Instant Reports for Adaptive\n",
       "     Assessments. R package version ", utils::packageVersion("inrep"), ".\n",
       "     \n",
       "   Note: Ensure TAM package is installed for psychometric computations and properly cited.\n",
