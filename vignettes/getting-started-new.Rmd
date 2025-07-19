@@ -45,7 +45,7 @@ IRT is a framework for designing, analyzing, and scoring tests based on the assu
 Adaptive testing selects items in real-time based on the respondent's previous answers, making tests more efficient and precise.
 
 ### TAM Integration
-All psychometric computations in **inrep** are performed by the TAM package, ensuring methodological rigor and reproducibility.
+All psychometric computations in **inrep** are performed by the TAM package.
 
 ## Quick Start Example
 
