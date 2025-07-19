@@ -622,6 +622,7 @@
 #' )
 #' inrep::launch_study(config_1pl, item_bank_1pl)
 #' 
+#' \dontrun{
 #' # Example 5: Simple 1PL Model with Cloud Storage
 #' config <- inrep::create_study_config(model = "GRM", max_items = 10, session_save = TRUE)
 #' utils::data(bfi_items)
