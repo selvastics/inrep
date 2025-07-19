@@ -53,7 +53,7 @@ Named list containing ability estimation results:
 Estimates person ability using Item Response Theory models through the TAM package.
 This function serves as an interface layer that passes response data to TAM's validated 
 psychometric functions and returns standardized results for the \code{inrep} workflow.
-All statistical computations are performed exclusively by TAM (Robitzsch et al., 2020).
+All statistical computations are performed exclusively by TAM (Robitzsch et al., 2024).
 }
 \details{
 \strong{TAM Integration Architecture:} This function implements a comprehensive interface

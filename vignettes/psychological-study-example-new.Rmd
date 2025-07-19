@@ -76,7 +76,7 @@ personality_study <- create_study_config(
 
 ```{r}
 # Load the Big Five item bank
-data("bfi_items", package = "inrep")
+if (!exists("bfi_items")) data("bfi_items", package = "inrep")
 
 # Validate item bank compatibility
 validation_results <- validate_item_bank(

@@ -39,7 +39,7 @@ library(inrep)
 data(math_items)
 
 # Or load personality items
-data(bfi_items)
+if (!exists("bfi_items")) data(bfi_items)
 ```
 
 ### Step 2: Create Configuration

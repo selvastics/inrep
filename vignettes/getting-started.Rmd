@@ -48,7 +48,7 @@ Let's create a simple adaptive test in just a few lines of code:
 library(inrep)
 
 # Load the built-in personality item bank
-data(bfi_items)
+if (!exists("bfi_items")) data(bfi_items)
 
 # Create a basic study configuration
 config <- create_study_config(
@@ -73,10 +73,7 @@ That's it! This code creates a fully functional adaptive test interface.
 Item banks contain the questions and their psychometric properties. Let's examine the built-in item bank:
 
 ```{r examine_items}
-# Load the built-in Big Five personality item bank
-data(bfi_items)
-
-# Examine the structure
+# Examine the structure (data already loaded above)
 head(bfi_items, 3)
 cat("Number of items:", nrow(bfi_items), "\n")
 cat("Available columns:", names(bfi_items), "\n")

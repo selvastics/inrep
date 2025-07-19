@@ -65,7 +65,7 @@ The Big Five Inventory (BFI) dataset contains personality assessment items measu
 
 ```{r eval=FALSE}
 # Load BFI items
-data(bfi_items)
+if (!exists("bfi_items")) data(bfi_items)
 head(bfi_items)
 
 # Dataset structure

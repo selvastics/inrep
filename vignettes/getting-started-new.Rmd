@@ -55,7 +55,7 @@ All psychometric computations in **inrep** are performed by the TAM package, ens
 
 ```{r}
 # Load Big Five Inventory personality items
-data(bfi_items)
+if (!exists("bfi_items")) data(bfi_items)
 
 # Examine the structure
 head(bfi_items)
