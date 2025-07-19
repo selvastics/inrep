@@ -69,7 +69,6 @@ q.log
 test_*.R
 *_test.R
 temp_*.R
-create_*.R
 simple_*.R
 final_*.R
 quality_*.R
