@@ -116,6 +116,7 @@ generate_llm_prompt <- function(component = "study_config",
     }
     return(invisible(prompt))
   }
+}
 
 # Helper function for string repetition
 `%r%` <- function(string, times) {
