@@ -32,27 +32,27 @@
 #'\itemize{
 #'\itemBriefstudydescriptionandobjectives
 #'\itemExpectedstudydurationandparticipantnumbers
-#'\itemSpecialrequirements(multilingualsupport,accessibility,etc.)
-#'\itemInstitutionalaffiliationandresearchcontext
-#'}
+#'   \item Special requirements (multilingual support, accessibility, etc.)
+#'   \item Institutional affiliation and research context
+#' }
 #'
-#'@paramstudy_configAstudyconfigurationobjectcreatedwith\code{create_study_config()}
-#'@paramitem_bankAvalidateditembankdataframewithproperIRTparameters
-#'@paramoutput_dirCharacterstringspecifyingtheoutputdirectoryfordeploymentfiles
-#'@paramdeployment_typeCharacterstringspecifyingdeploymenttarget:
-#'\itemize{
-#'\item"inrep_platform"-Officialinrepplatform(default)
-#'\item"posit_connect"-PositConnectserver
-#'\item"shinyapps"-ShinyApps.iodeployment
-#'\item"custom_server"-CustomShinyserver
-#'\item"docker"-Dockercontainerdeployment
-#'}
-#'@paramcontact_infoListcontainingresearchercontactinformationandstudydetails
-#'@paramadvanced_featuresListofadvancedfeaturestoinclude:
-#'\itemize{
-#'\item"multilingual"-Multi-languagesupport
-#'\item"accessibility"-Enhancedaccessibilityfeatures
-#'\item"mobile_optimized"-Mobile-responsivedesign
+#' @param study_config A study configuration object created with \code{create_study_config()}
+#' @param item_bank A validated item bank dataframe with proper IRT parameters
+#' @param output_dir Character string specifying the output directory for deployment files
+#' @param deployment_type Character string specifying deployment target:
+#' \itemize{
+#'   \item "inrep_platform" - Official inrep platform (default)
+#'   \item "posit_connect" - Posit Connect server
+#'   \item "shinyapps" - ShinyApps.io deployment
+#'   \item "custom_server" - Custom Shiny server
+#'   \item "docker" - Docker container deployment
+#' }
+#' @param contact_info List containing researcher contact information and study details
+#' @param advanced_features List of advanced features to include:
+#' \itemize{
+#'   \item "multilingual" - Multi-language support
+#'   \item "accessibility" - Enhanced accessibility features
+#'   \item "mobile_optimized" - Mobile-responsive design
 #'\item"real_time_monitoring"-Livestudymonitoring
 #'\item"automated_reporting"-Automatedresultgeneration
 #'}
