@@ -34,6 +34,8 @@ Imports:
     utils
 Suggests: 
     mirt (>= 1.35),
+    psych (>= 2.0.0),
+    corrplot (>= 0.90),
     testthat (>= 3.0.0),
     knitr (>= 1.40),
     rmarkdown (>= 2.20),
