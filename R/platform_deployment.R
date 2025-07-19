@@ -371,23 +371,23 @@
 #'Platformdocumentation:https://inrep-platform.org
 #'
 #'Deploymentguides:https://inrep-platform.org/docs/deployment
-launch_to_inrep_platform<-function(study_config,
-item_bank,
-output_dir="inrep_deployment",
-deployment_type="inrep_platform",
-contact_info=NULL,
-advanced_features=NULL,
-security_settings=NULL,
-backup_settings=NULL,
-validate_deployment=TRUE){
+launch_to_inrep_platform <- function(study_config,
+                                       item_bank,
+                                       output_dir = "inrep_deployment",
+                                       deployment_type = "inrep_platform",
+                                       contact_info = NULL,
+                                       advanced_features = NULL,
+                                       security_settings = NULL,
+                                       backup_settings = NULL,
+                                       validate_deployment = TRUE) {
 
-#Validateinputs
-if(missing(study_config)||!is.list(study_config)){
-stop("study_configmustbeavalidconfigurationobjectcreatedwithcreate_study_config()")
-}
+  # Validate inputs
+  if (missing(study_config) || !is.list(study_config)) {
+    stop("study_config must be a valid configuration object created with create_study_config()")
+  }
 
-if(missing(item_bank)||!is.data.frame(item_bank)){
-stop("item_bankmustbeavaliddataframewithIRTparameters")
+  if (missing(item_bank) || !is.data.frame(item_bank)) {
+    stop("item_bank must be a valid data frame with IRT parameters")
 }
 
 #Validatedeploymenttype
