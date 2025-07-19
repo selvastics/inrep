@@ -571,6 +571,12 @@ estimate_ability_mirt <- function(responses, administered, item_bank, model = "2
   }
   
   tryCatch({
+    # Check if mirt package is available
+    if (!requireNamespace("mirt", quietly = TRUE)) {
+      warning("mirt package not available. Falling back to TAM estimation.")
+      return(list(theta = prior_mean, se = prior_sd, method = "error"))
+    }
+    
     # Prepare response matrix
     dat <- matrix(as.integer(responses), nrow = 1)
     colnames(dat) <- paste0("Item", administered)
