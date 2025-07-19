@@ -1,0 +1,64 @@
+/* File: inst/theme_editor/styles.css */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #f3f4f6;
+  color: #1f2937;
+  margin: 0;
+  padding: 0;
+}
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+h1, h2 {
+  color: #1f2937;
+}
+input[type="color"] {
+  padding: 0;
+  border: none;
+  cursor: pointer;
+}
+input[type="text"], select {
+  border: 1px solid #d1d5db;
+  padding: 0.5rem;
+  border-radius: 4px;
+  width: 100%;
+}
+button {
+  transition: background-color 0.3s ease;
+}
+#css_output {
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #1e1e1e;
+  color: #ffffff;
+}
+#preview {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+}
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+.assessment-card {
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+.btn-klee {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+  h1 {
+    font-size: 1.75rem;
+  }
+  h2 {
+    font-size: 1.25rem;
+  }
+}
