@@ -1,9 +1,5 @@
 # File: estimate_ability.R
 
-# Required packages
-library(TAM)
-library(mirt)
-
 #' Estimate Ability Using TAM Framework
 #'
 #' Estimates person ability using Item Response Theory models through the TAM package.
