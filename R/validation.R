@@ -246,15 +246,15 @@ if(model=="GRM"){
 b_cols<-grep("^b[0-9]+$",names(item_bank),value=TRUE)
 
 if(length(b_cols)==0){
-errors<-c(errors,"Nothresholdparameters(b1,b2,...)foundforGRMmodel")
+errors<-c(errors,"No threshold parameters (b1, b2, ...) found for GRM model")
 }else{
-cat("\n🎯Thresholdparameters:\n")
+cat("\nThreshold parameters:\n")
 
-for(colinb_cols){
+for(col in b_cols){
 unknown_thresh<-sum(is.na(item_bank[[col]]))
 known_thresh<-sum(!is.na(item_bank[[col]]))
 
-cat("",col,":Unknown=",unknown_thresh,",Known=",known_thresh,"\n")
+cat("  ",col,": Unknown =",unknown_thresh,", Known =",known_thresh,"\n")
 
 if(known_thresh>0){
 known_values<-item_bank[[col]][!is.na(item_bank[[col]])]
@@ -265,12 +265,12 @@ warnings<-c(warnings,paste(extreme_thresh,"itemshaveextreme",col,"values"))
 }
 }
 
-#Checkthresholdorderingforitemswithallknownthresholds
+# Check threshold ordering for items with all known thresholds
 ordering_issues<-0
-for(iin1:n_items){
+for(i in 1:n_items){
 thresholds<-as.numeric(item_bank[i,b_cols])
 if(!any(is.na(thresholds))){
-#Onlycheckorderingifallthresholdsareknown
+# Only check ordering if all thresholds are known
 if(any(diff(thresholds)<=0)){
 ordering_issues<-ordering_issues+1
 }
@@ -398,13 +398,13 @@ unknown_params<-unknown_params+sum(is.na(item_bank$a))
 
 if(model=="GRM"){
 b_cols<-grep("^b[0-9]+$",names(item_bank),value=TRUE)
-for(colinb_cols){
+for(col in b_cols){
 if(col%in%names(item_bank)){
 total_params<-total_params+n_items
 unknown_params<-unknown_params+sum(is.na(item_bank[[col]]))
 }
 }
-}elseif("b"%in%names(item_bank)){
+}else if("b"%in%names(item_bank)){
 total_params<-total_params+n_items
 unknown_params<-unknown_params+sum(is.na(item_bank$b))
 }
