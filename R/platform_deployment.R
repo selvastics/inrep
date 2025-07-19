@@ -962,5 +962,4 @@ paste0(basename(deployment_path),"/"),
 writeLines(summary_content,file.path(deployment_path,"DEPLOYMENT_SUMMARY.md"))
 }
 
-# Utility function for null coalescing
-`%||%` <- function(x, y) if (is.null(x)) y else x
+# (NULL coalescing operator defined in study_flow_helpers.R)

@@ -1471,7 +1471,7 @@ launch_study <- function(
 #'
 #' @return Character string containing the deployment optimization prompt
 #'
-#' @export
+#' @noRd
 #'
 #' @examples
 #' \dontrun{

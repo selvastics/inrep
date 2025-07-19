@@ -612,6 +612,4 @@ generate_item_selection_optimization_prompt <- function(item_selected,
 }
 
 # Utility operator for null-coalescing
-`%||%` <- function(x, y) {
-  if (is.null(x)) y else x
-}
+# (NULL coalescing operator defined in study_flow_helpers.R)
