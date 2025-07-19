@@ -282,9 +282,9 @@
 #'   return(shinyApp(ui = ui, server = server))
 #' }
 #' 
-#' # Create and run complete assessment
-#' data(bfi_items)
-#' config <- create_study_config(name = "BFI Assessment", model = "GRM")
+#' # Example usage (commented out to prevent data conflicts):
+#' # data(bfi_items)
+#' # config <- create_study_config(name = "BFI Assessment", model = "GRM")
 #' 
 #' # This would create a complete Shiny application
 #' # app <- create_complete_assessment(study_config, NULL, bfi_items)
