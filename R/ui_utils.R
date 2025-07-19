@@ -108,7 +108,7 @@
 #' @seealso 
 #' \code{\link{create_demographics_ui}} for complete demographics interface,
 #' \code{\link{launch_study}} for assessment workflow integration,
-#' \code{\link{create_study_config}} for demographic configuration
+#' \code{\link{create_study_config}} for demographic configuration}} for demographic configuration
 #'
 #' @importFrom shiny div numericInput selectInput textInput
 #' @export
