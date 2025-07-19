@@ -888,3 +888,6 @@ generate_config_optimization_prompt <- function(config) {
   
   return(prompt)
 }
+
+# End of create_study_config function
+}
