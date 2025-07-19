@@ -1,4 +1,4 @@
-# inrep: Adaptive Testing with Item Response Theory
+# inrep: Instant Reports for Adaptive Assessments
 
 <!-- badges: start -->
 [![CRAN status](https://www.r-pkg.org/badges/version/inrep)](https://CRAN.R-project.org/package=inrep)
@@ -24,11 +24,6 @@
 
 ## Installation
 
-### From CRAN
-
-```r
-install.packages("inrep")
-```
 
 ### Development Version
 
