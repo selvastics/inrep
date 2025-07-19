@@ -65,7 +65,7 @@ The Big Five Inventory (BFI) dataset contains personality assessment items measu
 
 ```{r eval=FALSE}
 # Load BFI items
-utils::data("bfi_items", package = "inrep", envir = environment())
+# bfi_items is automatically available via LazyData
 head(bfi_items)
 
 # Dataset structure
