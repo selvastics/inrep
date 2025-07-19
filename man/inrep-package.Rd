@@ -9,8 +9,9 @@
 The \code{inrep} package provides a comprehensive workflow framework for adaptive
 assessments that serves as a sophisticated wrapper around the TAM package for all
 psychometric computations. \code{inrep} integrates TAM's validated Item Response
-Theory implementations with modern interface technologies to create seamless
-research workflows from data collection through analysis and reporting.
+Theory implementations with modern interface technologies, LLM assistance capabilities,
+and website theme scraping to create seamless research workflows from data collection 
+through analysis and reporting.
 }
 \details{
 \strong{Psychometric Foundation:} All statistical computations are performed exclusively by
@@ -29,6 +30,8 @@ the TAM package (Robitzsch et al., 2020), ensuring methodological rigor and repr
   \item Interactive Shiny-based assessment interfaces with modern UI components
   \item Real-time data collection with quality monitoring and validation
   \item Bidirectional integration between user interfaces and TAM functions
+  \item LLM integration for enhanced user assistance and study configuration
+  \item Website theme scraping for automatic institutional branding
   \item Enterprise-grade logging, audit trails, and result management
   \item Cloud storage integration with secure authentication
   \item Multi-format export capabilities (RDS, CSV, JSON, PDF)

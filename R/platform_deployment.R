@@ -409,9 +409,9 @@ deployment_id<-paste0("inrep_deployment_",timestamp)
 deployment_path<-file.path(output_dir,deployment_id)
 dir.create(deployment_path,recursive=TRUE)
 
-#Createsubdirectories
+# Create subdirectories
 subdirs<-c("app","data","config","docs","validation","deployment")
-for(subdirinsubdirs){
+for(subdir in subdirs){
 dir.create(file.path(deployment_path,subdir),recursive=TRUE)
 }
 
@@ -513,13 +513,13 @@ writeLines(ui_content,file.path(deployment_path,"app","ui.R"))
 server_content<-generate_server_file(study_config,item_bank,advanced_features)
 writeLines(server_content,file.path(deployment_path,"app","server.R"))
 
-#Generatedeploymentconfigurationbasedontype
+# Generate deployment configuration based on type
 if(deployment_type=="inrep_platform"){
 deployment_config<-generate_inrep_platform_config(study_config,contact_info,
 advanced_features,security_settings)
-}elseif(deployment_type=="posit_connect"){
+}else if(deployment_type=="posit_connect"){
 deployment_config<-generate_posit_connect_config(study_config,advanced_features)
-}elseif(deployment_type=="docker"){
+}else if(deployment_type=="docker"){
 deployment_config<-generate_docker_config(study_config,advanced_features)
 }else{
 deployment_config<-generate_generic_config(study_config,advanced_features)
@@ -661,7 +661,7 @@ instructions_content<-c(instructions_content,
 "-Scalablearchitectureforlargestudies",
 "-Experttechnicalsupport"
 )
-}elseif(deployment_type=="posit_connect"){
+}else if(deployment_type=="posit_connect"){
 instructions_content<-c(instructions_content,
 "",
 "###PositConnectDeployment",
@@ -688,7 +688,7 @@ instructions_content<-c(instructions_content,
 "-Configureuseraccessandpermissions",
 "-Launchstudywithparticipantrecruitment"
 )
-}elseif(deployment_type=="docker"){
+}else if(deployment_type=="docker"){
 instructions_content<-c(instructions_content,
 "",
 "###DockerDeployment",
