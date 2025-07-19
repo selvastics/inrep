@@ -10,9 +10,10 @@ Authors@R: person("Clievins", "Selva",
 Description: A comprehensive framework for adaptive testing using Item Response Theory 
     (IRT) models. Provides web-based interfaces for test administration via 'Shiny', 
     supports multiple IRT models including the Graded Response Model through 'TAM' 
-    integration, implements adaptive item selection algorithms, and includes 
-    comprehensive reporting capabilities. Designed for psychological assessments, 
-    educational testing, and survey research with large item pools.
+    integration, implements adaptive item selection algorithms, includes LLM integration 
+    for enhanced user assistance and study configuration, website theme scraping for 
+    automatic branding, and comprehensive reporting capabilities. Designed for 
+    psychological assessments, educational testing, and survey research with large item pools.
 URL: https://github.com/selvastics/inrep
 BugReports: https://github.com/selvastics/inrep/issues
 Depends: R (>= 4.1.0)
