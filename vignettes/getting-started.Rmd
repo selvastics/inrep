@@ -35,11 +35,9 @@ The **inrep** package is a comprehensive framework for creating and administerin
 ## Installation
 
 ```{r eval=FALSE}
-# Install from CRAN (recommended)
-install.packages("inrep")
 
-# Or install development version from GitHub
-# devtools::install_github("your-repo/inrep")
+# Install development version from GitHub
+devtools::install_github("your-repo/inrep")
 ```
 
 ## Quick Start: Your First Adaptive Test
