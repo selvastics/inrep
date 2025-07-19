@@ -2,7 +2,7 @@ Package: inrep
 Type: Package
 Title: Instant Reports for Adaptive Assessments
 Version: 1.0.0
-Date: 2025-01-19
+Date: 2025-07-20
 Authors@R: person("Clievins", "Selva", 
                   email = "selva@uni-hildesheim.de", 
                   role = c("aut", "cre"), 
