@@ -170,7 +170,7 @@ This package is licensed under the MIT License. See LICENSE file for details.
 
 ## Acknowledgments
 
-I am deeply grateful to Prof. Dr. Alla Sawatzky and Prof. Dr. Kathrin Schütz for their early endorsement of this project and their insightful guidance during its initial stages. Their contributions were pivotal in shaping both the conceptual foundation and the development trajectory of the inrep package.
+I thank Alla Sawatzky and Kathrin Schütz for their early endorsement of this project and their insightful guidance during its initial stages. Their contributions were pivotal in shaping both the conceptual foundation and the development trajectory of the inrep package.
 
 ---
 
