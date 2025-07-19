@@ -24,12 +24,6 @@
 
 ## Installation
 
-### From CRAN
-
-```r
-install.packages("inrep")
-```
-
 ### Development Version
 
 ```r
