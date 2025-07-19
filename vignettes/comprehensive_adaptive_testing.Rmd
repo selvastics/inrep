@@ -1,0 +1,509 @@
+---
+title: "Comprehensive Guide to inrep: Adaptive Testing with Multiple Item Banks"
+author: "inrep Package Team"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    theme: united
+vignette: >
+  %\VignetteIndexEntry{Comprehensive Guide to inrep: Adaptive Testing with Multiple Item Banks}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.height = 6,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+# Introduction
+
+The `inrep` package provides a comprehensive framework for adaptive testing using Item Response Theory (IRT) models. This vignette demonstrates how to use the package with multiple item banks including personality assessment (Big Five Inventory) and cognitive assessment (Mathematics).
+
+## Package Features
+
+- **Multiple Item Banks**: BFI personality items and mathematics questions
+- **Adaptive Testing**: Dynamic item selection based on ability estimates
+- **IRT Integration**: Seamless integration with TAM package for psychometric computations
+- **Flexible Configuration**: Support for various testing scenarios
+- **Interactive Interface**: Shiny-based web application for test administration
+
+## Installation and Setup
+
+```{r eval=FALSE}
+# Install from local source
+devtools::install_local("path/to/inrep")
+
+# Load the package
+library(inrep)
+library(TAM)
+library(shiny)
+```
+
+```{r echo=FALSE}
+# For vignette building, we'll simulate loading
+library(TAM)
+```
+
+# Dataset Overview
+
+The `inrep` package includes several comprehensive datasets for different testing scenarios.
+
+## BFI Items Dataset
+
+The Big Five Inventory (BFI) dataset contains personality assessment items measuring five major personality dimensions:
+
+```{r eval=FALSE}
+# Load BFI items
+data(bfi_items)
+head(bfi_items)
+
+# Dataset structure
+str(bfi_items)
+
+# Content areas
+table(bfi_items$Content_Area)
+```
+
+**BFI Content Areas:**
+- **Extraversion**: Sociability, assertiveness, activity level
+- **Agreeableness**: Trust, cooperation, empathy
+- **Conscientiousness**: Organization, responsibility, dependability
+- **Neuroticism**: Emotional stability, anxiety, mood
+- **Openness**: Creativity, intellectual curiosity, aesthetic appreciation
+
+## Mathematics Items Dataset
+
+The mathematics dataset contains entry-level mathematics questions across multiple content areas:
+
+```{r eval=FALSE}
+# Load mathematics items
+data(math_items)
+head(math_items)
+
+# Content areas
+table(math_items$Content_Area)
+table(math_items$Difficulty_Level)
+```
+
+**Mathematics Content Areas:**
+- **Arithmetic**: Basic operations, percentages, fractions
+- **Algebra**: Linear equations, simplification, substitution
+- **Geometry**: Area, perimeter, volume calculations
+- **Statistics**: Mean, median, probability, range
+
+## Combined Dataset
+
+For comprehensive assessment scenarios, items can be combined across domains:
+
+```{r eval=FALSE}
+# Create combined assessment
+combined_items <- rbind(
+  transform(bfi_items, Domain = "Personality"),
+  transform(math_items, Domain = "Cognitive")
+)
+
+# Overview
+table(combined_items$Domain, combined_items$Content_Area)
+```
+
+# Basic Usage Examples
+
+## Example 1: Simple BFI Assessment
+
+```{r eval=FALSE}
+# Create study configuration for BFI assessment
+config <- create_study_config(
+  study_name = "BFI Personality Assessment",
+  item_bank = "bfi_items",
+  estimation_method = "TAM",
+  max_items = 20,
+  min_items = 10,
+  stopping_criterion = "se_threshold",
+  se_threshold = 0.5,
+  demographics = list(
+    age = list(type = "numeric", required = TRUE),
+    gender = list(type = "select", options = c("Male", "Female", "Other")),
+    education = list(type = "select", options = c("High School", "Bachelor", "Master", "PhD"))
+  )
+)
+
+# Launch the assessment
+launch_study(config)
+```
+
+## Example 2: Mathematics Adaptive Test
+
+```{r eval=FALSE}
+# Create mathematics adaptive test
+math_config <- create_study_config(
+  study_name = "Mathematics Adaptive Test",
+  item_bank = "math_items",
+  estimation_method = "TAM",
+  max_items = 15,
+  min_items = 5,
+  stopping_criterion = "se_threshold",
+  se_threshold = 0.4,
+  adaptive_selection = TRUE,
+  selection_method = "maximum_info",
+  demographics = list(
+    grade_level = list(type = "select", options = c("6th", "7th", "8th", "9th", "10th")),
+    math_background = list(type = "select", options = c("Basic", "Intermediate", "Advanced"))
+  )
+)
+
+# Launch the test
+launch_study(math_config)
+```
+
+## Example 3: Combined Assessment
+
+```{r eval=FALSE}
+# Create comprehensive assessment combining both domains
+comprehensive_config <- create_study_config(
+  study_name = "Comprehensive Assessment: Personality & Cognitive",
+  item_bank = "combined_items",
+  estimation_method = "TAM",
+  max_items = 30,
+  min_items = 15,
+  stopping_criterion = "max_items",
+  adaptive_selection = TRUE,
+  selection_method = "balanced_info",
+  demographics = list(
+    age = list(type = "numeric", required = TRUE),
+    education = list(type = "select", options = c("High School", "Bachelor", "Master", "PhD")),
+    research_participation = list(type = "checkbox", required = TRUE)
+  )
+)
+
+# Launch comprehensive assessment
+launch_study(comprehensive_config)
+```
+
+# Advanced Configuration Options
+
+## Adaptive Testing Parameters
+
+The package supports sophisticated adaptive testing configurations:
+
+```{r eval=FALSE}
+# Advanced adaptive configuration
+adaptive_config <- create_study_config(
+  study_name = "Advanced Adaptive Test",
+  item_bank = "math_items",
+  estimation_method = "TAM",
+  
+  # Adaptive parameters
+  adaptive_selection = TRUE,
+  selection_method = "maximum_info",
+  exposure_control = TRUE,
+  max_exposure_rate = 0.3,
+  content_balancing = TRUE,
+  
+  # Stopping criteria
+  stopping_criterion = "multiple",
+  max_items = 20,
+  min_items = 8,
+  se_threshold = 0.35,
+  theta_change_threshold = 0.1,
+  
+  # Initial parameters
+  initial_theta = 0,
+  initial_se = 1,
+  
+  # Demographics
+  demographics = list(
+    participant_id = list(type = "text", required = TRUE),
+    test_date = list(type = "date", required = TRUE),
+    testing_conditions = list(type = "select", options = c("Laboratory", "Online", "Classroom"))
+  )
+)
+```
+
+## Custom Item Selection
+
+```{r eval=FALSE}
+# Custom item selection function
+custom_selection <- function(theta, item_bank, administered_items) {
+  # Implement custom logic for item selection
+  # This could include:
+  # - Content area rotation
+  # - Difficulty progression
+  # - Exposure control
+  # - Domain-specific rules
+  
+  available_items <- setdiff(1:nrow(item_bank), administered_items)
+  
+  # Example: Select item with maximum information at current theta
+  info_values <- sapply(available_items, function(i) {
+    item_info(theta, item_bank$a[i], item_bank$b[i])
+  })
+  
+  return(available_items[which.max(info_values)])
+}
+
+# Use custom selection in configuration
+config_custom <- create_study_config(
+  study_name = "Custom Selection Test",
+  item_bank = "math_items",
+  selection_function = custom_selection,
+  # ... other parameters
+)
+```
+
+# Analysis and Reporting
+
+## Ability Estimation
+
+```{r eval=FALSE}
+# Estimate abilities from response data
+responses <- c(1, 0, 1, 1, 0, 1, 0, 1)  # Example responses
+item_indices <- c(1, 3, 5, 7, 9, 11, 13, 15)  # Administered items
+
+ability_est <- estimate_ability(
+  responses = responses,
+  item_indices = item_indices,
+  item_bank = "math_items",
+  method = "ML"
+)
+
+print(ability_est)
+```
+
+## Test Information
+
+```{r eval=FALSE}
+# Calculate test information function
+theta_range <- seq(-3, 3, by = 0.1)
+test_info <- calculate_test_info(
+  theta_range = theta_range,
+  item_bank = "math_items",
+  administered_items = item_indices
+)
+
+# Plot test information
+plot(theta_range, test_info, type = "l", 
+     xlab = "Ability (θ)", ylab = "Test Information",
+     main = "Test Information Function")
+```
+
+## Response Pattern Analysis
+
+```{r eval=FALSE}
+# Analyze response patterns
+response_analysis <- analyze_responses(
+  responses = responses,
+  item_indices = item_indices,
+  item_bank = "math_items"
+)
+
+# View analysis results
+print(response_analysis)
+```
+
+# Practical Applications
+
+## Educational Assessment
+
+```{r eval=FALSE}
+# Create educational assessment battery
+education_config <- create_study_config(
+  study_name = "Educational Assessment Battery",
+  item_bank = "math_items",
+  estimation_method = "TAM",
+  max_items = 25,
+  min_items = 12,
+  stopping_criterion = "se_threshold",
+  se_threshold = 0.3,
+  adaptive_selection = TRUE,
+  content_balancing = TRUE,
+  demographics = list(
+    student_id = list(type = "text", required = TRUE),
+    grade = list(type = "select", options = c("6", "7", "8", "9", "10", "11", "12")),
+    school = list(type = "text", required = TRUE),
+    teacher = list(type = "text", required = FALSE)
+  )
+)
+
+# Launch educational assessment
+launch_study(education_config)
+```
+
+## Psychological Research
+
+```{r eval=FALSE}
+# Create research study configuration
+research_config <- create_study_config(
+  study_name = "Personality Research Study",
+  item_bank = "bfi_items",
+  estimation_method = "TAM",
+  max_items = 44,  # All BFI items
+  min_items = 20,
+  stopping_criterion = "max_items",
+  adaptive_selection = FALSE,  # Fixed-length administration
+  randomize_items = TRUE,
+  demographics = list(
+    participant_id = list(type = "text", required = TRUE),
+    age = list(type = "numeric", required = TRUE, min = 18, max = 80),
+    gender = list(type = "select", options = c("Male", "Female", "Non-binary", "Prefer not to say")),
+    education = list(type = "select", options = c("High School", "Some College", "Bachelor", "Master", "PhD")),
+    consent = list(type = "checkbox", required = TRUE, label = "I consent to participate in this research")
+  )
+)
+
+# Launch research study
+launch_study(research_config)
+```
+
+## Clinical Assessment
+
+```{r eval=FALSE}
+# Create clinical assessment configuration
+clinical_config <- create_study_config(
+  study_name = "Clinical Psychological Assessment",
+  item_bank = "bfi_items",
+  estimation_method = "TAM",
+  max_items = 30,
+  min_items = 15,
+  stopping_criterion = "se_threshold",
+  se_threshold = 0.4,
+  adaptive_selection = TRUE,
+  selection_method = "maximum_info",
+  demographics = list(
+    client_id = list(type = "text", required = TRUE),
+    age = list(type = "numeric", required = TRUE),
+    referral_source = list(type = "select", options = c("Self", "Physician", "Therapist", "Other")),
+    assessment_date = list(type = "date", required = TRUE)
+  )
+)
+
+# Launch clinical assessment
+launch_study(clinical_config)
+```
+
+# Customization and Extensions
+
+## Custom Themes
+
+```{r eval=FALSE}
+# Create custom visual theme
+custom_theme <- create_custom_theme(
+  primary_color = "#2E86AB",
+  secondary_color = "#A23B72",
+  background_color = "#F18F01",
+  text_color = "#333333",
+  font_family = "Arial",
+  font_size = "14px"
+)
+
+# Apply theme to study
+themed_config <- create_study_config(
+  study_name = "Themed Assessment",
+  item_bank = "math_items",
+  theme = custom_theme,
+  # ... other parameters
+)
+```
+
+## Custom Validation
+
+```{r eval=FALSE}
+# Create custom validation rules
+custom_validation <- function(item_bank) {
+  # Custom validation logic
+  errors <- character(0)
+  
+  # Check for required columns
+  required_cols <- c("Question", "Option1", "Option2", "Option3", "Option4", "Answer", "a", "b")
+  missing_cols <- setdiff(required_cols, names(item_bank))
+  if (length(missing_cols) > 0) {
+    errors <- c(errors, paste("Missing columns:", paste(missing_cols, collapse = ", ")))
+  }
+  
+  # Check IRT parameters
+  if (any(item_bank$a <= 0)) {
+    errors <- c(errors, "Discrimination parameters must be positive")
+  }
+  
+  # Check answer validity
+  valid_answers <- c("Option1", "Option2", "Option3", "Option4")
+  if (!all(item_bank$Answer %in% valid_answers)) {
+    errors <- c(errors, "Invalid answer options found")
+  }
+  
+  return(errors)
+}
+
+# Use custom validation
+validated_config <- create_study_config(
+  study_name = "Validated Assessment",
+  item_bank = "math_items",
+  validation_function = custom_validation,
+  # ... other parameters
+)
+```
+
+# Best Practices
+
+## Test Administration
+
+1. **Pilot Testing**: Always pilot test your configuration with a small sample
+2. **Item Exposure**: Monitor item exposure rates to ensure test security
+3. **Content Balance**: Ensure adequate representation across content areas
+4. **Stopping Rules**: Use appropriate stopping criteria for your context
+
+## Data Quality
+
+1. **Response Time**: Monitor response times for quality control
+2. **Response Patterns**: Check for aberrant response patterns
+3. **Missing Data**: Handle missing responses appropriately
+4. **Validation**: Validate item bank data before use
+
+## Ethical Considerations
+
+1. **Informed Consent**: Ensure participants understand the assessment
+2. **Data Privacy**: Protect participant data and responses
+3. **Feedback**: Provide appropriate feedback to participants
+4. **Accessibility**: Ensure tests are accessible to all participants
+
+# Troubleshooting
+
+## Common Issues
+
+1. **Item Bank Errors**: Check data format and column names
+2. **TAM Integration**: Ensure TAM package is installed and loaded
+3. **Shiny Interface**: Check for JavaScript errors in browser console
+4. **Memory Issues**: Monitor memory usage with large item banks
+
+## Error Messages
+
+- `"Item bank validation failed"`: Check item bank format and content
+- `"TAM estimation failed"`: Check response data and item parameters
+- `"Configuration error"`: Review study configuration parameters
+- `"Shiny app launch failed"`: Check Shiny dependencies and port availability
+
+# Conclusion
+
+The `inrep` package provides a comprehensive framework for adaptive testing with multiple item banks. Whether you're conducting educational assessments, psychological research, or clinical evaluations, the package offers the flexibility and power needed for sophisticated testing scenarios.
+
+For more information, visit the package documentation or contact the development team.
+
+## References
+
+1. Hambleton, R. K., Swaminathan, H., & Rogers, H. J. (1991). *Fundamentals of item response theory*. Sage Publications.
+
+2. van der Linden, W. J., & Glas, C. A. (Eds.). (2010). *Elements of adaptive testing*. Springer.
+
+3. Robitzsch, A., Kiefer, T., & Wu, M. (2020). *TAM: Test Analysis Modules*. R package version 3.5-19.
+
+4. John, O. P., & Srivastava, S. (1999). The Big Five trait taxonomy: History, measurement, and theoretical perspectives. *Handbook of personality: Theory and research*, 2(1999), 102-138.

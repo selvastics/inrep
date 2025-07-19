@@ -1,0 +1,45 @@
+Package: inrep
+Type: Package
+Title: Adaptive Testing with Item Response Theory
+Version: 1.0.0
+Date: 2025-01-19
+Authors@R: person("Clievins", "Selva", 
+                  email = "selva@uni-hildesheim.de", 
+                  role = c("aut", "cre"), 
+                  comment = c(ORCID = "0000-0001-9980-7127"))
+Description: A comprehensive framework for adaptive testing using Item Response Theory 
+    (IRT) models. Provides web-based interfaces for test administration via 'Shiny', 
+    supports multiple IRT models including the Graded Response Model through 'TAM' 
+    integration, implements adaptive item selection algorithms, and includes 
+    comprehensive reporting capabilities. Designed for psychological assessments, 
+    educational testing, and survey research with large item pools.
+URL: https://github.com/selvastics/inrep
+BugReports: https://github.com/selvastics/inrep/issues
+Depends: R (>= 4.1.0)
+Imports: 
+    shiny (>= 1.7.0),
+    shinyWidgets (>= 0.7.0),
+    DT (>= 0.20),
+    dplyr (>= 1.0.0),
+    TAM (>= 4.2-21),
+    jsonlite (>= 1.8.0),
+    ggplot2 (>= 3.4.0),
+    shinyjs (>= 2.1.0),
+    shinycssloaders (>= 1.0.0),
+    stringr (>= 1.5.0),
+    methods,
+    stats,
+    utils
+Suggests: 
+    mirt (>= 1.35),
+    testthat (>= 3.0.0),
+    knitr (>= 1.40),
+    rmarkdown (>= 2.20),
+    covr
+License: MIT + file LICENSE
+Encoding: UTF-8
+Language: en-US
+RoxygenNote: 7.3.2
+VignetteBuilder: knitr
+LazyData: true
+Config/testthat/edition: 3
