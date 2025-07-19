@@ -97,7 +97,7 @@ math_personality_study <- create_study_config(
 data("math_items", package = "inrep")  # Hypothetical math item bank
 
 # Load personality items  
-data("bfi_items", package = "inrep")   # Big Five personality items
+if (!exists("bfi_items")) data("bfi_items", package = "inrep")   # Big Five personality items
 
 # Validate both item banks
 math_validation <- validate_item_bank(

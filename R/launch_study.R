@@ -34,7 +34,7 @@
 #'
 #' @details
 #' \strong{Psychometric Foundation:} All statistical computations are performed by the
-#' TAM package (Robitzsch et al., 2020). \code{inrep} serves as an integration framework
+#' TAM package (Robitzsch et al., 2024). \code{inrep} serves as an integration framework
 #' that orchestrates TAM's capabilities within an interactive research workflow:
 #' \itemize{
 #'   \item IRT model fitting: \code{\link[TAM]{tam.mml}}, \code{\link[TAM]{tam.mml.2pl}}, \code{\link[TAM]{tam.mml.3pl}}

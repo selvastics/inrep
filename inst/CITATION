@@ -13,4 +13,4 @@ citEntry(
                      "https://github.com/selvastics/inrep")
 )
 
-citFooter("This package integrates with the TAM package (Robitzsch et al., 2020) for all psychometric computations.")
+citFooter("This package integrates with the TAM package (Robitzsch et al., 2024) for all psychometric computations.")
