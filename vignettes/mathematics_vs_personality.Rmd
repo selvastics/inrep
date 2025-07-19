@@ -50,7 +50,7 @@ print(math_items[1, c("Question", "Option1", "Option2", "Option3", "Option4", "A
 The BFI dataset contains personality assessment items:
 
 ```{r eval=FALSE}
-if (!exists("bfi_items")) data(bfi_items)
+utils::data("bfi_items", package = "inrep", envir = environment())
 
 # Overview of BFI items
 table(bfi_items$Content_Area)

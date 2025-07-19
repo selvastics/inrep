@@ -39,7 +39,7 @@ library(inrep)
 data(math_items)
 
 # Or load personality items
-if (!exists("bfi_items")) data(bfi_items)
+utils::data("bfi_items", package = "inrep", envir = environment())
 ```
 
 ### Step 2: Create Configuration

@@ -48,7 +48,7 @@ Let's create a simple adaptive test in just a few lines of code:
 library(inrep)
 
 # Load the built-in personality item bank
-if (!exists("bfi_items")) data(bfi_items)
+utils::data("bfi_items", package = "inrep", envir = environment())
 
 # Create a basic study configuration
 config <- create_study_config(
