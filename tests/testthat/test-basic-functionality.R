@@ -1,20 +1,24 @@
 # Test that package loads correctly
 test_that("package loads without errors", {
-  expect_error(library(inrep), NA)
+  expect_no_error(library(inrep))
 })
 
 # Test that main functions exist
 test_that("main functions are available", {
+  library(inrep)
   expect_true(exists("create_study_config"))
-  expect_true(exists("launch_study"))
+  expect_true(exists("launch_study")) 
   expect_true(exists("estimate_ability"))
   expect_true(exists("validate_item_bank"))
 })
 
-# Test that data objects are available
-test_that("data objects are available", {
-  expect_true(exists("bfi_items"))
-  expect_true(exists("math_items"))
+# Test that data objects can be loaded
+test_that("data objects can be loaded", {
+  library(inrep)
+  data(bfi_items, envir = environment())
+  expect_true(exists("bfi_items", envir = environment()))
+  data(math_items, envir = environment()) 
+  expect_true(exists("math_items", envir = environment()))
 })
 
 # Test basic functionality
