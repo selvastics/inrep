@@ -1,6 +1,6 @@
 Package: inrep
 Type: Package
-Title: Adaptive Testing with Item Response Theory
+Title: Instant Reports for Adaptive Assessments
 Version: 1.0.0
 Date: 2025-01-19
 Authors@R: person("Clievins", "Selva", 
