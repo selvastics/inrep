@@ -23,7 +23,6 @@
 #' @keywords dataset datasets personality BFI TAM GRM
 #' @name bfi_items
 #' @usage data(bfi_items)
-#' @export
 #'
 #' @details
 #' This item bank demonstrates professional standards for IRT-Based Assessments:
