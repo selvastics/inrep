@@ -1438,7 +1438,9 @@ launch_study <- function(
       rv$session_active <- TRUE
       logger("Test restarted")
     })
-  }
+  } # End of observeEvent for restart_test
+  
+  } # End of server function
   
   # Generate LLM assistance prompt if enabled
   if (getOption("inrep.llm_assistance", FALSE) && is_llm_assistance_enabled("deployment")) {
@@ -1566,7 +1568,7 @@ generate_study_deployment_prompt <- function(study_config,
       "8. **Compliance Framework**: Regulatory and ethical compliance procedures\n\n",
       
       "Please provide actionable recommendations with specific configuration examples, deployment scripts, and operational procedures."
-    )
+    ))
   }
   
   return(prompt)
