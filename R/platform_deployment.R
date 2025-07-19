@@ -388,50 +388,50 @@ launch_to_inrep_platform <- function(study_config,
 
   if (missing(item_bank) || !is.data.frame(item_bank)) {
     stop("item_bank must be a valid data frame with IRT parameters")
-}
+  }
 
-#Validatedeploymenttype
-valid_deployments<-c("inrep_platform","posit_connect","shinyapps","custom_server","docker")
-if(!deployment_type%in%valid_deployments){
-stop(paste("deployment_typemustbeoneof:",paste(valid_deployments,collapse=",")))
-}
+  # Validate deployment type
+  valid_deployments <- c("inrep_platform", "posit_connect", "shinyapps", "custom_server", "docker")
+  if (!deployment_type %in% valid_deployments) {
+    stop(paste("deployment_type must be one of:", paste(valid_deployments, collapse = ", ")))
+  }
 
-#Createoutputdirectory
-if(!dir.exists(output_dir)){
-dir.create(output_dir,recursive=TRUE)
-}
+  # Create output directory
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = TRUE)
+  }
 
-#Generatedeploymenttimestamp
-timestamp<-format(Sys.time(),"%Y%m%d_%H%M%S")
-deployment_id<-paste0("inrep_deployment_",timestamp)
+  # Generate deployment timestamp
+  timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+  deployment_id <- paste0("inrep_deployment_", timestamp)
 
-#Createdeploymentstructure
-deployment_path<-file.path(output_dir,deployment_id)
-dir.create(deployment_path,recursive=TRUE)
+  # Create deployment structure
+  deployment_path <- file.path(output_dir, deployment_id)
+  dir.create(deployment_path, recursive = TRUE)
 
-# Create subdirectories
-subdirs<-c("app","data","config","docs","validation","deployment")
-for(subdir in subdirs){
-dir.create(file.path(deployment_path,subdir),recursive=TRUE)
-}
+  # Create subdirectories
+  subdirs <- c("app", "data", "config", "docs", "validation", "deployment")
+  for (subdir in subdirs) {
+    dir.create(file.path(deployment_path, subdir), recursive = TRUE)
+  }
 
-#Initializeresults
-deployment_results<-list(
-deployment_package=deployment_path,
-deployment_id=deployment_id,
-timestamp=timestamp,
-deployment_type=deployment_type,
-validation_report=list(),
-deployment_instructions=NULL,
-contact_template=NULL,
-study_metadata=list()
-)
+  # Initialize results
+  deployment_results <- list(
+    deployment_package = deployment_path,
+    deployment_id = deployment_id,
+    timestamp = timestamp,
+    deployment_type = deployment_type,
+    validation_report = list(),
+    deployment_instructions = NULL,
+    contact_template = NULL,
+    study_metadata = list()
+  )
 
-#Validateitembank
-if(validate_deployment){
-validation_results<-validate_item_bank(item_bank,model=study_config$model)
-deployment_results$validation_report$item_bank_validation<-validation_results
-}
+  # Validate item bank
+  if (validate_deployment) {
+    validation_results <- validate_item_bank(item_bank, model = study_config$model)
+    deployment_results$validation_report$item_bank_validation <- validation_results
+  }
 
 #Savestudyconfiguration
 saveRDS(study_config,file.path(deployment_path,"config","study_config.rds"))
