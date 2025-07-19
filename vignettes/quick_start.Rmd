@@ -39,7 +39,7 @@ library(inrep)
 data(math_items)
 
 # Or load personality items
-utils::data("bfi_items", package = "inrep", envir = environment())
+# bfi_items is automatically available via LazyData
 ```
 
 ### Step 2: Create Configuration
