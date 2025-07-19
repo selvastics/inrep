@@ -174,6 +174,10 @@ This package is licensed under the MIT License. See LICENSE file for details.
 - GitHub Issues: https://github.com/selvastics/inrep/issues
 - Email: selva@uni-hildesheim.de
 
+## Acknowledgments
+
+I am deeply grateful to Prof. Dr. Alla Sawatzky and Prof. Dr. Kathrin Schütz for their early endorsement of this project and their insightful guidance during its initial stages. Their contributions were pivotal in shaping both the conceptual foundation and the development trajectory of the inrep package.
+
 ---
 
 **Author:** Clievins Selva  
