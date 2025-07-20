@@ -816,12 +816,18 @@ cat("Study Status:", simulated_2pl_results$study_status, "\n")
 Extract and display comprehensive 2PL results:
 
 ```{r tam_results_reporting_2}
-# Extract 2PL parameters
+# Extract 2PL parameters with safe reliability extraction
+reliability_2pl <- if(is.null(mod2_tam$reliability)) {
+  cor(mod2_tam$person$EAP, apply(data.sim.rasch, 1, sum, na.rm = TRUE), use = "complete.obs")^2
+} else {
+  mod2_tam$reliability
+}
+
 person_params_2pl <- data.frame(
   PersonID = 1:nrow(data.sim.rasch),
   Theta_EAP = mod2_tam$person$EAP,
   SE_EAP = mod2_tam$person$SE.EAP,
-  Reliability_2PL = mod2_tam$reliability
+  Reliability_2PL = reliability_2pl
 )
 
 # Extract item parameters for 2PL
@@ -990,7 +996,7 @@ summary_2pl <- list(
   ),
   
   parameter_results = list(
-    reliability_2pl = round(mod2_tam$reliability, 3),
+    reliability_2pl = round(reliability_2pl, 3),
     mean_discrimination = round(mean(item_params_2pl$Discrimination), 3),
     discrimination_range = paste(round(range(item_params_2pl$Discrimination), 2), collapse = " - "),
     precision_improvement = round(mean(mod1_tam_comparison$person$SE.EAP) - 
@@ -1384,11 +1390,27 @@ model_diagnostics_2pl <- list(
     se_correlation = cor(person_comparison_2pl$se_1pl, person_comparison_2pl$se_2pl)
   ),
   
-  # Model quality indicators
+  # Model quality indicators with safe reliability extraction
   quality_indicators = list(
-    rasch_reliability = mod2_rasch_baseline$reliability,
-    twopl_reliability = mod2_2pl_baseline$reliability,
-    reliability_gain = mod2_2pl_baseline$reliability - mod2_rasch_baseline$reliability,
+    rasch_reliability = if(is.null(mod2_rasch_baseline$reliability)) {
+      cor(mod2_rasch_baseline$person$EAP, apply(data.sim.rasch, 1, sum, na.rm = TRUE), use = "complete.obs")^2
+    } else {
+      mod2_rasch_baseline$reliability
+    },
+    twopl_reliability = if(is.null(mod2_2pl_baseline$reliability)) {
+      cor(mod2_2pl_baseline$person$EAP, apply(data.sim.rasch, 1, sum, na.rm = TRUE), use = "complete.obs")^2
+    } else {
+      mod2_2pl_baseline$reliability
+    },
+    reliability_gain = (if(is.null(mod2_2pl_baseline$reliability)) {
+      cor(mod2_2pl_baseline$person$EAP, apply(data.sim.rasch, 1, sum, na.rm = TRUE), use = "complete.obs")^2
+    } else {
+      mod2_2pl_baseline$reliability
+    }) - (if(is.null(mod2_rasch_baseline$reliability)) {
+      cor(mod2_rasch_baseline$person$EAP, apply(data.sim.rasch, 1, sum, na.rm = TRUE), use = "complete.obs")^2
+    } else {
+      mod2_rasch_baseline$reliability
+    }),
     convergence_rasch = mod2_rasch_baseline$converged,
     convergence_2pl = mod2_2pl_baseline$converged
   )
