@@ -152,7 +152,15 @@ graded scores. \emph{Psychometrika Monograph Supplement}, 34(4), 100-114.
 }
 }
 \seealso{
+\itemize{
+\item \code{\link{create_study_config}} for configuring models that use validated item banks
+\item \code{\link{launch_study}} for using validated item banks in assessments
+\item \code{\link[TAM]{tam.mml}} for TAM model fitting functions
+}
 
-
-
+\itemize{
+\item \code{\link{create_study_config}} for configuring models that use validated item banks
+\item \code{\link{launch_study}} for using validated item banks in assessments
+\item \code{\link[TAM]{tam.mml}} for TAM model fitting functions
+}
 }

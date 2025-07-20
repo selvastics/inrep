@@ -154,7 +154,6 @@ detect_outlier_items <- function(item_bank, discrimination_threshold = 0.2) {
 #'   \item \code{\link{validate_item_bank}} for structural validation
 #'   \item \code{\link{create_study_config}} for assessment configuration
 #'   \item \code{\link{launch_study}} for actual assessment deployment
-#' }}} for actual assessment deployment
 #' }
 #' 
 #' @references

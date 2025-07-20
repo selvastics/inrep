@@ -82,7 +82,12 @@ van der Linden, W. J., & Glas, C. A. W. (Eds.). (2010).
 Elements of adaptive testing. Springer.
 }
 \seealso{
-
+\itemize{
+  \item \code{\link{detect_outlier_items}} for item quality assessment
+  \item \code{\link{validate_item_bank}} for structural validation
+  \item \code{\link{create_study_config}} for assessment configuration
+  \item \code{\link{launch_study}} for actual assessment deployment
+}
 }
 \keyword{adaptive-testing}
 \keyword{performance-analysis}

@@ -77,8 +77,6 @@
 #' \item \code{\link{create_study_config}} for configuring models that use validated item banks
 #' \item \code{\link{launch_study}} for using validated item banks in assessments
 #' \item \code{\link[TAM]{tam.mml}} for TAM model fitting functions
-#' }}} for using validated item banks in assessments
-#' \item \code{\link[TAM]{tam.mml}} for TAM model fitting functions
 #' }
 validate_item_bank <- function(item_bank, model = "GRM") {
   
