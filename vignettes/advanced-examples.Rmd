@@ -1,0 +1,210 @@
+---
+title: "Advanced Examples - Cognitive Assessment and Features"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Advanced Examples - Cognitive Assessment and Features}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE  # Set to FALSE for CRAN to avoid Shiny examples
+)
+```
+
+```{r setup}
+library(inrep)
+library(TAM)
+```
+
+# Advanced Cognitive Assessment Examples
+
+This vignette demonstrates advanced features of the `inrep` package using comprehensive cognitive assessment scenarios.
+
+## Example 1: Basic Personality Assessment (BFI)
+
+```{r basic-bfi}
+# Load the built-in Big Five personality items
+data(bfi_items)
+
+# Create a simple configuration
+basic_config <- create_study_config(
+    name = "Personality Assessment",
+    model = "GRM",
+    max_items = 15,
+    min_items = 5,
+    criteria = "MI"
+)
+
+# Launch the study (requires Shiny environment)
+# launch_study(config = basic_config, item_bank = bfi_items)
+```
+
+## Example 2: Advanced Cognitive Assessment with 2PL Model
+
+```{r advanced-cognitive}
+# Load the cognitive assessment items
+data(cognitive_items)
+
+# Create advanced configuration with accessibility features
+advanced_config <- create_study_config(
+    name = "Cognitive Ability Assessment",
+    model = "2PL", 
+    estimation_method = "TAM",
+    max_items = 20,
+    min_items = 10,
+    min_SEM = 0.25,
+    criteria = "MI",  # Maximum Information selection
+    theta_prior = c(0, 1),
+    demographics = c("Age", "Gender", "Education", "Native_Language"),
+    input_types = list(
+        Age = "numeric",
+        Gender = "select", 
+        Education = "select",
+        Native_Language = "text"
+    ),
+    theme = "Professional",
+    session_save = TRUE,
+    parallel_computation = TRUE,
+    cache_enabled = TRUE,
+    accessibility_enhanced = TRUE
+)
+
+# Launch with accessibility features
+# launch_study(
+#     config = advanced_config,
+#     item_bank = cognitive_items,
+#     accessibility = TRUE
+# )
+```
+
+## Example 3: Multi-Domain Assessment
+
+```{r multi-domain}
+# Create configuration for multiple cognitive domains
+multi_domain_config <- create_study_config(
+    name = "Comprehensive Cognitive Battery",
+    model = "2PL",
+    max_items = 30,
+    min_items = 15,
+    criteria = "MI",
+    demographics = c("Age", "Education", "Testing_Experience"),
+    input_types = list(
+        Age = "numeric",
+        Education = "select",
+        Testing_Experience = "select"
+    ),
+    theme = "Academic",
+    session_save = TRUE
+)
+
+# Show available cognitive domains
+print("Available cognitive domains:")
+print(unique(cognitive_items$domain))
+
+# Launch multi-domain assessment
+# launch_study(
+#     config = multi_domain_config,
+#     item_bank = cognitive_items
+# )
+```
+
+## Example 4: Research Study with Cloud Storage
+
+```{r cloud-study}
+# Configuration for research study with cloud storage
+research_config <- create_study_config(
+    name = "Cognitive Research Study 2025",
+    model = "GRM",
+    max_items = 25,
+    min_items = 12,
+    criteria = "MI",
+    demographics = c("Age", "Gender", "Education", "Handedness"),
+    input_types = list(
+        Age = "numeric",
+        Gender = "select",
+        Education = "select",
+        Handedness = "select"
+    ),
+    theme = "Research",
+    session_save = TRUE,
+    study_key = "COGNITIVE_2025"
+)
+
+# WebDAV configuration for cloud storage
+webdav_url <- "https://your-cloud-storage.com/webdav"
+study_password <- "secure_password"
+
+# Launch with cloud storage (requires valid WebDAV setup)
+# launch_study(
+#     config = research_config,
+#     item_bank = cognitive_items,
+#     save_format = "json",
+#     webdav_url = webdav_url,
+#     webdav_password = study_password
+# )
+```
+
+## Key Features Demonstrated
+
+### 1. **Advanced Model Configuration**
+- Support for 1PL, 2PL, 3PL, and GRM models
+- TAM integration for reliable psychometric computation
+- Flexible stopping criteria (minimum SEM, maximum items)
+
+### 2. **Comprehensive Demographics**
+- Multiple input types (numeric, select, text)
+- Customizable demographic questions
+- Automatic validation and storage
+
+### 3. **Professional Themes**
+- Built-in themes: Light, Dark, Professional, Academic, Research
+- Accessibility compliance features
+- Responsive design for multiple devices
+
+### 4. **Research Features**
+- Session management with pause/resume capability
+- Cloud storage integration via WebDAV
+- Comprehensive data export formats
+- Real-time progress monitoring
+
+### 5. **Cognitive Assessment Domains**
+- **Verbal Reasoning**: Language comprehension and analogies
+- **Numerical Reasoning**: Mathematical problem solving
+- **Spatial Reasoning**: Visual-spatial pattern recognition
+- **Working Memory**: Short-term memory and manipulation
+- **Processing Speed**: Rapid cognitive processing tasks
+
+## Dataset Information
+
+### BFI Items (Big Five Inventory)
+- **Size**: 30 items across 5 personality dimensions
+- **Model**: Graded Response Model (GRM) with 5 response categories
+- **Domains**: Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism
+
+### Cognitive Items
+- **Size**: 50 items across 5 cognitive domains  
+- **Model**: 2PL with calibrated difficulty and discrimination parameters
+- **Domains**: Verbal, Numerical, Spatial, Working Memory, Processing Speed
+
+## Technical Notes
+
+All psychometric computations are performed using the **TAM** package, ensuring:
+- Reliable parameter estimation
+- Standard error calculations
+- Information function computations
+- Adaptive item selection algorithms
+
+For production deployments, ensure proper citation of both `inrep` and `TAM` packages.
+
+## Next Steps
+
+1. **Customize item banks**: Create domain-specific items for your research
+2. **Configure themes**: Match your institutional branding  
+3. **Set up cloud storage**: Enable data collection across sessions
+4. **Plan deployment**: Choose appropriate hosting platform
+
+For technical support and advanced configuration options, visit the [inrep GitHub repository](https://github.com/selvastics/inrep).
