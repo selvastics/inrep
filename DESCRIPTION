@@ -32,6 +32,10 @@ Imports:
     clipr,
     httr,
     logr,
+    kableExtra,
+    pdftools,
+    tinytex,
+    knitr,
     methods,
     stats,
     utils
@@ -40,7 +44,6 @@ Suggests:
     psych (>= 2.0.0),
     corrplot (>= 0.90),
     testthat (>= 3.0.0),
-    knitr (>= 1.40),
     rmarkdown (>= 2.20),
     covr
 License: MIT + file LICENSE

@@ -1,5 +1,3 @@
-^doc$
-^Meta$
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^\.git$
@@ -13,15 +11,7 @@
 ^.*\.ps1$
 ^.*\.bat$
 ^.*\.sh$
-^.*\.md$
-^.*\.json$
-^.*\.rds$
-^.*\.yml$
-^.*\.yaml$
 ^.*\.log$
-^.*\.msg$
 ^\.Rhistory$
 ^\.RData$
 ^\.Ruserdata$
-^README\.html$
-^\.gitignore$
