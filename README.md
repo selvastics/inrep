@@ -1,3 +1,4 @@
+
 # inrep: Instant Reports for Adaptive Assessments
 
 <!-- badges: start -->
@@ -12,15 +13,15 @@
 
 ### Key Features
 
-- **Adaptive Testing**: Support for multiple IRT models (1PL, 2PL, 3PL, GRM) with sophisticated item selection algorithms
-- **Web-based Interface**: Modern Shiny applications for test administration and data collection
-- **TAM Integration**: All psychometric computations performed using the validated TAM package
-- **LLM Integration**: Built-in support for LLM assistance in study configuration, deployment guidance, and optimization
-- **Website Theme Scraping**: Extract colors, fonts, and logos from institutional websites for automatic branding
-- **Multilingual Support**: Interface available in English, German, Spanish, and French
-- **Customizable Themes**: Professional appearance with accessibility compliance
-- **Comprehensive Reporting**: Multiple export formats with detailed analytics and visualizations
-- **Session Management**: Robust session handling with resume capabilities
+- **Adaptive Testing**: Support for multiple IRT models (1PL, 2PL, 3PL, GRM) with sophisticated item selection algorithms  
+- **Web-based Interface**: Modern Shiny applications for test administration and data collection  
+- **TAM Integration**: All psychometric computations performed using the validated TAM package  
+- **LLM Integration**: Built-in support for LLM assistance in study configuration, deployment guidance, and optimization  
+- **Website Theme Scraping**: Extract colors, fonts, and logos from institutional websites for automatic branding  
+- **Multilingual Support**: Interface available in English, German, Spanish, and French  
+- **Customizable Themes**: Professional appearance with accessibility compliance  
+- **Comprehensive Reporting**: Multiple export formats with detailed analytics and visualizations  
+- **Session Management**: Robust session handling with resume capabilities  
 
 ## Installation
 
@@ -29,16 +30,18 @@
 ```r
 # Install from GitHub
 devtools::install_github("selvastics/inrep")
-```
+````
+
+> 📌 [Click here if you have never installed anything in R before](#installation-instructions-for-beginners)
 
 ### Dependencies
 
-The package requires R >= 4.1.0 and integrates with the following packages:
+The package requires R ≥ 4.1.0 and integrates with the following packages:
 
-- **shiny**: Web application framework for interactive interfaces
-- **TAM**: Test Analysis Modules for IRT model estimation
-- **DT**: Interactive data tables for results display
-- **ggplot2**: High-quality visualizations and reporting
+* **shiny**
+* **TAM**
+* **DT**
+* **ggplot2**
 
 ## Quick Start
 
@@ -47,10 +50,8 @@ The package requires R >= 4.1.0 and integrates with the following packages:
 ```r
 library(inrep)
 
-# Load sample item bank
 data(bfi_items)
 
-# Create study configuration
 config <- create_study_config(
   name = "Personality Assessment",
   model = "GRM",
@@ -61,17 +62,14 @@ config <- create_study_config(
   language = "en"
 )
 
-# Launch study interface
 launch_study(config, bfi_items)
 ```
 
 ### Advanced Cognitive Assessment
 
 ```r
-# Load cognitive assessment items  
 data(cognitive_items)
 
-# Create advanced configuration with accessibility features
 advanced_config <- create_study_config(
     name = "Cognitive Ability Assessment",
     model = "2PL", 
@@ -79,7 +77,7 @@ advanced_config <- create_study_config(
     max_items = 20,
     min_items = 10,
     min_SEM = 0.25,
-    criteria = "MI",  # Maximum Information selection
+    criteria = "MI",
     theta_prior = c(0, 1),
     demographics = c("Age", "Gender", "Education", "Native_Language"),
     input_types = list(
@@ -95,7 +93,6 @@ advanced_config <- create_study_config(
     accessibility_enhanced = TRUE
 )
 
-# Launch with accessibility features and admin monitoring
 launch_study(
     config = advanced_config,
     item_bank = cognitive_items,
@@ -112,29 +109,24 @@ launch_study(
 ### Advanced Features with Website Scraping
 
 ```r
-# Scrape a website for theme inspiration
 result <- scrape_website_ui("https://www.uni-hildesheim.de/")
 
-# Preview extracted themes
 for (i in seq_along(result$themes)) {
   theme <- result$themes[[i]]
   cat(sprintf("Theme %d: %s (%s)\n", i, theme$name, theme$primary_color))
 }
 
-# Create study with scraped theme
 config <- create_study_config(
   title = "BFI Assessment",
   theme_config = result$themes[[1]]
 )
 
-# Launch with multiple theme options
 launch_study(config, bfi_items, theme_options = result$themes)
 ```
 
 ### Professional Platform Deployment
 
 ```r
-# Create complete deployment package for hosting
 deployment <- launch_to_inrep_platform(
   study_config = config,
   item_bank = bfi_items,
@@ -153,71 +145,105 @@ deployment <- launch_to_inrep_platform(
 # Contact selva@uni-hildesheim.de for hosting
 ```
 
+---
+
+## Installation Instructions for Beginners
+
+If you are new to R and have never installed a package before, follow these steps:
+
+### Step 1: Install R and RStudio
+
+1. **Install R**: [https://cran.r-project.org](https://cran.r-project.org)
+2. **Install RStudio**: [https://posit.co/download/rstudio-desktop](https://posit.co/download/rstudio-desktop)
+
+### Step 2: Install Required System Tools
+
+* **Windows**: Install [Rtools](https://cran.r-project.org/bin/windows/Rtools/)
+* **macOS**: Open Terminal and run:
+
+  ```bash
+  xcode-select --install
+  ```
+
+### Step 3: Install the Required Packages
+
+Open RStudio and copy-paste the following:
+
+```r
+# Install devtools (required to install from GitHub)
+install.packages("devtools")
+
+# Load the package
+library(devtools)
+
+# Install inrep from GitHub
+devtools::install_github("selvastics/inrep")
+
+# Load the installed package
+library(inrep)
+```
+
+If you encounter any error during installation, make sure Rtools (on Windows) or Xcode (on macOS) was correctly installed and your R version is up to date.
+
+---
+
 ## Documentation
 
-Comprehensive documentation is available through vignettes:
-
-- `vignette("getting-started", package = "inrep")` - Basic usage and setup
-- `vignette("customizing-appearance", package = "inrep")` - Themes and styling
-- `vignette("research-workflows", package = "inrep")` - Advanced research applications
+* `vignette("getting-started", package = "inrep")`
+* `vignette("customizing-appearance", package = "inrep")`
+* `vignette("research-workflows", package = "inrep")`
 
 ## Main Functions
 
-- `launch_study()`: Start an adaptive testing session
-- `create_study_config()`: Configure study parameters
-- `estimate_ability()`: Estimate participant abilities using IRT
-- `select_next_item()`: Adaptive item selection algorithms
-- `validate_item_bank()`: Check item bank format and content
-- `scrape_website_ui()`: Extract themes from websites for branding
-- `enable_llm_assistance()`: Configure LLM integration for enhanced guidance
+* `launch_study()`
+* `create_study_config()`
+* `estimate_ability()`
+* `select_next_item()`
+* `validate_item_bank()`
+* `scrape_website_ui()`
+* `enable_llm_assistance()`
 
 ## Example Datasets
 
-- **`bfi_items`**: Big Five Inventory personality assessment items
-- **`math_items`**: Entry-level mathematics questions (arithmetic, algebra, geometry, statistics)
-- Custom item bank support with flexible data structures
+* `bfi_items`
+* `math_items`
 
 ## Configuration Options
 
-The package offers extensive configuration options:
-
-- **IRT Models**: 1PL (Rasch), 2PL, 3PL, GRM
-- **Stopping Rules**: Minimum/maximum items, standard error thresholds
-- **Item Selection**: Maximum Information, Random, Fixed sequences
-- **Themes**: Light, Dark, Minimal, Academic, and more
-- **Languages**: English, German, Spanish, French
-- **Demographics**: Customizable demographic collection
-- **Session Management**: Save/resume functionality
-- **LLM Integration**: Configurable assistance levels and prompt customization
+* IRT Models: 1PL, 2PL, 3PL, GRM
+* Stopping Rules
+* Item Selection Criteria
+* Themes and Languages
+* Session Management
+* LLM Integration
 
 ## Citation
 
-If you use inrep in your research, please cite:
-
 ```
-Selva, C. (2025). inrep: Instant Reports for Adaptive Assessments. 
+Selva, C. (2025). inrep: Instant Reports for Adaptive Assessments.  
 R package version 1.0.0. https://github.com/selvastics/inrep
 ```
 
 ## Contributing
 
-We welcome contributions! Please see our contributing guidelines and code of conduct on GitHub.
+See `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md` on GitHub.
 
 ## License
 
-This package is licensed under the MIT License. See LICENSE file for details.
+MIT License
 
 ## Support
 
-- GitHub Issues: https://github.com/selvastics/inrep/issues
-- Email: selva@uni-hildesheim.de
+* GitHub: [https://github.com/selvastics/inrep/issues](https://github.com/selvastics/inrep/issues)
+* Email: [selva@uni-hildesheim.de](mailto:selva@uni-hildesheim.de)
 
 ## Acknowledgments
 
-I thank Alla Sawatzky and Kathrin Schütz for their early endorsement of this project and their insightful guidance during its initial stages. Their contributions were pivotal in shaping both the conceptual foundation and the development trajectory of the inrep package.
+I thank Alla Sawatzky and Kathrin Schütz for their early endorsement of this project and their insightful guidance during its initial stages.
 
 ---
 
-**Author:** Clievins Selva  
-**Affiliation:** University of Hildesheim, Department of Psychology  
-**Contact:** selva@uni-hildesheim.de
+**Author:** Clievins Selva
+**Affiliation:** University of Hildesheim
+**Contact:** [selva@uni-hildesheim.de](mailto:selva@uni-hildesheim.de)
+

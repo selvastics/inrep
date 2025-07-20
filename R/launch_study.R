@@ -17,8 +17,13 @@
 #' @param theme_config Named list of theme parameters (e.g., from \code{\link{launch_theme_editor}}).
 #'   Contains CSS variable definitions like \code{primary_color}, \code{font_family}, etc.
 #' @param webdav_url Character string specifying WebDAV URL for cloud-based result storage,
-#'   or \code{NULL} to disable cloud functionality. Requires valid WebDAV credentials.
-#' @param password Character string for WebDAV authentication when \code{webdav_url} is specified.
+#'   or \code{NULL} to disable cloud functionality. When provided, \code{password} must also be specified.
+#'   Example URLs: \code{"https://sync.academiccloud.de/index.php/s/YourSharedFolder/"} or 
+#'   \code{"https://your-institution.edu/webdav/studies/"}. Both \code{webdav_url} and \code{password}
+#'   are required together for cloud storage functionality.
+#' @param password Character string for WebDAV authentication. Required when \code{webdav_url} is specified.
+#'   This should be the access password or token for your WebDAV storage endpoint. 
+#'   For security, consider using environment variables: \code{Sys.getenv("WEBDAV_PASSWORD")}.
 #' @param save_format Character string specifying output format for assessment results.
 #'   Options: \code{"rds"} (default), \code{"csv"}, \code{"json"}, \code{"pdf"}.
 #' @param logger Function for custom logging. Default uses internal \code{logr} implementation.
@@ -78,6 +83,48 @@
 #'   \item \strong{Quality monitoring:} Built-in detection of response patterns, engagement metrics,
 #'     and data quality indicators with automatic flagging of suspicious sessions
 #' }
+#' 
+#' @section Cloud Storage Configuration:
+#' The framework supports automatic backup of assessment results to WebDAV-compatible cloud storage:
+#' 
+#' \strong{Setup Requirements:}
+#' \itemize{
+#'   \item Both \code{webdav_url} and \code{password} must be provided together
+#'   \item WebDAV URL must be a valid HTTP(S) endpoint with write permissions
+#'   \item Password should be the access token or credential for your WebDAV service
+#'   \item Network connectivity required for cloud functionality
+#' }
+#' 
+#' \strong{Compatible Services:}
+#' \itemize{
+#'   \item Academic cloud storage (e.g., \code{"https://sync.academiccloud.de/..."})
+#'   \item Institutional WebDAV servers (\code{"https://university.edu/webdav/..."})
+#'   \item Nextcloud/ownCloud instances with WebDAV enabled
+#'   \item Commercial WebDAV providers (Box, Dropbox Business, etc.)
+#' }
+#' 
+#' \strong{Security Best Practices:}
+#' \itemize{
+#'   \item Use environment variables for passwords: \code{password = Sys.getenv("WEBDAV_PASS")}
+#'   \item Ensure WebDAV endpoints use HTTPS for encrypted transmission
+#'   \item Use dedicated access tokens rather than account passwords when possible
+#'   \item Test connectivity before launching large-scale studies
+#' }
+#' 
+#' \strong{Usage Examples:}
+#' \preformatted{
+#' # Local storage only (default)
+#' launch_study(config, item_bank)
+#' 
+#' # With cloud backup
+#' launch_study(
+#'   config, 
+#'   item_bank,
+#'   webdav_url = "https://sync.academiccloud.de/index.php/s/YourFolder/",
+#'   password = Sys.getenv("WEBDAV_PASSWORD")
+#' )
+#' }
+#'
 #' @section Installation and Dependencies:
 #' \strong{Required Packages:} Ensure all dependencies are installed for full functionality:
 #' \preformatted{
@@ -347,7 +394,7 @@
 #'   item_bank = depression_items,
 #'   save_format = "json",
 #'   webdav_url = "https://secure-storage.hospital.edu/assessments/",
-#'   password = "secure_password_123",
+#'   password = Sys.getenv("CLINICAL_WEBDAV_PASSWORD"),
 #'   logger = function(msg, level = "INFO") {
 #'     timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
 #'     cat(sprintf("[%s] %s: %s\n", timestamp, level, msg))
@@ -626,7 +673,13 @@
 #' # Example 5: Simple 1PL Model with Cloud Storage
 #' config <- inrep::create_study_config(model = "GRM", max_items = 10, session_save = TRUE)
 #' utils::data(bfi_items)
-#' inrep::launch_study(config, bfi_items, webdav_url = "https://sync.academiccloud.de/index.php/s/Y51QPXzJVLWSAcb/", password = "inreptest")
+#' # Set up environment variable first: Sys.setenv(WEBDAV_PASSWORD = "your_actual_password")
+#' inrep::launch_study(
+#'   config, 
+#'   bfi_items, 
+#'   webdav_url = "https://sync.academiccloud.de/index.php/s/YourSharedFolder/", 
+#'   password = Sys.getenv("WEBDAV_PASSWORD")
+#' )
 #' }
 #' @importFrom shiny shinyApp fluidPage tags div numericInput selectInput actionButton downloadButton uiOutput renderUI plotOutput h2 h3 h4 p tagList
 #' @importFrom shinyjs useShinyjs
@@ -670,6 +723,42 @@ launch_study <- function(
   if (!save_format %in% base::c("rds", "csv", "json", "pdf")) {
     logger("Invalid save_format", level = "ERROR")
     base::stop("Invalid save_format")
+  }
+  
+  # Cloud storage validation
+  if (!base::is.null(webdav_url) || !base::is.null(password)) {
+    if (base::is.null(webdav_url) && !base::is.null(password)) {
+      logger("Password provided without WebDAV URL", level = "ERROR")
+      base::stop("Cloud storage requires both 'webdav_url' and 'password' arguments.\n",
+           "You provided a password but no WebDAV URL.\n",
+           "Please provide both arguments together:\n",
+           "  webdav_url = \"https://your-cloud-storage.com/path/\"\n",
+           "  password = \"your-access-password\"\n",
+           "Or remove both arguments to use local storage only.")
+    }
+    if (!base::is.null(webdav_url) && base::is.null(password)) {
+      logger("WebDAV URL provided without password", level = "ERROR")
+      base::stop("Cloud storage requires both 'webdav_url' and 'password' arguments.\n",
+           "You provided a WebDAV URL but no password.\n",
+           "Please provide both arguments together:\n",
+           "  webdav_url = \"", webdav_url, "\"\n",
+           "  password = \"your-access-password\"\n",
+           "For security, consider using: password = Sys.getenv(\"WEBDAV_PASSWORD\")")
+    }
+    if (!base::is.null(webdav_url) && !base::is.null(password)) {
+      # Validate URL format
+      if (!grepl("^https?://", webdav_url)) {
+        logger("Invalid WebDAV URL format", level = "ERROR")
+        base::stop("WebDAV URL must start with 'http://' or 'https://'\n",
+             "Provided: ", webdav_url, "\n",
+             "Example: webdav_url = \"https://sync.academiccloud.de/index.php/s/YourFolder/\"")
+      }
+      logger("Cloud storage enabled with WebDAV URL and password", level = "INFO")
+      print(paste("Cloud storage enabled:", webdav_url))
+    }
+  } else {
+    logger("Using local storage only (no cloud backup)", level = "INFO")
+    print("Cloud storage disabled - results will be saved locally only")
   }
   
   logger(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"))

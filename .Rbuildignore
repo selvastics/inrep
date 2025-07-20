@@ -15,3 +15,9 @@
 ^\.Rhistory$
 ^\.RData$
 ^\.Ruserdata$
+^test_.*\.R$
+^CLOUD_STORAGE_GUIDE\.md$
+^CRAN_READY_SUMMARY\.md$
+^CONTRIBUTING\.md$
+^RELEASE_NOTES\.md$
+^.*\.tar\.gz$
