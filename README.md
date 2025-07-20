@@ -65,6 +65,50 @@ config <- create_study_config(
 launch_study(config, bfi_items)
 ```
 
+### Advanced Cognitive Assessment
+
+```r
+# Load cognitive assessment items  
+data(cognitive_items)
+
+# Create advanced configuration with accessibility features
+advanced_config <- create_study_config(
+    name = "Cognitive Ability Assessment",
+    model = "2PL", 
+    estimation_method = "TAM",
+    max_items = 20,
+    min_items = 10,
+    min_SEM = 0.25,
+    criteria = "MI",  # Maximum Information selection
+    theta_prior = c(0, 1),
+    demographics = c("Age", "Gender", "Education", "Native_Language"),
+    input_types = list(
+        Age = "numeric",
+        Gender = "select", 
+        Education = "select",
+        Native_Language = "text"
+    ),
+    theme = "Professional",
+    session_save = TRUE,
+    parallel_computation = TRUE,
+    cache_enabled = TRUE,
+    accessibility_enhanced = TRUE
+)
+
+# Launch with accessibility features and admin monitoring
+launch_study(
+    config = advanced_config,
+    item_bank = cognitive_items,
+    accessibility = TRUE,
+    admin_dashboard_hook = function(session_data) {
+        cat("Participant ID:", session_data$participant_id, "\n")
+        cat("Progress:", session_data$progress, "%\n")
+        cat("Current theta:", round(session_data$theta, 3), "\n")
+        cat("Standard error:", round(session_data$se, 3), "\n")
+    }
+)
+```
+
 ### Advanced Features with Website Scraping
 
 ```r
@@ -90,13 +134,13 @@ launch_study(config, bfi_items, theme_options = result$themes)
 ### Professional Platform Deployment
 
 ```r
-# Create complete deployment package for professional hosting
+# Create complete deployment package for hosting
 deployment <- launch_to_inrep_platform(
   study_config = config,
   item_bank = bfi_items,
   deployment_type = "inrep_platform",
   contact_info = list(
-    researcher_name = "Dr. Your Name",
+    researcher_name = "Your Name",
     institution = "Your University", 
     email = "your.email@university.edu",
     study_title = "Your Study Title",
@@ -106,7 +150,7 @@ deployment <- launch_to_inrep_platform(
   )
 )
 
-# Contact selva@uni-hildesheim.de for professional hosting
+# Contact selva@uni-hildesheim.de for hosting
 ```
 
 ## Documentation
