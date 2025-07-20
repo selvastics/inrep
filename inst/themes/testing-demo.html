@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en" data-test-env="true">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University of Hildesheim - Ultimate Testing Environment</title>
+    <link rel="stylesheet" href="hildesheim.css">
+    <style>
+        /* Additional demo styles */
+        .demo-section {
+            margin: 2rem 0;
+            padding: 2rem;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+        }
+        
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .demo-card {
+            padding: 1rem;
+            background: var(--white-pure);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-base);
+            box-shadow: var(--shadow-sm);
+        }
+    </style>
+</head>
+<body>
+    <!-- Test Control Panel -->
+    <div class="test-control-panel">
+        <div class="test-control-panel__title">
+            🧪 Testing Controls
+        </div>
+        
+        <div class="test-control-panel__toggle" onclick="toggleTestMode('grid')">
+            <span>Grid Overlay</span>
+            <span>⚡</span>
+        </div>
+        
+        <div class="test-control-panel__toggle" onclick="toggleTestMode('boundaries')">
+            <span>Element Boundaries</span>
+            <span>📦</span>
+        </div>
+        
+        <div class="test-control-panel__toggle" onclick="toggleTestMode('spacing')">
+            <span>Spacing Visualization</span>
+            <span>📏</span>
+        </div>
+        
+        <div class="test-control-panel__toggle" onclick="toggleTestMode('typography')">
+            <span>Typography Grid</span>
+            <span>📝</span>
+        </div>
+        
+        <div class="test-control-panel__toggle" onclick="toggleTestMode('focus')">
+            <span>Focus Enhancement</span>
+            <span>🎯</span>
+        </div>
+        
+        <div class="test-control-panel__toggle" onclick="toggleTestMode('contrast')">
+            <span>Contrast Testing</span>
+            <span>🌗</span>
+        </div>
+    </div>
+
+    <!-- Viewport Indicator -->
+    <div class="test-viewport-indicator" data-viewport="Loading..."></div>
+
+    <!-- FPS Monitor -->
+    <div class="test-fps-monitor">FPS: <span id="fps-counter">60</span></div>
+
+    <!-- Breakpoint Indicators -->
+    <div class="test-breakpoints">
+        <div class="test-breakpoint" data-bp="xs"></div>
+        <div class="test-breakpoint" data-bp="sm"></div>
+        <div class="test-breakpoint" data-bp="md"></div>
+        <div class="test-breakpoint" data-bp="lg"></div>
+        <div class="test-breakpoint" data-bp="xl"></div>
+    </div>
+
+    <!-- Element Inspector -->
+    <div class="test-inspector" style="display: none;" id="test-inspector">
+        <h4>Element Inspector</h4>
+        <div class="test-inspector__property">
+            <span class="test-inspector__key">Tag:</span>
+            <span class="test-inspector__value" id="inspector-tag">-</span>
+        </div>
+        <div class="test-inspector__property">
+            <span class="test-inspector__key">Class:</span>
+            <span class="test-inspector__value" id="inspector-class">-</span>
+        </div>
+        <div class="test-inspector__property">
+            <span class="test-inspector__key">ID:</span>
+            <span class="test-inspector__value" id="inspector-id">-</span>
+        </div>
+        <div class="test-inspector__property">
+            <span class="test-inspector__key">Width:</span>
+            <span class="test-inspector__value" id="inspector-width">-</span>
+        </div>
+        <div class="test-inspector__property">
+            <span class="test-inspector__key">Height:</span>
+            <span class="test-inspector__value" id="inspector-height">-</span>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container">
+        <header class="demo-section">
+            <h1 data-test="main-heading">University of Hildesheim - Ultimate Testing Environment</h1>
+            <p>Welcome to the most comprehensive CSS testing framework for academic assessments. This environment provides enterprise-grade debugging tools, visual testing utilities, and performance monitoring.</p>
+        </header>
+
+        <!-- Test Suite Demonstration -->
+        <section class="demo-section">
+            <h2>Test Suite Examples</h2>
+            
+            <div class="test-suite">
+                <div class="test-suite__header">
+                    <div class="test-suite__title">Component Validation Suite</div>
+                    <div class="test-suite__summary">
+                        <span class="test-status test-status--pass">3 Passed</span>
+                        <span class="test-status test-status--fail">1 Failed</span>
+                        <span class="test-status test-status--warning">2 Warnings</span>
+                    </div>
+                </div>
+                <div class="test-suite__body">
+                    <div class="test-case test-case--pass">
+                        <div class="test-case__title">✅ Button Component Accessibility</div>
+                        <div class="test-case__description">All buttons have proper ARIA labels and keyboard navigation</div>
+                        <div class="test-case__result">PASS: 47 buttons tested, all compliant with WCAG 2.1 AA</div>
+                    </div>
+                    
+                    <div class="test-case test-case--pass">
+                        <div class="test-case__title">✅ Color Contrast Validation</div>
+                        <div class="test-case__description">Text contrast ratios meet accessibility standards</div>
+                        <div class="test-case__result">PASS: Contrast ratio 4.8:1 (exceeds 4.5:1 requirement)</div>
+                    </div>
+                    
+                    <div class="test-case test-case--fail">
+                        <div class="test-case__title">❌ Mobile Navigation Menu</div>
+                        <div class="test-case__description">Touch targets should be minimum 44px for accessibility</div>
+                        <div class="test-case__result">FAIL: Found 3 touch targets below 44px minimum</div>
+                    </div>
+                    
+                    <div class="test-case test-case--warning">
+                        <div class="test-case__title">⚠️ Form Validation Messages</div>
+                        <div class="test-case__description">Error messages could be more descriptive</div>
+                        <div class="test-case__result">WARNING: Consider adding field-specific error guidance</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Testing Status Indicators -->
+        <section class="demo-section">
+            <h2>Status Indicators</h2>
+            <div class="demo-grid">
+                <div class="demo-card">
+                    <h3>Test Results</h3>
+                    <div style="margin: 1rem 0;">
+                        <span class="test-status test-status--pass">All Tests Pass</span>
+                        <span class="test-status test-status--fail">2 Failures</span>
+                        <span class="test-status test-status--warning">3 Warnings</span>
+                        <span class="test-status test-status--info">5 Pending</span>
+                        <span class="test-status test-status--debug">Debug Mode</span>
+                    </div>
+                </div>
+                
+                <div class="demo-card">
+                    <h3>Progress Tracking</h3>
+                    <div style="margin: 1rem 0;">
+                        <p>Test Suite Progress:</p>
+                        <div class="test-progress">
+                            <div class="test-progress__bar" style="width: 75%;"></div>
+                        </div>
+                        <p style="margin-top: 0.5rem;">Coverage: 75% Complete</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Components -->
+        <section class="demo-section test-hotspot">
+            <h2 data-test="interactive-section">Interactive Testing Components</h2>
+            <div class="demo-grid">
+                <div class="demo-card test-loading">
+                    <h3>Loading Simulator</h3>
+                    <p>This card demonstrates the loading state animation for performance testing.</p>
+                    <button onclick="simulateLoading(this)">Trigger Loading</button>
+                </div>
+                
+                <div class="demo-card">
+                    <h3>Focus Testing</h3>
+                    <p>Tab through these elements to test focus indicators:</p>
+                    <button data-test="focus-test-btn-1">Button 1</button>
+                    <button data-test="focus-test-btn-2">Button 2</button>
+                    <input type="text" placeholder="Test input" data-test="focus-test-input">
+                </div>
+                
+                <div class="demo-card">
+                    <h3>Responsive Testing</h3>
+                    <p>Resize the window to see breakpoint indicators in action.</p>
+                    <button onclick="toggleResponsiveMode('mobile')">Mobile View</button>
+                    <button onclick="toggleResponsiveMode('tablet')">Tablet View</button>
+                    <button onclick="toggleResponsiveMode('desktop')">Desktop View</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Form Testing -->
+        <section class="demo-section">
+            <h2>Form Validation Testing</h2>
+            <form class="test-form" data-test="demo-form">
+                <div style="margin-bottom: 1rem;">
+                    <label for="test-email">Email Address:</label>
+                    <input type="email" id="test-email" data-test="email-input" required>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label for="test-password">Password:</label>
+                    <input type="password" id="test-password" data-test="password-input" required>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label>
+                        <input type="checkbox" data-test="terms-checkbox">
+                        I agree to the terms and conditions
+                    </label>
+                </div>
+                
+                <button type="submit" data-test="submit-button">Submit Form</button>
+            </form>
+        </section>
+
+        <!-- Color and Contrast Testing -->
+        <section class="demo-section">
+            <h2>Accessibility Testing</h2>
+            <div class="demo-grid">
+                <div class="demo-card">
+                    <h3>University Colors</h3>
+                    <div style="display: flex; gap: 10px; margin: 1rem 0;">
+                        <div style="width: 50px; height: 50px; background: var(--uni-red); border-radius: 4px;"></div>
+                        <div style="width: 50px; height: 50px; background: var(--uni-red-light); border-radius: 4px;"></div>
+                        <div style="width: 50px; height: 50px; background: var(--uni-red-dark); border-radius: 4px;"></div>
+                    </div>
+                </div>
+                
+                <div class="demo-card">
+                    <h3>Text Contrast</h3>
+                    <p style="color: var(--text-primary);">Primary text (high contrast)</p>
+                    <p style="color: var(--text-secondary);">Secondary text (medium contrast)</p>
+                    <p style="color: var(--text-tertiary);">Tertiary text (lower contrast)</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Performance Indicators -->
+        <section class="demo-section test-only">
+            <h2>Performance Testing (Test Mode Only)</h2>
+            <p>This section is only visible when data-test-env="true" is set on the body.</p>
+            <div class="demo-card">
+                <h3>Metrics Dashboard</h3>
+                <p>Frame Rate: <span id="live-fps">60 FPS</span></p>
+                <p>Memory Usage: <span id="memory-usage">Loading...</span></p>
+                <p>Load Time: <span id="load-time">1.2s</span></p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Testing Framework JavaScript
+        let testModes = {
+            grid: false,
+            boundaries: false,
+            spacing: false,
+            typography: false,
+            focus: false,
+            contrast: false
+        };
+
+        function toggleTestMode(mode) {
+            testModes[mode] = !testModes[mode];
+            const body = document.body;
+            
+            // Remove existing test classes
+            body.classList.remove('test-grid', 'test-boundaries', 'test-spacing', 'test-typography', 'test-focus', 'test-contrast-aa');
+            
+            // Add active test classes
+            Object.keys(testModes).forEach(key => {
+                if (testModes[key]) {
+                    if (key === 'contrast') {
+                        body.classList.add('test-contrast-aa');
+                    } else {
+                        body.classList.add(`test-${key}`);
+                    }
+                }
+            });
+            
+            // Update toggle states
+            document.querySelectorAll('.test-control-panel__toggle').forEach((toggle, index) => {
+                const modeKey = Object.keys(testModes)[index];
+                if (testModes[modeKey]) {
+                    toggle.classList.add('test-control-panel__toggle--active');
+                } else {
+                    toggle.classList.remove('test-control-panel__toggle--active');
+                }
+            });
+        }
+
+        function simulateLoading(button) {
+            const card = button.closest('.demo-card');
+            card.classList.add('test-loading');
+            button.disabled = true;
+            button.textContent = 'Loading...';
+            
+            setTimeout(() => {
+                card.classList.remove('test-loading');
+                button.disabled = false;
+                button.textContent = 'Trigger Loading';
+            }, 3000);
+        }
+
+        function toggleResponsiveMode(mode) {
+            const main = document.querySelector('main');
+            main.classList.remove('test-mobile', 'test-tablet', 'test-desktop');
+            if (mode) {
+                main.classList.add(`test-${mode}`);
+            }
+        }
+
+        // Viewport size indicator
+        function updateViewportIndicator() {
+            const indicator = document.querySelector('.test-viewport-indicator');
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            indicator.setAttribute('data-viewport', `${width} × ${height}`);
+            
+            // Update breakpoint indicators
+            const breakpoints = document.querySelectorAll('.test-breakpoint');
+            breakpoints.forEach(bp => bp.classList.remove('test-breakpoint--active'));
+            
+            if (width >= 1200) {
+                breakpoints[4]?.classList.add('test-breakpoint--active');
+            } else if (width >= 992) {
+                breakpoints[3]?.classList.add('test-breakpoint--active');
+            } else if (width >= 768) {
+                breakpoints[2]?.classList.add('test-breakpoint--active');
+            } else if (width >= 576) {
+                breakpoints[1]?.classList.add('test-breakpoint--active');
+            } else {
+                breakpoints[0]?.classList.add('test-breakpoint--active');
+            }
+        }
+
+        // Element inspector
+        function updateInspector(element) {
+            const inspector = document.getElementById('test-inspector');
+            const rect = element.getBoundingClientRect();
+            
+            document.getElementById('inspector-tag').textContent = element.tagName.toLowerCase();
+            document.getElementById('inspector-class').textContent = element.className || 'none';
+            document.getElementById('inspector-id').textContent = element.id || 'none';
+            document.getElementById('inspector-width').textContent = `${Math.round(rect.width)}px`;
+            document.getElementById('inspector-height').textContent = `${Math.round(rect.height)}px`;
+            
+            inspector.style.display = 'block';
+        }
+
+        // FPS Counter simulation
+        function updateFPS() {
+            const fps = Math.floor(Math.random() * 5) + 58; // Simulate 58-62 FPS
+            document.getElementById('fps-counter').textContent = fps;
+            document.getElementById('live-fps').textContent = `${fps} FPS`;
+        }
+
+        // Memory usage simulation
+        function updateMemoryUsage() {
+            const memory = (Math.random() * 20 + 40).toFixed(1); // Simulate 40-60MB
+            document.getElementById('memory-usage').textContent = `${memory}MB`;
+        }
+
+        // Event listeners
+        window.addEventListener('resize', updateViewportIndicator);
+        document.addEventListener('DOMContentLoaded', () => {
+            updateViewportIndicator();
+            setInterval(updateFPS, 1000);
+            setInterval(updateMemoryUsage, 2000);
+        });
+
+        // Element inspector on hover (when in test mode)
+        document.addEventListener('mouseover', (e) => {
+            if (document.body.dataset.testEnv === 'true' && e.ctrlKey) {
+                updateInspector(e.target);
+            }
+        });
+
+        // Hide inspector when not hovering
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#test-inspector')) {
+                document.getElementById('test-inspector').style.display = 'none';
+            }
+        });
+
+        console.log('🧪 University of Hildesheim Testing Environment Loaded');
+        console.log('Available test modes:', Object.keys(testModes));
+        console.log('Hold Ctrl and hover over elements to inspect them');
+    </script>
+</body>
+</html>
