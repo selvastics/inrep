@@ -469,7 +469,8 @@
 #'   \item Engagement and completion tracking
 #'   \item Comprehensive audit trails
 #' }
-#' inrep::launch_study(config, item_bank, accessibility = TRUE)
+#' 
+#' @examples
 #' \dontrun{
 #' # Example 1: Adaptive 2PL Model with Midnight Theme
 #' config_2pl <- base::list(
