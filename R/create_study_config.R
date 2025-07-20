@@ -371,8 +371,6 @@
 #'   \item \code{\link{select_next_item}} for item selection using configuration
 #' }
 #' 
-#' @references
-#' 
 #' @references Robitzsch A, Kiefer T, Wu M (2024). TAM: Test Analysis Modules. 
 #'   R package version 4.2-21. \url{https://CRAN.R-project.org/package=TAM}
 #' 

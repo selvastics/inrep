@@ -628,8 +628,6 @@
 #' utils::data(bfi_items)
 #' inrep::launch_study(config, bfi_items, webdav_url = "https://sync.academiccloud.de/index.php/s/Y51QPXzJVLWSAcb/", password = "inreptest")
 #' }
-#'
-#' @export
 #' @importFrom shiny shinyApp fluidPage tags div numericInput selectInput actionButton downloadButton uiOutput renderUI plotOutput h2 h3 h4 p tagList
 #' @importFrom shinyjs useShinyjs
 #' @importFrom shinyWidgets radioGroupButtons
