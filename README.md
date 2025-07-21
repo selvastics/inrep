@@ -1,5 +1,9 @@
 
 # inrep: Instant Reports for Adaptive Assessments
+<!-- Demo: See the package in action! -->
+![inrep demo](tesst.gif)
+
+> **Demo:** The above video showcases the main functionalities of the inrep package, including adaptive test setup, Shiny-based administration, theme customization, LLM-powered assistance, and professional reporting. Watch to see how easy it is to configure, deploy, and analyze adaptive assessments with inrep.
 
 <!-- badges: start -->
 [![CRAN status](https://www.r-pkg.org/badges/version/inrep)](https://CRAN.R-project.org/package=inrep)
