@@ -3,52 +3,17 @@ Type: Package
 Title: Instant Reports for Adaptive Assessments
 Version: 1.0.0
 Date: 2025-07-20
-Authors@R: person("Clievins", "Selva", 
-                  email = "selva@uni-hildesheim.de", 
-                  role = c("aut", "cre"), 
-                  comment = c(ORCID = "0000-0001-9980-7127"))
-Description: A comprehensive framework for adaptive testing using Item Response Theory 
-    (IRT) models. Provides web-based interfaces for test administration via 'Shiny', 
-    supports multiple IRT models including the Graded Response Model through 'TAM' 
-    integration, implements adaptive item selection algorithms, includes LLM integration 
-    for enhanced user assistance and study configuration, website theme scraping for 
-    automatic branding, and comprehensive reporting capabilities. Designed for 
-    psychological assessments, educational testing, and survey research with large item pools.
-    All psychometric computations are performed by the 'TAM' package, with 'inrep' serving 
-    as a modern workflow and interface layer. Includes complete replication of 'TAM' 
-    examples with enhanced usability and professional reporting capabilities.
+Authors@R: person(given = "Clievins", family = "Selva", email = "selva@uni-hildesheim.de", role = c("aut", "cre"), comment = c(ORCID = "0000-0001-9980-7127"))
+Author: Clievins Selva [aut, cre] (<ORCID:0000-0001-9980-7127>)
+Maintainer: Clievins Selva <selva@uni-hildesheim.de>
+Description: A comprehensive framework for adaptive testing using Item Response Theory (IRT) models. Provides web-based interfaces for test administration via 'Shiny', supports multiple IRT models including the Graded Response Model through 'TAM' integration, implements adaptive item selection algorithms, includes LLM integration for enhanced user assistance and study configuration, website theme scraping for automatic branding, and comprehensive reporting capabilities. Designed for psychological assessments, educational testing, and survey research with large item pools. All psychometric computations are performed by the 'TAM' package, with 'inrep' serving as a modern workflow and interface layer. Includes complete replication of 'TAM' examples with enhanced usability and professional reporting capabilities.
 URL: https://github.com/selvastics/inrep
 BugReports: https://github.com/selvastics/inrep/issues
 Depends: R (>= 4.1.0)
-Imports: 
-    shiny (>= 1.7.0),
-    shinyWidgets (>= 0.7.0),
-    DT (>= 0.20),
-    dplyr (>= 1.0.0),
-    TAM (>= 4.2-21),
-    jsonlite (>= 1.8.0),
-    ggplot2 (>= 3.4.0),
-    shinyjs (>= 2.1.0),
-    shinycssloaders (>= 1.0.0),
-    stringr (>= 1.5.0),
-    uuid,
-    clipr,
-    httr,
-    logr,
-    kableExtra,
-    pdftools,
-    tinytex,
-    knitr,
-    methods,
-    stats,
-    utils
-Suggests: 
-    mirt (>= 1.35),
-    psych (>= 2.0.0),
-    corrplot (>= 0.90),
-    testthat (>= 3.0.0),
-    rmarkdown (>= 2.20),
-    covr
+Imports:
+    shiny (>= 1.7.0), shinyWidgets (>= 0.7.0), DT (>= 0.20), dplyr (>= 1.0.0), TAM (>= 4.2-21), jsonlite (>= 1.8.0), ggplot2 (>= 3.4.0), shinyjs (>= 2.1.0), shinycssloaders (>= 1.0.0), stringr (>= 1.5.0), uuid, clipr, httr, logr, kableExtra, pdftools, tinytex, knitr, methods, stats, utils
+Suggests:
+    mirt (>= 1.35), psych (>= 2.0.0), corrplot (>= 0.90), testthat (>= 3.0.0), rmarkdown (>= 2.20), covr
 License: MIT + file LICENSE
 Encoding: UTF-8
 Language: en-US

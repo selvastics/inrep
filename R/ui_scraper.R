@@ -277,20 +277,20 @@
 #'     
 #'     # Color validation
 #'     color_valid <- grepl("^#[0-9A-Fa-f]{6}$", theme$primary_color)
-#'     cat("  Color format:", if (color_valid) "✓ Valid" else "✗ Invalid", "\n")
+#'     cat("  Color format:", if (color_valid) "[OK] Valid" else "X Invalid", "\n")
 #'     
 #'     # Font validation
 #'     font_valid <- !is.null(theme$font_family) && nchar(theme$font_family) > 0
-#'     cat("  Font family:", if (font_valid) "✓ Present" else "✗ Missing", "\n")
+#'     cat("  Font family:", if (font_valid) "[OK] Present" else "X Missing", "\n")
 #'     
 #'     # Logo validation
 #'     logo_present <- !is.null(theme$logo_path) && file.exists(theme$logo_path)
-#'     cat("  Logo file:", if (logo_present) "✓ Available" else "✗ Missing", "\n")
+#'     cat("  Logo file:", if (logo_present) "[OK] Available" else "X Missing", "\n")
 #'     
 #'     # Overall validation
 #'     overall_valid <- color_valid && font_valid
 #'     validation_results[[i]] <- overall_valid
-#'     cat("  Overall:", if (overall_valid) "✓ Valid" else "✗ Issues found", "\n\n")
+#'     cat("  Overall:", if (overall_valid) "[OK] Valid" else "X Issues found", "\n\n")
 #'   }
 #'   
 #'   # Summary

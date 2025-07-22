@@ -36,8 +36,10 @@ body {
     background-color: var(--background-color);
     color: var(--text-color);
     font-size: var(--font-size-base);
+[3 lines of pre-context]
     line-height: var(--line-height-base);
     margin: 0;
+
     padding: 0;
     overflow-x: hidden;
 }

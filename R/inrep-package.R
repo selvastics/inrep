@@ -10,7 +10,7 @@
 #'
 #' @details
 #' \strong{Psychometric Foundation:} All statistical computations are performed exclusively by
-#' the TAM package (Robitzsch et al., 2024), ensuring methodological rigor and reproducibility:
+#' the TAM package (Robitzsch et al., 2024):
 #' \itemize{
 #'   \item IRT model fitting: Uses TAM's \code{\link[TAM]{tam.mml}} family of functions
 #'   \item Ability estimation: Leverages TAM's \code{\link[TAM]{tam.wle}} and \code{\link[TAM]{tam.eap}} procedures

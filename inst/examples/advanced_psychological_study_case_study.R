@@ -69,9 +69,9 @@ advanced_psychological_items <- data.frame(
   stringsAsFactors = FALSE
 )
 
-cat("✓ Enhanced item bank created with", nrow(advanced_psychological_items), "items\n")
-cat("✓ Reverse-coded items:", sum(advanced_psychological_items$reverse_coded), "\n")
-cat("✓ Constructs:", paste(unique(advanced_psychological_items$construct), collapse = ", "), "\n")
+cat("[OK] Enhanced item bank created with", nrow(advanced_psychological_items), "items\n")
+cat("[OK] Reverse-coded items:", sum(advanced_psychological_items$reverse_coded), "\n")
+cat("[OK] Constructs:", paste(unique(advanced_psychological_items$construct), collapse = ", "), "\n")
 
 # =============================================================================
 # 2. ENHANCED DEMOGRAPHIC CONFIGURATION
@@ -99,7 +99,7 @@ enhanced_demographics <- list(
   )
 )
 
-cat("✓ Enhanced demographics created with", length(enhanced_demographics), "questions\n")
+cat("[OK] Enhanced demographics created with", length(enhanced_demographics), "questions\n")
 
 # =============================================================================
 # 3. ADVANCED RESULTS PROCESSING FUNCTION
@@ -342,7 +342,7 @@ enhanced_study_config <- create_study_config(
   )
 )
 
-cat("✓ Enhanced study configuration created\n")
+cat("[OK] Enhanced study configuration created\n")
 
 # =============================================================================
 # 5. COMPREHENSIVE VALIDATION
@@ -352,11 +352,11 @@ cat("\nValidating enhanced configuration...\n")
 # Validate item bank
 validation_result <- validate_item_bank(advanced_psychological_items, model = "GRM")
 if (is.logical(validation_result) && validation_result) {
-  cat("✓ Enhanced item bank validation passed\n")
+  cat("[OK] Enhanced item bank validation passed\n")
 } else if (is.list(validation_result) && validation_result$valid) {
-  cat("✓ Enhanced item bank validation passed\n")
+  cat("[OK] Enhanced item bank validation passed\n")
 } else {
-  cat("✗ Enhanced item bank validation failed:\n")
+  cat("X Enhanced item bank validation failed:\n")
   if (is.list(validation_result) && !is.null(validation_result$errors)) {
     print(validation_result$errors)
   }
@@ -365,14 +365,14 @@ if (is.logical(validation_result) && validation_result) {
 # Test theme loading
 theme_css <- load_theme_css("Monochrome")
 if (nchar(theme_css) > 1000) {
-  cat("✓ Monochrome theme loaded successfully (", nchar(theme_css), " characters)\n")
+  cat("[OK] Monochrome theme loaded successfully (", nchar(theme_css), " characters)\n")
 } else {
-  cat("✗ Monochrome theme loading failed\n")
+  cat("X Monochrome theme loading failed\n")
 }
 
 # Validate reverse coding
 reverse_count <- sum(advanced_psychological_items$reverse_coded)
-cat("✓ Reverse-coded items identified:", reverse_count, "items\n")
+cat("[OK] Reverse-coded items identified:", reverse_count, "items\n")
 
 # =============================================================================
 # 6. LAUNCH FUNCTIONS

@@ -218,10 +218,10 @@ validate_response_mapping <- function(config, item_bank, test_responses, test_it
   missing_fields <- required_fields[!required_fields %in% names(config)]
   
   if (length(missing_fields) > 0) {
-    cat("✗ Missing required config fields:", paste(missing_fields, collapse=", "), "\n")
+    cat("X Missing required config fields:", paste(missing_fields, collapse=", "), "\n")
     return(FALSE)
   }
-  cat("✓ Configuration valid\n")
+  cat("[OK] Configuration valid\n")
   
   # Step 2: Validate item bank structure
   cat("2. Item bank validation...\n")
@@ -235,10 +235,10 @@ validate_response_mapping <- function(config, item_bank, test_responses, test_it
   
   missing_cols <- required_cols[!required_cols %in% colnames(item_bank)]
   if (length(missing_cols) > 0) {
-    cat("✗ Missing required item bank columns:", paste(missing_cols, collapse=", "), "\n")
+    cat("X Missing required item bank columns:", paste(missing_cols, collapse=", "), "\n")
     return(FALSE)
   }
-  cat("✓ Item bank structure valid\n")
+  cat("[OK] Item bank structure valid\n")
   
   # Step 3: Validate response processing
   cat("3. Response processing validation...\n")
@@ -250,11 +250,11 @@ validate_response_mapping <- function(config, item_bank, test_responses, test_it
   })
   
   if (!all(validation_results)) {
-    cat("✗ Some responses failed validation:", 
+    cat("X Some responses failed validation:", 
         paste(test_responses[!validation_results], collapse=", "), "\n")
     return(FALSE)
   }
-  cat("✓ All responses pass validation\n")
+  cat("[OK] All responses pass validation\n")
   
   # Step 4: Validate scoring
   cat("4. Scoring validation...\n")
@@ -273,10 +273,10 @@ validate_response_mapping <- function(config, item_bank, test_responses, test_it
   })
   
   if (any(is.na(scored_responses))) {
-    cat("✗ Some responses could not be scored\n")
+    cat("X Some responses could not be scored\n")
     return(FALSE)
   }
-  cat("✓ All responses scored successfully\n")
+  cat("[OK] All responses scored successfully\n")
   
   # Step 5: Validate reporting table generation
   cat("5. Reporting table validation...\n")
@@ -306,7 +306,7 @@ validate_response_mapping <- function(config, item_bank, test_responses, test_it
       )
     }
     
-    cat("✓ Reporting table generated successfully\n")
+    cat("[OK] Reporting table generated successfully\n")
     
     # Step 6: Validate response consistency
     cat("6. Response consistency validation...\n")
@@ -321,13 +321,13 @@ validate_response_mapping <- function(config, item_bank, test_responses, test_it
     }
     
     if (!consistency_check) {
-      cat("✗ Response consistency check failed\n")
+      cat("X Response consistency check failed\n")
       cat("   Input responses:", paste(test_responses, collapse=", "), "\n")
       cat("   Scored responses:", paste(scored_responses, collapse=", "), "\n")
       return(FALSE)
     }
     
-    cat("✓ Response consistency validated\n")
+    cat("[OK] Response consistency validated\n")
     
     # Step 7: Summary report
     cat("\n", paste(rep("=", 50), collapse=""), "\n")
@@ -338,7 +338,7 @@ validate_response_mapping <- function(config, item_bank, test_responses, test_it
     cat("Scored responses:    ", paste(scored_responses, collapse=", "), "\n")
     cat("Items administered:  ", paste(test_items, collapse=", "), "\n")
     cat("Model:               ", config$model, "\n")
-    cat("Validation:          ✓ PASSED\n")
+    cat("Validation:          [OK] PASSED\n")
     
     cat("\nReporting table preview:\n")
     print(head(dat, 3))
@@ -346,7 +346,7 @@ validate_response_mapping <- function(config, item_bank, test_responses, test_it
     return(TRUE)
     
   }, error = function(e) {
-    cat("✗ Error generating reporting table:", e$message, "\n")
+    cat("X Error generating reporting table:", e$message, "\n")
     return(FALSE)
   })
 }

@@ -166,9 +166,9 @@ cat("launch_study(config = study_config, item_bank = r_testing_items, port = 383
 cat("\n=== Validation ===\n")
 validation_result <- validate_item_bank(r_testing_items, model = "GRM")
 if (validation_result$valid) {
-  cat("✓ Item bank validation passed\n")
+  cat("[OK] Item bank validation passed\n")
 } else {
-  cat("✗ Item bank validation failed:\n")
+  cat("X Item bank validation failed:\n")
   cat(validation_result$errors, "\n")
 }
 
@@ -176,9 +176,9 @@ if (validation_result$valid) {
 cat("\n=== Theme Test ===\n")
 theme_css <- load_theme_css("Monochrome")
 if (nchar(theme_css) > 1000) {
-  cat("✓ Monochrome theme loaded successfully (", nchar(theme_css), " characters)\n")
+  cat("[OK] Monochrome theme loaded successfully (", nchar(theme_css), " characters)\n")
 } else {
-  cat("✗ Monochrome theme loading failed\n")
+  cat("X Monochrome theme loading failed\n")
 }
 
 # Show case-insensitive theme matching
@@ -187,9 +187,9 @@ test_themes <- c("monochrome", "MONOCHROME", "Monochrome", "MonoChrome")
 for (theme in test_themes) {
   result <- validate_theme_name(theme)
   if (!is.null(result)) {
-    cat("✓", theme, "->", result, "\n")
+    cat("[OK]", theme, "->", result, "\n")
   } else {
-    cat("✗", theme, "-> validation failed\n")
+    cat("X", theme, "-> validation failed\n")
   }
 }
 
