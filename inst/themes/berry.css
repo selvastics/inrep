@@ -120,8 +120,10 @@ body {
   color: var(--text-color);
   margin: 0;
   padding: 0;
+[3 lines of pre-context]
   line-height: var(--line-height-base);
   font-size: var(--font-size-base);
+
   min-height: 100vh;
 }
 
@@ -592,6 +594,126 @@ body {
     overflow: hidden;
 }
 
+/* Tailwind-inspired Utility Classes for Berry Theme */
+.font-xs { font-size: var(--font-size-xs) !important; }
+.font-sm { font-size: var(--font-size-sm) !important; }
+.font-base { font-size: var(--font-size-base) !important; }
+.font-lg { font-size: var(--font-size-lg) !important; }
+.font-xl { font-size: var(--font-size-xl) !important; }
+.font-2xl { font-size: var(--font-size-2xl) !important; }
+.font-3xl { font-size: var(--font-size-3xl) !important; }
+.font-4xl { font-size: var(--font-size-4xl) !important; }
+.font-bold { font-weight: var(--font-weight-bold) !important; }
+.font-semibold { font-weight: var(--font-weight-semibold) !important; }
+.font-medium { font-weight: var(--font-weight-medium) !important; }
+.font-normal { font-weight: var(--font-weight-normal) !important; }
+.font-light { font-weight: var(--font-weight-light) !important; }
+.leading-tight { line-height: var(--line-height-tight) !important; }
+.leading-base { line-height: var(--line-height-base) !important; }
+.leading-relaxed { line-height: var(--line-height-relaxed) !important; }
+
+.p-1 { padding: var(--space-1) !important; }
+.p-2 { padding: var(--space-2) !important; }
+.p-3 { padding: var(--space-3) !important; }
+.p-4 { padding: var(--space-4) !important; }
+.p-6 { padding: var(--space-6) !important; }
+.p-8 { padding: var(--space-8) !important; }
+.p-12 { padding: var(--space-12) !important; }
+.p-16 { padding: var(--space-16) !important; }
+.p-20 { padding: var(--space-20) !important; }
+.m-1 { margin: var(--space-1) !important; }
+.m-2 { margin: var(--space-2) !important; }
+.m-3 { margin: var(--space-3) !important; }
+.m-4 { margin: var(--space-4) !important; }
+.m-6 { margin: var(--space-6) !important; }
+.m-8 { margin: var(--space-8) !important; }
+.m-12 { margin: var(--space-12) !important; }
+.m-16 { margin: var(--space-16) !important; }
+.m-20 { margin: var(--space-20) !important; }
+.mx-auto { margin-left: auto !important; margin-right: auto !important; }
+.w-full { width: 100% !important; }
+.max-w-container { max-width: var(--container-width) !important; }
+
+.rounded-sm { border-radius: var(--radius-sm) !important; }
+.rounded-md { border-radius: var(--radius-md) !important; }
+.rounded-lg { border-radius: var(--radius-lg) !important; }
+.rounded-xl { border-radius: var(--radius-xl) !important; }
+.rounded-2xl { border-radius: var(--radius-2xl) !important; }
+.rounded-full { border-radius: var(--radius-full) !important; }
+
+.shadow-sm { box-shadow: var(--shadow-sm) !important; }
+.shadow-md { box-shadow: var(--shadow-md) !important; }
+.shadow-lg { box-shadow: var(--shadow-lg) !important; }
+.shadow-xl { box-shadow: var(--shadow-xl) !important; }
+.shadow-2xl { box-shadow: var(--shadow-2xl) !important; }
+.shadow-inner { box-shadow: var(--shadow-inner) !important; }
+.shadow-glow { box-shadow: var(--shadow-glow) !important; }
+.shadow-focus { box-shadow: var(--shadow-focus) !important; }
+
+.transition-fast { transition: all var(--transition-fast) !important; }
+.transition-normal { transition: all var(--transition-normal) !important; }
+.transition-slow { transition: all var(--transition-slow) !important; }
+.transition-bounce { transition: all var(--transition-bounce) !important; }
+
+.border { border: 1px solid var(--border-color) !important; }
+.border-primary { border-color: var(--primary-color) !important; }
+.border-secondary { border-color: var(--secondary-color) !important; }
+.border-accent { border-color: var(--accent-color) !important; }
+
+.bg-primary { background: var(--primary-color) !important; }
+.bg-secondary { background: var(--secondary-color) !important; }
+.bg-elevated { background: var(--bg-elevated) !important; }
+.bg-accent { background: var(--accent-color) !important; }
+.bg-gradient-berry { background: var(--gradient-berry) !important; }
+.bg-gradient-berry-soft { background: var(--gradient-berry-soft) !important; }
+
+.text-primary { color: var(--primary-color) !important; }
+.text-secondary { color: var(--secondary-color) !important; }
+.text-accent { color: var(--accent-color) !important; }
+.text-muted { color: var(--text-muted) !important; }
+.text-success { color: var(--success-color) !important; }
+.text-error { color: var(--error-color) !important; }
+.text-warning { color: var(--warning-color) !important; }
+.text-info { color: var(--info-color) !important; }
+
+.focus-ring:focus { outline: 2px solid var(--focus-color) !important; outline-offset: 2px !important; }
+.sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
+
+@media (prefers-contrast: high) {
+  .bg-primary, .bg-secondary, .bg-elevated, .bg-accent {
+    background: #fff !important;
+  }
+  .text-primary, .text-secondary, .text-accent, .text-muted, .text-success, .text-error, .text-warning, .text-info {
+    color: #000 !important;
+  }
+  .border, .border-primary, .border-secondary, .border-accent {
+    border-color: #000 !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .transition-fast, .transition-normal, .transition-slow, .transition-bounce {
+    transition-duration: 0.01ms !important;
+  }
+  .shadow-glow, .shadow-focus, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl {
+    box-shadow: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .sm\:p-2 { padding: var(--space-2) !important; }
+  .sm\:p-4 { padding: var(--space-4) !important; }
+  .sm\:font-lg { font-size: var(--font-size-lg) !important; }
+  .sm\:font-xl { font-size: var(--font-size-xl) !important; }
+}
+@media (max-width: 1024px) {
+  .md\:p-4 { padding: var(--space-4) !important; }
+  .md\:font-xl { font-size: var(--font-size-xl) !important; }
+}
+@media (max-width: 480px) {
+  .lg\:font-base { font-size: var(--font-size-base) !important; }
+  .lg\:p-2 { padding: var(--space-2) !important; }
+}
 .berry-assessment-interface::before {
     content: '';
     position: absolute;

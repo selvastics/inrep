@@ -29,6 +29,6 @@
 - Multi-format export (RDS, CSV, JSON, PDF)
 
 ### Acknowledgments
-- Built on the robust TAM package for all psychometric computations
+- Built on the TAM package for all psychometric computations
 - Integrates modern web technologies with established IRT methods
 - Designed for psychological assessments, educational testing, and survey research

@@ -623,11 +623,13 @@ body {
 @keyframes ocean-pulse {
     0% { transform: translateX(-50%) scaleX(1); }
     50% { transform: translateX(-50%) scaleX(1.2); }
+[3 lines of pre-context]
     100% { transform: translateX(-50%) scaleX(1); }
 }
 
 .ocean-subtitle {
     font-size: var(--font-size-large);
+
     color: var(--secondary-color);
     margin-bottom: var(--space-8);
     line-height: var(--line-height-base);

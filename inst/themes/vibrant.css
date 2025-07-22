@@ -354,9 +354,11 @@ body {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-normal);
   line-height: var(--line-height-normal);
+[3 lines of pre-context]
   color: var(--text-color);
   background-color: var(--background-color);
   background-image: var(--background-pattern), var(--energy-pattern-1);
+
   background-attachment: fixed;
   background-repeat: repeat;
   background-size: 60px 60px, 100px 100px;

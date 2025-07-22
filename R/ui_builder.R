@@ -321,11 +321,11 @@
 #'         )
 #'         
 #'         results[[paste(config_name, theme_name, sep = "_")]] <- "SUCCESS"
-#'         cat("  ✓ Success\n")
+#'         cat("  [OK] Success\n")
 #'         
 #'       }, error = function(e) {
 #'         results[[paste(config_name, theme_name, sep = "_")]] <- paste("ERROR:", e$message)
-#'         cat("  ✗ Error:", e$message, "\n")
+#'         cat("  X Error:", e$message, "\n")
 #'       })
 #'     }
 #'   }

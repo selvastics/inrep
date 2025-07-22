@@ -176,7 +176,7 @@
 #'   # Overall assessment
 #'   cat("\nOverall Assessment:\n")
 #'   if (low_disc == 0 && high_disc < 3 && threshold_issues == 0) {
-#'     cat("  ✓ Item bank meets professional standards\n")
+#'     cat("  [OK] Item bank meets professional standards\n")
 #'   } else {
 #'     cat("  ⚠ Item bank may need review\n")
 #'   }

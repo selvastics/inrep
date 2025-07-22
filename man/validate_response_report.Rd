@@ -88,9 +88,9 @@ print(validation_result)
 
 # Check validation status
 if (validation_result$consistent) {
-  cat("✓ Report validation PASSED\n")
+  cat("[OK] Report validation PASSED\n")
 } else {
-  cat("✗ Report validation FAILED\n")
+  cat("[X] Report validation FAILED\n")
 }
 
 # Example 2: Binary Model Report Validation

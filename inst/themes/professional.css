@@ -78,8 +78,10 @@ body {
   background-color: var(--background-color);
   color: var(--text-color);
   margin: 0;
+[3 lines of pre-context]
   padding: 0;
   line-height: var(--line-height-base);
+
   font-size: var(--font-size-base);
 }
 
