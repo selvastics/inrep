@@ -1,6 +1,6 @@
-config <- create_cognitive_study_config()
-item_bank <- create_cognitive_items_from_demo()
-launch_cognitive_study(config, item_bank)
+#config <- create_cognitive_study_config()
+#item_bank <- create_cognitive_items_from_demo()
+#launch_cognitive_study(config, item_bank)
 
 #' Minimal stub for load_translations
 #'
