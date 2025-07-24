@@ -668,6 +668,8 @@ launch_study <- function(
     logger = function(msg, ...) print(msg),
     ...
 ) {
+
+  # --- Argument validation: always fail loudly, never return NULL ---
   # Allow launch_study(bfi_items) or launch_study(config, bfi_items, ...)
   if (is.data.frame(config_or_item_bank) && is.null(item_bank)) {
     item_bank <- config_or_item_bank
@@ -677,21 +679,45 @@ launch_study <- function(
     if (is.null(config$theme)) config$theme <- theme
   } else {
     stop("Invalid arguments: must provide either item_bank or config + item_bank")
-  if (length(extra_params) > 0) {
-    logger(paste("Ignoring unused parameters:", paste(names(extra_params), collapse = ", ")), level = "INFO")
   }
-  if (base::is.null(config)) {
-    logger("Configuration is NULL", level = "ERROR")
-    base::stop("Configuration is NULL")
+
+  # Validate config
+  if (is.null(config) || !is.list(config)) {
+    stop("Configuration is NULL or not a list. Please provide a valid config object.")
   }
-  if (base::is.null(item_bank)) {
-    logger("Item bank is NULL", level = "ERROR")
-    base::stop("Item bank is NULL")
+  # Validate item_bank
+  if (is.null(item_bank) || !is.data.frame(item_bank) || nrow(item_bank) == 0) {
+    stop("Item bank is NULL, not a data.frame, or has zero rows. Please provide a valid item bank.")
   }
-  if (!save_format %in% base::c("rds", "csv", "json", "pdf")) {
-    logger("Invalid save_format", level = "ERROR")
-    base::stop("Invalid save_format")
+  # Validate required config fields
+  required_fields <- c("model", "max_items")
+  missing_fields <- setdiff(required_fields, names(config))
+  if (length(missing_fields) > 0) {
+    stop(paste("Missing required config fields:", paste(missing_fields, collapse = ", ")))
   }
+  # Validate save_format
+  if (!save_format %in% c("rds", "csv", "json", "pdf")) {
+    stop("Invalid save_format. Must be one of 'rds', 'csv', 'json', 'pdf'.")
+  }
+  # Validate theme_config if present
+  if (!is.null(theme_config) && !is.list(theme_config)) {
+    stop("theme_config must be a named list.")
+  }
+  # Validate webdav_url/password logic
+  if (!is.null(webdav_url) && is.null(password)) {
+    stop("webdav_url provided but password is missing.")
+  }
+  # Validate logger
+  if (!is.function(logger)) {
+    stop("logger must be a function.")
+  }
+  # Validate config$demographics and config$input_types
+  if (!is.null(config$demographics) && !is.null(config$input_types)) {
+    if (!all(config$demographics %in% names(config$input_types))) {
+      stop("All demographics must have corresponding input_types in config.")
+    }
+  }
+  # --- End argument validation ---
   # ...existing code...
   
   logger(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"))
@@ -1449,9 +1475,9 @@ shiny::observeEvent(input$restart_test, {
   
   shiny::shinyApp(ui = ui, server = server)
 } # End of launch_study function
+
 #' Generate LLM Prompt for Study Deployment Optimization
 #'
-#' @description
 #' Creates detailed prompts for optimizing study deployment and technical infrastructure.
 #'
 #' @param study_config Study configuration object
@@ -1464,25 +1490,14 @@ shiny::observeEvent(input$restart_test, {
 #' @return Character string containing the deployment optimization prompt
 #'
 #' @noRd
-#'
-#' @examples
-#' \dontrun{
-#' prompt <- generate_study_deployment_prompt(
-#'   study_config = config,
-#'   item_bank_size = 50,
-#'   theme_config = NULL,
-#'   webdav_enabled = FALSE,
-#'   save_format = "rds"
-#' )
-#' cat(prompt)
-#' }
-generate_study_deployment_prompt <- function(study_config,
-                                            item_bank_size,
-                                            theme_config = NULL,
-                                            webdav_enabled = FALSE,
-                                            save_format = "rds",
-                                            include_examples = TRUE) {
-  
+generate_study_deployment_prompt <- function(
+    study_config,
+    item_bank_size,
+    theme_config = NULL,
+    webdav_enabled = FALSE,
+    save_format = "rds",
+    include_examples = TRUE
+) {
   prompt <- paste0(
     "# STUDY DEPLOYMENT AND INFRASTRUCTURE OPTIMIZATION\n\n",
     "You are a senior research technology specialist and infrastructure architect specializing in web-based psychological assessments. I need comprehensive guidance for optimizing the deployment and technical infrastructure of my inrep adaptive testing study.\n\n",
@@ -1497,11 +1512,8 @@ generate_study_deployment_prompt <- function(study_config,
     "- Save Format: ", save_format, "\n",
     "- Max Session Duration: ", study_config$max_session_duration %||% 30, " minutes\n",
     "- Expected Items per Participant: ", study_config$min_items %||% 5, " to ", study_config$max_items %||% 20, "\n",
-    "- Language: ", study_config$language %||% "English", "\n\n"
-  )
-  
-  # Add detailed analysis sections
-  prompt <- paste0(prompt,
+    "- Language: ", study_config$language %||% "English", "\n\n",
+    
     "## DEPLOYMENT OPTIMIZATION ANALYSIS\n\n",
     
     "### 1. Technical Infrastructure\n",
@@ -1548,7 +1560,8 @@ generate_study_deployment_prompt <- function(study_config,
   )
   
   if (include_examples) {
-    prompt <- paste0(prompt,
+    prompt <- paste0(
+      prompt,
       "## PROVIDE COMPREHENSIVE RECOMMENDATIONS\n",
       "1. **Infrastructure Architecture**: Complete deployment architecture with diagrams\n",
       "2. **Security Implementation**: Specific security measures and configurations\n",
@@ -1558,11 +1571,10 @@ generate_study_deployment_prompt <- function(study_config,
       "6. **Documentation**: Deployment guides and operational procedures\n",
       "7. **Scaling Strategy**: Plans for handling increased user load\n",
       "8. **Compliance Framework**: Regulatory and ethical compliance procedures\n\n",
-      "Please provide actionable recommendations with specific configuration examples, deployment scripts, and operational procedures."
+      "Please provide actionable recommendations with specific configuration examples, deployment scripts, and operational procedures.\n"
     )
   }
   
   return(prompt)
-}
 }
 }
