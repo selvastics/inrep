@@ -844,14 +844,31 @@ css <- if (!base::is.null(custom_css)) {
   )
   ui_labels <- labels[[config$language %||% "en"]]
   
-  ui <- complete_ui(
-    config = config,
-    item_bank = item_bank,
-    current_item = rv$current_item %||% 1,
-    responses = rv$responses,
-    progress = if (!is.null(rv$current_item)) (rv$current_item / config$max_items) * 100 else 0,
-    phase = rv$stage %||% "introduction"
+  ui <- shiny::fluidPage(
+    shinyjs::useShinyjs(),
+    shiny::tags$head(
+      shiny::tags$link(rel = "stylesheet", href = "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"),
+      shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
+      shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet"),
+      shiny::tags$style(type = "text/css", get_theme_css(config$theme))
+    ),
+    shiny::uiOutput("adapted_study_ui")
   )
+
+  server <- function(input, output, session) {
+    # ...existing code...
+    output$adapted_study_ui <- shiny::renderUI({
+      complete_ui(
+        config = config,
+        item_bank = item_bank,
+        current_item = rv$current_item %||% 1,
+        responses = rv$responses,
+        progress = if (!is.null(rv$current_item)) (rv$current_item / config$max_items) * 100 else 0,
+        phase = rv$stage %||% "introduction"
+      )
+    })
+    # ...existing code...
+  }
   
   server <- function(input, output, session) {
     data_dir <- base::file.path("study_data", config$study_key %||% "default_study")
