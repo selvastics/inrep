@@ -897,4 +897,29 @@ display_llm_prompt <- function(prompt, component = "general") {
   }
   
   invisible(prompt)
+  prompt <- paste0("# LLM Assistance Prompt\n",
+                   "Component: ", component, "\n",
+                   "Study Type: ", study_type, "\n\n")
+  if (!is.null(context) && length(context) > 0) {
+    prompt <- paste0(prompt, "## Context Information\n")
+    for (name in names(context)) {
+      prompt <- paste0(prompt, "- ", name, ": ", context[[name]], "\n")
+    }
+    prompt <- paste0(prompt, "\n")
+  }
+  if (include_examples) {
+    prompt <- paste0(prompt,
+      "## PROVIDE COMPREHENSIVE RECOMMENDATIONS\n",
+      "1. **Infrastructure Architecture**: Complete deployment architecture with diagrams\n",
+      "2. **Security Implementation**: Specific security measures and configurations\n",
+      "3. **Performance Optimization**: Technical optimizations for speed and reliability\n",
+      "4. **Monitoring and Alerting**: Comprehensive monitoring strategy with tools\n",
+      "5. **Quality Assurance**: Testing procedures and validation protocols\n",
+      "6. **Documentation**: Deployment guides and operational procedures\n",
+      "7. **Scaling Strategy**: Plans for handling increased user load\n",
+      "8. **Compliance Framework**: Regulatory and ethical compliance procedures\n\n",
+      "Please provide actionable recommendations with specific configuration examples, deployment scripts, and operational procedures."
+    )
+  }
+  return(prompt)
 }
