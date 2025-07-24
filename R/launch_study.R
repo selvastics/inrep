@@ -852,11 +852,13 @@ css <- if (!base::is.null(custom_css)) {
       shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
       shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet")
     ),
-    shiny::div(class = "container-fluid",
-        `data-theme` = config$theme %||% "Light",
-        if (!base::is.null(config$custom_ui_pre)) config$custom_ui_pre,
-        shiny::h2(config$name, class = "section-title", role = "heading", `aria-level` = "1"),
-        shiny::uiOutput("study_ui")
+    shiny::div(
+      class = "container-fluid",
+      style = "background: var(--bg); color: var(--text); min-height: 100vh;",
+      `data-theme` = config$theme %||% "Light",
+      if (!base::is.null(config$custom_ui_pre)) config$custom_ui_pre,
+      shiny::h2(config$name, class = "section-title", role = "heading", `aria-level` = "1", style = "color: var(--accent);"),
+      shiny::uiOutput("study_ui")
     )
   )
   
