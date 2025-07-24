@@ -759,13 +759,15 @@ launch_study <- function(
       item_bank$Answer <- "Option 1"  # Dummy answer
       logger("Added dummy options for dichotomous model compatibility", level = "INFO")
     }
-  
+    # End GRM conversion block
+  }
+
   # Adjust max_items if necessary
   if (base::is.null(config$max_items) || config$max_items > base::nrow(item_bank)) {
     logger(base::sprintf("Adjusting max_items to item bank size: %d", base::nrow(item_bank)))
     config$max_items <- base::nrow(item_bank)
   }
-  
+
   # Add default values for missing config parameters
   if (base::is.null(config$adaptive_start)) {
     config$adaptive_start <- base::ceiling((config$max_items %||% config$min_items) / 2)
