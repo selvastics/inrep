@@ -790,28 +790,18 @@ launch_study <- function(
   }
   
   # Apply theme: custom_css > theme_config > built-in theme
-  css <- if (!base::is.null(custom_css)) {
-    logger("Using custom CSS theme", level = "INFO")
-    custom_css
-  } else if (!base::is.null(theme_config)) {
-    logger("Using custom theme configuration", level = "INFO")
-    inrep::get_theme_css(theme_config = theme_config)
-  } else {
-    theme <- config$theme %||% "Light"
-    
-    # Validate and normalize theme name
-    validated_theme <- validate_theme_name(theme)
-    
-    if (is.null(validated_theme)) {
-      print(base::sprintf("Invalid theme '%s', falling back to Light theme", theme))
-      validated_theme <- "Light"
-    } else if (validated_theme != theme) {
-      print(base::sprintf("Theme '%s' normalized to '%s'", theme, validated_theme))
-    }
-    
-    print(base::sprintf("Using built-in '%s' theme", validated_theme))
-    inrep::get_theme_css(theme = validated_theme)
-  }
+css <- if (!base::is.null(custom_css)) {
+  logger("Using custom CSS theme", level = "INFO")
+  custom_css
+} else if (!base::is.null(theme_config)) {
+  logger("Using custom theme configuration", level = "INFO")
+  inrep::get_theme_css(theme_config = theme_config)
+} else {
+  theme_arg <- config$theme %||% theme
+  validated_theme <- validate_theme_name(theme_arg)
+  print(base::sprintf("Using built-in '%s' theme", validated_theme))
+  inrep::get_theme_css(theme = validated_theme)
+
   
   if (config$model == "1PL") item_bank$a <- base::rep(1, base::nrow(item_bank))
   
