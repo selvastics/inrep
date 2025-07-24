@@ -1,9 +1,10 @@
+# File: complete_ui.R
 #' Complete Unified UI Function - All Aspects in One
-#' 
-#' Ultimate single function that handles all UI aspects for adaptive testing
+#'
+#' Ultimate single function that handles all UI aspects for adaptive testing.
 #' Includes themes, accessibility, responsive design, demographics, assessment items,
-#' progress tracking, and complete study flow in one comprehensive function
-#' 
+#' progress tracking, and complete study flow in one comprehensive function.
+#'
 #' @param config Study configuration object
 #' @param item_bank Item bank data frame
 #' @param current_item Current item being displayed
@@ -19,35 +20,72 @@
 #' }
 complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, progress = 0, phase = "introduction") {
   
-  # Get theme CSS
-  css <- get_theme_css(config$theme)
+  # Validate inputs
+  if (is.null(config$name)) config$name <- "Assessment"
+  if (is.null(config$theme)) config$theme <- "professional"
+  if (is.null(config$demographics)) config$demographics <- character(0)
+  if (is.null(config$max_items)) config$max_items <- nrow(item_bank)
   
   # Calculate progress
   total_items <- nrow(item_bank)
-  progress_percent <- min(100, (current_item / config$max_items) * 100)
+  progress_percent <- min(100, round((current_item / config$max_items) * 100, 1))
   
   # Current item data
-  current_item_data <- if(current_item <= nrow(item_bank)) {
+  current_item_data <- if (current_item <= nrow(item_bank) && current_item > 0) {
     item_bank[current_item, ]
   } else {
-    item_bank[nrow(item_bank), ]
+    list(text = "Loading question...", ResponseCategories = "1,2,3,4,5")
   }
+  
+  # Language labels
+  labels <- list(
+    en = list(
+      intro_title = "Welcome to the Assessment",
+      intro_text = "This assessment will help us understand your profile through carefully designed questions.",
+      demo_title = "Demographic Information",
+      demo_text = "Please provide some basic information about yourself. All questions are optional.",
+      assessment_title = "Assessment",
+      results_title = "Assessment Complete",
+      start_button = "Begin Assessment",
+      submit_button = "Submit",
+      prev_button = "Previous",
+      next_button = "Next",
+      download_button = "Download Report",
+      restart_button = "Restart Assessment"
+    ),
+    de = list(
+      intro_title = "Willkommen zur Bewertung",
+      intro_text = "Diese Bewertung hilft uns, Ihr Profil durch sorgfältig gestaltete Fragen zu verstehen.",
+      demo_title = "Demografische Informationen",
+      demo_text = "Bitte geben Sie einige grundlegende Informationen über sich selbst ein. Alle Fragen sind optional.",
+      assessment_title = "Bewertung",
+      results_title = "Bewertung abgeschlossen",
+      start_button = "Bewertung beginnen",
+      submit_button = "Absenden",
+      prev_button = "Zurück",
+      next_button = "Weiter",
+      download_button = "Bericht herunterladen",
+      restart_button = "Bewertung neu starten"
+    )
+  )
+  ui_labels <- labels[[config$language %||% "en"]]
   
   # Build complete UI
   shiny::fluidPage(
-    # Head section with CSS and meta tags
+    shinyjs::useShinyjs(),
+    # Head section with Tailwind CSS and custom styles
     shiny::tags$head(
-      shiny::tags$style(type = "text/css", css),
+      shiny::tags$link(rel = "stylesheet", href = "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"),
       shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
       shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet"),
+      shiny::tags$style(type = "text/css", get_theme_css(config$theme)),
       shiny::tags$script(shiny::HTML("
-        // Enhanced accessibility and interaction
+        // Enhanced accessibility
         document.addEventListener('keydown', function(e) {
           if (e.key === 'Tab') {
             document.body.classList.add('keyboard-nav');
           }
         });
-        
         // Progress animation
         function updateProgress(percent) {
           const progressBar = document.querySelector('.progress-bar');
@@ -56,119 +94,180 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
             progressBar.setAttribute('aria-valuenow', percent);
           }
         }
-        
         // Response selection
         function selectResponse(element) {
           document.querySelectorAll('.response-option').forEach(opt => {
-            opt.classList.remove('selected');
+            opt.classList.remove('bg-blue-100', 'border-blue-500');
             opt.setAttribute('aria-selected', 'false');
           });
-          element.classList.add('selected');
+          element.classList.add('bg-blue-100', 'border-blue-500');
           element.setAttribute('aria-selected', 'true');
+          element.focus();
         }
       "))
     ),
     
     # Main container
-    shiny::div(class = "study-container",
+    shiny::div(class = "container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl",
+      `data-theme` = config$theme,
+      `aria-live` = "polite",
+      
       # Header
-      shiny::div(class = "study-header",
-        shiny::h1(config$name, class = "study-title"),
-        shiny::p(config$subtitle %||% "Psychological Assessment", class = "study-subtitle"),
-        shiny::div(class = "progress-container",
-          shiny::div(class = "progress-bar", 
-                    style = paste0("width: ", progress_percent, "%"),
+      shiny::div(class = "study-header text-center mb-8",
+        shiny::h1(class = "text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white", 
+                 config$name, 
+                 role = "heading", 
+                 `aria-level` = "1"),
+        shiny::p(class = "text-lg text-gray-600 dark:text-gray-300 mt-2", 
+                config$subtitle %||% "Psychological Assessment"),
+        shiny::div(class = "progress-container mt-4 bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden",
+          shiny::div(class = "progress-bar bg-blue-600 dark:bg-blue-400 h-full transition-all duration-300 ease-in-out",
+                    style = sprintf("width: %s%%", progress_percent),
                     `aria-valuenow` = progress_percent,
                     `aria-valuemin` = "0",
                     `aria-valuemax` = "100",
                     role = "progressbar",
-                    `aria-label` = paste("Progress:", progress_percent, "percent"))
+                    `aria-label` = sprintf("Progress: %s%%", progress_percent))
         )
       ),
       
       # Content area based on phase
       shiny::div(class = "study-content",
-        
         # Introduction Phase
         shiny::conditionalPanel(
           condition = "input.phase == 'introduction'",
-          shiny::div(class = "phase-container introduction",
-            shiny::h2("Welcome to the Assessment", class = "phase-title"),
+          shiny::div(class = "phase-container bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-lg",
+            shiny::h2(class = "text-2xl font-semibold text-gray-900 dark:text-white mb-4", 
+                     ui_labels$intro_title, 
+                     role = "heading", 
+                     `aria-level` = "2"),
             shiny::div(class = "phase-content",
-              shiny::p("This assessment will help us understand your psychological profile through a series of carefully designed questions."),
-              shiny::p("The assessment typically takes 10-15 minutes to complete."),
-              shiny::p("All responses are confidential and will be used for research purposes only.")
+              shiny::p(class = "text-gray-700 dark:text-gray-300 mb-4", ui_labels$intro_text),
+              shiny::p(class = "text-gray-700 dark:text-gray-300 mb-4", 
+                      "The assessment typically takes 10-15 minutes to complete."),
+              shiny::p(class = "text-gray-700 dark:text-gray-300", 
+                      "All responses are confidential and used for research purposes only.")
             ),
-            shiny::actionButton("start_introduction", "Begin Introduction", class = "btn-primary")
+            shiny::actionButton("start_introduction", 
+                               ui_labels$start_button, 
+                               class = "btn-primary mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-transform hover:-translate-y-1 hover:shadow-lg",
+                               `aria-label` = ui_labels$start_button)
           )
         ),
         
         # Demographics Phase
         shiny::conditionalPanel(
           condition = "input.phase == 'demographics'",
-          shiny::div(class = "phase-container demographics",
-            shiny::h2("Demographic Information", class = "phase-title"),
+          shiny::div(class = "phase-container bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-lg",
+            shiny::h2(class = "text-2xl font-semibold text-gray-900 dark:text-white mb-4", 
+                     ui_labels$demo_title, 
+                     role = "heading", 
+                     `aria-level` = "2"),
             shiny::div(class = "phase-content",
-              shiny::p("Please provide some basic information about yourself. All questions are optional."),
-              
-              # Dynamic demographics
-              shiny::div(class = "demographics-form",
+              shiny::p(class = "text-gray-700 dark:text-gray-300 mb-4", ui_labels$demo_text),
+              shiny::div(class = "demographics-form grid gap-4",
                 lapply(seq_along(config$demographics), function(i) {
                   demo <- config$demographics[i]
+                  input_type <- config$input_types[[demo]] %||% "select"
+                  input_id <- paste0("demo_", i)
                   shiny::div(class = "form-group",
-                    shiny::tags$label(demo, class = "form-label"),
-                    shiny::selectInput(
-                      inputId = paste0("demo_", i),
-                      label = NULL,
-                      choices = c("Select" = "", "Male", "Female", "Other", "Prefer not to say"),
-                      width = "100%"
-                    )
+                    shiny::tags$label(class = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1", 
+                                     demo, 
+                                     `for` = input_id),
+                    switch(input_type,
+                           "numeric" = shiny::numericInput(
+                             inputId = input_id,
+                             label = NULL,
+                             value = NA,
+                             min = 1,
+                             max = 150,
+                             width = "100%",
+                             `aria-describedby` = paste0(input_id, "_desc")
+                           ),
+                           "text" = shiny::textInput(
+                             inputId = input_id,
+                             label = NULL,
+                             value = "",
+                             width = "100%",
+                             `aria-describedby` = paste0(input_id, "_desc")
+                           ),
+                           shiny::selectInput(
+                             inputId = input_id,
+                             label = NULL,
+                             choices = c("Select" = "", "Male", "Female", "Other", "Prefer not to say"),
+                             selected = "",
+                             width = "100%",
+                             `aria-describedby` = paste0(input_id, "_desc")
+                           )
+                    ),
+                    shiny::div(id = paste0(input_id, "_desc"), 
+                              class = "text-sm text-gray-500 dark:text-gray-400", 
+                              sprintf("Enter your %s (optional)", demo))
                   )
                 })
               ),
-              
-              shiny::actionButton("start_assessment", "Start Assessment", class = "btn-primary")
-            )
+              shiny::div(id = "demo_error", 
+                        class = "text-red-600 dark:text-red-400 mt-2 hidden", 
+                        "Please complete all required fields correctly.")
+            ),
+            shiny::actionButton("start_assessment", 
+                               ui_labels$start_button, 
+                               class = "btn-primary mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-transform hover:-translate-y-1 hover:shadow-lg",
+                               `aria-label` = ui_labels$start_button)
           )
         ),
         
         # Assessment Phase
         shiny::conditionalPanel(
           condition = "input.phase == 'assessment'",
-          shiny::div(class = "phase-container assessment",
+          shiny::div(class = "phase-container bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-lg",
             shiny::div(class = "item-display",
-              shiny::div(class = "item-counter",
-                shiny::span(paste("Item", current_item, "of", config$max_items))
-              ),
-              shiny::div(class = "item-text",
-                shiny::HTML(current_item_data$text %||% "Loading question...")
-              )
+              shiny::div(class = "item-counter text-gray-600 dark:text-gray-300 text-sm mb-4", 
+                        sprintf("Item %d of %d", current_item, config$max_items)),
+              shiny::div(class = "item-text text-lg font-medium text-gray-900 dark:text-white text-center mb-6", 
+                        shiny::HTML(current_item_data$Question %||% current_item_data$text %||% "Loading question..."),
+                        role = "region",
+                        `aria-live` = "assertive")
             ),
-            
-            # Response options
             shiny::div(class = "response-container",
-              shiny::div(class = "response-options",
-                shiny::radioGroupButtons(
-                  inputId = "item_response",
-                  label = NULL,
-                  choices = c(
-                    "Strongly Disagree" = 1,
-                    "Disagree" = 2,
-                    "Neutral" = 3,
-                    "Agree" = 4,
-                    "Strongly Agree" = 5
-                  ),
-                  selected = character(0),
-                  direction = "vertical",
-                  status = "default",
-                  individual = TRUE,
-                  width = "100%"
-                )
+              shiny::div(class = "response-options grid gap-2",
+                {
+                  choices <- if (!is.null(current_item_data$ResponseCategories)) {
+                    as.numeric(unlist(strsplit(current_item_data$ResponseCategories, ",")))
+                  } else {
+                    1:5
+                  }
+                  labels <- switch(config$language %||% "en",
+                                   en = c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")[1:length(choices)],
+                                   de = c("Stark abgelehnt", "Abgelehnt", "Neutral", "Zustimmen", "Stark zustimmen")[1:length(choices)],
+                                   es = c("Totalmente en desacuerdo", "En desacuerdo", "Neutral", "De acuerdo", "Totalmente de acuerdo")[1:length(choices)],
+                                   fr = c("Fortement en désaccord", "En désaccord", "Neutre", "D'accord", "Fortement d'accord")[1:length(choices)]
+                  )
+                  shinyWidgets::radioGroupButtons(
+                    inputId = "item_response",
+                    label = NULL,
+                    choices = stats::setNames(choices, labels),
+                    selected = character(0),
+                    direction = "vertical",
+                    status = "default",
+                    individual = TRUE,
+                    width = "100%",
+                    checkIcon = list(yes = shiny::icon("check-circle"))
+                  )
+                }
               ),
-              
-              shiny::div(class = "navigation-buttons",
-                shiny::actionButton("prev_item", "Previous", class = "btn-secondary"),
-                shiny::actionButton("next_item", "Next", class = "btn-primary")
+              shiny::div(id = "response_error", 
+                        class = "text-red-600 dark:text-red-400 mt-2 hidden", 
+                        "Please select a response."),
+              shiny::div(class = "navigation-buttons flex gap-4 justify-center mt-6",
+                shiny::actionButton("prev_item", 
+                                   ui_labels$prev_button, 
+                                   class = "btn-secondary bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-transform hover:-translate-y-1 hover:shadow-lg",
+                                   `aria-label` = ui_labels$prev_button),
+                shiny::actionButton("next_item", 
+                                   ui_labels$next_button, 
+                                   class = "btn-primary bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-transform hover:-translate-y-1 hover:shadow-lg",
+                                   `aria-label` = ui_labels$next_button)
               )
             )
           )
@@ -177,30 +276,41 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
         # Results Phase
         shiny::conditionalPanel(
           condition = "input.phase == 'results'",
-          shiny::div(class = "phase-container results",
-            shiny::h2("Assessment Complete", class = "phase-title"),
+          shiny::div(class = "phase-container bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-lg",
+            shiny::h2(class = "text-2xl font-semibold text-gray-900 dark:text-white mb-4", 
+                     ui_labels$results_title, 
+                     role = "heading", 
+                     `aria-level` = "2"),
             shiny::div(class = "phase-content",
-              shiny::p("Thank you for completing the assessment!"),
-              
-              shiny::div(class = "results-summary",
-                shiny::h3("Your Results"),
-                shiny::div(class = "result-item",
-                  shiny::strong("Trait Score:"),
-                  shiny::span("0.5", class = "score-value")
+              shiny::p(class = "text-gray-700 dark:text-gray-300 mb-4", 
+                      "Thank you for completing the assessment!"),
+              shiny::div(class = "results-summary bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4",
+                shiny::h3(class = "text-xl font-medium text-gray-900 dark:text-white mb-4", "Your Results"),
+                shiny::div(class = "result-item flex justify-between py-2 border-b border-gray-200 dark:border-gray-600",
+                  shiny::strong(class = "text-gray-700 dark:text-gray-300", "Trait Score:"),
+                  shiny::span(class = "score-value text-gray-900 dark:text-white font-medium", 
+                             sprintf("%.2f", mean(responses, na.rm = TRUE)))
                 ),
-                shiny::div(class = "result-item",
-                  shiny::strong("Measurement Precision:"),
-                  shiny::span("High", class = "precision-value")
+                shiny::div(class = "result-item flex justify-between py-2 border-b border-gray-200 dark:border-gray-600",
+                  shiny::strong(class = "text-gray-700 dark:text-gray-300", "Measurement Precision:"),
+                  shiny::span(class = "precision-value text-gray-900 dark:text-white font-medium", 
+                             if (config$adaptive) sprintf("SE: %.3f", sd(responses, na.rm = TRUE)) else "High")
                 ),
-                shiny::div(class = "result-item",
-                  shiny::strong("Items Completed:"),
-                  shiny::span(current_item, class = "items-value")
+                shiny::div(class = "result-item flex justify-between py-2",
+                  shiny::strong(class = "text-gray-700 dark:text-gray-300", "Items Completed:"),
+                  shiny::span(class = "items-value text-gray-900 dark:text-white font-medium", 
+                             length(responses))
                 )
               ),
-              
-              shiny::div(class = "results-actions",
-                shiny::downloadButton("download_results", "Download Report", class = "btn-success"),
-                shiny::actionButton("restart_assessment", "Take Another Assessment", class = "btn-secondary")
+              shiny::div(class = "results-actions flex gap-4 justify-center mt-6",
+                shiny::downloadButton("download_results", 
+                                     ui_labels$download_button, 
+                                     class = "btn-success bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-transform hover:-translate-y-1 hover:shadow-lg",
+                                     `aria-label` = ui_labels$download_button),
+                shiny::actionButton("restart_assessment", 
+                                   ui_labels$restart_button, 
+                                   class = "btn-secondary bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-transform hover:-translate-y-1 hover:shadow-lg",
+                                   `aria-label` = ui_labels$restart_button)
               )
             )
           )
@@ -208,245 +318,11 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
       ),
       
       # Footer
-      shiny::div(class = "study-footer",
+      shiny::div(class = "study-footer text-center mt-8 py-4 border-t border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300",
         shiny::p("Powered by INREP - Instant Reports for Adaptive Testing"),
-        shiny::p("© 2024 Research Platform")
+        shiny::p(sprintf("© %s Research Platform", format(Sys.time(), "%Y")))
       )
-    ),
-    
-    # Additional CSS for complete styling
-    shiny::tags$style(shiny::HTML("
-      :root {
-        --primary-color: #2563eb;
-        --background-color: #ffffff;
-        --text-color: #1a1a1a;
-        --border-color: #e5e7eb;
-        --success-color: #10b981;
-        --warning-color: #f59e0b;
-        --error-color: #ef4444;
-        --shadow: 0 4px 12px rgba(0,0,0,0.1);
-        --border-radius: 0.5rem;
-      }
-      
-      * {
-        box-sizing: border-box;
-      }
-      
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        background: var(--background-color);
-        color: var(--text-color);
-        line-height: 1.6;
-        margin: 0;
-        padding: 1rem;
-        min-height: 100vh;
-      }
-      
-      .study-container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 1rem;
-      }
-      
-      .study-header {
-        text-align: center;
-        margin-bottom: 2rem;
-      }
-      
-      .study-title {
-        font-size: 2rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-        color: var(--text-color);
-      }
-      
-      .study-subtitle {
-        font-size: 1.2rem;
-        color: #6b7280;
-        margin-bottom: 1rem;
-      }
-      
-      .progress-container {
-        background: var(--border-color);
-        height: 0.5rem;
-        border-radius: var(--border-radius);
-        overflow: hidden;
-        margin: 1rem 0;
-      }
-      
-      .progress-bar {
-        background: var(--primary-color);
-        height: 100%;
-        transition: width 0.3s ease;
-      }
-      
-      .study-content {
-        margin: 2rem 0;
-      }
-      
-      .phase-container {
-        background: white;
-        border: 1px solid var(--border-color);
-        border-radius: var(--border-radius);
-        padding: 2rem;
-        box-shadow: var(--shadow);
-        margin: 1rem 0;
-      }
-      
-      .phase-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
-        color: var(--text-color);
-      }
-      
-      .phase-content {
-        margin-bottom: 2rem;
-      }
-      
-      .phase-content p {
-        margin-bottom: 1rem;
-        font-size: 1.1rem;
-      }
-      
-      .demographics-form {
-        display: grid;
-        gap: 1rem;
-      }
-      
-      .form-group {
-        margin-bottom: 1rem;
-      }
-      
-      .form-label {
-        display: block;
-        font-weight: 500;
-        margin-bottom: 0.5rem;
-      }
-      
-      .item-display {
-        margin-bottom: 2rem;
-      }
-      
-      .item-counter {
-        font-size: 0.9rem;
-        color: #6b7280;
-        margin-bottom: 1rem;
-      }
-      
-      .item-text {
-        font-size: 1.3rem;
-        font-weight: 500;
-        margin-bottom: 2rem;
-        text-align: center;
-      }
-      
-      .response-container {
-        margin: 2rem 0;
-      }
-      
-      .response-options {
-        margin: 2rem 0;
-      }
-      
-      .navigation-buttons {
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-        margin-top: 2rem;
-      }
-      
-      .btn-primary, .btn-secondary, .btn-success {
-        padding: 0.75rem 1.5rem;
-        border: none;
-        border-radius: var(--border-radius);
-        font-size: 1rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        min-width: 120px;
-      }
-      
-      .btn-primary {
-        background: var(--primary-color);
-        color: white;
-      }
-      
-      .btn-secondary {
-        background: #6b7280;
-        color: white;
-      }
-      
-      .btn-success {
-        background: var(--success-color);
-        color: white;
-      }
-      
-      .btn-primary:hover, .btn-secondary:hover, .btn-success:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-      }
-      
-      .results-summary {
-        background: #f9fafb;
-        border: 1px solid var(--border-color);
-        border-radius: var(--border-radius);
-        padding: 1.5rem;
-        margin: 1rem 0;
-      }
-      
-      .result-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.5rem 0;
-        border-bottom: 1px solid var(--border-color);
-      }
-      
-      .result-item:last-child {
-        border-bottom: none;
-      }
-      
-      .study-footer {
-        text-align: center;
-        margin-top: 3rem;
-        padding: 2rem;
-        border-top: 1px solid var(--border-color);
-        color: #6b7280;
-      }
-      
-      @media (max-width: 768px) {
-        .study-container {
-          padding: 0.5rem;
-        }
-        
-        .study-title {
-          font-size: 1.5rem;
-        }
-        
-        .phase-container {
-          padding: 1.5rem;
-        }
-        
-        .navigation-buttons {
-          flex-direction: column;
-        }
-        
-        .btn-primary, .btn-secondary, .btn-success {
-          width: 100%;
-        }
-      }
-      
-      @media (prefers-reduced-motion: reduce) {
-        * {
-          transition: none !important;
-        }
-      }
-      
-      @media (prefers-contrast: high) {
-        .phase-container {
-          border-width: 2px;
-        }
-      }
-    "))
+    )
   )
 }
 
@@ -454,103 +330,87 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
 #' @param theme Theme name
 #' @return CSS string
 #' @export
-get_theme_css <- function(theme = "light") {
+get_theme_css <- function(theme = "professional") {
   theme <- tolower(theme)
   
   # Theme definitions
   themes <- list(
-    light = list(bg = "#fff", text = "#000", accent = "#2563eb", border = "#e5e7eb", font = "16px", button = "60px"),
-    dark = list(bg = "#0f172a", text = "#f1f5f9", accent = "#3b82f6", border = "#334155", font = "16px", button = "60px"),
-    professional = list(bg = "#fafafa", text = "#262626", accent = "#0f172a", border = "#e5e5e5", font = "16px", button = "60px"),
-    academic = list(bg = "#fefbf3", text = "#2c1810", accent = "#8b4513", border = "#d4c5b9", font = "16px", button = "60px"),
-    forest = list(bg = "#f0f9f0", text = "#1a3a1a", accent = "#228b22", border = "#c8e6c9", font = "16px", button = "60px"),
-    ocean = list(bg = "#f0f8ff", text = "#0c2340", accent = "#0066cc", border = "#b3d9ff", font = "16px", button = "60px"),
-    sunset = list(bg = "#fff5f5", text = "#742a2a", accent = "#e53e3e", border = "#fed7d7", font = "16px", button = "60px"),
-    midnight = list(bg = "#0a0a0a", text = "#e5e5e5", accent = "#6366f1", border = "#262626", font = "16px", button = "60px"),
-    berry = list(bg = "#fdf2f8", text = "#831843", accent = "#ec4899", border = "#fbcfe8", font = "16px", button = "60px"),
-    paper = list(bg = "#fefefe", text = "#171717", accent = "#525252", border = "#e5e5e5", font = "16px", button = "60px"),
-    monochrome = list(bg = "#fafafa", text = "#18181b", accent = "#18181b", border = "#e4e4e7", font = "16px", button = "60px"),
-    vibrant = list(bg = "#fef3c7", text = "#92400e", accent = "#f59e0b", border = "#fcd34d", font = "16px", button = "60px"),
-    hildesheim = list(bg = "#f8fafc", text = "#0f172a", accent = "#1e40af", border = "#e2e8f0", font = "16px", button = "60px"),
-    darkblue = list(bg = "#0f172a", text = "#f8fafc", accent = "#3b82f6", border = "#334155", font = "16px", button = "60px"),
-    
-    # Accessibility themes
-    "colorblind-safe" = list(bg = "#ffffff", text = "#000000", accent = "#0066cc", border = "#666666", font = "18px", button = "65px"),
-    "large-text" = list(bg = "#ffffff", text = "#000000", accent = "#0000ff", border = "#000000", font = "24px", button = "80px"),
-    "dyslexia-friendly" = list(bg = "#f8f4f0", text = "#2c2c2c", accent = "#005a9c", border = "#8d8d8d", font = "20px", button = "65px"),
-    "low-vision" = list(bg = "#ffffff", text = "#000000", accent = "#0000ff", border = "#000000", font = "28px", button = "100px"),
-    "cognitive-accessible" = list(bg = "#fffef7", text = "#1a1a1a", accent = "#1976d2", border = "#757575", font = "22px", button = "75px")
+    professional = list(bg = "#fafafa", text = "#262626", accent = "#0f172a", border = "#e5e5e5", font = "16px", button = "48px"),
+    light = list(bg = "#ffffff", text = "#000000", accent = "#2563eb", border = "#e5e7eb", font = "16px", button = "48px"),
+    dark = list(bg = "#0f172a", text = "#f1f5f9", accent = "#3b82f6", border = "#334155", font = "16px", button = "48px"),
+    forest = list(bg = "#f0f9f0", text = "#1a3a1a", accent = "#228b22", border = "#c8e6c9", font = "16px", button = "48px"),
+    ocean = list(bg = "#f0f8ff", text = "#0c2340", accent = "#0066cc", border = "#b3d9ff", font = "16px", button = "48px"),
+    sunset = list(bg = "#fff5f5", text = "#742a2a", accent = "#e53e3e", border = "#fed7d7", font = "16px", button = "48px"),
+    midnight = list(bg = "#0a0a0a", text = "#e5e5e5", accent = "#6366f1", border = "#262626", font = "16px", button = "48px"),
+    berry = list(bg = "#fdf2f8", text = "#831843", accent = "#ec4899", border = "#fbcfe8", font = "16px", button = "48px"),
+    colorblind-safe = list(bg = "#ffffff", text = "#000000", accent = "#0066cc", border = "#666666", font = "18px", button = "52px"),
+    large-text = list(bg = "#ffffff", text = "#000000", accent = "#0000ff", border = "#000000", font = "24px", button = "60px"),
+    dyslexia-friendly = list(bg = "#f8f4f0", text = "#2c2c2c", accent = "#005a9c", border = "#8d8d8d", font = "20px", button = "56px"),
+    low-vision = list(bg = "#ffffff", text = "#000000", accent = "#0000ff", border = "#000000", font = "28px", button = "64px"),
+    cognitive-accessible = list(bg = "#fffef7", text = "#1a1a1a", accent = "#1976d2", border = "#757575", font = "22px", button = "60px")
   )
   
-  # Default to light if theme not found
-  if (!theme %in% names(themes)) theme <- "light"
+  # Default to professional if theme not found
+  if (!theme %in% names(themes)) theme <- "professional"
   vars <- themes[[theme]]
   
-  # Ultra-efficient CSS (<200 lines)
+  # CSS with Tailwind overrides and accessibility enhancements
   sprintf('
 :root {
-  --bg: %s; --text: %s; --accent: %s; --border: %s; --card: %s;
-  --font-size: %s; --button-size: %s; --radius: 0.5rem; --shadow: 0 4px 12px rgba(0,0,0,0.1);
+  --bg: %s;
+  --text: %s;
+  --accent: %s;
+  --border: %s;
+  --font-size: %s;
+  --button-height: %s;
+  --shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: var(--bg); color: var(--text); font-size: var(--font-size);
-  line-height: 1.6; padding: 1rem; min-height: 100vh;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: var(--font-size);
+  line-height: 1.6;
 }
 
-.container { max-width: 800px; margin: 0 auto; padding: 1rem; }
-
-.assessment-card {
-  background: var(--card); border: 2px solid var(--border);
-  border-radius: var(--radius); padding: 2rem; margin: 1rem 0;
-  box-shadow: var(--shadow); transition: all 0.2s ease;
+.phase-container {
+  transition: all 0.3s ease;
 }
 
-.btn {
-  background: var(--accent); color: white; border: none;
-  padding: 1rem 2rem; border-radius: var(--radius);
-  font-size: 1.2rem; cursor: pointer; min-height: var(--button-size);
-  transition: all 0.2s ease; width: 100%%; max-width: 300px;
+.btn-primary, .btn-secondary, .btn-success {
+  min-height: var(--button-height);
+  width: 100%%;
+  max-width: 200px;
 }
 
-.btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
-
-.question {
-  font-size: 1.3rem; margin: 2rem 0; text-align: center;
-  line-height: 1.5; font-weight: 500;
+.radio-group-buttons .btn {
+  border: 2px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  text-align: left;
+  width: 100%%;
+  transition: all 0.2s ease;
 }
 
-.radio-group {
-  display: flex; flex-direction: column; gap: 1rem; margin: 2rem 0;
+.radio-group-buttons .btn:hover {
+  border-color: var(--accent);
+  background-color: rgba(37, 99, 235, 0.1);
 }
 
-.radio-option {
-  padding: 1.5rem; border: 2px solid var(--border);
-  border-radius: var(--radius); cursor: pointer;
-  transition: all 0.2s ease; text-align: center;
+.radio-group-buttons .btn.active {
+  background-color: var(--accent);
+  color: white;
+  border-color: var(--accent);
 }
 
-.radio-option:hover { border-color: var(--accent); }
-
-.radio-option.active {
-  background: var(--accent); color: white; border-color: var(--accent);
+.keyboard-nav .radio-group-buttons .btn:focus {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
 }
 
-.progress {
-  background: var(--border); height: 0.5rem; border-radius: var(--radius);
-  overflow: hidden; margin: 2rem 0;
-}
-
-.progress-bar {
-  background: var(--accent); height: 100%%; transition: width 0.3s ease;
-}
-
-@media (max-width: 768px) {
-  .btn { font-size: 1.1rem; padding: 0.8rem 1.5rem; }
-  .assessment-card { padding: 1.5rem; }
+@media (max-width: 640px) {
+  body { font-size: calc(var(--font-size) * 0.9); }
+  .phase-container { padding: 1rem; }
+  .btn-primary, .btn-secondary, .btn-success { max-width: 100%%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -558,7 +418,13 @@ body {
 }
 
 @media (prefers-contrast: high) {
-  .assessment-card { border-width: 3px; }
+  .phase-container { border-width: 3px; }
+  .radio-group-buttons .btn { border-width: 3px; }
+  :root {
+    --text: #000000;
+    --accent: #0000ff;
+    --border: #000000;
+  }
 }
-', vars$bg, vars$text, vars$accent, vars$border, vars$card, vars$font, vars$button)
+', vars$bg, vars$text, vars$accent, vars$border, vars$font, vars$button)
 }
