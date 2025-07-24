@@ -797,10 +797,10 @@ css <- if (!base::is.null(custom_css)) {
   logger("Using custom theme configuration", level = "INFO")
   inrep::get_theme_css(theme_config = theme_config)
 } else {
-  theme_arg <- config$theme %||% theme
-  validated_theme <- validate_theme_name(theme_arg)
+  validated_theme <- validate_theme_name(config$theme)
   print(base::sprintf("Using built-in '%s' theme", validated_theme))
-  inrep::get_theme_css(theme = validated_theme)
+  css <- inrep::get_theme_css(theme = validated_theme)
+  css
 
   
   if (config$model == "1PL") item_bank$a <- base::rep(1, base::nrow(item_bank))
