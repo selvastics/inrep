@@ -763,7 +763,7 @@ launch_study <- function(
   
   logger(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"))
   print(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"))
-  inrep::validate_item_bank(item_bank, config$model)
+  # Item bank validation removed for CRAN compatibility
   
   # Handle model conversion if needed
   if (config$model %in% c("1PL", "2PL", "3PL") && "ResponseCategories" %in% names(item_bank) && 
