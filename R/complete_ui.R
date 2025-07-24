@@ -343,11 +343,11 @@ get_theme_css <- function(theme = "professional") {
     sunset = list(bg = "#fff5f5", text = "#742a2a", accent = "#e53e3e", border = "#fed7d7", font = "16px", button = "48px"),
     midnight = list(bg = "#0a0a0a", text = "#e5e5e5", accent = "#6366f1", border = "#262626", font = "16px", button = "48px"),
     berry = list(bg = "#fdf2f8", text = "#831843", accent = "#ec4899", border = "#fbcfe8", font = "16px", button = "48px"),
-    colorblind-safe = list(bg = "#ffffff", text = "#000000", accent = "#0066cc", border = "#666666", font = "18px", button = "52px"),
-    large-text = list(bg = "#ffffff", text = "#000000", accent = "#0000ff", border = "#000000", font = "24px", button = "60px"),
-    dyslexia-friendly = list(bg = "#f8f4f0", text = "#2c2c2c", accent = "#005a9c", border = "#8d8d8d", font = "20px", button = "56px"),
-    low-vision = list(bg = "#ffffff", text = "#000000", accent = "#0000ff", border = "#000000", font = "28px", button = "64px"),
-    cognitive-accessible = list(bg = "#fffef7", text = "#1a1a1a", accent = "#1976d2", border = "#757575", font = "22px", button = "60px")
+    "colorblind-safe" = list(bg = "#ffffff", text = "#000000", accent = "#0066cc", border = "#666666", font = "18px", button = "52px"),
+    "large-text" = list(bg = "#ffffff", text = "#000000", accent = "#0000ff", border = "#000000", font = "24px", button = "60px"),
+    "dyslexia-friendly" = list(bg = "#f8f4f0", text = "#2c2c2c", accent = "#005a9c", border = "#8d8d8d", font = "20px", button = "56px"),
+    "low-vision" = list(bg = "#ffffff", text = "#000000", accent = "#0000ff", border = "#000000", font = "28px", button = "64px"),
+    "cognitive-accessible" = list(bg = "#fffef7", text = "#1a1a1a", accent = "#1976d2", border = "#757575", font = "22px", button = "60px")
   )
   
   # Default to professional if theme not found
