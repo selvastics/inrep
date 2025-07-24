@@ -844,30 +844,15 @@ css <- if (!base::is.null(custom_css)) {
   )
   ui_labels <- labels[[config$language %||% "en"]]
   
-  ui <- shiny::fluidPage(
-    shinyjs::useShinyjs(),
-    shiny::tags$head(
-      shiny::tags$link(rel = "stylesheet", href = "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"),
-      shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
-      shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet"),
-      shiny::tags$style(type = "text/css", get_theme_css(config$theme))
-    ),
-    shiny::uiOutput("adapted_study_ui")
-  )
-
-  server <- function(input, output, session) {
-    # ...existing code...
-    output$adapted_study_ui <- shiny::renderUI({
-      complete_ui(
-        config = config,
-        item_bank = item_bank,
-        current_item = rv$current_item %||% 1,
-        responses = rv$responses,
-        progress = if (!is.null(rv$current_item)) (rv$current_item / config$max_items) * 100 else 0,
-        phase = rv$stage %||% "introduction"
-      )
-    })
-    # ...existing code...
+  ui <- function() {
+    complete_ui(
+      config = config,
+      item_bank = item_bank,
+      current_item = rv$current_item %||% 1,
+      responses = rv$responses,
+      progress = if (!is.null(rv$current_item)) (rv$current_item / config$max_items) * 100 else 0,
+      phase = rv$stage %||% "introduction"
+    )
   }
   
   server <- function(input, output, session) {
@@ -1220,49 +1205,34 @@ css <- if (!base::is.null(custom_css)) {
         DT::formatStyle(columns = base::names(dat), color = 'var(--text-color)', fontFamily = 'var(--font-family)')
     })
     
-    output$recommendations <- shiny::renderUI({
-      shiny::req(rv$cat_result)
-      recs <- base::tryCatch(
-        config$recommendation_fun(if (config$adaptive) rv$cat_result$theta else base::mean(rv$cat_result$responses, na.rm = TRUE), rv$demo_data),
-        error = function(e) {
-          logger(base::sprintf("Recommendation function error: %s", e$message))
-          NULL
+    output$study_ui <- shiny::renderUI({
+      if (!rv$session_active) {
+        return(
+          shiny::div(class = "assessment-card",
+              shiny::h3(ui_labels$timeout_message, class = "card-header"),
+              shiny::div(class = "nav-buttons",
+                  shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee")
+              )
+          )
+        )
+      }
+      switch(rv$stage,
+        "demographics" = {
+          create_demographics_ui(config$demographics, config$input_types)
+        },
+        "test" = {
+          if (is.null(rv$current_item)) {
+            return(shiny::div(class = "assessment-card",
+              shiny::h3("Loading next item...", class = "card-header")))
+          }
+          item <- get_item_content(rv$current_item)
+          create_response_ui(item, config$response_ui_type %||% "radio")
+        },
+        "results" = {
+          inrep::inrep_results_ui(config, rv$cat_result, save_format)
         }
       )
-      if (base::is.null(recs) || base::length(recs) == 0) {
-        shiny::p("No recommendations available.")
-      } else {
-        shiny::tags$ul(class = "recommendation-list", base::lapply(recs, shiny::tags$li))
-      }
     })
-    
-    output$save_report <- shiny::downloadHandler(
-      filename = function() {
-        base::paste0(config$study_key %||% "study", "_", base::format(base::Sys.time(), "%Y%m%d_%H%M%S"), ".", save_format)
-      },
-      content = function(file) {
-        report_data <- base::as.list(base::list(
-          config = config,
-          demographics = base::as.list(rv$demo_data),
-          theta = if (config$adaptive) rv$cat_result$theta else NULL,
-          se = if (config$adaptive) rv$cat_result$se else NULL,
-          administered = item_bank$Question[rv$cat_result$administered],
-          responses = rv$cat_result$responses,
-          response_times = rv$cat_result$response_times,
-          recommendations = config$recommendation_fun(if (config$adaptive) rv$cat_result$theta else base::mean(rv$cat_result$responses, na.rm = TRUE), rv$demo_data),
-          timestamp = base::Sys.time(),
-          theta_history = if (config$adaptive) base::unlist(rv$theta_history) else NULL,
-          se_history = if (config$adaptive) base::unlist(rv$se_history) else NULL
-        ))
-        if (save_format == "pdf") {
-          safe_title <- gsub("[_%&#$]", "\\\\\\0", config$name)
-          latex_content <- sprintf('
-            \\documentclass{article}
-            \\usepackage{geometry}
-            \\usepackage{booktabs}
-            \\usepackage[utf8]{inputenc}
-            \\usepackage{amsmath}
-            \\usepackage{fontspec}
             \\setmainfont{Inter}
             \\geometry{margin=0.75in}
             \\begin{document}
