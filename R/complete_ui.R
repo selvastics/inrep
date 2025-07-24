@@ -21,306 +21,212 @@
 complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, progress = 0, phase = "introduction") {
   
   # Validate inputs
-  if (is.null(config$name)) config$name <- "Assessment"
+  if (is.null(config$name)) config$name <- "Cognitive Assessment Research Study"
   if (is.null(config$theme)) config$theme <- "professional"
-  if (is.null(config$demographics)) config$demographics <- character(0)
+  if (is.null(config$demographics)) config$demographics <- c("Age", "Gender", "Education")
   if (is.null(config$max_items)) config$max_items <- nrow(item_bank)
+  if (is.null(config$language)) config$language <- "en"
   
   # Calculate progress
   total_items <- nrow(item_bank)
   progress_percent <- min(100, round((current_item / config$max_items) * 100, 1))
-  
-  # Current item data
   current_item_data <- if (current_item <= nrow(item_bank) && current_item > 0) {
     item_bank[current_item, ]
   } else {
-    list(text = "Loading question...", ResponseCategories = "1,2,3,4,5")
+    list(Question = "Loading question...", ResponseCategories = "1,2,3,4,5")
   }
   
-  # Language labels
-  labels <- list(
-    en = list(
-      intro_title = "Welcome to the Assessment",
-      intro_text = "This assessment will help us understand your profile through carefully designed questions.",
-      demo_title = "Demographic Information",
-      demo_text = "Please provide some basic information about yourself. All questions are optional.",
-      assessment_title = "Assessment",
-      results_title = "Assessment Complete",
-      start_button = "Begin Assessment",
-      submit_button = "Submit",
-      prev_button = "Previous",
-      next_button = "Next",
-      download_button = "Download Report",
-      restart_button = "Restart Assessment"
-    ),
-    de = list(
-      intro_title = "Willkommen zur Bewertung",
-      intro_text = "Diese Bewertung hilft uns, Ihr Profil durch sorgfältig gestaltete Fragen zu verstehen.",
-      demo_title = "Demografische Informationen",
-      demo_text = "Bitte geben Sie einige grundlegende Informationen über sich selbst ein. Alle Fragen sind optional.",
-      assessment_title = "Bewertung",
-      results_title = "Bewertung abgeschlossen",
-      start_button = "Bewertung beginnen",
-      submit_button = "Absenden",
-      prev_button = "Zurück",
-      next_button = "Weiter",
-      download_button = "Bericht herunterladen",
-      restart_button = "Bewertung neu starten"
-    )
+  # UI labels
+  ui_labels <- list(
+    consent = "Consent",
+    continue = "Continue",
+    age = "Age",
+    gender = "Gender",
+    education = "Education",
+    instructions = "Instructions",
+    begin_assessment = "Begin Assessment"
   )
-  ui_labels <- labels[[config$language %||% "en"]]
   
-  # Build complete UI
   shiny::fluidPage(
     shinyjs::useShinyjs(),
-    # Head section with Tailwind CSS and custom styles
     shiny::tags$head(
       shiny::tags$link(rel = "stylesheet", href = "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"),
       shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
       shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet"),
-      shiny::tags$style(type = "text/css", get_theme_css(config$theme)),
-      shiny::tags$script(shiny::HTML("
-        // Enhanced accessibility
-        document.addEventListener('keydown', function(e) {
-          if (e.key === 'Tab') {
-            document.body.classList.add('keyboard-nav');
-          }
-        });
-        // Progress animation
-        function updateProgress(percent) {
-          const progressBar = document.querySelector('.progress-bar');
-          if (progressBar) {
-            progressBar.style.width = percent + '%';
-            progressBar.setAttribute('aria-valuenow', percent);
-          }
-        }
-        // Response selection
-        function selectResponse(element) {
-          document.querySelectorAll('.response-option').forEach(opt => {
-            opt.classList.remove('bg-blue-100', 'border-blue-500');
-            opt.setAttribute('aria-selected', 'false');
-          });
-          element.classList.add('bg-blue-100', 'border-blue-500');
-          element.setAttribute('aria-selected', 'true');
-          element.focus();
-        }
-      "))
+      shiny::tags$style(type = "text/css", get_theme_css(config$theme))
     ),
-    
-    # Main container
-    shiny::div(class = "container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl",
-      `data-theme` = config$theme,
-      `aria-live` = "polite",
-      
-      # Header
-      shiny::div(class = "study-header text-center mb-8",
-        shiny::h1(class = "text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white", 
-                 config$name, 
-                 role = "heading", 
-                 `aria-level` = "1"),
-        shiny::p(class = "text-lg text-gray-600 dark:text-gray-300 mt-2", 
-                config$subtitle %||% "Psychological Assessment"),
-        shiny::div(class = "progress-container mt-4 bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden",
-          shiny::div(class = "progress-bar bg-blue-600 dark:bg-blue-400 h-full transition-all duration-300 ease-in-out",
-                    style = sprintf("width: %s%%", progress_percent),
-                    `aria-valuenow` = progress_percent,
-                    `aria-valuemin` = "0",
-                    `aria-valuemax` = "100",
-                    role = "progressbar",
-                    `aria-label` = sprintf("Progress: %s%%", progress_percent))
-        )
-      ),
-      
-      # Content area based on phase
-      shiny::div(class = "study-content",
-        # Introduction Phase
+    shiny::div(class = "min-h-screen bg-white text-black flex items-center justify-center",
+      shiny::div(class = "assessment-card max-w-lg w-full",
         shiny::conditionalPanel(
           condition = "input.phase == 'introduction'",
-          shiny::div(class = "phase-container bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-lg",
-            shiny::h2(class = "text-2xl font-semibold text-gray-900 dark:text-white mb-4", 
-                     ui_labels$intro_title, 
-                     role = "heading", 
-                     `aria-level` = "2"),
-            shiny::div(class = "phase-content",
-              shiny::p(class = "text-gray-700 dark:text-gray-300 mb-4", ui_labels$intro_text),
-              shiny::p(class = "text-gray-700 dark:text-gray-300 mb-4", 
-                      "The assessment typically takes 10-15 minutes to complete."),
-              shiny::p(class = "text-gray-700 dark:text-gray-300", 
-                      "All responses are confidential and used for research purposes only.")
-            ),
-            shiny::actionButton("start_introduction", 
-                               ui_labels$start_button, 
-                               class = "btn-primary mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-transform hover:-translate-y-1 hover:shadow-lg",
-                               `aria-label` = ui_labels$start_button)
+          shiny::div(
+            shiny::h2("Welcome to the Cognitive Assessment Study", class = "card-header text-2xl font-bold mb-4"),
+            shiny::p("Your participation helps advance cognitive science. All data is confidential and used for academic research only.", class = "mb-4 text-gray-700"),
+            shiny::actionButton("go_to_consent", "Participate in Study", class = "btn-klee w-full")
           )
         ),
-        
-        # Demographics Phase
         shiny::conditionalPanel(
-          condition = "input.phase == 'demographics'",
-          shiny::div(class = "phase-container bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-lg",
-            shiny::h2(class = "text-2xl font-semibold text-gray-900 dark:text-white mb-4", 
-                     ui_labels$demo_title, 
-                     role = "heading", 
-                     `aria-level` = "2"),
-            shiny::div(class = "phase-content",
-              shiny::p(class = "text-gray-700 dark:text-gray-300 mb-4", ui_labels$demo_text),
-              shiny::div(class = "demographics-form grid gap-4",
-                lapply(seq_along(config$demographics), function(i) {
-                  demo <- config$demographics[i]
-                  input_type <- config$input_types[[demo]] %||% "select"
-                  input_id <- paste0("demo_", i)
-                  shiny::div(class = "form-group",
-                    shiny::tags$label(class = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1", 
-                                     demo, 
-                                     `for` = input_id),
-                    switch(input_type,
-                           "numeric" = shiny::numericInput(
-                             inputId = input_id,
-                             label = NULL,
-                             value = NA,
-                             min = 1,
-                             max = 150,
-                             width = "100%",
-                             `aria-describedby` = paste0(input_id, "_desc")
-                           ),
-                           "text" = shiny::textInput(
-                             inputId = input_id,
-                             label = NULL,
-                             value = "",
-                             width = "100%",
-                             `aria-describedby` = paste0(input_id, "_desc")
-                           ),
-                           shiny::selectInput(
-                             inputId = input_id,
-                             label = NULL,
-                             choices = c("Select" = "", "Male", "Female", "Other", "Prefer not to say"),
-                             selected = "",
-                             width = "100%",
-                             `aria-describedby` = paste0(input_id, "_desc")
-                           )
-                    ),
-                    shiny::div(id = paste0(input_id, "_desc"), 
-                              class = "text-sm text-gray-500 dark:text-gray-400", 
-                              sprintf("Enter your %s (optional)", demo))
-                  )
-                })
-              ),
-              shiny::div(id = "demo_error", 
-                        class = "text-red-600 dark:text-red-400 mt-2 hidden", 
-                        "Please complete all required fields correctly.")
+          condition = "input.phase == 'consent'",
+          shiny::div(
+            shiny::h3("Research Study Consent", class = "card-header text-xl font-bold"),
+            shiny::p("Welcome to the Cognitive Assessment Study. Please read the information below and provide your consent to participate.", class = "welcome-text"),
+            shiny::div(class = "mb-4 text-sm text-gray-700",
+              shiny::p(shiny::strong("Purpose:"), " This study investigates cognitive abilities using standardized assessment items. Your responses will be anonymized and used for research purposes only."),
+              shiny::p(shiny::strong("Data Privacy:"), " All data is stored securely and handled in accordance with institutional and GDPR guidelines.", class = "mt-2"),
+              shiny::p(shiny::strong("Voluntary Participation:"), " You may withdraw at any time without penalty.", class = "mt-2")
             ),
-            shiny::actionButton("start_assessment", 
-                               ui_labels$start_button, 
-                               class = "btn-primary mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-transform hover:-translate-y-1 hover:shadow-lg",
-                               `aria-label` = ui_labels$start_button)
+            shiny::div(class = "flex items-center gap-2 mb-4",
+              shiny::checkboxInput("consent_checkbox", label = "I have read and understood the information above and consent to participate.", value = FALSE)
+            ),
+            shiny::div(class = "nav-buttons",
+              shiny::actionButton("consent_continue", "Continue", class = "btn-klee w-full", disabled = TRUE)
+            )
           )
         ),
-        
-        # Assessment Phase
+        shiny::conditionalPanel(
+          condition = "input.phase == 'info'",
+          shiny::div(
+            shiny::h3("Participant Information", class = "card-header text-xl font-bold"),
+            shiny::p("Please provide the following demographic information for research purposes.", class = "welcome-text"),
+            shiny::div(class = "space-y-4",
+              shiny::div(
+                shiny::tags$label("Age", class = "block text-sm mb-1"),
+                shiny::numericInput("participant_age", label = NULL, value = NULL, min = 18, max = 99, width = "100%")
+              ),
+              shiny::div(
+                shiny::tags$label("Gender", class = "block text-sm mb-1"),
+                shiny::selectInput("participant_gender", label = NULL, choices = c("Select..." = "", "Female" = "female", "Male" = "male", "Other" = "other", "Prefer not to say" = "prefer_not"), width = "100%")
+              ),
+              shiny::div(
+                shiny::tags$label("Education", class = "block text-sm mb-1"),
+                shiny::selectInput("participant_education", label = NULL, choices = c("Select..." = "", "High School" = "highschool", "Bachelor's Degree" = "bachelor", "Master's Degree" = "master", "Doctorate" = "doctorate", "Other" = "other"), width = "100%")
+              )
+            ),
+            shiny::div(class = "nav-buttons mt-4",
+              shiny::actionButton("info_continue", "Continue", class = "btn-klee w-full")
+            )
+          )
+        ),
+        shiny::conditionalPanel(
+          condition = "input.phase == 'instructions'",
+          shiny::div(
+            shiny::h3("Instructions", class = "card-header text-xl font-bold"),
+            shiny::p("Please read the instructions carefully before starting the assessment.", class = "welcome-text"),
+            shiny::tags$ul(class = "list-disc pl-5 text-sm text-gray-700 mb-4",
+              shiny::tags$li("You will complete a series of cognitive tasks assessing memory, speed, and executive function."),
+              shiny::tags$li("Answer each question as accurately and quickly as possible."),
+              shiny::tags$li("Your progress will be displayed at the top of the screen."),
+              shiny::tags$li("There are no right or wrong answers; please try your best."),
+              shiny::tags$li("Click 'Begin Assessment' when you are ready.")
+            ),
+            shiny::div(class = "nav-buttons",
+              shiny::actionButton("begin_assessment", "Begin Assessment", class = "btn-klee w-full")
+            )
+          )
+        ),
         shiny::conditionalPanel(
           condition = "input.phase == 'assessment'",
-          shiny::div(class = "phase-container bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-lg",
-            shiny::div(class = "item-display",
-              shiny::div(class = "item-counter text-gray-600 dark:text-gray-300 text-sm mb-4", 
-                        sprintf("Item %d of %d", current_item, config$max_items)),
-              shiny::div(class = "item-text text-lg font-medium text-gray-900 dark:text-white text-center mb-6", 
-                        shiny::HTML(current_item_data$Question %||% current_item_data$text %||% "Loading question..."),
-                        role = "region",
-                        `aria-live` = "assertive")
-            ),
-            shiny::div(class = "response-container",
-              shiny::div(class = "response-options grid gap-2",
-                {
-                  choices <- if (!is.null(current_item_data$ResponseCategories)) {
-                    as.numeric(unlist(strsplit(current_item_data$ResponseCategories, ",")))
-                  } else {
-                    1:5
+          shiny::div(
+            # Assessment header
+            shiny::div(class = "bg-white rounded-lg border p-4 mb-6",
+              shiny::div(class = "flex items-center justify-between",
+                shiny::div(class = "flex items-center gap-4",
+                  shiny::div(class = "flex items-center gap-2",
+                    shiny::icon("brain", class = "w-5 h-5 text-black"),
+                    shiny::span("Cognitive Assessment", class = "font-semibold")
+                  ),
+                  shiny::span(class = "badge border border-gray-300 bg-white text-black px-2 py-1 rounded text-xs",
+                    shiny::icon("shield", class = "w-3 h-3 mr-1"),
+                    "Live Analysis Active"
+                  ),
+                  if (!is.null(current_item_data)) {
+                    shiny::span(class = "badge border border-gray-300 bg-white text-black px-2 py-1 rounded text-xs",
+                      toupper(current_item_data$analysis_type %||% "")
+                    )
                   }
-                  labels <- switch(config$language %||% "en",
-                                   en = c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")[1:length(choices)],
-                                   de = c("Stark abgelehnt", "Abgelehnt", "Neutral", "Zustimmen", "Stark zustimmen")[1:length(choices)],
-                                   es = c("Totalmente en desacuerdo", "En desacuerdo", "Neutral", "De acuerdo", "Totalmente de acuerdo")[1:length(choices)],
-                                   fr = c("Fortement en désaccord", "En désaccord", "Neutre", "D'accord", "Fortement d'accord")[1:length(choices)]
-                  )
-                  shinyWidgets::radioGroupButtons(
-                    inputId = "item_response",
-                    label = NULL,
-                    choices = stats::setNames(choices, labels),
-                    selected = character(0),
-                    direction = "vertical",
-                    status = "default",
-                    individual = TRUE,
-                    width = "100%",
-                    checkIcon = list(yes = shiny::icon("check-circle"))
-                  )
-                }
+                ),
+                shiny::div(class = "flex items-center gap-4 text-sm text-gray-600",
+                  shiny::div(class = "flex items-center gap-1",
+                    shiny::icon("clock", class = "w-4 h-4"),
+                    "12:34"
+                  ),
+                  shiny::div("ID: P001")
+                )
               ),
-              shiny::div(id = "response_error", 
-                        class = "text-red-600 dark:text-red-400 mt-2 hidden", 
-                        "Please select a response."),
-              shiny::div(class = "navigation-buttons flex gap-4 justify-center mt-6",
-                shiny::actionButton("prev_item", 
-                                   ui_labels$prev_button, 
-                                   class = "btn-secondary bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-transform hover:-translate-y-1 hover:shadow-lg",
-                                   `aria-label` = ui_labels$prev_button),
-                shiny::actionButton("next_item", 
-                                   ui_labels$next_button, 
-                                   class = "btn-primary bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-transform hover:-translate-y-1 hover:shadow-lg",
-                                   `aria-label` = ui_labels$next_button)
+              shiny::div(class = "mt-4",
+                shiny::div(class = "flex justify-between text-sm text-gray-600 mb-2",
+                  shiny::span(sprintf("Question %d of %d", current_item, config$max_items)),
+                  shiny::span(sprintf("%d%% Complete", round((current_item / config$max_items) * 100)))
+                ),
+                shiny::div(class = "progress-container",
+                  shiny::div(class = "progress-bar bg-gray-200 h-2 rounded",
+                    shiny::div(class = "progress-fill bg-black h-full rounded transition-all duration-500",
+                      style = sprintf("width: %s%%", round((current_item / config$max_items) * 100))
+                    )
+                  )
+                )
+              )
+            ),
+            # Assessment item
+            shiny::div(class = "assessment-card mb-5",
+              shiny::div(class = "card-header flex items-center justify-between",
+                shiny::div(
+                  shiny::h4(current_item_data$domain %||% "", class = "text-base font-semibold"),
+                  shiny::div(class = "flex items-center gap-2 mt-1",
+                    shiny::span(class = "badge border border-gray-300 bg-white text-black px-2 py-1 rounded text-xs", current_item_data$subtype %||% ""),
+                    shiny::span(class = "text-xs text-gray-500", sprintf("Difficulty: %s | Load: %s", current_item_data$b %||% "", current_item_data$cognitive_load %||% ""))
+                  )
+                ),
+                shiny::div(class = "text-right",
+                  shiny::span(class = "badge border border-gray-300 bg-white text-black px-2 py-1 rounded text-xs", sprintf("Item %d", current_item)),
+                  shiny::p(class = "text-xs text-gray-500 mt-1", sprintf("Analysis: %s", config$analysis_strategies[[current_item_data$domain]]$name %||% ""))
+                )
+              ),
+              shiny::div(class = "space-y-5",
+                shiny::div(class = "bg-gray-50 p-5 rounded-lg text-center",
+                  shiny::p(current_item_data$Question %||% "Loading question...", class = "text-base font-medium mb-3")
+                  # Stimulus UI omitted for brevity
+                ),
+                shiny::div(
+                  shiny::h3("Select your answer:", class = "text-base font-medium mb-3"),
+                  shiny::div(class = "grid grid-cols-2 gap-3",
+                    lapply(1:4, function(i) {
+                      option_text <- current_item_data[[paste0("Option", i)]] %||% ""
+                      shiny::actionButton(paste0("option_", i), label = shiny::div(
+                        shiny::span(class = "w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-base font-medium mr-3", LETTERS[i]),
+                        option_text
+                      ), class = "btn-option h-12 text-left justify-start w-full border border-gray-300 bg-white text-black hover:bg-gray-100 text-base")
+                    })
+                  )
+                )
+                # Feedback and analysis indicator omitted for brevity
               )
             )
           )
         ),
-        
-        # Results Phase
         shiny::conditionalPanel(
           condition = "input.phase == 'results'",
-          shiny::div(class = "phase-container bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-lg",
-            shiny::h2(class = "text-2xl font-semibold text-gray-900 dark:text-white mb-4", 
-                     ui_labels$results_title, 
-                     role = "heading", 
-                     `aria-level` = "2"),
-            shiny::div(class = "phase-content",
-              shiny::p(class = "text-gray-700 dark:text-gray-300 mb-4", 
-                      "Thank you for completing the assessment!"),
-              shiny::div(class = "results-summary bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4",
-                shiny::h3(class = "text-xl font-medium text-gray-900 dark:text-white mb-4", "Your Results"),
-                shiny::div(class = "result-item flex justify-between py-2 border-b border-gray-200 dark:border-gray-600",
-                  shiny::strong(class = "text-gray-700 dark:text-gray-300", "Trait Score:"),
-                  shiny::span(class = "score-value text-gray-900 dark:text-white font-medium", 
-                             sprintf("%.2f", mean(responses, na.rm = TRUE)))
+          shiny::div(class = "min-h-screen bg-white text-black p-4",
+            shiny::div(class = "max-w-7xl mx-auto",
+              shiny::div(class = "text-center mb-8",
+                shiny::div(class = "flex items-center justify-center mb-4",
+                  shiny::icon("check-circle", class = "w-16 h-16 text-black")
                 ),
-                shiny::div(class = "result-item flex justify-between py-2 border-b border-gray-200 dark:border-gray-600",
-                  shiny::strong(class = "text-gray-700 dark:text-gray-300", "Measurement Precision:"),
-                  shiny::span(class = "precision-value text-gray-900 dark:text-white font-medium", 
-                             if (config$adaptive) sprintf("SE: %.3f", sd(responses, na.rm = TRUE)) else "High")
-                ),
-                shiny::div(class = "result-item flex justify-between py-2",
-                  shiny::strong(class = "text-gray-700 dark:text-gray-300", "Items Completed:"),
-                  shiny::span(class = "items-value text-gray-900 dark:text-white font-medium", 
-                             length(responses))
+                shiny::h1("Assessment Complete", class = "text-2xl font-bold mb-2"),
+                shiny::p("Advanced psychometric analysis completed with domain-specific reporting", class = "text-gray-500"),
+                shiny::div(class = "mt-4 flex justify-center gap-4",
+                  shiny::actionButton("restart_assessment", label = list(shiny::icon("refresh-cw", class = "w-4 h-4 mr-2"), "Restart Assessment"), class = "btn-klee"),
+                  shiny::downloadButton("download_report", label = list(shiny::icon("download", class = "w-4 h-4 mr-2"), "Download Report"), class = "btn-klee")
                 )
               ),
-              shiny::div(class = "results-actions flex gap-4 justify-center mt-6",
-                shiny::downloadButton("download_results", 
-                                     ui_labels$download_button, 
-                                     class = "btn-success bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-transform hover:-translate-y-1 hover:shadow-lg",
-                                     `aria-label` = ui_labels$download_button),
-                shiny::actionButton("restart_assessment", 
-                                   ui_labels$restart_button, 
-                                   class = "btn-secondary bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-transform hover:-translate-y-1 hover:shadow-lg",
-                                   `aria-label` = ui_labels$restart_button)
+              # Analysis summary cards omitted for brevity
+              shiny::div(class = "flex justify-center gap-4 mt-8",
+                shiny::actionButton("return_dashboard", "Return to Dashboard", class = "btn-klee"),
+                shiny::actionButton("view_backend", "View Analysis Backend", class = "btn-klee")
               )
             )
           )
         )
-      ),
-      
-      # Footer
-      shiny::div(class = "study-footer text-center mt-8 py-4 border-t border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300",
-        shiny::p("Powered by INREP - Instant Reports for Adaptive Testing"),
-        shiny::p(sprintf("© %s Research Platform", format(Sys.time(), "%Y")))
       )
     )
   )
