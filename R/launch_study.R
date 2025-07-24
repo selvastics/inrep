@@ -1507,7 +1507,7 @@ css <- if (!base::is.null(custom_css)) {
   }
   
   shiny::shinyApp(ui = ui, server = server)
-}
+} # End of launch_study function
 #' Generate LLM Prompt for Study Deployment Optimization
 #'
 #' @description
@@ -1623,3 +1623,4 @@ generate_study_deployment_prompt <- function(study_config,
   
   return(prompt)
 }
+
