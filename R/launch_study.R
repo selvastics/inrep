@@ -695,8 +695,9 @@
 #' @importFrom tinytex latexmk
 #' @importFrom logr log_print
 launch_study <- function(
-    config,
-    item_bank,
+    config_or_item_bank,
+    item_bank = NULL,
+    theme = "light",
     custom_css = NULL,
     theme_config = NULL,
     webdav_url = NULL, 
@@ -705,13 +706,21 @@ launch_study <- function(
     logger = function(msg, ...) print(msg),
     ...
 ) {
-  
+  # Allow launch_study(bfi_items) or launch_study(config, bfi_items, ...)
+  if (is.data.frame(config_or_item_bank) && is.null(item_bank)) {
+    item_bank <- config_or_item_bank
+    config <- create_study_config(theme = theme)
+  } else if (!is.null(item_bank)) {
+    config <- config_or_item_bank
+    if (is.null(config$theme)) config$theme <- theme
+  } else {
+    stop("Invalid arguments: must provide either item_bank or config + item_bank")
+  }
   # Input validation
   extra_params <- list(...)
   if (length(extra_params) > 0) {
     logger(paste("Ignoring unused parameters:", paste(names(extra_params), collapse = ", ")), level = "INFO")
   }
-  
   if (base::is.null(config)) {
     logger("Configuration is NULL", level = "ERROR")
     base::stop("Configuration is NULL")
@@ -724,37 +733,7 @@ launch_study <- function(
     logger("Invalid save_format", level = "ERROR")
     base::stop("Invalid save_format")
   }
-  
-  # Cloud storage validation
-  if (!base::is.null(webdav_url) || !base::is.null(password)) {
-    if (base::is.null(webdav_url) && !base::is.null(password)) {
-      logger("Password provided without WebDAV URL", level = "ERROR")
-      base::stop("Cloud storage requires both 'webdav_url' and 'password' arguments.\n",
-           "You provided a password but no WebDAV URL.\n",
-           "Please provide both arguments together:\n",
-           "  webdav_url = \"https://your-cloud-storage.com/path/\"\n",
-           "  password = \"your-access-password\"\n",
-           "Or remove both arguments to use local storage only.")
-    }
-    if (!base::is.null(webdav_url) && base::is.null(password)) {
-      logger("WebDAV URL provided without password", level = "ERROR")
-      base::stop("Cloud storage requires both 'webdav_url' and 'password' arguments.\n",
-           "You provided a WebDAV URL but no password.\n",
-           "Please provide both arguments together:\n",
-           "  webdav_url = \"", webdav_url, "\"\n",
-           "  password = \"your-access-password\"\n",
-           "For security, consider using: password = Sys.getenv(\"WEBDAV_PASSWORD\")")
-    }
-    if (!base::is.null(webdav_url) && !base::is.null(password)) {
-      # Validate URL format
-      if (!grepl("^https?://", webdav_url)) {
-        logger("Invalid WebDAV URL format", level = "ERROR")
-        base::stop("WebDAV URL must start with 'http://' or 'https://'\n",
-             "Provided: ", webdav_url, "\n",
-             "Example: webdav_url = \"https://sync.academiccloud.de/index.php/s/YourFolder/\"")
-      }
-      logger("Cloud storage enabled with WebDAV URL and password", level = "INFO")
-      print(paste("Cloud storage enabled:", webdav_url))
+  # ...existing code...
     }
   } else {
     logger("Using local storage only (no cloud backup)", level = "INFO")
