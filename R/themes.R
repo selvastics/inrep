@@ -46,8 +46,8 @@ get_theme_css <- function(theme = "light", theme_config = NULL) {
     "cognitive-accessible" = list(bg = "#fffef7", text = "#1a1a1a", accent = "#1976d2", border = "#757575", font = "22px", button = "75px")
   )
   
-  # Default to light if theme not found
-  if (!theme %in% names(themes)) theme <- "light"
+  # Default to dyslexia-friendly if theme not found
+  if (!theme %in% names(themes)) theme <- "dyslexia-friendly"
   vars <- themes[[theme]]
   
   # Ultra-efficient CSS (<200 lines)
