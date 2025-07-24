@@ -1,4 +1,6 @@
+
 # File: launch_study.R
+#' @importFrom magrittr %>%
 
 #' Launch Adaptive Study Interface
 #'
