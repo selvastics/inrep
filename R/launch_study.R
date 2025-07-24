@@ -118,46 +118,7 @@
 #' launch_study(config, item_bank)
 #' 
 #' # With cloud backup
-#' launch_study(
-#'   config, 
-#'   item_bank,
-#'   webdav_url = "https://sync.academiccloud.de/index.php/s/YourFolder/",
-#'   password = Sys.getenv("WEBDAV_PASSWORD")
-#' )
-#' }
-#'
-#' @section Installation and Dependencies:
-#' \strong{Required Packages:} Ensure all dependencies are installed for full functionality:
-#' \preformatted{
-#' # Core psychometric engine
-#' install.packages("TAM")
-#' 
-#' # Interface and visualization  
-#' install.packages(c("shiny", "DT", "ggplot2", "plotly"))
-#' 
-#' # Data processing and utilities
-#' install.packages(c("dplyr", "jsonlite", "logr"))
-#' 
-#' # Install inrep package
-#' devtools::install_github("selvastics/inrep")
-#' }
-#' 
-#' \strong{System Requirements:}
-#' \itemize{
-#'   \item R version 4.0.0 or higher for optimal TAM compatibility
-#'   \item Minimum 4GB RAM for medium-scale assessments (>500 participants)
-#'   \item Modern web browser with JavaScript enabled for Shiny interface
-#'   \item Network connectivity for cloud storage features (optional)
-#' }
-#'
-#' @section Performance Optimization:
-#' For large-scale deployments and high-performance requirements:
-#' 
-#' \strong{Computational Settings:}
-#' \itemize{
-#'   \item Enable \code{parallel_computation = TRUE} in config for faster TAM estimation
-#'   \item Use \code{cache_enabled = TRUE} to cache item information calculations
-#'   \item Specify optimal \code{theta_grid} density based on precision requirements
+            # [REMOVED: LaTeX code block for CRAN compliance]
 #'   \item Consider \code{auto_scaling = TRUE} for cloud-based deployments
 #' }
 #' 
@@ -716,9 +677,6 @@ launch_study <- function(
     if (is.null(config$theme)) config$theme <- theme
   } else {
     stop("Invalid arguments: must provide either item_bank or config + item_bank")
-  }
-  # Input validation
-  extra_params <- list(...)
   if (length(extra_params) > 0) {
     logger(paste("Ignoring unused parameters:", paste(names(extra_params), collapse = ", ")), level = "INFO")
   }
@@ -1126,352 +1084,355 @@ css <- if (!base::is.null(custom_css)) {
              }
       )
     })
-    
-    output$theta_plot <- shiny::renderPlot({
-      if (!config$adaptive || base::length(rv$theta_history) < 2) return(NULL)
-      data <- base::data.frame(
-        Item = base::seq_along(rv$theta_history),
-        Theta = base::unlist(rv$theta_history),
-        SE = base::unlist(rv$se_history)
-      )
-      # Use static color based on theme or default
-      plot_color <- if (!base::is.null(theme_config)) {
-        theme_config$primary_color %||% "#212529"
-      } else {
-        base::switch(base::tolower(config$theme %||% "Light"),
-               "light" = "#212529",
-               "midnight" = "#1a1a1a",
-               "sunset" = "#ff6f61",
-               "forest" = "#2e7d32",
-               "ocean" = "#0288d1",
-               "berry" = "#c2185b",
-               "#212529") # Default to Light theme color
-      }
-      ggplot2::ggplot(data, ggplot2::aes(x = Item, y = Theta)) +
-        ggplot2::geom_line(color = plot_color) +
-        ggplot2::geom_ribbon(ggplot2::aes(ymin = Theta - SE, ymax = Theta + SE), alpha = 0.2, fill = plot_color) +
-        ggplot2::theme_minimal() +
-        ggplot2::labs(y = "Trait Score", x = "Item") +
-        ggplot2::theme(
-          text = ggplot2::element_text(family = "Inter", size = 12),
-          plot.title = ggplot2::element_text(face = "bold", size = 14),
-          axis.title = ggplot2::element_text(size = 12),
-          panel.grid = ggplot2::element_blank(),
-          axis.line = ggplot2::element_line(color = "#212529")
-        )
-    })
-    
-    output$item_table <- DT::renderDT({
-      if (base::is.null(rv$cat_result)) return()
-      items <- rv$cat_result$administered
-      responses <- rv$cat_result$responses
-      dat <- if (config$model == "GRM") {
-        base::data.frame(
-          Item = item_bank$Question[items],
-          Response = responses,
-          Time = base::round(rv$cat_result$response_times, 1),
-          check.names = FALSE
-        )
-      } else {
-        base::data.frame(
-          Item = item_bank$Question[items],
-          Response = base::ifelse(responses == 1, "Correct", "Incorrect"),
-          Correct = item_bank$Answer[items],
-          Time = base::round(rv$cat_result$response_times, 1),
-          check.names = FALSE
-        )
-      }
-      columnDefs <- base::list(
-        base::list(width = '50%', targets = 0),
-        base::list(width = '25%', targets = 1)
-      )
-      if (config$model == "GRM") {
-        columnDefs[[3]] <- base::list(width = '25%', targets = 2)
-      } else {
-        columnDefs[[3]] <- base::list(width = '25%', targets = 2)
-        columnDefs[[4]] <- base::list(width = '25%', targets = 3)
-      }
-      DT::datatable(
-        dat,
-        rownames = FALSE,
-        options = base::list(
-          dom = 't',
-          paging = FALSE,
-          searching = FALSE,
-          autoWidth = TRUE,
-          columnDefs = columnDefs
-        )
-      ) %>%
-        DT::formatStyle(columns = base::names(dat), color = 'var(--text-color)', fontFamily = 'var(--font-family)')
-    })
-    
-    output$study_ui <- shiny::renderUI({
-      if (!rv$session_active) {
-        return(
-          shiny::div(class = "assessment-card",
-              shiny::h3(ui_labels$timeout_message, class = "card-header"),
-              shiny::div(class = "nav-buttons",
-                  shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee")
-              )
-          )
-        )
-      }
-      switch(rv$stage,
-        "demographics" = {
-          create_demographics_ui(config$demographics, config$input_types)
-        },
-        "test" = {
-          if (is.null(rv$current_item)) {
-            return(shiny::div(class = "assessment-card",
-              shiny::h3("Loading next item...", class = "card-header")))
-          }
-          item <- get_item_content(rv$current_item)
-          create_response_ui(item, config$response_ui_type %||% "radio")
-        },
-        "results" = {
-          inrep::inrep_results_ui(config, rv$cat_result, save_format)
-        }
-      )
-    })
-            \\setmainfont{Inter}
-            \\geometry{margin=0.75in}
-            \\begin{document}
-            
-            \\title{%s}
-            \\author{}
-            \\date{%s}
-            \\maketitle
-            
-            \\section{Participant Information}
-            \\begin{tabular}{ll}
-            %s
-            \\end{tabular}
-            
-            \\section{Assessment Results}
-            \\begin{itemize}
-            %s
-                \\item \\textbf{Items Administered}: %d
-            \\end{itemize}
-            
-            \\section{Responses}
-            \\begin{table}[h]
-            \\centering
-            \\small
-            \\begin{tabular}{p{5cm}lp{2cm}}
-            \\toprule
-            \\textbf{Question} & \\textbf{Response} & \\textbf{Time (Sec.)} \\\\
-            \\midrule
-            %s
-            \\bottomrule
-            \\end{tabular}
-            \\caption{Individual Item Results}
-            \\end{table}
-            
-            \\section{Recommendations}
-            \\begin{itemize}
-            %s
-            \\end{itemize}
-            
-            \\end{document}
-            ',
-                                   safe_title,
-                                   format(Sys.time(), "%B %d, %Y"),
-                                   base::paste(base::sapply(base::names(rv$demo_data), function(d) base::sprintf("%s & %s \\\\", d, rv$demo_data[d] %||% "N/A")), collapse = "\n"),
-                                   if (config$adaptive) base::sprintf("\\item \\textbf{Trait Score}: %.2f\n\\item \\textbf{Standard Error}: %.3f", rv$cat_result$theta, rv$cat_result$se) else "",
-                                   base::length(rv$cat_result$administered),
-                                   base::paste(base::sapply(base::seq_along(rv$cat_result$administered), function(i) {
-                                     base::sprintf("%s & %s & %.1f \\\\", 
-                                             item_bank$Question[rv$cat_result$administered[i]], 
-                                             rv$cat_result$responses[i],
-                                             rv$cat_result$response_times[i])
-                                   }), collapse = "\n"),
-                                   base::paste(base::sprintf("\\item %s", report_data$recommendations), collapse = "\n")
-          )
-          temp_dir <- base::tempdir()
-          tex_file <- base::file.path(temp_dir, "report.tex")
-          base::writeLines(latex_content, tex_file)
-          base::tryCatch({
-            tinytex::latexmk(tex_file, "pdflatex")
-            base::file.copy(base::paste0(tools::file_path_sans_ext(tex_file), ".pdf"), file)
-          }, error = function(e) {
-            logger(base::sprintf("PDF generation failed: %s", e$message))
-            jsonlite::write_json(report_data, file, pretty = TRUE, auto_unbox = TRUE)
-          })
-        } else if (save_format == "rds") {
-          base::saveRDS(report_data, file)
-        } else if (save_format == "csv") {
-          flat_data <- base::data.frame(
-            Timestamp = report_data$timestamp,
-            Theta = if (config$adaptive) report_data$theta else NA,
-            SE = if (config$adaptive) report_data$se else NA,
-            base::t(report_data$demographics),
-            Items = base::paste(report_data$administered, collapse = ";"),
-            Responses = base::paste(report_data$responses, collapse = ";"),
-            Response_Times = base::paste(report_data$response_times, collapse = ";"),
-            Recommendations = base::paste(report_data$recommendations, collapse = ";")
-          )
-          utils::write.csv(flat_data, file, row.names = FALSE)
-        } else if (save_format == "json") {
-          jsonlite::write_json(report_data, file, pretty = TRUE, auto_unbox = TRUE)
-        }
-      }
+    # Render theta plot
+output$theta_plot <- shiny::renderPlot({
+  if (!config$adaptive || length(rv$theta_history) < 2) return(NULL)
+  data <- data.frame(
+    Item = seq_along(rv$theta_history),
+    Theta = unlist(rv$theta_history),
+    SE = unlist(rv$se_history)
+  )
+  # Use static color based on theme or default
+  plot_color <- if (!is.null(theme_config)) {
+    theme_config$primary_color %||% "#212529"
+  } else {
+    switch(tolower(config$theme %||% "Light"),
+           "light" = "#212529",
+           "midnight" = "#1a1a1a",
+           "sunset" = "#ff6f61",
+           "forest" = "#2e7d32",
+           "ocean" = "#0288d1",
+           "berry" = "#c2185b",
+           "#212529") # Default to Light theme color
+  }
+  ggplot2::ggplot(data, ggplot2::aes(x = Item, y = Theta)) +
+    ggplot2::geom_line(color = plot_color) +
+    ggplot2::geom_ribbon(ggplot2::aes(ymin = Theta - SE, ymax = Theta + SE), alpha = 0.2, fill = plot_color) +
+    ggplot2::theme_minimal() +
+    ggplot2::labs(y = "Trait Score", x = "Item") +
+    ggplot2::theme(
+      text = ggplot2::element_text(family = "Inter", size = 12),
+      plot.title = ggplot2::element_text(face = "bold", size = 14),
+      axis.title = ggplot2::element_text(size = 12),
+      panel.grid = ggplot2::element_blank(),
+      axis.line = ggplot2::element_line(color = "#212529")
     )
-    
-    shiny::observe({
-      if (config$session_save) {
-        base::tryCatch({
-          base::saveRDS(shiny::reactiveValuesToList(rv), session_file)
-        }, error = function(e) {
-          logger(base::sprintf("Failed to save session: %s", e$message))
-        })
-      }
-    })
-    
-    shiny::observeEvent(input$start_test, {
-      rv$demo_data <- base::sapply(base::seq_along(config$demographics), function(i) {
-        val <- input[[base::paste0("demo_", i)]]
-        dem <- config$demographics[i]
-        input_type <- config$input_types[[dem]]
-        
-        if (input_type == "numeric") {
-          if (base::is.null(val) || base::is.na(val) || val == "") {
-            return(NA)
-          }
-          if (!base::is.numeric(val) || val < 1 || val > 150) {
-            rv$error_message <- ui_labels$age_error
-            logger(base::sprintf("Invalid age input: %s", val))
-            return(NA)
-          }
-          return(val)
-        } else {
-          if (base::is.null(val) || base::is.na(val) || val == "" || val == "Select") {
-            return(NA)
-          }
-          if (base::is.character(val)) {
-            val <- base::trimws(base::gsub("[<>\"&]", "", val))
-          }
-          return(val)
-        }
-      })
-      base::names(rv$demo_data) <- config$demographics
-      
-      non_age_dems <- base::setdiff(config$demographics, "Age")
-      if (base::length(non_age_dems) > 0 && base::all(base::is.na(rv$demo_data[non_age_dems]) | rv$demo_data[non_age_dems] == "")) {
-        rv$error_message <- ui_labels$demo_error
-        logger("Invalid non-age demographic inputs")
-        return()
-      }
-      
-      rv$error_message <- NULL
-      rv$stage <- "test"
-      rv$start_time <- base::Sys.time()
-      rv$current_item <- inrep::select_next_item(rv, item_bank, config)
-      logger("Demographic data validated, proceeding to test stage")
-    })
-    
-    shiny::observeEvent(input$submit_response, {
-      shiny::req(input$item_response, rv$current_item)
-      if (!config$response_validation_fun(input$item_response)) {
-        rv$error_message <- base::sprintf("Please select a valid response (%s).", config$language)
-        logger(base::sprintf("Invalid response submitted for item %d", rv$current_item))
-        return()
-      }
-      rv$error_message <- NULL
-      response_time <- base::as.numeric(base::difftime(base::Sys.time(), rv$start_time, units = "secs"))
-      rv$response_times <- base::c(rv$response_times, response_time)
-      item_index <- rv$current_item
-      correct_answer <- item_bank$Answer[item_index] %||% NULL
-      response_score <- base::tryCatch(
-        config$scoring_fun(input$item_response, correct_answer),
-        error = function(e) {
-          logger(base::sprintf("Scoring function error: %s", e$message))
-          if (config$model == "GRM") base::as.numeric(input$item_response) else base::as.numeric(input$item_response == correct_answer)
-        }
+})
+
+# Render item table
+output$item_table <- DT::renderDT({
+  if (is.null(rv$cat_result)) return(NULL)
+  items <- rv$cat_result$administered
+  responses <- rv$cat_result$responses
+  dat <- if (config$model == "GRM") {
+    data.frame(
+      Item = item_bank$Question[items] %||% rep("N/A", length(items)),
+      Response = responses %||% rep(NA, length(items)),
+      Time = round(rv$cat_result$response_times %||% rep(0, length(items)), 1),
+      check.names = FALSE
+    )
+  } else {
+    data.frame(
+      Item = item_bank$Question[items] %||% rep("N/A", length(items)),
+      Response = ifelse(responses == 1, "Correct", "Incorrect") %||% rep("N/A", length(items)),
+      Correct = item_bank$Answer[items] %||% rep("N/A", length(items)),
+      Time = round(rv$cat_result$response_times %||% rep(0, length(items)), 1),
+      check.names = FALSE
+    )
+  }
+  columnDefs <- list(
+    list(width = '50%', targets = 0),
+    list(width = '25%', targets = 1)
+  )
+  if (config$model == "GRM") {
+    columnDefs[[3]] <- list(width = '25%', targets = 2)
+  } else {
+    columnDefs[[3]] <- list(width = '12.5%', targets = 2)
+    columnDefs[[4]] <- list(width = '12.5%', targets = 3)
+  }
+  DT::datatable(
+    dat,
+    rownames = FALSE,
+    options = list(
+      dom = 't',
+      paging = FALSE,
+      searching = FALSE,
+      autoWidth = TRUE,
+      columnDefs = columnDefs
+    )
+  ) %>%
+    DT::formatStyle(columns = names(dat), color = 'var(--text-color)', fontFamily = 'var(--font-family)')
+})
+
+# Render study UI
+output$study_ui <- shiny::renderUI({
+  if (!rv$session_active) {
+    return(
+      shiny::div(class = "assessment-card",
+                 shiny::h3(ui_labels$timeout_message %||% "Session timed out", class = "card-header"),
+                 shiny::div(class = "nav-buttons",
+                            shiny::actionButton("restart_test", ui_labels$restart_button %||% "Restart", class = "btn-klee")
+                 )
       )
-      rv$responses <- base::c(rv$responses, response_score)
-      rv$administered <- base::c(rv$administered, item_index)
-      
-      if (config$adaptive) {
-        base::tryCatch({
-          ability <- inrep::estimate_ability(rv, item_bank, config)
-          rv$current_ability <- ability$theta
-          rv$current_se <- ability$se
-          logger(base::sprintf("Estimated ability: theta=%.2f, se=%.3f", ability$theta, ability$se))
-          rv$theta_history <- base::c(rv$theta_history, rv$current_ability)
-          rv$se_history <- base::c(rv$se_history, rv$current_se)
-        }, error = function(e) {
-          logger(base::sprintf("Ability estimation failed: %s", e$message))
-          rv$error_message <- "Error estimating ability. Please try again."
-          return()
-        })
-      }
-      
-      if (check_stopping_criteria()) {
-        rv$cat_result <- base::list(
-          theta = if (config$adaptive) rv$current_ability else base::mean(rv$responses, na.rm = TRUE),
-          se = if (config$adaptive) rv$current_se else NULL,
-          responses = rv$responses,
-          administered = rv$administered,
-          response_times = rv$response_times
-        )
-        rv$stage <- "results"
-        logger("Test completed, proceeding to results")
-        
-        # Save session to cloud if enabled
-        if (config$session_save && !base::is.null(webdav_url)) {
-          logger("Attempting to save session to cloud...")
-          inrep::save_session_to_cloud(rv, config, webdav_url, password)
-        }
-      } else {
-        rv$current_item <- inrep::select_next_item(rv, item_bank, config)
-        if (base::is.null(rv$current_item)) {
-          rv$cat_result <- base::list(
-            theta = if (config$adaptive) rv$current_ability else base::mean(rv$responses, na.rm = TRUE),
-            se = if (config$adaptive) rv$current_se else NULL,
-            responses = rv$responses,
-            administered = rv$administered,
-            response_times = rv$response_times
-          )
-          rv$stage = "results"
-          logger("No more items available, proceeding to results")
-          
-          # Save session to cloud if enabled
-          if (config$session_save && !base::is.null(webdav_url)) {
-            logger("Attempting to save session to cloud...")
-            inrep::save_session_to_cloud(rv, config, webdav_url, password)
-          }
-        } else {
-          rv$start_time <- base::Sys.time()
-          if (config$response_ui_type == "slider") {
-            shiny::updateSliderInput(session, "item_response", value = base::min(base::as.numeric(base::unlist(base::strsplit(item_bank$ResponseCategories[rv$current_item], ",")))))
-          } else if (config$response_ui_type == "dropdown") {
-            shiny::updateSelectInput(session, "item_response", selected = NULL)
-          } else {
-            shinyWidgets::updateRadioGroupButtons(session, "item_response", selected = base::character(0))
-          }
-        }
-      }
+    )
+  }
+  switch(rv$stage,
+         "demographics" = {
+           inrep::create_demographics_ui(config$demographics, config$input_types)
+         },
+         "test" = {
+           if (is.null(rv$current_item)) {
+             return(shiny::div(class = "assessment-card",
+                               shiny::h3("Loading next item...", class = "card-header")))
+           }
+           item <- inrep::get_item_content(rv$current_item)
+           inrep::create_response_ui(item, config$response_ui_type %||% "radio")
+         },
+         "results" = {
+           inrep::inrep_results_ui(config, rv$cat_result, save_format)
+         }
+  )
+})
+
+# Generate report (corrected LaTeX template)
+generate_report <- function(report_data, file, save_format) {
+  if (save_format == "pdf") {
+    safe_title <- gsub("[^[:alnum:]]", " ", report_data$title %||% "Assessment Report")
+    latex_content <- sprintf(
+      '\\documentclass{article}\n
+       \\usepackage[utf8]{inputenc}\n
+       \\usepackage{booktabs}\n
+       \\usepackage{caption}\n
+       \\begin{document}\n
+       \\title{%s}\n
+       \\date{%s}\n
+       \\maketitle\n
+       \\section{Participant Information}\n
+       \\begin{tabular}{ll}\n
+       %s\n
+       \\end{tabular}\n
+       \\section{Assessment Results}\n
+       \\begin{itemize}\n
+       %s\n
+       \\item \\textbf{Items Administered}: %d\n
+       \\end{itemize}\n
+       \\section{Responses}\n
+       \\begin{table}[h]\n
+       \\centering\n
+       \\small\n
+       \\begin{tabular}{p{5cm}lp{2cm}}\n
+       \\toprule\n
+       \\textbf{Question} & \\textbf{Response} & \\textbf{Time (Sec.)} \\\\\n
+       \\midrule\n
+       %s\n
+       \\bottomrule\n
+       \\end{tabular}\n
+       \\caption{Individual Item Results}\n
+       \\end{table}\n
+       \\section{Recommendations}\n
+       \\begin{itemize}\n
+       %s\n
+       \\end{itemize}\n
+       \\end{document}',
+      safe_title,
+      format(Sys.time(), "%B %d, %Y"),
+      paste(sapply(names(report_data$demo_data %||% list()), function(d) sprintf("%s & %s \\\\", d, report_data$demo_data[[d]] %||% "N/A")), collapse = "\n"),
+      if (config$adaptive) sprintf("\\item \\textbf{Trait Score}: %.2f\n\\item \\textbf{Standard Error}: %.3f", report_data$cat_result$theta %||% 0, report_data$cat_result$se %||% 0) else "",
+      length(report_data$cat_result$administered %||% integer(0)),
+      paste(sapply(seq_along(report_data$cat_result$administered %||% integer(0)), function(i) {
+        sprintf("%s & %s & %.1f \\\\", 
+                item_bank$Question[report_data$cat_result$administered[i]] %||% "N/A", 
+                report_data$cat_result$responses[i] %||% "N/A",
+                report_data$cat_result$response_times[i] %||% 0)
+      }), collapse = "\n"),
+      paste(sprintf("\\item %s", report_data$recommendations %||% "No recommendations provided"), collapse = "\n")
+    )
+    temp_dir <- tempdir()
+    tex_file <- file.path(temp_dir, "report.tex")
+    writeLines(latex_content, tex_file)
+    tryCatch({
+      tinytex::latexmk(tex_file, "pdflatex")
+      file.copy(paste0(tools::file_path_sans_ext(tex_file), ".pdf"), file, overwrite = TRUE)
+    }, error = function(e) {
+      warning(sprintf("PDF generation failed: %s", e$message))
+      jsonlite::write_json(report_data, file, pretty = TRUE, auto_unbox = TRUE)
     })
+  } else if (save_format == "rds") {
+    saveRDS(report_data, file)
+  } else if (save_format == "csv") {
+    flat_data <- data.frame(
+      Timestamp = report_data$timestamp %||% Sys.time(),
+      Theta = if (config$adaptive) report_data$cat_result$theta %||% NA else NA,
+      SE = if (config$adaptive) report_data$cat_result$se %||% NA else NA,
+      t(report_data$demo_data %||% list()),
+      Items = paste(report_data$cat_result$administered %||% integer(0), collapse = ";"),
+      Responses = paste(report_data$cat_result$responses %||% numeric(0), collapse = ";"),
+      Response_Times = paste(report_data$cat_result$response_times %||% numeric(0), collapse = ";"),
+      Recommendations = paste(report_data$recommendations %||% "None", collapse = ";")
+    )
+    utils::write.csv(flat_data, file, row.names = FALSE)
+  } else if (save_format == "json") {
+    jsonlite::write_json(report_data, file, pretty = TRUE, auto_unbox = TRUE)
+  }
+}
+
+# Session saving
+shiny::observe({
+  if (config$session_save) {
+    tryCatch({
+      saveRDS(shiny::reactiveValuesToList(rv), session_file %||% "session.rds")
+    }, error = function(e) {
+      warning(sprintf("Failed to save session: %s", e$message))
+    })
+  }
+})
+
+# Handle demographic submission
+shiny::observeEvent(input$start_test, {
+  rv$demo_data <- sapply(seq_along(config$demographics), function(i) {
+    val <- input[[paste0("demo_", i)]]
+    dem <- config$demographics[i]
+    input_type <- config$input_types[[dem]]
     
-    shiny::observeEvent(input$restart_test, {
-      rv$stage = "demographics"
-      rv$current_ability <- config$theta_prior[1]
-      rv$current_se <- config$theta_prior[2]
-      rv$administered <- base::c()
-      rv$responses = base::c()
-      rv$response_times = base::c()
-      rv$current_item <- NULL
-      rv$cat_result <- NULL
-      rv$theta_history <- base::list()
-      rv$se_history <- base::list()
-      rv$item_counter = 0
-      rv$error_message <- NULL
-      rv$feedback_message <- NULL
-      rv$item_info_cache = base::list()
-      rv$session_start <- base::Sys.time()
-      rv$session_active <- TRUE
-      logger("Test restarted")
+    if (input_type == "numeric") {
+      if (is.null(val) || is.na(val) || val == "") {
+        return(NA)
+      }
+      if (!is.numeric(val) || val < 1 || val > 150) {
+        rv$error_message <- ui_labels$age_error %||% "Invalid age input"
+        warning(sprintf("Invalid age input: %s", val))
+        return(NA)
+      }
+      return(val)
+    } else {
+      if (is.null(val) || is.na(val) || val == "" || val == "Select") {
+        return(NA)
+      }
+      if (is.character(val)) {
+        val <- trimws(gsub("[<>\"&]", "", val))
+      }
+      return(val)
+    }
+  })
+  names(rv$demo_data) <- config$demographics
+  
+  non_age_dems <- setdiff(config$demographics, "Age")
+  if (length(non_age_dems) > 0 && all(is.na(rv$demo_data[non_age_dems]) | rv$demo_data[non_age_dems] == "")) {
+    rv$error_message <- ui_labels$demo_error %||% "Invalid non-age demographic inputs"
+    warning("Invalid non-age demographic inputs")
+    return()
+  }
+  
+  rv$error_message <- NULL
+  rv$stage <- "test"
+  rv$start_time <- Sys.time()
+  rv$current_item <- inrep::select_next_item(rv, item_bank, config)
+  message("Demographic data validated, proceeding to test stage")
+})
+
+# Handle response submission
+shiny::observeEvent(input$submit_response, {
+  shiny::req(input$item_response, rv$current_item)
+  if (!config$response_validation_fun(input$item_response)) {
+    rv$error_message <- sprintf("Please select a valid response (%s).", config$language %||% "English")
+    warning(sprintf("Invalid response submitted for item %d", rv$current_item))
+    return()
+  }
+  rv$error_message <- NULL
+  response_time <- as.numeric(difftime(Sys.time(), rv$start_time, units = "secs"))
+  rv$response_times <- c(rv$response_times, response_time)
+  item_index <- rv$current_item
+  correct_answer <- item_bank$Answer[item_index] %||% NULL
+  response_score <- tryCatch(
+    config$scoring_fun(input$item_response, correct_answer),
+    error = function(e) {
+      warning(sprintf("Scoring function error: %s", e$message))
+      if (config$model == "GRM") as.numeric(input$item_response) else as.numeric(input$item_response == correct_answer)
+    }
+  )
+  rv$responses[item_index] <- response_score
+  rv$administered <- c(rv$administered, item_index)
+  
+  if (config$adaptive) {
+    tryCatch({
+      ability <- inrep::estimate_ability(rv, item_bank, config)
+      rv$current_ability <- ability$theta
+      rv$current_se <- ability$se
+      message(sprintf("Estimated ability: theta=%.2f, se=%.3f", ability$theta, ability$se))
+      rv$theta_history <- c(rv$theta_history, rv$current_ability)
+      rv$se_history <- c(rv$se_history, rv$current_se)
+    }, error = function(e) {
+      warning(sprintf("Ability estimation failed: %s", e$message))
+      rv$error_message <- "Error estimating ability. Please try again."
+      return()
     })
+  }
+  
+  if (inrep::check_stopping_criteria(rv, config)) {
+    rv$cat_result <- list(
+      theta = if (config$adaptive) rv$current_ability else mean(rv$responses, na.rm = TRUE),
+      se = if (config$adaptive) rv$current_se else NULL,
+      responses = rv$responses,
+      administered = rv$administered,
+      response_times = rv$response_times
+    )
+    rv$stage <- "results"
+    message("Test completed, proceeding to results")
+    
+    if (config$session_save && !is.null(webdav_url)) {
+      message("Attempting to save session to cloud...")
+      inrep::save_session_to_cloud(rv, config, webdav_url, password)
+    }
+  } else {
+    rv$current_item <- inrep::select_next_item(rv, item_bank, config)
+    if (is.null(rv$current_item)) {
+      rv$cat_result <- list(
+        theta = if (config$adaptive) rv$current_ability else mean(rv$responses, na.rm = TRUE),
+        se = if (config$adaptive) rv$current_se else NULL,
+        responses = rv$responses,
+        administered = rv$administered,
+        response_times = rv$response_times
+      )
+      rv$stage <- "results"
+      message("No more items available, proceeding to results")
+      
+      if (config$session_save && !is.null(webdav_url)) {
+        message("Attempting to save session to cloud...")
+        inrep::save_session_to_cloud(rv, config, webdav_url, password)
+      }
+    } else {
+      rv$start_time <- Sys.time()
+      if (config$response_ui_type == "slider") {
+        shiny::updateSliderInput(session, "item_response", value = min(as.numeric(unlist(strsplit(item_bank$ResponseCategories[rv$current_item] %||% "1,2,3,4,5", ",")))))
+      } else if (config$response_ui_type == "dropdown") {
+        shiny::updateSelectInput(session, "item_response", selected = NULL)
+      } else {
+        shinyWidgets::updateRadioGroupButtons(session, "item_response", selected = character(0))
+      }
+    }
+  }
+})
+
+# Handle restart
+shiny::observeEvent(input$restart_test, {
+  rv$stage <- "demographics"
+  rv$current_ability <- config$theta_prior[1] %||% 0
+  rv$current_se <- config$theta_prior[2] %||% Inf
+  rv$administered <- integer(0)
+  rv$responses <- rep(NA_real_, nrow(item_bank))
+  rv$response_times <- numeric(0)
+  rv$current_item <- NULL
+  rv$cat_result <- NULL
+  rv$theta_history <- list()
+  rv$se_history <- list()
+  rv$item_counter <- 0
+  rv$error_message <- NULL
+  rv$feedback_message <- NULL
+  rv$item_info_cache <- list()
+  rv$session_start <- Sys.time()
+  rv$session_active <- TRUE
+  message("Test restarted")
+})
   } # End of server function
   
   # Generate LLM assistance prompt if enabled
@@ -1602,5 +1563,6 @@ generate_study_deployment_prompt <- function(study_config,
   }
   
   return(prompt)
+}
 }
 }
