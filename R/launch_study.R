@@ -106,6 +106,92 @@ launch_study <- function(...,
   if (is.null(config$min_items)) config$min_items <- min_items
   if (is.null(config$min_SEM)) config$min_SEM <- min_SEM
   
+  # Create UI function
+  ui <- shiny::fluidPage(
+    shiny::tags$head(
+      shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
+      shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet"),
+      shiny::tags$style(shiny::HTML("
+        body { 
+          font-family: 'Inter', sans-serif; 
+          margin: 0; 
+          padding: 20px;
+          background-color: #f8f9fa;
+        }
+        .container-fluid { 
+          max-width: 800px; 
+          margin: 0 auto; 
+        }
+        .assessment-card {
+          background: white;
+          border-radius: 8px;
+          padding: 20px;
+          margin: 20px 0;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card-header {
+          color: #333;
+          margin-bottom: 20px;
+        }
+        .form-group {
+          margin-bottom: 15px;
+        }
+        .input-label {
+          display: block;
+          margin-bottom: 5px;
+          font-weight: 500;
+        }
+        .nav-buttons {
+          margin-top: 20px;
+          text-align: center;
+        }
+        .btn-klee {
+          background-color: #007bff;
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          border-radius: 4px;
+          cursor: pointer;
+          margin: 0 10px;
+        }
+        .btn-klee:hover {
+          background-color: #0056b3;
+        }
+        .test-question {
+          font-size: 18px;
+          font-weight: 500;
+          margin: 20px 0;
+          line-height: 1.4;
+        }
+        .radio-group-container {
+          margin: 20px 0;
+        }
+        .error-message {
+          color: #dc3545;
+          background-color: #f8d7da;
+          border: 1px solid #f5c6cb;
+          padding: 10px;
+          border-radius: 4px;
+          margin: 10px 0;
+        }
+        .welcome-text {
+          color: #666;
+          margin-bottom: 20px;
+        }
+        .results-section {
+          margin: 20px 0;
+        }
+        .dimension-score {
+          background: #f8f9fa;
+          padding: 15px;
+          border-radius: 4px;
+          margin: 10px 0;
+        }
+      "))
+    ),
+    shiny::uiOutput("main_ui")
+  )
+  
   # Create server function
   server <- function(input, output, session) {
     
@@ -118,32 +204,137 @@ launch_study <- function(...,
       theta = 0,
       se = 1,
       demo_data = list(),
-      start_time = Sys.time()
+      start_time = Sys.time(),
+      trigger_update = 0
     )
     
     # Main UI using complete_ui
     output$main_ui <- shiny::renderUI({
-      complete_ui(
-        config = config,
-        item_bank = item_bank,
-        current_item = values$current_item,
-        responses = values$responses,
-        progress = ifelse(length(values$administered_items) > 0, 
-                         length(values$administered_items) / config$max_items * 100, 0),
-        phase = values$stage
+      # Force re-rendering when trigger changes
+      values$trigger_update
+      
+      # Create appropriate UI based on stage
+      switch(values$stage,
+        "introduction" = {
+          shiny::div(class = "assessment-card",
+            shiny::h3(config$name, class = "card-header"),
+            shiny::p("Welcome to this assessment. Click below to begin.", class = "welcome-text"),
+            shiny::div(class = "nav-buttons",
+              shiny::actionButton("go_to_consent", "Begin", class = "btn-klee")
+            )
+          )
+        },
+        "consent" = {
+          shiny::div(class = "assessment-card",
+            shiny::h3("Informed Consent", class = "card-header"),
+            shiny::p("Please read and agree to participate in this study."),
+            shiny::div(class = "form-group",
+              shiny::checkboxInput("consent_checkbox", "I agree to participate", value = FALSE)
+            ),
+            shiny::div(class = "nav-buttons",
+              shiny::actionButton("consent_continue", "Continue", class = "btn-klee")
+            )
+          )
+        },
+        "demographics" = {
+          demo_inputs <- lapply(seq_along(config$demographics), function(i) {
+            demo <- config$demographics[i]
+            input_id <- paste0("participant_", tolower(gsub(" ", "_", demo)))
+            
+            shiny::div(class = "form-group",
+              shiny::tags$label(demo, class = "input-label"),
+              if (demo == "Age") {
+                shiny::numericInput(input_id, NULL, value = NULL, min = 1, max = 150)
+              } else {
+                shiny::selectInput(input_id, NULL, 
+                  choices = c("Select..." = "", "Male", "Female", "Other", "Prefer not to say"),
+                  selected = "")
+              }
+            )
+          })
+          
+          shiny::div(class = "assessment-card",
+            shiny::h3("Demographic Information", class = "card-header"),
+            shiny::p("Please provide some basic information about yourself.", class = "welcome-text"),
+            demo_inputs,
+            shiny::div(class = "nav-buttons",
+              shiny::actionButton("info_continue", "Continue", class = "btn-klee")
+            )
+          )
+        },
+        "instructions" = {
+          shiny::div(class = "assessment-card",
+            shiny::h3("Instructions", class = "card-header"),
+            shiny::p("You will be presented with questions. Please respond honestly and to the best of your ability."),
+            shiny::p("The assessment will adapt based on your responses."),
+            shiny::div(class = "nav-buttons",
+              shiny::actionButton("begin_assessment", "Begin Assessment", class = "btn-klee")
+            )
+          )
+        },
+        "assessment" = {
+          if (values$current_item <= nrow(item_bank)) {
+            item <- item_bank[values$current_item, ]
+            progress_pct <- round((length(values$administered_items) / config$max_items) * 100)
+            
+            # Create response options based on model type
+            if (config$model == "GRM" && "ResponseCategories" %in% names(item_bank)) {
+              # Graded response model - use Likert scale
+              choices <- 1:5
+              labels <- c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")
+              response_ui <- shiny::radioButtons("item_response", NULL,
+                choices = setNames(choices, labels),
+                selected = character(0))
+            } else {
+              # Multiple choice options
+              choices <- c(item$Option1, item$Option2, item$Option3, item$Option4)
+              response_ui <- shiny::radioButtons("item_response", NULL,
+                choices = choices,
+                selected = character(0))
+            }
+            
+            shiny::div(class = "assessment-card",
+              shiny::h3(paste("Question", length(values$administered_items) + 1, "of", config$max_items), class = "card-header"),
+              shiny::div(class = "progress-bar", style = paste0("width: 100%; background: #e9ecef; height: 10px; border-radius: 5px; margin-bottom: 20px;"),
+                shiny::div(style = paste0("width: ", progress_pct, "%; background: #007bff; height: 100%; border-radius: 5px; transition: width 0.3s;"))
+              ),
+              shiny::div(class = "test-question", item$Question),
+              shiny::div(class = "radio-group-container", response_ui),
+              shiny::div(class = "nav-buttons",
+                shiny::actionButton("submit_response", "Submit Answer", class = "btn-klee")
+              )
+            )
+          }
+        },
+        "results" = {
+          shiny::div(class = "assessment-card",
+            shiny::h3("Assessment Complete", class = "card-header"),
+            shiny::div(class = "results-section",
+              shiny::h4("Results Summary"),
+              shiny::p(paste("Items completed:", length(values$administered_items))),
+              shiny::p(paste("Estimated ability:", round(values$theta, 2))),
+              shiny::p(paste("Standard error:", round(values$se, 3)))
+            ),
+            shiny::div(class = "nav-buttons",
+              shiny::actionButton("restart_assessment", "Take Again", class = "btn-klee")
+            )
+          )
+        }
       )
     })
     
-    # Handle phase transitions
+    # Handle phase transitions with proper event handling
     shiny::observeEvent(input$go_to_consent, {
       values$stage <- "consent"
-    })
+      values$trigger_update <- values$trigger_update + 1
+    }, ignoreNULL = TRUE, ignoreInit = TRUE)
     
     shiny::observeEvent(input$consent_continue, {
       if (isTRUE(input$consent_checkbox)) {
         values$stage <- "demographics"
+        values$trigger_update <- values$trigger_update + 1
       }
-    })
+    }, ignoreNULL = TRUE, ignoreInit = TRUE)
     
     shiny::observeEvent(input$info_continue, {
       # Collect demographic data
@@ -151,51 +342,62 @@ launch_study <- function(...,
       for (i in seq_along(config$demographics)) {
         demo <- config$demographics[i]
         input_id <- paste0("participant_", tolower(gsub(" ", "_", demo)))
-        values$demo_data[[demo]] <- input[[input_id]]
+        if (!is.null(input[[input_id]])) {
+          values$demo_data[[demo]] <- input[[input_id]]
+        }
       }
       values$stage <- "instructions"
-    })
+      values$trigger_update <- values$trigger_update + 1
+    }, ignoreNULL = TRUE, ignoreInit = TRUE)
     
     shiny::observeEvent(input$begin_assessment, {
       values$stage <- "assessment"
       values$start_time <- Sys.time()
-    })
+      values$current_item <- 1
+      values$trigger_update <- values$trigger_update + 1
+    }, ignoreNULL = TRUE, ignoreInit = TRUE)
     
     # Handle response submission
-    shiny::observe({
-      # Check for any option button clicks
-      for (i in 1:4) {
-        option_id <- paste0("option_", i)
-        if (!is.null(input[[option_id]])) {
-          shiny::isolate({
-            values$responses[values$current_item] <- i
-            values$administered_items <- c(values$administered_items, values$current_item)
-            
-            # Simple ability estimation
-            responses <- values$responses[values$administered_items]
-            if (length(responses) > 0 && !all(is.na(responses))) {
-              values$theta <- mean(responses, na.rm = TRUE)
-              values$se <- sd(responses, na.rm = TRUE) / sqrt(length(responses))
-            }
-            
-            # Check stopping criteria
-            if (length(values$administered_items) >= config$max_items || 
-                (length(values$administered_items) >= config$min_items && values$se <= config$min_SEM)) {
-              values$stage <- "results"
-            } else {
-              # Select next item
-              available_items <- setdiff(seq_len(nrow(item_bank)), values$administered_items)
-              if (length(available_items) > 0) {
-                values$current_item <- available_items[1]
-              } else {
-                values$stage <- "results"
-              }
-            }
-          })
-          break
+    shiny::observeEvent(input$submit_response, {
+      if (!is.null(input$item_response)) {
+        # Record response
+        if (config$model == "GRM") {
+          values$responses[values$current_item] <- as.numeric(input$item_response)
+        } else {
+          # For multiple choice, check if correct
+          correct_answer <- item_bank$Answer[values$current_item]
+          values$responses[values$current_item] <- ifelse(input$item_response == correct_answer, 1, 0)
         }
+        
+        values$administered_items <- c(values$administered_items, values$current_item)
+        
+        # Simple ability estimation
+        responses <- values$responses[values$administered_items]
+        if (length(responses) > 0 && !all(is.na(responses))) {
+          values$theta <- mean(responses, na.rm = TRUE)
+          values$se <- ifelse(length(responses) > 1, 
+                             sd(responses, na.rm = TRUE) / sqrt(length(responses)), 
+                             1)
+        }
+        
+        # Check stopping criteria
+        if (length(values$administered_items) >= config$max_items || 
+            (length(values$administered_items) >= config$min_items && 
+             !is.na(values$se) && values$se <= config$min_SEM)) {
+          values$stage <- "results"
+        } else {
+          # Select next item
+          available_items <- setdiff(seq_len(nrow(item_bank)), values$administered_items)
+          if (length(available_items) > 0) {
+            values$current_item <- sample(available_items, 1)
+          } else {
+            values$stage <- "results"
+          }
+        }
+        
+        values$trigger_update <- values$trigger_update + 1
       }
-    })
+    }, ignoreNULL = TRUE, ignoreInit = TRUE)
     
     # Handle restart
     shiny::observeEvent(input$restart_assessment, {
@@ -206,26 +408,29 @@ launch_study <- function(...,
       values$theta <- 0
       values$se <- 1
       values$demo_data <- list()
+      values$start_time <- Sys.time()
+      values$trigger_update <- values$trigger_update + 1
+    }, ignoreNULL = TRUE, ignoreInit = TRUE)
+    
+    # Session end handling
+    session$onSessionEnded(function() {
+      shiny::stopApp()
     })
   }
   
   # Create app
-  app <- shiny::shinyApp(
-    ui = shiny::fluidPage(
-      shiny::tags$head(
-        shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
-        shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet")
-      ),
-      shiny::uiOutput("main_ui")
-    ),
-    server = server
-  )
+  app <- shiny::shinyApp(ui = ui, server = server)
   
-  # Launch app
-  shiny::runApp(
-    app,
-    port = port,
-    host = host,
-    launch.browser = launch.browser
-  )
+  # Launch app with error handling
+  tryCatch({
+    shiny::runApp(
+      app,
+      port = port,
+      host = host,
+      launch.browser = launch.browser
+    )
+  }, error = function(e) {
+    message("Error launching Shiny app: ", e$message)
+    stop(e)
+  })
 }
