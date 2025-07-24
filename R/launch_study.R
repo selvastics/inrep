@@ -734,11 +734,6 @@ launch_study <- function(
     base::stop("Invalid save_format")
   }
   # ...existing code...
-    }
-  } else {
-    logger("Using local storage only (no cloud backup)", level = "INFO")
-    print("Cloud storage disabled - results will be saved locally only")
-  }
   
   logger(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"))
   print(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"))
