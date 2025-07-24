@@ -764,7 +764,6 @@ launch_study <- function(
       item_bank$Answer <- "Option 1"  # Dummy answer
       logger("Added dummy options for dichotomous model compatibility", level = "INFO")
     }
-  }
   
   # Adjust max_items if necessary
   if (base::is.null(config$max_items) || config$max_items > base::nrow(item_bank)) {
