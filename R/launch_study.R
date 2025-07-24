@@ -1,4 +1,3 @@
-}
 # File: launch_study.R
 
 #' Launch Adaptive Study Interface
