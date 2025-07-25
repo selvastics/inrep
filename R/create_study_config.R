@@ -469,7 +469,7 @@ create_study_config <- function(
       is.character(progress_style) && progress_style %in% c("bar", "circle"),
       is.character(response_ui_type) && response_ui_type %in% c("radio", "slider", "dropdown"),
       is.logical(session_save),
-      is.character(theme) && !is.null(validate_theme_name(theme, error_on_invalid = FALSE)),
+      is.character(theme) && !is.null(validate_theme_name(theme)),
       is.character(language) && language %in% c("en", "de", "es", "fr"),
       is.character(report_formats) && all(report_formats %in% c("rds", "csv", "json", "pdf")),
       is.numeric(max_session_duration) && max_session_duration > 0,
