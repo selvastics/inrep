@@ -1,3 +1,85 @@
+#' Unified INREP UI Generator
+#'
+#' Generates all UI components for assessment items and demographics in one function.
+#' Maintains accessibility, validation, and configuration features.
+#'
+#' @param type UI type: "assessment" or "demographics"
+#' @param item Data frame row for assessment item (if type = "assessment")
+#' @param response_ui_type UI type for assessment: "radio", "dropdown", "slider"
+#' @param demographics Character vector of demographic fields (if type = "demographics")
+#' @param input_types Named list of input types for demographics
+#' @return Shiny UI element
+#' @export
+inrep_ui <- function(type = c("assessment", "demographics"),
+                     item = NULL,
+                     response_ui_type = "radio",
+                     demographics = NULL,
+                     input_types = NULL) {
+  require(shiny)
+  type <- match.arg(type)
+  if (type == "assessment") {
+    # Assessment item UI
+    choices <- as.character(item[grep("^Option", names(item))])
+    choices <- choices[!is.na(choices) & choices != ""]
+    names(choices) <- choices
+    if (response_ui_type == "radio") {
+      return(radioButtons(
+        inputId = "item_response",
+        label = item$Question,
+        choices = choices,
+        selected = character(0)
+      ))
+    } else if (response_ui_type == "dropdown") {
+      return(selectInput(
+        inputId = "item_response",
+        label = item$Question,
+        choices = c("", choices),
+        selected = ""
+      ))
+    } else if (response_ui_type == "slider") {
+      return(sliderInput(
+        inputId = "item_response",
+        label = item$Question,
+        min = 1,
+        max = length(choices),
+        value = 1,
+        step = 1,
+        ticks = TRUE
+      ))
+    } else {
+      stop("Unsupported response_ui_type: ", response_ui_type)
+    }
+  } else if (type == "demographics") {
+    # Demographics UI
+    if (is.null(demographics)) {
+      return(actionButton("start_test", "Start Test"))
+    }
+    inputs <- lapply(demographics, function(demo) {
+      input_type <- input_types[[demo]]
+      if (input_type == "numeric") {
+        numericInput(
+          inputId = paste0("demo_", demo),
+          label = demo,
+          value = NA
+        )
+      } else if (input_type == "select") {
+        selectInput(
+          inputId = paste0("demo_", demo),
+          label = demo,
+          choices = c("", "Male", "Female", "Other"),
+          selected = ""
+        )
+      } else {
+        textInput(
+          inputId = paste0("demo_", demo),
+          label = demo,
+          value = ""
+        )
+      }
+    })
+    return(tagList(inputs, actionButton("start_test", "Start Test")))
+  }
+}
 # File: ui_helpers.R
 
 #' Create Response UI Component for Assessment Items
