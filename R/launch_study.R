@@ -823,12 +823,9 @@ launch_study <- function(
     theme <- config$theme %||% "Light"
     
     # Validate and normalize theme name
-    validated_theme <- validate_theme_name(theme, error_on_invalid = FALSE)
+    validated_theme <- validate_theme_name(theme)
     
-    if (is.null(validated_theme)) {
-      print(base::sprintf("Invalid theme '%s', falling back to Light theme", theme))
-      validated_theme <- "Light"
-    } else if (validated_theme != theme) {
+    if (validated_theme != theme) {
       print(base::sprintf("Theme '%s' normalized to '%s'", theme, validated_theme))
     }
     
