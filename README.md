@@ -1,14 +1,23 @@
 
+
+<p align="right">
+  <a href="https://github.com/selvastics/inrep">
+    <img src="man/figures/inrep_logo.png" alt="inrep hex logo" height="120"/>
+  </a>
+</p>
+
 # inrep: Instant Reports for Adaptive Assessments
 <!-- Demo: See the package in action! -->
 ![inrep demo](tesst.gif)
 
 > **Demo:** The above video showcases the main functionalities of the inrep package, including adaptive test setup, Shiny-based administration, theme customization, LLM-powered assistance, and professional reporting. Watch to see how easy it is to configure, deploy, and analyze adaptive assessments with inrep.
 
+
 <!-- badges: start -->
 [![CRAN status](https://www.r-pkg.org/badges/version/inrep)](https://CRAN.R-project.org/package=inrep)
 [![R-CMD-check](https://github.com/selvastics/inrep/workflows/R-CMD-check/badge.svg)](https://github.com/selvastics/inrep/actions)
 [![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
+[![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/inrep)](https://cran.r-project.org/package=inrep)
 <!-- badges: end -->
 
 ## Overview
@@ -110,44 +119,6 @@ launch_study(
 )
 ```
 
-### Advanced Features with Website Scraping
-
-```r
-result <- scrape_website_ui("https://www.uni-hildesheim.de/")
-
-for (i in seq_along(result$themes)) {
-  theme <- result$themes[[i]]
-  cat(sprintf("Theme %d: %s (%s)\n", i, theme$name, theme$primary_color))
-}
-
-config <- create_study_config(
-  title = "BFI Assessment",
-  theme_config = result$themes[[1]]
-)
-
-launch_study(config, bfi_items, theme_options = result$themes)
-```
-
-### Professional Platform Deployment
-
-```r
-deployment <- launch_to_inrep_platform(
-  study_config = config,
-  item_bank = bfi_items,
-  deployment_type = "inrep_platform",
-  contact_info = list(
-    researcher_name = "Your Name",
-    institution = "Your University", 
-    email = "your.email@university.edu",
-    study_title = "Your Study Title",
-    study_description = "Brief description of your study",
-    expected_duration = "Study duration",
-    expected_participants = 500
-  )
-)
-
-# Contact selva@uni-hildesheim.de for hosting
-```
 
 ---
 
