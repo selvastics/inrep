@@ -6,6 +6,11 @@
 \usage{
 launch_theme_editor()
 }
+\value{
+A Shiny application object for the theme editor
+}
 \description{
-Launch Theme Editor
+Launches an interactive web-based theme editor for customizing the appearance
+of inrep assessment interfaces. Provides real-time preview and CSS customization
+capabilities.
 }

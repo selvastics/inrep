@@ -4,20 +4,22 @@
 \alias{get_theme_css}
 \title{Get Theme CSS}
 \usage{
-get_theme_css(theme = "light", theme_config = NULL)
+get_theme_css(theme = "light", custom_css = NULL)
 
-get_theme_css(theme = "light", theme_config = NULL)
+get_theme_css(theme = "light", custom_css = NULL)
 }
 \arguments{
 \item{theme}{Theme name (case-insensitive)}
+
+\item{custom_css}{Optional custom CSS to append}
 }
 \value{
 CSS string
 
-CSS string (<200 lines)
+CSS string
 }
 \description{
 Get Theme CSS
 
-Generate Ultra-Efficient CSS
+Generate CSS for Theme
 }
