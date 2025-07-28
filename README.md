@@ -8,6 +8,7 @@
   </a>
 </td>
 </tr></table>
+
 <!-- Demo: See the package in action! -->
 ![inrep demo](tesst.gif)
 
