@@ -466,7 +466,7 @@ create_study_config <- function(
       is.character(model) && model %in% c("1PL", "2PL", "3PL", "GRM"),
       is.character(estimation_method) && estimation_method %in% c("TAM", "MIRT"),
       is.numeric(theta_prior) && length(theta_prior) == 2 && theta_prior[2] > 0,
-      is.character(progress_style) && progress_style %in% c("bar", "circle"),
+      is.character(progress_style) && progress_style %in% c("bar", "circle", "modern-circle", "enhanced-bar", "segmented", "minimal", "card"),
       is.character(response_ui_type) && response_ui_type %in% c("radio", "slider", "dropdown"),
       is.logical(session_save),
       is.character(theme) && !is.null(validate_theme_name(theme)),

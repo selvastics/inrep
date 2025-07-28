@@ -66,6 +66,19 @@
 * `theme_functions()`: UI theme management
 * `response_validation()`: Response validation systems
 
+
+Users can now specify progress styles via `config$progress_style` with options:
+
+- `"modern-circle"` (default)
+- `"enhanced-bar"`
+- `"segmented"`
+- `"minimal"`
+- `"card"`
+- `"circle"` (legacy)
+- `"bar"` (legacy)
+
+
+
 ## Documentation
 
 * Comprehensive function documentation with examples
