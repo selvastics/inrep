@@ -98,3 +98,124 @@ list_theme_files <- function() {
     stringsAsFactors = FALSE
   )
 }
+
+#' Launch Theme Editor
+#' @description
+#' Launches an interactive web-based theme editor for customizing the appearance
+#' of inrep assessment interfaces. Provides real-time preview and CSS customization
+#' capabilities.
+#' @return A Shiny application object for the theme editor
+#' @export
+launch_theme_editor <- function() {
+  if (!requireNamespace("shiny", quietly = TRUE)) {
+    stop("Shiny package is required for theme editor")
+  }
+  
+  ui <- shiny::fluidPage(
+    shiny::titlePanel("inrep Theme Editor"),
+    shiny::sidebarLayout(
+      shiny::sidebarPanel(
+        shiny::selectInput("theme_select", "Select Theme", choices = get_builtin_themes()),
+        shiny::colourInput("primary_color", "Primary Color", value = "#007bff"),
+        shiny::colourInput("secondary_color", "Secondary Color", value = "#6c757d"),
+        shiny::colourInput("background_color", "Background Color", value = "#ffffff"),
+        shiny::colourInput("text_color", "Text Color", value = "#212529"),
+        shiny::textInput("font_family", "Font Family", value = "Inter, sans-serif"),
+        shiny::sliderInput("border_radius", "Border Radius", min = 0, max = 20, value = 8),
+        shiny::actionButton("apply_changes", "Apply Changes"),
+        shiny::downloadButton("download_css", "Download CSS")
+      ),
+      shiny::mainPanel(
+        shiny::h3("Theme Preview"),
+        shiny::tags$div(
+          id = "theme_preview",
+          style = "padding: 20px; border: 1px solid #ddd; border-radius: 8px;",
+          shiny::tags$h4("Sample Assessment Question"),
+          shiny::tags$p("This is how your assessment will look with the selected theme."),
+          shiny::tags$div(
+            class = "btn-group",
+            shiny::tags$button(class = "btn btn-primary", "Option 1"),
+            shiny::tags$button(class = "btn btn-secondary", "Option 2"),
+            shiny::tags$button(class = "btn btn-success", "Option 3")
+          )
+        ),
+        shiny::verbatimTextOutput("css_output")
+      )
+    )
+  )
+  
+  server <- function(input, output, session) {
+    theme_css <- shiny::reactive({
+      css <- sprintf('
+        :root {
+          --primary-color: %s;
+          --secondary-color: %s;
+          --background-color: %s;
+          --text-color: %s;
+          --font-family: %s;
+          --border-radius: %spx;
+        }
+        
+        body {
+          font-family: var(--font-family);
+          background-color: var(--background-color);
+          color: var(--text-color);
+        }
+        
+        .btn-primary {
+          background-color: var(--primary-color);
+          border-color: var(--primary-color);
+          border-radius: var(--border-radius);
+        }
+        
+        .btn-secondary {
+          background-color: var(--secondary-color);
+          border-color: var(--secondary-color);
+          border-radius: var(--border-radius);
+        }
+        
+        .assessment-card {
+          background-color: var(--background-color);
+          color: var(--text-color);
+          border-radius: var(--border-radius);
+          padding: 20px;
+          margin: 10px 0;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+      ', 
+      input$primary_color, 
+      input$secondary_color, 
+      input$background_color, 
+      input$text_color, 
+      input$font_family, 
+      input$border_radius
+      )
+      css
+    })
+    
+    output$css_output <- shiny::renderText({
+      theme_css()
+    })
+    
+    shiny::observeEvent(input$apply_changes, {
+      shiny::runjs(sprintf('
+        document.getElementById("theme_preview").style.cssText = `
+          background-color: %s;
+          color: %s;
+          border-radius: %spx;
+        `;
+      ', input$background_color, input$text_color, input$border_radius))
+    })
+    
+    output$download_css <- shiny::downloadHandler(
+      filename = function() {
+        paste0("inrep_custom_theme_", Sys.Date(), ".css")
+      },
+      content = function(file) {
+        writeLines(theme_css(), file)
+      }
+    )
+  }
+  
+  shiny::shinyApp(ui = ui, server = server)
+}

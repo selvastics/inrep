@@ -610,7 +610,6 @@ launch_study <- function(
   # Use new get_theme_css for all theming
   theme_css <- get_theme_css(
     theme = config$theme %||% "Light",
-    theme_config = theme_config,
     custom_css = custom_css
   )
   
