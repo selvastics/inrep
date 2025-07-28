@@ -1,12 +1,13 @@
 
 
-<p align="right">
+<table width="100%"><tr>
+<td><h1>inrep: Instant Reports for Adaptive Assessments</h1></td>
+<td align="right" width="160">
   <a href="https://github.com/selvastics/inrep">
-    <img src="man/figures/inrep_logo.png" alt="inrep hex logo" height="120"/>
+    <img src="man/figures/inrep_logo.png" alt="inrep hex logo" height="100"/>
   </a>
-</p>
-
-# inrep: Instant Reports for Adaptive Assessments
+</td>
+</tr></table>
 <!-- Demo: See the package in action! -->
 ![inrep demo](tesst.gif)
 
