@@ -1,19 +1,15 @@
 
 
+
 <table width="100%"><tr>
 <td><h1>inrep: Instant Reports for Adaptive Assessments</h1></td>
+
 <td align="right" width="160">
   <a href="https://github.com/selvastics/inrep">
     <img src="man/figures/inrep_logo.png" alt="inrep hex logo" height="130"/>
   </a>
 </td>
 </tr></table>
-
-<!-- Demo: See the package in action! -->
-![inrep demo](man/figures/tesst.gif)
-
-> **Demo:** The above video showcases the main functionalities of the inrep package, including adaptive test setup, Shiny-based administration, theme customization, LLM-powered assistance, and professional reporting. Watch to see how easy it is to configure, deploy, and analyze adaptive assessments with inrep.
-
 
 <!-- badges: start -->
 [![CRAN status](https://www.r-pkg.org/badges/version/inrep)](https://CRAN.R-project.org/package=inrep)
@@ -22,9 +18,15 @@
 [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/inrep)](https://cran.r-project.org/package=inrep)
 <!-- badges: end -->
 
+
 ## Overview
 
 **inrep** provides a comprehensive framework for adaptive testing using Item Response Theory (IRT) models. The package offers web-based interfaces for test administration via Shiny, supports multiple IRT models through TAM integration, implements adaptive item selection algorithms, and includes comprehensive reporting capabilities with LLM integration for enhanced user assistance. It is designed for psychological assessments, educational testing, and survey research with large item pools.
+
+<!-- Demo: See the package in action! -->
+![inrep demo](man/figures/tesst.gif)
+
+> **Demo:** The above video showcases the main functionalities of the inrep package, including adaptive test setup, Shiny-based administration, theme customization, LLM-powered assistance, and professional reporting. Watch to see how easy it is to configure, deploy, and analyze adaptive assessments with inrep.
 
 ### Key Features
 
@@ -37,6 +39,7 @@
 - **Customizable Themes**: Professional appearance with accessibility compliance  
 - **Comprehensive Reporting**: Multiple export formats with detailed analytics and visualizations  
 - **Session Management**: Robust session handling with resume capabilities  
+- **Accessibility Options**: WCAG-compliant with colorblind-safe palettes, large text, dyslexia-friendly fonts, and high-contrast modes.
 
 ## Installation
 
