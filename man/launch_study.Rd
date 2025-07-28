@@ -13,6 +13,7 @@ launch_study(
   password = NULL,
   save_format = "rds",
   logger = function(msg, ...) print(msg),
+  study_key = NULL,
   ...
 )
 }
@@ -30,15 +31,22 @@ When provided, overrides both built-in themes and \code{theme_config} settings.}
 Contains CSS variable definitions like \code{primary_color}, \code{font_family}, etc.}
 
 \item{webdav_url}{Character string specifying WebDAV URL for cloud-based result storage,
-or \code{NULL} to disable cloud functionality. Requires valid WebDAV credentials.}
+or \code{NULL} to disable cloud functionality. When provided, \code{password} must also be specified.
+Example URLs: \code{"https://sync.academiccloud.de/index.php/s/YourSharedFolder/"} or 
+\code{"https://your-institution.edu/webdav/studies/"}. Both \code{webdav_url} and \code{password}
+are required together for cloud storage functionality.}
 
-\item{password}{Character string for WebDAV authentication when \code{webdav_url} is specified.}
+\item{password}{Character string for WebDAV authentication. Required when \code{webdav_url} is specified.
+This should be the access password or token for your WebDAV storage endpoint. 
+For security, consider using environment variables: \code{Sys.getenv("WEBDAV_PASSWORD")}.}
 
 \item{save_format}{Character string specifying output format for assessment results.
 Options: \code{"rds"} (default), \code{"csv"}, \code{"json"}, \code{"pdf"}.}
 
 \item{logger}{Function for custom logging. Default uses internal \code{logr} implementation.
 Should accept \code{message} and \code{level} parameters.}
+
+\item{study_key}{Character string for unique study identification. Overrides config$study_key.}
 
 \item{...}{Additional parameters passed to Shiny application configuration.}
 
@@ -106,6 +114,49 @@ adaptive testing (CAT) capabilities including:
     and data quality indicators with automatic flagging of suspicious sessions
 }
 }
+\section{Cloud Storage Configuration}{
+
+The framework supports automatic backup of assessment results to WebDAV-compatible cloud storage:
+
+\strong{Setup Requirements:}
+\itemize{
+  \item Both \code{webdav_url} and \code{password} must be provided together
+  \item WebDAV URL must be a valid HTTP(S) endpoint with write permissions
+  \item Password should be the access token or credential for your WebDAV service
+  \item Network connectivity required for cloud functionality
+}
+
+\strong{Compatible Services:}
+\itemize{
+  \item Academic cloud storage (e.g., \code{"https://sync.academiccloud.de/..."})
+  \item Institutional WebDAV servers (\code{"https://university.edu/webdav/..."})
+  \item Nextcloud/ownCloud instances with WebDAV enabled
+  \item Commercial WebDAV providers (Box, Dropbox Business, etc.)
+}
+
+\strong{Security Best Practices:}
+\itemize{
+  \item Use environment variables for passwords: \code{password = Sys.getenv("WEBDAV_PASS")}
+  \item Ensure WebDAV endpoints use HTTPS for encrypted transmission
+  \item Use dedicated access tokens rather than account passwords when possible
+  \item Test connectivity before launching large-scale studies
+}
+
+\strong{Usage Examples:}
+\preformatted{
+# Local storage only (default)
+launch_study(config, item_bank)
+
+# With cloud backup
+launch_study(
+  config, 
+  item_bank,
+  webdav_url = "https://sync.academiccloud.de/index.php/s/YourFolder/",
+  password = Sys.getenv("WEBDAV_PASSWORD")
+)
+}
+}
+
 \section{Installation and Dependencies}{
 
 \strong{Required Packages:} Ensure all dependencies are installed for full functionality:
@@ -232,6 +283,43 @@ The interface supports extensive theming capabilities through multiple mechanism
 CSS customization takes precedence in this order: \code{custom_css} > \code{theme_config} > built-in themes.
 }
 
+\section{Progress Visualization}{
+
+The interface provides multiple progress visualization styles to enhance user experience:
+
+\strong{Available Progress Styles:}
+\itemize{
+  \item \code{"modern-circle"}: Enhanced circular progress with smooth animations (default)
+  \item \code{"enhanced-bar"}: Gradient-filled linear progress bar with shimmer effect
+  \item \code{"segmented"}: Step-by-step visual indicator with numbered segments
+  \item \code{"minimal"}: Clean, unobtrusive progress display
+  \item \code{"card"}: Prominent progress display in card format
+  \item \code{"circle"}: Legacy circular progress (backward compatible)
+  \item \code{"bar"}: Legacy linear progress bar (backward compatible)
+}
+
+\strong{Usage Examples:}
+\preformatted{
+# Use modern circular progress (default)
+config <- create_study_config(
+  name = "My Assessment",
+  progress_style = "modern-circle"
+)
+
+# Use segmented progress for step-by-step feedback
+config <- create_study_config(
+  name = "Long Assessment",
+  progress_style = "segmented"
+)
+
+# Use minimal progress for clean interface
+config <- create_study_config(
+  name = "Simple Assessment",
+  progress_style = "minimal"
+)
+}
+}
+
 \section{Item Bank Requirements}{
 
 The \code{item_bank} data frame must conform to TAM package specifications with 
@@ -286,38 +374,6 @@ columns varying by IRT model type:
   \item Threshold ordering for polytomous models (b1 < b2 < b3 < ...)
   \item Consistency between model specification and available parameters
   \item Data types and missing value patterns that could affect TAM computations
-}
-}
-
-\section{Installation and Setup}{
-
-To use all features, ensure required packages are installed:
-\preformatted{
-install.packages(c("TAM", "shiny", "DT", "ggplot2", "logr"))
-devtools::install_github("selvastics/inrep")
-}
-}
-
-\section{Performance Considerations}{
-
-For large-scale deployments:
-\itemize{
-  \item Enable \code{parallel_computation = TRUE} in config for faster ability estimation
-  \item Use \code{cache_enabled = TRUE} to cache item information calculations  
-  \item Consider \code{auto_scaling = TRUE} for cloud deployments
-  \item Monitor performance with built-in profiling tools
-}
-}
-
-\section{Validation and Quality}{
-
-The framework includes comprehensive validation:
-\itemize{
-  \item Real-time response quality monitoring
-  \item Automatic outlier detection
-  \item Model fit diagnostics through TAM
-  \item Engagement and completion tracking
-  \item Comprehensive audit trails
 }
 }
 
@@ -417,7 +473,7 @@ launch_study(
   item_bank = depression_items,
   save_format = "json",
   webdav_url = "https://secure-storage.hospital.edu/assessments/",
-  password = "secure_password_123",
+  password = Sys.getenv("CLINICAL_WEBDAV_PASSWORD"),
   logger = function(msg, level = "INFO") {
     timestamp <- format(Sys.time(), "\%Y-\%m-\%d \%H:\%M:\%S")
     cat(sprintf("[\%s] \%s: \%s\n", timestamp, level, msg))
@@ -436,7 +492,7 @@ research_config <- create_study_config(
   theta_prior = c(0, 1.2),
   demographics = c("Age", "Gender", "Education", "Country", "Language"),
   response_ui_type = "radio",
-  progress_style = "circle",
+  progress_style = "modern-circle",
   theme = "Research",
   language = "en",
   session_save = TRUE,
@@ -453,220 +509,22 @@ research_config <- create_study_config(
   }
 )
 
-# Custom CSS for research branding
-research_css <- "
-  :root {
-    --primary-color: #1f4e79;
-    --secondary-color: #8cc8ff;
-    --background-color: #ffffff;
-    --text-color: #2c3e50;
-    --font-family: 'Georgia', serif;
-    --border-radius: 6px;
-  }
-  
-  .assessment-header {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: white;
-    padding: 20px;
-    text-align: center;
-  }
-  
-  .progress-container {
-    margin: 20px 0;
-    text-align: center;
-  }
-"
-
-launch_study(
-  config = research_config,
-  item_bank = validation_items,
-  custom_css = research_css,
-  save_format = "rds",
-  accessibility = TRUE
-)
-}
-
-\dontrun{
-# Example 1: Adaptive 2PL Model with Midnight Theme
-config_2pl <- base::list(
-  name = "Mathematics Proficiency",
-  model = "2PL",
-  max_items = 20,
-  min_items = 5,
-  min_SEM = 0.3,
-  theta_prior = base::c(0, 1),
-  adaptive = TRUE,
-  theme = "Midnight",
-  language = "en",
-  demographics = base::c("Age", "Gender"),
-  input_types = base::list(Age = "numeric", Gender = "select"),
-  response_ui_type = "radio",
-  progress_style = "circle",
-  session_save = TRUE,
-  max_session_duration = 30,
-  recommendation_fun = function(theta, demo) {
-    if (theta > 0) base::c("Consider advanced coursework", "Practice complex problems")
-    else base::c("Review basic concepts", "Seek tutoring support")
-  },
-  response_validation_fun = function(resp) !base::is.null(resp) && base::length(resp) > 0,
-  scoring_fun = function(resp, ans) base::as.numeric(resp == ans)
-)
-item_bank_2pl <- base::data.frame(
-  Question = base::c("What is 2 + 2?", "What is 5 * 3?"),
-  a = base::c(1.2, 1.0),
-  b = base::c(0.5, -0.5),
-  Option1 = base::c("2", "10"),
-  Option2 = base::c("3", "12"),
-  Option3 = base::c("4", "15"),
-  Option4 = base::c("5", "18"),
-  Answer = base::c("4", "15")
-)
-inrep::launch_study(config_2pl, item_bank_2pl)
-
-# Example 2: Non-Adaptive GRM Model with Custom Theme
-config_grm <- base::list(
-  name = "Survey of Attitudes",
+# Example 6: University of Hildesheim theme with cloud storage
+hildesheim_config <- create_study_config(
+  name = "University of Hildesheim Assessment",
   model = "GRM",
   max_items = 10,
-  adaptive = FALSE,
-  theme = "Light",
-  language = "de",
-  demographics = base::c("Age"),
-  input_types = base::list(Age = "numeric"),
-  response_ui_type = "slider",
-  progress_style = "circle",
-  session_save = FALSE,
-  max_session_duration = 15,
-  recommendation_fun = function(score, demo) {
-    if (base::mean(score) > 3) base::c("Positive attitude detected", "Continue engagement")
-    else base::c("Consider motivational support", "Review responses")
-  },
-  response_validation_fun = function(resp) base::is.numeric(resp) && resp >= 1 && resp <= 5,
-  scoring_fun = function(resp, ans) base::as.numeric(resp)
-)
-item_bank_grm <- base::data.frame(
-  Question = base::c("I enjoy learning.", "I feel confident."),
-  a = base::c(1.0, 1.1),
-  b1 = base::c(-1.0, -0.8),
-  b2 = base::c(-0.5, -0.3),
-  b3 = base::c(0.0, 0.2),
-  b4 = base::c(0.5, 0.7),
-  ResponseCategories = base::c("1,2,3,4,5", "1,2,3,4,5")
-)
-custom_theme <- base::list(
-  primary_color = "#007bff",
-  background_color = "#e9ecef",
-  font_family = "'Arial', sans-serif",
-  font_size_base = "1.1rem",
-  border_radius = "10px"
-)
-inrep::launch_study(config_grm, item_bank_grm, theme_config = custom_theme)
-
-# Example 3: Adaptive 3PL Model with Custom CSS
-config_3pl <- base::list(
-  name = "Reading Comprehension",
-  model = "3PL",
-  max_items = 15,
-  min_items = 5,
-  min_SEM = 0.4,
-  theta_prior = base::c(0, 1.5),
-  adaptive = TRUE,
-  theme = "Sunset",
-  language = "en",
-  demographics = base::c("Gender"),
-  input_types = base::list(Gender = "select"),
-  response_ui_type = "dropdown",
-  progress_style = "circle",
   session_save = TRUE,
-  max_session_duration = 20,
-  recommendation_fun = function(theta, demo) {
-    if (theta > 1) base::c("Advanced reading recommended", "Explore complex texts")
-    else base::c("Practice basic comprehension", "Review vocabulary")
-  },
-  response_validation_fun = function(resp) !base::is.null(resp) && base::length(resp) > 0,
-  scoring_fun = function(resp, ans) base::as.numeric(resp == ans)
+  theme = "Berry"
 )
-item_bank_3pl <- base::data.frame(
-  Question = base::c("What is the main idea?", "Who is the protagonist?"),
-  a = base::c(1.3, 1.1),
-  b = base::c(0.2, -0.2),
-  c = base::c(0.2, 0.15),
-  Option1 = base::c("Theme", "John"),
-  Option2 = base::c("Plot", "Jane"),
-  Option3 = base::c("Setting", "Jack"),
-  Option4 = base::c("Character", "Jill"),
-  Answer = base::c("Theme", "Jane")
-)
-custom_css <- "
-  :root {
-    --primary-color: #ff4500;
-    --background-color: #fff8dc;
-    --text-color: #333333;
-    --font-family: 'Helvetica', sans-serif;
-    --border-radius: 12px;
-  }
-  .btn-klee { background: var(--primary-color); }
-  .assessment-card { border: 2px solid var(--primary-color); }
-"
-inrep::launch_study(config_3pl, item_bank_3pl, custom_css = custom_css)
 
-# Example 4: Simple 1PL Model with Default Settings
-config_1pl <- base::list(
-  name = "Basic Arithmetic",
-  model = "1PL",
-  max_items = 5,
-  adaptive = TRUE,
-  theme = "Light",
-  language = "en",
-  demographics = NULL,
-  response_ui_type = "radio",
-  progress_style = "circle",
-  session_save = FALSE,
-  max_session_duration = 10,
-  recommendation_fun = function(theta, demo) base::c("Practice more problems"),
-  response_validation_fun = function(resp) !base::is.null(resp) && base::length(resp) > 0,
-  scoring_fun = function(resp, ans) base::as.numeric(resp == ans)
+launch_study(
+  config = hildesheim_config,
+  item_bank = bfi_items,
+  save_format = "json",
+  webdav_url = "https://sync.academiccloud.de/index.php/s/Y51QPXzJVLWSAcb",
+  password = "inreptest",
+  study_key = paste0("HILDESHEIM_", UUIDgenerate())
 )
-item_bank_1pl <- base::data.frame(
-  Question = base::c("1 + 1 =", "2 + 3 ="),
-  b = base::c(0.0, 0.5),
-  Option1 = base::c("1", "4"),
-  Option2 = base::c("2", "5"),
-  Option3 = base::c("3", "6"),
-  Option4 = base::c("4", "7"),
-  Answer = base::c("2", "5")
-)
-inrep::launch_study(config_1pl, item_bank_1pl)
-
-# Example 5: Simple 1PL Model with Cloud Storage
-config <- inrep::create_study_config(model = "GRM", max_items = 10, session_save = TRUE)
-utils::data(bfi_items)
-inrep::launch_study(config, bfi_items, webdav_url = "https://sync.academiccloud.de/index.php/s/Y51QPXzJVLWSAcb/", password = "inreptest")
-}
-}
-\references{
-\itemize{
-  \item Robitzsch, A., Kiefer, T., & Wu, M. (2020). \emph{TAM: Test Analysis Modules}. 
-    R package version 3.5-19. \url{https://CRAN.R-project.org/package=TAM}
-  \item Chang, W., Cheng, J., Allaire, J., Xie, Y., & McPherson, J. (2021). 
-    \emph{shiny: Web Application Framework for R}. R package version 1.6.0. 
-    \url{https://CRAN.R-project.org/package=shiny}
-  \item American Educational Research Association, American Psychological Association, 
-    & National Council on Measurement in Education. (2014). 
-    \emph{Standards for educational and psychological testing}. 
-    American Educational Research Association.
-  \item van der Linden, W. J., & Glas, C. A. W. (Eds.). (2010). 
-    \emph{Elements of adaptive testing}. Springer.
-  \item Embretson, S. E., & Reise, S. P. (2000). 
-    \emph{Item response theory for psychologists}. Lawrence Erlbaum Associates.
-}
-}
-\seealso{
-\itemize{
-  \item \code{\link{create_study_config}} for configuration parameters
-  \item \code{\link{launch_theme_editor}} for interactive theme creation
-  \item \code{\link{validate_item_bank}} for item bank validation
-  \item \code{\link{estimate_ability}} for ability estimation details
-  \item \code{\link{select_next_item}} for item selection algorithms
 }
 }

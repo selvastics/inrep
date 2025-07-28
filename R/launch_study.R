@@ -242,6 +242,41 @@
 #' 
 #' CSS customization takes precedence in this order: \code{custom_css} > \code{theme_config} > built-in themes.
 #'
+#' @section Progress Visualization:
+#' The interface provides multiple progress visualization styles to enhance user experience:
+#' 
+#' \strong{Available Progress Styles:}
+#' \itemize{
+#'   \item \code{"modern-circle"}: Enhanced circular progress with smooth animations (default)
+#'   \item \code{"enhanced-bar"}: Gradient-filled linear progress bar with shimmer effect
+#'   \item \code{"segmented"}: Step-by-step visual indicator with numbered segments
+#'   \item \code{"minimal"}: Clean, unobtrusive progress display
+#'   \item \code{"card"}: Prominent progress display in card format
+#'   \item \code{"circle"}: Legacy circular progress (backward compatible)
+#'   \item \code{"bar"}: Legacy linear progress bar (backward compatible)
+#' }
+#' 
+#' \strong{Usage Examples:}
+#' \preformatted{
+#' # Use modern circular progress (default)
+#' config <- create_study_config(
+#'   name = "My Assessment",
+#'   progress_style = "modern-circle"
+#' )
+#' 
+#' # Use segmented progress for step-by-step feedback
+#' config <- create_study_config(
+#'   name = "Long Assessment",
+#'   progress_style = "segmented"
+#' )
+#' 
+#' # Use minimal progress for clean interface
+#' config <- create_study_config(
+#'   name = "Simple Assessment",
+#'   progress_style = "minimal"
+#' )
+#' }
+#'
 #' @section Item Bank Requirements:
 #' The \code{item_bank} data frame must conform to TAM package specifications with 
 #' columns varying by IRT model type:
@@ -412,7 +447,7 @@
 #'   theta_prior = c(0, 1.2),
 #'   demographics = c("Age", "Gender", "Education", "Country", "Language"),
 #'   response_ui_type = "radio",
-#'   progress_style = "circle",
+#'   progress_style = "modern-circle",
 #'   theme = "Research",
 #'   language = "en",
 #'   session_save = TRUE,
@@ -572,41 +607,6 @@ launch_study <- function(
     logger(base::sprintf("Setting default adaptive_start: %d", config$adaptive_start))
   }
   if (base::is.null(config$theta_grid)) {
-    config$theta_grid <- base::seq(-4, 4, length.out = 100)
-    logger("Setting default theta_grid: seq(-4, 4, length.out = 100)")
-  }
-  
-  # Validate item_groups indices
-  if (!base::is.null(config$item_groups)) {
-    all_items <- base::unlist(config$item_groups)
-    if (!base::all(all_items %in% base::seq_len(base::nrow(item_bank)))) {
-      logger("item_groups contains invalid item indices", level = "ERROR")
-      base::stop("item_groups contains invalid item indices")
-    }
-  }
-  
-  # Enhanced theme system with support for inst/themes folder
-  get_theme_css <- function(theme_name = "light", theme_config = NULL, custom_css = NULL) {
-    # Priority: custom_css > theme_config > built-in themes > inst/themes
-    
-    if (!base::is.null(custom_css)) {
-      return(custom_css)
-    }
-    
-    if (!base::is.null(theme_config)) {
-      return(generate_theme_css(theme_config))
-    }
-    
-    # Try to load from inst/themes folder first
-    theme_file <- tryCatch({
-      system.file("themes", paste0(tolower(theme_name), ".css"), package = "inrep")
-    }, error = function(e) NULL)
-    
-    if (!base::is.null(theme_file) && file.exists(theme_file)) {
-      return(readLines(theme_file, warn = FALSE) %>% paste(collapse = "\n"))
-    }
-    
-    # Fall back to built-in themes
     return(get_builtin_theme_css(theme_name))
   }
   

@@ -183,7 +183,7 @@ analyze_item_bank <- function(item_bank) {
   if (low_disc == 0 && high_disc < 3 && threshold_issues == 0) {
     cat("  [OK] Item bank meets professional standards\n")
   } else {
-    cat("  WARNING: Item bank may need review\n")
+    cat("  ⚠ Item bank may need review\n")
   }
 }
 
