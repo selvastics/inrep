@@ -24,7 +24,7 @@
 **inrep** provides a comprehensive framework for adaptive testing using Item Response Theory (IRT) models. The package offers web-based interfaces for test administration via Shiny, supports multiple IRT models through TAM integration, implements adaptive item selection algorithms, and includes comprehensive reporting capabilities with LLM integration for enhanced user assistance. It is designed for psychological assessments, educational testing, and survey research with large item pools.
 
 <!-- Demo: See the package in action! -->
-![inrep demo](man/figures/tesst.gif)
+![inrep demo](man/figures/inrep_previewer.gif)
 
 > **Demo:** The above video showcases the main functionalities of the inrep package, including adaptive test setup, Shiny-based administration, theme customization, LLM-powered assistance, and professional reporting. Watch to see how easy it is to configure, deploy, and analyze adaptive assessments with inrep.
 
@@ -123,6 +123,15 @@ launch_study(
 )
 ```
 
+## Theme Customization 
+
+![inrep themes](man/figures/inrep_themes.png)
+
+> **Themes:** `inrep` supports multiple default UI themes for customizing assessment components.  
+> In addition to built-in options, users can extract CSS styles from institutional websites  
+> or define fully custom themes through direct CSS editing.  
+>  
+> New themes are added incrementally. Contributions are welcome to share themes that can be made available to other users.
 
 ---
 
