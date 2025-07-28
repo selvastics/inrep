@@ -2,36 +2,16 @@
 % Please edit documentation in R/themes.R
 \name{validate_theme_name}
 \alias{validate_theme_name}
-\title{Validate and Normalize Theme Name}
+\title{Validate Theme Name}
 \usage{
-validate_theme_name(
-  theme_name,
-  error_on_invalid = FALSE,
-  suggest_alternatives = TRUE
-)
+validate_theme_name(theme_name)
 }
 \arguments{
-\item{theme_name}{Character string specifying the theme name to validate}
-
-\item{error_on_invalid}{Logical; if TRUE, throws an error for invalid themes.
-If FALSE, returns NULL for invalid themes with a warning.}
-
-\item{suggest_alternatives}{Logical; if TRUE, suggests similar theme names
-when an exact match is not found.}
+\item{theme_name}{Theme name to validate}
 }
 \value{
-Character string with the correctly capitalized theme name, or NULL
-  if the theme is invalid and error_on_invalid is FALSE.
+Validated theme name
 }
 \description{
-Validates a theme name with case-insensitive matching and provides helpful
-error messages listing all supported themes when an invalid theme is provided.
-}
-\examples{
-\dontrun{
-# Valid theme names (case-insensitive)
-validate_theme_name("hildesheim")    # Returns "Hildesheim"
-validate_theme_name("MIDNIGHT")      # Returns "Midnight"
-validate_theme_name("ocean")         # Returns "Ocean"
-}
+Validate Theme Name
 }

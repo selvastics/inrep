@@ -6,15 +6,6 @@
 \usage{
 launch_theme_editor()
 }
-\value{
-Opens the theme editor in the default browser.
-}
 \description{
-Opens a web-based GUI for creating custom themes.
-}
-\examples{
-\dontrun{
-# Launch the theme editor
-launch_theme_editor()
-}
+Launch Theme Editor
 }
