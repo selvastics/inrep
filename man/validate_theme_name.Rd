@@ -10,7 +10,7 @@ validate_theme_name(theme_name)
 \item{theme_name}{Theme name to validate}
 }
 \value{
-Validated theme name
+Validated theme name if found, otherwise 'light'
 }
 \description{
 Validate Theme Name

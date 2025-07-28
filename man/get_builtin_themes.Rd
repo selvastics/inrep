@@ -2,15 +2,13 @@
 % Please edit documentation in R/themes.R
 \name{get_builtin_themes}
 \alias{get_builtin_themes}
-\title{Final Optimized Theme System}
+\title{Get All Available Themes}
 \usage{
 get_builtin_themes()
 }
 \value{
-Character vector of 19 themes including accessibility options
+Character vector of available themes
 }
 \description{
-Complete working theme system with accessibility support
-Ultra-efficient single-file implementation
 Get All Available Themes
 }
