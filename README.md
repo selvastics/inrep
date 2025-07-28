@@ -4,7 +4,7 @@
 <td><h1>inrep: Instant Reports for Adaptive Assessments</h1></td>
 <td align="right" width="160">
   <a href="https://github.com/selvastics/inrep">
-    <img src="man/figures/inrep_logo.png" alt="inrep hex logo" height="100"/>
+    <img src="man/figures/inrep_logo.png" alt="inrep hex logo" height="130"/>
   </a>
 </td>
 </tr></table>
