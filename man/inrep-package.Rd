@@ -4,7 +4,7 @@
 \name{inrep-package}
 \alias{inrep}
 \alias{inrep-package}
-\title{inrep: Instant Report for Adaptive Assessments}
+\title{inrep: Instant Reports for Adaptive Assessments}
 \description{
 The inrep package provides a comprehensive workflow framework for adaptive assessments, integrating TAM's Item Response Theory models with modern UI, LLM assistance, and cloud features.
 }
