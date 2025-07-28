@@ -6,6 +6,7 @@
 #' while this function provides the interactive interface, workflow management, and
 #' integration layer for comprehensive research workflows.
 #'
+#' @export
 #' @param config A list containing study configuration parameters created by \code{\link{create_study_config}}.
 #'   Must include essential elements like \code{model}, \code{max_items}, \code{min_SEM}, etc.
 #' @param item_bank Data frame containing item parameters compatible with TAM package requirements.
