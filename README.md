@@ -10,7 +10,7 @@
 </tr></table>
 
 <!-- Demo: See the package in action! -->
-![inrep demo](tesst.gif)
+![inrep demo](man/figures/tesst.gif)
 
 > **Demo:** The above video showcases the main functionalities of the inrep package, including adaptive test setup, Shiny-based administration, theme customization, LLM-powered assistance, and professional reporting. Watch to see how easy it is to configure, deploy, and analyze adaptive assessments with inrep.
 
@@ -55,7 +55,6 @@ The package requires R ≥ 4.1.0 and integrates with the following packages:
 
 * **shiny**
 * **TAM**
-* **DT**
 * **ggplot2**
 
 ## Quick Start
