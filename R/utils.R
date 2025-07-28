@@ -184,49 +184,6 @@ log_open <- function(path) {
   return(TRUE)
 }
 
-#' Validate Item Bank
-#'
-#' Validates the structure and content of the item bank.
-#'
-#' @param item_bank Data frame containing item parameters.
-#' @param model IRT model ("1PL", "2PL", "3PL", "GRM").
-#' @return TRUE if valid, stops with an error otherwise.
-#' @export
-validate_item_bank <- function(item_bank, model) {
-  print("Validating item bank...")
-  if (!is.data.frame(item_bank) || nrow(item_bank) == 0) {
-    print("Item bank must be a non-empty data frame")
-    stop("Item bank must be a non-empty data frame")
-  }
-  required_cols <- c("Question", "a")
-  if (model %in% c("1PL", "2PL", "3PL")) {
-    required_cols <- c(required_cols, paste0("Option", 1:4), "Answer", "b")
-    if (model == "3PL") required_cols <- c(required_cols, "c")
-  } else if (model == "GRM") {
-    required_cols <- c(required_cols, "ResponseCategories")
-    b_cols <- grep("^b[0-9]+$", names(item_bank), value = TRUE)
-    if (length(b_cols) < 1) {
-      print("GRM requires at least one threshold column")
-      stop("GRM requires at least one threshold column (b1, b2, ...)")
-    }
-    required_cols <- c(required_cols, b_cols)
-  }
-  missing_cols <- setdiff(required_cols, names(item_bank))
-  if (length(missing_cols) > 0) {
-    print(sprintf("Item bank missing columns: %s", paste(missing_cols, collapse = ", ")))
-    stop(sprintf("Item bank missing columns: %s", paste(missing_cols, collapse = ", ")))
-  }
-  numeric_cols <- c("a", if (model %in% c("2PL", "3PL")) "b", if (model == "3PL") "c",
-                    if (model == "GRM") grep("^b[0-9]+$", names(item_bank), value = TRUE))
-  for (col in numeric_cols) {
-    if (!all(is.numeric(item_bank[[col]]) & !is.na(item_bank[[col]]))) {
-      print(sprintf("Column %s must be numeric and non-NA", col))
-      stop(sprintf("Column %s must be numeric and non-NA", col))
-    }
-  }
-  print("Item bank validation successful")
-  TRUE
-}
 
 #' Select Next Item
 #'

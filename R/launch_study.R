@@ -1,5 +1,3 @@
-# File: launch_study.R
-
 #' Launch Adaptive Study Interface
 #'
 #' Launches a Shiny-based adaptive or non-adaptive assessment interface that serves as
@@ -32,6 +30,7 @@
 #'   Called with participant progress, ability estimates, and session metrics.
 #' @param accessibility Logical indicating whether to enable accessibility features
 #'   including ARIA labels, keyboard navigation, and screen reader support.
+#' @param study_key Character string for unique study identification. Overrides config$study_key.
 #' @param ... Additional parameters passed to Shiny application configuration.
 #'
 #' @return A Shiny application object that can be run with \code{shiny::runApp()}.
@@ -430,255 +429,22 @@
 #'   }
 #' )
 #' 
-#' # Custom CSS for research branding
-#' research_css <- "
-#'   :root {
-#'     --primary-color: #1f4e79;
-#'     --secondary-color: #8cc8ff;
-#'     --background-color: #ffffff;
-#'     --text-color: #2c3e50;
-#'     --font-family: 'Georgia', serif;
-#'     --border-radius: 6px;
-#'   }
-#'   
-#'   .assessment-header {
-#'     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-#'     color: white;
-#'     padding: 20px;
-#'     text-align: center;
-#'   }
-#'   
-#'   .progress-container {
-#'     margin: 20px 0;
-#'     text-align: center;
-#'   }
-#' "
-#' 
-#' launch_study(
-#'   config = research_config,
-#'   item_bank = validation_items,
-#'   custom_css = research_css,
-#'   save_format = "rds",
-#'   accessibility = TRUE
-#' )
-#' }
-#' 
-#' @references
-#' \itemize{
-#'   \item Robitzsch, A., Kiefer, T., & Wu, M. (2020). \emph{TAM: Test Analysis Modules}. 
-#'     R package version 3.5-19. \url{https://CRAN.R-project.org/package=TAM}
-#'   \item Chang, W., Cheng, J., Allaire, J., Xie, Y., & McPherson, J. (2021). 
-#'     \emph{shiny: Web Application Framework for R}. R package version 1.6.0. 
-#'     \url{https://CRAN.R-project.org/package=shiny}
-#'   \item American Educational Research Association, American Psychological Association, 
-#'     & National Council on Measurement in Education. (2014). 
-#'     \emph{Standards for educational and psychological testing}. 
-#'     American Educational Research Association.
-#'   \item van der Linden, W. J., & Glas, C. A. W. (Eds.). (2010). 
-#'     \emph{Elements of adaptive testing}. Springer.
-#'   \item Embretson, S. E., & Reise, S. P. (2000). 
-#'     \emph{Item response theory for psychologists}. Lawrence Erlbaum Associates.
-#' }
-#' 
-#' @seealso
-#' \itemize{
-#'   \item \code{\link{create_study_config}} for configuration parameters
-#'   \item \code{\link{launch_theme_editor}} for interactive theme creation
-#'   \item \code{\link{validate_item_bank}} for item bank validation
-#'   \item \code{\link{estimate_ability}} for ability estimation details
-#'   \item \code{\link{select_next_item}} for item selection algorithms
-#' }
-#' 
-#' @export
-#' 
-#' @section Installation and Setup:
-#' To use all features, ensure required packages are installed:
-#' \preformatted{
-#' install.packages(c("TAM", "shiny", "DT", "ggplot2", "logr"))
-#' devtools::install_github("selvastics/inrep")
-#' }
-#' 
-#' @section Performance Considerations:
-#' For large-scale deployments:
-#' \itemize{
-#'   \item Enable \code{parallel_computation = TRUE} in config for faster ability estimation
-#'   \item Use \code{cache_enabled = TRUE} to cache item information calculations  
-#'   \item Consider \code{auto_scaling = TRUE} for cloud deployments
-#'   \item Monitor performance with built-in profiling tools
-#' }
-#' 
-#' @section Validation and Quality:
-#' The framework includes comprehensive validation:
-#' \itemize{
-#'   \item Real-time response quality monitoring
-#'   \item Automatic outlier detection
-#'   \item Model fit diagnostics through TAM
-#'   \item Engagement and completion tracking
-#'   \item Comprehensive audit trails
-#' }
-#' 
-#' @examples
-#' \dontrun{
-#' # Example 1: Adaptive 2PL Model with Midnight Theme
-#' config_2pl <- base::list(
-#'   name = "Mathematics Proficiency",
-#'   model = "2PL",
-#'   max_items = 20,
-#'   min_items = 5,
-#'   min_SEM = 0.3,
-#'   theta_prior = base::c(0, 1),
-#'   adaptive = TRUE,
-#'   theme = "Midnight",
-#'   language = "en",
-#'   demographics = base::c("Age", "Gender"),
-#'   input_types = base::list(Age = "numeric", Gender = "select"),
-#'   response_ui_type = "radio",
-#'   progress_style = "circle",
-#'   session_save = TRUE,
-#'   max_session_duration = 30,
-#'   recommendation_fun = function(theta, demo) {
-#'     if (theta > 0) base::c("Consider advanced coursework", "Practice complex problems")
-#'     else base::c("Review basic concepts", "Seek tutoring support")
-#'   },
-#'   response_validation_fun = function(resp) !base::is.null(resp) && base::length(resp) > 0,
-#'   scoring_fun = function(resp, ans) base::as.numeric(resp == ans)
-#' )
-#' item_bank_2pl <- base::data.frame(
-#'   Question = base::c("What is 2 + 2?", "What is 5 * 3?"),
-#'   a = base::c(1.2, 1.0),
-#'   b = base::c(0.5, -0.5),
-#'   Option1 = base::c("2", "10"),
-#'   Option2 = base::c("3", "12"),
-#'   Option3 = base::c("4", "15"),
-#'   Option4 = base::c("5", "18"),
-#'   Answer = base::c("4", "15")
-#' )
-#' inrep::launch_study(config_2pl, item_bank_2pl)
-#'
-#' # Example 2: Non-Adaptive GRM Model with Custom Theme
-#' config_grm <- base::list(
-#'   name = "Survey of Attitudes",
+#' # Example 6: University of Hildesheim theme with cloud storage
+#' hildesheim_config <- create_study_config(
+#'   name = "University of Hildesheim Assessment",
 #'   model = "GRM",
 #'   max_items = 10,
-#'   adaptive = FALSE,
-#'   theme = "Light",
-#'   language = "de",
-#'   demographics = base::c("Age"),
-#'   input_types = base::list(Age = "numeric"),
-#'   response_ui_type = "slider",
-#'   progress_style = "circle",
-#'   session_save = FALSE,
-#'   max_session_duration = 15,
-#'   recommendation_fun = function(score, demo) {
-#'     if (base::mean(score) > 3) base::c("Positive attitude detected", "Continue engagement")
-#'     else base::c("Consider motivational support", "Review responses")
-#'   },
-#'   response_validation_fun = function(resp) base::is.numeric(resp) && resp >= 1 && resp <= 5,
-#'   scoring_fun = function(resp, ans) base::as.numeric(resp)
-#' )
-#' item_bank_grm <- base::data.frame(
-#'   Question = base::c("I enjoy learning.", "I feel confident."),
-#'   a = base::c(1.0, 1.1),
-#'   b1 = base::c(-1.0, -0.8),
-#'   b2 = base::c(-0.5, -0.3),
-#'   b3 = base::c(0.0, 0.2),
-#'   b4 = base::c(0.5, 0.7),
-#'   ResponseCategories = base::c("1,2,3,4,5", "1,2,3,4,5")
-#' )
-#' custom_theme <- base::list(
-#'   primary_color = "#007bff",
-#'   background_color = "#e9ecef",
-#'   font_family = "'Arial', sans-serif",
-#'   font_size_base = "1.1rem",
-#'   border_radius = "10px"
-#' )
-#' inrep::launch_study(config_grm, item_bank_grm, theme_config = custom_theme)
-#'
-#' # Example 3: Adaptive 3PL Model with Custom CSS
-#' config_3pl <- base::list(
-#'   name = "Reading Comprehension",
-#'   model = "3PL",
-#'   max_items = 15,
-#'   min_items = 5,
-#'   min_SEM = 0.4,
-#'   theta_prior = base::c(0, 1.5),
-#'   adaptive = TRUE,
-#'   theme = "Sunset",
-#'   language = "en",
-#'   demographics = base::c("Gender"),
-#'   input_types = base::list(Gender = "select"),
-#'   response_ui_type = "dropdown",
-#'   progress_style = "circle",
 #'   session_save = TRUE,
-#'   max_session_duration = 20,
-#'   recommendation_fun = function(theta, demo) {
-#'     if (theta > 1) base::c("Advanced reading recommended", "Explore complex texts")
-#'     else base::c("Practice basic comprehension", "Review vocabulary")
-#'   },
-#'   response_validation_fun = function(resp) !base::is.null(resp) && base::length(resp) > 0,
-#'   scoring_fun = function(resp, ans) base::as.numeric(resp == ans)
+#'   theme = "Berry"
 #' )
-#' item_bank_3pl <- base::data.frame(
-#'   Question = base::c("What is the main idea?", "Who is the protagonist?"),
-#'   a = base::c(1.3, 1.1),
-#'   b = base::c(0.2, -0.2),
-#'   c = base::c(0.2, 0.15),
-#'   Option1 = base::c("Theme", "John"),
-#'   Option2 = base::c("Plot", "Jane"),
-#'   Option3 = base::c("Setting", "Jack"),
-#'   Option4 = base::c("Character", "Jill"),
-#'   Answer = base::c("Theme", "Jane")
-#' )
-#' custom_css <- "
-#'   :root {
-#'     --primary-color: #ff4500;
-#'     --background-color: #fff8dc;
-#'     --text-color: #333333;
-#'     --font-family: 'Helvetica', sans-serif;
-#'     --border-radius: 12px;
-#'   }
-#'   .btn-klee { background: var(--primary-color); }
-#'   .assessment-card { border: 2px solid var(--primary-color); }
-#' "
-#' inrep::launch_study(config_3pl, item_bank_3pl, custom_css = custom_css)
-#'
-#' # Example 4: Simple 1PL Model with Default Settings
-#' config_1pl <- base::list(
-#'   name = "Basic Arithmetic",
-#'   model = "1PL",
-#'   max_items = 5,
-#'   adaptive = TRUE,
-#'   theme = "Light",
-#'   language = "en",
-#'   demographics = NULL,
-#'   response_ui_type = "radio",
-#'   progress_style = "circle",
-#'   session_save = FALSE,
-#'   max_session_duration = 10,
-#'   recommendation_fun = function(theta, demo) base::c("Practice more problems"),
-#'   response_validation_fun = function(resp) !base::is.null(resp) && base::length(resp) > 0,
-#'   scoring_fun = function(resp, ans) base::as.numeric(resp == ans)
-#' )
-#' item_bank_1pl <- base::data.frame(
-#'   Question = base::c("1 + 1 =", "2 + 3 ="),
-#'   b = base::c(0.0, 0.5),
-#'   Option1 = base::c("1", "4"),
-#'   Option2 = base::c("2", "5"),
-#'   Option3 = base::c("3", "6"),
-#'   Option4 = base::c("4", "7"),
-#'   Answer = base::c("2", "5")
-#' )
-#' inrep::launch_study(config_1pl, item_bank_1pl)
 #' 
-#' # Example 5: Simple 1PL Model with Cloud Storage
-#' config <- inrep::create_study_config(model = "GRM", max_items = 10, session_save = TRUE)
-#' utils::data(bfi_items)
-#' # Set up environment variable first: Sys.setenv(WEBDAV_PASSWORD = "your_actual_password")
-#' inrep::launch_study(
-#'   config, 
-#'   bfi_items, 
-#'   webdav_url = "https://sync.academiccloud.de/index.php/s/YourSharedFolder/", 
-#'   password = Sys.getenv("WEBDAV_PASSWORD")
+#' launch_study(
+#'   config = hildesheim_config,
+#'   item_bank = bfi_items,
+#'   save_format = "json",
+#'   webdav_url = "https://sync.academiccloud.de/index.php/s/Y51QPXzJVLWSAcb",
+#'   password = "inreptest",
+#'   study_key = paste0("HILDESHEIM_", UUIDgenerate())
 #' )
 #' }
 #' @importFrom shiny shinyApp fluidPage tags div numericInput selectInput actionButton downloadButton uiOutput renderUI plotOutput h2 h3 h4 p tagList
@@ -703,6 +469,7 @@ launch_study <- function(
     password = NULL,
     save_format = "rds",
     logger = function(msg, ...) print(msg),
+    study_key = NULL,
     ...
 ) {
   
@@ -711,6 +478,12 @@ launch_study <- function(
   if (length(extra_params) > 0) {
     logger(paste("Ignoring unused parameters:", paste(names(extra_params), collapse = ", ")), level = "INFO")
   }
+  
+  # Ensure required packages are loaded
+  if (!requireNamespace("magrittr", quietly = TRUE)) stop("Package 'magrittr' is required.")
+  if (!requireNamespace("TAM", quietly = TRUE)) stop("Package 'TAM' is required.")
+  library(magrittr)
+  library(TAM)
   
   if (base::is.null(config)) {
     logger("Configuration is NULL", level = "ERROR")
@@ -730,28 +503,28 @@ launch_study <- function(
     if (base::is.null(webdav_url) && !base::is.null(password)) {
       logger("Password provided without WebDAV URL", level = "ERROR")
       base::stop("Cloud storage requires both 'webdav_url' and 'password' arguments.\n",
-           "You provided a password but no WebDAV URL.\n",
-           "Please provide both arguments together:\n",
-           "  webdav_url = \"https://your-cloud-storage.com/path/\"\n",
-           "  password = \"your-access-password\"\n",
-           "Or remove both arguments to use local storage only.")
+                 "You provided a password but no WebDAV URL.\n",
+                 "Please provide both arguments together:\n",
+                 "  webdav_url = \"https://your-cloud-storage.com/path/\"\n",
+                 "  password = \"your-access-password\"\n",
+                 "Or remove both arguments to use local storage only.")
     }
     if (!base::is.null(webdav_url) && base::is.null(password)) {
       logger("WebDAV URL provided without password", level = "ERROR")
       base::stop("Cloud storage requires both 'webdav_url' and 'password' arguments.\n",
-           "You provided a WebDAV URL but no password.\n",
-           "Please provide both arguments together:\n",
-           "  webdav_url = \"", webdav_url, "\"\n",
-           "  password = \"your-access-password\"\n",
-           "For security, consider using: password = Sys.getenv(\"WEBDAV_PASSWORD\")")
+                 "You provided a WebDAV URL but no password.\n",
+                 "Please provide both arguments together:\n",
+                 "  webdav_url = \"", webdav_url, "\"\n",
+                 "  password = \"your-access-password\"\n",
+                 "For security, consider using: password = Sys.getenv(\"WEBDAV_PASSWORD\")")
     }
     if (!base::is.null(webdav_url) && !base::is.null(password)) {
       # Validate URL format
       if (!grepl("^https?://", webdav_url)) {
         logger("Invalid WebDAV URL format", level = "ERROR")
         base::stop("WebDAV URL must start with 'http://' or 'https://'\n",
-             "Provided: ", webdav_url, "\n",
-             "Example: webdav_url = \"https://sync.academiccloud.de/index.php/s/YourFolder/\"")
+                   "Provided: ", webdav_url, "\n",
+                   "Example: webdav_url = \"https://sync.academiccloud.de/index.php/s/YourFolder/\"")
       }
       logger("Cloud storage enabled with WebDAV URL and password", level = "INFO")
       print(paste("Cloud storage enabled:", webdav_url))
@@ -802,7 +575,7 @@ launch_study <- function(
     config$theta_grid <- base::seq(-4, 4, length.out = 100)
     logger("Setting default theta_grid: seq(-4, 4, length.out = 100)")
   }
-
+  
   # Validate item_groups indices
   if (!base::is.null(config$item_groups)) {
     all_items <- base::unlist(config$item_groups)
@@ -812,28 +585,400 @@ launch_study <- function(
     }
   }
   
-  # Apply theme: custom_css > theme_config > built-in theme
-  css <- if (!base::is.null(custom_css)) {
-    logger("Using custom CSS theme", level = "INFO")
-    custom_css
-  } else if (!base::is.null(theme_config)) {
-    logger("Using custom theme configuration", level = "INFO")
-    inrep::get_theme_css(theme_config = theme_config)
-  } else {
-    theme <- config$theme %||% "Light"
+  # Enhanced theme system with support for inst/themes folder
+  get_theme_css <- function(theme_name = "light", theme_config = NULL, custom_css = NULL) {
+    # Priority: custom_css > theme_config > built-in themes > inst/themes
     
-    # Validate and normalize theme name
-    validated_theme <- validate_theme_name(theme)
-    
-    if (validated_theme != theme) {
-      print(base::sprintf("Theme '%s' normalized to '%s'", theme, validated_theme))
+    if (!base::is.null(custom_css)) {
+      return(custom_css)
     }
     
-    print(base::sprintf("Using built-in '%s' theme", validated_theme))
-    inrep::get_theme_css(theme = validated_theme)
+    if (!base::is.null(theme_config)) {
+      return(generate_theme_css(theme_config))
+    }
+    
+    # Try to load from inst/themes folder first
+    theme_file <- tryCatch({
+      system.file("themes", paste0(tolower(theme_name), ".css"), package = "inrep")
+    }, error = function(e) NULL)
+    
+    if (!base::is.null(theme_file) && file.exists(theme_file)) {
+      return(readLines(theme_file, warn = FALSE) %>% paste(collapse = "\n"))
+    }
+    
+    # Fall back to built-in themes
+    return(get_builtin_theme_css(theme_name))
   }
   
+  generate_theme_css <- function(theme_config) {
+    primary_color <- theme_config$primary_color %||% "#007bff"
+    secondary_color <- theme_config$secondary_color %||% "#6c757d"
+    background_color <- theme_config$background_color %||% "#ffffff"
+    text_color <- theme_config$text_color %||% "#212529"
+    font_family <- theme_config$font_family %||% "'Inter', sans-serif"
+    border_radius <- theme_config$border_radius %||% "8px"
+    
+    return(paste0("
+      :root {
+        --primary-color: ", primary_color, ";
+        --secondary-color: ", secondary_color, ";
+        --background-color: ", background_color, ";
+        --text-color: ", text_color, ";
+        --font-family: ", font_family, ";
+        --border-radius: ", border_radius, ";
+        --progress-bg-color: ", adjust_color(background_color, -0.1), ";
+        --error-color: #dc3545;
+        --success-color: #28a745;
+        --warning-color: #ffc107;
+        --info-color: #17a2b8;
+      }
+    "))
+  }
+  
+  get_builtin_theme_css <- function(theme_name) {
+    theme_name <- tolower(theme_name)
+    
+    themes <- list(
+      light = "
+        :root {
+          --primary-color: #007bff;
+          --secondary-color: #6c757d;
+          --background-color: #ffffff;
+          --text-color: #212529;
+          --font-family: 'Inter', sans-serif;
+          --border-radius: 8px;
+          --progress-bg-color: #e9ecef;
+          --error-color: #dc3545;
+          --success-color: #28a745;
+          --warning-color: #ffc107;
+          --info-color: #17a2b8;
+        }
+      ",
+      midnight = "
+        :root {
+          --primary-color: #6366f1;
+          --secondary-color: #8b5cf6;
+          --background-color: #0f172a;
+          --text-color: #f1f5f9;
+          --font-family: 'Inter', sans-serif;
+          --border-radius: 8px;
+          --progress-bg-color: #1e293b;
+          --error-color: #ef4444;
+          --success-color: #10b981;
+          --warning-color: #f59e0b;
+          --info-color: #06b6d4;
+        }
+      ",
+      sunset = "
+        :root {
+          --primary-color: #ff6f61;
+          --secondary-color: #ffa726;
+          --background-color: #fff8f0;
+          --text-color: #2c1810;
+          --font-family: 'Inter', sans-serif;
+          --border-radius: 12px;
+          --progress-bg-color: #ffe0b2;
+          --error-color: #e53935;
+          --success-color: #43a047;
+          --warning-color: #fb8c00;
+          --info-color: #039be5;
+        }
+      ",
+      forest = "
+        :root {
+          --primary-color: #2e7d32;
+          --secondary-color: #388e3c;
+          --background-color: #f1f8e9;
+          --text-color: #1b5e20;
+          --font-family: 'Inter', sans-serif;
+          --border-radius: 8px;
+          --progress-bg-color: #c8e6c9;
+          --error-color: #c62828;
+          --success-color: #2e7d32;
+          --warning-color: #f57f17;
+          --info-color: #0277bd;
+        }
+      ",
+      ocean = "
+        :root {
+          --primary-color: #0288d1;
+          --secondary-color: #039be5;
+          --background-color: #e3f2fd;
+          --text-color: #0d47a1;
+          --font-family: 'Inter', sans-serif;
+          --border-radius: 8px;
+          --progress-bg-color: #bbdefb;
+          --error-color: #d32f2f;
+          --success-color: #388e3c;
+          --warning-color: #ffa000;
+          --info-color: #0288d1;
+        }
+      ",
+      berry = "
+        :root {
+          --primary-color: #c2185b;
+          --secondary-color: #d81b60;
+          --background-color: #fce4ec;
+          --text-color: #880e4f;
+          --font-family: 'Inter', sans-serif;
+          --border-radius: 10px;
+          --progress-bg-color: #f8bbd9;
+          --error-color: #c62828;
+          --success-color: #4caf50;
+          --warning-color: #ff9800;
+          --info-color: #2196f3;
+        }
+      "
+    )
+    
+    return(themes[[theme_name]] %||% themes[["light"]])
+  }
+  
+  adjust_color <- function(color_hex, factor) {
+    # Simple color adjustment function
+    if (!grepl("^#", color_hex)) return(color_hex)
+    color_hex <- sub("^#", "", color_hex)
+    if (nchar(color_hex) != 6) return(color_hex)
+    
+    rgb <- strtoi(substring(color_hex, seq(1, 5, 2), seq(2, 6, 2)), 16L)
+    rgb <- pmax(0, pmin(255, round(rgb * (1 + factor))))
+    sprintf("#%02x%02x%02x", rgb[1], rgb[2], rgb[3])
+  }
+  
+  # Apply theme: custom_css > theme_config > inst/themes > built-in themes
+  theme_css <- get_theme_css(
+    theme_name = config$theme %||% "Light",
+    theme_config = theme_config,
+    custom_css = custom_css
+  )
+  
   if (config$model == "1PL") item_bank$a <- base::rep(1, base::nrow(item_bank))
+  
+  # Enhanced CSS with theme variables
+  enhanced_css <- paste0(theme_css, "
+    body { 
+      font-family: var(--font-family);
+      color: var(--text-color);
+      background-color: var(--background-color);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    
+    .container-fluid { 
+      max-width: 800px; 
+      margin: 0 auto; 
+    }
+    
+    .assessment-card {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: 30px;
+      margin: 20px 0;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      border: 1px solid var(--secondary-color);
+      background-color: var(--background-color);
+      color: var(--text-color);
+    }
+    
+    .card-header {
+      color: var(--text-color);
+      margin-bottom: 25px;
+      font-size: 28px;
+      font-weight: 600;
+      text-align: center;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .input-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--text-color);
+    }
+    
+    .nav-buttons {
+      margin-top: 30px;
+      text-align: center;
+    }
+    
+    .btn-klee {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      margin: 0 10px;
+      font-size: 16px;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    
+    .btn-klee:hover {
+      background-color: var(--secondary-color);
+    }
+    
+    .test-question {
+      font-size: 20px;
+      font-weight: 500;
+      margin: 25px 0;
+      line-height: 1.5;
+      color: var(--text-color);
+    }
+    
+    .radio-group-container {
+      margin: 25px 0;
+    }
+    
+    .error-message {
+      color: var(--error-color);
+      background-color: rgba(var(--error-color), 0.1);
+      border: 1px solid var(--error-color);
+      padding: 12px;
+      border-radius: var(--border-radius);
+      margin: 15px 0;
+    }
+    
+    .feedback-message {
+      color: var(--success-color);
+      background-color: rgba(var(--success-color), 0.1);
+      border: 1px solid var(--success-color);
+      padding: 12px;
+      border-radius: var(--border-radius);
+      margin: 15px 0;
+    }
+    
+    .welcome-text {
+      color: var(--text-color);
+      opacity: 0.8;
+      margin-bottom: 25px;
+      line-height: 1.6;
+      font-size: 16px;
+    }
+    
+    .results-section {
+      margin: 25px 0;
+    }
+    
+    .dimension-score {
+      background: rgba(var(--primary-color), 0.05);
+      padding: 20px;
+      border-radius: var(--border-radius);
+      margin: 15px 0;
+      border-left: 4px solid var(--primary-color);
+    }
+    
+    .dimension-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .dimension-value {
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+    
+    .dimension-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--progress-bg-color);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .dimension-fill {
+      height: 100%;
+      background: var(--primary-color);
+      transition: width 0.3s ease;
+    }
+    
+    .progress-bar-container {
+      width: 100%;
+      background: var(--progress-bg-color);
+      height: 12px;
+      border-radius: 6px;
+      margin: 25px 0;
+      overflow: hidden;
+    }
+    
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--primary-color);
+      transition: width 0.3s ease;
+      border-radius: 6px;
+    }
+    
+    .progress-circle {
+      text-align: center;
+      margin: 20px 0;
+    }
+    
+    .progress-circle svg {
+      display: block;
+      margin: 0 auto;
+    }
+    
+    .progress-circle span {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+    
+    .shiny-input-radiogroup {
+      margin: 15px 0;
+    }
+    
+    .shiny-input-radiogroup label {
+      display: block;
+      margin: 10px 0;
+      cursor: pointer;
+      padding: 12px;
+      border-radius: var(--border-radius);
+      transition: background-color 0.2s;
+      border: 1px solid var(--secondary-color);
+      background-color: rgba(var(--secondary-color), 0.05);
+    }
+    
+    .shiny-input-radiogroup label:hover {
+      background-color: rgba(var(--primary-color), 0.1);
+    }
+    
+    .shiny-input-radiogroup input[type='radio'] {
+      margin-right: 10px;
+    }
+    
+    .slider-container {
+      margin: 25px 0;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid var(--secondary-color);
+      color: var(--text-color);
+      opacity: 0.7;
+    }
+    
+    .recommendation-list {
+      list-style-type: none;
+      padding: 0;
+    }
+    
+    .recommendation-list li {
+      background: rgba(var(--primary-color), 0.05);
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: var(--border-radius);
+      border-left: 4px solid var(--primary-color);
+    }
+  ")
   
   labels <- base::list(
     en = base::list(
@@ -852,7 +997,12 @@ launch_study <- function(
       feedback_incorrect = "Incorrect",
       timeout_message = "Session timed out. Please restart.",
       demo_error = "Please complete all required fields.",
-      age_error = "Please enter a valid age (1-150)."
+      age_error = "Please enter a valid age (1-150).",
+      continue_button = "Continue",
+      begin_button = "Begin Assessment",
+      consent_text = "I agree to participate in this study",
+      instructions_title = "Instructions",
+      instructions_text = "You will be presented with questions. Please respond honestly and to the best of your ability."
     ),
     de = base::list(
       demo_title = "Demografische Informationen",
@@ -870,7 +1020,12 @@ launch_study <- function(
       feedback_incorrect = "Falsch",
       timeout_message = "Sitzung abgelaufen. Bitte neu starten.",
       demo_error = "Bitte füllen Sie alle erforderlichen Felder aus.",
-      age_error = "Bitte geben Sie ein gültiges Alter ein (1-150)."
+      age_error = "Bitte geben Sie ein gültiges Alter ein (1-150).",
+      continue_button = "Weiter",
+      begin_button = "Bewertung beginnen",
+      consent_text = "Ich stimme der Teilnahme an dieser Studie zu",
+      instructions_title = "Anweisungen",
+      instructions_text = "Sie werden Fragen präsentiert bekommen. Bitte antworten Sie ehrlich und nach bestem Wissen und Gewissen."
     )
   )
   ui_labels <- labels[[config$language %||% "en"]]
@@ -878,20 +1033,17 @@ launch_study <- function(
   ui <- shiny::fluidPage(
     shinyjs::useShinyjs(),
     shiny::tags$head(
-      shiny::tags$style(type = "text/css", css),
+      shiny::tags$style(type = "text/css", enhanced_css),
       shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
       shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet")
     ),
-    shiny::div(class = "container-fluid",
-        `data-theme` = config$theme %||% "Light",
-        if (!base::is.null(config$custom_ui_pre)) config$custom_ui_pre,
-        shiny::h2(config$name, class = "section-title", role = "heading", `aria-level` = "1"),
-        shiny::uiOutput("study_ui")
-    )
+    shiny::uiOutput("study_ui")
   )
   
   server <- function(input, output, session) {
-    data_dir <- base::file.path("study_data", config$study_key %||% "default_study")
+    # Use study_key argument if provided, else config$study_key, else default
+    effective_study_key <- study_key %||% config$study_key %||% "default_study"
+    data_dir <- base::file.path("study_data", effective_study_key)
     if (!base::dir.exists(data_dir)) base::dir.create(data_dir, recursive = TRUE)
     session_file <- base::file.path(data_dir, "session.rds")
     
@@ -906,8 +1058,8 @@ launch_study <- function(
       start_time = NULL,
       session_start = base::Sys.time(),
       current_item = NULL,
-      theta_history = base::list(),
-      se_history = base::list(),
+      theta_history = as.numeric(base::c()),
+      se_history = as.numeric(base::c()),
       cat_result = NULL,
       item_counter = 0,
       error_message = NULL,
@@ -966,36 +1118,21 @@ launch_study <- function(
         (base::length(rv$administered) >= config$max_items || rv$current_se <= config$min_SEM)
     }
     
-    output$ui <- shiny::renderUI({
-      rv <- inrep::validate_session(rv, config, webdav_url, password)
-      if (rv$stage == "demographics") {
-        inrep::create_demographics_ui(config)
-      } else if (rv$stage == "test") {
-        inrep::inrep_test_ui(config, item_bank, rv$current_item, rv$feedback_message, rv$error_message, rv$loading)
-      } else {
-        inrep::inrep_results_ui(config, rv$cat_result, save_format)
-      }
-    })
-    
     output$study_ui <- shiny::renderUI({
       if (!rv$session_active) {
         return(
           shiny::div(class = "assessment-card",
-              shiny::h3(ui_labels$timeout_message, class = "card-header"),
-              shiny::div(class = "nav-buttons",
-                  shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee")
-              )
+                     shiny::h3(ui_labels$timeout_message, class = "card-header"),
+                     shiny::div(class = "nav-buttons",
+                                shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee")
+                     )
           )
         )
       }
       
       base::switch(rv$stage,
-             "demographics" = {
-               shiny::tagList(
-                 shiny::div(class = "assessment-card",
-                     shiny::h3(ui_labels$demo_title, class = "card-header"),
-                     shiny::p(ui_labels$welcome_text, class = "welcome-text"),
-                     base::lapply(base::seq_along(config$demographics), function(i) {
+                   "demographics" = {
+                     demo_inputs <- base::lapply(base::seq_along(config$demographics), function(i) {
                        dem <- config$demographics[i]
                        input_type <- config$input_types[[dem]]
                        input_id <- base::paste0("demo_", i)
@@ -1003,196 +1140,227 @@ launch_study <- function(
                          class = "form-group",
                          shiny::tags$label(dem, class = "input-label"),
                          base::switch(input_type,
-                                "numeric" = shiny::numericInput(
-                                  inputId = input_id,
-                                  label = NULL,
-                                  value = rv$demo_data[i] %||% NA,
-                                  min = 1,
-                                  max = 150,
-                                  width = "100%"
-                                ),
-                                "select" = shiny::selectInput(
-                                  inputId = input_id,
-                                  label = NULL,
-                                  choices = base::c("Select" = "", "Male", "Female", "Other"),
-                                  selected = rv$demo_data[i] %||% "",
-                                  width = "100%"
-                                ),
-                                shiny::textInput(
-                                  inputId = input_id,
-                                  label = NULL,
-                                  value = rv$demo_data[i] %||% "",
-                                  width = "100%"
-                                )
+                                      "numeric" = shiny::numericInput(
+                                        inputId = input_id,
+                                        label = NULL,
+                                        value = rv$demo_data[i] %||% NA,
+                                        min = 1,
+                                        max = 150,
+                                        width = "100%"
+                                      ),
+                                      "select" = shiny::selectInput(
+                                        inputId = input_id,
+                                        label = NULL,
+                                        choices = base::c("Select..." = "", "Male", "Female", "Other", "Prefer not to say"),
+                                        selected = rv$demo_data[i] %||% "",
+                                        width = "100%"
+                                      ),
+                                      shiny::textInput(
+                                        inputId = input_id,
+                                        label = NULL,
+                                        value = rv$demo_data[i] %||% "",
+                                        width = "100%"
+                                      )
                          )
                        )
-                     }),
-                     if (!base::is.null(rv$error_message)) shiny::div(class = "error-message", rv$error_message),
-                     shiny::div(class = "nav-buttons",
-                         shiny::actionButton("start_test", ui_labels$start_button, class = "btn-klee")
+                     })
+                     
+                     shiny::tagList(
+                       shiny::div(class = "assessment-card",
+                                  shiny::h3(ui_labels$demo_title, class = "card-header"),
+                                  shiny::p(ui_labels$welcome_text, class = "welcome-text"),
+                                  demo_inputs,
+                                  if (!base::is.null(rv$error_message)) shiny::div(class = "error-message", rv$error_message),
+                                  shiny::div(class = "nav-buttons",
+                                             shiny::actionButton("start_test", ui_labels$start_button, class = "btn-klee")
+                                  )
+                       )
                      )
-                 )
-               )
-             },
-             "test" = {
-               if (base::is.null(rv$current_item)) {
-                 return(shiny::div(class = "assessment-card",
-                            shiny::h3("Preparing...", class = "card-header"),
-                            shiny::p("Loading next question...")))
-               }
-               item <- get_item_content(rv$current_item)
-               response_ui <- if (config$model == "GRM") {
-                 choices <- base::as.numeric(base::unlist(base::strsplit(item$ResponseCategories, ",")))
-                 labels <- base::switch(config$language,
-                                  de = base::c("Stark abgelehnt", "Abgelehnt", "Neutral", "Zustimmen", "Stark zustimmen")[1:base::length(choices)],
-                                  en = base::c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")[1:base::length(choices)],
-                                  es = base::c("Totalmente en desacuerdo", "En desacuerdo", "Neutral", "De acuerdo", "Totalmente de acuerdo")[1:base::length(choices)],
-                                  fr = base::c("Fortement en désaccord", "En désaccord", "Neutre", "D'accord", "Fortement d'accord")[1:base::length(choices)]
-                 )
-                 base::switch(config$response_ui_type,
-                        "slider" = shiny::div(class = "slider-container",
-                                       shiny::sliderInput(
-                                         inputId = "item_response",
-                                         label = NULL,
-                                         min = base::min(choices),
-                                         max = base::max(choices),
-                                         value = base::min(choices),
-                                         step = 1,
-                                         ticks = TRUE,
-                                         width = "100%"
-                                       )),
-                        "dropdown" = shiny::selectInput(
-                          inputId = "item_response",
-                          label = NULL,
-                          choices = stats::setNames(choices, labels),
-                          selected = NULL,
-                          width = "100%"
-                        ),
-                        shinyWidgets::radioGroupButtons(
-                          inputId = "item_response",
-                          label = NULL,
-                          choices = stats::setNames(choices, labels),
-                          selected = base::character(0),
-                          direction = "vertical",
-                          status = "default",
-                          individual = TRUE,
-                          width = "100%"
-                        )
-                 )
-               } else {
-                 shinyWidgets::radioGroupButtons(
-                   inputId = "item_response",
-                   label = NULL,
-                   choices = base::c(item$Option1, item$Option2, item$Option3, item$Option4),
-                   selected = base::character(0),
-                   direction = "vertical",
-                   status = "default",
-                   individual = TRUE,
-                   width = "100%"
-                 )
-               }
-               progress_ui <- base::switch(config$progress_style,
-                                     "circle" = shiny::div(class = "progress-circle",
-                                                    shiny::tags$svg(
-                                                      width = "100", height = "100",
-                                                      shiny::tags$circle(cx = "50", cy = "50", r = "45", stroke = "var(--progress-bg-color)"),
-                                                      shiny::tags$circle(cx = "50", cy = "50", r = "45", class = "progress",
-                                                                  strokeDasharray = "283", strokeDashoffset = base::sprintf("%.0f",
-                                                                                                                      283 * (1 - base::length(rv$administered) / config$max_items)),
-                                                                  style = "stroke: var(--primary-color);"),
-                                                      shiny::span(base::sprintf("%d%%", base::round(base::length(rv$administered) / config$max_items * 100)))
-                                                    )
-                                     ))
-               shiny::tagList(
-                 shiny::div(class = "assessment-card",
-                     shiny::h3(config$name, class = "card-header"),
-                     progress_ui,
-                     shiny::div(class = "test-question", item$Question),
-                     shiny::div(class = "radio-group-container", response_ui),
-                     if (!base::is.null(rv$error_message)) shiny::div(class = "error-message", rv$error_message),
-                     if (!base::is.null(rv$feedback_message)) shiny::div(class = "feedback-message", rv$feedback_message),
-                     shiny::div(class = "nav-buttons",
-                         shiny::actionButton("submit_response", ui_labels$submit_button, class = "btn-klee")
+                   },
+                   "instructions" = {
+                     shiny::div(class = "assessment-card",
+                                shiny::h3(ui_labels$instructions_title, class = "card-header"),
+                                shiny::p(ui_labels$instructions_text, class = "welcome-text"),
+                                shiny::p("The assessment will adapt based on your responses.", class = "welcome-text"),
+                                shiny::div(class = "nav-buttons",
+                                           shiny::actionButton("begin_test", ui_labels$begin_button, class = "btn-klee")
+                                )
                      )
-                 )
-               )
-             },
-             "results" = {
-               if (base::is.null(rv$cat_result)) return()
-               shiny::tagList(
-                 shiny::div(class = "assessment-card",
-                     shiny::h3(ui_labels$results_title, class = "card-header"),
-                     if (config$adaptive) shiny::plotOutput("theta_plot", height = "200px"),
-                     if (config$adaptive) shiny::div(class = "results-section",
-                                              shiny::h4(ui_labels$proficiency, class = "results-title"),
-                                              shiny::div(class = "dimension-score",
-                                                  shiny::div(class = "dimension-title",
-                                                      shiny::span(ui_labels$proficiency),
-                                                      shiny::span(class = "dimension-value", base::sprintf("%.2f", rv$cat_result$theta))
-                                                  ),
-                                                  shiny::div(class = "dimension-bar",
-                                                      shiny::div(class = "dimension-fill",
-                                                          style = base::sprintf("width:%.0f%%; background: var(--primary-color);", (rv$cat_result$theta + 3)/6 * 100))
-                                                  )
-                                              )
-                     ),
-                     if (config$adaptive) shiny::div(class = "results-section",
-                                              shiny::h4(ui_labels$precision, class = "results-title"),
-                                              shiny::p(base::sprintf("Standard Error: %.3f", rv$cat_result$se))
-                     ),
-                     shiny::div(class = "results-section",
-                         shiny::h4(ui_labels$items_administered, class = "results-title"),
-                         DT::DTOutput("item_table")
-                     ),
-                     shiny::div(class = "results-section",
-                         shiny::h4(ui_labels$recommendations, class = "results-title"),
-                         shiny::uiOutput("recommendations")
-                     ),
-                     shiny::div(class = "footer",
-                         shiny::p(config$name),
-                         shiny::p(base::format(base::Sys.time(), "%B %d, %Y"))
-                     ),
-                     shiny::div(class = "nav-buttons",
-                         shiny::downloadButton("save_report", ui_labels$save_button, class = "btn-klee"),
-                         shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee")
+                   },
+                   "test" = {
+                     if (base::is.null(rv$current_item)) {
+                       return(shiny::div(class = "assessment-card",
+                                         shiny::h3("Preparing...", class = "card-header"),
+                                         shiny::p("Loading next question...")))
+                     }
+                     item <- get_item_content(rv$current_item)
+                     response_ui <- if (config$model == "GRM") {
+                       choices <- base::as.numeric(base::unlist(base::strsplit(item$ResponseCategories, ",")))
+                       labels <- base::switch(config$language,
+                                              de = base::c("Stark ablehnen", "Ablehnen", "Neutral", "Zustimmen", "Stark zustimmen")[1:base::length(choices)],
+                                              en = base::c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")[1:base::length(choices)],
+                                              es = base::c("Totalmente en desacuerdo", "En desacuerdo", "Neutral", "De acuerdo", "Totalmente de acuerdo")[1:base::length(choices)],
+                                              fr = base::c("Fortement en désaccord", "En désaccord", "Neutre", "D'accord", "Fortement d'accord")[1:base::length(choices)]
+                       )
+                       base::switch(config$response_ui_type,
+                                    "slider" = shiny::div(class = "slider-container",
+                                                          shiny::sliderInput(
+                                                            inputId = "item_response",
+                                                            label = NULL,
+                                                            min = base::min(choices),
+                                                            max = base::max(choices),
+                                                            value = base::min(choices),
+                                                            step = 1,
+                                                            ticks = TRUE,
+                                                            width = "100%"
+                                                          )),
+                                    "dropdown" = shiny::selectInput(
+                                      inputId = "item_response",
+                                      label = NULL,
+                                      choices = stats::setNames(choices, labels),
+                                      selected = NULL,
+                                      width = "100%"
+                                    ),
+                                    shinyWidgets::radioGroupButtons(
+                                      inputId = "item_response",
+                                      label = NULL,
+                                      choices = stats::setNames(choices, labels),
+                                      selected = base::character(0),
+                                      direction = "vertical",
+                                      status = "default",
+                                      individual = TRUE,
+                                      width = "100%"
+                                    )
+                       )
+                     } else {
+                       choices <- base::c(item$Option1, item$Option2, item$Option3, item$Option4)
+                       choices <- choices[!is.na(choices) & choices != ""]
+                       shiny::radioButtons(
+                         inputId = "item_response",
+                         label = NULL,
+                         choices = choices,
+                         selected = base::character(0),
+                         width = "100%"
+                       )
+                     }
+                     progress_pct <- base::round((base::length(rv$administered) / config$max_items) * 100)
+                     progress_ui <- base::switch(config$progress_style,
+                                                 "circle" = shiny::div(class = "progress-circle",
+                                                                       shiny::tags$svg(
+                                                                         width = "100", height = "100",
+                                                                         shiny::tags$circle(cx = "50", cy = "50", r = "45", stroke = "var(--progress-bg-color)"),
+                                                                         shiny::tags$circle(cx = "50", cy = "50", r = "45", class = "progress",
+                                                                                            strokeDasharray = "283", strokeDashoffset = base::sprintf("%.0f",
+                                                                                                                                                      283 * (1 - progress_pct / 100)),
+                                                                                            style = "stroke: var(--primary-color);"),
+                                                                         shiny::span(base::sprintf("%d%%", progress_pct))
+                                                                       )
+                                                 ),
+                                                 "bar" = shiny::div(class = "progress-bar-container",
+                                                                    shiny::div(class = "progress-bar-fill", 
+                                                                               style = base::sprintf("width: %d%%;", progress_pct))
+                                                 )
                      )
-                 )
-               )
-             }
+                     shiny::tagList(
+                       shiny::div(class = "assessment-card",
+                                  shiny::h3(config$name, class = "card-header"),
+                                  progress_ui,
+                                  shiny::p(base::paste("Question", base::length(rv$administered) + 1, "of", config$max_items), 
+                                           style = "text-align: center; margin: 15px 0;"),
+                                  shiny::div(class = "test-question", item$Question),
+                                  shiny::div(class = "radio-group-container", response_ui),
+                                  if (!base::is.null(rv$error_message)) shiny::div(class = "error-message", rv$error_message),
+                                  if (!base::is.null(rv$feedback_message)) shiny::div(class = "feedback-message", rv$feedback_message),
+                                  shiny::div(class = "nav-buttons",
+                                             shiny::actionButton("submit_response", ui_labels$submit_button, class = "btn-klee")
+                                  )
+                       )
+                     )
+                   },
+                   "results" = {
+                     if (base::is.null(rv$cat_result)) return()
+                     
+                     results_content <- base::list(
+                       shiny::h3(ui_labels$results_title, class = "card-header"),
+                       shiny::div(class = "results-section",
+                                  shiny::h4("Assessment Summary"),
+                                  shiny::p(base::paste("Items completed:", base::length(rv$cat_result$administered))),
+                                  if (config$adaptive) shiny::p(base::paste("Estimated ability:", base::round(rv$cat_result$theta, 2))),
+                                  if (config$adaptive) shiny::p(base::paste("Standard error:", base::round(rv$cat_result$se, 3)))
+                       )
+                     )
+                     
+                     if (config$adaptive && base::length(rv$theta_history) > 1) {
+                       results_content <- base::c(results_content, base::list(
+                         shiny::plotOutput("theta_plot", height = "200px")
+                       ))
+                     }
+                     
+                     results_content <- base::c(results_content, base::list(
+                       shiny::div(class = "results-section",
+                                  shiny::h4(ui_labels$items_administered, class = "results-title"),
+                                  DT::DTOutput("item_table")
+                       ),
+                       shiny::div(class = "results-section",
+                                  shiny::h4(ui_labels$recommendations, class = "results-title"),
+                                  shiny::uiOutput("recommendations")
+                       ),
+                       shiny::div(class = "footer",
+                                  shiny::p(config$name),
+                                  shiny::p(base::format(base::Sys.time(), "%B %d, %Y"))
+                       ),
+                       shiny::div(class = "nav-buttons",
+                                  shiny::downloadButton("save_report", ui_labels$save_button, class = "btn-klee"),
+                                  shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee")
+                       )
+                     ))
+                     
+                     shiny::tagList(
+                       shiny::div(class = "assessment-card", results_content)
+                     )
+                   }
       )
     })
     
     output$theta_plot <- shiny::renderPlot({
       if (!config$adaptive || base::length(rv$theta_history) < 2) return(NULL)
+      
+      # Get theme colors for plot
+      theme_colors <- list(
+        primary = "#007bff",
+        secondary = "#6c757d"
+      )
+      
+      if (!base::is.null(theme_config) && !base::is.null(theme_config$primary_color)) {
+        theme_colors$primary <- theme_config$primary_color
+      } else {
+        theme_name <- tolower(config$theme %||% "Light")
+        theme_colors$primary <- base::switch(theme_name,
+                                             "light" = "#212529",
+                                             "midnight" = "#6366f1",
+                                             "sunset" = "#ff6f61",
+                                             "forest" = "#2e7d32",
+                                             "ocean" = "#0288d1",
+                                             "berry" = "#c2185b",
+                                             "#007bff"
+        )
+      }
+      
       data <- base::data.frame(
         Item = base::seq_along(rv$theta_history),
-        Theta = base::unlist(rv$theta_history),
-        SE = base::unlist(rv$se_history)
+        Theta = rv$theta_history,
+        SE = rv$se_history
       )
-      # Use static color based on theme or default
-      plot_color <- if (!base::is.null(theme_config)) {
-        theme_config$primary_color %||% "#212529"
-      } else {
-        base::switch(base::tolower(config$theme %||% "Light"),
-               "light" = "#212529",
-               "midnight" = "#1a1a1a",
-               "sunset" = "#ff6f61",
-               "forest" = "#2e7d32",
-               "ocean" = "#0288d1",
-               "berry" = "#c2185b",
-               "#212529") # Default to Light theme color
-      }
+      
       ggplot2::ggplot(data, ggplot2::aes(x = Item, y = Theta)) +
-        ggplot2::geom_line(color = plot_color) +
-        ggplot2::geom_ribbon(ggplot2::aes(ymin = Theta - SE, ymax = Theta + SE), alpha = 0.2, fill = plot_color) +
+        ggplot2::geom_line(color = theme_colors$primary, linewidth = 1) +
+        ggplot2::geom_ribbon(ggplot2::aes(ymin = Theta - SE, ymax = Theta + SE), alpha = 0.2, fill = theme_colors$primary) +
         ggplot2::theme_minimal() +
-        ggplot2::labs(y = "Trait Score", x = "Item") +
+        ggplot2::labs(y = "Trait Score", x = "Item Number") +
         ggplot2::theme(
           text = ggplot2::element_text(family = "Inter", size = 12),
           plot.title = ggplot2::element_text(face = "bold", size = 14),
-          axis.title = ggplot2::element_text(size = 12),
-          panel.grid = ggplot2::element_blank(),
-          axis.line = ggplot2::element_line(color = "#212529")
+          axis.title = ggplot2::element_text(size = 12)
         )
     })
     
@@ -1202,14 +1370,16 @@ launch_study <- function(
       responses <- rv$cat_result$responses
       dat <- if (config$model == "GRM") {
         base::data.frame(
-          Item = item_bank$Question[items],
+          Item = 1:base::length(items),
+          Question = item_bank$Question[items],
           Response = responses,
           Time = base::round(rv$cat_result$response_times, 1),
           check.names = FALSE
         )
       } else {
         base::data.frame(
-          Item = item_bank$Question[items],
+          Item = 1:base::length(items),
+          Question = item_bank$Question[items],
           Response = base::ifelse(responses == 1, "Correct", "Incorrect"),
           Correct = item_bank$Answer[items],
           Time = base::round(rv$cat_result$response_times, 1),
@@ -1271,8 +1441,8 @@ launch_study <- function(
           response_times = rv$cat_result$response_times,
           recommendations = config$recommendation_fun(if (config$adaptive) rv$cat_result$theta else base::mean(rv$cat_result$responses, na.rm = TRUE), rv$demo_data),
           timestamp = base::Sys.time(),
-          theta_history = if (config$adaptive) base::unlist(rv$theta_history) else NULL,
-          se_history = if (config$adaptive) base::unlist(rv$se_history) else NULL
+          theta_history = if (config$adaptive) rv$theta_history else NULL,
+          se_history = if (config$adaptive) rv$se_history else NULL
         ))
         if (save_format == "pdf") {
           safe_title <- gsub("[_%&#$]", "\\\\\\0", config$name)
@@ -1331,9 +1501,9 @@ launch_study <- function(
                                    base::length(rv$cat_result$administered),
                                    base::paste(base::sapply(base::seq_along(rv$cat_result$administered), function(i) {
                                      base::sprintf("%s & %s & %.1f \\\\", 
-                                             item_bank$Question[rv$cat_result$administered[i]], 
-                                             rv$cat_result$responses[i],
-                                             rv$cat_result$response_times[i])
+                                                   item_bank$Question[rv$cat_result$administered[i]], 
+                                                   rv$cat_result$responses[i],
+                                                   rv$cat_result$response_times[i])
                                    }), collapse = "\n"),
                                    base::paste(base::sprintf("\\item %s", report_data$recommendations), collapse = "\n")
           )
@@ -1394,7 +1564,7 @@ launch_study <- function(
           }
           return(val)
         } else {
-          if (base::is.null(val) || base::is.na(val) || val == "" || val == "Select") {
+          if (base::is.null(val) || base::is.na(val) || val == "" || val == "Select...") {
             return(NA)
           }
           if (base::is.character(val)) {
@@ -1413,10 +1583,15 @@ launch_study <- function(
       }
       
       rv$error_message <- NULL
+      rv$stage <- "instructions"
+      logger("Demographic data validated, proceeding to instructions stage")
+    })
+    
+    shiny::observeEvent(input$begin_test, {
       rv$stage <- "test"
       rv$start_time <- base::Sys.time()
       rv$current_item <- inrep::select_next_item(rv, item_bank, config)
-      logger("Demographic data validated, proceeding to test stage")
+      logger("Beginning assessment")
     })
     
     shiny::observeEvent(input$submit_response, {
@@ -1470,7 +1645,13 @@ launch_study <- function(
         # Save session to cloud if enabled
         if (config$session_save && !base::is.null(webdav_url)) {
           logger("Attempting to save session to cloud...")
-          inrep::save_session_to_cloud(rv, config, webdav_url, password)
+          if (exists("save_session_to_cloud", where = asNamespace("inrep"), inherits = FALSE)) {
+            inrep:::save_session_to_cloud(rv, config, webdav_url, password)
+          } else if (exists("save_session_to_cloud")) {
+            save_session_to_cloud(rv, config, webdav_url, password)
+          } else {
+            logger("save_session_to_cloud function not found.")
+          }
         }
       } else {
         rv$current_item <- inrep::select_next_item(rv, item_bank, config)
@@ -1488,7 +1669,13 @@ launch_study <- function(
           # Save session to cloud if enabled
           if (config$session_save && !base::is.null(webdav_url)) {
             logger("Attempting to save session to cloud...")
-            inrep::save_session_to_cloud(rv, config, webdav_url, password)
+            if (exists("save_session_to_cloud", where = asNamespace("inrep"), inherits = FALSE)) {
+              inrep:::save_session_to_cloud(rv, config, webdav_url, password)
+            } else if (exists("save_session_to_cloud")) {
+              save_session_to_cloud(rv, config, webdav_url, password)
+            } else {
+              logger("save_session_to_cloud function not found.")
+            }
           }
         } else {
           rv$start_time <- base::Sys.time()
@@ -1512,8 +1699,8 @@ launch_study <- function(
       rv$response_times = base::c()
       rv$current_item <- NULL
       rv$cat_result <- NULL
-      rv$theta_history <- base::list()
-      rv$se_history <- base::list()
+      rv$theta_history <- base::c()
+      rv$se_history <- base::c()
       rv$item_counter = 0
       rv$error_message <- NULL
       rv$feedback_message <- NULL
@@ -1567,11 +1754,11 @@ launch_study <- function(
 #' cat(prompt)
 #' }
 generate_study_deployment_prompt <- function(study_config,
-                                            item_bank_size,
-                                            theme_config = NULL,
-                                            webdav_enabled = FALSE,
-                                            save_format = "rds",
-                                            include_examples = TRUE) {
+                                             item_bank_size,
+                                             theme_config = NULL,
+                                             webdav_enabled = FALSE,
+                                             save_format = "rds",
+                                             include_examples = TRUE) {
   
   prompt <- paste0(
     "# STUDY DEPLOYMENT AND INFRASTRUCTURE OPTIMIZATION\n\n",
@@ -1592,63 +1779,63 @@ generate_study_deployment_prompt <- function(study_config,
   
   # Add detailed analysis sections
   prompt <- paste0(prompt,
-    "## DEPLOYMENT OPTIMIZATION ANALYSIS\n\n",
-    
-    "### 1. Technical Infrastructure\n",
-    "- Server requirements and capacity planning\n",
-    "- Database optimization for response storage\n",
-    "- Performance monitoring and alerting systems\n",
-    "- Backup and disaster recovery procedures\n",
-    "- Load balancing and scaling strategies\n\n",
-    
-    "### 2. Security and Privacy\n",
-    "- Data encryption and secure transmission\n",
-    "- User authentication and session management\n",
-    "- GDPR and privacy regulation compliance\n",
-    "- Audit logging and data governance\n",
-    "- Vulnerability assessment and penetration testing\n\n",
-    
-    "### 3. Quality Assurance and Monitoring\n",
-    "- Automated testing and validation procedures\n",
-    "- Real-time performance monitoring\n",
-    "- Error tracking and alerting systems\n",
-    "- User behavior analytics and optimization\n",
-    "- Data integrity and validation checks\n\n",
-    
-    "### 4. User Experience and Accessibility\n",
-    "- Cross-browser and device compatibility testing\n",
-    "- Mobile and tablet experience optimization\n",
-    "- Accessibility compliance (WCAG 2.1 AA)\n",
-    "- Internationalization and localization support\n",
-    "- User support and help documentation\n\n",
-    
-    "### 5. Data Management and Analytics\n",
-    "- Data collection and storage optimization\n",
-    "- Real-time data processing and analysis\n",
-    "- Export and integration capabilities\n",
-    "- Long-term data archival strategies\n",
-    "- Research data management best practices\n\n",
-    
-    "### 6. Deployment Strategy\n",
-    "- Development, staging, and production environments\n",
-    "- Continuous integration and deployment pipelines\n",
-    "- Version control and release management\n",
-    "- Rollback and emergency procedures\n",
-    "- Documentation and knowledge transfer\n\n"
+                   "## DEPLOYMENT OPTIMIZATION ANALYSIS\n\n",
+                   
+                   "### 1. Technical Infrastructure\n",
+                   "- Server requirements and capacity planning\n",
+                   "- Database optimization for response storage\n",
+                   "- Performance monitoring and alerting systems\n",
+                   "- Backup and disaster recovery procedures\n",
+                   "- Load balancing and scaling strategies\n\n",
+                   
+                   "### 2. Security and Privacy\n",
+                   "- Data encryption and secure transmission\n",
+                   "- User authentication and session management\n",
+                   "- GDPR and privacy regulation compliance\n",
+                   "- Audit logging and data governance\n",
+                   "- Vulnerability assessment and penetration testing\n\n",
+                   
+                   "### 3. Quality Assurance and Monitoring\n",
+                   "- Automated testing and validation procedures\n",
+                   "- Real-time performance monitoring\n",
+                   "- Error tracking and alerting systems\n",
+                   "- User behavior analytics and optimization\n",
+                   "- Data integrity and validation checks\n\n",
+                   
+                   "### 4. User Experience and Accessibility\n",
+                   "- Cross-browser and device compatibility testing\n",
+                   "- Mobile and tablet experience optimization\n",
+                   "- Accessibility compliance (WCAG 2.1 AA)\n",
+                   "- Internationalization and localization support\n",
+                   "- User support and help documentation\n\n",
+                   
+                   "### 5. Data Management and Analytics\n",
+                   "- Data collection and storage optimization\n",
+                   "- Real-time data processing and analysis\n",
+                   "- Export and integration capabilities\n",
+                   "- Long-term data archival strategies\n",
+                   "- Research data management best practices\n\n",
+                   
+                   "### 6. Deployment Strategy\n",
+                   "- Development, staging, and production environments\n",
+                   "- Continuous integration and deployment pipelines\n",
+                   "- Version control and release management\n",
+                   "- Rollback and emergency procedures\n",
+                   "- Documentation and knowledge transfer\n\n"
   )
   
   if (include_examples) {
     prompt <- paste0(prompt,
-      "## PROVIDE COMPREHENSIVE RECOMMENDATIONS\n",
-      "1. **Infrastructure Architecture**: Complete deployment architecture with diagrams\n",
-      "2. **Security Implementation**: Specific security measures and configurations\n",
-      "3. **Performance Optimization**: Technical optimizations for speed and reliability\n",
-      "4. **Monitoring and Alerting**: Comprehensive monitoring strategy with tools\n",
-      "5. **Quality Assurance**: Testing procedures and validation protocols\n",
-      "6. **Documentation**: Deployment guides and operational procedures\n",
-      "7. **Scaling Strategy**: Plans for handling increased user load\n",
-      "8. **Compliance Framework**: Regulatory and ethical compliance procedures\n\n",
-      "Please provide actionable recommendations with specific configuration examples, deployment scripts, and operational procedures."
+                     "## PROVIDE COMPREHENSIVE RECOMMENDATIONS\n",
+                     "1. **Infrastructure Architecture**: Complete deployment architecture with diagrams\n",
+                     "2. **Security Implementation**: Specific security measures and configurations\n",
+                     "3. **Performance Optimization**: Technical optimizations for speed and reliability\n",
+                     "4. **Monitoring and Alerting**: Comprehensive monitoring strategy with tools\n",
+                     "5. **Quality Assurance**: Testing procedures and validation protocols\n",
+                     "6. **Documentation**: Deployment guides and operational procedures\n",
+                     "7. **Scaling Strategy**: Plans for handling increased user load\n",
+                     "8. **Compliance Framework**: Regulatory and ethical compliance procedures\n\n",
+                     "Please provide actionable recommendations with specific configuration examples, deployment scripts, and operational procedures."
     )
   }
   
