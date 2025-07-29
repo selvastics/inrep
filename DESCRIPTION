@@ -37,13 +37,24 @@ Imports:
     chromote,
     base64enc,
     mirt,
-    flextable
+    flextable,
+    tidyr,
+    reshape2,
+    viridis,
+    e1071,
+    MASS
 Suggests:
     psych (>= 2.0.0),
     corrplot (>= 0.90),
     testthat (>= 3.0.0),
     rmarkdown (>= 2.20),
-    covr
+    covr,
+    devtools,
+    tidyr,
+    reshape2,
+    viridis,
+    e1071,
+    MASS
 License: MIT + file LICENSE
 Encoding: UTF-8
 Language: en-US
