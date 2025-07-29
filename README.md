@@ -48,7 +48,47 @@
 devtools::install_github("selvastics/inrep")
 ````
 
-> 📌 [Click here if you have never installed anything in R before](#installation-instructions-for-beginners)
+<details>
+<summary>💡 <strong style="color:#2a5db0">Set up instructions: Expand if R is not yet installed on your system</strong></summary>
+
+<br>
+
+### Step 1: Install R and RStudio
+
+1. **Install R**: [https://cran.r-project.org](https://cran.r-project.org)  
+2. **Install RStudio**: [https://posit.co/download/rstudio-desktop](https://posit.co/download/rstudio-desktop)
+
+### Step 2: Install Required System Tools
+
+- **Windows**: Install [Rtools](https://cran.r-project.org/bin/windows/Rtools/)  
+- **macOS**: Open Terminal and run:
+
+  ```bash
+  xcode-select --install
+  ```
+
+### Step 3: Install the Required Packages
+
+Open RStudio and copy-paste the following:
+
+```r
+# Install devtools (required to install from GitHub)
+install.packages("devtools")
+
+# Load the package
+library(devtools)
+
+# Install inrep from GitHub
+devtools::install_github("selvastics/inrep")
+
+# Load the installed package
+library(inrep)
+```
+
+If you encounter any error during installation, make sure Rtools (on Windows) or Xcode (on macOS) was correctly installed and your R version is up to date.
+
+</details>
+
 
 ### Dependencies
 
@@ -131,47 +171,6 @@ launch_study(
 >  
 > New themes are added incrementally. Contributions are welcome to share themes that can be made available to other users.
 
----
-
-## Installation Instructions for Beginners
-
-If you are new to R and have never installed a package before, follow these steps:
-
-### Step 1: Install R and RStudio
-
-1. **Install R**: [https://cran.r-project.org](https://cran.r-project.org)
-2. **Install RStudio**: [https://posit.co/download/rstudio-desktop](https://posit.co/download/rstudio-desktop)
-
-### Step 2: Install Required System Tools
-
-* **Windows**: Install [Rtools](https://cran.r-project.org/bin/windows/Rtools/)
-* **macOS**: Open Terminal and run:
-
-  ```bash
-  xcode-select --install
-  ```
-
-### Step 3: Install the Required Packages
-
-Open RStudio and copy-paste the following:
-
-```r
-# Install devtools (required to install from GitHub)
-install.packages("devtools")
-
-# Load the package
-library(devtools)
-
-# Install inrep from GitHub
-devtools::install_github("selvastics/inrep")
-
-# Load the installed package
-library(inrep)
-```
-
-If you encounter any error during installation, make sure Rtools (on Windows) or Xcode (on macOS) was correctly installed and your R version is up to date.
-
----
 
 ## Documentation
 
@@ -225,7 +224,7 @@ MIT License
 
 ## Acknowledgments
 
-I thank Alla Sawatzky and Kathrin Schütz for their early endorsement of this project and their insightful guidance during its initial stages.
+I thank Alla Sawatzky and Kathrin Schütz for their early endorsement of this project and their insightful guidance during its development.
 
 ---
 

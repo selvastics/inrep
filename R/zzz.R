@@ -6,7 +6,7 @@
       "===============================================================================\n",
       "   Instant Reports for Adaptive Assessments\n",
       "   A comprehensive framework wrapper around TAM for psychometric research\n",
-      "   \n"
+      "   \n",
       "===============================================================================\n"
     )
   )

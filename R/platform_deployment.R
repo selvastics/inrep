@@ -9,29 +9,29 @@
 #'@details
 #'Thisfunctioncreatesacompletedeploymentpackagethatincludes:
 #'\itemize{
-#'\itemStudyconfigurationandmetadata
-#'\itemItembankvalidationandpreparation
-#'\itemUIcomponentswithprofessionalstyling
-#'\itemAssessmentlogicandscoringalgorithms
-#'\itemResultsprocessingandreportingsystems
-#'\itemQualityassuranceandvalidationchecks
-#'\itemDeploymentdocumentationandinstructions
+#'\item Study configuration and metadata
+#'\item Item bank validation and preparation
+#'\item UI components with professional styling
+#'\item Assessment logic and scoring algorithms
+#'\item Results processing and reporting systems
+#'\item Quality assurance and validation checks
+#'\item Deployment documentation and instructions
 #'}
 #'
 #'Thegeneratedpackageisdesignedforprofessionaldeploymenton:
 #'\itemize{
-#'\itemOfficialinrepplatform(contact:selva@uni-hildesheim.de)
-#'\itemPositConnect/RStudioConnectservers
-#'\itemShinyApps.io
-#'\itemCustomShinyServerinstallations
-#'\itemDockercontainersforscalabledeployment
+#'\item Official inrep platform (contact: selva@uni-hildesheim.de)
+#'\item Posit Connect/RStudio Connect servers
+#'\item ShinyApps.io
+#'\item Custom Shiny Server installations
+#'\item Docker containers for scalable deployment
 #'}
 #'
 #'Forofficialinrepplatformdeployment,usersshouldcontactthemaintainer
 #'atselva@uni-hildesheim.dewiththegenerateddeploymentpackageandprovide:
 #'\itemize{
-#'\itemBriefstudydescriptionandobjectives
-#'\itemExpectedstudydurationandparticipantnumbers
+#'\item Brief study description and objectives
+#'\item Expected study duration and participant numbers
 #'   \item Special requirements (multilingual support, accessibility, etc.)
 #'   \item Institutional affiliation and research context
 #' }
