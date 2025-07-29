@@ -12,10 +12,8 @@
 </tr></table>
 
 <!-- badges: start -->
-[![CRAN status](https://www.r-pkg.org/badges/version/inrep)](https://CRAN.R-project.org/package=inrep)
 [![R-CMD-check](https://github.com/selvastics/inrep/workflows/R-CMD-check/badge.svg)](https://github.com/selvastics/inrep/actions)
 [![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
-[![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/inrep)](https://cran.r-project.org/package=inrep)
 <!-- badges: end -->
 
 
