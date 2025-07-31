@@ -1,18 +1,30 @@
 :root {
-  --primary-color: #8B1538;
-  --secondary-color: #A61C3E;
+  --primary-color: #e8041c;
+  --secondary-color: #e8041c;
   --background-color: #F5F5F5;
   --text-color: #2C2C2C;
   --font-family: 'Inter', 'Arial', sans-serif;
   --border-radius: 8px;
   --progress-bg-color: #E0E0E0;
-  --error-color: #D32F2F;
+  --error-color: #e8041c;
   --success-color: #388E3C;
   --warning-color: #FF9800;
   --info-color: #1976D2;
-  --button-hover-color: #6D0F2A;
-  --card-shadow: 0 2px 4px rgba(139, 21, 56, 0.1);
-  --border-color: #8B1538;
-  --accent-color: #B71C1C;
-  --logo-url: url('https://www.uni-hildesheim.de/typo3conf/ext/unihildesheim/Resources/Public/Images/logo-uni.svgz');
+  --button-hover-color: #b30315;
+  --card-shadow: 0 2px 4px rgba(232, 4, 28, 0.08);
+  --border-color: #e8041c;
+  --accent-color: #e8041c;
+  --logo-url: url('https://www.uni-hildesheim.de/fileadmin/_processed_/b/2/csm_logo-uni_4c_2b7e2e2e2a.png');
+}
+
+/* University logo at the top */
+.hildesheim-logo {
+  width: 260px;
+  height: 60px;
+  background-image: var(--logo-url);
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: left center;
+  margin: 24px auto 16px auto;
+  display: block;
 }
