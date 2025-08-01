@@ -5,7 +5,7 @@
       "   Welcome to inrep (v", utils::packageVersion("inrep"), ")\n",
       "===============================================================================\n",
       "   Instant Reports for Adaptive Assessments\n",
-      "   A comprehensive framework wrapper around TAM for psychometric research\n",
+      "   A comprehensive framework wrapper around TAM for psychometric research for computerized adaptive and non-adaptive assessments \n",
       "   \n",
       "===============================================================================\n"
     )
