@@ -390,3 +390,52 @@ library(shiny)
 #' cat("Launching Example 13: Advanced Customization with Mixed IRT Models\n")
 #' cat("Access at: http://localhost:3838\n")
 #' launch_study(config, bfi_items)
+
+# Example 14: Generate Standalone Assessment Script
+# Purpose: Create a self-contained R script that runs independently of the inrep package.
+#' @description Uses inrep_code() to generate a complete standalone script with smart features.
+#' @details Perfect for sharing assessments, quick deployment, or console copy-paste.
+#' @example
+#' # Create configuration for standalone deployment
+#' config <- create_study_config(
+#'   model = "GRM",          # Graded Response Model
+#'   name = "Standalone Personality Assessment",
+#'   max_items = 10,         # Stop after 10 items
+#'   theme = "hildesheim",   # University theme
+#'   session_save = TRUE,    # Enable session saving
+#'   language = "en"
+#' )
+#' 
+#' # Define cloud storage (optional)
+#' webdav_url <- "https://sync.academiccloud.de/index.php/s/Y51QPXzJVLWSAcb"
+#' password <- "inreptest"
+#' 
+#' # Method 1: Auto-save to file with auto-run (EASIEST!)
+#' inrep_code(
+#'   launch_study(config, bfi_items, 
+#'                webdav_url = webdav_url, 
+#'                password = password),
+#'   output_file = "standalone_assessment",  # .R added automatically
+#'   auto_run = TRUE  # Will launch immediately when run!
+#' )
+#' 
+#' # Method 2: Console-ready for copy-paste deployment
+#' standalone_script <- inrep_code(
+#'   launch_study(config, bfi_items),
+#'   console_ready = TRUE  # Optimized for copy-paste
+#' )
+#' # Now you can copy 'standalone_script' and paste into any R console!
+#' 
+#' # Method 3: Save to specific directory
+#' inrep_code(
+#'   launch_study(config, bfi_items),
+#'   output_file = "C:/Projects/my_assessment.R",
+#'   auto_run = FALSE  # User must uncomment launch line
+#' )
+#' 
+#' cat("Launching Example 14: Generate Standalone Assessment Script\n")
+#' cat("✅ Multiple deployment methods demonstrated!\n")
+#' cat("🚀 Auto-run mode: Immediate deployment\n")
+#' cat("📋 Console-ready: Copy-paste deployment\n")
+#' cat("💾 File output: Smart file handling\n")
+#' cat("🎯 Choose the method that works best for your workflow!\n")
