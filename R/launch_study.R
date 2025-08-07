@@ -1108,33 +1108,79 @@ launch_study <- function(
                      }
                      progress_pct <- base::round((base::length(rv$administered) / config$max_items) * 100)
                      progress_ui <- base::switch(config$progress_style,
-                                                 "circle" = shiny::div(class = "progress-circle progress-circle-gradient",
-                                                   shiny::tags$style("
-                                                     .progress-circle-gradient { position: relative; display: inline-flex; justify-content: center; align-items: center; width: 100px; height: 100px; background: #f8f9fa; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.1);}
-                                                     .progress-circle-gradient svg { transform: rotate(-90deg);}
-                                                     .progress-circle-gradient circle { fill: none; stroke-width: 8;}
-                                                     .progress-circle-gradient .progress { transition: stroke-dashoffset 0.5s cubic-bezier(.4,2,.3,1); stroke: url(#progressGradient);}
-                                                     .progress-circle-gradient span { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: 'Helvetica Neue', 'Arial', sans-serif; font-size: 20px; font-weight: 500; color: #333; text-shadow: 0 0 2px rgba(255,255,255,0.8);}
-                                                   "),
-                                                   shiny::tags$svg(
-                                                     width = "100", height = "100",
-                                                     shiny::tags$defs(
-                                                       shiny::tags$linearGradient(id = "progressGradient",
-                                                         shiny::tags$stop(offset = "0%", style = "stop-color: var(--primary-color);"),
-                                                         shiny::tags$stop(offset = "100%", style = "stop-color: var(--primary-color); stop-opacity: 0.7;")
-                                                       )
-                                                     ),
-                                                     shiny::tags$circle(cx = "50", cy = "50", r = "45", stroke = "var(--progress-bg-color)"),
-                                                     shiny::tags$circle(cx = "50", cy = "50", r = "45", class = "progress",
-                                                       strokeDasharray = "283", strokeDashoffset = base::sprintf("%.0f", 283 * (1 - progress_pct / 100))
-                                                     )
-                                                   ),
-                                                   shiny::span(base::sprintf("%d%%", progress_pct))
-                                                 ),
-                                                 "bar" = shiny::div(class = "progress-bar-container",
-                                                                    shiny::div(class = "progress-bar-fill", 
-                                                                               style = base::sprintf("width: %d%%;", progress_pct))
-                                                 )
+                       "circle" = shiny::div(
+                         class = "progress-circle progress-circle-gradient",
+                         shiny::tags$style("
+                           .progress-circle-gradient {
+                             position: relative;
+                             display: flex;
+                             justify-content: center;
+                             align-items: center;
+                             width: 120px;
+                             height: 120px;
+                             background: transparent;
+                           }
+                           .progress-circle-gradient svg {
+                             position: absolute;
+                             left: 50%;
+                             top: 50%;
+                             transform: translate(-50%, -50%) rotate(-90deg);
+                             display: block;
+                           }
+                           .progress-circle-gradient .progress-bg {
+                             stroke: #e0e0e0;
+                             stroke-width: 8;
+                             fill: none;
+                           }
+                           .progress-circle-gradient .progress {
+                             transition: stroke-dashoffset 0.5s cubic-bezier(.4,2,.3,1);
+                             stroke: url(#progressGradient);
+                             stroke-width: 8;
+                             fill: none;
+                           }
+                           .progress-circle-gradient .tiny-full {
+                             stroke: var(--primary-color);
+                             stroke-width: 3;
+                             fill: none;
+                             opacity: 0.5;
+                           }
+                           .progress-circle-gradient span {
+                             position: absolute;
+                             top: 50%;
+                             left: 50%;
+                             transform: translate(-50%, -50%);
+                             font-family: 'Helvetica Neue', 'Arial', sans-serif;
+                             font-size: 20px;
+                             font-weight: 500;
+                             color: #333;
+                             text-shadow: 0 0 2px rgba(255,255,255,0.8);
+                           }
+                         "),
+                         shiny::tags$svg(
+                           width = "120", height = "120",
+                           shiny::tags$defs(
+                             shiny::tags$linearGradient(id = "progressGradient",
+                               shiny::tags$stop(offset = "0%", style = "stop-color: var(--primary-color);"),
+                               shiny::tags$stop(offset = "100%", style = "stop-color: var(--primary-color); stop-opacity: 0.7;")
+                             )
+                           ),
+                           # Tiny full circle indicator (background)
+                           shiny::tags$circle(cx = "60", cy = "60", r = "52", class = "tiny-full"),
+                           # Main progress background circle
+                           shiny::tags$circle(cx = "60", cy = "60", r = "50", class = "progress-bg"),
+                           # Main progress arc (foreground)
+                           shiny::tags$circle(
+                             cx = "60", cy = "60", r = "50", class = "progress",
+                             strokeDasharray = "314",
+                             strokeDashoffset = base::sprintf("%.0f", 314 * (1 - progress_pct / 100))
+                           )
+                         ),
+                         shiny::span(base::sprintf("%d%%", progress_pct))
+                       ),
+                       "bar" = shiny::div(
+                         class = "progress-bar-container",
+                         shiny::div(class = "progress-bar-fill", style = base::sprintf("width: %d%%;", progress_pct))
+                       )
                      )
                      shiny::tagList(
                        shiny::div(class = "assessment-card",
