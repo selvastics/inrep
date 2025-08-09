@@ -60,7 +60,9 @@ inrep_ui <- function(type = c("assessment", "demographics"),
         numericInput(
           inputId = paste0("demo_", demo),
           label = demo,
-          value = NA
+          value = NA,
+          min = 0,
+          max = 120
         )
       } else if (input_type == "select") {
         selectInput(
@@ -373,11 +375,13 @@ create_demographics_ui <- function(demographics, input_types) {
   inputs <- lapply(demographics, function(demo) {
     input_type <- input_types[[demo]]
     if (input_type == "numeric") {
-      numericInput(
-        inputId = paste0("demo_", demo),
-        label = demo,
-        value = NA
-      )
+              numericInput(
+          inputId = paste0("demo_", demo),
+          label = demo,
+          value = NA,
+          min = 0,
+          max = 120
+        )
     } else if (input_type == "select") {
       selectInput(
         inputId = paste0("demo_", demo),

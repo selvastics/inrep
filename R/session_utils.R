@@ -469,14 +469,15 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
   }
   
   tryCatch({
+    # Ensure all data is properly structured as lists to avoid jsonlite warnings
     session_data <- list(
       study_key = config$study_key %||% "unknown_study",
       timestamp = as.character(Sys.time()),
-      cat_result = rv$cat_result,
-      demographics = rv$demographics,
-      response_times = rv$response_times,
-      theta_history = rv$theta_history,
-      se_history = rv$se_history
+      cat_result = if (is.null(rv$cat_result)) list() else as.list(rv$cat_result),
+      demographics = if (is.null(rv$demographics)) list() else as.list(rv$demographics),
+      response_times = if (is.null(rv$response_times)) list() else as.list(rv$response_times),
+      theta_history = if (is.null(rv$theta_history)) list() else as.list(rv$theta_history),
+      se_history = if (is.null(rv$se_history)) list() else as.list(rv$se_history)
     )
     
     # Create JSON data
