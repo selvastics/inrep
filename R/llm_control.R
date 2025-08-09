@@ -106,18 +106,20 @@ enable_llm_assistance <- function(enable = TRUE,
   
   if (verbose) {
     if (enable) {
-      cat("LLM Assistance ENABLED for inrep package\n")
-      cat("Output format:", output_format, "\n")
-      cat("Prompt types:", paste(prompt_types, collapse = ", "), "\n")
-      cat("\nAvailable assistance:\n")
-      cat("- create_study_config(): Configuration optimization prompts\n")
-      cat("- validate_item_bank(): Psychometric validation insights\n")
-      cat("- estimate_ability(): Ability estimation analysis\n")
-      cat("- scrape_website_ui(): Theme customization guidance\n")
-      cat("- generate_llm_prompt(): Standalone prompt generation\n")
-      cat("\nPrompts contain NO participant data - only technical parameters.\n")
+      message("LLM Assistance ENABLED for inrep package")
+      message("Output format: ", output_format)
+      message("Prompt types: ", paste(prompt_types, collapse = ", "))
+      message("")
+      message("Available assistance:")
+      message("- create_study_config(): Configuration optimization prompts")
+      message("- validate_item_bank(): Psychometric validation insights")
+      message("- estimate_ability(): Ability estimation analysis")
+      message("- scrape_website_ui(): Theme customization guidance")
+      message("- generate_llm_prompt(): Standalone prompt generation")
+      message("")
+      message("Prompts contain NO participant data - only technical parameters.")
     } else {
-      cat("LLM Assistance DISABLED for inrep package\n")
+      message("LLM Assistance DISABLED for inrep package")
     }
   }
   
@@ -182,32 +184,37 @@ display_llm_prompt <- function(prompt, component = "general") {
   
   if (output_format == "console") {
     if (verbose) {
-      cat("\n" %r% 60, "\n")
-      cat("LLM ASSISTANCE:", toupper(component), "OPTIMIZATION\n")
-      cat("=" %r% 60, "\n")
-      cat("Copy the following prompt to ChatGPT, Claude, or your preferred LLM:\n\n")
+      message("")
+      message(paste(rep("=", 60), collapse = ""))
+      message("LLM ASSISTANCE: ", toupper(component), " OPTIMIZATION")
+      message(paste(rep("=", 60), collapse = ""))
+      message("Copy the following prompt to ChatGPT, Claude, or your preferred LLM:")
+      message("")
     }
-    cat(prompt)
+    message(prompt)
     if (verbose) {
-      cat("\n" %r% 60, "\n\n")
+      message("")
+      message(paste(rep("=", 60), collapse = ""))
+      message("")
     }
   } else if (output_format == "file") {
     filename <- paste0("inrep_", component, "_prompt_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".txt")
     writeLines(prompt, filename)
     if (verbose) {
-      cat("LLM prompt saved to:", filename, "\n")
+      message("LLM prompt saved to: ", filename)
     }
   } else if (output_format == "clipboard") {
     if (requireNamespace("clipr", quietly = TRUE)) {
       clipr::write_clip(prompt)
       if (verbose) {
-        cat("LLM prompt copied to clipboard!\n")
+        message("LLM prompt copied to clipboard!")
       }
     } else {
       if (verbose) {
-        cat("clipr package not available. Displaying prompt:\n\n")
+        message("clipr package not available. Displaying prompt:")
+        message("")
       }
-      cat(prompt)
+      message(prompt)
     }
   }
   
