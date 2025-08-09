@@ -32,6 +32,14 @@
 #' @param accessibility Logical indicating whether to enable accessibility features
 #'   including ARIA labels, keyboard navigation, and screen reader support.
 #' @param study_key Character string for unique study identification. Overrides config$study_key.
+#' @param max_session_time Maximum session time in seconds (default: 7200 = 2 hours).
+#'   The assessment will automatically terminate after this time to ensure data security.
+#' @param enable_robust_session Logical indicating whether to enable robust session management
+#'   with automatic data preservation, keep-alive monitoring, and error recovery.
+#' @param data_preservation_interval Interval for automatic data preservation in seconds (default: 30).
+#' @param keep_alive_interval Keep-alive ping interval in seconds (default: 10).
+#' @param enable_error_recovery Logical indicating whether to enable automatic error recovery
+#'   with up to 3 recovery attempts before graceful degradation.
 #' @param ... Additional parameters passed to Shiny application configuration.
 #'
 #' @return A Shiny application object that can be run with \code{shiny::runApp()}.
@@ -506,6 +514,12 @@ launch_study <- function(
     save_format = "rds",
     logger = function(msg, ...) print(msg),
     study_key = NULL,
+    accessibility = FALSE,
+    max_session_time = 7200,
+    enable_robust_session = TRUE,
+    data_preservation_interval = 30,
+    keep_alive_interval = 10,
+    enable_error_recovery = TRUE,
     ...
 ) {
   
@@ -570,6 +584,32 @@ launch_study <- function(
   
   logger(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"))
   logger(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"), level = "INFO")
+  
+  # Initialize robust session management for sensitive participant data
+  if (enable_robust_session) {
+    logger("Initializing robust session management", level = "INFO")
+    
+    # Initialize robust session management
+    session_config <- initialize_robust_session(
+      max_session_time = max_session_time,
+      data_preservation_interval = data_preservation_interval,
+      keep_alive_interval = keep_alive_interval,
+      enable_logging = TRUE
+    )
+    
+    # Initialize robust error handling
+    error_config <- initialize_robust_error_handling(
+      max_recovery_attempts = 3,
+      enable_auto_recovery = enable_error_recovery
+    )
+    
+    # Create periodic backup system
+    backup_observer <- create_periodic_backup(backup_interval = 300)  # 5 minutes
+    
+    logger(sprintf("Robust session initialized: %s (max time: %d seconds)", 
+                   session_config$session_id, session_config$max_time), level = "INFO")
+  }
+  
   inrep::validate_item_bank(item_bank, config$model)
   
   # Handle model conversion if needed
@@ -939,6 +979,73 @@ launch_study <- function(
       })
     }
     
+    # Robust session monitoring with automatic data preservation
+    if (enable_robust_session) {
+      # Session timeout monitoring
+      shiny::observe({
+        shiny::invalidateLater(1000, session)
+        
+        # Check session timeout
+        if (base::difftime(base::Sys.time(), rv$session_start, units = "secs") > max_session_time) {
+          rv$session_active <- FALSE
+          rv$stage = "timeout"
+          logger("Session timed out due to maximum session time", level = "WARNING")
+          
+          # Force final data preservation
+          if (exists("preserve_session_data")) {
+            preserve_session_data(force = TRUE)
+          }
+        }
+        
+        # Update activity tracking
+        if (exists("update_activity")) {
+          update_activity()
+        }
+      })
+      
+      # Automatic data preservation
+      shiny::observe({
+        shiny::invalidateLater(data_preservation_interval * 1000, session)
+        
+        if (rv$session_active && exists("preserve_session_data")) {
+          tryCatch({
+            preserve_session_data()
+          }, error = function(e) {
+            logger(sprintf("Data preservation failed: %s", e$message), level = "ERROR")
+          })
+        }
+      })
+      
+      # Session status monitoring
+          shiny::observe({
+      shiny::invalidateLater(5000, session)  # Check every 5 seconds
+      
+      if (exists("get_session_status")) {
+        session_status <- get_session_status()
+        if (session_status$active) {
+          remaining_minutes <- round(session_status$remaining_time / 60, 1)
+          logger(sprintf("Session active: %s minutes remaining", remaining_minutes), level = "INFO")
+        }
+      }
+    })
+    
+    # Session cleanup when app stops
+    session$onSessionEnded(function() {
+      if (enable_robust_session && exists("cleanup_session")) {
+        logger("Session ending - cleaning up and preserving final data", level = "INFO")
+        cleanup_session(save_final_data = TRUE)
+      }
+    })
+    
+    # Handle browser disconnect
+    session$onFlush(function() {
+      if (enable_robust_session && exists("update_activity")) {
+        update_activity()
+      }
+    })
+    
+  } else {
+    # Basic session monitoring (legacy)
     shiny::observe({
       shiny::invalidateLater(1000, session)
       if (base::difftime(base::Sys.time(), rv$session_start, units = "mins") > config$max_session_duration) {
@@ -947,6 +1054,7 @@ launch_study <- function(
         logger("Session timed out")
       }
     })
+  }
     
     get_item_content <- function(item_idx) {
       if (base::is.null(config$item_translations) || base::is.null(config$item_translations[[config$language]])) {
@@ -1572,26 +1680,53 @@ launch_study <- function(
     })
     
     shiny::observeEvent(input$submit_response, {
-      shiny::req(input$item_response, rv$current_item)
-      if (!config$response_validation_fun(input$item_response)) {
-        rv$error_message <- base::sprintf("Please select a valid response (%s).", config$language)
-        logger(base::sprintf("Invalid response submitted for item %d", rv$current_item))
-        return()
-      }
-      rv$error_message <- NULL
-      response_time <- base::as.numeric(base::difftime(base::Sys.time(), rv$start_time, units = "secs"))
-      rv$response_times <- base::c(rv$response_times, response_time)
-      item_index <- rv$current_item
-      correct_answer <- item_bank$Answer[item_index] %||% NULL
-      response_score <- base::tryCatch(
-        config$scoring_fun(input$item_response, correct_answer),
-        error = function(e) {
-          logger(base::sprintf("Scoring function error: %s", e$message))
-          if (config$model == "GRM") base::as.numeric(input$item_response) else base::as.numeric(input$item_response == correct_answer)
+      # Robust error boundary for sensitive participant data
+      tryCatch({
+        shiny::req(input$item_response, rv$current_item)
+        
+        if (!config$response_validation_fun(input$item_response)) {
+          rv$error_message <- base::sprintf("Please select a valid response (%s).", config$language)
+          logger(base::sprintf("Invalid response submitted for item %d", rv$current_item))
+          return()
         }
-      )
-      rv$responses <- base::c(rv$responses, response_score)
-      rv$administered <- base::c(rv$administered, item_index)
+        
+        rv$error_message <- NULL
+        response_time <- base::as.numeric(base::difftime(base::Sys.time(), rv$start_time, units = "secs"))
+        rv$response_times <- base::c(rv$response_times, response_time)
+        item_index <- rv$current_item
+        correct_answer <- item_bank$Answer[item_index] %||% NULL
+        
+        response_score <- base::tryCatch(
+          config$scoring_fun(input$item_response, correct_answer),
+          error = function(e) {
+            logger(base::sprintf("Scoring function error: %s", e$message))
+            if (config$model == "GRM") base::as.numeric(input$item_response) else base::as.numeric(input$item_response == correct_answer)
+          }
+        )
+        
+        rv$responses <- base::c(rv$responses, response_score)
+        rv$administered <- base::c(rv$administered, item_index)
+        
+      }, error = function(e) {
+        # Emergency error handling for sensitive data
+        logger(sprintf("Critical error in response processing: %s", e$message), level = "ERROR")
+        
+        # Attempt emergency data preservation
+        if (enable_robust_session && exists("emergency_data_preservation")) {
+          tryCatch({
+            emergency_data_preservation()
+            logger("Emergency data preservation completed", level = "INFO")
+          }, error = function(preserve_error) {
+            logger(sprintf("Emergency data preservation failed: %s", preserve_error$message), level = "ERROR")
+          })
+        }
+        
+        # Show user-friendly error
+        rv$error_message <- "An unexpected error occurred. Your progress has been saved. Please contact support if this problem persists."
+        rv$stage <- "error"
+        
+        return()
+      })
       
       if (config$adaptive) {
         base::tryCatch({
@@ -1605,6 +1740,16 @@ launch_study <- function(
           logger(base::sprintf("Ability estimation failed: %s", e$message))
           rv$error_message <- "Error estimating ability. Please try again."
           return()
+        })
+      }
+      
+      # Robust data preservation after each response
+      if (enable_robust_session && exists("preserve_session_data")) {
+        tryCatch({
+          preserve_session_data()
+          logger("Response data automatically preserved", level = "INFO")
+        }, error = function(e) {
+          logger(sprintf("Automatic data preservation failed: %s", e$message), level = "ERROR")
         })
       }
       
