@@ -91,11 +91,22 @@ log_session_event <- function(event_type, message, details = NULL) {
   
   # Write to log file
   tryCatch({
+    # Ensure details is a list to avoid jsonlite warnings
+    safe_details <- if (!is.null(details)) {
+      if (is.vector(details) && !is.list(details)) {
+        as.list(details)
+      } else {
+        details
+      }
+    } else {
+      NULL
+    }
+    
     log_line <- paste0(
       "[", timestamp, "] ",
       event_type, ": ",
       message,
-      if (!is.null(details)) paste0(" | ", jsonlite::toJSON(details, auto_unbox = TRUE)) else ""
+      if (!is.null(safe_details)) paste0(" | ", jsonlite::toJSON(safe_details, auto_unbox = TRUE)) else ""
     )
     cat(log_line, file = .session_state$log_file, append = TRUE)
   }, error = function(e) {

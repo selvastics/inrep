@@ -171,18 +171,8 @@ logger<-function(m,l='INFO')message(sprintf('[%s] %s: %s',Sys.time(),l,m))
   
   # Essential inrep functions - extract only the most critical ones
   essential_code <- '
-# Core inrep functions (compact)
-create_study_config<-function(name="Study",model="GRM",max_items=10,min_SEM=0.3,demographics=c("Age"),theme="light",...){
-  # Basic theme validation for compact mode
-  valid_themes <- c("minimal", "dark", "modern", "Light", "Midnight", "Sunset", "Forest", "Ocean", "Berry", "Professional", "Clinical", "Educational", "Research", "hildesheim")
-  if (!is.character(theme) || !theme %in% valid_themes) {
-    theme <- "light"
-  }
-  
-  list(name=name,model=model,max_items=max_items,min_SEM=min_SEM,demographics=demographics,theme=theme,
-       min_items=5,adaptive=TRUE,criteria="MI",theta_prior=c(0,1),language="en",session_save=FALSE,
-       response_ui_type="radio",progress_style="circle",estimation_method="TAM",...)
-}
+# Core inrep functions (compact) - using main create_study_config function
+# create_study_config function is defined in create_study_config.R
 
 launch_study_compact<-function(config,item_bank,webdav_url=NULL,password=NULL,save_format="json",study_key=NULL,...){
   if(is.null(item_bank)||nrow(item_bank)==0)stop("Item bank required")
