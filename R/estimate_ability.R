@@ -371,7 +371,7 @@ estimate_ability <- function(rv, item_bank, config) {
     )
   }
   
-  print(sprintf("Estimating ability for %d responses", length(responses)))
+  # logger(sprintf("Estimating ability for %d responses", length(responses)), level = "INFO")
   
   if (length(responses) == 0) {
     print("No responses provided, returning prior")
