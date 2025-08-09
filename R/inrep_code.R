@@ -102,7 +102,7 @@ inrep_code <- function(expr, output_file = NULL, auto_run = FALSE, console_ready
   }
   
   # FULL MODE: Generate complete standalone script for file deployment
-  complete_script <- generate_complete_script(user_code, auto_run, console_ready = console_ready)
+  complete_script <- generate_complete_script(user_code, auto_run, console_ready = console_ready, output_file = output_file)
   script_length <- nchar(complete_script)
   
   # Warning for very large scripts (extensive server logic)
@@ -292,7 +292,7 @@ launch_study<-function(config,item_bank,webdav_url=NULL,password=NULL,save_forma
 }
 
 # Generate complete script for file deployment  
-generate_complete_script <- function(user_code, auto_run, console_ready = FALSE) {
+generate_complete_script <- function(user_code, auto_run, console_ready = FALSE, output_file = NULL) {
   
   # Essential libraries - ordered by dependency
   libraries <- c(
