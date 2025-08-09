@@ -1,113 +1,45 @@
+# inrep: Instant Reports for Adaptive Assessments
 
-
-
-<table width="100%"><tr>
-<td><h1>inrep: Instant Reports for Adaptive Assessments</h1></td>
-
-<td align="right" width="160">
-  <a href="https://github.com/selvastics/inrep">
-    <img src="man/figures/inrep_logo.png" alt="inrep hex logo" height="130"/>
-  </a>
-</td>
-</tr></table>
-
-<!-- badges: start -->
 [![R-CMD-check](https://github.com/selvastics/inrep/workflows/R-CMD-check/badge.svg)](https://github.com/selvastics/inrep/actions)
 [![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
- [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16682020.svg)](https://doi.org/10.5281/zenodo.16682020)
-<!-- badges: end -->
-
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16682020.svg)](https://doi.org/10.5281/zenodo.16682020)
 
 ## Overview
 
-**inrep** provides a comprehensive framework for adaptive testing using Item Response Theory (IRT) models. The package offers web-based interfaces for test administration via Shiny, supports multiple IRT models through TAM integration, implements adaptive item selection algorithms, and includes comprehensive reporting capabilities with LLM integration for enhanced user assistance. It is designed for psychological assessments, educational testing, and survey research with large item pools.
-
-<!-- Demo: See the package in action! -->
-![inrep demo](man/figures/inrep_previewer.gif)
-
-> **Demo:** The above video showcases the main functionalities of the inrep package, including adaptive test setup, Shiny-based administration, theme customization, LLM-powered assistance, and professional reporting. Watch to see how easy it is to configure, deploy, and analyze adaptive assessments with inrep.
+**inrep** is a comprehensive, production-ready framework for adaptive testing using Item Response Theory (IRT) models. Designed for psychological assessments, educational testing, and survey research, inrep provides a complete solution from study design to result analysis with enterprise-grade features.
 
 ### Key Features
 
-- **Adaptive Testing**: Support for multiple IRT models (1PL, 2PL, 3PL, GRM) with sophisticated item selection algorithms  
-- **Web-based Interface**: Modern Shiny applications for test administration and data collection  
-- **TAM Integration**: All psychometric computations performed using the validated TAM package  
-- **LLM Integration**: Built-in support for LLM assistance in study configuration, deployment guidance, and optimization  
-- **Website Theme Scraping**: Extract colors, fonts, and logos from institutional websites for automatic branding  
-- **Multilingual Support**: Interface available in English, German, Spanish, and French  
-- **Customizable Themes**: Professional appearance with accessibility compliance  
-- **Comprehensive Reporting**: Multiple export formats with detailed analytics and visualizations  
-- **Session Management**: Robust session handling with resume capabilities  
-- **Accessibility Options**: WCAG-compliant with colorblind-safe palettes, large text, dyslexia-friendly fonts, and high-contrast modes.
-
-## Installation
-
-### Development Version
-
-```r
-# Install from GitHub
-devtools::install_github("selvastics/inrep")
-````
-
-<details>
-<summary>💡 <strong style="color:#2a5db0">Set up instructions: Expand if R is not yet installed on your system</strong></summary>
-
-<br>
-
-### Step 1: Install R and RStudio
-
-1. **Install R**: [https://cran.r-project.org](https://cran.r-project.org)  
-2. **Install RStudio**: [https://posit.co/download/rstudio-desktop](https://posit.co/download/rstudio-desktop)
-
-### Step 2: Install Required System Tools
-
-- **Windows**: Install [Rtools](https://cran.r-project.org/bin/windows/Rtools/)  
-- **macOS**: Open Terminal and run:
-
-  ```bash
-  xcode-select --install
-  ```
-
-### Step 3: Install the Required Packages
-
-Open RStudio and copy-paste the following:
-
-```r
-# Install devtools (required to install from GitHub)
-install.packages("devtools")
-
-# Load the package
-library(devtools)
-
-# Install inrep from GitHub
-devtools::install_github("selvastics/inrep")
-
-# Load the installed package
-library(inrep)
-```
-
-If you encounter any error during installation, make sure Rtools (on Windows) or Xcode (on macOS) was correctly installed and your R version is up to date.
-
-</details>
-
-
-### Dependencies
-
-The package requires R ≥ 4.1.0 and integrates with the following packages:
-
-* **shiny**
-* **TAM**
-* **ggplot2**
+- **Multiple IRT Models**: Full support for 1PL, 2PL, 3PL, and Graded Response Model (GRM)
+- **TAM Integration**: All psychometric computations performed by the validated TAM package
+- **Web-based Interface**: Modern Shiny applications with responsive design and accessibility compliance
+- **Adaptive Testing**: Sophisticated item selection algorithms (Maximum Information, Weighted, Random)
+- **Real-time Monitoring**: Live progress tracking, ability estimation, and quality control
+- **Cloud Integration**: Automatic backup to WebDAV-compatible storage systems
+- **Multilingual Support**: Interface available in English, German, Spanish, and French
+- **Professional Reporting**: Multiple export formats with detailed analytics and visualizations
+- **Session Management**: Robust session handling with resume capabilities
+- **Accessibility Compliance**: WCAG 2.1 compliant with screen reader support
 
 ## Quick Start
 
-### Basic Usage
+### Installation
 
 ```r
-library(inrep)
+# Install from GitHub (development version)
+devtools::install_github("selvastics/inrep")
 
+# Load the package
+library(inrep)
+```
+
+### Basic Example
+
+```r
+# Load built-in personality assessment data
 data(bfi_items)
 
+# Create study configuration
 config <- create_study_config(
   name = "Personality Assessment",
   model = "GRM",
@@ -118,118 +50,220 @@ config <- create_study_config(
   language = "en"
 )
 
+# Launch the adaptive assessment
 launch_study(config, bfi_items)
 ```
 
-### Advanced Cognitive Assessment
+### Advanced Example
 
 ```r
-data(cognitive_items)
-
+# Advanced cognitive assessment with full features
 advanced_config <- create_study_config(
-    name = "Cognitive Ability Assessment",
-    model = "2PL", 
-    estimation_method = "TAM",
-    max_items = 20,
-    min_items = 10,
-    min_SEM = 0.25,
-    criteria = "MI",
-    theta_prior = c(0, 1),
-    demographics = c("Age", "Gender", "Education", "Native_Language"),
-    input_types = list(
-        Age = "numeric",
-        Gender = "select", 
-        Education = "select",
-        Native_Language = "text"
-    ),
-    theme = "Professional",
-    session_save = TRUE,
-    parallel_computation = TRUE,
-    cache_enabled = TRUE,
-    accessibility_enhanced = TRUE
+  name = "Cognitive Ability Assessment",
+  model = "2PL",
+  estimation_method = "TAM",
+  max_items = 20,
+  min_items = 10,
+  min_SEM = 0.25,
+  criteria = "MI",
+  theta_prior = c(0, 1),
+  demographics = c("Age", "Gender", "Education", "Native_Language"),
+  input_types = list(
+    Age = "numeric",
+    Gender = "select",
+    Education = "select",
+    Native_Language = "text"
+  ),
+  theme = "Professional",
+  session_save = TRUE,
+  parallel_computation = TRUE,
+  cache_enabled = TRUE,
+  accessibility_enhanced = TRUE
 )
 
+# Launch with cloud backup and monitoring
 launch_study(
-    config = advanced_config,
-    item_bank = cognitive_items,
-    accessibility = TRUE,
-    admin_dashboard_hook = function(session_data) {
-        cat("Participant ID:", session_data$participant_id, "\n")
-        cat("Progress:", session_data$progress, "%\n")
-        cat("Current theta:", round(session_data$theta, 3), "\n")
-        cat("Standard error:", round(session_data$se, 3), "\n")
-    }
+  config = advanced_config,
+  item_bank = cognitive_items,
+  webdav_url = "https://your-institution.edu/webdav/studies/",
+  password = Sys.getenv("WEBDAV_PASSWORD"),
+  accessibility = TRUE,
+  admin_dashboard_hook = function(session_data) {
+    cat("Participant ID:", session_data$participant_id, "\n")
+    cat("Progress:", session_data$progress, "%\n")
+    cat("Current theta:", round(session_data$theta, 3), "\n")
+    cat("Standard error:", round(session_data$se, 3), "\n")
+  }
 )
 ```
 
-## Theme Customization 
+## Core Functions
 
-![inrep themes](man/figures/inrep_themes.png)
+### Study Configuration
+- `create_study_config()`: Configure adaptive testing studies with comprehensive options
+- `validate_item_bank()`: Validate item banks for TAM compatibility
+- `simulate_item_bank()`: Generate simulated item banks for testing
 
-> **Themes:** `inrep` supports multiple default UI themes for customizing assessment components.  
-> In addition to built-in options, users can extract CSS styles from institutional websites  
-> or define fully custom themes through direct CSS editing.  
->  
-> New themes are added incrementally. Contributions are welcome to share themes that can be made available to other users.
+### Assessment Execution
+- `launch_study()`: Launch interactive adaptive assessments
+- `estimate_ability()`: TAM-based ability estimation
+- `select_next_item()`: Adaptive item selection algorithms
 
+### Advanced Features
+- `enable_llm_assistance()`: LLM-powered study configuration and optimization
+- `scrape_website_ui()`: Extract themes from institutional websites
+- `launch_theme_editor()`: Interactive theme customization
+
+### Utility Functions
+- `inrep_code()`: Generate standalone R scripts for deployment
+- `resume_session()`: Resume interrupted assessment sessions
+- `validate_response_mapping()`: Validate response data structure
 
 ## Documentation
 
-* `vignette("getting-started", package = "inrep")`
-* `vignette("customizing-appearance", package = "inrep")`
-* `vignette("research-workflows", package = "inrep")`
+### Vignettes
+- `vignette("getting-started", package = "inrep")`: Complete beginner's guide
+- `vignette("psychological-study-example", package = "inrep")`: Real-world example
+- `vignette("advanced-examples", package = "inrep")`: Advanced usage patterns
+- `vignette("complete-tam-examples", package = "inrep")`: TAM integration examples
 
-## Main Functions
+### Function Documentation
+All functions include comprehensive documentation with examples, parameter descriptions, and usage guidelines.
 
-* `launch_study()`
-* `create_study_config()`
-* `estimate_ability()`
-* `select_next_item()`
-* `validate_item_bank()`
-* `scrape_website_ui()`
-* `enable_llm_assistance()`
+## Data
 
-## Example Datasets
+### Built-in Datasets
+- `bfi_items`: Big Five Inventory personality assessment items with validated parameters
+- `math_items`: Mathematics assessment items for cognitive testing
+- `cognitive_items`: Cognitive ability assessment items
 
-* `bfi_items`
-* `math_items`
+### Data Structure
+Item banks follow TAM package specifications with required columns varying by IRT model:
+
+```r
+# Example item bank structure for GRM
+head(bfi_items)
+#   Question    a    b1    b2    b3    b4 ResponseCategories
+# 1 "I am..." 1.2 -2.1 -0.8  0.5  1.8              "1,2,3,4,5"
+# 2 "I tend..." 0.9 -1.5 -0.3  0.8  2.1              "1,2,3,4,5"
+```
 
 ## Configuration Options
 
-* IRT Models: 1PL, 2PL, 3PL, GRM
-* Stopping Rules
-* Item Selection Criteria
-* Themes and Languages
-* Session Management
-* LLM Integration
+### IRT Models
+- **1PL/Rasch**: Equal discrimination parameters
+- **2PL**: Variable discrimination parameters
+- **3PL**: Includes guessing parameters
+- **GRM**: Graded response model for polytomous items
 
-## Citation
+### Stopping Rules
+- Minimum standard error threshold
+- Maximum/minimum item counts
+- Custom stopping functions
 
+### Item Selection Criteria
+- Maximum Information (MI)
+- Weighted Information
+- Random selection
+- Maximum Fisher Information (MFI)
+
+### Themes and Languages
+- Built-in themes: Professional, Light, Midnight, Sunset, Forest, Ocean, Berry
+- Custom theme support with CSS variables
+- Multilingual interface (EN, DE, ES, FR)
+
+## Quality Assurance
+
+### Validation
+- Comprehensive item bank validation
+- Response pattern analysis
+- Real-time quality monitoring
+- Automatic flagging of suspicious responses
+
+### Performance
+- Parallel computation support
+- Caching for item information calculations
+- Memory management optimizations
+- Scalability for large-scale deployments
+
+### Security
+- Secure session management
+- Data encryption for cloud storage
+- GDPR/DSGVO compliance
+- Audit trail logging
+
+## Deployment
+
+### Local Deployment
+```r
+# Generate standalone script
+inrep_code(
+  launch_study(config, item_bank),
+  output_file = "my_assessment.R",
+  auto_run = TRUE
+)
 ```
-Selva, C. (2025). inrep: Instant Reports for Adaptive Assessments.  
-R package version 1.0.0. https://github.com/selvastics/inrep
+
+### Cloud Deployment
+```r
+# Deploy with cloud backup
+launch_study(
+  config, 
+  item_bank,
+  webdav_url = "https://your-cloud-storage.com/studies/",
+  password = Sys.getenv("WEBDAV_PASSWORD")
+)
 ```
+
+### Enterprise Integration
+- WebDAV-compatible cloud storage
+- REST API support for external systems
+- Database integration capabilities
+- Load balancing support
 
 ## Contributing
 
-See `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md` on GitHub.
+We welcome contributions! Please see `CONTRIBUTING.md` for guidelines.
 
-## License
+### Development Setup
+```r
+# Clone the repository
+git clone https://github.com/selvastics/inrep.git
+cd inrep
 
-MIT License
+# Install dependencies
+devtools::install_deps()
+
+# Run tests
+devtools::test()
+
+# Build documentation
+devtools::document()
+```
 
 ## Support
 
-* GitHub: [https://github.com/selvastics/inrep/issues](https://github.com/selvastics/inrep/issues)
-* Email: [selva@uni-hildesheim.de](mailto:selva@uni-hildesheim.de)
+- **GitHub Issues**: [https://github.com/selvastics/inrep/issues](https://github.com/selvastics/inrep/issues)
+- **Email**: [selva@uni-hildesheim.de](mailto:selva@uni-hildesheim.de)
+- **Documentation**: [https://selvastics.github.io/inrep/](https://selvastics.github.io/inrep/)
+
+## Citation
+
+```r
+citation("inrep")
+```
+
+## License
+
+MIT License - see `LICENSE` file for details.
 
 ## Acknowledgments
 
-I thank Alla Sawatzky and Kathrin Schütz for their early endorsement of this project and their insightful guidance during its conceptualization.
+Special thanks to Alla Sawatzky and Kathrin Schütz for their early endorsement and guidance during the conceptualization phase.
 
 ---
 
-**Author:** Clievins Selva
-**Affiliation:** University of Hildesheim
+**Author:** Clievins Selva  
+**Affiliation:** University of Hildesheim  
 **Contact:** [selva@uni-hildesheim.de](mailto:selva@uni-hildesheim.de)
 
