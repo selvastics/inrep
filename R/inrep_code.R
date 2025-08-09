@@ -466,11 +466,11 @@ body { background: var(--background-color); color: var(--text-color); }
 )
 
 # Simplified theme system functions for standalone operation
-get_theme_css_standalone <- function(theme = "light", custom_css = NULL) {
+get_theme_css_standalone <- function(theme = \"light\", custom_css = NULL) {
   theme <- tolower(theme)
-  css_content <- theme_css_library[[theme]] %||% theme_css_library[["light"]]
+  css_content <- theme_css_library[[theme]] %||% theme_css_library[[\"light\"]]
   if (!is.null(custom_css)) {
-    css_content <- paste0(css_content, "\n", custom_css)
+    css_content <- paste0(css_content, \"\\n\", custom_css)
   }
   return(css_content)
 }
