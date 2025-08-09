@@ -518,8 +518,6 @@ launch_study <- function(
   # Ensure required packages are loaded
   if (!requireNamespace("magrittr", quietly = TRUE)) stop("Package 'magrittr' is required.")
   if (!requireNamespace("TAM", quietly = TRUE)) stop("Package 'TAM' is required.")
-  library(magrittr)
-  library(TAM)
   
   if (base::is.null(config)) {
     logger("Configuration is NULL", level = "ERROR")
@@ -563,15 +561,15 @@ launch_study <- function(
                    "Example: webdav_url = \"https://sync.academiccloud.de/index.php/s/YourFolder/\"")
       }
       logger("Cloud storage enabled with WebDAV URL and password", level = "INFO")
-      print(paste("Cloud storage enabled:", webdav_url))
+      logger(paste("Cloud storage enabled:", webdav_url), level = "INFO")
     }
   } else {
     logger("Using local storage only (no cloud backup)", level = "INFO")
-    print("Cloud storage disabled - results will be saved locally only")
+    logger("Cloud storage disabled - results will be saved locally only", level = "INFO")
   }
   
   logger(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"))
-  print(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"))
+  logger(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"), level = "INFO")
   inrep::validate_item_bank(item_bank, config$model)
   
   # Handle model conversion if needed
