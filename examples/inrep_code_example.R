@@ -4,7 +4,9 @@
 library(inrep)
 
 # Load data
+\dontrun{
 data(bfi_items)
+}
 
 # Create study configuration  
 config <- create_study_config(

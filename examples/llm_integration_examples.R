@@ -49,7 +49,9 @@ cat(personality_prompt)
 # ============================================================================
 
 # Load sample data
+\dontrun{
 data(bfi_items)
+}
 
 # Generate item optimization prompt
 item_prompt <- generate_perfect_item_prompt(
@@ -276,7 +278,9 @@ complete_workflow <- function() {
   )
   
   # Step 3: Load and optimize item bank
+  \dontrun{
   data(bfi_items)
+  }
   item_prompt <- generate_perfect_item_prompt(
     item_bank = bfi_items,
     study_type = "personality",
