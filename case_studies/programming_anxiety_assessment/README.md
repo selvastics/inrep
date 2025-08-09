@@ -12,13 +12,13 @@ This case study demonstrates a comprehensive assessment system focused on Progra
 - **Statistical Robustness**: Enhanced reliability for research and analysis
 - **Seed Control**: Reproducible results for validation studies
 
-### 📊 **Comprehensive Dashboard Experience**
+### **Comprehensive Dashboard Experience**
 - **Interactive Visualizations**: Dynamic plots and charts
 - **Real-time Analytics**: Live updates and calculations
 - **Export Capabilities**: Multiple format support (PDF, HTML, CSV, RDS)
 - **Comparison Features**: Benchmark against population norms
 
-### 🎯 **Programming Anxiety Assessment**
+### **Programming Anxiety Assessment**
 - **35 Carefully Calibrated Items**: IRT parameters for GRM model
 - **5 Anxiety Dimensions**: Cognitive, Somatic, Avoidance, Performance, Learning
 - **Adaptive Testing**: 20-30 items with SEM < 0.20

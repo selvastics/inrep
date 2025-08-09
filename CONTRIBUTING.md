@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing to the **inrep** package! This document provides guidelines and information for contributors who want to help improve this intelligent psychological assessment platform.
 
-## 🤝 How to Contribute
+## How to Contribute
 
 We welcome contributions from researchers, developers, and users in the psychological assessment community. There are many ways to contribute:
 
@@ -19,19 +19,19 @@ We welcome contributions from researchers, developers, and users in the psycholo
 - **Testing**: Add or improve test coverage
 - **Documentation**: Enhance guides and examples
 
-### 📚 Documentation & Examples
+### Documentation & Examples
 - **Case studies**: Create new examples showing package capabilities
 - **Tutorials**: Write guides for specific use cases
 - **API documentation**: Improve function documentation
 - **Best practices**: Share optimal usage patterns
 
-### 🧪 Testing & Quality Assurance
+### Testing & Quality Assurance
 - **Test coverage**: Ensure comprehensive testing of new features
 - **R-CMD-check**: Verify CRAN compliance
 - **Cross-platform testing**: Test on different operating systems
 - **Performance testing**: Validate scalability and efficiency
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - **R** (version 4.0.0 or higher)
@@ -198,7 +198,7 @@ test_that("function_name works correctly", {
 - **Documentation**: Update relevant documentation
 - **Merge**: Maintainers will merge approved changes
 
-## 🏗️ Architecture Guidelines
+## Architecture Guidelines
 
 ### Package Structure
 ```
@@ -230,7 +230,7 @@ inrep/
 - **Comprehensive logging**: Detailed logging for debugging
 - **Recovery mechanisms**: Automatic recovery from common errors
 
-## 🧪 Testing Strategy
+## Testing Strategy
 
 ### Test Categories
 - **Unit tests**: Test individual functions in isolation
@@ -250,7 +250,7 @@ inrep/
 - **R versions**: Test on multiple R versions
 - **Dependency checks**: Verify package compatibility
 
-## 📖 Documentation Strategy
+## Documentation Strategy
 
 ### User Documentation
 - **Getting started**: Quick start guide for new users
@@ -290,7 +290,7 @@ inrep/
 - **System libraries**: Some packages require system-level dependencies
 - **Permissions**: Ensure write access to package directory
 
-## 📞 Getting Help
+## Getting Help
 
 ### Communication Channels
 - **GitHub Issues**: For bug reports and feature requests
@@ -310,7 +310,7 @@ inrep/
 - **Be patient**: Development takes time and careful consideration
 - **Be collaborative**: Work together to improve the package
 
-## 🎯 Contribution Priorities
+## Contribution Priorities
 
 ### High Priority
 - **Bug fixes**: Critical issues affecting functionality
@@ -330,7 +330,7 @@ inrep/
 - **Experimental features**: New capabilities requiring significant development
 - **Platform-specific optimizations**: Improvements for specific operating systems
 
-## 🙏 Recognition and Credits
+## Recognition and Credits
 
 ### Contributor Recognition
 - **Authors file**: Contributors are listed in package documentation
@@ -359,7 +359,7 @@ Before submitting a contribution, please ensure:
 - [ ] **Commit messages are clear** and descriptive
 - [ ] **Pull request description** explains what and why
 
-## 🚀 Ready to Contribute?
+## Ready to Contribute?
 
 Thank you for reading through these guidelines! We're excited to work with you to improve the **inrep** package. Here's how to get started:
 

@@ -7,34 +7,34 @@
 
 **inrep** is a comprehensive R package that transforms psychological assessment development through intelligent LLM assistance, robust session management, and advanced psychometric capabilities. Built with modern R development practices and Claude 4 best practices for AI assistance, it provides researchers and practitioners with a powerful, secure, and user-friendly platform for creating, deploying, and analyzing psychological assessments.
 
-## 🚀 Key Features
+## Key Features
 
-### 🤖 Enhanced LLM Assistance System
+### Enhanced LLM Assistance System
 - **Claude 4 Best Practices Implementation**: Advanced prompt engineering following Anthropic's latest recommendations
 - **Context-Aware Assistance**: Intelligent guidance that adapts to your specific assessment needs and constraints
 - **Complexity Scaling**: Assistance that scales from basic to expert levels based on your expertise
 - **Task-Specific Optimization**: Specialized prompts for study design, item bank optimization, ability estimation, UI design, analysis planning, and deployment strategy
 - **Quick Assistance Functions**: Immediate guidance for common assessment tasks
 
-### 🔒 Robust Session Management
+### Robust Session Management
 - **Data Persistence**: Automatic saving and recovery of participant responses and session state
 - **Keep-Alive Mechanisms**: Prevents session timeouts during long assessments
 - **Error Recovery**: Graceful handling of network issues and system interruptions
 - **Secure Data Handling**: Built-in security measures for sensitive participant data
 
-### 📊 Advanced Psychometric Capabilities
+### Advanced Psychometric Capabilities
 - **Multiple IRT Models**: Support for GRM, PCM, and other item response theory models
 - **Adaptive Testing**: Intelligent item selection and ability estimation
 - **Item Bank Optimization**: Tools for improving item quality and measurement precision
 - **Comprehensive Validation**: Built-in psychometric validation and quality assessment
 
-### 🎯 User Experience Excellence
+### User Experience Excellence
 - **Responsive Design**: Works seamlessly across desktop, tablet, and mobile devices
 - **Accessibility First**: WCAG 2.1 AA compliance and inclusive design principles
 - **Intuitive Interface**: Clean, modern UI that reduces participant anxiety and improves completion rates
 - **Real-Time Feedback**: Immediate progress indicators and support throughout the assessment
 
-## 🏗️ Architecture
+## Architecture
 
 The package is built with a modular architecture that separates concerns and ensures maintainability:
 
@@ -53,7 +53,7 @@ inrep/
 └── tests/                      # Comprehensive testing
 ```
 
-## 📚 Case Studies
+## Case Studies
 
 ### 1. Programming Anxiety Assessment
 A comprehensive case study demonstrating the enhanced LLM assistance system in action, showing how it guides every step of assessment development from study design to deployment.
@@ -72,7 +72,7 @@ A hands-on showcase of all enhanced LLM assistance capabilities, including:
 - Integration workflow demonstration
 - Advanced features and system validation
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -128,7 +128,7 @@ quick_llm_assistance("validation", list(model = "GRM", items = 30))
 quick_llm_assistance("ui", list(target_users = "mobile", accessibility = "required"))
 ```
 
-## 🔧 Configuration
+## Configuration
 
 ### LLM Assistance Settings
 
@@ -158,14 +158,14 @@ set_robust_session_settings(
 )
 ```
 
-## 📖 Documentation
+## Documentation
 
 - **Package Documentation**: `?inrep` for overview, `?function_name` for specific functions
 - **Case Studies**: See `inst/case_studies/` for comprehensive examples
 - **Vignettes**: Detailed tutorials and best practices
 - **API Reference**: Complete function documentation with examples
 
-## 🧪 Testing
+## Testing
 
 The package includes comprehensive testing to ensure reliability:
 
@@ -177,7 +177,7 @@ devtools::test()
 devtools::test_file("tests/testthat/test-enhanced-llm-assistance.R")
 ```
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on:
 
@@ -186,17 +186,17 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 - Pull request process
 - Issue reporting
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Anthropic**: For Claude 4 best practices in prompt engineering
 - **R Community**: For the excellent tools and packages that make this possible
 - **Contributors**: All those who have helped improve and expand the package
 
-## 📞 Support
+## Support
 
 - **Issues**: [GitHub Issues](https://github.com/your-username/inrep/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/your-username/inrep/discussions)

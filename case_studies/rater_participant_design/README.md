@@ -11,12 +11,12 @@ This case study demonstrates a sophisticated rater-participant design where mult
 - **Balanced Assignments**: Automated assignment system ensures fair distribution
 - **Quality Monitoring**: Track rater performance and agreement rates
 
-### 📊 **Inter-Rater Reliability Analysis**
+### **Inter-Rater Reliability Analysis**
 - **ICC Calculations**: Intraclass Correlation Coefficients for single and multiple raters
 - **Agreement Tracking**: Monitor consistency across raters
 - **Quality Metrics**: Reliability scores and agreement rates for each rater
 
-### 🎯 **Comprehensive Assessment**
+### **Comprehensive Assessment**
 - **5 Performance Dimensions**: Communication, Problem-Solving, Technical, Professional, Overall
 - **25 Evaluation Items**: Carefully calibrated IRT parameters for GRM model
 - **Adaptive Testing**: 15-20 items with SEM < 0.25
