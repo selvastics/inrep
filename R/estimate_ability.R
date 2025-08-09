@@ -374,7 +374,7 @@ estimate_ability <- function(rv, item_bank, config) {
   # logger(sprintf("Estimating ability for %d responses", length(responses)), level = "INFO")
   
   if (length(responses) == 0) {
-    print("No responses provided, returning prior")
+    message("No responses provided, returning prior")
     return(list(theta = config$theta_prior[1], se = config$theta_prior[2]))
   }
   
@@ -382,7 +382,7 @@ estimate_ability <- function(rv, item_bank, config) {
   theta_grid <- if (is.numeric(config$theta_grid) && length(config$theta_grid) >= 2) {
     config$theta_grid
   } else {
-    print("Invalid theta_grid, using default grid (-4, 4, 100)")
+    message("Invalid theta_grid, using default grid (-4, 4, 100)")
     seq(-4, 4, length.out = 100)
   }
   
@@ -401,13 +401,13 @@ estimate_ability <- function(rv, item_bank, config) {
       }
       est <- tam.wle(mod)
       if (nrow(est) == 0 || is.na(est$theta[1])) {
-        print("TAM estimation failed, falling back to EAP")
+        message("TAM estimation failed, falling back to EAP")
       } else {
-        print(sprintf("TAM estimation: theta=%.2f, se=%.3f", est$theta[1], est$error[1]))
+        message(sprintf("TAM estimation: theta=%.2f, se=%.3f", est$theta[1], est$error[1]))
         return(list(theta = est$theta[1], se = est$error[1]))
       }
     }, error = function(e) {
-      print(sprintf("TAM estimation error: %s, falling back to EAP", e$message))
+      message(sprintf("TAM estimation error: %s, falling back to EAP", e$message))
     })
   }
   
@@ -427,7 +427,7 @@ estimate_ability <- function(rv, item_bank, config) {
     if (!is.null(mirt_result$theta) && !is.na(mirt_result$theta) && mirt_result$method != "error") {
       return(list(theta = mirt_result$theta, se = mirt_result$se))
     } else {
-      print("MIRT estimation failed, falling back to EAP")
+      message("MIRT estimation failed, falling back to EAP")
     }
   }
   
@@ -460,7 +460,7 @@ estimate_ability <- function(rv, item_bank, config) {
       
       if (config$model == "GRM") {
         if (length(b) == 0) {
-          print("No threshold parameters for GRM item")
+          message("No threshold parameters for GRM item")
           return(list(theta = config$theta_prior[1], se = config$theta_prior[2]))
         }
         
@@ -491,7 +491,7 @@ estimate_ability <- function(rv, item_bank, config) {
         probs <- probs / sum(probs)
         response <- as.integer(rv$responses[j])
         if (response < 1 || response > n_categories || is.na(response)) {
-          print(sprintf("Invalid response %d for item %d", response, item_idx))
+          message(sprintf("Invalid response %d for item %d", response, item_idx))
           next
         }
         ll <- ll + log(probs[response])
@@ -519,7 +519,7 @@ estimate_ability <- function(rv, item_bank, config) {
   
   log_post <- log_likelihood + log(prior)
   if (all(is.na(log_post) | is.infinite(log_post))) {
-    print("Invalid posterior, returning prior")
+    message("Invalid posterior, returning prior")
     return(list(theta = config$theta_prior[1], se = config$theta_prior[2]))
   }
   
@@ -530,11 +530,11 @@ estimate_ability <- function(rv, item_bank, config) {
   se_est <- sqrt(sum((theta_grid - theta_est)^2 * post, na.rm = TRUE))
   
   if (is.na(theta_est) || is.na(se_est)) {
-    print("EAP estimation resulted in NA, returning prior")
+    message("EAP estimation resulted in NA, returning prior")
     return(list(theta = config$theta_prior[1], se = config$theta_prior[2]))
   }
   
-  print(sprintf("EAP estimation: theta=%.2f, se=%.3f", theta_est, se_est))
+  message(sprintf("EAP estimation: theta=%.2f, se=%.3f", theta_est, se_est))
   return(list(theta = theta_est, se = se_est))
 }
 
@@ -557,16 +557,16 @@ estimate_ability_mirt <- function(responses, administered, item_bank, model = "2
                                   method = "EAP", prior_mean = 0, prior_sd = 1, 
                                   n_synthetic = 500, verbose = FALSE) {
   
-  print(sprintf("Starting MIRT ability estimation with %d responses using %s model", 
+  message(sprintf("Starting MIRT ability estimation with %d responses using %s model", 
                 length(responses), model))
   
   if (length(responses) == 0 || length(administered) == 0) {
-    print("No responses provided for MIRT estimation")
+    message("No responses provided for MIRT estimation")
     return(list(theta = prior_mean, se = prior_sd, method = "prior"))
   }
   
   if (length(responses) != length(administered)) {
-    print("Length mismatch between responses and administered items")
+    message("Length mismatch between responses and administered items")
     return(list(theta = prior_mean, se = prior_sd, method = "error"))
   }
   
@@ -704,7 +704,7 @@ estimate_ability_mirt <- function(responses, administered, item_bank, model = "2
                       "GRM" = "graded")
     
     # Fit mirt model
-    print(sprintf("Fitting MIRT model with itemtype: %s", itemtype))
+    message(sprintf("Fitting MIRT model with itemtype: %s", itemtype))
     
     mirt_model <- mirt::mirt(data = full_data, 
                             model = 1, 
@@ -747,7 +747,7 @@ estimate_ability_mirt <- function(responses, administered, item_bank, model = "2
         converged = mirt::extract.mirt(mirt_model, "converged")
       )
       
-      print(sprintf("MIRT %s estimation successful: theta=%.3f, se=%.3f, reliability=%.3f", 
+      message(sprintf("MIRT %s estimation successful: theta=%.3f, se=%.3f, reliability=%.3f", 
                     method, theta_est, se_est, reliability))
       
       # Generate LLM assistance prompt for ability estimation optimization
@@ -767,12 +767,12 @@ estimate_ability_mirt <- function(responses, administered, item_bank, model = "2
       return(result)
       
     } else {
-      print("MIRT ability estimation failed - no valid scores returned")
+      message("MIRT ability estimation failed - no valid scores returned")
       return(list(theta = prior_mean, se = prior_sd, method = "fallback_prior"))
     }
     
   }, error = function(e) {
-    print(sprintf("MIRT estimation error: %s", e$message))
+    message(sprintf("MIRT estimation error: %s", e$message))
     return(list(theta = prior_mean, se = prior_sd, method = "error", error_msg = e$message))
   })
 }

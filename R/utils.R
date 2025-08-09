@@ -65,7 +65,7 @@ initialize_logging <- function(path = NULL) {
   assign("log_print", function(msg, level = "INFO") {
     writeLines(sprintf("[%s] %s", level, msg), .log_path, append = TRUE)
   }, envir = .GlobalEnv)
-  print("Logging initialized successfully")
+  message("Logging initialized successfully")
   list(success = TRUE, path = new_path, message = "Logging initialized successfully")
 }
 
@@ -197,7 +197,7 @@ log_open <- function(path) {
 select_next_item <- function(rv, item_bank, config) {
   rv$item_counter <- rv$item_counter + 1
   if (length(rv$administered) >= config$max_items) {
-    print("Maximum items reached")
+    message("Maximum items reached")
     return(NULL)
   }
   
@@ -206,37 +206,37 @@ select_next_item <- function(rv, item_bank, config) {
     if (!is.null(config$fixed_items)) {
       if (rv$item_counter <= length(config$fixed_items)) {
         item <- config$fixed_items[rv$item_counter]
-        print(sprintf("Selecting fixed item %d: %d", rv$item_counter, item))
+        message(sprintf("Selecting fixed item %d: %d", rv$item_counter, item))
         return(item)
       }
-      print("No more fixed items available")
+              message("No more fixed items available")
       return(NULL)
     }
     if (!is.null(config$item_groups)) {
       group_items <- unlist(config$item_groups)
       available <- setdiff(group_items, rv$administered)
       if (length(available) == 0 || rv$item_counter > length(group_items)) {
-        print("No more items in item_groups")
+        message("No more items in item_groups")
         return(NULL)
       }
       item <- group_items[rv$item_counter]
-      print(sprintf("Selecting item %d from group: %d", rv$item_counter, item))
+              message(sprintf("Selecting item %d from group: %d", rv$item_counter, item))
       return(item)
     }
     available <- setdiff(seq_len(nrow(item_bank)), rv$administered)
     if (length(available) == 0 || rv$item_counter > length(available)) {
-      print("No more items available")
+              message("No more items available")
       return(NULL)
     }
     item <- available[1]
-    print(sprintf("Selecting item %d: %d", rv$item_counter, item))
+            message(sprintf("Selecting item %d: %d", rv$item_counter, item))
     return(item)
   }
   
   # Adaptive mode
   if (!is.null(config$fixed_items) && rv$item_counter <= length(config$fixed_items)) {
     item <- config$fixed_items[rv$item_counter]
-    print(sprintf("Selecting fixed item %d: %d", rv$item_counter, item))
+    message(sprintf("Selecting fixed item %d: %d", rv$item_counter, item))
     return(item)
   }
   available <- setdiff(seq_len(nrow(item_bank)), rv$administered)
@@ -244,12 +244,12 @@ select_next_item <- function(rv, item_bank, config) {
     available <- intersect(available, unlist(config$item_groups))
   }
   if (length(available) == 0) {
-    print("No more items available in specified groups")
+    message("No more items available in specified groups")
     return(NULL)
   }
   if (rv$item_counter <= config$adaptive_start) {
     item <- sample(available, 1)
-    print(sprintf("Selecting random item %d: %d", rv$item_counter, item))
+          message(sprintf("Selecting random item %d: %d", rv$item_counter, item))
     return(item)
   }
   
@@ -325,6 +325,6 @@ select_next_item <- function(rv, item_bank, config) {
     top_items <- available[info >= 0.95 * max(info, na.rm = TRUE)]
     item <- sample(top_items, 1)
   }
-  print(sprintf("Selected item %d with information %f", item, max(info, na.rm = TRUE)))
+  message(sprintf("Selected item %d with information %f", item, max(info, na.rm = TRUE)))
   item
 }
