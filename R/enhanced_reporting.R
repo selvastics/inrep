@@ -353,9 +353,9 @@ create_enhanced_response_report <- function(config, cat_result, item_bank, inclu
 #' 
 #' # Check validation status
 #' if (validation_result$consistent) {
-#'   cat("✓ Report validation PASSED\n")
+#'   cat("PASS: Report validation PASSED\n")
 #' } else {
-#'   cat("✗ Report validation FAILED\n")
+#'   cat("FAIL: Report validation FAILED\n")
 #' }
 #' 
 #' # Example 2: Binary Model Report Validation
