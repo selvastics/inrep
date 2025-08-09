@@ -609,7 +609,7 @@ launch_study <- function(
       # Start periodic backup monitoring
       if (enable_robust_session && exists("start_data_preservation_monitoring")) {
         tryCatch({
-          start_data_preservation_monitoring(interval = data_preservation_interval)
+          start_data_preservation_monitoring()
           logger("Periodic data preservation monitoring started", level = "INFO")
         }, error = function(e) {
           logger(sprintf("Failed to start data preservation monitoring: %s", e$message), level = "WARNING")
@@ -1081,7 +1081,7 @@ launch_study <- function(
     # Keep-alive mechanism to prevent session timeouts
     if (enable_robust_session && exists("start_keep_alive_monitoring")) {
       tryCatch({
-        start_keep_alive_monitoring(interval = keep_alive_interval)
+        start_keep_alive_monitoring()
         logger("Keep-alive monitoring started", level = "INFO")
       }, error = function(e) {
         logger(sprintf("Failed to start keep-alive monitoring: %s", e$message), level = "WARNING")

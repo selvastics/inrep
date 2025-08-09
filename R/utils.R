@@ -63,7 +63,7 @@ initialize_logging <- function(path = NULL) {
   }
   assign(".log_path", new_path, envir = .GlobalEnv)
   assign("log_print", function(msg, level = "INFO") {
-    writeLines(sprintf("[%s] %s", level, msg), .log_path, append = TRUE)
+    cat(sprintf("[%s] %s\n", level, msg), file = .log_path, append = TRUE)
   }, envir = .GlobalEnv)
   message("Logging initialized successfully")
   list(success = TRUE, path = new_path, message = "Logging initialized successfully")
