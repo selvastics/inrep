@@ -102,7 +102,7 @@ inrep_code <- function(expr, output_file = NULL, auto_run = FALSE, console_ready
   }
   
   # FULL MODE: Generate complete standalone script for file deployment
-  complete_script <- generate_complete_script(user_code, auto_run, console_ready)
+  complete_script <- generate_complete_script(user_code, auto_run, console_ready = console_ready)
   script_length <- nchar(complete_script)
   
   # Warning for very large scripts (extensive server logic)
