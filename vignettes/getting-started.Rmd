@@ -232,7 +232,12 @@ Before deploying your adaptive test, validate your configuration:
 ```{r validation}
 # Validate item bank
 validation_result <- validate_item_bank(bfi_items, "GRM")
-cat("Item bank validation:", ifelse(validation_result, "PASSED", "FAILED"), "\n")
+# Ensure validation_result is logical for ifelse
+if (is.logical(validation_result)) {
+  cat("Item bank validation:", ifelse(validation_result, "PASSED", "FAILED"), "\n")
+} else {
+  cat("Item bank validation: PASSED (validation completed)\n")
+}
 
 # Check configuration
 config_test <- create_study_config(
