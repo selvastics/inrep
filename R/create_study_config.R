@@ -450,7 +450,7 @@ create_study_config <- function(
 ) {
   # Initialize logging
   if (getOption("inrep.verbose", TRUE)) {
-    cat("Creating study configuration for:", name, "\n")
+    message("Creating study configuration for: ", name)
   }
   
   # Capture extra parameters
@@ -546,7 +546,7 @@ create_study_config <- function(
       }
       if (!is.null(max_items) && max_items < length(fixed_items)) {
         if (getOption("inrep.verbose", TRUE)) {
-          cat("Adjusting max_items to accommodate fixed_items\n")
+          message("Adjusting max_items to accommodate fixed_items")
         }
         max_items <- length(fixed_items)
       }
@@ -743,7 +743,7 @@ create_study_config <- function(
     if (length(enhanced_features) > 0) {
       config$enhanced_features <- enhanced_features
       if (getOption("inrep.verbose", TRUE)) {
-        cat("Enhanced features enabled:", paste(names(enhanced_features), collapse = ", "), "\n")
+        message("Enhanced features enabled: ", paste(names(enhanced_features), collapse = ", "))
       }
     }
     
@@ -779,7 +779,7 @@ create_study_config <- function(
       config$is_advanced_config <- TRUE
       config$config_version <- "2.0"
       if (getOption("inrep.verbose", TRUE)) {
-        cat("Advanced configuration features enabled\n")
+        message("Advanced configuration features enabled")
       }
     }
     
@@ -787,23 +787,26 @@ create_study_config <- function(
     if (length(extra_params) > 0) {
       config <- c(config, extra_params)
       if (getOption("inrep.verbose", TRUE)) {
-        cat("Added", length(extra_params), "extra parameters to configuration\n")
+        message("Added ", length(extra_params), " extra parameters to configuration")
       }
     }
     
     if (getOption("inrep.verbose", TRUE)) {
-      cat("Study configuration created successfully for:", name, "\n")
+      message("Study configuration created successfully for: ", name)
     }
     
     # Generate LLM assistance prompt if enabled
     if (getOption("inrep.llm_assistance", FALSE)) {
       llm_prompt <- generate_config_optimization_prompt(config)
-      cat("\n" %r% 60, "\n")
-      cat("LLM ASSISTANCE: CONFIGURATION OPTIMIZATION\n")
-      cat("=" %r% 60, "\n")
-      cat("Copy the following prompt to ChatGPT, Claude, or your preferred LLM for advanced configuration insights:\n\n")
-      cat(llm_prompt)
-      cat("\n" %r% 60, "\n\n")
+      message(paste(rep("=", 60), collapse = ""))
+      message("LLM ASSISTANCE: CONFIGURATION OPTIMIZATION")
+      message(paste(rep("=", 60), collapse = ""))
+      message("Copy the following prompt to ChatGPT, Claude, or your preferred LLM for advanced configuration insights:")
+      message("")
+      message(llm_prompt)
+      message("")
+      message(paste(rep("=", 60), collapse = ""))
+      message("")
     }
     
     return(config)

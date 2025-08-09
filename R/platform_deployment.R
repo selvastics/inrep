@@ -486,11 +486,11 @@ deployment_results$validation_report$final_validation<-final_validation
 generate_deployment_summary(deployment_results,deployment_path)
 
 #Printsuccessmessage
-cat("✅Deploymentpackagecreatedsuccessfully!\n")
-cat("📁Location:",deployment_path,"\n")
-cat("🎯Deploymenttype:",deployment_type,"\n")
-cat("📧Contactmaintainerat:selva@uni-hildesheim.de\n")
-cat("📖Seedeploymentinstructionsin:",file.path(deployment_path,"docs"),"\n")
+message("✅Deploymentpackagecreatedsuccessfully!")
+message("📁Location:",deployment_path)
+message("🎯Deploymenttype:",deployment_type)
+message("📧Contactmaintainerat:selva@uni-hildesheim.de")
+message("📖Seedeploymentinstructionsin:",file.path(deployment_path,"docs"))
 
 return(deployment_results)
 }

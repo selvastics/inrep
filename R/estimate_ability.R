@@ -753,12 +753,15 @@ estimate_ability_mirt <- function(responses, administered, item_bank, model = "2
       # Generate LLM assistance prompt for ability estimation optimization
       if (getOption("inrep.llm_assistance", FALSE)) {
         ability_prompt <- generate_ability_optimization_prompt(result, administered, model)
-        cat("\n" %r% 60, "\n")
-        cat("LLM ASSISTANCE: ABILITY ESTIMATION OPTIMIZATION\n")
-        cat("=" %r% 60, "\n")
-        cat("Copy the following prompt to ChatGPT, Claude, or your preferred LLM for advanced ability estimation insights:\n\n")
-        cat(ability_prompt)
-        cat("\n" %r% 60, "\n\n")
+        message(paste(rep("=", 60), collapse = ""))
+        message("LLM ASSISTANCE: ABILITY ESTIMATION OPTIMIZATION")
+        message(paste(rep("=", 60), collapse = ""))
+        message("Copy the following prompt to ChatGPT, Claude, or your preferred LLM for advanced ability estimation insights:")
+        message("")
+        message(ability_prompt)
+        message("")
+        message(paste(rep("=", 60), collapse = ""))
+        message("")
       }
       
       return(result)
