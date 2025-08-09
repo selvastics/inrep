@@ -1,269 +1,208 @@
-# inrep: Instant Reports for Adaptive Assessments
+# inrep: Intelligent Psychological Assessment Platform
 
-[![R-CMD-check](https://github.com/selvastics/inrep/workflows/R-CMD-check/badge.svg)](https://github.com/selvastics/inrep/actions)
-[![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16682020.svg)](https://doi.org/10.5281/zenodo.16682020)
+[![R-CMD-check](https://github.com/your-username/inrep/workflows/R-CMD-check/badge.svg)](https://github.com/your-username/inrep/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
 
-**inrep** is a comprehensive, production-ready framework for adaptive testing using Item Response Theory (IRT) models. Designed for psychological assessments, educational testing, and survey research, inrep provides a complete solution from study design to result analysis with enterprise-grade features.
+**inrep** is a comprehensive R package that transforms psychological assessment development through intelligent LLM assistance, robust session management, and advanced psychometric capabilities. Built with modern R development practices and Claude 4 best practices for AI assistance, it provides researchers and practitioners with a powerful, secure, and user-friendly platform for creating, deploying, and analyzing psychological assessments.
 
-### Key Features
+## 🚀 Key Features
 
-- **Multiple IRT Models**: Full support for 1PL, 2PL, 3PL, and Graded Response Model (GRM)
-- **TAM Integration**: All psychometric computations performed by the validated TAM package
-- **Web-based Interface**: Modern Shiny applications with responsive design and accessibility compliance
-- **Adaptive Testing**: Sophisticated item selection algorithms (Maximum Information, Weighted, Random)
-- **Real-time Monitoring**: Live progress tracking, ability estimation, and quality control
-- **Cloud Integration**: Automatic backup to WebDAV-compatible storage systems
-- **Multilingual Support**: Interface available in English, German, Spanish, and French
-- **Professional Reporting**: Multiple export formats with detailed analytics and visualizations
-- **Session Management**: Robust session handling with resume capabilities
-- **Accessibility Compliance**: WCAG 2.1 compliant with screen reader support
+### 🤖 Enhanced LLM Assistance System
+- **Claude 4 Best Practices Implementation**: Advanced prompt engineering following Anthropic's latest recommendations
+- **Context-Aware Assistance**: Intelligent guidance that adapts to your specific assessment needs and constraints
+- **Complexity Scaling**: Assistance that scales from basic to expert levels based on your expertise
+- **Task-Specific Optimization**: Specialized prompts for study design, item bank optimization, ability estimation, UI design, analysis planning, and deployment strategy
+- **Quick Assistance Functions**: Immediate guidance for common assessment tasks
 
-## Quick Start
+### 🔒 Robust Session Management
+- **Data Persistence**: Automatic saving and recovery of participant responses and session state
+- **Keep-Alive Mechanisms**: Prevents session timeouts during long assessments
+- **Error Recovery**: Graceful handling of network issues and system interruptions
+- **Secure Data Handling**: Built-in security measures for sensitive participant data
+
+### 📊 Advanced Psychometric Capabilities
+- **Multiple IRT Models**: Support for GRM, PCM, and other item response theory models
+- **Adaptive Testing**: Intelligent item selection and ability estimation
+- **Item Bank Optimization**: Tools for improving item quality and measurement precision
+- **Comprehensive Validation**: Built-in psychometric validation and quality assessment
+
+### 🎯 User Experience Excellence
+- **Responsive Design**: Works seamlessly across desktop, tablet, and mobile devices
+- **Accessibility First**: WCAG 2.1 AA compliance and inclusive design principles
+- **Intuitive Interface**: Clean, modern UI that reduces participant anxiety and improves completion rates
+- **Real-Time Feedback**: Immediate progress indicators and support throughout the assessment
+
+## 🏗️ Architecture
+
+The package is built with a modular architecture that separates concerns and ensures maintainability:
+
+```
+inrep/
+├── R/                          # Core R functions
+│   ├── enhanced_llm_assistance.R    # LLM assistance system
+│   ├── robust_session_management.R  # Session handling
+│   ├── robust_error_handling.R      # Error management
+│   ├── item_selection.R             # Item selection algorithms
+│   ├── estimate_ability.R           # Ability estimation
+│   └── ...                         # Additional modules
+├── inst/                       # Package resources
+│   ├── case_studies/           # Example implementations
+│   └── examples/               # Usage examples
+└── tests/                      # Comprehensive testing
+```
+
+## 📚 Case Studies
+
+### 1. Programming Anxiety Assessment
+A comprehensive case study demonstrating the enhanced LLM assistance system in action, showing how it guides every step of assessment development from study design to deployment.
+
+**Key Features Demonstrated:**
+- Study design optimization with LLM guidance
+- Item bank quality improvement
+- Ability estimation strategy optimization
+- User interface optimization for anxiety reduction
+- Analysis planning and deployment strategy
+
+### 2. Enhanced LLM System Demonstration
+A hands-on showcase of all enhanced LLM assistance capabilities, including:
+- Context-aware prompt generation
+- Complexity scaling from basic to expert
+- Integration workflow demonstration
+- Advanced features and system validation
+
+## 🚀 Quick Start
 
 ### Installation
 
 ```r
-# Install from GitHub (development version)
-devtools::install_github("selvastics/inrep")
+# Install from GitHub
+if (!require(devtools)) install.packages("devtools")
+devtools::install_github("your-username/inrep")
 
 # Load the package
 library(inrep)
 ```
 
-### Basic Example
+### Basic Usage
 
 ```r
-# Load built-in personality assessment data
-data(bfi_items)
-
-# Create study configuration
-config <- create_study_config(
-  name = "Personality Assessment",
-  model = "GRM",
-  max_items = 15,
-  min_items = 5,
-  min_SEM = 0.3,
-  demographics = c("Age", "Gender"),
-  language = "en"
+# Enable enhanced LLM assistance
+enable_llm_assistance(
+  enable = TRUE,
+  enhanced_mode = TRUE,
+  complexity_level = "intermediate"
 )
 
-# Launch the adaptive assessment
-launch_study(config, bfi_items)
-```
-
-### Advanced Example
-
-```r
-# Advanced cognitive assessment with full features
-advanced_config <- create_study_config(
-  name = "Cognitive Ability Assessment",
-  model = "2PL",
-  estimation_method = "TAM",
-  max_items = 20,
-  min_items = 10,
-  min_SEM = 0.25,
-  criteria = "MI",
-  theta_prior = c(0, 1),
-  demographics = c("Age", "Gender", "Education", "Native_Language"),
-  input_types = list(
-    Age = "numeric",
-    Gender = "select",
-    Education = "select",
-    Native_Language = "text"
-  ),
-  theme = "Professional",
-  session_save = TRUE,
-  parallel_computation = TRUE,
-  cache_enabled = TRUE,
-  accessibility_enhanced = TRUE
+# Get LLM guidance for study design
+study_prompt <- generate_enhanced_prompt(
+  task_type = "study_design",
+  context = list(
+    study_type = "personality_assessment",
+    population = "university students",
+    sample_size = 300
+  )
 )
 
-# Launch with cloud backup and monitoring
+# Launch a study with robust session management
 launch_study(
-  config = advanced_config,
-  item_bank = cognitive_items,
-  webdav_url = "https://your-institution.edu/webdav/studies/",
-  password = Sys.getenv("WEBDAV_PASSWORD"),
-  accessibility = TRUE,
-  admin_dashboard_hook = function(session_data) {
-    cat("Participant ID:", session_data$participant_id, "\n")
-    cat("Progress:", session_data$progress, "%\n")
-    cat("Current theta:", round(session_data$theta, 3), "\n")
-    cat("Standard error:", round(session_data$se, 3), "\n")
-  }
+  study_config = "path/to/config.yaml",
+  enable_robust_mode = TRUE,
+  enable_llm_assistance = TRUE
 )
 ```
 
-## Core Functions
-
-### Study Configuration
-- `create_study_config()`: Configure adaptive testing studies with comprehensive options
-- `validate_item_bank()`: Validate item banks for TAM compatibility
-- `simulate_item_bank()`: Generate simulated item banks for testing
-
-### Assessment Execution
-- `launch_study()`: Launch interactive adaptive assessments
-- `estimate_ability()`: TAM-based ability estimation
-- `select_next_item()`: Adaptive item selection algorithms
-
-### Advanced Features
-- `enable_llm_assistance()`: LLM-powered study configuration and optimization
-- `scrape_website_ui()`: Extract themes from institutional websites
-- `launch_theme_editor()`: Interactive theme customization
-
-### Utility Functions
-- `inrep_code()`: Generate standalone R scripts for deployment
-- `resume_session()`: Resume interrupted assessment sessions
-- `validate_response_mapping()`: Validate response data structure
-
-## Documentation
-
-### Vignettes
-- `vignette("getting-started", package = "inrep")`: Complete beginner's guide
-- `vignette("psychological-study-example", package = "inrep")`: Real-world example
-- `vignette("advanced-examples", package = "inrep")`: Advanced usage patterns
-- `vignette("complete-tam-examples", package = "inrep")`: TAM integration examples
-
-### Function Documentation
-All functions include comprehensive documentation with examples, parameter descriptions, and usage guidelines.
-
-## Data
-
-### Built-in Datasets
-- `bfi_items`: Big Five Inventory personality assessment items with validated parameters
-- `math_items`: Mathematics assessment items for cognitive testing
-- `cognitive_items`: Cognitive ability assessment items
-
-### Data Structure
-Item banks follow TAM package specifications with required columns varying by IRT model:
+### Advanced Usage
 
 ```r
-# Example item bank structure for GRM
-head(bfi_items)
-#   Question    a    b1    b2    b3    b4 ResponseCategories
-# 1 "I am..." 1.2 -2.1 -0.8  0.5  1.8              "1,2,3,4,5"
-# 2 "I tend..." 0.9 -1.5 -0.3  0.8  2.1              "1,2,3,4,5"
+# Run the complete enhanced LLM case study
+run_enhanced_llm_case_study()
+
+# Demonstrate the enhanced LLM system
+demonstrate_enhanced_llm_system()
+
+# Get quick assistance for specific tasks
+quick_llm_assistance("study_config", list(study_type = "cognitive"))
+quick_llm_assistance("validation", list(model = "GRM", items = 30))
+quick_llm_assistance("ui", list(target_users = "mobile", accessibility = "required"))
 ```
 
-## Configuration Options
+## 🔧 Configuration
 
-### IRT Models
-- **1PL/Rasch**: Equal discrimination parameters
-- **2PL**: Variable discrimination parameters
-- **3PL**: Includes guessing parameters
-- **GRM**: Graded response model for polytomous items
+### LLM Assistance Settings
 
-### Stopping Rules
-- Minimum standard error threshold
-- Maximum/minimum item counts
-- Custom stopping functions
-
-### Item Selection Criteria
-- Maximum Information (MI)
-- Weighted Information
-- Random selection
-- Maximum Fisher Information (MFI)
-
-### Themes and Languages
-- Built-in themes: Professional, Light, Midnight, Sunset, Forest, Ocean, Berry
-- Custom theme support with CSS variables
-- Multilingual interface (EN, DE, ES, FR)
-
-## Quality Assurance
-
-### Validation
-- Comprehensive item bank validation
-- Response pattern analysis
-- Real-time quality monitoring
-- Automatic flagging of suspicious responses
-
-### Performance
-- Parallel computation support
-- Caching for item information calculations
-- Memory management optimizations
-- Scalability for large-scale deployments
-
-### Security
-- Secure session management
-- Data encryption for cloud storage
-- GDPR/DSGVO compliance
-- Audit trail logging
-
-## Deployment
-
-### Local Deployment
 ```r
-# Generate standalone script
-inrep_code(
-  launch_study(config, item_bank),
-  output_file = "my_assessment.R",
-  auto_run = TRUE
+# Configure enhanced LLM assistance
+set_llm_assistance_settings(
+  enhanced_mode = TRUE,
+  complexity_level = "expert",  # basic, intermediate, advanced, expert
+  output_format = "console",    # console, markdown, json
+  prompt_types = "all",         # specific types or "all"
+  verbose = TRUE
+)
+
+# View current settings
+get_llm_assistance_settings()
+```
+
+### Robust Session Management
+
+```r
+# Configure robust session handling
+set_robust_session_settings(
+  auto_save_interval = 30,      # seconds
+  keep_alive_interval = 60,     # seconds
+  max_session_duration = 7200,  # seconds (2 hours)
+  enable_error_recovery = TRUE
 )
 ```
 
-### Cloud Deployment
+## 📖 Documentation
+
+- **Package Documentation**: `?inrep` for overview, `?function_name` for specific functions
+- **Case Studies**: See `inst/case_studies/` for comprehensive examples
+- **Vignettes**: Detailed tutorials and best practices
+- **API Reference**: Complete function documentation with examples
+
+## 🧪 Testing
+
+The package includes comprehensive testing to ensure reliability:
+
 ```r
-# Deploy with cloud backup
-launch_study(
-  config, 
-  item_bank,
-  webdav_url = "https://your-cloud-storage.com/studies/",
-  password = Sys.getenv("WEBDAV_PASSWORD")
-)
-```
-
-### Enterprise Integration
-- WebDAV-compatible cloud storage
-- REST API support for external systems
-- Database integration capabilities
-- Load balancing support
-
-## Contributing
-
-We welcome contributions! Please see `CONTRIBUTING.md` for guidelines.
-
-### Development Setup
-```r
-# Clone the repository
-git clone https://github.com/selvastics/inrep.git
-cd inrep
-
-# Install dependencies
-devtools::install_deps()
-
-# Run tests
+# Run all tests
 devtools::test()
 
-# Build documentation
-devtools::document()
+# Run specific test files
+devtools::test_file("tests/testthat/test-enhanced-llm-assistance.R")
 ```
 
-## Support
+## 🤝 Contributing
 
-- **GitHub Issues**: [https://github.com/selvastics/inrep/issues](https://github.com/selvastics/inrep/issues)
-- **Email**: [selva@uni-hildesheim.de](mailto:selva@uni-hildesheim.de)
-- **Documentation**: [https://selvastics.github.io/inrep/](https://selvastics.github.io/inrep/)
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on:
 
-## Citation
+- Code style and standards
+- Testing requirements
+- Pull request process
+- Issue reporting
 
-```r
-citation("inrep")
-```
+## 📄 License
 
-## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-MIT License - see `LICENSE` file for details.
+## 🙏 Acknowledgments
 
-## Acknowledgments
+- **Anthropic**: For Claude 4 best practices in prompt engineering
+- **R Community**: For the excellent tools and packages that make this possible
+- **Contributors**: All those who have helped improve and expand the package
 
-Special thanks to Alla Sawatzky and Kathrin Schütz for their early endorsement and guidance during the conceptualization phase.
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/your-username/inrep/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/your-username/inrep/discussions)
+- **Documentation**: [Package Website](https://your-username.github.io/inrep/)
 
 ---
 
-**Author:** Clievins Selva  
-**Affiliation:** University of Hildesheim  
-**Contact:** [selva@uni-hildesheim.de](mailto:selva@uni-hildesheim.de)
+**Transform your psychological assessment development with intelligent AI assistance. Get started with inrep today!**
 

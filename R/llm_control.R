@@ -11,6 +11,10 @@
 #'   Options: "console" (default), "file", "clipboard".
 #' @param prompt_types Character vector specifying which types of prompts to enable.
 #'   Options: "all" (default), "validation", "configuration", "estimation", "analysis".
+#' @param enhanced_mode Logical indicating whether to use enhanced Claude 4 best practices.
+#'   Default is TRUE for optimal assistance quality.
+#' @param complexity_level Character string specifying the complexity level for enhanced prompts.
+#'   Options: "basic", "intermediate", "advanced", "expert". Default is "intermediate".
 #' @param verbose Logical indicating whether to display status messages.
 #'   Default is TRUE.
 #'
@@ -35,6 +39,17 @@
 #'   \item \strong{Documentation}: Create publication-ready methodology descriptions
 #' }
 #'
+#' \strong{Enhanced Mode Features (Claude 4 Best Practices):}
+#' When enhanced_mode is TRUE, the system uses:
+#' \itemize{
+#'   \item Clear and direct instructions with specific objectives
+#'   \item Multishot examples for better context understanding
+#'   \item Chain of thought reasoning for complex problem solving
+#'   \item XML tags for structured, parseable output
+#'   \item System prompts for consistent role definition
+#'   \item Extended thinking for sophisticated analysis
+#' }
+#'
 #' \strong{Integration Points:}
 #' LLM assistance is integrated into major package functions:
 #' \itemize{
@@ -43,6 +58,7 @@
 #'   \item \code{\link{estimate_ability}}: Ability estimation analysis
 #'   \item \code{\link{scrape_website_ui}}: Theme customization guidance
 #'   \item \code{\link{generate_llm_prompt}}: Standalone prompt generation
+#'   \item \code{\link{generate_task_specific_prompt}}: Enhanced task-specific prompts
 #' }
 #'
 #' \strong{Privacy and Ethics:}
@@ -52,29 +68,32 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Enable LLM assistance with console output
-#' enable_llm_assistance(TRUE)
+#' # Enable enhanced LLM assistance with console output
+#' enable_llm_assistance(TRUE, enhanced_mode = TRUE)
 #'
 #' # Now when you run package functions, you'll get optimization prompts:
 #' config <- create_study_config(
 #'   name = "Personality Study",
 #'   model = "GRM"
 #' )
-#' # Displays prompt for configuration optimization
+#' # Displays enhanced prompt for configuration optimization
 #'
 #' validate_item_bank(bfi_items, "GRM")
-#' # Displays prompt for validation insights
+#' # Displays enhanced prompt for validation insights
 #'
-#' # Enable specific prompt types only
+#' # Enable specific prompt types with advanced complexity
 #' enable_llm_assistance(
 #'   enable = TRUE,
-#'   prompt_types = c("validation", "configuration")
+#'   prompt_types = c("validation", "configuration"),
+#'   enhanced_mode = TRUE,
+#'   complexity_level = "advanced"
 #' )
 #'
-#' # Save prompts to files instead of console
+#' # Save enhanced prompts to files instead of console
 #' enable_llm_assistance(
 #'   enable = TRUE,
-#'   output_format = "file"
+#'   output_format = "file",
+#'   enhanced_mode = TRUE
 #' )
 #'
 #' # Disable all LLM assistance
@@ -83,6 +102,8 @@
 enable_llm_assistance <- function(enable = TRUE,
                                  output_format = "console",
                                  prompt_types = "all",
+                                 enhanced_mode = TRUE,
+                                 complexity_level = "intermediate",
                                  verbose = TRUE) {
   
   # Validate inputs
@@ -92,6 +113,9 @@ enable_llm_assistance <- function(enable = TRUE,
     output_format %in% c("console", "file", "clipboard"),
     is.character(prompt_types),
     all(prompt_types %in% c("all", "validation", "configuration", "estimation", "analysis", "ui", "multilingual", "deployment", "documentation")),
+    is.logical(enhanced_mode),
+    is.character(complexity_level),
+    complexity_level %in% c("basic", "intermediate", "advanced", "expert"),
     is.logical(verbose)
   )
   
@@ -99,27 +123,26 @@ enable_llm_assistance <- function(enable = TRUE,
   previous_setting <- getOption("inrep.llm_assistance", FALSE)
   
   # Set new options
-  options(inrep.llm_assistance = enable)
-  options(inrep.llm_output_format = output_format)
-  options(inrep.llm_prompt_types = prompt_types)
-  options(inrep.llm_verbose = verbose)
+  options(
+    inrep.llm_assistance = enable,
+    inrep.llm_output_format = output_format,
+    inrep.llm_prompt_types = prompt_types,
+    inrep.llm_enhanced_mode = enhanced_mode,
+    inrep.llm_complexity_level = complexity_level
+  )
   
+  # Display status message
   if (verbose) {
     if (enable) {
-      message("LLM Assistance ENABLED for inrep package")
+      message("LLM assistance enabled")
+      if (enhanced_mode) {
+        message("Enhanced mode active (Claude 4 best practices)")
+        message("Complexity level: ", complexity_level)
+      }
       message("Output format: ", output_format)
       message("Prompt types: ", paste(prompt_types, collapse = ", "))
-      message("")
-      message("Available assistance:")
-      message("- create_study_config(): Configuration optimization prompts")
-      message("- validate_item_bank(): Psychometric validation insights")
-      message("- estimate_ability(): Ability estimation analysis")
-      message("- scrape_website_ui(): Theme customization guidance")
-      message("- generate_llm_prompt(): Standalone prompt generation")
-      message("")
-      message("Prompts contain NO participant data - only technical parameters.")
     } else {
-      message("LLM Assistance DISABLED for inrep package")
+      message("LLM assistance disabled")
     }
   }
   
@@ -129,205 +152,256 @@ enable_llm_assistance <- function(enable = TRUE,
 #' Get Current LLM Assistance Settings
 #'
 #' @description
-#' Returns the current LLM assistance configuration settings.
+#' Retrieves the current configuration for LLM assistance throughout the package
 #'
-#' @return Named list containing current LLM assistance settings:
-#' \describe{
-#'   \item{enabled}{Logical indicating if LLM assistance is enabled}
-#'   \item{output_format}{Current output format for prompts}
-#'   \item{prompt_types}{Types of prompts currently enabled}
-#'   \item{verbose}{Verbose output setting}
-#' }
+#' @return List containing current LLM assistance settings
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' # Check current settings
-#' settings <- get_llm_assistance_settings()
-#' print(settings)
+#' # Get current settings
+#' current_settings <- get_llm_assistance_settings()
+#' print(current_settings)
 #' }
 get_llm_assistance_settings <- function() {
+  
   list(
     enabled = getOption("inrep.llm_assistance", FALSE),
     output_format = getOption("inrep.llm_output_format", "console"),
     prompt_types = getOption("inrep.llm_prompt_types", "all"),
-    verbose = getOption("inrep.llm_verbose", TRUE)
+    enhanced_mode = getOption("inrep.llm_enhanced_mode", TRUE),
+    complexity_level = getOption("inrep.llm_complexity_level", "intermediate")
   )
 }
 
-#' Check if LLM Assistance is Available for Specific Component
-#' @noRd
-is_llm_assistance_enabled <- function(component = "all") {
-  if (!getOption("inrep.llm_assistance", FALSE)) {
-    return(FALSE)
+#' Set LLM Assistance Settings
+#'
+#' @description
+#' Configures multiple LLM assistance settings at once
+#'
+#' @param ... Named arguments for LLM assistance settings
+#'
+#' @return Invisibly returns the previous settings
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Configure multiple settings at once
+#' set_llm_assistance_settings(
+#'   enable = TRUE,
+#'   enhanced_mode = TRUE,
+#'   complexity_level = "advanced",
+#'   output_format = "file"
+#' )
+#' }
+set_llm_assistance_settings <- function(...) {
+  
+  args <- list(...)
+  previous_settings <- get_llm_assistance_settings()
+  
+  # Validate and set each argument
+  if ("enable" %in% names(args)) {
+    stopifnot(is.logical(args$enable))
+    options(inrep.llm_assistance = args$enable)
   }
   
-  enabled_types <- getOption("inrep.llm_prompt_types", "all")
-  
-  if ("all" %in% enabled_types) {
-    return(TRUE)
+  if ("output_format" %in% names(args)) {
+    stopifnot(is.character(args$output_format),
+              args$output_format %in% c("console", "file", "clipboard"))
+    options(inrep.llm_output_format = args$output_format)
   }
   
-  return(component %in% enabled_types)
+  if ("prompt_types" %in% names(args)) {
+    stopifnot(is.character(args$prompt_types),
+              all(args$prompt_types %in% c("all", "validation", "configuration", "estimation", "analysis", "ui", "multilingual", "deployment", "documentation")))
+    options(inrep.llm_prompt_types = args$prompt_types)
+  }
+  
+  if ("enhanced_mode" %in% names(args)) {
+    stopifnot(is.logical(args$enhanced_mode))
+    options(inrep.llm_enhanced_mode = args$enhanced_mode)
+  }
+  
+  if ("complexity_level" %in% names(args)) {
+    stopifnot(is.character(args$complexity_level),
+              args$complexity_level %in% c("basic", "intermediate", "advanced", "expert"))
+    options(inrep.llm_complexity_level = args$complexity_level)
+  }
+  
+  # Display updated settings
+  message("LLM assistance settings updated:")
+  current_settings <- get_llm_assistance_settings()
+  for (name in names(current_settings)) {
+    message("  ", name, ": ", paste(current_settings[[name]], collapse = ", "))
+  }
+  
+  invisible(previous_settings)
 }
 
-#' Generate and Display LLM Prompt Based on Settings
-#' @noRd
-display_llm_prompt <- function(prompt, component = "general") {
-  if (!is_llm_assistance_enabled(component)) {
-    return(invisible(NULL))
-  }
+#' Display LLM Prompt with Enhanced Formatting
+#'
+#' @description
+#' Displays LLM prompts with enhanced formatting and Claude 4 best practices
+#'
+#' @param prompt Character string containing the LLM prompt
+#' @param task_type Character string specifying the task type
+#' @param context List containing context information
+#' @param enhanced Logical indicating whether to use enhanced formatting
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Display a basic prompt
+#' display_llm_prompt("Your prompt here", "study_config")
+#'
+#' # Display an enhanced prompt with context
+#' context <- list(study_type = "personality", population = "students")
+#' display_llm_prompt("Your prompt here", "study_config", context, enhanced = TRUE)
+#' }
+display_llm_prompt <- function(prompt,
+                              task_type = "general",
+                              context = list(),
+                              enhanced = TRUE) {
   
+  # Check if enhanced mode is enabled
+  enhanced_mode <- getOption("inrep.llm_enhanced_mode", TRUE)
   output_format <- getOption("inrep.llm_output_format", "console")
-  verbose <- getOption("inrep.llm_verbose", TRUE)
   
-  if (output_format == "console") {
-    if (verbose) {
+  if (enhanced && enhanced_mode) {
+    # Use enhanced display function
+    display_enhanced_llm_prompt(prompt, task_type, output_format)
+  } else {
+    # Use basic display
+    if (output_format == "console") {
+      message("\n" %r% 60)
+      message("LLM ASSISTANCE PROMPT")
+      message("Task: ", toupper(task_type))
+      message("=" %r% 60)
       message("")
-      message(paste(rep("=", 60), collapse = ""))
-      message("LLM ASSISTANCE: ", toupper(component), " OPTIMIZATION")
-      message(paste(rep("=", 60), collapse = ""))
-      message("Copy the following prompt to ChatGPT, Claude, or your preferred LLM:")
-      message("")
-    }
-    message(prompt)
-    if (verbose) {
-      message("")
-      message(paste(rep("=", 60), collapse = ""))
-      message("")
-    }
-  } else if (output_format == "file") {
-    filename <- paste0("inrep_", component, "_prompt_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".txt")
-    writeLines(prompt, filename)
-    if (verbose) {
-      message("LLM prompt saved to: ", filename)
-    }
-  } else if (output_format == "clipboard") {
-    if (requireNamespace("clipr", quietly = TRUE)) {
-      clipr::write_clip(prompt)
-      if (verbose) {
-        message("LLM prompt copied to clipboard!")
-      }
-    } else {
-      if (verbose) {
-        message("clipr package not available. Displaying prompt:")
-        message("")
-      }
       message(prompt)
+      message("")
+      message("=" %r% 60)
+    } else if (output_format == "file") {
+      filename <- paste0("llm_prompt_", task_type, "_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".txt")
+      writeLines(prompt, filename)
+      message("Prompt saved to: ", filename)
+    } else if (output_format == "clipboard") {
+      tryCatch({
+        writeClipboard(prompt)
+        message("Prompt copied to clipboard")
+      }, error = function(e) {
+        message("Could not copy to clipboard. Saving to file instead.")
+        filename <- paste0("llm_prompt_", task_type, "_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".txt")
+        writeLines(prompt, filename)
+        message("Prompt saved to: ", filename)
+      })
     }
   }
   
   invisible(prompt)
 }
 
-#' Comprehensive LLM Assistance for Complete Study Optimization
+#' Generate Enhanced LLM Prompt for Specific Task
 #'
 #' @description
-#' Generates comprehensive prompts for optimizing all aspects of an inrep study,
-#' including configuration, item banks, analysis strategy, and deployment.
+#' Creates an enhanced LLM prompt using Claude 4 best practices for a specific task
 #'
-#' @param config Study configuration object from create_study_config()
-#' @param item_bank Item bank data frame (optional)
-#' @param study_type Character string describing study type for context
-#' @param research_goals Character vector of research objectives
-#' @param target_population Character string describing target participants
-#' @param timeline Character string describing project timeline
+#' @param task_type Character string specifying the task type
+#' @param context List containing context information
+#' @param complexity_level Character string specifying complexity
+#' @param include_reasoning Logical indicating whether to include reasoning steps
+#' @param output_structure Character string specifying output format
 #'
-#' @return Invisibly returns the comprehensive prompt string
+#' @return Character string containing the enhanced LLM prompt
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' # Generate comprehensive study optimization prompt
-#' config <- create_study_config(name = "Big Five Study")
-#' data(bfi_items)
-#'
-#' comprehensive_llm_assistance(
-#'   config = config,
-#'   item_bank = bfi_items,
-#'   study_type = "Personality assessment",
-#'   research_goals = c("Validate Big Five structure", "Test measurement invariance"),
-#'   target_population = "University students aged 18-25",
-#'   timeline = "6 months data collection"
+#' # Generate enhanced prompt for study design
+#' context <- list(
+#'   study_type = "personality",
+#'   population = "university students",
+#'   sample_size = 500,
+#'   duration = "20 minutes"
 #' )
+#' 
+#' prompt <- generate_enhanced_prompt(
+#'   task_type = "study_design",
+#'   context = context,
+#'   complexity_level = "intermediate",
+#'   include_reasoning = TRUE,
+#'   output_structure = "structured"
+#' )
+#' 
+#' # Display the enhanced prompt
+#' display_llm_prompt(prompt, "study_design", context, enhanced = TRUE)
 #' }
-comprehensive_llm_assistance <- function(config,
-                                       item_bank = NULL,
-                                       study_type = "Psychological assessment",
-                                       research_goals = NULL,
-                                       target_population = "Not specified",
-                                       timeline = "Not specified") {
+generate_enhanced_prompt <- function(task_type,
+                                   context = list(),
+                                   complexity_level = NULL,
+                                   include_reasoning = TRUE,
+                                   output_structure = "structured") {
   
-  # Generate comprehensive analysis
-  n_items <- if (!is.null(item_bank)) nrow(item_bank) else "Not specified"
+  # Use global complexity level if not specified
+  if (is.null(complexity_level)) {
+    complexity_level <- getOption("inrep.llm_complexity_level", "intermediate")
+  }
   
-  prompt <- paste0(
-    "# COMPREHENSIVE STUDY OPTIMIZATION CONSULTATION\n\n",
-    "You are a senior psychometrician and research methodology expert. I need comprehensive guidance for optimizing every aspect of my adaptive testing study using the inrep R package.\n\n",
-    
-    "## STUDY OVERVIEW\n",
-    "- Study Name: ", config$name, "\n",
-    "- Study Type: ", study_type, "\n",
-    "- Target Population: ", target_population, "\n",
-    "- Timeline: ", timeline, "\n",
-    "- Research Goals: ", paste(research_goals %||% "Not specified", collapse = "; "), "\n",
-    "- Item Bank Size: ", n_items, " items\n",
-    "- IRT Model: ", config$model, "\n\n",
-    
-    "## CURRENT CONFIGURATION\n",
-    "- Test Length: ", config$min_items, " to ", config$max_items %||% "unlimited", " items\n",
-    "- Stopping Criterion: SEM ≤ ", config$min_SEM, "\n",
-    "- Item Selection: ", config$criteria, "\n",
-    "- Theme: ", config$theme, "\n",
-    "- Language: ", config$language, "\n",
-    "- Session Duration: ", config$max_session_duration, " minutes\n",
-    "- Demographics: ", paste(config$demographics %||% "None", collapse = ", "), "\n\n",
-    
-    "## COMPREHENSIVE OPTIMIZATION REQUESTS\n\n",
-    "### 1. PSYCHOMETRIC OPTIMIZATION\n",
-    "- Evaluate and optimize all IRT parameters for study goals\n",
-    "- Assess item bank adequacy and recommend improvements\n",
-    "- Design validation and calibration procedures\n",
-    "- Plan for measurement invariance testing across groups\n",
-    "- Recommend bias detection and mitigation strategies\n\n",
-    
-    "### 2. METHODOLOGICAL EXCELLENCE\n",
-    "- Optimize study design for research objectives\n",
-    "- Plan sampling strategy and power analysis\n",
-    "- Design quality control and data monitoring procedures\n",
-    "- Recommend ethical considerations and IRB preparation\n",
-    "- Plan for publication and reproducibility\n\n",
-    
-    "### 3. TECHNICAL IMPLEMENTATION\n",
-    "- Optimize configuration for target population\n",
-    "- Design user experience for maximum engagement\n",
-    "- Plan deployment strategy and infrastructure\n",
-    "- Recommend security and privacy measures\n",
-    "- Design backup and data recovery procedures\n\n",
-    
-    "### 4. ANALYSIS AND REPORTING\n",
-    "- Design comprehensive analysis strategy\n",
-    "- Plan for descriptive and inferential statistics\n",
-    "- Recommend visualization and reporting approaches\n",
-    "- Design interpretation guidelines and benchmarks\n",
-    "- Plan for manuscript preparation and submission\n\n",
-    
-    "## DELIVERABLES REQUESTED\n\n",
-    "Please provide:\n",
-    "1. **Executive Summary**: Key recommendations and priorities\n",
-    "2. **Optimized Configuration**: Complete R code with improvements\n",
-    "3. **Methodological Protocol**: Step-by-step research procedures\n",
-    "4. **Quality Assurance Plan**: Monitoring and validation procedures\n",
-    "5. **Analysis Strategy**: Comprehensive statistical analysis plan\n",
-    "6. **Timeline and Milestones**: Project management recommendations\n",
-    "7. **Risk Assessment**: Potential issues and mitigation strategies\n",
-    "8. **Publication Strategy**: Manuscript and dissemination planning\n\n",
-    "Please provide expert-level guidance with specific, actionable recommendations and complete R code examples for implementation."
+  # Generate the enhanced prompt using the new system
+  prompt <- generate_task_specific_prompt(
+    task_type = task_type,
+    context = context,
+    complexity_level = complexity_level,
+    include_reasoning = include_reasoning,
+    output_structure = output_structure
   )
   
-  display_llm_prompt(prompt, "comprehensive")
+  return(prompt)
+}
+
+#' Quick LLM Assistance for Common Tasks
+#'
+#' @description
+#' Provides quick access to enhanced LLM assistance for common assessment tasks
+#'
+#' @param task Character string specifying the quick task
+#' @param context List containing minimal context information
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Quick assistance for study configuration
+#' quick_llm_assistance("study_config", list(study_type = "cognitive"))
+#'
+#' # Quick assistance for item bank validation
+#' quick_llm_assistance("validation", list(model = "GRM"))
+#' }
+quick_llm_assistance <- function(task, context = list()) {
+  
+  # Map quick tasks to full task types
+  task_mapping <- list(
+    "study_config" = "study_design",
+    "validation" = "item_bank_optimization",
+    "estimation" = "ability_estimation",
+    "ui" = "ui_optimization",
+    "analysis" = "analysis_planning",
+    "deployment" = "deployment_strategy"
+  )
+  
+  if (task %in% names(task_mapping)) {
+    task_type <- task_mapping[[task]]
+  } else {
+    task_type <- task
+  }
+  
+  # Generate and display enhanced prompt
+  prompt <- generate_enhanced_prompt(task_type, context)
+  display_llm_prompt(prompt, task_type, context, enhanced = TRUE)
   
   invisible(prompt)
 }
