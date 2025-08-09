@@ -42,7 +42,7 @@
 #' @param custom_ui_pre Custom UI elements to display before assessment, 
 #'   or \code{NULL} for standard interface.
 #' @param progress_style Character string specifying progress indicator style.
-#'   Options: \code{"bar"}, \code{"circle"}.
+#'   Options: \code{"bar"}, \code{"circle"}, \code{"modern-circle"}, \code{"enhanced-bar"}, \code{"segmented"}, \code{"minimal"}, \code{"card"}.
 #' @param response_validation_fun Function to validate participant responses, 
 #'   or \code{NULL} for default validation. Should return logical.
 #' @param response_ui_type Character string specifying response input interface.
@@ -50,7 +50,7 @@
 #' @param session_save Logical indicating whether to enable session state persistence
 #'   for interrupted session recovery.
 #' @param theme Character string specifying built-in UI theme. Options: \code{"Light"}, 
-#'   \code{"Midnight"}, \code{"Sunset"}, \code{"Forest"}, \code{"Ocean"}, \code{"Berry"}.
+#'   \code{"Midnight"}, \code{"Sunset"}, \code{"Forest"}, \code{"Ocean"}, \code{"Berry"}, \code{"Professional"}.
 #' @param language Character string specifying interface language. 
 #'   Options: \code{"en"}, \code{"de"}, \code{"es"}, \code{"fr"}.
 #' @param item_translations Named list of item translations by language code, 
@@ -398,11 +398,11 @@ create_study_config <- function(
     adaptive = TRUE,
     item_groups = NULL,
     custom_ui_pre = NULL,
-    progress_style = "circle",
+    progress_style = "modern-circle",
     response_validation_fun = NULL,
     response_ui_type = "radio",
     session_save = FALSE,
-    theme = "Light",
+    theme = "Professional",
     language = "en",
     item_translations = NULL,
     report_formats = c("rds", "csv", "json", "pdf"),
@@ -448,50 +448,106 @@ create_study_config <- function(
     study_metadata = NULL,
     ...
 ) {
-  print("Creating study configuration...")
+  # Initialize logging
+  if (getOption("inrep.verbose", TRUE)) {
+    cat("Creating study configuration for:", name, "\n")
+  }
   
   # Capture extra parameters
   extra_params <- list(...)
   
   tryCatch({
-    # Validate inputs
-    stopifnot(
-      is.character(name) && nzchar(name),
-      is.null(demographics) || (is.character(demographics) && length(demographics) > 0),
-      is.character(study_key) && nzchar(study_key),
-      is.numeric(min_SEM) && min_SEM > 0 && min_SEM <= 1,
-      is.numeric(min_items) && min_items > 0 && min_items <= 100,
-      is.null(max_items) || (is.numeric(max_items) && max_items > 0),
-      is.character(criteria) && criteria %in% c("MI", "RANDOM", "WEIGHTED", "MFI"),
-      is.character(model) && model %in% c("1PL", "2PL", "3PL", "GRM"),
-      is.character(estimation_method) && estimation_method %in% c("TAM", "MIRT"),
-      is.numeric(theta_prior) && length(theta_prior) == 2 && theta_prior[2] > 0,
-      is.character(progress_style) && progress_style %in% c("bar", "circle", "modern-circle", "enhanced-bar", "segmented", "minimal", "card"),
-      is.character(response_ui_type) && response_ui_type %in% c("radio", "slider", "dropdown"),
-      is.logical(session_save),
-      is.character(theme) && !is.null(validate_theme_name(theme)),
-      is.character(language) && language %in% c("en", "de", "es", "fr"),
-      is.character(report_formats) && all(report_formats %in% c("rds", "csv", "json", "pdf")),
-      is.numeric(max_session_duration) && max_session_duration > 0,
-      is.numeric(max_response_time) && max_response_time > 0,
-      is.logical(cache_enabled),
-      is.logical(parallel_computation),
-      is.logical(feedback_enabled),
-      is.null(item_translations) || is.list(item_translations),
-      is.null(fixed_items) || (is.numeric(fixed_items) && all(fixed_items > 0)),
-      is.numeric(theta_grid) && length(theta_grid) >= 2
-    )
+    # Enhanced input validation with detailed error messages
+    validation_errors <- c()
     
-    # Validate max_items and min_items
+    # Validate required parameters
+    if (!is.character(name) || nchar(name) == 0) {
+      validation_errors <- c(validation_errors, "name must be a non-empty character string")
+    }
+    
+    if (!is.null(demographics) && (!is.character(demographics) || length(demographics) == 0)) {
+      validation_errors <- c(validation_errors, "demographics must be NULL or a non-empty character vector")
+    }
+    
+    if (!is.character(study_key) || nchar(study_key) == 0) {
+      validation_errors <- c(validation_errors, "study_key must be a non-empty character string")
+    }
+    
+    if (!is.numeric(min_SEM) || min_SEM <= 0 || min_SEM > 1) {
+      validation_errors <- c(validation_errors, "min_SEM must be a numeric value between 0 and 1")
+    }
+    
+    if (!is.numeric(min_items) || min_items <= 0 || min_items > 100) {
+      validation_errors <- c(validation_errors, "min_items must be a positive integer <= 100")
+    }
+    
+    if (!is.null(max_items) && (!is.numeric(max_items) || max_items <= 0)) {
+      validation_errors <- c(validation_errors, "max_items must be NULL or a positive integer")
+    }
+    
+    if (!criteria %in% c("MI", "RANDOM", "WEIGHTED", "MFI")) {
+      validation_errors <- c(validation_errors, "criteria must be one of: MI, RANDOM, WEIGHTED, MFI")
+    }
+    
+    if (!model %in% c("1PL", "2PL", "3PL", "GRM")) {
+      validation_errors <- c(validation_errors, "model must be one of: 1PL, 2PL, 3PL, GRM")
+    }
+    
+    if (!estimation_method %in% c("TAM", "MIRT", "EAP", "WLE")) {
+      validation_errors <- c(validation_errors, "estimation_method must be one of: TAM, MIRT, EAP, WLE")
+    }
+    
+    if (!is.numeric(theta_prior) || length(theta_prior) != 2 || theta_prior[2] <= 0) {
+      validation_errors <- c(validation_errors, "theta_prior must be a numeric vector of length 2 with positive standard deviation")
+    }
+    
+    if (!progress_style %in% c("bar", "circle", "modern-circle", "enhanced-bar", "segmented", "minimal", "card")) {
+      validation_errors <- c(validation_errors, "progress_style must be one of: bar, circle, modern-circle, enhanced-bar, segmented, minimal, card")
+    }
+    
+    if (!response_ui_type %in% c("radio", "slider", "dropdown")) {
+      validation_errors <- c(validation_errors, "response_ui_type must be one of: radio, slider, dropdown")
+    }
+    
+    if (!is.character(theme)) {
+      validation_errors <- c(validation_errors, "theme must be a character string")
+    }
+    
+    if (!language %in% c("en", "de", "es", "fr")) {
+      validation_errors <- c(validation_errors, "language must be one of: en, de, es, fr")
+    }
+    
+    if (!all(report_formats %in% c("rds", "csv", "json", "pdf"))) {
+      validation_errors <- c(validation_errors, "report_formats must be a subset of: rds, csv, json, pdf")
+    }
+    
+    if (!is.numeric(max_session_duration) || max_session_duration <= 0) {
+      validation_errors <- c(validation_errors, "max_session_duration must be a positive number")
+    }
+    
+    if (!is.numeric(max_response_time) || max_response_time <= 0) {
+      validation_errors <- c(validation_errors, "max_response_time must be a positive number")
+    }
+    
+    # Check for validation errors
+    if (length(validation_errors) > 0) {
+      stop("Configuration validation failed:\n", paste("  -", validation_errors, collapse = "\n"))
+    }
+    
+    # Validate max_items and min_items relationship
     if (!is.null(max_items) && max_items < min_items) {
-      print("max_items must be at least min_items")
-      stop("max_items must be at least min_items")
+      stop("max_items (", max_items, ") must be at least min_items (", min_items, ")")
     }
     
     # Validate fixed_items
     if (!is.null(fixed_items) && length(fixed_items) > 0) {
+      if (!is.numeric(fixed_items) || any(fixed_items <= 0)) {
+        stop("fixed_items must be a vector of positive integers")
+      }
       if (!is.null(max_items) && max_items < length(fixed_items)) {
-        print("max_items adjusted to match fixed_items length")
+        if (getOption("inrep.verbose", TRUE)) {
+          cat("Adjusting max_items to accommodate fixed_items\n")
+        }
         max_items <- length(fixed_items)
       }
       min_items <- min(min_items, length(fixed_items))
@@ -500,51 +556,50 @@ create_study_config <- function(
     # Validate item_translations
     if (!is.null(item_translations)) {
       valid_langs <- c("en", "de", "es", "fr")
-      if (!all(names(item_translations) %in% valid_langs)) {
-        print("Item translations must be for languages: en, de, es, fr")
-        stop("Item translations must be for languages: en, de, es, fr")
-      }
-      for (lang in names(item_translations)) {
-        if (!is.data.frame(item_translations[[lang]]) || 
-            nrow(item_translations[[lang]]) != nrow(item_translations[[names(item_translations)[1]]])) {
-          print(sprintf("Translations for %s must be a data frame with consistent rows", lang))
-          stop(sprintf("Translations for %s must be a data frame with consistent rows", lang))
-        }
+      invalid_langs <- setdiff(names(item_translations), valid_langs)
+      if (length(invalid_langs) > 0) {
+        stop("Invalid languages in item_translations: ", paste(invalid_langs, collapse = ", "), 
+             ". Valid languages are: ", paste(valid_langs, collapse = ", "))
       }
     }
     
     # Validate demographics and input_types
     if (!is.null(demographics)) {
       if (is.null(input_types)) {
+        # Set sensible defaults
         input_types <- setNames(rep("text", length(demographics)), demographics)
         if ("Age" %in% demographics) input_types["Age"] <- "numeric"
         if ("Gender" %in% demographics) input_types["Gender"] <- "select"
+        if ("Education" %in% demographics) input_types["Education"] <- "select"
       } else {
         if (!is.list(input_types) || !all(demographics %in% names(input_types))) {
-          print("input_types must be a named list with entries for all demographics")
           stop("input_types must be a named list with entries for all demographics")
         }
-        valid_types <- c("text", "numeric", "select")
-        if (!all(sapply(input_types, function(x) x %in% valid_types))) {
-          print("input_types must be 'text', 'numeric', or 'select'")
-          stop("input_types must be 'text', 'numeric', or 'select'")
+        valid_types <- c("text", "numeric", "select", "radio", "checkbox")
+        invalid_types <- setdiff(unlist(input_types), valid_types)
+        if (length(invalid_types) > 0) {
+          stop("Invalid input types: ", paste(invalid_types, collapse = ", "), 
+               ". Valid types are: ", paste(valid_types, collapse = ", "))
         }
       }
     } else {
       input_types <- NULL
     }
     
-    # Set default recommendation_fun
+    # Set default functions if not provided
     if (is.null(recommendation_fun)) {
-      recommendation_fun <- function(theta, demographics) {
+      recommendation_fun <- function(theta, demographics, item_responses) {
         if (!is.numeric(theta) || length(theta) == 0 || is.na(theta)) theta <- 0
-        if (theta < -1) c("Focus on foundational skills", "Seek supportive resources")
-        else if (theta < 1) c("Engage in balanced development", "Explore intermediate challenges")
-        else c("Pursue advanced opportunities", "Apply skills in complex scenarios")
+        if (theta < -1) {
+          c("Focus on foundational skills", "Seek supportive resources", "Consider additional practice")
+        } else if (theta < 1) {
+          c("Engage in balanced development", "Explore intermediate challenges", "Build on current strengths")
+        } else {
+          c("Pursue advanced opportunities", "Apply skills in complex scenarios", "Consider mentoring others")
+        }
       }
     }
     
-    # Set default scoring_fun
     if (is.null(scoring_fun)) {
       scoring_fun <- if (model == "GRM") {
         function(response, correct_answer) as.numeric(response)
@@ -553,17 +608,22 @@ create_study_config <- function(
       }
     }
     
-    # Set default response_validation_fun
     if (is.null(response_validation_fun)) {
-      response_validation_fun <- function(response) !is.null(response) && nzchar(as.character(response))
+      response_validation_fun <- function(response) {
+        !is.null(response) && !is.na(response) && nchar(as.character(response)) > 0
+      }
     }
     
     # Set default adaptive_start
     if (is.null(adaptive_start)) {
-      adaptive_start <- ceiling((if(is.null(max_items)) min_items else max_items) / 2)
+      adaptive_start <- if (!is.null(max_items)) {
+        max(1, ceiling(max_items / 2))
+      } else {
+        max(1, ceiling(min_items / 2))
+      }
     }
     
-    # Core configuration
+    # Create core configuration
     config <- list(
       name = name,
       demographics = demographics,
@@ -598,6 +658,7 @@ create_study_config <- function(
       parallel_computation = parallel_computation,
       feedback_enabled = feedback_enabled,
       theta_grid = theta_grid,
+      
       # Enhanced study flow features
       show_introduction = show_introduction,
       introduction_content = introduction_content %||% create_default_introduction_content(),
@@ -622,7 +683,7 @@ create_study_config <- function(
       calibration_mode = calibration_mode
     )
     
-    # Enhanced features from extra_params (opt-in basis)
+    # Add enhanced features if specified
     enhanced_features <- list()
     
     # Multidimensional IRT support
@@ -678,118 +739,35 @@ create_study_config <- function(
       )
     }
     
-    # Cognitive load reduction
-    if (!is.null(extra_params$cognitive_support) && extra_params$cognitive_support) {
-      enhanced_features$cognitive_support <- list(
-        enabled = TRUE,
-        complexity_analysis = extra_params$complexity_analysis %||% TRUE,
-        progressive_disclosure = extra_params$progressive_disclosure %||% TRUE,
-        cognitive_aids = extra_params$cognitive_aids %||% c("visual_cues", "chunking")
-      )
-    }
-    
     # Add enhanced features if any are configured
     if (length(enhanced_features) > 0) {
       config$enhanced_features <- enhanced_features
-      print(sprintf("Enhanced features enabled: %s", 
-                       paste(names(enhanced_features), collapse = ", ")))
+      if (getOption("inrep.verbose", TRUE)) {
+        cat("Enhanced features enabled:", paste(names(enhanced_features), collapse = ", "), "\n")
+      }
     }
     
     # Add advanced customization features if provided
-    if (!is.null(study_pages)) {
-      config$study_pages <- study_pages
-    }
+    if (!is.null(study_pages)) config$study_pages <- study_pages
+    if (!is.null(page_contents)) config$page_contents <- page_contents
+    if (!is.null(advanced_demographics)) config$advanced_demographics <- advanced_demographics
+    if (!is.null(ui_config)) config$ui_config <- ui_config
+    if (!is.null(language_config)) config$language_config <- language_config
+    if (!is.null(data_config)) config$data_config <- data_config
+    if (!is.null(quality_config)) config$quality_config <- quality_config
+    if (!is.null(analytics_config)) config$analytics_config <- analytics_config
+    if (!is.null(integration_config)) config$integration_config <- integration_config
+    if (!is.null(custom_functions)) config$custom_functions <- custom_functions
     
-    if (!is.null(page_contents)) {
-      config$page_contents <- page_contents
-    }
-    
-    if (!is.null(advanced_demographics)) {
-      config$advanced_demographics <- advanced_demographics
-      # Process advanced demographics into standard format
-      if (is.null(config$demographic_configs)) {
-        processed_demos <- list()
-        demo_names <- c()
-        input_types_adv <- list()
-        
-        for (section_name in names(advanced_demographics)) {
-          section <- advanced_demographics[[section_name]]
-          if ("questions" %in% names(section)) {
-            for (q_name in names(section$questions)) {
-              question <- section$questions[[q_name]]
-              demo_names <- c(demo_names, q_name)
-              input_types_adv[[q_name]] <- question$type
-              
-              processed_demos[[q_name]] <- list(
-                question = question$question,
-                input_type = question$type,
-                required = question$required %||% FALSE,
-                options = question$options,
-                section_title = section$section_title
-              )
-            }
-          }
-        }
-        
-        if (length(processed_demos) > 0) {
-          config$demographic_configs <- processed_demos
-          config$demographics <- demo_names
-          config$input_types <- input_types_adv
-        }
-      }
-    }
-    
-    if (!is.null(ui_config)) {
-      config$ui_config <- ui_config
-      # Override theme if specified in ui_config
-      if (!is.null(ui_config$theme)) {
-        config$theme <- ui_config$theme
-      }
-    }
-    
-    if (!is.null(language_config)) {
-      config$language_config <- language_config
-      # Override language if specified
-      if (!is.null(language_config$default_language)) {
-        config$language <- language_config$default_language
-      }
-    }
-    
-    if (!is.null(data_config)) {
-      config$data_config <- data_config
-      # Override session settings if specified
-      if (!is.null(data_config$session_timeout)) {
-        config$max_session_duration <- data_config$session_timeout
-      }
-      if (!is.null(data_config$save_format)) {
-        config$report_formats <- data_config$save_format
-      }
-    }
-    
-    if (!is.null(quality_config)) {
-      config$quality_config <- quality_config
-    }
-    
-    if (!is.null(analytics_config)) {
-      config$analytics_config <- analytics_config
-    }
-    
-    if (!is.null(integration_config)) {
-      config$integration_config <- integration_config
-    }
-    
-    if (!is.null(custom_functions)) {
-      config$custom_functions <- custom_functions
-    }
-    
+    # Add study metadata
     if (!is.null(study_metadata)) {
       config$study_metadata <- study_metadata
     } else {
-      # Add default metadata
       config$study_metadata <- list(
         creation_date = Sys.Date(),
         last_modified = Sys.time(),
-        config_version = "2.0"
+        config_version = "2.0",
+        package_version = utils::packageVersion("inrep")
       )
     }
     
@@ -800,18 +778,24 @@ create_study_config <- function(
     if (advanced_features_used) {
       config$is_advanced_config <- TRUE
       config$config_version <- "2.0"
-      print("Advanced configuration features enabled")
+      if (getOption("inrep.verbose", TRUE)) {
+        cat("Advanced configuration features enabled\n")
+      }
     }
     
     # Add extra parameters to config
     if (length(extra_params) > 0) {
       config <- c(config, extra_params)
-      print(sprintf("Added %d extra parameters to configuration", length(extra_params)))
+      if (getOption("inrep.verbose", TRUE)) {
+        cat("Added", length(extra_params), "extra parameters to configuration\n")
+      }
     }
     
-    print("Study configuration created successfully")
+    if (getOption("inrep.verbose", TRUE)) {
+      cat("Study configuration created successfully for:", name, "\n")
+    }
     
-    # Generate LLM assistance prompt for configuration optimization
+    # Generate LLM assistance prompt if enabled
     if (getOption("inrep.llm_assistance", FALSE)) {
       llm_prompt <- generate_config_optimization_prompt(config)
       cat("\n" %r% 60, "\n")
@@ -823,9 +807,9 @@ create_study_config <- function(
     }
     
     return(config)
+    
   }, error = function(e) {
-    print(paste("Configuration creation failed:", e$message))
-    stop(e)
+    stop("Configuration creation failed: ", e$message, call. = FALSE)
   })
 }
 
