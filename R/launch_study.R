@@ -589,21 +589,68 @@ launch_study <- function(
       logger("Initializing robust session management", level = "INFO")
       
       # Initialize robust session management
-      session_config <- initialize_robust_session(
-        max_session_time = max_session_time,
-        data_preservation_interval = data_preservation_interval,
-        keep_alive_interval = keep_alive_interval,
-        enable_logging = TRUE
-      )
+      session_config <- tryCatch({
+        if (exists("initialize_robust_session") && is.function(initialize_robust_session)) {
+          initialize_robust_session(
+            max_session_time = max_session_time,
+            data_preservation_interval = data_preservation_interval,
+            keep_alive_interval = keep_alive_interval,
+            enable_logging = TRUE
+          )
+        } else {
+          # Fallback to basic session management
+          list(
+            session_id = paste0("SESS_", format(Sys.time(), "%Y%m%d_%H%M%S")),
+            start_time = Sys.time(),
+            max_time = max_session_time,
+            log_file = NULL
+          )
+        }
+      }, error = function(e) {
+        logger(sprintf("Failed to initialize robust session management: %s", e$message), level = "WARNING")
+        # Fallback to basic session management
+        list(
+          session_id = paste0("SESS_", format(Sys.time(), "%Y%m%d_%H%M%S")),
+          start_time = Sys.time(),
+          max_time = max_session_time,
+          log_file = NULL
+        )
+      })
       
       # Initialize robust error handling
-      error_config <- initialize_robust_error_handling(
-        max_recovery_attempts = 3,
-        enable_auto_recovery = enable_error_recovery
-      )
+      error_config <- tryCatch({
+        if (exists("initialize_robust_error_handling") && is.function(initialize_robust_error_handling)) {
+          initialize_robust_error_handling(
+            max_recovery_attempts = 3,
+            enable_auto_recovery = enable_error_recovery
+          )
+        } else {
+          # Fallback to basic error handling
+          list(
+            max_recovery_attempts = 3,
+            enable_auto_recovery = enable_error_recovery
+          )
+        }
+      }, error = function(e) {
+        logger(sprintf("Failed to initialize robust error handling: %s", e$message), level = "WARNING")
+        # Fallback to basic error handling
+        list(
+          max_recovery_attempts = 3,
+          enable_auto_recovery = enable_error_recovery
+        )
+      })
       
       # Create periodic backup system
-      backup_observer <- create_periodic_backup(backup_interval = 300)  # 5 minutes
+      backup_observer <- tryCatch({
+        if (exists("create_periodic_backup") && is.function(create_periodic_backup)) {
+          create_periodic_backup(backup_interval = 300)  # 5 minutes
+        } else {
+          NULL
+        }
+      }, error = function(e) {
+        logger(sprintf("Failed to create periodic backup: %s", e$message), level = "WARNING")
+        NULL
+      })
       
       # Start periodic backup monitoring (with fallback)
       if (session_save && exists("start_data_preservation_monitoring") && is.function(start_data_preservation_monitoring)) {

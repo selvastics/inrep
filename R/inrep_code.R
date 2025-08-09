@@ -173,12 +173,18 @@ logger<-function(m,l='INFO')message(sprintf('[%s] %s: %s',Sys.time(),l,m))
   essential_code <- '
 # Core inrep functions (compact)
 create_study_config<-function(name="Study",model="GRM",max_items=10,min_SEM=0.3,demographics=c("Age"),theme="light",...){
+  # Basic theme validation for compact mode
+  valid_themes <- c("minimal", "dark", "modern", "Light", "Midnight", "Sunset", "Forest", "Ocean", "Berry", "Professional", "Clinical", "Educational", "Research", "hildesheim")
+  if (!is.character(theme) || !theme %in% valid_themes) {
+    theme <- "light"
+  }
+  
   list(name=name,model=model,max_items=max_items,min_SEM=min_SEM,demographics=demographics,theme=theme,
        min_items=5,adaptive=TRUE,criteria="MI",theta_prior=c(0,1),language="en",session_save=FALSE,
        response_ui_type="radio",progress_style="circle",estimation_method="TAM",...)
 }
 
-launch_study<-function(config,item_bank,webdav_url=NULL,password=NULL,save_format="json",study_key=NULL,...){
+launch_study_compact<-function(config,item_bank,webdav_url=NULL,password=NULL,save_format="json",study_key=NULL,...){
   if(is.null(item_bank)||nrow(item_bank)==0)stop("Item bank required")
   
   # Basic item bank validation
@@ -460,11 +466,11 @@ body { background: var(--background-color); color: var(--text-color); }
 )
 
 # Simplified theme system functions for standalone operation
-get_theme_css_standalone <- function(theme = \"light\", custom_css = NULL) {
+get_theme_css_standalone <- function(theme = "light", custom_css = NULL) {
   theme <- tolower(theme)
-  css_content <- theme_css_library[[theme]] %||% theme_css_library[[\"light\"]]
+  css_content <- theme_css_library[[theme]] %||% theme_css_library[["light"]]
   if (!is.null(custom_css)) {
-    css_content <- paste0(css_content, \"\\n\", custom_css)
+    css_content <- paste0(css_content, "\n", custom_css)
   }
   return(css_content)
 }
