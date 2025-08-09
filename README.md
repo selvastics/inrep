@@ -1,208 +1,231 @@
-# inrep: Intelligent Psychological Assessment Platform
+# inrep: Instant Reports for Adaptive Assessments
 
-[![R-CMD-check](https://github.com/your-username/inrep/workflows/R-CMD-check/badge.svg)](https://github.com/your-username/inrep/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<table width="100%"><tr>
+<td><h1>inrep: Instant Reports for Adaptive Assessments</h1></td>
+
+<td align="right" width="160">
+  <a href="https://github.com/selvastics/inrep">
+    <img src="man/figures/inrep_logo.png" alt="inrep hex logo" height="130"/>
+  </a>
+</td>
+</tr></table>
+
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/selvastics/inrep/workflows/R-CMD-check/badge.svg)](https://github.com/selvastics/inrep/actions)
+[![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
+ [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16682020.svg)](https://doi.org/10.5281/zenodo.16682020)
+<!-- badges: end -->
 
 ## Overview
 
-**inrep** is a comprehensive R package that transforms psychological assessment development through intelligent LLM assistance, robust session management, and advanced psychometric capabilities. Built with modern R development practices and Claude 4 best practices for AI assistance, it provides researchers and practitioners with a powerful, secure, and user-friendly platform for creating, deploying, and analyzing psychological assessments.
+**inrep** provides a comprehensive framework for adaptive testing using Item Response Theory (IRT) models. The package offers web-based interfaces for test administration via Shiny, supports multiple IRT models through TAM integration, implements adaptive item selection algorithms, and includes comprehensive reporting capabilities with LLM integration for enhanced user assistance. It is designed for psychological assessments, educational testing, and survey research with large item pools.
 
-## Key Features
+<!-- Demo: See the package in action! -->
+![inrep demo](man/figures/inrep_previewer.gif)
 
-### Enhanced LLM Assistance System
-- **Claude 4 Best Practices Implementation**: Advanced prompt engineering following Anthropic's latest recommendations
-- **Context-Aware Assistance**: Intelligent guidance that adapts to your specific assessment needs and constraints
-- **Complexity Scaling**: Assistance that scales from basic to expert levels based on your expertise
-- **Task-Specific Optimization**: Specialized prompts for study design, item bank optimization, ability estimation, UI design, analysis planning, and deployment strategy
-- **Quick Assistance Functions**: Immediate guidance for common assessment tasks
+> **Demo:** The above video showcases the main functionalities of the inrep package, including adaptive test setup, Shiny-based administration, theme customization, LLM-powered assistance, and professional reporting. Watch to see how easy it is to configure, deploy, and analyze adaptive assessments with inrep.
 
-### Robust Session Management
-- **Data Persistence**: Automatic saving and recovery of participant responses and session state
-- **Keep-Alive Mechanisms**: Prevents session timeouts during long assessments
-- **Error Recovery**: Graceful handling of network issues and system interruptions
-- **Secure Data Handling**: Built-in security measures for sensitive participant data
+### Key Features
 
-### Advanced Psychometric Capabilities
-- **Multiple IRT Models**: Support for GRM, PCM, and other item response theory models
-- **Adaptive Testing**: Intelligent item selection and ability estimation
-- **Item Bank Optimization**: Tools for improving item quality and measurement precision
-- **Comprehensive Validation**: Built-in psychometric validation and quality assessment
+- **Adaptive Testing**: Support for multiple IRT models (1PL, 2PL, 3PL, GRM) with sophisticated item selection algorithms  
+- **Web-based Interface**: Modern Shiny applications for test administration and data collection  
+- **TAM Integration**: All psychometric computations performed using the validated TAM package  
+- **LLM Integration**: Built-in support for LLM assistance in study configuration, deployment guidance, and optimization  
+- **Website Theme Scraping**: Extract colors, fonts, and logos from institutional websites for automatic branding  
+- **Multilingual Support**: Interface available in English, German, Spanish, and French  
+- **Customizable Themes**: Professional appearance with accessibility compliance  
+- **Comprehensive Reporting**: Multiple export formats with detailed analytics and visualizations  
+- **Session Management**: Robust session handling with resume capabilities  
+- **Accessibility Options**: WCAG-compliant with colorblind-safe palettes, large text, dyslexia-friendly fonts, and high-contrast modes.
 
-### User Experience Excellence
-- **Responsive Design**: Works seamlessly across desktop, tablet, and mobile devices
-- **Accessibility First**: WCAG 2.1 AA compliance and inclusive design principles
-- **Intuitive Interface**: Clean, modern UI that reduces participant anxiety and improves completion rates
-- **Real-Time Feedback**: Immediate progress indicators and support throughout the assessment
+## Installation
 
-## Architecture
-
-The package is built with a modular architecture that separates concerns and ensures maintainability:
-
-```
-inrep/
-├── R/                          # Core R functions
-│   ├── enhanced_llm_assistance.R    # LLM assistance system
-│   ├── robust_session_management.R  # Session handling
-│   ├── robust_error_handling.R      # Error management
-│   ├── item_selection.R             # Item selection algorithms
-│   ├── estimate_ability.R           # Ability estimation
-│   └── ...                         # Additional modules
-├── inst/                       # Package resources
-│   ├── case_studies/           # Example implementations
-│   └── examples/               # Usage examples
-└── tests/                      # Comprehensive testing
-```
-
-## Case Studies
-
-### 1. Programming Anxiety Assessment
-A comprehensive case study demonstrating the enhanced LLM assistance system in action, showing how it guides every step of assessment development from study design to deployment.
-
-**Key Features Demonstrated:**
-- Study design optimization with LLM guidance
-- Item bank quality improvement
-- Ability estimation strategy optimization
-- User interface optimization for anxiety reduction
-- Analysis planning and deployment strategy
-
-### 2. Enhanced LLM System Demonstration
-A hands-on showcase of all enhanced LLM assistance capabilities, including:
-- Context-aware prompt generation
-- Complexity scaling from basic to expert
-- Integration workflow demonstration
-- Advanced features and system validation
-
-## Quick Start
-
-### Installation
+### Development Version
 
 ```r
 # Install from GitHub
-if (!require(devtools)) install.packages("devtools")
-devtools::install_github("your-username/inrep")
+devtools::install_github("selvastics/inrep")
+```
+
+<details>
+<summary><strong style="color:#2a5db0">Set up instructions: Expand if R is not yet installed on your system</strong></summary>
+
+<br>
+
+### Step 1: Install R and RStudio
+
+1. **Install R**: [https://cran.r-project.org](https://cran.r-project.org)  
+2. **Install RStudio**: [https://posit.co/download/rstudio-desktop](https://posit.co/download/rstudio-desktop)
+
+### Step 2: Install Required System Tools
+
+- **Windows**: Install [Rtools](https://cran.r-project.org/bin/windows/Rtools/)  
+- **macOS**: Open Terminal and run:
+
+  ```bash
+  xcode-select --install
+  ```
+
+### Step 3: Install the Required Packages
+
+Open RStudio and copy-paste the following:
+
+```r
+# Install devtools (required to install from GitHub)
+install.packages("devtools")
 
 # Load the package
+library(devtools)
+
+# Install inrep from GitHub
+devtools::install_github("selvastics/inrep")
+
+# Load the installed package
 library(inrep)
 ```
+
+If you encounter any error during installation, make sure Rtools (on Windows) or Xcode (on macOS) was correctly installed and your R version is up to date.
+
+</details>
+
+### Dependencies
+
+The package requires R ≥ 4.1.0 and integrates with the following packages:
+
+* **shiny**
+* **TAM**
+* **ggplot2**
+
+## Quick Start
 
 ### Basic Usage
 
 ```r
-# Enable enhanced LLM assistance
-enable_llm_assistance(
-  enable = TRUE,
-  enhanced_mode = TRUE,
-  complexity_level = "intermediate"
+library(inrep)
+
+data(bfi_items)
+
+config <- create_study_config(
+  name = "Personality Assessment",
+  model = "GRM",
+  max_items = 15,
+  min_items = 5,
+  min_SEM = 0.3,
+  demographics = c("Age", "Gender"),
+  language = "en"
 )
 
-# Get LLM guidance for study design
-study_prompt <- generate_enhanced_prompt(
-  task_type = "study_design",
-  context = list(
-    study_type = "personality_assessment",
-    population = "university students",
-    sample_size = 300
-  )
+launch_study(config, bfi_items)
+```
+
+### Advanced Cognitive Assessment
+
+```r
+data(cognitive_items)
+
+advanced_config <- create_study_config(
+    name = "Cognitive Ability Assessment",
+    model = "2PL", 
+    estimation_method = "TAM",
+    max_items = 20,
+    min_items = 10,
+    min_SEM = 0.25,
+    criteria = "MI",
+    theta_prior = c(0, 1),
+    demographics = c("Age", "Gender", "Education", "Native_Language"),
+    input_types = list(
+        Age = "numeric",
+        Gender = "select", 
+        Education = "select",
+        Native_Language = "text"
+    ),
+    theme = "Professional",
+    session_save = TRUE,
+    parallel_computation = TRUE,
+    cache_enabled = TRUE,
+    accessibility_enhanced = TRUE
 )
 
-# Launch a study with robust session management
 launch_study(
-  study_config = "path/to/config.yaml",
-  enable_robust_mode = TRUE,
-  enable_llm_assistance = TRUE
+    config = advanced_config,
+    item_bank = cognitive_items,
+    accessibility = TRUE,
+    admin_dashboard_hook = function(session_data) {
+        message("Participant ID:", session_data$participant_id)
+        message("Progress:", session_data$progress, "%")
+        message("Current theta:", round(session_data$theta, 3))
+        message("Standard error:", round(session_data$se, 3))
+    }
 )
 ```
 
-### Advanced Usage
+## Theme Customization 
 
-```r
-# Run the complete enhanced LLM case study
-run_enhanced_llm_case_study()
+![inrep themes](man/figures/inrep_themes.png)
 
-# Demonstrate the enhanced LLM system
-demonstrate_enhanced_llm_system()
-
-# Get quick assistance for specific tasks
-quick_llm_assistance("study_config", list(study_type = "cognitive"))
-quick_llm_assistance("validation", list(model = "GRM", items = 30))
-quick_llm_assistance("ui", list(target_users = "mobile", accessibility = "required"))
-```
-
-## Configuration
-
-### LLM Assistance Settings
-
-```r
-# Configure enhanced LLM assistance
-set_llm_assistance_settings(
-  enhanced_mode = TRUE,
-  complexity_level = "expert",  # basic, intermediate, advanced, expert
-  output_format = "console",    # console, markdown, json
-  prompt_types = "all",         # specific types or "all"
-  verbose = TRUE
-)
-
-# View current settings
-get_llm_assistance_settings()
-```
-
-### Robust Session Management
-
-```r
-# Configure robust session handling
-set_robust_session_settings(
-  auto_save_interval = 30,      # seconds
-  keep_alive_interval = 60,     # seconds
-  max_session_duration = 7200,  # seconds (2 hours)
-  enable_error_recovery = TRUE
-)
-```
+> **Themes:** `inrep` supports multiple default UI themes for customizing assessment components.  
+> In addition to built-in options, users can extract CSS styles from institutional websites  
+> or define fully custom themes through direct CSS editing.  
+>  
+> New themes are added incrementally. Contributions are welcome to share themes that can be made available to other users.
 
 ## Documentation
 
-- **Package Documentation**: `?inrep` for overview, `?function_name` for specific functions
-- **Case Studies**: See `inst/case_studies/` for comprehensive examples
-- **Vignettes**: Detailed tutorials and best practices
-- **API Reference**: Complete function documentation with examples
+* `vignette("getting-started", package = "inrep")`
+* `vignette("customizing-appearance", package = "inrep")`
+* `vignette("research-workflows", package = "inrep")`
 
-## Testing
+## Main Functions
 
-The package includes comprehensive testing to ensure reliability:
+* `launch_study()`
+* `create_study_config()`
+* `estimate_ability()`
+* `select_next_item()`
+* `validate_item_bank()`
+* `scrape_website_ui()`
+* `enable_llm_assistance()`
 
-```r
-# Run all tests
-devtools::test()
+## Example Datasets
 
-# Run specific test files
-devtools::test_file("tests/testthat/test-enhanced-llm-assistance.R")
+* `bfi_items`
+* `math_items`
+
+## Configuration Options
+
+* IRT Models: 1PL, 2PL, 3PL, GRM
+* Stopping Rules
+* Item Selection Criteria
+* Themes and Languages
+* Session Management
+* LLM Integration
+
+## Citation
+
+```
+Selva, C. (2025). inrep: Instant Reports for Adaptive Assessments.  
+R package version 1.0.0. https://github.com/selvastics/inrep
 ```
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on:
-
-- Code style and standards
-- Testing requirements
-- Pull request process
-- Issue reporting
+See `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md` on GitHub.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- **Anthropic**: For Claude 4 best practices in prompt engineering
-- **R Community**: For the excellent tools and packages that make this possible
-- **Contributors**: All those who have helped improve and expand the package
+MIT License
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/your-username/inrep/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-username/inrep/discussions)
-- **Documentation**: [Package Website](https://your-username.github.io/inrep/)
+* GitHub: [https://github.com/selvastics/inrep/issues](https://github.com/selvastics/inrep/issues)
+* Email: [selva@uni-hildesheim.de](mailto:selva@uni-hildesheim.de)
+
+## Acknowledgments
+
+I thank Alla Sawatzky and Kathrin Schütz for their early endorsement of this project and their insightful guidance during its conceptualization.
 
 ---
 
-**Transform your psychological assessment development with intelligent AI assistance. Get started with inrep today!**
+**Author:** Clievins Selva
+**Affiliation:** University of Hildesheim
+**Contact:** [selva@uni-hildesheim.de](mailto:selva@uni-hildesheim.de)
 
