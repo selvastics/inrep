@@ -102,7 +102,7 @@ log_session_event <- function(event_type, message, details = NULL) {
       message,
       if (!is.null(details)) paste0(" | ", jsonlite::toJSON(details, auto_unbox = TRUE)) else ""
     )
-    writeLines(log_line, .session_state$log_file, append = TRUE)
+    cat(log_line, file = .session_state$log_file, append = TRUE)
   }, error = function(e) {
     # Fallback to console if file writing fails
     message("Session logging failed: ", e$message)

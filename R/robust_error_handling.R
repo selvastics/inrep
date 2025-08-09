@@ -104,7 +104,7 @@ log_error_event <- function(event_type, message, details = NULL) {
   )
   
   tryCatch({
-    writeLines(log_entry, log_file, append = TRUE)
+    cat(log_entry, file = log_file, append = TRUE)
   }, error = function(e) {
     # Fallback to console if file writing fails
     message("Error logging failed: ", e$message)
