@@ -669,6 +669,7 @@ launch_study <- function(
         tryCatch({
           log_session_event(
             event_type = "session_initialized",
+            message = "Session initialized successfully",
             details = list(
               session_id = session_config$session_id,
               max_time = max_session_time,
@@ -1833,6 +1834,7 @@ launch_study <- function(
         tryCatch({
           log_session_event(
             event_type = "demographics_submitted",
+            message = "Demographics submitted by participant",
             details = list(
               demographics = sapply(seq_along(config$demographics), function(i) {
                 val <- input[[paste0("demo_", i)]]
@@ -1892,6 +1894,7 @@ launch_study <- function(
         tryCatch({
           log_session_event(
             event_type = "test_started",
+            message = "Assessment test started",
             details = list(
               start_time = Sys.time(),
               demographics = rv$demo_data,
@@ -1942,6 +1945,7 @@ launch_study <- function(
           tryCatch({
             log_session_event(
               event_type = "response_submitted",
+              message = "Response submitted by participant",
               details = list(
                 item_index = item_index,
                 response = input$item_response,
@@ -2020,6 +2024,7 @@ launch_study <- function(
           tryCatch({
             log_session_event(
               event_type = "test_completed",
+              message = "Assessment test completed",
               details = list(
                 final_theta = if (config$adaptive) rv$current_ability else NULL,
                 final_se = if (config$adaptive) rv$current_se else NULL,
@@ -2073,6 +2078,7 @@ launch_study <- function(
             tryCatch({
               log_session_event(
                 event_type = "test_completed",
+                message = "Assessment test completed (no more items)",
                 details = list(
                   final_theta = if (config$adaptive) rv$current_ability else NULL,
                   final_se = if (config$adaptive) rv$current_se else NULL,
@@ -2178,6 +2184,7 @@ launch_study <- function(
         tryCatch({
           log_session_event(
             event_type = "test_restarted",
+            message = "Assessment test restarted",
             details = list(
               restart_time = Sys.time(),
                               previous_session_data = list(

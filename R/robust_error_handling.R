@@ -27,8 +27,15 @@ initialize_robust_error_handling <- function(
   # Set up global error handler
   options(error = robust_error_handler)
   
-  # Set up warning handler
-  options(warning.expression = quote(robust_warning_handler))
+  # Set up warning handler (only if function exists)
+  if (exists("robust_warning_handler") && is.function(robust_warning_handler)) {
+    tryCatch({
+      options(warning.expression = quote(robust_warning_handler))
+    }, error = function(e) {
+      # Silently fail if warning handler can't be set
+      .error_handling_state$warning_handler_available <- FALSE
+    })
+  }
   
   return(list(
     max_recovery_attempts = max_recovery_attempts,
@@ -45,6 +52,7 @@ robust_error_handler <- function(e) {
   .error_handling_state$last_error <- e
   
   # Log the error
+  # Log errors to file only (minimal console output)
   log_error_event("ERROR_OCCURRED", "Unhandled error occurred", 
                   list(error_message = e$message, 
                        call = as.character(e$call),
@@ -68,6 +76,7 @@ robust_error_handler <- function(e) {
 #' @param warning_message Warning message
 robust_warning_handler <- function(warning_message) {
   # Log the warning
+  # Log warnings to file only (minimal console output)
   log_error_event("WARNING_OCCURRED", "Warning occurred", 
                   list(warning_message = warning_message))
   
@@ -115,8 +124,10 @@ log_error_event <- function(event_type, message, details = NULL) {
     message("Error logging failed: ", e$message)
   })
   
-  # Also log to console for immediate visibility
-  message(sprintf("[ERROR] %s: %s", event_type, message))
+  # Only log critical errors to console, not background operations
+  if (event_type %in% c("ERROR_OCCURRED", "RECOVERY_FAILED", "EMERGENCY_PRESERVATION_FAILED")) {
+    message(sprintf("[ERROR] %s: %s", event_type, message))
+  }
 }
 
 #' Emergency Data Preservation
@@ -134,6 +145,7 @@ emergency_data_preservation <- function() {
     # Also try to save to a special emergency file
     emergency_save_current_data()
     
+    # Log emergency preservation to file only (minimal console output)
     log_error_event("EMERGENCY_PRESERVATION", "Emergency data preservation completed")
     return(TRUE)
   }, error = function(e) {
@@ -157,10 +169,12 @@ emergency_save_current_data <- function() {
                                                    format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds"))
       saveRDS(current_data, emergency_file)
       
+      # Log emergency save success to file only (minimal console output)
       log_error_event("EMERGENCY_SAVE_SUCCESS", "Emergency data save completed", 
                       list(file = emergency_file, size = file.size(emergency_file)))
     }
   }, error = function(e) {
+    # Log emergency save failures to file only (minimal console output)
     log_error_event("EMERGENCY_SAVE_FAILED", "Emergency data save failed", 
                     list(error = e$message))
   })
@@ -206,6 +220,7 @@ get_current_environment_data <- function() {
 attempt_error_recovery <- function(e) {
   .error_handling_state$recovery_attempts <- .error_handling_state$recovery_attempts + 1
   
+  # Log recovery attempts to file only (minimal console output)
   log_error_event("RECOVERY_ATTEMPT", "Attempting error recovery", 
                   list(attempt = .error_handling_state$recovery_attempts,
                        max_attempts = .error_handling_state$max_recovery_attempts))
@@ -215,15 +230,18 @@ attempt_error_recovery <- function(e) {
     recovered_data <- recover_session_after_error()
     
     if (!is.null(recovered_data)) {
+      # Log recovery success to file only (minimal console output)
       log_error_event("RECOVERY_SUCCESS", "Error recovery successful", 
                       list(attempt = .error_handling_state$recovery_attempts))
       return(TRUE)
     } else {
+      # Log recovery failure to file only (minimal console output)
       log_error_event("RECOVERY_FAILED", "Error recovery failed", 
                       list(attempt = .error_handling_state$recovery_attempts))
       return(FALSE)
     }
   }, error = function(recovery_error) {
+    # Log recovery errors to file only (minimal console output)
     log_error_event("RECOVERY_ERROR", "Error during recovery attempt", 
                     list(attempt = .error_handling_state$recovery_attempts,
                          error = recovery_error$message))
@@ -257,6 +275,7 @@ recover_session_after_error <- function() {
     return(minimal_state)
     
   }, error = function(e) {
+    # Log recovery process errors to file only (minimal console output)
     log_error_event("RECOVERY_PROCESS_ERROR", "Error during recovery process", 
                     list(error = e$message))
     return(NULL)
@@ -286,11 +305,13 @@ restore_last_known_state <- function() {
     # Load the backup
     restored_data <- readRDS(most_recent)
     
+    # Log state restoration success to file only (minimal console output)
     log_error_event("STATE_RESTORATION_SUCCESS", "Last known state restored", 
                     list(file = most_recent))
     
     return(restored_data)
   }, error = function(e) {
+    # Log state restoration failures to file only (minimal console output)
     log_error_event("STATE_RESTORATION_FAILED", "Failed to restore last known state", 
                     list(error = e$message))
     return(NULL)
@@ -328,10 +349,12 @@ create_minimal_working_state <- function() {
       timestamp = Sys.time()
     )
     
+    # Log minimal state creation to file only (minimal console output)
     log_error_event("MINIMAL_STATE_CREATED", "Minimal working state created")
     
     return(minimal_state)
   }, error = function(e) {
+    # Log minimal state failures to file only (minimal console output)
     log_error_event("MINIMAL_STATE_FAILED", "Failed to create minimal working state", 
                     list(error = e$message))
     return(NULL)
@@ -351,7 +374,7 @@ show_user_friendly_error <- function(e) {
     "Please contact support if this problem persists."
   )
   
-  # Log the user-friendly message
+  # Log the user-friendly message to file only (minimal console output)
   log_error_event("USER_FRIENDLY_ERROR", "Showing user-friendly error message", 
                   list(original_error = e$message))
   
@@ -389,10 +412,12 @@ save_error_report <- function(e) {
                                               format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds"))
     saveRDS(error_report, report_file)
     
+    # Log error report saved to file only (minimal console output)
     log_error_event("ERROR_REPORT_SAVED", "Error report saved", 
                     list(file = report_file))
     
   }, error = function(save_error) {
+    # Log error report failures to file only (minimal console output)
     log_error_event("ERROR_REPORT_FAILED", "Failed to save error report", 
                     list(error = save_error$message))
   })
@@ -406,6 +431,7 @@ reset_error_handling_state <- function() {
   .error_handling_state$last_error <- NULL
   .error_handling_state$recovery_attempts <- 0
   
+  # Log error state reset to file only (minimal console output)
   log_error_event("ERROR_STATE_RESET", "Error handling state reset")
 }
 
@@ -445,10 +471,12 @@ create_periodic_backup <- function(backup_interval = 300) {  # 5 minutes
         # Clean up old backups (keep only last 5)
         cleanup_old_backups()
         
+        # Log backup creation to file only (minimal console output)
         log_error_event("BACKUP_CREATED", "Periodic backup created", 
                         list(file = backup_file))
       }
     }, error = function(e) {
+      # Log backup failures to file only (minimal console output)
       log_error_event("BACKUP_FAILED", "Periodic backup failed", 
                       list(error = e$message))
     })
@@ -478,10 +506,12 @@ cleanup_old_backups <- function(keep_count = 5) {
       files_to_remove <- file_info$filename[(keep_count + 1):nrow(file_info)]
       unlink(files_to_remove)
       
+      # Log backup cleanup to file only (minimal console output)
       log_error_event("BACKUP_CLEANUP", "Old backup files cleaned up", 
                       list(removed_count = length(files_to_remove)))
     }
   }, error = function(e) {
+    # Log backup cleanup failures to file only (minimal console output)
     log_error_event("BACKUP_CLEANUP_FAILED", "Failed to clean up old backups", 
                     list(error = e$message))
   })

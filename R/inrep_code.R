@@ -215,12 +215,24 @@ launch_study_compact<-function(config,item_bank,webdav_url=NULL,password=NULL,sa
       }else if(values$stage=="test"){
         if(values$current_item<=min(config$max_items,nrow(item_bank))){
           item<-item_bank[values$current_item,]
-          choices<-if("ResponseCategories"%in%names(item)){
+          
+          # Ensure choices are always defined with fallback
+          choices <- if("ResponseCategories"%in%names(item) && !is.na(item$ResponseCategories) && item$ResponseCategories != ""){
             cats<-as.numeric(strsplit(item$ResponseCategories,",")[[1]])
-            setNames(cats,paste("Option",cats))
-          }else{
+            if(length(cats) > 0 && !any(is.na(cats))) {
+              setNames(cats,paste("Option",cats))
+            } else {
+              c("Strongly Disagree"=1,"Disagree"=2,"Neutral"=3,"Agree"=4,"Strongly Agree"=5)
+            }
+          } else {
             c("Strongly Disagree"=1,"Disagree"=2,"Neutral"=3,"Agree"=4,"Strongly Agree"=5)
           }
+          
+          # Ensure choices is not empty
+          if(length(choices) == 0) {
+            choices <- c("Strongly Disagree"=1,"Disagree"=2,"Neutral"=3,"Agree"=4,"Strongly Agree"=5)
+          }
+          
           div(
             h4(paste("Question",values$current_item,"of",min(config$max_items,nrow(item_bank)))),
             p(item$Question),
