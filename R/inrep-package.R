@@ -149,8 +149,8 @@
 #' │   ├── estimate_ability.R           # Ability estimation
 #' │   └── ...                         # Additional modules
 #' ├── inst/                       # Package resources
-│   ├── case_studies/           # Example implementations
-│   └── examples/               # Usage examples
+#' │   ├── case_studies/           # Example implementations
+#' │   └── examples/               # Usage examples
 #' └── tests/                      # Comprehensive testing
 #' ```
 #'
@@ -179,9 +179,9 @@
 #'
 #' @section Support:
 #'
-#' - **GitHub Issues**: [https://github.com/your-username/inrep/issues](https://github.com/your-username/inrep/issues)
-#' - **Discussions**: [https://github.com/your-username/inrep/discussions](https://github.com/your-username/inrep/discussions)
-#' - **Documentation**: [https://your-username.github.io/inrep/](https://your-username.github.io/inrep/)
+#' - **GitHub Issues**: [https://github.com/selvastics/inrep/issues](https://github.com/selvastics/inrep/issues)
+#' - **Discussions**: [https://github.com/selvastics/inrep/discussions](https://github.com/selvastics/inrep/discussions)
+#' - **Documentation**: [https://selvastics.github.io/inrep/](https://selvastics.github.io/inrep/)
 #'
 #' @section License:
 #'

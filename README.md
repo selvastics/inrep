@@ -43,9 +43,14 @@
 ### Development Version
 
 ```r
-# Install from GitHub
-devtools::install_github("selvastics/inrep")
+# Install from GitHub (clean installation with dependency management)
+devtools::install_github("selvastics/inrep", ref = "main", force = TRUE)
+
+# Load the package
+library(inrep)
 ```
+
+**Note:** The package now includes proper dependency version specifications to ensure a clean installation experience without unnecessary update prompts.
 
 <details>
 <summary><strong style="color:#2a5db0">Set up instructions: Expand if R is not yet installed on your system</strong></summary>
