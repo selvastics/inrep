@@ -10,26 +10,26 @@
 #'
 #' @section Key Features:
 #'
-#' **🤖 Enhanced LLM Assistance System**
+#' **Enhanced LLM Assistance System**
 #' - Claude 4 Best Practices Implementation: Advanced prompt engineering following Anthropic's latest recommendations
 #' - Context-Aware Assistance: Intelligent guidance that adapts to your specific assessment needs and constraints
 #' - Complexity Scaling: Assistance that scales from basic to expert levels based on your expertise
 #' - Task-Specific Optimization: Specialized prompts for study design, item bank optimization, ability estimation, UI design, analysis planning, and deployment strategy
 #' - Quick Assistance Functions: Immediate guidance for common assessment tasks
 #'
-#' **🔒 Robust Session Management**
+#' **Robust Session Management**
 #' - Data Persistence: Automatic saving and recovery of participant responses and session state
 #' - Keep-Alive Mechanisms: Prevents session timeouts during long assessments
 #' - Error Recovery: Graceful handling of network issues and system interruptions
 #' - Secure Data Handling: Built-in security measures for sensitive participant data
 #'
-#' **📊 Advanced Psychometric Capabilities**
+#' **Advanced Psychometric Capabilities**
 #' - Multiple IRT Models: Support for GRM, PCM, and other item response theory models
 #' - Adaptive Testing: Intelligent item selection and ability estimation
 #' - Item Bank Optimization: Tools for improving item quality and measurement precision
 #' - Comprehensive Validation: Built-in psychometric validation and quality assessment
 #'
-#' **🎯 User Experience Excellence**
+#' **User Experience Excellence**
 #' - Responsive Design: Works seamlessly across desktop, tablet, and mobile devices
 #' - Accessibility First: WCAG 2.1 AA compliance and inclusive design principles
 #' - Intuitive Interface: Clean, modern UI that reduces participant anxiety and improves completion rates

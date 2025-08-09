@@ -6,7 +6,7 @@ This directory contains comprehensive case studies demonstrating the capabilitie
 
 ## Available Case Studies
 
-### 1. **Rater-Participant Design** 📊
+### 1. **Rater-Participant Design**
 **Location**: `rater_participant_design/`
 
 A sophisticated assessment system where multiple raters evaluate participants, featuring:
