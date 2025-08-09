@@ -208,23 +208,27 @@
 #' @keywords validation psychometrics IRT response-mapping quality-assurance
 validate_response_mapping <- function(config, item_bank, test_responses, test_items) {
   
-  cat("VALIDATING RESPONSE MAPPING SYSTEM\n")
-  cat(paste(rep("=", 50), collapse=""), "\n")
+  # Initialize validation log
+  validation_log <- character()
+  add_log <- function(msg) validation_log <<- c(validation_log, msg)
+  
+  add_log("VALIDATING RESPONSE MAPPING SYSTEM")
+  add_log(paste(rep("=", 50), collapse=""))
   
   # Step 1: Validate configuration
-  cat("1. Configuration validation...\n")
+  add_log("1. Configuration validation...")
   
   required_fields <- c("model", "response_validation_fun", "scoring_fun")
   missing_fields <- required_fields[!required_fields %in% names(config)]
   
   if (length(missing_fields) > 0) {
-    cat("X Missing required config fields:", paste(missing_fields, collapse=", "), "\n")
+    add_log(paste("X Missing required config fields:", paste(missing_fields, collapse=", ")))
     return(FALSE)
   }
-  cat("[OK] Configuration valid\n")
+  add_log("[OK] Configuration valid")
   
   # Step 2: Validate item bank structure
-  cat("2. Item bank validation...\n")
+  add_log("2. Item bank validation...")
   
   required_cols <- c("Question")
   if (config$model == "GRM") {
@@ -235,13 +239,13 @@ validate_response_mapping <- function(config, item_bank, test_responses, test_it
   
   missing_cols <- required_cols[!required_cols %in% colnames(item_bank)]
   if (length(missing_cols) > 0) {
-    cat("X Missing required item bank columns:", paste(missing_cols, collapse=", "), "\n")
+    add_log(paste("X Missing required item bank columns:", paste(missing_cols, collapse=", ")))
     return(FALSE)
   }
-  cat("[OK] Item bank structure valid\n")
+  add_log("[OK] Item bank structure valid")
   
   # Step 3: Validate response processing
-  cat("3. Response processing validation...\n")
+  add_log("3. Response processing validation...")
   
   validation_results <- sapply(test_responses, function(r) {
     tryCatch({
@@ -250,14 +254,14 @@ validate_response_mapping <- function(config, item_bank, test_responses, test_it
   })
   
   if (!all(validation_results)) {
-    cat("X Some responses failed validation:", 
-        paste(test_responses[!validation_results], collapse=", "), "\n")
+    add_log(paste("X Some responses failed validation:", 
+        paste(test_responses[!validation_results], collapse=", ")))
     return(FALSE)
   }
-  cat("[OK] All responses pass validation\n")
+  add_log("[OK] All responses pass validation")
   
   # Step 4: Validate scoring
-  cat("4. Scoring validation...\n")
+  add_log("4. Scoring validation...")
   
   scored_responses <- sapply(seq_along(test_responses), function(i) {
     response <- test_responses[i]
@@ -267,19 +271,19 @@ validate_response_mapping <- function(config, item_bank, test_responses, test_it
     tryCatch({
       config$scoring_fun(response, correct_answer)
     }, error = function(e) {
-      cat("Error scoring response", i, ":", e$message, "\n")
+      add_log(paste("Error scoring response", i, ":", e$message))
       NA
     })
   })
   
   if (any(is.na(scored_responses))) {
-    cat("X Some responses could not be scored\n")
+    add_log("X Some responses could not be scored")
     return(FALSE)
   }
-  cat("[OK] All responses scored successfully\n")
+  add_log("[OK] All responses scored successfully")
   
   # Step 5: Validate reporting table generation
-  cat("5. Reporting table validation...\n")
+  add_log("5. Reporting table validation...")
   
   # Simulate the exact table generation logic from launch_study.R
   cat_result <- list(
@@ -306,10 +310,10 @@ validate_response_mapping <- function(config, item_bank, test_responses, test_it
       )
     }
     
-    cat("[OK] Reporting table generated successfully\n")
+    add_log("[OK] Reporting table generated successfully")
     
     # Step 6: Validate response consistency
-    cat("6. Response consistency validation...\n")
+    add_log("6. Response consistency validation...")
     
     # Check that input responses match reported responses
     if (config$model == "GRM") {
@@ -321,32 +325,34 @@ validate_response_mapping <- function(config, item_bank, test_responses, test_it
     }
     
     if (!consistency_check) {
-      cat("X Response consistency check failed\n")
-      cat("   Input responses:", paste(test_responses, collapse=", "), "\n")
-      cat("   Scored responses:", paste(scored_responses, collapse=", "), "\n")
+      add_log("X Response consistency check failed")
+      add_log(paste("   Input responses:", paste(test_responses, collapse=", ")))
+      add_log(paste("   Scored responses:", paste(scored_responses, collapse=", ")))
       return(FALSE)
     }
     
-    cat("[OK] Response consistency validated\n")
+    add_log("[OK] Response consistency validated")
     
     # Step 7: Summary report
-    cat("\n", paste(rep("=", 50), collapse=""), "\n")
-    cat("VALIDATION SUMMARY\n")
-    cat(paste(rep("=", 50), collapse=""), "\n")
+    add_log("")
+    add_log(paste(rep("=", 50), collapse=""))
+    add_log("VALIDATION SUMMARY")
+    add_log(paste(rep("=", 50), collapse=""))
     
-    cat("Input responses:     ", paste(test_responses, collapse=", "), "\n")
-    cat("Scored responses:    ", paste(scored_responses, collapse=", "), "\n")
-    cat("Items administered:  ", paste(test_items, collapse=", "), "\n")
-    cat("Model:               ", config$model, "\n")
-    cat("Validation:          [OK] PASSED\n")
+    add_log(paste("Input responses:     ", paste(test_responses, collapse=", ")))
+    add_log(paste("Scored responses:    ", paste(scored_responses, collapse=", ")))
+    add_log(paste("Items administered:  ", paste(test_items, collapse=", ")))
+    add_log(paste("Model:               ", config$model))
+    add_log("Validation:          [OK] PASSED")
     
-    cat("\nReporting table preview:\n")
-    print(head(dat, 3))
+    add_log("")
+    add_log("Reporting table preview:")
+    add_log(paste(capture.output(print(head(dat, 3))), collapse = "\n"))
     
     return(TRUE)
     
   }, error = function(e) {
-    cat("X Error generating reporting table:", e$message, "\n")
+    add_log(paste("X Error generating reporting table:", e$message))
     return(FALSE)
   })
 }

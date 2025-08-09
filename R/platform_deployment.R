@@ -485,12 +485,12 @@ deployment_results$validation_report$final_validation<-final_validation
 #Generatesummaryreport
 generate_deployment_summary(deployment_results,deployment_path)
 
-#Printsuccessmessage
-cat("✅Deploymentpackagecreatedsuccessfully!\n")
-cat("📁Location:",deployment_path,"\n")
-cat("🎯Deploymenttype:",deployment_type,"\n")
-cat("📧Contactmaintainerat:selva@uni-hildesheim.de\n")
-cat("📖Seedeploymentinstructionsin:",file.path(deployment_path,"docs"),"\n")
+# Print success message
+message("Deployment package created successfully!")
+message("Location: ", deployment_path)
+message("Deployment type: ", deployment_type)
+message("Contact maintainer at: selva@uni-hildesheim.de")
+message("See deployment instructions in: ", file.path(deployment_path, "docs"))
 
 return(deployment_results)
 }

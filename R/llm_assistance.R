@@ -89,30 +89,33 @@ generate_llm_prompt <- function(component = "study_config",
   # Handle output format
   if (output_format == "console") {
     if (verbose) {
-      cat("=" %r% 80, "\n")
-      cat("LLM PROMPT FOR", toupper(component), "CUSTOMIZATION\n")
-      cat("=" %r% 80, "\n\n")
+      message("=" %r% 80)
+      message("LLM PROMPT FOR ", toupper(component), " CUSTOMIZATION")
+      message("=" %r% 80)
+      message("")
     }
-    cat(prompt)
-    cat("\n\n")
+    message(prompt)
+    message("")
+    message("")
     if (verbose) {
-      cat("=" %r% 80, "\n")
-      cat("Copy the above prompt to your preferred LLM (ChatGPT, Claude, etc.)\n")
-      cat("=" %r% 80, "\n")
+      message("=" %r% 80)
+      message("Copy the above prompt to your preferred LLM (ChatGPT, Claude, etc.)")
+      message("=" %r% 80)
     }
     return(invisible(prompt))
   } else if (output_format == "file") {
     filename <- paste0("inrep_", component, "_prompt_", Sys.Date(), ".txt")
     writeLines(prompt, filename)
-    if (verbose) cat("Prompt saved to:", filename, "\n")
+    if (verbose) message("Prompt saved to: ", filename)
     return(invisible(prompt))
   } else if (output_format == "clipboard") {
     if (requireNamespace("clipr", quietly = TRUE)) {
       clipr::write_clip(prompt)
-      if (verbose) cat("Prompt copied to clipboard!\n")
+      if (verbose) message("Prompt copied to clipboard!")
     } else {
-      cat("clipr package not available. Displaying prompt instead:\n\n")
-      cat(prompt)
+      message("clipr package not available. Displaying prompt instead:")
+      message("")
+      message(prompt)
     }
     return(invisible(prompt))
   }
@@ -819,11 +822,11 @@ enable_llm_assistance <- function(enable = TRUE,
   
   if (verbose) {
     if (enable) {
-      cat("LLM Assistance ENABLED for inrep package\n")
-      cat("Output format:", output_format, "\n")
-      cat("Prompt types:", paste(prompt_types, collapse = ", "), "\n")
+      message("LLM Assistance ENABLED for inrep package")
+      message("Output format: ", output_format)
+      message("Prompt types: ", paste(prompt_types, collapse = ", "))
     } else {
-      cat("LLM Assistance DISABLED for inrep package\n")
+      message("LLM Assistance DISABLED for inrep package")
     }
   }
   
@@ -879,20 +882,24 @@ display_llm_prompt <- function(prompt, component = "general") {
   
   if (output_format == "console") {
     if (verbose) {
-      cat("\n", rep("=", 60), "\n")
-      cat("LLM ASSISTANCE:", toupper(component), "OPTIMIZATION\n")
-      cat(rep("=", 60), "\n")
-      cat("Copy the following prompt to ChatGPT, Claude, or your preferred LLM:\n\n")
+      message("")
+      message(paste(rep("=", 60), collapse = ""))
+      message("LLM ASSISTANCE: ", toupper(component), " OPTIMIZATION")
+      message(paste(rep("=", 60), collapse = ""))
+      message("Copy the following prompt to ChatGPT, Claude, or your preferred LLM:")
+      message("")
     }
-    cat(prompt)
+    message(prompt)
     if (verbose) {
-      cat("\n", rep("=", 60), "\n\n")
+      message("")
+      message(paste(rep("=", 60), collapse = ""))
+      message("")
     }
   } else if (output_format == "file") {
     filename <- paste0("inrep_", component, "_prompt_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".txt")
     writeLines(prompt, filename)
     if (verbose) {
-      cat("LLM prompt saved to:", filename, "\n")
+      message("LLM prompt saved to: ", filename)
     }
   }
   

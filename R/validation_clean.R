@@ -80,8 +80,12 @@
 #' }
 validate_item_bank <- function(item_bank, model = "GRM") {
   
-  cat("VALIDATING ITEM BANK FOR TAM COMPATIBILITY\n")
-  cat("===========================================\n")
+  # Initialize validation log
+  validation_log <- character()
+  add_log <- function(msg) validation_log <<- c(validation_log, msg)
+  
+  add_log("VALIDATING ITEM BANK FOR TAM COMPATIBILITY")
+  add_log("===========================================")
   
   if (!is.data.frame(item_bank)) {
     stop("item_bank must be a data frame")
@@ -92,7 +96,8 @@ validate_item_bank <- function(item_bank, model = "GRM") {
   }
   
   n_items <- nrow(item_bank)
-  cat("Validating", n_items, "items for", model, "model\n\n")
+  add_log(paste("Validating", n_items, "items for", model, "model"))
+  add_log("")
   
   errors <- c()
   warnings <- c()
@@ -114,9 +119,9 @@ validate_item_bank <- function(item_bank, model = "GRM") {
       unknown_a <- sum(is.na(a_values))
       known_a <- sum(!is.na(a_values))
       
-      cat("Discrimination parameters (a):\n")
-      cat("  Unknown (NA):", unknown_a, "of", n_items, "\n")
-      cat("  Known values:", known_a, "of", n_items, "\n")
+      add_log("Discrimination parameters (a):")
+      add_log(paste("  Unknown (NA):", unknown_a, "of", n_items))
+      add_log(paste("  Known values:", known_a, "of", n_items))
       
       if (known_a > 0) {
         known_values <- a_values[!is.na(a_values)]
@@ -130,11 +135,11 @@ validate_item_bank <- function(item_bank, model = "GRM") {
           warnings <- c(warnings, paste(extreme_a, "items have very high discrimination (>5)"))
         }
         
-        cat("  Range of known values:", round(range(known_values), 2), "\n")
+        add_log(paste("  Range of known values:", round(range(known_values), 2)))
       }
       
       if (unknown_a > 0) {
-        cat("  Note: Unknown parameters will be initialized during analysis\n")
+        add_log("  Note: Unknown parameters will be initialized during analysis")
       }
     }
   }
@@ -146,13 +151,14 @@ validate_item_bank <- function(item_bank, model = "GRM") {
     if (length(b_cols) == 0) {
       errors <- c(errors, "No threshold parameters (b1, b2, ...) found for GRM model")
     } else {
-      cat("\nThreshold parameters:\n")
+      add_log("")
+      add_log("Threshold parameters:")
       
       for (col in b_cols) {
         unknown_thresh <- sum(is.na(item_bank[[col]]))
         known_thresh <- sum(!is.na(item_bank[[col]]))
         
-        cat("  ", col, ": Unknown =", unknown_thresh, ", Known =", known_thresh, "\n")
+        add_log(paste("  ", col, ": Unknown =", unknown_thresh, ", Known =", known_thresh))
         
         if (known_thresh > 0) {
           known_values <- item_bank[[col]][!is.na(item_bank[[col]])]
@@ -177,7 +183,7 @@ validate_item_bank <- function(item_bank, model = "GRM") {
       
       if (ordering_issues > 0) {
         warnings <- c(warnings, paste(ordering_issues, "items have threshold ordering issues"))
-        cat("  Warning:", ordering_issues, "items may need threshold reordering\n")
+        add_log(paste("  Warning:", ordering_issues, "items may need threshold reordering"))
       }
       
       # Count items with mixed known/unknown thresholds
@@ -190,7 +196,7 @@ validate_item_bank <- function(item_bank, model = "GRM") {
       }
       
       if (mixed_items > 0) {
-        cat("  Note:", mixed_items, "items have partial threshold information\n")
+        add_log(paste("  Note:", mixed_items, "items have partial threshold information"))
       }
     }
     
@@ -208,9 +214,10 @@ validate_item_bank <- function(item_bank, model = "GRM") {
       unknown_b <- sum(is.na(b_values))
       known_b <- sum(!is.na(b_values))
       
-      cat("\nDifficulty parameters (b):\n")
-      cat("  Unknown (NA):", unknown_b, "of", n_items, "\n")
-      cat("  Known values:", known_b, "of", n_items, "\n")
+      add_log("")
+      add_log("Difficulty parameters (b):")
+      add_log(paste("  Unknown (NA):", unknown_b, "of", n_items))
+      add_log(paste("  Known values:", known_b, "of", n_items))
       
       if (known_b > 0) {
         known_values <- b_values[!is.na(b_values)]
@@ -220,11 +227,11 @@ validate_item_bank <- function(item_bank, model = "GRM") {
           warnings <- c(warnings, paste(extreme_b, "items have extreme difficulty values"))
         }
         
-        cat("  Range of known values:", round(range(known_values), 2), "\n")
+        add_log(paste("  Range of known values:", round(range(known_values), 2)))
       }
       
       if (unknown_b > 0) {
-        cat("  Note: Unknown parameters will be initialized during analysis\n")
+        add_log("  Note: Unknown parameters will be initialized during analysis")
       }
     }
   }
@@ -238,9 +245,10 @@ validate_item_bank <- function(item_bank, model = "GRM") {
       unknown_c <- sum(is.na(c_values))
       known_c <- sum(!is.na(c_values))
       
-      cat("\nGuessing parameters (c):\n")
-      cat("  Unknown (NA):", unknown_c, "of", n_items, "\n")
-      cat("  Known values:", known_c, "of", n_items, "\n")
+      add_log("")
+      add_log("Guessing parameters (c):")
+      add_log(paste("  Unknown (NA):", unknown_c, "of", n_items))
+      add_log(paste("  Known values:", known_c, "of", n_items))
       
       if (known_c > 0) {
         known_values <- c_values[!is.na(c_values)]
@@ -254,35 +262,36 @@ validate_item_bank <- function(item_bank, model = "GRM") {
           warnings <- c(warnings, paste(high_c, "items have high guessing parameters (>0.4)"))
         }
         
-        cat("  Range of known values:", round(range(known_values), 3), "\n")
+        add_log(paste("  Range of known values:", round(range(known_values), 3)))
       }
       
       if (unknown_c > 0) {
-        cat("  Note: Unknown parameters will be initialized during analysis\n")
+        add_log("  Note: Unknown parameters will be initialized during analysis")
       }
     }
   }
   
   # Summary and recommendations
-  cat("\nVALIDATION SUMMARY\n")
-  cat("===================\n")
+  add_log("")
+  add_log("VALIDATION SUMMARY")
+  add_log("===================")
   
   if (length(errors) > 0) {
-    cat("ERROR: ERRORS FOUND:\n")
+    add_log("ERROR: ERRORS FOUND:")
     for (error in errors) {
-      cat("• ", error, "\n")
+      add_log(paste("• ", error))
     }
   }
   
   if (length(warnings) > 0) {
-    cat("Warning: WARNINGS:\n")
+    add_log("Warning: WARNINGS:")
     for (warning in warnings) {
-      cat("• ", warning, "\n")
+      add_log(paste("• ", warning))
     }
   }
   
   if (length(errors) == 0 && length(warnings) == 0) {
-    cat("SUCCESS: No issues found\n")
+    add_log("SUCCESS: No issues found")
   }
   
   # Unknown parameter summary
@@ -314,10 +323,11 @@ validate_item_bank <- function(item_bank, model = "GRM") {
   
   unknown_proportion <- if (total_params > 0) unknown_params / total_params else 0
   
-  cat("\nPARAMETER SUMMARY:\n")
-  cat("Total parameters:", total_params, "\n")
-  cat("Unknown (NA) parameters:", unknown_params, "\n")
-  cat("Proportion unknown:", round(unknown_proportion * 100, 1), "%\n")
+  add_log("")
+  add_log("PARAMETER SUMMARY:")
+  add_log(paste("Total parameters:", total_params))
+  add_log(paste("Unknown (NA) parameters:", unknown_params))
+  add_log(paste("Proportion unknown:", round(unknown_proportion * 100, 1), "%"))
   
   study_type <- if (unknown_params == 0) {
     "Fixed Parameter Analysis"
@@ -326,41 +336,57 @@ validate_item_bank <- function(item_bank, model = "GRM") {
   } else {
     "Mixed Parameter Study"
   }
-  cat("Study type:", study_type, "\n")
+  add_log(paste("Study type:", study_type))
   
   # Recommendations
-  cat("\nRECOMMENDATIONS:\n")
+  add_log("")
+  add_log("RECOMMENDATIONS:")
   
   if (unknown_params > 0) {
-    cat("• Use initialize_unknown_parameters() before analysis\n")
-    cat("• Consider parameter estimation with TAM calibration\n")
-    cat("• Ensure adequate sample size for stable estimation\n")
+    add_log("• Use initialize_unknown_parameters() before analysis")
+    add_log("• Consider parameter estimation with TAM calibration")
+    add_log("• Ensure adequate sample size for stable estimation")
     
     if (unknown_proportion > 0.5) {
-      cat("• Large-scale parameter estimation detected\n")
-      cat("• Recommend N > 500 for stable parameter estimates\n")
+      add_log("• Large-scale parameter estimation detected")
+      add_log("• Recommend N > 500 for stable parameter estimates")
     }
     
     if (unknown_proportion < 1.0 && unknown_proportion > 0) {
-      cat("• Mixed known/unknown parameters detected\n")
-      cat("• Consider anchoring strategy for parameter linking\n")
+      add_log("• Mixed known/unknown parameters detected")
+      add_log("• Consider anchoring strategy for parameter linking")
     }
   } else {
-    cat("• All parameters known - ready for fixed-parameter analysis\n")
-    cat("• No parameter initialization required\n")
+    add_log("• All parameters known - ready for fixed-parameter analysis")
+    add_log("• No parameter initialization required")
   }
   
   # Return validation result
   is_valid <- length(errors) == 0
   
   if (is_valid) {
-    cat("\nSUCCESS: VALIDATION PASSED\n")
-    cat("Item bank is ready for", model, "analysis with inrep/TAM\n")
+    add_log("")
+    add_log("SUCCESS: VALIDATION PASSED")
+    add_log(paste("Item bank is ready for", model, "analysis with inrep/TAM"))
   } else {
-    cat("\nERROR: VALIDATION FAILED\n")
-    cat("Please fix errors before proceeding\n")
+    add_log("")
+    add_log("ERROR: VALIDATION FAILED")
+    add_log("Please fix errors before proceeding")
   }
   
-  cat("\n")
-  return(is_valid)
+  add_log("")
+  
+  # Return both validation result and log
+  result <- list(
+    is_valid = is_valid,
+    errors = errors,
+    warnings = warnings,
+    validation_log = validation_log,
+    total_params = total_params,
+    unknown_params = unknown_params,
+    unknown_proportion = unknown_proportion,
+    study_type = study_type
+  )
+  
+  return(result)
 }

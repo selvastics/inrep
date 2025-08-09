@@ -71,31 +71,32 @@ inrep_code <- function(expr, output_file = NULL, auto_run = FALSE, console_ready
     
     # Check for console length limitations
     if (script_length > 4000) {
-      cat("WARNING: Script length (", script_length, " characters) may exceed R console limits!\n")
-      cat("   R console maximum is typically 4,094 characters per input.\n")
-      cat("   Consider using:\n")
-      cat("   1. minimal = TRUE for more compact code\n")
-      cat("   2. output_file to save and source() the script instead\n")
-      cat("   3. Contact inrep platform for hosting (see below)\n\n")
+      message("WARNING: Script length (", script_length, " characters) may exceed R console limits!")
+      message("   R console maximum is typically 4,094 characters per input.")
+      message("   Consider using:")
+      message("   1. minimal = TRUE for more compact code")
+      message("   2. output_file to save and source() the script instead")
+      message("   3. Contact inrep platform for hosting (see below)")
+      message("")
     }
     
     if (!is.null(output_file)) {
       writeLines(compact_script, output_file)
-      cat("Compact standalone script saved to:", basename(output_file), "\n")
-      cat("Script length:", script_length, "characters\n")
+      message("Compact standalone script saved to: ", basename(output_file))
+      message("Script length: ", script_length, " characters")
       if (script_length <= 4000) {
-        cat("Console-safe: Ready for copy-paste deployment\n")
+        message("Console-safe: Ready for copy-paste deployment")
       }
       return(invisible(compact_script))
     }
     
-    cat("Compact standalone script generated!\n")
-    cat("Script length:", script_length, "characters\n")
+    message("Compact standalone script generated!")
+    message("Script length: ", script_length, " characters")
     if (script_length <= 4000) {
-      cat("Console-safe: Ready for copy-paste deployment\n")
-      cat("READY: Copy-paste the output directly into R console\n")
+      message("Console-safe: Ready for copy-paste deployment")
+      message("READY: Copy-paste the output directly into R console")
     } else {
-      cat("Too long for console: Use output_file parameter or minimal = TRUE\n")
+      message("Too long for console: Use output_file parameter or minimal = TRUE")
     }
     return(compact_script)
   }
@@ -106,20 +107,22 @@ inrep_code <- function(expr, output_file = NULL, auto_run = FALSE, console_ready
   
   # Warning for very large scripts (extensive server logic)
   if (script_length > 50000) {
-    cat("WARNING: Generated script is very large (", script_length, " characters)!\n")
-    cat("   This may indicate complex server logic that could be difficult to deploy standalone.\n")
-    cat("   For complex studies with extensive logic, consider professional hosting:\n\n")
-    cat("INREP PLATFORM HOSTING SERVICE:\n")
-    cat("   Researchers planning to use inrep for published papers and assessments\n")
-    cat("   can contact the package author for professional hosting via the inrep platform.\n")
-    cat("   \n")
-    cat("   Contact: selva@uni-hildesheim.de\n")
-    cat("   Please provide:\n")
-    cat("      - Brief description of your study aim\n")
-    cat("      - Publication plan details\n")
-    cat("      - Expected participant numbers\n")
-    cat("   \n")
-    cat("   Benefits: Professional hosting, scalability, data security, technical support\n\n")
+    message("WARNING: Generated script is very large (", script_length, " characters)!")
+    message("   This may indicate complex server logic that could be difficult to deploy standalone.")
+    message("   For complex studies with extensive logic, consider professional hosting:")
+    message("")
+    message("INREP PLATFORM HOSTING SERVICE:")
+    message("   Researchers planning to use inrep for published papers and assessments")
+    message("   can contact the package author for professional hosting via the inrep platform.")
+    message("")
+    message("   Contact: selva@uni-hildesheim.de")
+    message("   Please provide:")
+    message("      - Brief description of your study aim")
+    message("      - Publication plan details")
+    message("      - Expected participant numbers")
+    message("")
+    message("   Benefits: Professional hosting, scalability, data security, technical support")
+    message("")
   }
   
   if (!is.null(output_file)) {
@@ -132,9 +135,9 @@ inrep_code <- function(expr, output_file = NULL, auto_run = FALSE, console_ready
     # Write the script to file
     tryCatch({
       writeLines(complete_script, output_file)
-      cat("Complete standalone script saved to:", basename(output_file), "\n")
-      cat("Script size:", nchar(complete_script), "characters\n")
-      cat("Auto-run enabled:", auto_run, "\n")
+      message("Complete standalone script saved to: ", basename(output_file))
+      message("Script size: ", nchar(complete_script), " characters")
+      message("Auto-run enabled: ", auto_run)
     }, error = function(e) {
       warning("Failed to write file: ", e$message)
       return(complete_script)
@@ -144,9 +147,9 @@ inrep_code <- function(expr, output_file = NULL, auto_run = FALSE, console_ready
   }
   
   # Return the complete script
-  cat("Complete standalone script generated!\n")
-  cat("Script size:", nchar(complete_script), "characters\n")
-  cat("Save with: writeLines(result, 'filename.R')\n")
+  message("Complete standalone script generated!")
+  message("Script size: ", nchar(complete_script), " characters")
+  message("Save with: writeLines(result, 'filename.R')")
   return(complete_script)
 }
 
@@ -261,7 +264,7 @@ launch_study<-function(config,item_bank,webdav_url=NULL,password=NULL,save_forma
     })
   }
   
-  cat("Starting assessment at http://localhost:3838\\n")
+  message("Starting assessment at http://localhost:3838")
   shinyApp(ui,server)
 }
 
@@ -546,7 +549,7 @@ get_builtin_themes_standalone <- function() {
 # Simple logging function for standalone operation
 logger <- function(message, level = 'INFO') {
   timestamp <- format(Sys.time(), '%Y-%m-%d %H:%M:%S')
-  cat(sprintf('[%s] %s: %s\\n', timestamp, level, message))
+  message(sprintf('[%s] %s: %s', timestamp, level, message))
 }
 
 # Simplified UUID generation
@@ -590,20 +593,22 @@ required_packages <- c('shiny', 'TAM', 'magrittr', 'jsonlite', 'DT', 'ggplot2')
 missing_packages <- required_packages[!sapply(required_packages, requireNamespace, quietly = TRUE)]
 
 if (length(missing_packages) > 0) {
-  cat('Warning: Missing required packages:', paste(missing_packages, collapse = ', '), '\\n')
-  cat('Install with: install.packages(c(', paste(paste0('\"', missing_packages, '\"'), collapse = ', '), '))\\n')
+  message('Warning: Missing required packages: ', paste(missing_packages, collapse = ', '))
+  message('Install with: install.packages(c(', paste(paste0('\"', missing_packages, '\"'), collapse = ', '), '))')
 }
 
 # Runtime diagnostics
-cat('\\n=== INREP STANDALONE APP DIAGNOSTICS ===\\n')
-cat('R Version:', R.version.string, '\\n')
-cat('Platform:', R.version$platform, '\\n')
-cat('Required packages status:\\n')
+message('')
+message('=== INREP STANDALONE APP DIAGNOSTICS ===')
+message('R Version: ', R.version.string)
+message('Platform: ', R.version$platform)
+message('Required packages status:')
 for (pkg in required_packages) {
   status <- if (requireNamespace(pkg, quietly = TRUE)) 'OK' else 'MISSING'
-  cat(' -', pkg, ':', status, '\\n')
+  message(' -', pkg, ': ', status)
 }
-cat('==========================================\\n\\n')
+message('==========================================')
+message('')
 "
 
   # Smart execution section based on parameters
@@ -613,10 +618,12 @@ cat('==========================================\\n\\n')
       "# AUTOMATIC EXECUTION",
       "# ============================================================================",
       "",
-      "cat('\\nStarting standalone inrep assessment application...\\n')",
-      "cat('This script will automatically launch your assessment.\\n')",
-      "cat('Access the application in your web browser at the displayed URL.\\n')",
-      "cat('Press Ctrl+C or Esc to stop the application.\\n\\n')",
+      "message('')",
+      "message('Starting standalone inrep assessment application...')",
+      "message('This script will automatically launch your assessment.')",
+      "message('Access the application in your web browser at the displayed URL.')",
+      "message('Press Ctrl+C or Esc to stop the application.')",
+      "message('')",
       "",
       "# Auto-launch the assessment:",
       paste(user_code, collapse = "\n"),
@@ -629,10 +636,12 @@ cat('==========================================\\n\\n')
       "# MANUAL EXECUTION",
       "# ============================================================================",
       "",
-      "cat('\\nStandalone inrep assessment application ready!\\n')",
-      "cat('To start your assessment, uncomment and run the line below:\\n')",
-      "cat('Access the application in your web browser at the displayed URL.\\n')",
-      "cat('Press Ctrl+C or Esc to stop the application.\\n\\n')",
+      "message('')",
+      "message('Standalone inrep assessment application ready!')",
+      "message('To start your assessment, uncomment and run the line below:')",
+      "message('Access the application in your web browser at the displayed URL.')",
+      "message('Press Ctrl+C or Esc to stop the application.')",
+      "message('')",
       "",
       "# Uncomment the line below to launch the assessment:",
       paste("#", user_code),
@@ -790,25 +799,28 @@ cat('==========================================\\n\\n')
     # Write the script to file
     tryCatch({
       writeLines(final_script, output_file)
-      cat("Standalone script successfully saved to:", output_file, "\n")
-      cat("Script size:", nchar(final_script), "characters\n")
-      cat("Auto-run enabled:", auto_run, "\n")
-      cat("Console-ready:", console_ready, "\n")
+      message("Standalone script successfully saved to: ", output_file)
+      message("Script size: ", nchar(final_script), " characters")
+      message("Auto-run enabled: ", auto_run)
+      message("Console-ready: ", console_ready)
       
       if (auto_run) {
-        cat("\nREADY TO USE: Just run the saved script file!\n")
-        cat("   source('", basename(output_file), "')\n", sep = "")
+        message("")
+        message("READY TO USE: Just run the saved script file!")
+        message("   source('", basename(output_file), "')")
       } else {
-        cat("\nREADY TO USE: Uncomment the launch_study() call in the saved file\n")
+        message("")
+        message("READY TO USE: Uncomment the launch_study() call in the saved file")
       }
       
       if (console_ready) {
-        cat("\nCONSOLE DEPLOYMENT: Open the file and copy-paste the contents\n")
+        message("")
+        message("CONSOLE DEPLOYMENT: Open the file and copy-paste the contents")
       }
       
     }, error = function(e) {
       warning("Failed to write file: ", e$message)
-      cat("File write failed, returning script as string instead\n")
+      message("File write failed, returning script as string instead")
       return(final_script)
     })
     
@@ -817,15 +829,17 @@ cat('==========================================\\n\\n')
   }
   
   # If no output file, return the script visibly
-  cat("Standalone script generated successfully!\n")
-  cat("Script size:", nchar(final_script), "characters\n")
-  cat("Auto-run enabled:", auto_run, "\n")
-  cat("Console-ready:", console_ready, "\n")
+  message("Standalone script generated successfully!")
+  message("Script size: ", nchar(final_script), " characters")
+  message("Auto-run enabled: ", auto_run)
+  message("Console-ready: ", console_ready)
   
   if (console_ready) {
-    cat("\nCONSOLE-READY: You can copy-paste this output directly into R console\n")
+    message("")
+    message("CONSOLE-READY: You can copy-paste this output directly into R console")
   } else {
-    cat("\nSave with: writeLines(result, 'filename.R')\n")
+    message("")
+    message("Save with: writeLines(result, 'filename.R')")
   }
   
   # Return the complete standalone script
