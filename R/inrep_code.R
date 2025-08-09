@@ -268,14 +268,7 @@ launch_study<-function(config,item_bank,webdav_url=NULL,password=NULL,save_forma
   shinyApp(ui,server)
 }
 
-# Fallback data
-if(!exists("bfi_items")||!is.data.frame(bfi_items)){
-  bfi_items<-data.frame(
-    Question=c("I am talkative","I am reserved","I am outgoing","I am quiet","I am sociable"),
-    ResponseCategories=rep("1,2,3,4,5",5),
-    stringsAsFactors=FALSE
-  )
-}
+# Note: Built-in datasets (bfi_items, cognitive_items, math_items) should be loaded with data() function
 '
   
   # Execution code
@@ -387,70 +380,14 @@ generate_complete_script <- function(user_code, auto_run) {
 # BUILT-IN DATASETS
 # ============================================================================
 
-# Load built-in datasets (if they exist in the workspace or can be accessed)
-if (exists('bfi_items') && is.data.frame(bfi_items)) {
-  # bfi_items already available
-} else {
-  # Fallback BFI items dataset structure
-  bfi_items <- data.frame(
-    Question = c(
-      'I am the life of the party.',
-      'I feel little concern for others.',
-      'I am always prepared.',
-      'I get stressed out easily.',
-      'I have a rich vocabulary.'
-    ),
-    a = c(1.5, 1.2, 1.8, 1.4, 1.6),
-    b1 = c(-2.0, -1.5, -1.8, -1.2, -2.2),
-    b2 = c(-0.5, -0.2, -0.8, -0.1, -0.9),
-    b3 = c(0.5, 0.8, 0.2, 0.9, 0.1),
-    b4 = c(2.0, 2.2, 1.8, 2.1, 1.9),
-    ResponseCategories = rep('1,2,3,4,5', 5),
-    stringsAsFactors = FALSE
-  )
-}
+# Note: Built-in datasets should be loaded with data() function
+# data(bfi_items)  # Load Big Five Inventory items
+# data(cognitive_items)  # Load cognitive assessment items  
+# data(math_items)  # Load mathematics assessment items
 
-if (exists('cognitive_items') && is.data.frame(cognitive_items)) {
-  # cognitive_items already available  
-} else {
-  # Fallback cognitive items dataset
-  cognitive_items <- data.frame(
-    Question = c(
-      'What is 2 + 2?',
-      'Which number comes next: 2, 4, 6, __?',
-      'If all cats are animals, and Fluffy is a cat, then Fluffy is...?'
-    ),
-    a = c(1.0, 1.2, 1.4),
-    b = c(-1.0, 0.0, 1.0),
-    Option1 = c('3', '7', 'a plant'),
-    Option2 = c('4', '8', 'an animal'), 
-    Option3 = c('5', '9', 'a mineral'),
-    Option4 = c('6', '10', 'unknown'),
-    Answer = c('4', '8', 'an animal'),
-    stringsAsFactors = FALSE
-  )
-}
+# Note: Built-in datasets should be loaded with data() function
 
-if (exists('math_items') && is.data.frame(math_items)) {
-  # math_items already available
-} else {
-  # Fallback math items dataset
-  math_items <- data.frame(
-    Question = c(
-      'Solve: 3x + 7 = 22',
-      'What is the area of a circle with radius 5?',
-      'Factor: x² - 9'
-    ),
-    a = c(1.3, 1.5, 1.7),
-    b = c(-0.5, 0.5, 1.5),
-    Option1 = c('x = 4', '25π', '(x-3)(x-3)'),
-    Option2 = c('x = 5', '10π', '(x+3)(x-3)'),
-    Option3 = c('x = 6', '15π', '(x+3)(x+3)'),
-    Option4 = c('x = 7', '20π', 'cannot factor'),
-    Answer = c('x = 5', '25π', '(x+3)(x-3)'),
-    stringsAsFactors = FALSE
-  )
-}
+# Note: Built-in datasets should be loaded with data() function
 "
 
   # Theme CSS extraction - get all built-in themes
