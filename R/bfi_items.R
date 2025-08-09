@@ -63,7 +63,7 @@
 #' \dontrun{
 #' # Example 1: Basic Data Exploration
 #' library(inrep)
-#' data(bfi_items)
+#' # data(bfi_items)  # Load dataset when needed
 #' 
 #' # Examine item bank structure
 #' str(bfi_items)

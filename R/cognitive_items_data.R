@@ -48,8 +48,9 @@
 #' used in research and clinical practice.
 #'
 #' @examples
+#' \dontrun{
 #' # Load the cognitive items dataset
-#' data(cognitive_items)
+#' # data(cognitive_items)  # Load dataset when needed
 #' 
 #' # Examine the structure
 #' str(cognitive_items)
@@ -71,6 +72,7 @@
 #'   
 #'   # Launch study (requires Shiny environment)
 #'   # launch_study(config, cognitive_items)
+#' }
 #' }
 #'
 #' @seealso 

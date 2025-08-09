@@ -34,8 +34,7 @@
 #' @param study_key Character string for unique study identification. Overrides config$study_key.
 #' @param max_session_time Maximum session time in seconds (default: 7200 = 2 hours).
 #'   The assessment will automatically terminate after this time to ensure data security.
-#' @param enable_robust_session Logical indicating whether to enable robust session management
-#'   with automatic data preservation, keep-alive monitoring, and error recovery.
+#' @param session_save Logical indicating whether to enable session saving and recovery.
 #' @param data_preservation_interval Interval for automatic data preservation in seconds (default: 30).
 #' @param keep_alive_interval Keep-alive ping interval in seconds (default: 10).
 #' @param enable_error_recovery Logical indicating whether to enable automatic error recovery
@@ -516,7 +515,7 @@ launch_study <- function(
     study_key = NULL,
     accessibility = FALSE,
     max_session_time = 7200,
-    enable_robust_session = TRUE,
+    session_save = TRUE,
     data_preservation_interval = 30,
     keep_alive_interval = 10,
     enable_error_recovery = TRUE,
@@ -585,8 +584,8 @@ launch_study <- function(
   logger(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"))
   logger(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"), level = "INFO")
   
-      # Initialize robust session management for sensitive participant data
-    if (enable_robust_session) {
+      # Initialize session management if enabled
+    if (session_save) {
       logger("Initializing robust session management", level = "INFO")
       
       # Initialize robust session management
@@ -606,34 +605,10 @@ launch_study <- function(
       # Create periodic backup system
       backup_observer <- create_periodic_backup(backup_interval = 300)  # 5 minutes
       
-      # Start periodic backup monitoring
-      if (enable_robust_session && exists("start_data_preservation_monitoring")) {
-        tryCatch({
-          start_data_preservation_monitoring()
-          logger("Periodic data preservation monitoring started", level = "INFO")
-        }, error = function(e) {
-          logger(sprintf("Failed to start data preservation monitoring: %s", e$message), level = "WARNING")
-        })
+      # Simple session logging
+      if (session_save) {
+        logger("Session saving enabled", level = "INFO")
       }
-      
-      # Log comprehensive session initialization
-      if (exists("log_session_event")) {
-        log_session_event(
-          event_type = "session_initialized",
-          details = list(
-            session_id = session_config$session_id,
-            max_time = max_session_time,
-            data_preservation_interval = data_preservation_interval,
-            keep_alive_interval = keep_alive_interval,
-            study_name = config$name,
-            participant_id = if (!is.null(study_key)) study_key else "unknown",
-            timestamp = Sys.time()
-          )
-        )
-      }
-      
-      logger(sprintf("Robust session initialized: %s (max time: %d seconds)", 
-                     session_config$session_id, session_config$max_time), level = "INFO")
     }
   
   inrep::validate_item_bank(item_bank, config$model)
@@ -983,8 +958,8 @@ launch_study <- function(
       shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet")
     ),
     if (tolower(config$theme %||% "") == "hildesheim") shiny::div(class = "hildesheim-logo"),
-    # Session status indicator for robust sessions
-    if (enable_robust_session) {
+    # Session status indicator for session saving
+    if (session_save) {
       shiny::uiOutput("session_status_ui")
     },
     shiny::uiOutput("study_ui")
@@ -1028,8 +1003,8 @@ launch_study <- function(
       })
     }
     
-    # Robust session monitoring with automatic data preservation
-    if (enable_robust_session) {
+    # Session monitoring with automatic data preservation
+    if (session_save) {
       # Session timeout monitoring
       shiny::observe({
         shiny::invalidateLater(1000, session)
@@ -1065,75 +1040,25 @@ launch_study <- function(
         }
       })
       
-          # Session status monitoring
-    shiny::observe({
-      shiny::invalidateLater(5000, session)  # Check every 5 seconds
-      
-      if (exists("get_session_status")) {
-        session_status <- get_session_status()
-        if (session_status$active) {
-          remaining_minutes <- round(session_status$remaining_time / 60, 1)
-          logger(sprintf("Session active: %s minutes remaining", remaining_minutes), level = "INFO")
-        }
-      }
-    })
-    
-    # Keep-alive mechanism to prevent session timeouts
-    if (enable_robust_session && exists("start_keep_alive_monitoring")) {
-      tryCatch({
-        start_keep_alive_monitoring()
-        logger("Keep-alive monitoring started", level = "INFO")
-      }, error = function(e) {
-        logger(sprintf("Failed to start keep-alive monitoring: %s", e$message), level = "WARNING")
+          # Simple session monitoring
+    if (session_save) {
+      shiny::observe({
+        shiny::invalidateLater(5000, session)  # Check every 5 seconds
+        logger("Session monitoring active", level = "INFO")
       })
     }
     
-    # Session status UI
-    output$session_status_ui <- shiny::renderUI({
-      if (enable_robust_session && exists("get_session_status")) {
-        tryCatch({
-          session_status <- get_session_status()
-          if (session_status$active) {
-            remaining_minutes <- round(session_status$remaining_time / 60, 1)
-            shiny::div(
-              class = "session-status-indicator",
-              style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px;",
-              shiny::div("Session Active", style = "font-weight: bold;"),
-              shiny::div(sprintf("Time remaining: %s min", remaining_minutes))
-            )
-          } else {
-            shiny::div(
-              class = "session-status-indicator",
-              style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(255,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px;",
-              shiny::div("Session Expired", style = "font-weight: bold;"),
-              shiny::div("Please refresh or restart")
-            )
-          }
-        }, error = function(e) {
-          shiny::div(
-            class = "session-status-indicator",
-            style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(255,165,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px;",
-            shiny::div("Status Unknown", style = "font-weight: bold;"),
-            shiny::div("Monitoring active")
-          )
-        })
-      }
-    })
-    
-    # Session cleanup when app stops
-    session$onSessionEnded(function() {
-      if (enable_robust_session && exists("cleanup_session")) {
-        logger("Session ending - cleaning up and preserving final data", level = "INFO")
-        cleanup_session(save_final_data = TRUE)
-      }
-    })
-    
-    # Handle browser disconnect
-    session$onFlush(function() {
-      if (enable_robust_session && exists("update_activity")) {
-        update_activity()
-      }
-    })
+    # Simple session status UI
+    if (session_save) {
+      output$session_status_ui <- shiny::renderUI({
+        shiny::div(
+          class = "session-status-indicator",
+          style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px;",
+          shiny::div("Session Active", style = "font-weight: bold;"),
+          shiny::div("Session saving enabled")
+        )
+      })
+    }
     
   } else {
     # Basic session monitoring (legacy)
@@ -1739,7 +1664,7 @@ launch_study <- function(
     
     shiny::observeEvent(input$start_test, {
       # Log demographic submission
-      if (enable_robust_session && exists("log_session_event")) {
+      if (session_save && exists("log_session_event")) {
         tryCatch({
           log_session_event(
             event_type = "demographics_submitted",
@@ -1798,7 +1723,7 @@ launch_study <- function(
     
     shiny::observeEvent(input$begin_test, {
       # Log test start
-      if (enable_robust_session && exists("log_session_event")) {
+      if (session_save && exists("log_session_event")) {
         tryCatch({
           log_session_event(
             event_type = "test_started",
@@ -1848,7 +1773,7 @@ launch_study <- function(
         rv$administered <- base::c(rv$administered, item_index)
         
         # Log response submission
-        if (enable_robust_session && exists("log_session_event")) {
+        if (session_save && exists("log_session_event")) {
           tryCatch({
             log_session_event(
               event_type = "response_submitted",
@@ -1873,7 +1798,7 @@ launch_study <- function(
         logger(sprintf("Critical error in response processing: %s", e$message), level = "ERROR")
         
         # Attempt emergency data preservation
-        if (enable_robust_session && exists("emergency_data_preservation")) {
+        if (session_save && exists("emergency_data_preservation")) {
           tryCatch({
             emergency_data_preservation()
             logger("Emergency data preservation completed", level = "INFO")
@@ -1905,7 +1830,7 @@ launch_study <- function(
       }
       
       # Robust data preservation after each response
-      if (enable_robust_session && exists("preserve_session_data")) {
+      if (session_save && exists("preserve_session_data")) {
         tryCatch({
           preserve_session_data()
           logger("Response data automatically preserved", level = "INFO")
@@ -1926,7 +1851,7 @@ launch_study <- function(
         logger("Test completed, proceeding to results")
         
         # Log test completion
-        if (enable_robust_session && exists("log_session_event")) {
+        if (session_save && exists("log_session_event")) {
           tryCatch({
             log_session_event(
               event_type = "test_completed",
@@ -1945,7 +1870,7 @@ launch_study <- function(
         }
         
         # Final robust data preservation
-        if (enable_robust_session && exists("preserve_session_data")) {
+        if (session_save && exists("preserve_session_data")) {
           tryCatch({
             preserve_session_data(force = TRUE)
             logger("Final assessment data preserved", level = "INFO")
@@ -1979,7 +1904,7 @@ launch_study <- function(
           logger("No more items available, proceeding to results")
           
           # Log test completion
-          if (enable_robust_session && exists("log_session_event")) {
+          if (session_save && exists("log_session_event")) {
             tryCatch({
               log_session_event(
                 event_type = "test_completed",
@@ -1998,7 +1923,7 @@ launch_study <- function(
           }
           
           # Final robust data preservation
-          if (enable_robust_session && exists("preserve_session_data")) {
+          if (session_save && exists("preserve_session_data")) {
             tryCatch({
               preserve_session_data(force = TRUE)
               logger("Final assessment data preserved", level = "INFO")
@@ -2033,7 +1958,7 @@ launch_study <- function(
     
     # Error recovery handlers
     shiny::observeEvent(input$retry_continue, {
-      if (enable_robust_session && exists("attempt_error_recovery")) {
+      if (session_save && exists("attempt_error_recovery")) {
         tryCatch({
           recovery_result <- attempt_error_recovery()
           if (recovery_result$success) {
@@ -2058,7 +1983,7 @@ launch_study <- function(
     
     shiny::observeEvent(input$restart_test, {
       # Clean up robust session before restart
-      if (enable_robust_session && exists("cleanup_session")) {
+      if (session_save && exists("cleanup_session")) {
         tryCatch({
           cleanup_session(save_final_data = TRUE)
         }, error = function(e) {
@@ -2084,7 +2009,7 @@ launch_study <- function(
       rv$session_active <- TRUE
       
       # Log test restart
-      if (enable_robust_session && exists("log_session_event")) {
+      if (session_save && exists("log_session_event")) {
         tryCatch({
           log_session_event(
             event_type = "test_restarted",
@@ -2119,8 +2044,8 @@ launch_study <- function(
     display_llm_prompt(prompt, "deployment")
   }
   
-  # Final robust session cleanup setup
-  if (enable_robust_session) {
+  # Final session cleanup setup
+  if (session_save) {
     # Set up global cleanup on package unload
     .GlobalEnv$.inrep_cleanup_on_exit <- function() {
       if (exists("cleanup_session")) {

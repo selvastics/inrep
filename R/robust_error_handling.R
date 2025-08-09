@@ -2,8 +2,6 @@
 #' 
 #' This module provides comprehensive error handling, automatic recovery,
 #' and data preservation mechanisms to ensure assessment stability.
-#' 
-#' @keywords internal
 
 # Global error handling state
 .error_handling_state <- new.env()
@@ -119,7 +117,6 @@ log_error_event <- function(event_type, message, details = NULL) {
 #' Attempts to preserve all current data immediately when an error occurs
 #' 
 #' @return Logical indicating if preservation was successful
-#' @keywords internal
 emergency_data_preservation <- function() {
   tryCatch({
     # Force immediate data preservation
@@ -142,8 +139,6 @@ emergency_data_preservation <- function() {
 #' Emergency Save Current Data
 #' 
 #' Saves current data to a special emergency file
-#' 
-#' @keywords internal
 emergency_save_current_data <- function() {
   tryCatch({
     # Get current data from global environment
@@ -169,7 +164,6 @@ emergency_save_current_data <- function() {
 #' Collects all relevant data from the current environment
 #' 
 #' @return List with current environment data
-#' @keywords internal
 get_current_environment_data <- function() {
   data <- list()
   
@@ -202,7 +196,6 @@ get_current_environment_data <- function() {
 #' 
 #' @param e Error object
 #' @return Logical indicating if recovery was successful
-#' @keywords internal
 attempt_error_recovery <- function(e) {
   .error_handling_state$recovery_attempts <- .error_handling_state$recovery_attempts + 1
   
