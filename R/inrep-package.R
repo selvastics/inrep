@@ -41,19 +41,14 @@
 #' Anthropic's Claude 4 best practices for prompt engineering:
 #'
 #' - **`enable_llm_assistance()`**: Enable and configure the enhanced LLM assistance system
-#' - **`generate_enhanced_prompt()`**: Generate context-aware, complexity-scaled prompts for any assessment task
-#' - **`generate_task_specific_prompt()`**: Create specialized prompts for specific assessment phases
-#' - **`quick_llm_assistance()`**: Get immediate guidance for common assessment tasks
-#' - **`display_llm_prompt()`**: Display and format LLM prompts for optimal use
+#' - **`enable_llm_assistance()`**: Enable and configure the enhanced LLM assistance system
 #'
 #' @section Robust Session Management:
 #'
 #' Built-in robust session handling ensures data integrity and participant experience:
 #'
-#' - **`enable_robust_session_management()`**: Enable robust session handling with automatic recovery
-#' - **`set_robust_session_settings()`**: Configure session persistence and error recovery
+#' - **`session_save`**: Enable session persistence and recovery
 #' - **`resume_session()`**: Resume interrupted assessment sessions seamlessly
-#' - **`get_session_status()`**: Monitor session health and status
 #'
 #' @section Core Assessment Functions:
 #'
@@ -67,9 +62,7 @@
 #'
 #' The package includes comprehensive case studies demonstrating the enhanced LLM assistance system:
 #'
-#' - **`run_enhanced_llm_case_study()`**: Complete case study showing LLM assistance throughout assessment development
-#' - **`demonstrate_enhanced_llm_system()`**: Hands-on demonstration of all enhanced LLM capabilities
-#' - **`generate_case_study_report()`**: Generate comprehensive reports documenting case study outcomes
+#' - **`enable_llm_assistance()`**: Enable and configure the enhanced LLM assistance system
 #'
 #' @section Quick Start:
 #'
@@ -82,56 +75,49 @@
 #' )
 #'
 #' # Get LLM guidance for study design
-#' study_prompt <- generate_enhanced_prompt(
-#'   task_type = "study_design",
-#'   context = list(
-#'     study_type = "personality_assessment",
-#'     population = "university students",
-#'     sample_size = 300
-#'   )
-#' )
+#' enable_llm_assistance(enable = TRUE, enhanced_mode = TRUE)
 #'
 #' # Launch a study with robust session management
-#' launch_study(
-#'   study_config = "path/to/config.yaml",
-#'   enable_robust_mode = TRUE,
-#'   enable_llm_assistance = TRUE
-#' )
+#' config <- create_study_config(name = "My Study", model = "GRM")
+#' launch_study(config, bfi_items, session_save = TRUE)
 #' ```
 #'
 #' @section Advanced Usage:
 #'
 #' ```r
-#' # Run the complete enhanced LLM case study
-#' run_enhanced_llm_case_study()
+#' # Enable enhanced LLM assistance with expert complexity
+#' enable_llm_assistance(
+#'   enable = TRUE,
+#'   enhanced_mode = TRUE,
+#'   complexity_level = "expert"
+#' )
 #'
-#' # Demonstrate the enhanced LLM system
-#' demonstrate_enhanced_llm_system()
-#'
-#' # Get quick assistance for specific tasks
-#' quick_llm_assistance("study_config", list(study_type = "cognitive"))
-#' quick_llm_assistance("validation", list(model = "GRM", items = 30))
-#' quick_llm_assistance("ui", list(target_users = "mobile", accessibility = "required"))
+#' # Create a comprehensive study configuration
+#' config <- create_study_config(
+#'   name = "Advanced Study",
+#'   model = "GRM",
+#'   max_items = 20,
+#'   min_SEM = 0.25,
+#'   session_save = TRUE,
+#'   theme = "Professional"
+#' )
 #' ```
 #'
 #' @section Configuration:
 #'
 #' ```r
 #' # Configure enhanced LLM assistance
-#' set_llm_assistance_settings(
+#' enable_llm_assistance(
+#'   enable = TRUE,
 #'   enhanced_mode = TRUE,
-#'   complexity_level = "expert",  # basic, intermediate, advanced, expert
-#'   output_format = "console",    # console, markdown, json
-#'   prompt_types = "all",         # specific types or "all"
-#'   verbose = TRUE
+#'   complexity_level = "expert"
 #' )
 #'
-#' # Configure robust session handling
-#' set_robust_session_settings(
-#'   auto_save_interval = 30,      # seconds
-#'   keep_alive_interval = 60,     # seconds
-#'   max_session_duration = 7200,  # seconds (2 hours)
-#'   enable_error_recovery = TRUE
+#' # Launch a study with robust session management
+#' config <- create_study_config(
+#'   name = "My Study", 
+#'   model = "GRM",
+#'   session_save = TRUE
 #' )
 #' ```
 #'
@@ -196,20 +182,18 @@
 #' @author Enhanced LLM Assistance System
 #' @keywords package
 #' @seealso
-#' \code{\link{enable_llm_assistance}}, \code{\link{generate_enhanced_prompt}},
-#' \code{\link{launch_study}}, \code{\link{create_study_config}},
-#' \code{\link{run_enhanced_llm_case_study}}, \code{\link{demonstrate_enhanced_llm_system}}
+#' \code{\link{enable_llm_assistance}}, \code{\link{launch_study}}, 
+#' \code{\link{create_study_config}}, \code{\link{estimate_ability}}, 
+#' \code{\link{validate_item_bank}}
 #'
 #' @examples
 #' \dontrun{
 #' # Enable enhanced LLM assistance
 #' enable_llm_assistance(enable = TRUE, enhanced_mode = TRUE)
 #'
-#' # Run the complete enhanced LLM case study
-#' run_enhanced_llm_case_study()
-#'
-#' # Demonstrate the enhanced LLM system
-#' demonstrate_enhanced_llm_system()
+#' # Create and launch a study
+#' config <- create_study_config(name = "My Study", model = "GRM")
+#' launch_study(config, bfi_items)
 #' }
 #'
 #' @docType package

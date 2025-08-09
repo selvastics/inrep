@@ -511,6 +511,8 @@ create_study_config <- function(
     
     if (!is.character(theme)) {
       validation_errors <- c(validation_errors, "theme must be a character string")
+    } else if (!theme %in% c("minimal", "dark", "modern", "Light", "Midnight", "Sunset", "Forest", "Ocean", "Berry", "Professional", "Clinical", "Educational", "Research", "hildesheim")) {
+      validation_errors <- c(validation_errors, "theme must be one of: minimal, dark, modern, Light, Midnight, Sunset, Forest, Ocean, Berry, Professional, Clinical, Educational, Research, hildesheim")
     }
     
     if (!language %in% c("en", "de", "es", "fr")) {

@@ -3,8 +3,6 @@
 #' This module provides robust session handling with automatic data preservation,
 #' keep-alive functionality, and comprehensive logging to ensure data integrity
 #' during assessments.
-#' 
-#' @keywords internal
 
 # Global session state
 .session_state <- new.env()
@@ -22,7 +20,6 @@
 #' @param keep_alive_interval Keep-alive ping interval in seconds
 #' @param enable_logging Whether to enable comprehensive logging
 #' @return List with session configuration
-#' @keywords internal
 initialize_robust_session <- function(
   max_session_time = 7200,
   data_preservation_interval = 30,
@@ -67,7 +64,6 @@ initialize_robust_session <- function(
 #' Generate Unique Session ID
 #' 
 #' @return Character string with unique session identifier
-#' @keywords internal
 generate_session_id <- function() {
   timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
   random_suffix <- paste(sample(c(letters, 0:9), 8, replace = TRUE), collapse = "")
@@ -79,7 +75,6 @@ generate_session_id <- function() {
 #' @param event_type Type of event (e.g., "SESSION_INIT", "DATA_SAVE", "ERROR")
 #' @param message Event description
 #' @param details Additional event details as list
-#' @keywords internal
 log_session_event <- function(event_type, message, details = NULL) {
   if (!.session_state$enable_logging) return()
   
@@ -114,7 +109,6 @@ log_session_event <- function(event_type, message, details = NULL) {
 
 #' Update Last Activity Time
 #' 
-#' @keywords internal
 update_activity <- function() {
   .session_state$last_activity <- Sys.time()
   log_session_event("ACTIVITY", "User activity detected")
@@ -123,7 +117,6 @@ update_activity <- function() {
 #' Check Session Validity
 #' 
 #' @return Logical indicating if session is still valid
-#' @keywords internal
 is_session_valid <- function() {
   if (is.null(.session_state$session_start_time)) return(FALSE)
   
@@ -141,7 +134,6 @@ is_session_valid <- function() {
 
 #' Start Keep-Alive Monitoring
 #' 
-#' @keywords internal
 start_keep_alive_monitoring <- function() {
   if (.session_state$keep_alive_active) return()
   
@@ -170,7 +162,6 @@ start_keep_alive_monitoring <- function() {
 
 #' Stop Keep-Alive Monitoring
 #' 
-#' @keywords internal
 stop_keep_alive_monitoring <- function() {
   if (!.session_state$keep_alive_active) return()
   
@@ -186,7 +177,6 @@ stop_keep_alive_monitoring <- function() {
 
 #' Start Data Preservation Monitoring
 #' 
-#' @keywords internal
 start_data_preservation_monitoring <- function() {
   # Create data preservation observer
   .session_state$data_preservation_observer <- observe({
@@ -206,7 +196,6 @@ start_data_preservation_monitoring <- function() {
 #' 
 #' @param force Whether to force preservation even if session is invalid
 #' @return Logical indicating if preservation was successful
-#' @keywords internal
 preserve_session_data <- function(force = FALSE) {
   if (!force && !is_session_valid()) {
     log_session_event("DATA_PRESERVATION_SKIPPED", "Session invalid, skipping data preservation")
@@ -239,7 +228,6 @@ preserve_session_data <- function(force = FALSE) {
 #' Get Current Session Data
 #' 
 #' @return List with current session data
-#' @keywords internal
 get_session_data <- function() {
   # This function should be customized based on your data structure
   # For now, we'll collect common session elements
@@ -290,7 +278,6 @@ get_session_data <- function() {
 #' Attempts to recover data from the most recent preservation point
 #' 
 #' @return List with recovered data or NULL if recovery failed
-#' @keywords internal
 emergency_data_recovery <- function() {
   tryCatch({
     # Look for preserved data files
@@ -324,7 +311,6 @@ emergency_data_recovery <- function() {
 #' Clean Up Session
 #' 
 #' @param save_final_data Whether to save final data before cleanup
-#' @keywords internal
 cleanup_session <- function(save_final_data = TRUE) {
   log_session_event("SESSION_CLEANUP", "Starting session cleanup")
   
@@ -353,7 +339,6 @@ cleanup_session <- function(save_final_data = TRUE) {
 #' Get Session Status
 #' 
 #' @return List with current session status
-#' @keywords internal
 get_session_status <- function() {
   if (is.null(.session_state$session_start_time)) {
     return(list(active = FALSE, message = "No active session"))
@@ -379,7 +364,6 @@ get_session_status <- function() {
 #' 
 #' @param additional_time Additional time in seconds
 #' @return Logical indicating if extension was successful
-#' @keywords internal
 extend_session <- function(additional_time) {
   if (is.null(.session_state$max_session_time)) {
     log_session_event("EXTENSION_FAILED", "No active session to extend")
