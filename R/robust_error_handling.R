@@ -15,7 +15,6 @@
 #' @param max_recovery_attempts Maximum number of recovery attempts
 #' @param enable_auto_recovery Whether to enable automatic recovery
 #' @return List with error handling configuration
-#' @keywords internal
 initialize_robust_error_handling <- function(
   max_recovery_attempts = 3,
   enable_auto_recovery = TRUE
@@ -40,7 +39,6 @@ initialize_robust_error_handling <- function(
 #' Robust Error Handler
 #' 
 #' @param e Error object
-#' @keywords internal
 robust_error_handler <- function(e) {
   # Increment error count
   .error_handling_state$error_count <- .error_handling_state$error_count + 1
@@ -68,7 +66,6 @@ robust_error_handler <- function(e) {
 #' Robust Warning Handler
 #' 
 #' @param warning_message Warning message
-#' @keywords internal
 robust_warning_handler <- function(warning_message) {
   # Log the warning
   log_error_event("WARNING_OCCURRED", "Warning occurred", 
@@ -83,7 +80,6 @@ robust_warning_handler <- function(warning_message) {
 #' @param event_type Type of error event
 #' @param message Error description
 #' @param details Additional error details
-#' @keywords internal
 log_error_event <- function(event_type, message, details = NULL) {
   # Get session log file if available
   log_file <- if (exists(".session_state") && !is.null(.session_state$log_file)) {
@@ -229,7 +225,6 @@ attempt_error_recovery <- function(e) {
 #' Attempts to recover the session to a stable state
 #' 
 #' @return List with recovered data or NULL if recovery failed
-#' @keywords internal
 recover_session_after_error <- function() {
   tryCatch({
     # Try to get data from emergency preservation
@@ -262,7 +257,6 @@ recover_session_after_error <- function() {
 #' Attempts to restore the session to the last known good state
 #' 
 #' @return List with restored data or NULL if restoration failed
-#' @keywords internal
 restore_last_known_state <- function() {
   tryCatch({
     # Look for backup files
@@ -297,7 +291,6 @@ restore_last_known_state <- function() {
 #' Creates a minimal working state when recovery fails
 #' 
 #' @return List with minimal working state
-#' @keywords internal
 create_minimal_working_state <- function() {
   tryCatch({
     # Create a minimal configuration
@@ -339,7 +332,6 @@ create_minimal_working_state <- function() {
 #' Displays a user-friendly error message when recovery fails
 #' 
 #' @param e Error object
-#' @keywords internal
 show_user_friendly_error <- function(e) {
   # Create user-friendly error message
   error_message <- paste0(
@@ -365,7 +357,6 @@ show_user_friendly_error <- function(e) {
 #' Saves a detailed error report for debugging
 #' 
 #' @param e Error object
-#' @keywords internal
 save_error_report <- function(e) {
   tryCatch({
     error_report <- list(
@@ -399,8 +390,6 @@ save_error_report <- function(e) {
 #' Reset Error Handling State
 #' 
 #' Resets the error handling state after successful recovery
-#' 
-#' @keywords internal
 reset_error_handling_state <- function() {
   .error_handling_state$error_count <- 0
   .error_handling_state$last_error <- NULL
@@ -412,7 +401,6 @@ reset_error_handling_state <- function() {
 #' Get Error Handling Status
 #' 
 #' @return List with current error handling status
-#' @keywords internal
 get_error_handling_status <- function() {
   return(list(
     error_count = .error_handling_state$error_count,
@@ -428,7 +416,6 @@ get_error_handling_status <- function() {
 #' Creates a periodic backup of the current session state
 #' 
 #' @param backup_interval Backup interval in seconds
-#' @keywords internal
 create_periodic_backup <- function(backup_interval = 300) {  # 5 minutes
   # Create backup observer
   backup_observer <- observe({
@@ -464,7 +451,6 @@ create_periodic_backup <- function(backup_interval = 300) {  # 5 minutes
 #' Removes old backup files, keeping only the most recent ones
 #' 
 #' @param keep_count Number of recent backups to keep
-#' @keywords internal
 cleanup_old_backups <- function(keep_count = 5) {
   tryCatch({
     temp_dir <- tempdir()
