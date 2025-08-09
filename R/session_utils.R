@@ -128,7 +128,7 @@ init_reactive_values <- function(config) {
   
   # Validate config
   if (!is.list(config)) {
-    print("Invalid config for reactive values initialization")
+    message("Invalid config for reactive values initialization")
     stop("Invalid config for reactive values initialization")
   }
   
@@ -155,7 +155,7 @@ init_reactive_values <- function(config) {
     loading = FALSE
   )
   
-  print("Initialized reactive values")
+  message("Initialized reactive values")
   return(rv)
 }
 
@@ -279,7 +279,7 @@ validate_session <- function(rv, config, webdav_url = NULL, password = NULL) {
   requireNamespace("logr", quietly = TRUE)
   
   if (!is.list(rv) || !is.list(config)) {
-    print("Invalid rv or config, initializing new reactive values")
+    message("Invalid rv or config, initializing new reactive values")
     return(inrep::init_reactive_values(config))
   }
   
@@ -287,7 +287,7 @@ validate_session <- function(rv, config, webdav_url = NULL, password = NULL) {
   if (!is.null(rv$session_start) && is.numeric(config$max_session_duration)) {
     session_duration <- as.numeric(difftime(Sys.time(), rv$session_start, units = "mins"))
     if (session_duration > config$max_session_duration) {
-      print("Session timed out, resetting reactive values")
+      message("Session timed out, resetting reactive values")
       return(inrep::init_reactive_values(config))
     }
   }
@@ -318,7 +318,7 @@ validate_session <- function(rv, config, webdav_url = NULL, password = NULL) {
     inrep::save_session_to_cloud(rv, config, webdav_url, password)
   }
   
-  print("Session validated successfully")
+  message("Session validated successfully")
   return(rv)
 }
 
@@ -459,12 +459,12 @@ validate_session <- function(rv, config, webdav_url = NULL, password = NULL) {
 #' @export
 save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL) {
   if (!requireNamespace("httr", quietly = TRUE) || !requireNamespace("jsonlite", quietly = TRUE)) {
-    print("Required packages 'httr' and 'jsonlite' are not installed")
+    message("Required packages 'httr' and 'jsonlite' are not installed")
     return(FALSE)
   }
   
   if (is.null(webdav_url)) {
-    print("No WebDAV URL provided, skipping cloud save")
+    message("No WebDAV URL provided, skipping cloud save")
     return(FALSE)
   }
   
@@ -500,15 +500,15 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
       # Convert to WebDAV format for public shares
       base_url <- gsub("(https?://[^/]+).*", "\\1", webdav_url)
       webdav_url <- paste0(base_url, "/public.php/webdav/")
-      print(sprintf("Converted to WebDAV URL: %s", webdav_url))
-      print(sprintf("Using share token: %s", share_token))
+      message(sprintf("Converted to WebDAV URL: %s", webdav_url))
+      message(sprintf("Using share token: %s", share_token))
     }
     
     # Ensure URL ends with /
     if (!grepl("/$", webdav_url)) webdav_url <- paste0(webdav_url, "/")
     upload_url <- paste0(webdav_url, filename)
     
-    print(sprintf("Attempting to upload to: %s", upload_url))
+    message(sprintf("Attempting to upload to: %s", upload_url))
     
     # Set up authentication for public shares
     auth <- if (!is.null(share_token) && nzchar(share_token)) {
@@ -524,11 +524,11 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
     
     # Print authentication info for debugging
     if (!is.null(auth)) {
-      print(sprintf("Using authentication: user='%s', password='%s'", 
+      message(sprintf("Using authentication: user='%s', password='%s'", 
                     if (!is.null(share_token)) share_token else "",
                     if (!is.null(password)) "***" else ""))
     } else {
-      print("No authentication configured")
+      message("No authentication configured")
     }
     
     # Upload file
@@ -540,16 +540,16 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
       httr::timeout(30)  # 30 second timeout
     )
     
-    print(sprintf("Upload response status: %d", httr::status_code(response)))
+    message(sprintf("Upload response status: %d", httr::status_code(response)))
     
     # Detailed error reporting
     if (httr::status_code(response) %in% c(200, 201, 204)) {
-      print(sprintf("Session data successfully uploaded to %s as %s", webdav_url, filename))
+      message(sprintf("Session data successfully uploaded to %s as %s", webdav_url, filename))
       file.remove(temp_file)
       return(TRUE)
     } else {
       status_code <- httr::status_code(response)
-      print(sprintf("Failed to upload session data to %s: HTTP %d", webdav_url, status_code))
+      message(sprintf("Failed to upload session data to %s: HTTP %d", webdav_url, status_code))
       
       # Provide specific error messages based on status code
       error_msg <- switch(as.character(status_code),
@@ -564,23 +564,23 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
         sprintf("HTTP %d - check server configuration", status_code)
       )
       
-      print(sprintf("Error details: %s", error_msg))
+      message(sprintf("Error details: %s", error_msg))
       
       # Try to get response body for more details
       tryCatch({
         response_text <- httr::content(response, "text")
         if (nzchar(response_text)) {
-          print(sprintf("Server response: %s", substr(response_text, 1, 500)))
+          message(sprintf("Server response: %s", substr(response_text, 1, 500)))
         }
       }, error = function(e) {
-        print("Could not retrieve server response details")
+        message("Could not retrieve server response details")
       })
       
       file.remove(temp_file)
       return(FALSE)
     }
   }, error = function(e) {
-    print(sprintf("Error saving session to cloud: %s", e$message))
+    message(sprintf("Error saving session to cloud: %s", e$message))
     return(FALSE)
   })
 
@@ -719,10 +719,10 @@ resume_session <- function(file_path) {
     encrypted_data <- readLines(file_path)
     json_data <- rawToChar(base64enc::base64decode(encrypted_data))
     session_data <- jsonlite::fromJSON(json_data)
-    print("Session successfully restored.")
+    message("Session successfully restored.")
     session_data
   }, error = function(e) {
-    print(sprintf("Error restoring session: %s", e$message))
+    message(sprintf("Error restoring session: %s", e$message))
     NULL
   })
 }

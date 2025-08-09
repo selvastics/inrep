@@ -347,7 +347,7 @@ validate_response_mapping <- function(config, item_bank, test_responses, test_it
     
     add_log("")
     add_log("Reporting table preview:")
-    add_log(paste(capture.output(print(head(dat, 3))), collapse = "\n"))
+    add_log(paste("Preview:", paste(capture.output(head(dat, 3)), collapse = "\n")))
     
     return(TRUE)
     

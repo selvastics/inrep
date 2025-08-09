@@ -512,7 +512,7 @@ launch_study <- function(
     webdav_url = NULL, 
     password = NULL,
     save_format = "rds",
-    logger = function(msg, ...) print(msg),
+    logger = function(msg, ...) message(msg),
     study_key = NULL,
     accessibility = FALSE,
     max_session_time = 7200,

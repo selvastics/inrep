@@ -214,7 +214,7 @@ select_next_item <- function(rv, item_bank, config) {
   
   # Validate inputs
   if (!is.list(rv) || !is.data.frame(item_bank) || !is.list(config)) {
-    print("Invalid input: rv, item_bank, or config is not of correct type")
+    message("Invalid input: rv, item_bank, or config is not of correct type")
     return(NULL)
   }
   
@@ -222,7 +222,7 @@ select_next_item <- function(rv, item_bank, config) {
   if (!is.null(rv$session_start) && is.numeric(config$max_session_duration)) {
     session_duration <- as.numeric(difftime(Sys.time(), rv$session_start, units = "mins"))
     if (session_duration > config$max_session_duration) {
-      print("Session timed out, resetting reactive values")
+      message("Session timed out, resetting reactive values")
       rv$administered <- integer(0)
       rv$responses <- list()
       rv$current_ability <- config$theta_prior[1] %||% 0
@@ -241,37 +241,37 @@ select_next_item <- function(rv, item_bank, config) {
   # Check maximum items
   max_items <- min(config$max_items %||% nrow(item_bank), nrow(item_bank))
   if (length(rv$administered) >= max_items) {
-    print("Maximum items reached")
+    message("Maximum items reached")
     return(NULL)
   }
   
   # Validate min_items
   if (config$min_items > nrow(item_bank)) {
-    print("min_items exceeds item bank size, adjusting to item bank size")
+    message("min_items exceeds item bank size, adjusting to item bank size")
     config$min_items <- nrow(item_bank)
   }
   
   # Handle fixed items
   if (!is.null(config$fixed_items) && rv$item_counter <= length(config$fixed_items)) {
     if (!is.numeric(config$fixed_items) || any(config$fixed_items < 1) || any(config$fixed_items > nrow(item_bank))) {
-      print("Invalid fixed_items configuration")
+      message("Invalid fixed_items configuration")
       return(NULL)
     }
-    print(sprintf("Selecting fixed item %d", config$fixed_items[rv$item_counter]))
+    message(sprintf("Selecting fixed item %d", config$fixed_items[rv$item_counter]))
     return(config$fixed_items[rv$item_counter])
   }
   
   # Get available items
   available <- setdiff(seq_len(nrow(item_bank)), rv$administered)
   if (length(available) == 0) {
-    print("No more items available")
+    message("No more items available")
     return(NULL)
   }
   
   # Custom item selection algorithm support
   if (!is.null(config$item_selection_fun) && is.function(config$item_selection_fun)) {
     item <- config$item_selection_fun(rv, item_bank, config)
-    print(sprintf("Custom item selection function chose item %d", item))
+    message(sprintf("Custom item selection function chose item %d", item))
     return(item)
   }
   # Handle non-adaptive or early items
@@ -279,31 +279,31 @@ select_next_item <- function(rv, item_bank, config) {
     if (!is.null(config$item_groups)) {
       available <- available[available %in% unlist(config$item_groups)]
       if (length(available) == 0) {
-        print("No items available in specified groups")
+        message("No items available in specified groups")
         return(NULL)
       }
     }
     item <- sample(available, 1)
-    print(sprintf("Selected random item %d", item))
+    message(sprintf("Selected random item %d", item))
     return(item)
   }
   
   # Validate theta_grid
   if (is.null(config$theta_grid) || !is.numeric(config$theta_grid) || length(config$theta_grid) < 2) {
-    print("Invalid theta_grid, using default grid (-4, 4, 100)")
+    message("Invalid theta_grid, using default grid (-4, 4, 100)")
     config$theta_grid <- seq(-4, 4, length.out = 100)
   }
   
   # Validate current_ability
   if (!is.numeric(rv$current_ability) || length(rv$current_ability) == 0 || is.na(rv$current_ability) || !is.finite(rv$current_ability)) {
-    print("Invalid current_ability, defaulting to theta_prior mean")
+    message("Invalid current_ability, defaulting to theta_prior mean")
     rv$current_ability <- config$theta_prior[1] %||% 0
   }
   
   # Validate item_bank columns
   required_cols <- if (config$model == "GRM") c("a", "b1") else if (config$model == "3PL") c("a", "b", "c") else c("a", "b")
   if (!all(required_cols %in% names(item_bank))) {
-    print(sprintf("Item bank missing required columns for %s model: %s", config$model, paste(required_cols, collapse = ", ")))
+    message(sprintf("Item bank missing required columns for %s model: %s", config$model, paste(required_cols, collapse = ", ")))
     return(NULL)
   }
   
@@ -336,7 +336,7 @@ select_next_item <- function(rv, item_bank, config) {
     if (config$model == "GRM") {
       b_cols <- grep("^b[0-9]+$", names(item_bank), value = TRUE)
       if (length(b_cols) == 0) {
-        print("No b thresholds found for GRM model")
+        message("No b thresholds found for GRM model")
         return(0)
       }
       b_thresholds <- as.numeric(item_bank[item_idx, b_cols])
@@ -377,7 +377,7 @@ select_next_item <- function(rv, item_bank, config) {
     } else if (config$model == "GRM") {
       n_categories <- length(b_thresholds) + 1
       if (n_categories < 2) {
-        print("Invalid number of categories for GRM model")
+        message("Invalid number of categories for GRM model")
         return(0)
       }
       probs <- numeric(n_categories)
@@ -407,7 +407,7 @@ select_next_item <- function(rv, item_bank, config) {
   # Compute item information
   if (isTRUE(config$parallel_computation)) {
     if (!requireNamespace("parallel", quietly = TRUE)) {
-      print("Parallel package not available, falling back to sequential computation")
+      message("Parallel package not available, falling back to sequential computation")
       info <- vapply(available, function(i) item_info(rv$current_ability, i), numeric(1))
     } else {
       cl <- parallel::makeCluster(min(parallel::detectCores() - 1, 2))
@@ -421,7 +421,7 @@ select_next_item <- function(rv, item_bank, config) {
   
   # Handle invalid information values
   if (length(info) == 0 || all(is.na(info) | info <= 0)) {
-    print("No valid information values, selecting random item")
+    message("No valid information values, selecting random item")
     return(sample(available, 1))
   }
   
@@ -429,7 +429,7 @@ select_next_item <- function(rv, item_bank, config) {
   item <- if (config$criteria == "MI") {
     top_items <- available[info >= 0.95 * max(info, na.rm = TRUE)]
     if (length(top_items) == 0) {
-      print("No items meet MI criteria, selecting random item")
+      message("No items meet MI criteria, selecting random item")
       sample(available, 1)
     } else {
       sample(top_items, 1)
@@ -443,7 +443,7 @@ select_next_item <- function(rv, item_bank, config) {
     })
     probs <- info * (group_weights[group_indices] %||% 1)
     if (length(probs) == 0 || all(is.na(probs) | probs <= 0)) {
-      print("Invalid probabilities for WEIGHTED criteria, selecting random item")
+      message("Invalid probabilities for WEIGHTED criteria, selecting random item")
       return(sample(available, 1))
     }
     probs <- probs / sum(probs, na.rm = TRUE)
@@ -455,12 +455,12 @@ select_next_item <- function(rv, item_bank, config) {
     }, numeric(1))
     adjusted_info <- info * exposure_penalty
     if (length(adjusted_info) == 0 || all(is.na(adjusted_info) | adjusted_info <= 0)) {
-      print("Invalid adjusted information for MFI criteria, selecting random item")
+      message("Invalid adjusted information for MFI criteria, selecting random item")
       return(sample(available, 1))
     }
     top_items <- available[adjusted_info >= 0.95 * max(adjusted_info, na.rm = TRUE)]
     if (length(top_items) == 0) {
-      print("No items meet MFI criteria, selecting random item")
+      message("No items meet MFI criteria, selecting random item")
       sample(available, 1)
     } else {
       sample(top_items, 1)
@@ -468,14 +468,14 @@ select_next_item <- function(rv, item_bank, config) {
   } else {
     top_items <- available[info >= 0.95 * max(info, na.rm = TRUE)]
     if (length(top_items) == 0) {
-      print("No items meet default criteria, selecting random item")
+      message("No items meet default criteria, selecting random item")
       sample(available, 1)
     } else {
       sample(top_items, 1)
     }
   }
   
-  print(sprintf("Selected item %d with information %f", item, max(info, na.rm = TRUE)))
+  message(sprintf("Selected item %d with information %f", item, max(info, na.rm = TRUE)))
   # Admin dashboard hook: log selection rationale
   if (!is.null(config$admin_dashboard_hook) && is.function(config$admin_dashboard_hook)) {
     config$admin_dashboard_hook(list(
