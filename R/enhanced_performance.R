@@ -252,9 +252,13 @@ get_memory_usage <- function() {
   used_mb <- sum(gc_info[, "used"]) / (1024^2)
   max_mb <- sum(gc_info[, "max used"]) / (1024^2)
   
-  # Get system memory if possible
-  total_system <- as.numeric(system("awk '/MemTotal/ {print $2}' /proc/meminfo", 
-                                    intern = TRUE, ignore.stderr = TRUE)) / 1024
+  # Get system memory if possible (platform-safe)
+  total_system <- tryCatch({
+    as.numeric(system("awk '/MemTotal/ {print $2}' /proc/meminfo", 
+                     intern = TRUE, ignore.stderr = TRUE)) / 1024
+  }, error = function(e) {
+    1024  # Default to 1GB if unable to detect
+  })
   
   list(
     used_mb = used_mb,

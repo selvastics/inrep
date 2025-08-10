@@ -344,9 +344,13 @@ check_setup <- function(config = NULL, item_bank = NULL, verbose = TRUE) {
     }
   }
   
-  # Check system resources
-  mem_available <- as.numeric(system("awk '/MemAvailable/ {print $2}' /proc/meminfo", 
-                                     intern = TRUE, ignore.stderr = TRUE)) / 1024
+  # Check system resources (platform-safe)
+  mem_available <- tryCatch({
+    as.numeric(system("awk '/MemAvailable/ {print $2}' /proc/meminfo", 
+                     intern = TRUE, ignore.stderr = TRUE)) / 1024
+  }, error = function(e) {
+    NULL  # Unable to detect on this platform
+  })
   if (length(mem_available) > 0 && mem_available < 500) {
     warnings$memory <- sprintf("Low memory available: %.0f MB", mem_available)
   }
