@@ -2496,7 +2496,6 @@ launch_study <- function(
         session_duration <- as.numeric(difftime(Sys.time(), rv$start_time, units = "secs")
         if (session_duration > 3600) {  # 1 hour
           logger("Long session detected - performing health check", level = "INFO")
-          
           # Force data preservation
           if (session_save && exists("preserve_session_data") && is.function(preserve_session_data)) {
             tryCatch({
