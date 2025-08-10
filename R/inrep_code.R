@@ -335,9 +335,9 @@ generate_complete_script <- function(user_code, auto_run, console_ready = FALSE,
     "select_next_item",
     
     # UI components
-    "get_theme_css",
-    "get_builtin_themes",
-    "validate_theme_name",
+    "generate_theme_css",
+    "get_theme_config",
+    "validate_theme",
     "create_response_ui",
     "create_demographics_ui",
     "inrep_ui",
