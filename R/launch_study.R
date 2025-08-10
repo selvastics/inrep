@@ -533,6 +533,16 @@ launch_study <- function(
     logger(paste("Ignoring unused parameters:", paste(names(extra_params), collapse = ", ")), level = "INFO")
   }
   
+  # Check if item_bank is provided, if not try to extract from config
+  if (missing(item_bank) || is.null(item_bank)) {
+    if (!is.null(config$items)) {
+      item_bank <- config$items
+      logger("Extracted items from config$items", level = "INFO")
+    } else {
+      stop("Argument 'item_bank' is required. Please provide the item bank data or include 'items' in your config.")
+    }
+  }
+  
   # Safely load suggested packages with fallbacks
   safe_load_packages <- function() {
     packages <- list(
@@ -1480,12 +1490,23 @@ launch_study <- function(
                      logger(sprintf("Item content retrieved - Question: %s", substr(item$Question, 1, 50)))
                      response_ui <- if (config$model == "GRM") {
                        choices <- base::as.numeric(base::unlist(base::strsplit(item$ResponseCategories, ",")))
+                       
+                       # Ensure we have valid choices
+                       if (length(choices) == 0 || all(is.na(choices))) {
+                         choices <- 1:5
+                       }
+                       
                        labels <- base::switch(config$language,
                                               de = base::c("Stark ablehnen", "Ablehnen", "Neutral", "Zustimmen", "Stark zustimmen")[1:base::length(choices)],
                                               en = base::c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")[1:base::length(choices)],
                                               es = base::c("Totalmente en desacuerdo", "En desacuerdo", "Neutral", "De acuerdo", "Totalmente de acuerdo")[1:base::length(choices)],
                                               fr = base::c("Fortement en désaccord", "En désaccord", "Neutre", "D'accord", "Fortement d'accord")[1:base::length(choices)]
                        )
+                       
+                       # Ensure we have valid labels
+                       if (length(labels) == 0 || all(is.na(labels))) {
+                         labels <- base::c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")[1:base::length(choices)]
+                       }
                        base::switch(config$response_ui_type,
                                     "slider" = shiny::div(class = "slider-container",
                                                           shiny::sliderInput(
@@ -1529,6 +1550,12 @@ launch_study <- function(
                      } else {
                        choices <- base::c(item$Option1, item$Option2, item$Option3, item$Option4)
                        choices <- choices[!is.na(choices) & choices != ""]
+                       
+                       # Ensure we have valid choices
+                       if (length(choices) == 0) {
+                         choices <- c("Option 1", "Option 2", "Option 3", "Option 4")
+                       }
+                       
                        shiny::radioButtons(
                          inputId = "item_response",
                          label = NULL,

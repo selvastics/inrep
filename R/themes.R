@@ -17,12 +17,31 @@ validate_theme_name <- function(theme_name) {
 #' @return Character vector of available themes
 #' @export
 get_builtin_themes <- function() {
-  # Get all CSS files from inst/themes/
+  # Try to get themes from installed package first
+  theme_dir <- system.file("themes", package = "inrep")
+  
+  # If package not installed, try to find themes in current directory
+  if (theme_dir == "") {
+    theme_dir <- "inst/themes"
+  }
+  
+  # Check if theme directory exists
+  if (!dir.exists(theme_dir)) {
+    # Fallback to hardcoded list of known themes
+    return(c("light", "dark", "professional", "clinical", "research", "hildesheim", 
+             "inrep", "accessible-blue", "colorblind-safe", "dyslexia-friendly", 
+             "high-contrast", "large-text", "midnight", "ocean", "forest", 
+             "berry", "sunset", "sepia", "paper", "monochrome", "vibrant", 
+             "darkblue", "dark-mode"))
+  }
+  
+  # Get all CSS files from theme directory
   theme_files <- list.files(
-    system.file("themes", package = "inrep"), 
+    theme_dir, 
     pattern = "\\.css$", 
     full.names = FALSE
   )
+  
   # Remove .css extension and return
   tools::file_path_sans_ext(theme_files)
 }
@@ -50,6 +69,11 @@ get_theme_css <- function(theme = "light", custom_css = NULL) {
   
   # Construct CSS file path
   css_path <- system.file("themes", paste0(theme, ".css"), package = "inrep")
+  
+  # If package not installed, try to find CSS in current directory
+  if (css_path == "") {
+    css_path <- file.path("inst/themes", paste0(theme, ".css"))
+  }
   
   if (!file.exists(css_path)) {
     warning(sprintf("CSS file for theme '%s' not found: %s", theme, css_path))
@@ -82,7 +106,14 @@ get_theme_css_path <- function(theme) {
     theme <- get_builtin_themes()[match_index]
   }
   
-  system.file("themes", paste0(theme, ".css"), package = "inrep")
+  css_path <- system.file("themes", paste0(theme, ".css"), package = "inrep")
+  
+  # If package not installed, try to find CSS in current directory
+  if (css_path == "") {
+    css_path <- file.path("inst/themes", paste0(theme, ".css"))
+  }
+  
+  css_path
 }
 
 #' List Available Theme Files
