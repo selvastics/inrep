@@ -41,7 +41,9 @@ vignettes/*.pdf
 .Renviron
 
 # pkgdown site
-docs/
+docs/pkgdown/
+# Allow docs folder for enhancement documentation
+# docs/
 
 # translation temp files
 po/*~
@@ -81,7 +83,7 @@ run_*.R
 working_*.R
 minimal_*.R
 comprehensive_*.R
-enhanced_*.R
+# enhanced_*.R - Commented out to allow enhancement modules
 runner.*
 
 # Documentation build files
