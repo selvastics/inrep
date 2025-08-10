@@ -1,10 +1,12 @@
-#' Enhanced Security Module
-#' 
-#' Provides comprehensive security features including rate limiting, CSRF protection,
-#' XSS prevention, secure password handling, and audit logging.
-#' 
-#' @author Enhanced by Comprehensive Robustness Review
-#' @version 2.0.0
+#' @title Enhanced Security Module
+#' @description Provides comprehensive security features including rate limiting, CSRF protection,
+#' XSS prevention, secure password handling, and audit logging for the inrep package.
+#' @details This module implements security best practices to protect assessment data
+#' and prevent common web vulnerabilities. It includes authentication, authorization,
+#' input validation, and audit logging capabilities.
+#' @name enhanced_security
+#' @docType data
+NULL
 
 # Global security state
 .security_state <- new.env()
