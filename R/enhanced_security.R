@@ -482,5 +482,5 @@ clear_security_state <- function() {
   .security_state$csrf_tokens <- list()
   .security_state$failed_attempts <- list()
   .security_state$blocked_ips <- list()
-  message("Security state cleared")
+  invisible(NULL)  # Return invisibly per CRAN standards
 }

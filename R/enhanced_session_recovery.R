@@ -411,10 +411,11 @@ log_recovery_event <- function(event_type, message) {
     log_session_event(paste0("RECOVERY_", event_type), message)
   } else {
     # Fallback to simple logging
-    cat(sprintf("[%s] %s: %s\n", 
-                format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
-                event_type, 
-                message))
+    # Use message() instead of cat() for CRAN compliance
+    message(sprintf("[%s] %s: %s", 
+                   format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+                   event_type, 
+                   message))
   }
 }
 
