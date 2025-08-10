@@ -3,9 +3,22 @@
 
 #' Create Default Introduction Content
 #'
+#' @param ui_labels Language labels for UI elements
 #' @return HTML string with default introduction content
 #' @export
-create_default_introduction_content <- function() {
+create_default_introduction_content <- function(ui_labels = NULL) {
+  # Get default labels if none provided
+  if (is.null(ui_labels)) {
+    ui_labels <- list(
+      study_overview = "Study Overview",
+      what_to_expect = "What to Expect",
+      important_notes = "Important Notes",
+      voluntary_participation = "Voluntary Participation",
+      data_protection = "Data Protection",
+      technical_requirements = "Technical Requirements"
+    )
+  }
+  
   paste0(
     '<div class="study-introduction">',
     '<h2 class="section-title">Welcome to Our Research Study</h2>',
@@ -44,9 +57,28 @@ create_default_introduction_content <- function() {
 
 #' Create Default Briefing Content
 #'
+#' @param ui_labels Language labels for UI elements
 #' @return HTML string with default briefing content
 #' @export
-create_default_briefing_content <- function() {
+create_default_briefing_content <- function(ui_labels = NULL) {
+  # Get default labels if none provided
+  if (is.null(ui_labels)) {
+    ui_labels <- list(
+      research_details = "Research Details",
+      principal_investigator = "Principal Investigator",
+      institution = "Institution",
+      study_procedures = "Study Procedures",
+      during_study_you_will = "During this study, you will:",
+      answer_questions_experiences = "Answer questions about your experiences and opinions",
+      provide_optional_demographics = "Provide optional demographic information",
+      complete_interactive_questionnaire = "Complete an interactive questionnaire",
+      receive_personalized_feedback = "Receive personalized feedback on your responses",
+      risks_and_benefits = "Risks and Benefits",
+      confidentiality = "Confidentiality",
+      contact_information = "Contact Information"
+    )
+  }
+  
   paste0(
     '<div class="study-briefing">',
     '<h2 class="section-title">Study Briefing</h2>',
@@ -96,9 +128,19 @@ create_default_briefing_content <- function() {
 
 #' Create Default Consent Content
 #'
+#' @param ui_labels Language labels for UI elements
 #' @return HTML string with default consent content
 #' @export
-create_default_consent_content <- function() {
+create_default_consent_content <- function(ui_labels = NULL) {
+  # Get default labels if none provided
+  if (is.null(ui_labels)) {
+    ui_labels <- list(
+      consent_to_participate = "Consent to Participate",
+      data_use_and_storage = "Data Use and Storage",
+      right_to_withdraw = "Right to Withdraw"
+    )
+  }
+  
   paste0(
     '<div class="consent-form">',
     '<h2 class="section-title">Informed Consent</h2>',
@@ -144,9 +186,38 @@ create_default_consent_content <- function() {
 
 #' Create Default GDPR Content
 #'
+#' @param ui_labels Language labels for UI elements
 #' @return HTML string with default GDPR compliance content
 #' @export
-create_default_gdpr_content <- function() {
+create_default_gdpr_content <- function(ui_labels = NULL) {
+  # Get default labels if none provided
+  if (is.null(ui_labels)) {
+    ui_labels <- list(
+      data_controller = "Data Controller",
+      legal_basis_for_processing = "Legal Basis for Processing",
+      article_6_gdpr = "Article 6 GDPR - Legitimate Interest",
+      article_9_gdpr = "Article 9 GDPR - Research Purposes",
+      legitimate_interest = "Legitimate Interest",
+      categories_of_data = "Categories of Data",
+      we_may_process_data = "We may process the following categories of data:",
+      response_data_questionnaires = "Response data from questionnaires",
+      optional_demographics = "Optional demographic information",
+      technical_data = "Technical data (browser type, response times)",
+      no_personal_identifiers = "No personal identifiers",
+      data_retention = "Data Retention",
+      your_rights_under_gdpr = "Your Rights Under GDPR",
+      access = "Access",
+      rectification = "Rectification",
+      erasure = "Erasure",
+      portability = "Portability",
+      restriction = "Restriction",
+      objection = "Objection",
+      complaint = "Complaint",
+      data_sharing = "Data Sharing",
+      contact_for_data_protection = "Contact for Data Protection"
+    )
+  }
+  
   paste0(
     '<div class="gdpr-compliance">',
     '<h2 class="section-title">Data Protection Information (GDPR/DSGVO)</h2>',
@@ -225,9 +296,22 @@ create_default_gdpr_content <- function() {
 
 #' Create Default Debriefing Content
 #'
+#' @param ui_labels Language labels for UI elements
 #' @return HTML string with default debriefing content
 #' @export
-create_default_debriefing_content <- function() {
+create_default_debriefing_content <- function(ui_labels = NULL) {
+  # Get default labels if none provided
+  if (is.null(ui_labels)) {
+    ui_labels <- list(
+      study_purpose = "Study Purpose",
+      research_methodology = "Research Methodology",
+      research_implications = "Research Implications",
+      next_steps = "Next Steps",
+      additional_resources = "Additional Resources",
+      support_and_concerns = "Support and Concerns"
+    )
+  }
+  
   paste0(
     '<div class="study-debriefing">',
     '<h2 class="section-title">Study Debriefing</h2>',
@@ -303,7 +387,16 @@ create_default_debriefing_content <- function() {
 #' @param input_types Named list of input types for demographic fields
 #' @return List of demographic configurations with full control
 #' @export
-create_default_demographic_configs <- function(demographics, input_types) {
+create_default_demographic_configs <- function(demographics, input_types, ui_labels = NULL) {
+  # Get default labels if none provided
+  if (is.null(ui_labels)) {
+    ui_labels <- list(
+      enter_age = "Enter your age",
+      demographics_provide_info = "Please provide your %s",
+      enter_field = "Enter your %s"
+    )
+  }
+  
   if (is.null(demographics)) {
     return(NULL)
   }
@@ -437,9 +530,18 @@ validate_demographic_config <- function(config) {
 #'
 #' @param demographic_configs List of demographic configurations
 #' @param theme Theme configuration
+#' @param ui_labels Language labels for UI elements
 #' @return Shiny UI elements for demographics
 #' @export
-create_custom_demographic_ui <- function(demographic_configs, theme = NULL) {
+create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_labels = NULL) {
+  # Get default labels if none provided
+  if (is.null(ui_labels)) {
+    ui_labels <- list(
+      demo_title = "Demographic Information",
+      demographics_optional_info = "The following questions are optional and help us better understand our research population."
+    )
+  }
+  
   if (is.null(demographic_configs)) {
     return(NULL)
   }
