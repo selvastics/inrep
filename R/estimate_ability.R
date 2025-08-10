@@ -391,15 +391,15 @@ estimate_ability <- function(rv, item_bank, config) {
       dat <- matrix(as.integer(responses), nrow = 1)
       colnames(dat) <- administered
       if (config$model == "1PL") {
-        mod <- tam.mml(resp = dat, irtmodel = "1PL", control = list(snodes = 1000))
+        mod <- TAM::tam.mml(resp = dat, irtmodel = "1PL", control = list(snodes = 1000))
       } else if (config$model == "2PL") {
-        mod <- tam.mml.2pl(resp = dat, irtmodel = "2PL", control = list(snodes = 1000))
+        mod <- TAM::tam.mml.2pl(resp = dat, irtmodel = "2PL", control = list(snodes = 1000))
       } else {
         item_bank_subset <- item_bank[administered, , drop = FALSE]
         c_params <- if ("c" %in% names(item_bank)) item_bank_subset$c else rep(0, length(administered))
-        mod <- tam.mml.3pl(resp = dat, gammaslope = item_bank_subset$a, guess = c_params, control = list(snodes = 1000))
+        mod <- TAM::tam.mml.3pl(resp = dat, gammaslope = item_bank_subset$a, guess = c_params, control = list(snodes = 1000))
       }
-      est <- tam.wle(mod)
+      est <- TAM::tam.wle(mod)
       if (nrow(est) == 0 || is.na(est$theta[1])) {
         message("TAM estimation failed, falling back to EAP")
       } else {
