@@ -96,6 +96,27 @@ export(simulate_corporate_studies)
 export(simulate_extreme_studies)
 export(run_all_simulations)
 
+# User Experience Functions
+export(initialize_ux_enhancements)
+export(user_friendly_error)
+export(show_progress_with_eta)
+export(configuration_wizard)
+export(check_setup)
+export(fix_setup_issues)
+export(install_required_packages)
+export(diagnose_issue)
+
+# Quick Start Functions
+export(quick_start)
+export(simple_quiz)
+export(educational_test)
+export(psychological_assessment)
+export(employee_screening)
+export(custom_assessment)
+export(test_assessment)
+export(show_examples)
+export(get_help)
+
 import(shiny)
 import(methods)
 import(stats)
