@@ -1123,55 +1123,8 @@ launch_study <- function(
     }
   ")
   
-  labels <- base::list(
-    en = base::list(
-      demo_title = "Demographic Information",
-      welcome_text = "Please provide your demographic details to begin the assessment.",
-      start_button = "Start Assessment",
-      submit_button = "Submit",
-      results_title = "Assessment Results",
-      save_button = "Download Report",
-      restart_button = "Restart",
-      proficiency = "Trait Score",
-      precision = "Measurement Precision",
-      items_administered = "Items Completed",
-      recommendations = "Recommendations",
-      feedback_correct = "Correct",
-      feedback_incorrect = "Incorrect",
-      timeout_message = "Session timed out. Please restart.",
-      demo_error = "Please complete all required fields.",
-      age_error = "Please enter a valid age (1-150).",
-      continue_button = "Continue",
-      begin_button = "Begin Assessment",
-      consent_text = "I agree to participate in this study",
-      instructions_title = "Instructions",
-      instructions_text = "You will be presented with questions. Please respond honestly and to the best of your ability."
-    ),
-    de = base::list(
-      demo_title = "Demografische Informationen",
-      welcome_text = "Bitte geben Sie Ihre demografischen Daten ein, um die Bewertung zu beginnen.",
-      start_button = "Bewertung beginnen",
-      submit_button = "Absenden",
-      results_title = "Bewertungsergebnisse",
-      save_button = "Bericht herunterladen",
-      restart_button = "Neu starten",
-      proficiency = "Merkmalswert",
-      precision = "Messgenauigkeit",
-      items_administered = "Abgeschlossene Elemente",
-      recommendations = "Empfehlungen",
-      feedback_correct = "Korrekt",
-      feedback_incorrect = "Falsch",
-      timeout_message = "Sitzung abgelaufen. Bitte neu starten.",
-      demo_error = "Bitte füllen Sie alle erforderlichen Felder aus.",
-      age_error = "Bitte geben Sie ein gültiges Alter ein (1-150).",
-      continue_button = "Weiter",
-      begin_button = "Bewertung beginnen",
-      consent_text = "Ich stimme der Teilnahme an dieser Studie zu",
-      instructions_title = "Anweisungen",
-      instructions_text = "Sie werden Fragen präsentiert bekommen. Bitte antworten Sie ehrlich und nach bestem Wissen und Gewissen."
-    )
-  )
-  ui_labels <- labels[[config$language %||% "en"]]
+  # Get language labels from the comprehensive multilingual system
+  ui_labels <- get_language_labels(config$language %||% "en")
   
   ui <- shiny::fluidPage(
     shinyjs::useShinyjs(),
@@ -1438,15 +1391,15 @@ launch_study <- function(
       base::switch(rv$stage,
                    "error" = {
                      shiny::div(class = "assessment-card error-card",
-                                shiny::h3("System Error", class = "card-header error-header"),
+                                shiny::h3(ui_labels$system_error, class = "card-header error-header"),
                                 shiny::div(class = "error-message",
-                                           shiny::p(rv$error_message %||% "An unexpected error occurred."),
-                                           shiny::p("Your progress has been automatically saved."),
-                                           shiny::p("Please contact support if this problem persists.")
+                                                                                        shiny::p(rv$error_message %||% ui_labels$error_message),
+                                                                                        shiny::p(ui_labels$error_save_progress),
+                                             shiny::p(ui_labels$error_contact_support)
                                 ),
                                 shiny::div(class = "nav-buttons",
-                                           shiny::actionButton("retry_continue", "Try to Continue", class = "btn-klee"),
-                                           shiny::actionButton("restart_test", "Restart Assessment", class = "btn-klee")
+                                                                                        shiny::actionButton("retry_continue", ui_labels$error_continue_button, class = "btn-klee"),
+                                                                                        shiny::actionButton("restart_test", ui_labels$error_restart_button, class = "btn-klee")
                                 )
                      )
                    },
@@ -1512,9 +1465,9 @@ launch_study <- function(
                      
                      if (base::is.null(rv$current_item)) {
                        logger("ERROR: current_item is NULL in assessment stage - this is the problem!", level = "ERROR")
-                       return(shiny::div(class = "assessment-card",
-                                         shiny::h3("Preparing...", class = "card-header"),
-                                         shiny::p("Loading next question...")))
+                                                return(shiny::div(class = "assessment-card",
+                                           shiny::h3(ui_labels$preparing, class = "card-header"),
+                                         shiny::p(ui_labels$loading_question)))
                      }
                      
                      logger(sprintf("Getting content for item %d", rv$current_item))
@@ -1715,7 +1668,7 @@ launch_study <- function(
                            style = "display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;",
                            progress_ui,
                            shiny::p(
-                             base::paste("Question", base::length(rv$administered) + 1, "of", config$max_items),
+                             base::paste(ui_labels$question_progress %||% "Question", base::length(rv$administered) + 1, "of", config$max_items),
                              style = "text-align: center; margin: 15px 0; width: 100%;"
                            )
                          ),

@@ -28,7 +28,7 @@ NULL
 #' 
 #' \strong{Session Management:}
 #' \itemize{
-#'   \item Assessment stage tracking (demographics, test, completion)
+#'   \item Assessment stage tracking (demographics, assessment, completion)
 #'   \item Response collection and validation structures
 #'   \item Real-time ability and standard error tracking
 #'   \item Item administration history and timing data
@@ -56,7 +56,7 @@ NULL
 #'
 #' @return A comprehensive list containing initialized reactive values:
 #' \describe{
-#'   \item{\code{stage}}{Current assessment stage ("demographics", "test", "complete")}
+#'   \item{\code{stage}}{Current assessment stage ("demographics", "assessment", "complete")}
 #'   \item{\code{demographics}}{Named list for demographic data collection (if specified)}
 #'   \item{\code{administered}}{Integer vector of administered item indices}
 #'   \item{\code{responses}}{List of participant responses with timestamps}
@@ -104,7 +104,7 @@ NULL
 #' )
 #' 
 #' rv_basic <- init_reactive_values(config_basic)
-#' rv_basic$stage  # "test" (skip demographics)
+#' rv_basic$stage  # "assessment" (skip demographics)
 #' rv_basic$demographics  # NULL
 #' }
 #'
@@ -133,7 +133,7 @@ init_reactive_values <- function(config) {
   }
   
   rv <- list(
-    stage = if (is.null(config$demographics)) "test" else "demographics",
+    stage = if (is.null(config$demographics)) "assessment" else "demographics",
     demographics = if (!is.null(config$demographics)) {
       setNames(vector("list", length(config$demographics)), config$demographics)
     } else NULL,
@@ -307,7 +307,7 @@ validate_session <- function(rv, config, webdav_url = NULL, password = NULL) {
     rv$demographics <- setNames(vector("list", length(config$demographics)), config$demographics)
   }
   if (is.null(rv$session_start)) rv$session_start <- Sys.time()
-  if (is.null(rv$stage)) rv$stage <- if (is.null(config$demographics)) "test" else "demographics"
+  if (is.null(rv$stage)) rv$stage <- if (is.null(config$demographics)) "assessment" else "demographics"
   if (is.null(rv$response_times)) rv$response_times <- numeric(0)
   if (is.null(rv$theta_history)) rv$theta_history <- numeric(0)
   if (is.null(rv$se_history)) rv$se_history <- numeric(0)

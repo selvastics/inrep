@@ -8,14 +8,20 @@
 #' @param response_ui_type UI type for assessment: "radio", "dropdown", "slider"
 #' @param demographics Character vector of demographic fields (if type = "demographics")
 #' @param input_types Named list of input types for demographics
+#' @param language Language code for UI labels (default: "en")
 #' @return Shiny UI element
 #' @export
 inrep_ui <- function(type = c("assessment", "demographics"),
                      item = NULL,
                      response_ui_type = "radio",
                      demographics = NULL,
-                     input_types = NULL) {
+                     input_types = NULL,
+                     language = "en") {
   require(shiny)
+  
+  # Get language labels
+  ui_labels <- get_language_labels(language)
+  get_label <- function(key) ui_labels[[key]] %||% key
   type <- match.arg(type)
   if (type == "assessment") {
     # Assessment item UI
@@ -52,7 +58,7 @@ inrep_ui <- function(type = c("assessment", "demographics"),
   } else if (type == "demographics") {
     # Demographics UI
     if (is.null(demographics)) {
-      return(actionButton("start_test", "Start Test"))
+      return(actionButton("start_test", get_label("start_button")))
     }
     inputs <- lapply(demographics, function(demo) {
       input_type <- input_types[[demo]]
@@ -79,7 +85,7 @@ inrep_ui <- function(type = c("assessment", "demographics"),
         )
       }
     })
-    return(tagList(inputs, actionButton("start_test", "Start Test")))
+    return(tagList(inputs, actionButton("start_test", get_label("start_button"))))
   }
 }
 # File: ui_helpers.R
@@ -369,7 +375,7 @@ create_demographics_ui <- function(demographics, input_types) {
   require(shiny)
   
   if (is.null(demographics)) {
-    return(actionButton("start_test", "Start Test"))
+    return(actionButton("start_test", get_label("start_button")))
   }
   
   inputs <- lapply(demographics, function(demo) {
@@ -398,5 +404,5 @@ create_demographics_ui <- function(demographics, input_types) {
     }
   })
   
-  tagList(inputs, actionButton("start_test", "Start Test"))
+  tagList(inputs, actionButton("start_test", get_label("start_button")))
 }

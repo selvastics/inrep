@@ -14,7 +14,7 @@ and optional demographic requirements.}
 \value{
 A comprehensive list containing initialized reactive values:
 \describe{
-  \item{\code{stage}}{Current assessment stage ("demographics", "test", "complete")}
+  \item{\code{stage}}{Current assessment stage ("demographics", "assessment", "complete")}
   \item{\code{demographics}}{Named list for demographic data collection (if specified)}
   \item{\code{administered}}{Integer vector of administered item indices}
   \item{\code{responses}}{List of participant responses with timestamps}
@@ -46,7 +46,7 @@ process establishes:
 
 \strong{Session Management:}
 \itemize{
-  \item Assessment stage tracking (demographics, test, completion)
+  \item Assessment stage tracking (demographics, assessment, completion)
   \item Response collection and validation structures
   \item Real-time ability and standard error tracking
   \item Item administration history and timing data
@@ -100,7 +100,7 @@ config_basic <- create_study_config(
 )
 
 rv_basic <- init_reactive_values(config_basic)
-rv_basic$stage  # "test" (skip demographics)
+rv_basic$stage  # "assessment" (skip demographics)
 rv_basic$demographics  # NULL
 }
 

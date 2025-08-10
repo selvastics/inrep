@@ -212,7 +212,7 @@ launch_study_compact<-function(config,item_bank,webdav_url=NULL,password=NULL,sa
           }),
           actionButton("start_test","Start Assessment")
         )
-      }else if(values$stage=="test"){
+      }else if(values$stage=="assessment"){
         if(values$current_item<=min(config$max_items,nrow(item_bank))){
           item<-item_bank[values$current_item,]
           
@@ -254,7 +254,7 @@ launch_study_compact<-function(config,item_bank,webdav_url=NULL,password=NULL,sa
       for(d in config$demographics){
         values$demo_data[[d]]<-input[[paste0("demo_",d)]]
       }
-      values$stage<-"test"
+      values$stage<-"assessment"
     })
     
     observeEvent(input$next_item,{
