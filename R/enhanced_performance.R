@@ -268,7 +268,7 @@ get_memory_usage <- function() {
 #' 
 #' Triggers aggressive memory cleanup
 trigger_memory_cleanup <- function() {
-  message("Triggering memory cleanup...")
+  # Log internally without console output (CRAN compliance)
   
   # Clear expired cache entries
   evict_expired_cache()
@@ -551,5 +551,5 @@ clear_performance_state <- function() {
   rm(list = ls(.performance_state$query_cache), envir = .performance_state$query_cache)
   .performance_state$concurrent_users <- 0
   gc(verbose = FALSE, full = TRUE)
-  message("Performance state cleared")
+  invisible(NULL)  # Return invisibly per CRAN standards
 }
