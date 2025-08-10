@@ -1760,10 +1760,10 @@ launch_study <- function(
                          shiny::div(
                            style = "display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;",
                            progress_ui,
-                           shiny::p(
-                             base::paste(ui_labels$question_progress %||% "Question", base::length(rv$administered) + 1, "of", config$max_items),
-                             style = "text-align: center; margin: 15px 0; width: 100%;"
-                           )
+                                                     shiny::p(
+                            sprintf(ui_labels$question_progress %||% "Question %d of %d", base::length(rv$administered) + 1, config$max_items),
+                            style = "text-align: center; margin: 15px 0; width: 100%;"
+                          )
                          ),
                          shiny::div(class = "test-question", item$Question),
                          shiny::div(class = "radio-group-container", response_ui),

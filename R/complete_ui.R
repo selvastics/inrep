@@ -161,7 +161,7 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
               shiny::div(class = "mt-4",
                 shiny::div(class = "flex justify-between text-sm text-gray-600 mb-2",
                   shiny::span(sprintf(ui_labels$question_progress %||% "Question %d of %d", current_item, config$max_items %||% 1)),
-                  shiny::span(sprintf("%d%% Complete", round((current_item / (config$max_items %||% 1)) * 100)))
+                  shiny::span(sprintf(ui_labels$completion_percentage %||% "%d%% Complete", round((current_item / (config$max_items %||% 1)) * 100)))
                 ),
                 shiny::div(class = "progress-container",
                                       shiny::div(class = "progress-bar bg-gray-200 h-2 rounded",
