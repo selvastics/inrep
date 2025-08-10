@@ -121,6 +121,7 @@ export(get_theme_config)
 export(generate_theme_css)
 export(get_theme_css)
 export(get_available_themes)
+export(ensure_font_consistency)
 
 # Responsive UI Functions
 export(get_responsive_css)

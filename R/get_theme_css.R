@@ -31,6 +31,9 @@ get_theme_css <- function(theme = "Light", custom_css = NULL) {
     ":root { --primary-color: #007bff; --background-color: #ffffff; }"
   }
   
+  # Ensure font consistency
+  theme_css <- ensure_font_consistency(theme_css)
+  
   # Add custom CSS if provided
   if (!is.null(custom_css)) {
     theme_css <- paste(theme_css, custom_css, sep = "\n")
