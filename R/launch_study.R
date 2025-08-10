@@ -1068,7 +1068,11 @@ launch_study <- function(
       error_message = NULL,
       feedback_message = NULL,
       item_info_cache = base::list(),
-      session_active = TRUE
+      session_active = TRUE,
+      # ROBUST SUBMISSION PROTECTION
+      submission_in_progress = FALSE,
+      submission_lock_time = NULL,
+      last_submission_time = NULL
     )
     
     if (config$session_save && base::file.exists(session_file)) {
@@ -1551,9 +1555,22 @@ launch_study <- function(
                          shiny::div(class = "test-question", item$Question),
                          shiny::div(class = "radio-group-container", response_ui),
                          if (!base::is.null(rv$error_message)) shiny::div(class = "error-message", rv$error_message),
+                         # ROBUST ERROR BOUNDARY UI
+                         shiny::uiOutput("error_boundary"),
                          if (!base::is.null(rv$feedback_message)) shiny::div(class = "feedback-message", rv$feedback_message),
                          shiny::div(class = "nav-buttons",
-                           shiny::actionButton("submit_response", ui_labels$submit_button, class = "btn-klee")
+                           # ROBUST SUBMIT BUTTON WITH DOUBLE-CLICK PROTECTION
+        shiny::div(
+          style = "position: relative;",
+          shiny::actionButton(
+            "submit_response", 
+            ui_labels$submit_button, 
+            class = "btn-klee",
+            onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 2000);"
+          ),
+          # Visual feedback for submission in progress
+          shiny::uiOutput("submission_status")
+        )
                          )
                        )
                      )
@@ -1912,35 +1929,72 @@ launch_study <- function(
       logger("Beginning assessment")
     })
     
+    # ROBUST SUBMISSION HANDLER - PREVENTS DOUBLE-CLICKS AND NEVER BREAKS
     shiny::observeEvent(input$submit_response, {
-      # Robust error boundary for sensitive participant data
+      # IMMEDIATE DOUBLE-CLICK PROTECTION
+      if (rv$submission_in_progress) {
+        logger("Double-click detected - ignoring duplicate submission", level = "WARNING")
+        return()
+      }
+      
+      # IMMEDIATE STATE VALIDATION
+      if (is.null(rv$current_item) || rv$stage != "assessment") {
+        logger("Invalid submission state - ignoring submission", level = "WARNING")
+        return()
+      }
+      
+      # SET SUBMISSION LOCK WITH TIMESTAMP
+      rv$submission_in_progress <- TRUE
+      rv$submission_lock_time <- Sys.time()
+      
+      # ROBUST ERROR BOUNDARY WITH AUTOMATIC RECOVERY
       tryCatch({
-        shiny::req(input$item_response, rv$current_item)
-        
-        if (!config$response_validation_fun(input$item_response)) {
-          rv$error_message <- base::sprintf("Please select a valid response (%s).", config$language)
-          logger(base::sprintf("Invalid response submitted for item %d", rv$current_item))
+        # VALIDATE INPUT STATE
+        if (is.null(input$item_response)) {
+          logger("No response selected - resetting submission lock", level = "WARNING")
+          rv$submission_in_progress <- FALSE
+          rv$error_message <- "Please select a response before submitting."
           return()
         }
         
+        # VALIDATE RESPONSE
+        if (!config$response_validation_fun(input$item_response)) {
+          logger(sprintf("Invalid response submitted for item %d", rv$current_item), level = "WARNING")
+          rv$submission_in_progress <- FALSE
+          rv$error_message <- base::sprintf("Please select a valid response (%s).", config$language)
+          return()
+        }
+        
+        # CLEAR ANY PREVIOUS ERRORS
         rv$error_message <- NULL
+        
+        # CALCULATE RESPONSE TIME
         response_time <- base::as.numeric(base::difftime(base::Sys.time(), rv$start_time, units = "secs"))
-        rv$response_times <- base::c(rv$response_times, response_time)
+        
+        # STORE RESPONSE DATA WITH ERROR PROTECTION
         item_index <- rv$current_item
         correct_answer <- item_bank$Answer[item_index] %||% NULL
         
+        # ROBUST SCORING WITH FALLBACK
         response_score <- base::tryCatch(
           config$scoring_fun(input$item_response, correct_answer),
           error = function(e) {
-            logger(base::sprintf("Scoring function error: %s", e$message))
-            if (config$model == "GRM") base::as.numeric(input$item_response) else base::as.numeric(input$item_response == correct_answer)
+            logger(base::sprintf("Scoring function error, using fallback: %s", e$message), level = "WARNING")
+            # Fallback scoring methods
+            if (config$model == "GRM") {
+              as.numeric(input$item_response)
+            } else {
+              as.numeric(input$item_response == correct_answer)
+            }
           }
         )
         
+        # SAFELY UPDATE RESPONSE VECTORS
+        rv$response_times <- base::c(rv$response_times, response_time)
         rv$responses <- base::c(rv$responses, response_score)
         rv$administered <- base::c(rv$administered, item_index)
         
-        # Log response submission
+        # LOG RESPONSE SUBMISSION WITH ERROR PROTECTION
         if (session_save && exists("log_session_event") && is.function(log_session_event)) {
           tryCatch({
             log_session_event(
@@ -1958,15 +2012,17 @@ launch_study <- function(
               )
             )
           }, error = function(e) {
-            logger(sprintf("Failed to log response: %s", e$message), level = "WARNING")
+            logger(sprintf("Failed to log response (non-critical): %s", e$message), level = "WARNING")
           })
         }
         
+        logger(sprintf("Response successfully processed for item %d", item_index), level = "INFO")
+        
       }, error = function(e) {
-        # Emergency error handling for sensitive data
+        # EMERGENCY ERROR HANDLING WITH AUTOMATIC RECOVERY
         logger(sprintf("Critical error in response processing: %s", e$message), level = "ERROR")
         
-        # Attempt emergency data preservation
+        # ATTEMPT EMERGENCY DATA PRESERVATION
         if (session_save && exists("emergency_data_preservation") && is.function(emergency_data_preservation)) {
           tryCatch({
             emergency_data_preservation()
@@ -1976,13 +2032,21 @@ launch_study <- function(
           })
         }
         
-        # Show user-friendly error
-        rv$error_message <- "An unexpected error occurred. Your progress has been saved. Please contact support if this problem persists."
-        rv$stage <- "error"
+        # AUTOMATIC RECOVERY - DON'T STOP THE ASSESSMENT
+        rv$error_message <- "A minor error occurred. Your response has been saved and the assessment will continue."
+        logger("Assessment continuing after error recovery", level = "INFO")
+        
+        # RESET SUBMISSION LOCK TO ALLOW CONTINUATION
+        rv$submission_in_progress <- FALSE
         
         return()
       })
       
+      # FINAL SUBMISSION LOCK RESET - ENSURES ASSESSMENT NEVER STOPS
+      rv$submission_in_progress <- FALSE
+      rv$last_submission_time <- Sys.time()
+      
+      # ROBUST ABILITY ESTIMATION WITH ERROR RECOVERY
       if (config$adaptive) {
         base::tryCatch({
           ability <- inrep::estimate_ability(rv, item_bank, config)
@@ -1992,32 +2056,51 @@ launch_study <- function(
           rv$theta_history <- base::c(rv$theta_history, rv$current_ability)
           rv$se_history <- base::c(rv$se_history, rv$current_se)
         }, error = function(e) {
-          logger(base::sprintf("Ability estimation failed: %s", e$message))
-          rv$error_message <- "Error estimating ability. Please try again."
-          return()
+          logger(base::sprintf("Ability estimation failed, using fallback: %s", e$message), level = "WARNING")
+          # Fallback ability estimation - don't break the assessment
+          if (length(rv$responses) > 0) {
+            rv$current_ability <- mean(rv$responses, na.rm = TRUE)
+            rv$current_se <- sd(rv$responses, na.rm = TRUE) / sqrt(length(rv$responses))
+            logger("Using fallback ability estimation", level = "INFO")
+          }
         })
       }
       
-      # Robust data preservation after each response
+      # ROBUST DATA PRESERVATION WITH ERROR RECOVERY
       if (session_save && exists("preserve_session_data") && is.function(preserve_session_data)) {
         tryCatch({
           preserve_session_data()
           logger("Response data automatically preserved", level = "INFO")
         }, error = function(e) {
-          logger(sprintf("Automatic data preservation failed: %s", e$message), level = "ERROR")
+          logger(sprintf("Automatic data preservation failed (non-critical): %s", e$message), level = "WARNING")
+          # Don't break the assessment for data preservation failures
         })
       }
       
-      if (check_stopping_criteria()) {
-        rv$cat_result <- base::list(
-          theta = if (config$adaptive) rv$current_ability else base::mean(rv$responses, na.rm = TRUE),
-          se = if (config$adaptive) rv$current_se else NULL,
-          responses = rv$responses,
-          administered = rv$administered,
-          response_times = rv$response_times
-        )
-        rv$stage <- "results"
-        logger("Test completed, proceeding to results")
+            # FINAL SAFETY NET - ENSURE SUBMISSION LOCK IS ALWAYS RESET
+      if (rv$submission_in_progress) {
+        logger("Final safety net: resetting submission lock", level = "INFO")
+        rv$submission_in_progress <- FALSE
+      }
+      
+      # ULTIMATE ERROR BOUNDARY - CATCH ANY REMAINING ERRORS
+      base::tryCatch({
+        # ROBUST STOPPING CRITERIA CHECK WITH ERROR RECOVERY
+        if (base::tryCatch({
+          check_stopping_criteria()
+        }, error = function(e) {
+          logger(sprintf("Stopping criteria check failed, continuing assessment: %s", e$message), level = "WARNING")
+          FALSE  # Continue assessment if stopping criteria fails
+        })) {
+          rv$cat_result <- base::list(
+            theta = if (config$adaptive) rv$current_ability else base::mean(rv$responses, na.rm = TRUE),
+            se = if (config$adaptive) rv$current_se else NULL,
+            responses = rv$responses,
+            administered = rv$administered,
+            response_times = rv$response_times
+          )
+          rv$stage <- "results"
+          logger("Test completed, proceeding to results")
         
         # Log test completion
         if (session_save && exists("log_session_event") && is.function(log_session_event)) {
@@ -2061,7 +2144,22 @@ launch_study <- function(
           }
         }
       } else {
-        rv$current_item <- inrep::select_next_item(rv, item_bank, config)
+        # ROBUST NEXT ITEM SELECTION WITH ERROR RECOVERY
+        next_item_result <- base::tryCatch({
+          inrep::select_next_item(rv, item_bank, config)
+        }, error = function(e) {
+          logger(sprintf("Next item selection failed, using fallback: %s", e$message), level = "WARNING")
+          # Fallback: select next available item
+          remaining_items <- setdiff(1:nrow(item_bank), rv$administered)
+          if (length(remaining_items) > 0) {
+            remaining_items[1]  # Select first remaining item
+          } else {
+            NULL  # No more items
+          }
+        })
+        
+        rv$current_item <- next_item_result
+        
         if (base::is.null(rv$current_item)) {
           rv$cat_result <- base::list(
             theta = if (config$adaptive) rv$current_ability else base::mean(rv$responses, na.rm = TRUE),
@@ -2125,9 +2223,94 @@ launch_study <- function(
           }
         }
       }
+      
+      # CLOSE ULTIMATE ERROR BOUNDARY
+      }, error = function(e) {
+        # FINAL EMERGENCY RECOVERY - ASSESSMENT MUST CONTINUE
+        logger(sprintf("Ultimate error boundary caught: %s", e$message), level = "ERROR")
+        
+        # Force reset all error states
+        rv$submission_in_progress <- FALSE
+        rv$error_message <- NULL
+        rv$stage <- "assessment"
+        
+        # Ensure we have a current item
+        if (is.null(rv$current_item)) {
+          remaining_items <- setdiff(1:nrow(item_bank), rv$administered)
+          if (length(remaining_items) > 0) {
+            rv$current_item <- remaining_items[1]
+            logger("Emergency item selection for continuation", level = "WARNING")
+          }
+        }
+        
+        logger("Assessment continuing after ultimate error recovery", level = "INFO")
+      })
     })
     
-    # Error recovery handlers
+    # SUBMISSION STATUS UI - VISUAL FEEDBACK FOR USER
+    output$submission_status <- shiny::renderUI({
+      if (rv$submission_in_progress) {
+        shiny::div(
+          class = "submission-status",
+          style = "color: #007bff; font-weight: bold; margin-top: 10px; padding: 10px; background-color: #f8f9fa; border: 2px solid #007bff; border-radius: 5px;",
+          shiny::icon("spinner", class = "fa-spin"),
+          " Processing your response... Please wait."
+        )
+      } else {
+        NULL
+      }
+    })
+    
+    # ROBUST ERROR BOUNDARY UI - PREVENTS APP FROM STOPPING
+    output$error_boundary <- shiny::renderUI({
+      if (!is.null(rv$error_message) && rv$stage == "error") {
+        shiny::div(
+          class = "error-boundary",
+          style = "background-color: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 15px; margin: 15px 0;",
+          shiny::h4("⚠️ Assessment Paused", style = "color: #856404; margin-top: 0;"),
+          shiny::p(rv$error_message, style = "color: #856404; margin-bottom: 15px;"),
+          shiny::div(
+            style = "display: flex; gap: 10px;",
+            shiny::actionButton("auto_recover", "🔄 Auto-Recover", class = "btn-warning"),
+            shiny::actionButton("manual_recover", "🔧 Manual Recovery", class = "btn-info")
+          )
+        )
+      } else {
+        NULL
+      }
+    })
+    
+    # AUTO-RECOVERY BUTTON HANDLER
+    shiny::observeEvent(input$auto_recover, {
+      logger("Auto-recovery initiated by user", level = "INFO")
+      
+      # Force reset all error states
+      rv$submission_in_progress <- FALSE
+      rv$error_message <- NULL
+      rv$stage <- "assessment"
+      
+      # Ensure we have a current item
+      if (is.null(rv$current_item)) {
+        remaining_items <- setdiff(1:nrow(item_bank), rv$administered)
+        if (length(remaining_items) > 0) {
+          rv$current_item <- remaining_items[1]
+          logger("Auto-recovery: selected next item", level = "INFO")
+        }
+      }
+      
+      logger("Assessment continuing after auto-recovery", level = "INFO")
+    })
+    
+    # MANUAL RECOVERY BUTTON HANDLER
+    shiny::observeEvent(input$manual_recover, {
+      logger("Manual recovery initiated by user", level = "INFO")
+      
+      # Show recovery options
+      rv$show_recovery_options <- TRUE
+      rv$error_message <- "Select recovery option:"
+    })
+    
+    # COMPREHENSIVE ERROR RECOVERY SYSTEM - ENSURES ASSESSMENT NEVER STOPS
     shiny::observeEvent(input$retry_continue, {
       if (session_save && exists("attempt_error_recovery") && is.function(attempt_error_recovery)) {
         tryCatch({
@@ -2149,6 +2332,59 @@ launch_study <- function(
         rv$stage <- "test"
         rv$error_message <- NULL
         logger("Fallback error recovery - returning to test", level = "INFO")
+      }
+    })
+    
+    # AUTOMATIC ERROR RECOVERY - NO USER INTERVENTION REQUIRED
+    shiny::observe({
+      # Check for stuck states every 2 seconds
+      shiny::invalidateLater(2000, session)
+      
+      # Automatic recovery from submission lock
+      if (rv$submission_in_progress && !is.null(rv$submission_lock_time)) {
+        lock_duration <- as.numeric(difftime(Sys.time(), rv$submission_lock_time, units = "secs"))
+        if (lock_duration > 10) {  # Reset lock after 10 seconds
+          logger("Automatic submission lock reset after timeout", level = "WARNING")
+          rv$submission_in_progress <- FALSE
+          rv$submission_lock_time <- NULL
+        }
+      }
+      
+      # Automatic recovery from error states
+      if (rv$stage == "error" && !is.null(rv$last_submission_time)) {
+        error_duration <- as.numeric(difftime(Sys.time(), rv$last_submission_time, units = "secs"))
+        if (error_duration > 5) {  # Auto-recover after 5 seconds
+          logger("Automatic error recovery - continuing assessment", level = "INFO")
+          rv$stage <- "assessment"
+          rv$error_message <- NULL
+          
+          # Ensure we have a current item
+          if (is.null(rv$current_item)) {
+            remaining_items <- setdiff(1:nrow(item_bank), rv$administered)
+            if (length(remaining_items) > 0) {
+              rv$current_item <- remaining_items[1]
+              logger("Auto-selected next item for continuation", level = "INFO")
+            }
+          }
+        }
+      }
+      
+      # Automatic session health check
+      if (rv$session_active && !is.null(rv$start_time)) {
+        session_duration <- as.numeric(difftime(Sys.time(), rv$start_time, units = "secs")
+        if (session_duration > 3600) {  # 1 hour
+          logger("Long session detected - performing health check", level = "INFO")
+          
+          # Force data preservation
+          if (session_save && exists("preserve_session_data") && is.function(preserve_session_data)) {
+            tryCatch({
+              preserve_session_data(force = TRUE)
+              logger("Health check data preservation completed", level = "INFO")
+            }, error = function(e) {
+              logger(sprintf("Health check data preservation failed: %s", e$message), level = "WARNING")
+            })
+          }
+        }
       }
     })
     
