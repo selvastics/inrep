@@ -6,14 +6,14 @@
 #' @param custom_css Additional custom CSS
 #' @return CSS string
 #' @export
-get_theme_css <- function(theme = "light", custom_css = NULL) {
-  # Normalize theme name
-  theme <- tolower(as.character(theme))
+get_theme_css <- function(theme = "Light", custom_css = NULL) {
+  # Normalize theme name to lowercase for file lookup
+  theme_lower <- tolower(as.character(theme))
   
   # Build path to theme CSS file
   theme_file <- system.file(
     "themes", 
-    paste0(theme, ".css"), 
+    paste0(theme_lower, ".css"), 
     package = "inrep"
   )
   

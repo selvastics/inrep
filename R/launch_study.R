@@ -946,9 +946,9 @@ launch_study <- function(
     logger(base::sprintf("Setting default adaptive_start: %d", config$adaptive_start))
   }
 
-  # Use original get_theme_css for all theming
+  # Use new get_theme_css for all theming
   theme_css <- get_theme_css(
-    theme = config$theme %||% "light",
+    theme = config$theme %||% "Light",
     custom_css = custom_css
   )
   
