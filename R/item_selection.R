@@ -286,8 +286,16 @@ select_next_item <- function(rv, item_bank, config) {
         return(NULL)
       }
     }
-    item <- sample(available, 1)
-    message(sprintf("Selected random item %d", item))
+    # In non-adaptive mode, select items in order from the item bank
+    if (!isTRUE(config$adaptive)) {
+      # Use the order of items in the item bank
+      item <- min(available)  # Select the first available item in order
+      message(sprintf("Selected item %d (non-adaptive, sequential order)", item))
+    } else {
+      # For early items before adaptive_start, use random selection
+      item <- sample(available, 1)
+      message(sprintf("Selected random item %d (pre-adaptive phase)", item))
+    }
     return(item)
   }
   
