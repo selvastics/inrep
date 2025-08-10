@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>inrep - Interactive Response Theory Package</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        .content {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .feature-card {
+            background: rgba(255,255,255,0.1);
+            padding: 1.5rem;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .feature-card h3 {
+            margin-top: 0;
+            color: #ffd700;
+        }
+        .cta-buttons {
+            text-align: center;
+            margin-top: 2rem;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 0 10px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        .warning {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid rgba(255, 193, 7, 0.5);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .warning h4 {
+            color: #ffc107;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 inrep</h1>
+            <p>Interactive Response Theory Package for R</p>
+        </div>
+
+        <div class="content">
+            <h2>About inrep</h2>
+            <p>
+                <strong>inrep</strong> is a comprehensive R package for implementing interactive 
+                response theory (IRT) assessments and computerized adaptive testing (CAT). 
+                It provides robust tools for creating, administering, and analyzing 
+                psychological and educational assessments.
+            </p>
+
+            <div class="warning">
+                <h4>⚠️ Important Note</h4>
+                <p>
+                    This is an <strong>R package</strong>, not a web application. 
+                    Vercel is designed for web applications and cannot run R code directly. 
+                    To use this package, you need to install it in an R environment.
+                </p>
+            </div>
+
+            <h3>Key Features</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>🎯 Adaptive Testing</h3>
+                    <p>Computerized adaptive testing with multiple IRT models (1PL, 2PL, 3PL, GRM)</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔄 Robust Error Handling</h3>
+                    <p>Comprehensive error handling and recovery mechanisms for reliable assessments</p>
+                </div>
+                <div class="feature-card">
+                    <h3>📱 Shiny Integration</h3>
+                    <p>Built-in Shiny web application for interactive assessments</p>
+                </div>
+                <div class="feature-card">
+                    <h3>💾 Data Management</h3>
+                    <p>Advanced session management and data preservation capabilities</p>
+                </div>
+            </div>
+
+            <h3>Installation & Usage</h3>
+            <p>
+                To use this package, you need to install it in an R environment:
+            </p>
+            <pre style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 10px; overflow-x: auto;">
+# Install from source
+R CMD INSTALL inrep_1.0.0.tar.gz
+
+# Or use devtools
+devtools::install_local("inrep_1.0.0.tar.gz")
+
+# Load the package
+library(inrep)
+
+# Launch the study
+launch_study()</pre>
+        </div>
+
+        <div class="cta-buttons">
+            <a href="https://github.com/selvastics/inrep" class="btn">📁 View on GitHub</a>
+            <a href="https://cran.r-project.org/" class="btn">📦 R Project</a>
+        </div>
+
+        <div class="content">
+            <h3>Why This Won't Work on Vercel</h3>
+            <p>
+                Vercel is a platform designed for deploying web applications built with:
+            </p>
+            <ul>
+                <li>React, Next.js, Vue.js</li>
+                <li>Node.js applications</li>
+                <li>Static websites</li>
+                <li>Serverless functions</li>
+            </ul>
+            <p>
+                R packages are statistical computing tools that run in R environments, 
+                not web applications. They cannot be deployed on Vercel.
+            </p>
+
+            <h3>Alternative Deployment Options</h3>
+            <p>
+                If you want to deploy this as a web application, consider:
+            </p>
+            <ul>
+                <li><strong>Shiny Server</strong> - For hosting Shiny applications</li>
+                <li><strong>RStudio Connect</strong> - For enterprise R deployment</li>
+                <li><strong>Docker containers</strong> - For containerized R applications</li>
+                <li><strong>Cloud platforms</strong> - AWS, Google Cloud, Azure with R support</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
