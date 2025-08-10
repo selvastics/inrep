@@ -17,7 +17,9 @@ inrep_ui <- function(type = c("assessment", "demographics"),
                      demographics = NULL,
                      input_types = NULL,
                      language = "en") {
-  require(shiny)
+  if (!requireNamespace("shiny", quietly = TRUE)) {
+    stop("Package 'shiny' is required but not available. Please install it with: install.packages('shiny')")
+  }
   
   # Get language labels
   ui_labels <- get_language_labels(language)
@@ -214,7 +216,9 @@ inrep_ui <- function(type = c("assessment", "demographics"),
 #'
 #' @export
 create_response_ui <- function(item, response_ui_type) {
-  require(shiny)
+  if (!requireNamespace("shiny", quietly = TRUE)) {
+    stop("Package 'shiny' is required but not available. Please install it with: install.packages('shiny')")
+  }
   
   choices <- as.character(item[paste0("Option", 1:4)])
   choices <- choices[!is.na(choices)]
@@ -372,7 +376,9 @@ create_response_ui <- function(item, response_ui_type) {
 #'
 #' @export
 create_demographics_ui <- function(demographics, input_types) {
-  require(shiny)
+  if (!requireNamespace("shiny", quietly = TRUE)) {
+    stop("Package 'shiny' is required but not available. Please install it with: install.packages('shiny')")
+  }
   
   if (is.null(demographics)) {
     return(actionButton("start_test", get_label("start_button")))
