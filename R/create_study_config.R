@@ -400,7 +400,7 @@ create_study_config <- function(
     adaptive = TRUE,
     item_groups = NULL,
     custom_ui_pre = NULL,
-    progress_style = "modern-circle",
+    progress_style = "circle",
     response_validation_fun = NULL,
     response_ui_type = "radio",
     session_save = FALSE,
