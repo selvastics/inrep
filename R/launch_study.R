@@ -1506,13 +1506,20 @@ launch_study <- function(
                                 )
                      )
                    },
-                   "test" = {
+                   "assessment" = {
+                     # Debug: Log item display state
+                     logger(sprintf("Rendering assessment UI - stage: %s, current_item: %s", rv$stage, rv$current_item))
+                     
                      if (base::is.null(rv$current_item)) {
+                       logger("ERROR: current_item is NULL in assessment stage - this is the problem!", level = "ERROR")
                        return(shiny::div(class = "assessment-card",
                                          shiny::h3("Preparing...", class = "card-header"),
                                          shiny::p("Loading next question...")))
                      }
+                     
+                     logger(sprintf("Getting content for item %d", rv$current_item))
                      item <- get_item_content(rv$current_item)
+                     logger(sprintf("Item content retrieved - Question: %s", substr(item$Question, 1, 50)))
                      response_ui <- if (config$model == "GRM") {
                        choices <- base::as.numeric(base::unlist(base::strsplit(item$ResponseCategories, ",")))
                        labels <- base::switch(config$language,
@@ -1810,16 +1817,32 @@ launch_study <- function(
         SE = rv$se_history
       )
       
-      ggplot2::ggplot(data, ggplot2::aes(x = Item, y = Theta)) +
-        ggplot2::geom_line(color = theme_colors$primary, linewidth = 1) +
-        ggplot2::geom_ribbon(ggplot2::aes(ymin = Theta - SE, ymax = Theta + SE), alpha = 0.2, fill = theme_colors$primary) +
-        ggplot2::theme_minimal() +
-        ggplot2::labs(y = "Trait Score", x = "Item Number") +
-        ggplot2::theme(
-          text = ggplot2::element_text(family = "Inter", size = 12),
-          plot.title = ggplot2::element_text(face = "bold", size = 14),
-          axis.title = ggplot2::element_text(size = 12)
-        )
+      # Use base R plotting as fallback if ggplot2 fails
+      tryCatch({
+        if (available_packages$ggplot2 && requireNamespace("ggplot2", quietly = TRUE)) {
+          ggplot2::ggplot(data, ggplot2::aes(x = Item, y = Theta)) +
+            ggplot2::geom_line(color = theme_colors$primary, linewidth = 1) +
+            ggplot2::geom_ribbon(ggplot2::aes(ymin = Theta - SE, ymax = Theta + SE), alpha = 0.2, fill = theme_colors$primary) +
+            ggplot2::theme_minimal() +
+            ggplot2::labs(y = "Trait Score", x = "Item Number") +
+            ggplot2::theme(
+              text = ggplot2::element_text(family = "Inter", size = 12),
+              plot.title = ggplot2::element_text(face = "bold", size = 14),
+              axis.title = ggplot2::element_text(size = 12)
+            )
+        } else {
+          # Fallback to base R plot
+          plot(data$Item, data$Theta, type = "l", col = theme_colors$primary, 
+               xlab = "Item Number", ylab = "Trait Score", main = "Ability Progression")
+          polygon(c(data$Item, rev(data$Item)), 
+                  c(data$Theta - data$SE, rev(data$Theta + data$SE)), 
+                  col = paste0(theme_colors$primary, "20"), border = NA)
+        }
+      }, error = function(e) {
+        # Ultimate fallback to text
+        plot(1, 1, type = "n", xlab = "", ylab = "", main = "Plot Unavailable")
+        text(1, 1, "Plot rendering failed\nData available in table below", cex = 1.2)
+      })
     })
     
     output$item_table <- safe_render_dt({
@@ -2054,11 +2077,19 @@ launch_study <- function(
       })
       base::names(rv$demo_data) <- config$demographics
       
+      # More flexible demographic validation - allow some empty fields
       non_age_dems <- base::setdiff(config$demographics, "Age")
-      if (base::length(non_age_dems) > 0 && base::all(base::is.na(rv$demo_data[non_age_dems]) | rv$demo_data[non_age_dems] == "")) {
-        rv$error_message <- ui_labels$demo_error
-        logger("Invalid non-age demographic inputs")
-        return()
+      if (base::length(non_age_dems) > 0) {
+        # Check if at least one non-age demographic is filled
+        filled_dems <- base::sapply(non_age_dems, function(dem) {
+          !base::is.na(rv$demo_data[dem]) && rv$demo_data[dem] != ""
+        })
+        
+        if (base::sum(filled_dems) == 0) {
+          rv$error_message <- ui_labels$demo_error
+          logger("No non-age demographic inputs provided")
+          return()
+        }
       }
       
       rv$error_message <- NULL
@@ -2086,7 +2117,28 @@ launch_study <- function(
       
       rv$stage <- "assessment"  # Fixed: was "test", now "assessment"
       rv$start_time <- base::Sys.time()
+      
+      # Debug: Log the item selection process
+      logger("Attempting to select next item...")
+      logger(sprintf("rv$current_ability: %s", rv$current_ability))
+      logger(sprintf("config$adaptive: %s", config$adaptive))
+      logger(sprintf("config$model: %s", config$model))
+      logger(sprintf("Item bank columns: %s", paste(names(item_bank), collapse = ", ")))
+      
       rv$current_item <- inrep::select_next_item(rv, item_bank, config)
+      
+      logger(sprintf("Item selection result: %s", rv$current_item))
+      
+      if (is.null(rv$current_item)) {
+        logger("ERROR: select_next_item returned NULL - this is why items don't display!", level = "ERROR")
+        # Fallback: select first available item
+        available_items <- setdiff(seq_len(nrow(item_bank)), rv$administered)
+        if (length(available_items) > 0) {
+          rv$current_item <- available_items[1]
+          logger(sprintf("Fallback: selected item %d", rv$current_item))
+        }
+      }
+      
       logger("Beginning assessment")
     })
     
