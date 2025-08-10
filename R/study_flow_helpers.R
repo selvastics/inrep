@@ -509,7 +509,7 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL) {
         shiny::selectInput(
           inputId = demo_name,
           label = NULL,
-          choices = c(ui_labels$please_select = "", choices),
+          choices = c("Please select..." = "", choices),
           selected = ""
         ),
         if (config$allow_other_text) shiny::conditionalPanel(
