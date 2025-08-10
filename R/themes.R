@@ -13,37 +13,37 @@ NULL
 #' @param theme_name Name of the theme
 #' @return Theme configuration list
 #' @export
-get_theme_config <- function(theme_name = "clean") {
+get_theme_config <- function(theme_name = "light") {
   
   # Validate theme name
   if (!is.null(theme_name)) {
     theme_name <- tolower(as.character(theme_name))
   } else {
-    theme_name <- "clean"
+    theme_name <- "light"
   }
   
   themes <- list(
-    # Clean default theme - ultra minimalist black and white
+    # Clean theme - professional and minimal
     clean = list(
       name = "Clean",
-      description = "Ultra-minimalist black and white theme with sharp edges",
+      description = "Clean, professional theme with excellent readability",
       colors = list(
-        primary = "#000000",
-        secondary = "#000000", 
-        success = "#000000",
-        info = "#000000",
-        warning = "#000000",
-        danger = "#000000",
+        primary = "#2C3E50",
+        secondary = "#34495E", 
+        success = "#27AE60",
+        info = "#3498DB",
+        warning = "#F39C12",
+        danger = "#E74C3C",
         background = "#FFFFFF",
-        surface = "#FFFFFF",
-        text = "#000000",
-        text_secondary = "#000000",
-        border = "#000000"
+        surface = "#F8F9FA",
+        text = "#2C3E50",
+        text_secondary = "#7F8C8D",
+        border = "#DEE2E6"
       ),
       fonts = list(
-        heading = "'Helvetica Neue', Helvetica, Arial, sans-serif",
-        body = "'Helvetica Neue', Helvetica, Arial, sans-serif",
-        mono = "'Courier New', Courier, monospace"
+        heading = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+        body = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+        mono = "'SF Mono', Monaco, 'Cascadia Code', monospace"
       ),
       spacing = list(
         base = "1rem",
@@ -52,14 +52,14 @@ get_theme_config <- function(theme_name = "clean") {
         spacious = "2rem"
       ),
       borders = list(
-        radius = "0px",
+        radius = "8px",
         width = "1px",
         style = "solid"
       ),
       shadows = list(
-        small = "none",
-        medium = "none",
-        large = "none"
+        small = "0 1px 3px rgba(0,0,0,0.12)",
+        medium = "0 4px 6px rgba(0,0,0,0.1)",
+        large = "0 10px 20px rgba(0,0,0,0.15)"
       )
     ),
     
@@ -375,14 +375,14 @@ get_theme_config <- function(theme_name = "clean") {
     )
   )
   
-  # Return requested theme or default to clean
+  # Return requested theme or default to light
   theme <- themes[[theme_name]]
   if (is.null(theme)) {
     message(sprintf(
-      "Theme '%s' not found. Using 'clean' theme instead.",
+      "Theme '%s' not found. Using 'light' theme instead.",
       theme_name
     ))
-    theme <- themes[["clean"]]
+    theme <- themes[["light"]]
   }
   
   return(theme)
@@ -395,7 +395,7 @@ get_theme_config <- function(theme_name = "clean") {
 #' @param theme_name Name of the theme
 #' @return CSS string
 #' @export
-generate_theme_css <- function(theme_name = "clean") {
+generate_theme_css <- function(theme_name = "light") {
   
   theme <- get_theme_config(theme_name)
   colors <- theme$colors
@@ -409,9 +409,8 @@ generate_theme_css <- function(theme_name = "clean") {
     style = "solid"
   )
   
-  # Special handling for clean/minimal themes
-  is_minimal <- theme_name %in% c("clean", "minimal", "default")
-  button_text_color <- if(is_minimal && colors$primary == "#000000") "white" else "white"
+  # Button text color is always white for primary buttons
+  button_text_color <- "white"
   
   css <- sprintf('
     :root {
@@ -572,20 +571,20 @@ generate_theme_css <- function(theme_name = "clean") {
       color: var(--color-background);
     }
   ',
-    colors$primary %||% "#000000",
-    colors$secondary %||% "#000000",
-    colors$success %||% "#000000",
-    colors$info %||% "#000000",
-    colors$warning %||% "#000000",
-    colors$danger %||% "#000000",
+    colors$primary %||% "#4A90E2",
+    colors$secondary %||% "#7BB3EC",
+    colors$success %||% "#7ED321",
+    colors$info %||% "#50E3C2",
+    colors$warning %||% "#F5A623",
+    colors$danger %||% "#D0021B",
     colors$background %||% "#FFFFFF",
-    colors$surface %||% "#FFFFFF",
-    colors$text %||% "#000000",
-    colors$text_secondary %||% "#000000",
-    colors$border %||% "#000000",
-    fonts$heading %||% "'Helvetica Neue', sans-serif",
-    fonts$body %||% "'Helvetica Neue', sans-serif",
-    borders$radius %||% "0px",
+    colors$surface %||% "#F7F9FC",
+    colors$text %||% "#333333",
+    colors$text_secondary %||% "#828282",
+    colors$border %||% "#E1E8ED",
+    fonts$heading %||% "system-ui, sans-serif",
+    fonts$body %||% "system-ui, sans-serif",
+    borders$radius %||% "8px",
     borders$width %||% "1px",
     button_text_color
   )

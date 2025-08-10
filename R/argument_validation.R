@@ -305,7 +305,7 @@ validate_theme <- function(theme) {
   
   # Handle NULL - return default
   if (is.null(theme)) {
-    return("clean")
+    return("light")
   }
   
   validated <- validate_argument(
