@@ -544,11 +544,17 @@ launch_study <- function(
       pkg <- packages[[pkg_name]]
       if (requireNamespace(pkg, quietly = TRUE)) {
         loaded_packages[[pkg_name]] <- TRUE
-        # Load the package
-        library(pkg, character.only = TRUE)
+        # Load the package into the namespace
+        tryCatch({
+          library(pkg, character.only = TRUE, quietly = TRUE)
+          logger(sprintf("Successfully loaded package: %s", pkg), level = "INFO")
+        }, error = function(e) {
+          logger(sprintf("Warning: Could not load package %s: %s", pkg, e$message), level = "WARNING")
+          loaded_packages[[pkg_name]] <- FALSE
+        })
       } else {
         loaded_packages[[pkg_name]] <- FALSE
-        warning(paste("Package", pkg, "not available. Some features may be limited."))
+        logger(sprintf("Package %s not available. Some features may be limited.", pkg), level = "WARNING")
       }
     }
     
@@ -563,44 +569,107 @@ launch_study <- function(
     stop("Package 'TAM' is required but not available. Please install it with: install.packages('TAM')")
   }
   
-  # TAM function wrappers with fallbacks
-  tam.mml <- function(...) {
+  # Create robust wrapper functions that check package availability
+  safe_tam_mml <- function(...) {
     if (available_packages$TAM) {
-      TAM::tam.mml(...)
+      tryCatch({
+        TAM::tam.mml(...)
+      }, error = function(e) {
+        logger(sprintf("TAM::tam.mml error: %s", e$message), level = "ERROR")
+        stop(sprintf("TAM computation failed: %s", e$message))
+      })
     } else {
       stop("TAM package not available")
     }
   }
   
-  tam.mml.2pl <- function(...) {
+  safe_tam_mml_2pl <- function(...) {
     if (available_packages$TAM) {
-      TAM::tam.mml.2pl(...)
+      tryCatch({
+        TAM::tam.mml.2pl(...)
+      }, error = function(e) {
+        logger(sprintf("TAM::tam.mml.2pl error: %s", e$message), level = "ERROR")
+        stop(sprintf("TAM computation failed: %s", e$message))
+      })
     } else {
       stop("TAM package not available")
     }
   }
   
-  tam.mml.3pl <- function(...) {
+  safe_tam_mml_3pl <- function(...) {
     if (available_packages$TAM) {
-      TAM::tam.mml.3pl(...)
+      tryCatch({
+        TAM::tam.mml.3pl(...)
+      }, error = function(e) {
+        logger(sprintf("TAM::tam.mml.3pl error: %s", e$message), level = "ERROR")
+        stop(sprintf("TAM computation failed: %s", e$message))
+      })
     } else {
       stop("TAM package not available")
     }
   }
   
-  tam.wle <- function(...) {
+  safe_tam_wle <- function(...) {
     if (available_packages$TAM) {
-      TAM::tam.wle(...)
+      tryCatch({
+        TAM::tam.wle(...)
+      }, error = function(e) {
+        logger(sprintf("TAM::tam.wle error: %s", e$message), level = "ERROR")
+        stop(sprintf("TAM computation failed: %s", e$message))
+      })
     } else {
       stop("TAM package not available")
     }
   }
   
-  tam.eap <- function(...) {
+  safe_tam_eap <- function(...) {
     if (available_packages$TAM) {
-      TAM::tam.eap(...)
+      tryCatch({
+        TAM::tam.eap(...)
+      }, error = function(e) {
+        logger(sprintf("TAM::tam.eap error: %s", e$message), level = "ERROR")
+        stop(sprintf("TAM computation failed: %s", e$message))
+      })
     } else {
       stop("TAM package not available")
+    }
+  }
+  
+  # Create safe plotting function
+  safe_render_plot <- function(expr, ...) {
+    if (available_packages$ggplot2) {
+      tryCatch({
+        ggplot2::renderPlot(expr, ...)
+      }, error = function(e) {
+        logger(sprintf("ggplot2::renderPlot error: %s", e$message), level = "ERROR")
+        # Fallback to text output
+        shiny::renderText({
+          "Plot rendering failed - displaying data as text instead"
+        })
+      })
+    } else {
+      shiny::renderText({
+        "Plotting not available - ggplot2 package not installed"
+      })
+    }
+  }
+  
+  # Create safe DT function
+  safe_render_dt <- function(expr, ...) {
+    if (available_packages$DT) {
+      tryCatch({
+        DT::renderDT(expr, ...)
+      }, error = function(e) {
+        logger(sprintf("DT::renderDT error: %s", e$message), level = "ERROR")
+        # Fallback to text output
+        shiny::renderPrint({
+          "Table rendering failed - displaying data as text instead"
+        })
+      })
+    } else {
+      shiny::renderPrint({
+        "Table rendering not available - DT package not installed"
+      })
     }
   }
   
@@ -1702,128 +1771,94 @@ launch_study <- function(
       )
     })
     
-    output$theta_plot <- if (available_packages$ggplot2) {
-      ggplot2::renderPlot({
-        if (!config$adaptive || base::length(rv$theta_history) < 2) return(NULL)
-        
-        # Get theme colors for plot
-        theme_colors <- list(
-          primary = "#007bff",
-          secondary = "#6c757d"
+    output$theta_plot <- safe_render_plot({
+      if (!config$adaptive || base::length(rv$theta_history) < 2) return(NULL)
+      
+      # Get theme colors for plot
+      theme_colors <- list(
+        primary = "#007bff",
+        secondary = "#6c757d"
+      )
+      
+      if (!base::is.null(theme_config) && !base::is.null(theme_config$primary_color)) {
+        theme_colors$primary <- theme_config$primary_color
+      } else {
+        theme_name <- tolower(config$theme %||% "Light")
+        theme_colors$primary <- base::switch(theme_name,
+                                             "light" = "#212529",
+                                             "midnight" = "#6366f1",
+                                             "sunset" = "#ff6f61",
+                                             "forest" = "#2e7d32",
+                                             "ocean" = "#0288d1",
+                                             "berry" = "#c2185b",
+                                             "#007bff"
         )
-        
-        if (!base::is.null(theme_config) && !base::is.null(theme_config$primary_color)) {
-          theme_colors$primary <- theme_config$primary_color
-        } else {
-          theme_name <- tolower(config$theme %||% "Light")
-          theme_colors$primary <- base::switch(theme_name,
-                                               "light" = "#212529",
-                                               "midnight" = "#6366f1",
-                                               "sunset" = "#ff6f61",
-                                               "forest" = "#2e7d32",
-                                               "ocean" = "#0288d1",
-                                               "berry" = "#c2185b",
-                                               "#007bff"
-          )
-        }
-        
-        data <- base::data.frame(
-          Item = base::seq_along(rv$theta_history),
-          Theta = rv$theta_history,
-          SE = rv$se_history
+      }
+      
+      data <- base::data.frame(
+        Item = base::seq_along(rv$theta_history),
+        Theta = rv$theta_history,
+        SE = rv$se_history
+      )
+      
+      ggplot2::ggplot(data, ggplot2::aes(x = Item, y = Theta)) +
+        ggplot2::geom_line(color = theme_colors$primary, linewidth = 1) +
+        ggplot2::geom_ribbon(ggplot2::aes(ymin = Theta - SE, ymax = Theta + SE), alpha = 0.2, fill = theme_colors$primary) +
+        ggplot2::theme_minimal() +
+        ggplot2::labs(y = "Trait Score", x = "Item Number") +
+        ggplot2::theme(
+          text = ggplot2::element_text(family = "Inter", size = 12),
+          plot.title = ggplot2::element_text(face = "bold", size = 14),
+          axis.title = ggplot2::element_text(size = 12)
         )
-        
-        ggplot2::ggplot(data, ggplot2::aes(x = Item, y = Theta)) +
-          ggplot2::geom_line(color = theme_colors$primary, linewidth = 1) +
-          ggplot2::geom_ribbon(ggplot2::aes(ymin = Theta - SE, ymax = Theta + SE), alpha = 0.2, fill = theme_colors$primary) +
-          ggplot2::theme_minimal() +
-          ggplot2::labs(y = "Trait Score", x = "Item Number") +
-          ggplot2::theme(
-            text = ggplot2::element_text(family = "Inter", size = 12),
-            plot.title = ggplot2::element_text(face = "bold", size = 14),
-            axis.title = ggplot2::element_text(size = 12)
-          )
-      })
-    } else {
-      shiny::renderText({
-        if (!config$adaptive || base::length(rv$theta_history) < 2) return("No plot data available")
-        "Plotting not available - ggplot2 package not installed"
-      })
-    }
+    })
     
-    output$item_table <- if (available_packages$DT) {
-      DT::renderDT({
-        if (base::is.null(rv$cat_result)) return()
-        items <- rv$cat_result$administered
-        responses <- rv$cat_result$responses
-        dat <- if (config$model == "GRM") {
-          base::data.frame(
-            Item = 1:base::length(items),
-            Question = item_bank$Question[items],
-            Response = responses,
-            Time = base::round(rv$cat_result$response_times, 1),
-            check.names = FALSE
-          )
-        } else {
-          base::data.frame(
-            Item = 1:base::length(items),
-            Question = item_bank$Question[items],
-            Response = base::ifelse(responses == 1, "Correct", "Incorrect"),
-            Correct = item_bank$Answer[items],
-            Time = base::round(rv$cat_result$response_times, 1),
-            check.names = FALSE
-          )
-        }
-        columnDefs <- base::list(
-          base::list(width = '50%', targets = 0),
-          base::list(width = '25%', targets = 1)
+    output$item_table <- safe_render_dt({
+      if (base::is.null(rv$cat_result)) return()
+      items <- rv$cat_result$administered
+      responses <- rv$cat_result$responses
+      dat <- if (config$model == "GRM") {
+        base::data.frame(
+          Item = 1:base::length(items),
+          Question = item_bank$Question[items],
+          Response = responses,
+          Time = base::round(rv$cat_result$response_times, 1),
+          check.names = FALSE
         )
-        if (config$model == "GRM") {
-          columnDefs[[3]] <- base::list(width = '25%', targets = 2)
-        } else {
-          columnDefs[[3]] <- base::list(width = '25%', targets = 2)
-          columnDefs[[4]] <- base::list(width = '25%', targets = 3)
-        }
-        DT::datatable(
-          dat,
-          rownames = FALSE,
-          options = base::list(
-            dom = 't',
-            paging = FALSE,
-            searching = FALSE,
-            autoWidth = TRUE,
-            columnDefs = columnDefs
-          )
-        ) -> dt_table
-        
-        DT::formatStyle(dt_table, columns = base::names(dat), color = 'var(--text-color)', fontFamily = 'var(--font-family)')
-      })
-    } else {
-      shiny::renderPrint({
-        if (base::is.null(rv$cat_result)) return()
-        items <- rv$cat_result$administered
-        responses <- rv$cat_result$responses
-        dat <- if (config$model == "GRM") {
-          base::data.frame(
-            Item = 1:base::length(items),
-            Question = item_bank$Question[items],
-            Response = responses,
-            Time = base::round(rv$cat_result$response_times, 1),
-            check.names = FALSE
-          )
-        } else {
-          base::data.frame(
-            Item = 1:base::length(items),
-            Question = item_bank$Question[items],
-            Response = base::ifelse(responses == 1, "Correct", "Incorrect"),
-            Correct = item_bank$Answer[items],
-            Time = base::round(rv$cat_result$response_times, 1),
-            check.names = FALSE
-          )
-        }
-        print(dat)
-      })
-    }
+      } else {
+        base::data.frame(
+          Item = 1:base::length(items),
+          Question = item_bank$Question[items],
+          Response = base::ifelse(responses == 1, "Correct", "Incorrect"),
+          Correct = item_bank$Answer[items],
+          Time = base::round(rv$cat_result$response_times, 1),
+          check.names = FALSE
+        )
+      }
+      columnDefs <- base::list(
+        base::list(width = '50%', targets = 0),
+        base::list(width = '25%', targets = 1)
+      )
+      if (config$model == "GRM") {
+        columnDefs[[3]] <- base::list(width = '25%', targets = 2)
+      } else {
+        columnDefs[[3]] <- base::list(width = '25%', targets = 2)
+        columnDefs[[4]] <- base::list(width = '25%', targets = 3)
+      }
+      DT::datatable(
+        dat,
+        rownames = FALSE,
+        options = base::list(
+          dom = 't',
+          paging = FALSE,
+          searching = FALSE,
+          autoWidth = TRUE,
+          columnDefs = columnDefs
+        )
+      ) -> dt_table
+      
+      DT::formatStyle(dt_table, columns = base::names(dat), color = 'var(--text-color)', fontFamily = 'var(--font-family)')
+    })
     
     output$recommendations <- shiny::renderUI({
       shiny::req(rv$cat_result)
@@ -2588,7 +2623,7 @@ launch_study <- function(
     }
     
     # Register cleanup function
-    reg.finalizer(environment(), function(e) {
+    reg.finalizer(environment(), function(env) {
       if (exists(".inrep_cleanup_on_exit", envir = .GlobalEnv)) {
         .GlobalEnv$.inrep_cleanup_on_exit()
       }
