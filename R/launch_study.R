@@ -1756,9 +1756,12 @@ launch_study <- function(
                      )
                      
                      if (config$adaptive && base::length(rv$theta_history) > 1) {
+                       logger(sprintf("Adding plot to results - theta_history length: %d", base::length(rv$theta_history)))
                        results_content <- base::c(results_content, base::list(
                          shiny::plotOutput("theta_plot", height = "200px")
                        ))
+                     } else {
+                       logger(sprintf("Plot not added - adaptive: %s, theta_history length: %d", config$adaptive, base::length(rv$theta_history)))
                      }
                      
                      results_content <- base::c(results_content, base::list(
@@ -1787,8 +1790,13 @@ launch_study <- function(
       )
     })
     
-    output$theta_plot <- safe_render_plot({
-      if (!config$adaptive || base::length(rv$theta_history) < 2) return(NULL)
+    output$theta_plot <- shiny::renderPlot({
+      logger(sprintf("Plot rendering triggered - adaptive: %s, theta_history length: %d", config$adaptive, base::length(rv$theta_history)))
+      
+      if (!config$adaptive || base::length(rv$theta_history) < 2) {
+        logger("Plot not rendered - conditions not met")
+        return(NULL)
+      }
       
       # Get theme colors for plot
       theme_colors <- list(
@@ -1807,7 +1815,22 @@ launch_study <- function(
                                              "forest" = "#2e7d32",
                                              "ocean" = "#0288d1",
                                              "berry" = "#c2185b",
-                                             "#007bff"
+                                             "hildesheim" = "#e8041c",
+                                             "professional" = "#2c3e50",
+                                             "clinical" = "#A23B72",
+                                             "research" = "#007bff",
+                                             "sepia" = "#8B4513",
+                                             "paper" = "#005073",
+                                             "monochrome" = "#333333",
+                                             "large-text" = "#2E5BBA",
+                                             "inrep" = "#000000",
+                                             "high-contrast" = "#000000",
+                                             "dyslexia-friendly" = "#005F73",
+                                             "darkblue" = "#64ffda",
+                                             "dark-mode" = "#00D4AA",
+                                             "colorblind-safe" = "#0072B2",
+                                             "vibrant" = "#e74c3c",
+                                             "#007bff"  # Default fallback
         )
       }
       
@@ -1817,31 +1840,38 @@ launch_study <- function(
         SE = rv$se_history
       )
       
-      # Use base R plotting as fallback if ggplot2 fails
+      # Robust plotting with multiple fallbacks
       tryCatch({
+        # Try ggplot2 first
         if (available_packages$ggplot2 && requireNamespace("ggplot2", quietly = TRUE)) {
-          ggplot2::ggplot(data, ggplot2::aes(x = Item, y = Theta)) +
+          p <- ggplot2::ggplot(data, ggplot2::aes(x = Item, y = Theta)) +
             ggplot2::geom_line(color = theme_colors$primary, linewidth = 1) +
             ggplot2::geom_ribbon(ggplot2::aes(ymin = Theta - SE, ymax = Theta + SE), alpha = 0.2, fill = theme_colors$primary) +
             ggplot2::theme_minimal() +
-            ggplot2::labs(y = "Trait Score", x = "Item Number") +
+            ggplot2::labs(y = "Trait Score", x = "Item Number", title = "Ability Progression") +
             ggplot2::theme(
               text = ggplot2::element_text(family = "Inter", size = 12),
               plot.title = ggplot2::element_text(face = "bold", size = 14),
               axis.title = ggplot2::element_text(size = 12)
             )
+          print(p)  # Explicitly print the plot
         } else {
           # Fallback to base R plot
           plot(data$Item, data$Theta, type = "l", col = theme_colors$primary, 
-               xlab = "Item Number", ylab = "Trait Score", main = "Ability Progression")
+               xlab = "Item Number", ylab = "Trait Score", main = "Ability Progression",
+               lwd = 2, ylim = range(c(data$Theta - data$SE, data$Theta + data$SE)))
           polygon(c(data$Item, rev(data$Item)), 
                   c(data$Theta - data$SE, rev(data$Theta + data$SE)), 
                   col = paste0(theme_colors$primary, "20"), border = NA)
+          grid()
         }
       }, error = function(e) {
-        # Ultimate fallback to text
-        plot(1, 1, type = "n", xlab = "", ylab = "", main = "Plot Unavailable")
-        text(1, 1, "Plot rendering failed\nData available in table below", cex = 1.2)
+        # Ultimate fallback to base R plot
+        logger(sprintf("Plot rendering failed: %s", e$message), level = "WARNING")
+        plot(data$Item, data$Theta, type = "l", col = theme_colors$primary, 
+             xlab = "Item Number", ylab = "Trait Score", main = "Ability Progression (Fallback)",
+             lwd = 2)
+        grid()
       })
     })
     
