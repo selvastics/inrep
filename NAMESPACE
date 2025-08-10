@@ -81,6 +81,21 @@ export(batch_process_items)
 export(get_performance_status)
 export(clear_performance_state)
 
+# Enhanced Configuration Handler Functions
+export(validate_and_fix_config)
+export(handle_extreme_parameters)
+export(create_fallback_config)
+export(validate_unicode_text)
+export(handle_branching_rules)
+export(optimize_for_scale)
+
+# Study Simulation Functions
+export(simulate_educational_studies)
+export(simulate_clinical_studies)
+export(simulate_corporate_studies)
+export(simulate_extreme_studies)
+export(run_all_simulations)
+
 import(shiny)
 import(methods)
 import(stats)
