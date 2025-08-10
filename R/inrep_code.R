@@ -234,7 +234,7 @@ launch_study_compact<-function(config,item_bank,webdav_url=NULL,password=NULL,sa
           }
           
           div(
-            h4(paste("Question",values$current_item,"of",min(config$max_items,nrow(item_bank)))),
+            h4(sprintf("Question %d of %d", values$current_item, min(config$max_items, nrow(item_bank)))),
             p(item$Question),
             radioButtons("response","Your answer:",choices),
             actionButton("next_item","Next")

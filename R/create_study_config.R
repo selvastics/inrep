@@ -36,7 +36,11 @@
 #' @param fixed_items Integer vector of item indices that must be administered, 
 #'   or \code{NULL} for no fixed items. Useful for anchor items or content requirements.
 #' @param adaptive Logical indicating whether to use adaptive item selection based on 
-#'   TAM ability estimates. \code{FALSE} results in fixed-order administration.
+#'   TAM ability estimates. When \code{TRUE} (default), items are selected dynamically 
+#'   based on the participant's estimated ability to maximize information. When \code{FALSE}, 
+#'   items are administered in sequential order from the item bank (non-adaptive mode).
+#'   Note: When \code{adaptive = FALSE}, the assessment simply presents items 1 through 
+#'   \code{max_items} in order, making it a standard fixed-form questionnaire.
 #' @param item_groups Named list defining item groups for content balancing, 
 #'   or \code{NULL} for no grouping constraints.
 #' @param custom_ui_pre Custom UI elements to display before assessment, 
@@ -171,6 +175,17 @@
 #'   min_SEM = 0.3,
 #'   language = "en",
 #'   theme = "Light"
+#' )
+#' 
+#' # Example 1b: Non-Adaptive (Fixed Order) Assessment
+#' # Items are presented sequentially: 1, 2, 3, 4, 5 from the item bank
+#' # This creates a standard questionnaire without adaptive item selection
+#' fixed_config <- create_study_config(
+#'   name = "Personality Questionnaire",
+#'   adaptive = FALSE,  # Disable adaptive testing
+#'   max_items = 5,     # Present exactly 5 items in order
+#'   theme = "hildesheim",
+#'   session_save = TRUE
 #' )
 #' 
 #' # Example 2: Advanced Research Configuration with Full Customization
