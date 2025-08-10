@@ -1,10 +1,12 @@
-#' Enhanced Session Recovery System
-#' 
-#' Provides comprehensive session recovery with auto-save, browser refresh handling,
-#' crash recovery, and data loss prevention mechanisms.
-#' 
-#' @author Enhanced by Comprehensive Robustness Review
-#' @version 2.0.0
+#' @title Enhanced Session Recovery System
+#' @description Provides comprehensive session recovery with auto-save, browser refresh handling,
+#' crash recovery, and data loss prevention mechanisms for the inrep package.
+#' @details This module implements robust session management to prevent data loss
+#' during assessment administration. It includes automatic saving, browser storage
+#' integration, and recovery mechanisms for interrupted sessions.
+#' @name enhanced_session_recovery
+#' @docType data
+NULL
 
 # Global recovery state
 .recovery_state <- new.env()

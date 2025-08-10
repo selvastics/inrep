@@ -1,10 +1,12 @@
-#' Enhanced Performance Optimization Module
-#' 
-#' Provides comprehensive performance improvements including caching, memory management,
-#' query optimization, and concurrent user handling.
-#' 
-#' @author Enhanced by Comprehensive Robustness Review
-#' @version 2.0.0
+#' @title Enhanced Performance Optimization Module
+#' @description Provides comprehensive performance improvements including caching, memory management,
+#' query optimization, and concurrent user handling for the inrep package.
+#' @details This module implements performance optimizations to handle large-scale
+#' assessments with thousands of concurrent users and large item banks. It includes
+#' caching strategies, memory management, and efficient data processing.
+#' @name enhanced_performance
+#' @docType data
+NULL
 
 # Global performance state
 .performance_state <- new.env()
