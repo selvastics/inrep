@@ -45,7 +45,7 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
       shiny::tags$link(rel = "stylesheet", href = "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"),
       shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
       shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet"),
-      shiny::tags$style(type = "text/css", get_theme_css(config$theme))
+      shiny::tags$style(type = "text/css", generate_theme_css(config$theme %||% "clean"))
     ),
     shiny::div(class = "min-h-screen bg-white text-black flex items-center justify-center",
       shiny::div(class = "assessment-card max-w-lg w-full",
@@ -237,4 +237,4 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
   )
 }
 
-# Use the get_theme_css function from themes.R instead of duplicating it here
+# Use the generate_theme_css function from themes.R instead of duplicating it here
