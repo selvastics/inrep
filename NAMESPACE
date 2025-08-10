@@ -106,6 +106,9 @@ export(fix_setup_issues)
 export(install_required_packages)
 export(diagnose_issue)
 
+# Operators
+export(`%||%`)
+
 # Quick Start Functions
 export(quick_start)
 export(simple_quiz)
