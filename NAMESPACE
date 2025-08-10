@@ -109,6 +109,10 @@ export(diagnose_issue)
 # Operators
 export(`%||%`)
 
+# Package Management Functions
+export(force_detach_inrep)
+export(reinstall_inrep)
+
 # Responsive UI Functions
 export(get_responsive_css)
 export(create_responsive_question)
