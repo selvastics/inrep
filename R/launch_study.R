@@ -948,7 +948,7 @@ launch_study <- function(
 
   # Use new generate_theme_css for all theming
   theme_css <- generate_theme_css(
-    theme_name = config$theme %||% "clean"
+    theme_name = config$theme %||% "light"
   )
   
   # Append custom CSS if provided
