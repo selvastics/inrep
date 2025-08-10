@@ -694,5 +694,5 @@ get_theme_styles <- function(theme_name) {
     '
   )
   
-  return themes[[theme_name]] %||% themes[["modern"]]
+  return(themes[[theme_name]] %||% themes[["modern"]])
 }
