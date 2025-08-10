@@ -946,15 +946,11 @@ launch_study <- function(
     logger(base::sprintf("Setting default adaptive_start: %d", config$adaptive_start))
   }
 
-  # Use new generate_theme_css for all theming
-  theme_css <- generate_theme_css(
-    theme_name = config$theme %||% "light"
+  # Use original get_theme_css for all theming
+  theme_css <- get_theme_css(
+    theme = config$theme %||% "light",
+    custom_css = custom_css
   )
-  
-  # Append custom CSS if provided
-  if (!is.null(custom_css)) {
-    theme_css <- paste0(theme_css, "\n", custom_css)
-  }
   
   if (config$model == "1PL") item_bank$a <- base::rep(1, base::nrow(item_bank))
   

@@ -119,6 +119,8 @@ export(validate_config_smart)
 # Theme Functions
 export(get_theme_config)
 export(generate_theme_css)
+export(get_theme_css)
+export(get_available_themes)
 
 # Responsive UI Functions
 export(get_responsive_css)
