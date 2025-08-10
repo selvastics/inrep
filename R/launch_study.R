@@ -13,7 +13,7 @@
 #'   Column structure varies by IRT model (see \strong{Item Bank Requirements} section).
 #' @param custom_css Character string containing CSS code for UI customization. 
 #'   When provided, overrides both built-in themes and \code{theme_config} settings.
-#' @param theme_config Named list of theme parameters (e.g., from \code{\link{launch_theme_editor}}).
+#' @param theme_config Named list of theme parameters for custom theming.
 #'   Contains CSS variable definitions like \code{primary_color}, \code{font_family}, etc.
 #' @param webdav_url Character string specifying WebDAV URL for cloud-based result storage,
 #'   or \code{NULL} to disable cloud functionality. When provided, \code{password} must also be specified.
@@ -235,7 +235,7 @@
 #' \itemize{
 #'   \item \code{theme_config}: Named list with CSS variable definitions
 #'   \item \code{custom_css}: Direct CSS injection for complete control
-#'   \item \code{\link{launch_theme_editor}}: Interactive theme builder with real-time preview
+#'   \item \code{\link{get_theme_config}}: Get theme configuration for available themes
 #' }
 #' 
 #' \strong{CSS Variables:} Key customization options include:

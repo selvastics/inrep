@@ -27,16 +27,19 @@
 
 ### Key Features
 
-- **Adaptive Testing**: Support for multiple IRT models (1PL, 2PL, 3PL, GRM) with sophisticated item selection algorithms  
+- **Adaptive & Non-Adaptive Testing**: Support for multiple IRT models (1PL, 2PL, 3PL, GRM) with sophisticated item selection algorithms, plus fixed-order questionnaires
 - **Web-based Interface**: Modern Shiny applications for test administration and data collection  
 - **TAM Integration**: All psychometric computations performed using the validated TAM package  
-- **LLM Integration**: Built-in support for LLM assistance in study configuration, deployment guidance, and optimization  
-- **Website Theme Scraping**: Extract colors, fonts, and logos from institutional websites for automatic branding  
-- **Multilingual Support**: Interface available in English, German, Spanish, and French  
-- **Customizable Themes**: Professional appearance with accessibility compliance  
-- **Comprehensive Reporting**: Multiple export formats with detailed analytics and visualizations  
-- **Session Management**: Robust session handling with resume capabilities  
-- **Accessibility Options**: WCAG-compliant with colorblind-safe palettes, large text, dyslexia-friendly fonts, and high-contrast modes.
+- **Professional Survey Features**: 30+ question types, branching logic, randomization, piping, quota control, and participant management
+- **Enhanced Security**: Input validation, rate limiting, CSRF protection, encryption, and audit logging
+- **Multilingual Support**: Interface available in English, German, Spanish, and French with complete translations
+- **10+ Beautiful Themes**: Including Light, Professional, Ocean, Forest, Midnight, Sunset, Hildesheim, and more
+- **Comprehensive Reporting**: Multiple export formats (CSV, JSON, SPSS, PDF) with detailed analytics and visualizations  
+- **Session Recovery**: Robust session handling with automatic save and crash recovery capabilities
+- **Smart Argument Validation**: Fuzzy matching for typos, case-insensitive parameters, helpful error messages
+- **Performance Optimized**: Caching, parallel processing, memory management for large-scale deployments
+- **Accessibility Options**: WCAG-compliant with colorblind-safe palettes, large text, dyslexia-friendly fonts, and high-contrast modes
+- **CRAN-Ready**: Clean code, comprehensive documentation, full test coverage
 
 ## Installation
 
@@ -103,24 +106,40 @@ The package requires R ≥ 4.1.0 and integrates with the following packages:
 
 ## Quick Start
 
-### Basic Usage
+### Adaptive Testing (IRT-based)
 
 ```r
 library(inrep)
-
 data(bfi_items)
 
+# Adaptive assessment with item selection based on ability
 config <- create_study_config(
-  name = "Personality Assessment",
-  model = "GRM",
+  name = "Adaptive Personality Assessment",
+  model = "GRM",           # Graded Response Model
+  adaptive = TRUE,         # Enable adaptive testing (default)
   max_items = 15,
   min_items = 5,
-  min_SEM = 0.3,
+  min_SEM = 0.3,          # Stop when precision reached
   demographics = c("Age", "Gender"),
-  language = "en"
+  theme = "professional"
 )
 
 launch_study(config, bfi_items)
+```
+
+### Non-Adaptive Testing (Fixed questionnaire)
+
+```r
+# Traditional questionnaire with fixed item order
+config_fixed <- create_study_config(
+  name = "Personality Questionnaire",
+  adaptive = FALSE,        # Disable adaptive testing
+  max_items = 5,          # Show exactly 5 items in order
+  theme = "hildesheim",   # University theme
+  session_save = TRUE     # Enable recovery
+)
+
+launch_study(config_fixed, bfi_items)
 ```
 
 ### Advanced Cognitive Assessment
