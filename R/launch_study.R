@@ -522,6 +522,11 @@ launch_study <- function(
     ...
 ) {
   
+  # Check if shiny is available (required for UI)
+  if (!requireNamespace("shiny", quietly = TRUE)) {
+    stop("Package 'shiny' is required but not available. Please install it with: install.packages('shiny')")
+  }
+  
   # Input validation
   extra_params <- list(...)
   if (length(extra_params) > 0) {

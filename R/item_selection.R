@@ -210,7 +210,10 @@
 #' 
 #' @keywords psychometrics adaptive testing item selection
 select_next_item <- function(rv, item_bank, config) {
-  require(logr)
+  if (!requireNamespace("logr", quietly = TRUE)) {
+    # Continue without logging if logr is not available
+    message("Package 'logr' not available - logging disabled")
+  }
   
   # Validate inputs
   if (!is.list(rv) || !is.data.frame(item_bank) || !is.list(config)) {
