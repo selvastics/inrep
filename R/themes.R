@@ -23,27 +23,27 @@ get_theme_config <- function(theme_name = "clean") {
   }
   
   themes <- list(
-    # Clean default theme - professional and minimal
+    # Clean default theme - ultra minimalist black and white
     clean = list(
       name = "Clean",
-      description = "Clean, professional theme with excellent readability",
+      description = "Ultra-minimalist black and white theme with sharp edges",
       colors = list(
-        primary = "#2C3E50",
-        secondary = "#34495E", 
-        success = "#27AE60",
-        info = "#3498DB",
-        warning = "#F39C12",
-        danger = "#E74C3C",
+        primary = "#000000",
+        secondary = "#000000", 
+        success = "#000000",
+        info = "#000000",
+        warning = "#000000",
+        danger = "#000000",
         background = "#FFFFFF",
-        surface = "#F8F9FA",
-        text = "#2C3E50",
-        text_secondary = "#7F8C8D",
-        border = "#DEE2E6"
+        surface = "#FFFFFF",
+        text = "#000000",
+        text_secondary = "#000000",
+        border = "#000000"
       ),
       fonts = list(
-        heading = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-        body = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-        mono = "'SF Mono', Monaco, 'Cascadia Code', monospace"
+        heading = "'Helvetica Neue', Helvetica, Arial, sans-serif",
+        body = "'Helvetica Neue', Helvetica, Arial, sans-serif",
+        mono = "'Courier New', Courier, monospace"
       ),
       spacing = list(
         base = "1rem",
@@ -52,14 +52,14 @@ get_theme_config <- function(theme_name = "clean") {
         spacious = "2rem"
       ),
       borders = list(
-        radius = "8px",
+        radius = "0px",
         width = "1px",
         style = "solid"
       ),
       shadows = list(
-        small = "0 1px 3px rgba(0,0,0,0.12)",
-        medium = "0 4px 6px rgba(0,0,0,0.1)",
-        large = "0 10px 20px rgba(0,0,0,0.15)"
+        small = "none",
+        medium = "none",
+        large = "none"
       )
     ),
     
@@ -400,9 +400,18 @@ generate_theme_css <- function(theme_name = "clean") {
   theme <- get_theme_config(theme_name)
   colors <- theme$colors
   fonts <- theme$fonts %||% list(
-    heading = "system-ui, sans-serif",
-    body = "system-ui, sans-serif"
+    heading = "'Helvetica Neue', sans-serif",
+    body = "'Helvetica Neue', sans-serif"
   )
+  borders <- theme$borders %||% list(
+    radius = "0px",
+    width = "1px",
+    style = "solid"
+  )
+  
+  # Special handling for clean/minimal themes
+  is_minimal <- theme_name %in% c("clean", "minimal", "default")
+  button_text_color <- if(is_minimal && colors$primary == "#000000") "white" else "white"
   
   css <- sprintf('
     :root {
@@ -419,33 +428,82 @@ generate_theme_css <- function(theme_name = "clean") {
       --color-border: %s;
       --font-heading: %s;
       --font-body: %s;
+      --border-radius: %s;
+      --border-width: %s;
+    }
+    
+    * {
+      border-radius: var(--border-radius) !important;
     }
     
     body {
       background-color: var(--color-background);
       color: var(--color-text);
       font-family: var(--font-body);
+      line-height: 1.6;
     }
     
     h1, h2, h3, h4, h5, h6 {
       font-family: var(--font-heading);
       color: var(--color-text);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    
+    .btn, button {
+      border-radius: var(--border-radius) !important;
+      border-width: var(--border-width);
+      font-weight: 500;
+      padding: 0.75rem 1.5rem;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.875rem;
     }
     
     .btn-primary {
       background-color: var(--color-primary);
-      border-color: var(--color-primary);
-      color: white;
+      border: var(--border-width) solid var(--color-primary);
+      color: %s;
     }
     
     .btn-primary:hover {
-      background-color: var(--color-secondary);
-      border-color: var(--color-secondary);
+      background-color: var(--color-background);
+      color: var(--color-primary);
+      border-color: var(--color-primary);
     }
     
     .card {
       background-color: var(--color-surface);
-      border-color: var(--color-border);
+      border: var(--border-width) solid var(--color-border);
+      border-radius: var(--border-radius) !important;
+      box-shadow: none !important;
+      padding: 2rem;
+    }
+    
+    input, select, textarea {
+      border: var(--border-width) solid var(--color-border) !important;
+      border-radius: var(--border-radius) !important;
+      background: var(--color-background);
+      color: var(--color-text);
+      padding: 0.5rem 0.75rem;
+    }
+    
+    input:focus, select:focus, textarea:focus {
+      outline: none !important;
+      border-color: var(--color-primary) !important;
+      box-shadow: none !important;
+    }
+    
+    .progress {
+      height: 2px;
+      background: var(--color-border);
+      border-radius: 0 !important;
+    }
+    
+    .progress-bar {
+      background: var(--color-primary);
+      border-radius: 0 !important;
     }
     
     .text-muted {
@@ -456,43 +514,80 @@ generate_theme_css <- function(theme_name = "clean") {
       border-color: var(--color-border) !important;
     }
     
+    .alert {
+      border: var(--border-width) solid var(--color-border);
+      border-radius: var(--border-radius) !important;
+      background: var(--color-background);
+      color: var(--color-text);
+    }
+    
     .alert-success {
-      background-color: var(--color-success);
       border-color: var(--color-success);
-      color: white;
     }
     
     .alert-info {
-      background-color: var(--color-info);
       border-color: var(--color-info);
-      color: white;
     }
     
     .alert-warning {
-      background-color: var(--color-warning);
       border-color: var(--color-warning);
-      color: white;
     }
     
     .alert-danger {
-      background-color: var(--color-danger);
       border-color: var(--color-danger);
-      color: white;
+    }
+    
+    /* Minimalist specific styles */
+    .assessment-card {
+      border: var(--border-width) solid var(--color-border);
+      padding: 3rem;
+      margin: 2rem auto;
+      max-width: 600px;
+      background: var(--color-background);
+    }
+    
+    .question-text {
+      font-size: 1.25rem;
+      font-weight: 400;
+      margin-bottom: 2rem;
+      line-height: 1.5;
+    }
+    
+    .response-option {
+      border: var(--border-width) solid var(--color-border);
+      padding: 1rem;
+      margin: 0.5rem 0;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--color-background);
+    }
+    
+    .response-option:hover {
+      background: var(--color-primary);
+      color: var(--color-background);
+    }
+    
+    .response-option.selected {
+      background: var(--color-primary);
+      color: var(--color-background);
     }
   ',
-    colors$primary %||% "#2C3E50",
-    colors$secondary %||% "#34495E",
-    colors$success %||% "#27AE60",
-    colors$info %||% "#3498DB",
-    colors$warning %||% "#F39C12",
-    colors$danger %||% "#E74C3C",
+    colors$primary %||% "#000000",
+    colors$secondary %||% "#000000",
+    colors$success %||% "#000000",
+    colors$info %||% "#000000",
+    colors$warning %||% "#000000",
+    colors$danger %||% "#000000",
     colors$background %||% "#FFFFFF",
-    colors$surface %||% "#F8F9FA",
-    colors$text %||% "#2C3E50",
-    colors$text_secondary %||% "#7F8C8D",
-    colors$border %||% "#DEE2E6",
-    fonts$heading %||% "system-ui, sans-serif",
-    fonts$body %||% "system-ui, sans-serif"
+    colors$surface %||% "#FFFFFF",
+    colors$text %||% "#000000",
+    colors$text_secondary %||% "#000000",
+    colors$border %||% "#000000",
+    fonts$heading %||% "'Helvetica Neue', sans-serif",
+    fonts$body %||% "'Helvetica Neue', sans-serif",
+    borders$radius %||% "0px",
+    borders$width %||% "1px",
+    button_text_color
   )
   
   return(css)
