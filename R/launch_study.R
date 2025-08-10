@@ -495,7 +495,7 @@
 #' @importFrom shinyWidgets radioGroupButtons
 #' @importFrom DT datatable DTOutput renderDT formatStyle
 #' @importFrom dplyr %>%
-#' @importFrom TAM tam.mml
+
 #' @importFrom jsonlite write_json
 #' @importFrom ggplot2 ggplot aes geom_line geom_ribbon theme_minimal labs theme element_text element_line element_blank
 #' @importFrom pdftools pdf_render_page
@@ -528,9 +528,81 @@ launch_study <- function(
     logger(paste("Ignoring unused parameters:", paste(names(extra_params), collapse = ", ")), level = "INFO")
   }
   
-  # Ensure required packages are loaded
-  if (!requireNamespace("magrittr", quietly = TRUE)) stop("Package 'magrittr' is required.")
-  if (!requireNamespace("TAM", quietly = TRUE)) stop("Package 'TAM' is required.")
+  # Safely load suggested packages with fallbacks
+  safe_load_packages <- function() {
+    packages <- list(
+      TAM = "TAM",
+      DT = "DT",
+      ggplot2 = "ggplot2", 
+      dplyr = "dplyr",
+      shinyWidgets = "shinyWidgets"
+    )
+    
+    loaded_packages <- list()
+    
+    for (pkg_name in names(packages)) {
+      pkg <- packages[[pkg_name]]
+      if (requireNamespace(pkg, quietly = TRUE)) {
+        loaded_packages[[pkg_name]] <- TRUE
+        # Load the package
+        library(pkg, character.only = TRUE)
+      } else {
+        loaded_packages[[pkg_name]] <- FALSE
+        warning(paste("Package", pkg, "not available. Some features may be limited."))
+      }
+    }
+    
+    return(loaded_packages)
+  }
+  
+  # Load suggested packages
+  available_packages <- safe_load_packages()
+  
+  # Check if TAM package is available (required for psychometric computations)
+  if (!available_packages$TAM) {
+    stop("Package 'TAM' is required but not available. Please install it with: install.packages('TAM')")
+  }
+  
+  # TAM function wrappers with fallbacks
+  tam.mml <- function(...) {
+    if (available_packages$TAM) {
+      TAM::tam.mml(...)
+    } else {
+      stop("TAM package not available")
+    }
+  }
+  
+  tam.mml.2pl <- function(...) {
+    if (available_packages$TAM) {
+      TAM::tam.mml.2pl(...)
+    } else {
+      stop("TAM package not available")
+    }
+  }
+  
+  tam.mml.3pl <- function(...) {
+    if (available_packages$TAM) {
+      TAM::tam.mml.3pl(...)
+    } else {
+      stop("TAM package not available")
+    }
+  }
+  
+  tam.wle <- function(...) {
+    if (available_packages$TAM) {
+      TAM::tam.wle(...)
+    } else {
+      stop("TAM package not available")
+    }
+  }
+  
+  tam.eap <- function(...) {
+    if (available_packages$TAM) {
+      TAM::tam.eap(...)
+    } else {
+      stop("TAM package not available")
+    }
+  }
   
   if (base::is.null(config)) {
     logger("Configuration is NULL", level = "ERROR")
@@ -1390,16 +1462,26 @@ launch_study <- function(
                                       selected = NULL,
                                       width = "100%"
                                     ),
-                                    shinyWidgets::radioGroupButtons(
-                                      inputId = "item_response",
-                                      label = NULL,
-                                      choices = stats::setNames(choices, labels),
-                                      selected = base::character(0),
-                                      direction = "vertical",
-                                      status = "default",
-                                      individual = TRUE,
-                                      width = "100%"
-                                    )
+                                    if (available_packages$shinyWidgets) {
+                                      shinyWidgets::radioGroupButtons(
+                                        inputId = "item_response",
+                                        label = NULL,
+                                        choices = stats::setNames(choices, labels),
+                                        selected = base::character(0),
+                                        direction = "vertical",
+                                        status = "default",
+                                        individual = TRUE,
+                                        width = "100%"
+                                      )
+                                    } else {
+                                      shiny::radioButtons(
+                                        inputId = "item_response",
+                                        label = NULL,
+                                        choices = stats::setNames(choices, labels),
+                                        selected = base::character(0),
+                                        width = "100%"
+                                      )
+                                    }
                        )
                      } else {
                        choices <- base::c(item$Option1, item$Option2, item$Option3, item$Option4)
@@ -1597,7 +1679,7 @@ launch_study <- function(
                      results_content <- base::c(results_content, base::list(
                        shiny::div(class = "results-section",
                                   shiny::h4(ui_labels$items_administered, class = "results-title"),
-                                  DT::DTOutput("item_table")
+                                  if (available_packages$DT) DT::DTOutput("item_table") else shiny::verbatimTextOutput("item_table")
                        ),
                        shiny::div(class = "results-section",
                                   shiny::h4(ui_labels$recommendations, class = "results-title"),
@@ -1620,93 +1702,128 @@ launch_study <- function(
       )
     })
     
-    output$theta_plot <- shiny::renderPlot({
-      if (!config$adaptive || base::length(rv$theta_history) < 2) return(NULL)
-      
-      # Get theme colors for plot
-      theme_colors <- list(
-        primary = "#007bff",
-        secondary = "#6c757d"
-      )
-      
-      if (!base::is.null(theme_config) && !base::is.null(theme_config$primary_color)) {
-        theme_colors$primary <- theme_config$primary_color
-      } else {
-        theme_name <- tolower(config$theme %||% "Light")
-        theme_colors$primary <- base::switch(theme_name,
-                                             "light" = "#212529",
-                                             "midnight" = "#6366f1",
-                                             "sunset" = "#ff6f61",
-                                             "forest" = "#2e7d32",
-                                             "ocean" = "#0288d1",
-                                             "berry" = "#c2185b",
-                                             "#007bff"
+    output$theta_plot <- if (available_packages$ggplot2) {
+      ggplot2::renderPlot({
+        if (!config$adaptive || base::length(rv$theta_history) < 2) return(NULL)
+        
+        # Get theme colors for plot
+        theme_colors <- list(
+          primary = "#007bff",
+          secondary = "#6c757d"
         )
-      }
-      
-      data <- base::data.frame(
-        Item = base::seq_along(rv$theta_history),
-        Theta = rv$theta_history,
-        SE = rv$se_history
-      )
-      
-      ggplot2::ggplot(data, ggplot2::aes(x = Item, y = Theta)) +
-        ggplot2::geom_line(color = theme_colors$primary, linewidth = 1) +
-        ggplot2::geom_ribbon(ggplot2::aes(ymin = Theta - SE, ymax = Theta + SE), alpha = 0.2, fill = theme_colors$primary) +
-        ggplot2::theme_minimal() +
-        ggplot2::labs(y = "Trait Score", x = "Item Number") +
-        ggplot2::theme(
-          text = ggplot2::element_text(family = "Inter", size = 12),
-          plot.title = ggplot2::element_text(face = "bold", size = 14),
-          axis.title = ggplot2::element_text(size = 12)
+        
+        if (!base::is.null(theme_config) && !base::is.null(theme_config$primary_color)) {
+          theme_colors$primary <- theme_config$primary_color
+        } else {
+          theme_name <- tolower(config$theme %||% "Light")
+          theme_colors$primary <- base::switch(theme_name,
+                                               "light" = "#212529",
+                                               "midnight" = "#6366f1",
+                                               "sunset" = "#ff6f61",
+                                               "forest" = "#2e7d32",
+                                               "ocean" = "#0288d1",
+                                               "berry" = "#c2185b",
+                                               "#007bff"
+          )
+        }
+        
+        data <- base::data.frame(
+          Item = base::seq_along(rv$theta_history),
+          Theta = rv$theta_history,
+          SE = rv$se_history
         )
-    })
+        
+        ggplot2::ggplot(data, ggplot2::aes(x = Item, y = Theta)) +
+          ggplot2::geom_line(color = theme_colors$primary, linewidth = 1) +
+          ggplot2::geom_ribbon(ggplot2::aes(ymin = Theta - SE, ymax = Theta + SE), alpha = 0.2, fill = theme_colors$primary) +
+          ggplot2::theme_minimal() +
+          ggplot2::labs(y = "Trait Score", x = "Item Number") +
+          ggplot2::theme(
+            text = ggplot2::element_text(family = "Inter", size = 12),
+            plot.title = ggplot2::element_text(face = "bold", size = 14),
+            axis.title = ggplot2::element_text(size = 12)
+          )
+      })
+    } else {
+      shiny::renderText({
+        if (!config$adaptive || base::length(rv$theta_history) < 2) return("No plot data available")
+        "Plotting not available - ggplot2 package not installed"
+      })
+    }
     
-    output$item_table <- DT::renderDT({
-      if (base::is.null(rv$cat_result)) return()
-      items <- rv$cat_result$administered
-      responses <- rv$cat_result$responses
-      dat <- if (config$model == "GRM") {
-        base::data.frame(
-          Item = 1:base::length(items),
-          Question = item_bank$Question[items],
-          Response = responses,
-          Time = base::round(rv$cat_result$response_times, 1),
-          check.names = FALSE
+    output$item_table <- if (available_packages$DT) {
+      DT::renderDT({
+        if (base::is.null(rv$cat_result)) return()
+        items <- rv$cat_result$administered
+        responses <- rv$cat_result$responses
+        dat <- if (config$model == "GRM") {
+          base::data.frame(
+            Item = 1:base::length(items),
+            Question = item_bank$Question[items],
+            Response = responses,
+            Time = base::round(rv$cat_result$response_times, 1),
+            check.names = FALSE
+          )
+        } else {
+          base::data.frame(
+            Item = 1:base::length(items),
+            Question = item_bank$Question[items],
+            Response = base::ifelse(responses == 1, "Correct", "Incorrect"),
+            Correct = item_bank$Answer[items],
+            Time = base::round(rv$cat_result$response_times, 1),
+            check.names = FALSE
+          )
+        }
+        columnDefs <- base::list(
+          base::list(width = '50%', targets = 0),
+          base::list(width = '25%', targets = 1)
         )
-      } else {
-        base::data.frame(
-          Item = 1:base::length(items),
-          Question = item_bank$Question[items],
-          Response = base::ifelse(responses == 1, "Correct", "Incorrect"),
-          Correct = item_bank$Answer[items],
-          Time = base::round(rv$cat_result$response_times, 1),
-          check.names = FALSE
-        )
-      }
-      columnDefs <- base::list(
-        base::list(width = '50%', targets = 0),
-        base::list(width = '25%', targets = 1)
-      )
-      if (config$model == "GRM") {
-        columnDefs[[3]] <- base::list(width = '25%', targets = 2)
-      } else {
-        columnDefs[[3]] <- base::list(width = '25%', targets = 2)
-        columnDefs[[4]] <- base::list(width = '25%', targets = 3)
-      }
-      DT::datatable(
-        dat,
-        rownames = FALSE,
-        options = base::list(
-          dom = 't',
-          paging = FALSE,
-          searching = FALSE,
-          autoWidth = TRUE,
-          columnDefs = columnDefs
-        )
-      ) %>%
-        DT::formatStyle(columns = base::names(dat), color = 'var(--text-color)', fontFamily = 'var(--font-family)')
-    })
+        if (config$model == "GRM") {
+          columnDefs[[3]] <- base::list(width = '25%', targets = 2)
+        } else {
+          columnDefs[[3]] <- base::list(width = '25%', targets = 2)
+          columnDefs[[4]] <- base::list(width = '25%', targets = 3)
+        }
+        DT::datatable(
+          dat,
+          rownames = FALSE,
+          options = base::list(
+            dom = 't',
+            paging = FALSE,
+            searching = FALSE,
+            autoWidth = TRUE,
+            columnDefs = columnDefs
+          )
+        ) -> dt_table
+        
+        DT::formatStyle(dt_table, columns = base::names(dat), color = 'var(--text-color)', fontFamily = 'var(--font-family)')
+      })
+    } else {
+      shiny::renderPrint({
+        if (base::is.null(rv$cat_result)) return()
+        items <- rv$cat_result$administered
+        responses <- rv$cat_result$responses
+        dat <- if (config$model == "GRM") {
+          base::data.frame(
+            Item = 1:base::length(items),
+            Question = item_bank$Question[items],
+            Response = responses,
+            Time = base::round(rv$cat_result$response_times, 1),
+            check.names = FALSE
+          )
+        } else {
+          base::data.frame(
+            Item = 1:base::length(items),
+            Question = item_bank$Question[items],
+            Response = base::ifelse(responses == 1, "Correct", "Incorrect"),
+            Correct = item_bank$Answer[items],
+            Time = base::round(rv$cat_result$response_times, 1),
+            check.names = FALSE
+          )
+        }
+        print(dat)
+      })
+    }
     
     output$recommendations <- shiny::renderUI({
       shiny::req(rv$cat_result)
@@ -2219,7 +2336,12 @@ launch_study <- function(
           } else if (config$response_ui_type == "dropdown") {
             shiny::updateSelectInput(session, "item_response", selected = NULL)
           } else {
-            shinyWidgets::updateRadioGroupButtons(session, "item_response", selected = base::character(0))
+            if (available_packages$shinyWidgets) {
+              shinyWidgets::updateRadioGroupButtons(session, "item_response", selected = base::character(0))
+            } else {
+              # Fallback for when shinyWidgets is not available
+              shiny::updateRadioButtons(session, "item_response", selected = base::character(0))
+            }
           }
         }
       }
