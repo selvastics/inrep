@@ -88,22 +88,22 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
               shiny::div(
                 shiny::tags$label(ui_labels$gender_label, class = "block text-sm mb-1"),
                 shiny::selectInput("participant_gender", label = NULL, choices = c(
-                  paste0(ui_labels$select_option %||% "Select...") = "", 
-                  ui_labels$gender_female = "female", 
-                  ui_labels$gender_male = "male", 
-                  ui_labels$gender_other = "other", 
-                  ui_labels$gender_prefer_not = "prefer_not"
+                  "Select..." = "", 
+                  "Female" = "female", 
+                  "Male" = "male", 
+                  "Other" = "other", 
+                  "Prefer not to say" = "prefer_not"
                 ), width = "100%")
               ),
               shiny::div(
                 shiny::tags$label(ui_labels$education_label, class = "block text-sm mb-1"),
                 shiny::selectInput("participant_education", label = NULL, choices = c(
-                  paste0(ui_labels$select_option %||% "Select...") = "", 
-                  ui_labels$education_high_school = "highschool", 
-                  ui_labels$education_bachelor = "bachelor", 
-                  ui_labels$education_master = "master", 
-                  ui_labels$education_doctorate = "doctorate", 
-                  ui_labels$education_other = "other"
+                  "Select..." = "", 
+                  "High School" = "highschool", 
+                  "Bachelor's Degree" = "bachelor", 
+                  "Master's Degree" = "master", 
+                  "Doctorate" = "doctorate", 
+                  "Other" = "other"
                 ), width = "100%")
               )
             ),
