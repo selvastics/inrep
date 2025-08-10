@@ -109,6 +109,20 @@ export(diagnose_issue)
 # Operators
 export(`%||%`)
 
+# Responsive UI Functions
+export(get_responsive_css)
+export(create_responsive_question)
+export(apply_responsive_theme)
+
+# Professional Survey Functions
+export(initialize_survey_features)
+export(create_professional_survey)
+export(compile_logic_rules)
+export(setup_quotas)
+export(manage_participants)
+export(export_survey_data)
+export(get_survey_statistics)
+
 # Quick Start Functions
 export(quick_start)
 export(simple_quiz)
