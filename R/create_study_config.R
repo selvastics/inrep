@@ -49,6 +49,8 @@
 #'   Options: \code{"radio"}, \code{"slider"}, \code{"dropdown"}.
 #' @param session_save Logical indicating whether to enable session state persistence
 #'   for interrupted session recovery.
+#' @param show_session_time Logical indicating whether to display session time remaining
+#'   in the top-right corner. Defaults to FALSE for cleaner interface.
 #' @param theme Character string specifying built-in UI theme. Options: \code{"Light"}, 
 #'   \code{"Midnight"}, \code{"Sunset"}, \code{"Forest"}, \code{"Ocean"}, \code{"Berry"}, \code{"Professional"}.
 #' @param language Character string specifying interface language. 
@@ -402,6 +404,7 @@ create_study_config <- function(
     response_validation_fun = NULL,
     response_ui_type = "radio",
     session_save = FALSE,
+    show_session_time = FALSE,  # Hide session time display by default
     theme = "Professional",
     language = "en",
     item_translations = NULL,

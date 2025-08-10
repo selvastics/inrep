@@ -639,6 +639,10 @@ launch_study <- function(
   safe_render_plot <- function(expr, ...) {
     if (available_packages$ggplot2) {
       tryCatch({
+        # Ensure ggplot2 is properly loaded and accessible
+        if (!requireNamespace("ggplot2", quietly = TRUE)) {
+          stop("ggplot2 package not available")
+        }
         ggplot2::renderPlot(expr, ...)
       }, error = function(e) {
         logger(sprintf("ggplot2::renderPlot error: %s", e$message), level = "ERROR")
@@ -1303,8 +1307,8 @@ launch_study <- function(
       })
     }
     
-    # Session status UI (with fallback)
-    if (session_save) {
+    # Session status UI (hidden by default - only shows when explicitly enabled)
+    if (session_save && isTRUE(config$show_session_time)) {
       output$session_status_ui <- shiny::renderUI({
         if (exists("get_session_status") && is.function(get_session_status)) {
           tryCatch({
@@ -1343,6 +1347,11 @@ launch_study <- function(
             shiny::div("Session saving enabled")
           )
         }
+      })
+    } else {
+      # Hide session status UI by default
+      output$session_status_ui <- shiny::renderUI({
+        NULL
       })
     }
     
@@ -2075,7 +2084,7 @@ launch_study <- function(
         })
       }
       
-      rv$stage <- "test"
+      rv$stage <- "assessment"  # Fixed: was "test", now "assessment"
       rv$start_time <- base::Sys.time()
       rv$current_item <- inrep::select_next_item(rv, item_bank, config)
       logger("Beginning assessment")
@@ -2486,9 +2495,9 @@ launch_study <- function(
         })
       } else {
         # Fallback recovery
-        rv$stage <- "test"
+        rv$stage <- "assessment"  # Fixed: was "test", now "assessment"
         rv$error_message <- NULL
-        logger("Fallback error recovery - returning to test", level = "INFO")
+        logger("Fallback error recovery - returning to assessment", level = "INFO")
       }
     })
     
