@@ -500,9 +500,13 @@ create_study_config <- function(
       validation_errors <- c(validation_errors, "criteria must be one of: MI, RANDOM, WEIGHTED, MFI")
     }
     
-    if (!model %in% c("1PL", "2PL", "3PL", "GRM")) {
-      validation_errors <- c(validation_errors, "model must be one of: 1PL, 2PL, 3PL, GRM")
-    }
+    # Use smart model validation
+    tryCatch({
+      model <- validate_model(model)
+    }, error = function(e) {
+      # Don't add to validation_errors here, validate_model will show helpful message
+      NULL
+    })
     
     if (!estimation_method %in% c("TAM", "MIRT", "EAP", "WLE")) {
       validation_errors <- c(validation_errors, "estimation_method must be one of: TAM, MIRT, EAP, WLE")
@@ -520,11 +524,13 @@ create_study_config <- function(
       validation_errors <- c(validation_errors, "response_ui_type must be one of: radio, slider, dropdown")
     }
     
-    if (!is.character(theme)) {
-      validation_errors <- c(validation_errors, "theme must be a character string")
-    } else if (!theme %in% c("minimal", "dark", "modern", "Light", "Midnight", "Sunset", "Forest", "Ocean", "Berry", "Professional", "Clinical", "Educational", "Research", "hildesheim")) {
-      validation_errors <- c(validation_errors, "theme must be one of: minimal, dark, modern, Light, Midnight, Sunset, Forest, Ocean, Berry, Professional, Clinical, Educational, Research, hildesheim")
-    }
+    # Use smart theme validation
+    tryCatch({
+      theme <- validate_theme(theme)
+    }, error = function(e) {
+      # Don't add to validation_errors here, validate_theme will show helpful message
+      NULL
+    })
     
     if (!language %in% c("en", "de", "es", "fr")) {
       validation_errors <- c(validation_errors, "language must be one of: en, de, es, fr")

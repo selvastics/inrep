@@ -1,252 +1,499 @@
-#' Validate Theme Name
-#' @param theme_name Theme name to validate
-#' @return Validated theme name if found, otherwise 'light'
-#' @export
-validate_theme_name <- function(theme_name) {
-  theme_name <- tolower(theme_name)
-  valid_themes <- tolower(get_builtin_themes())
-  match_index <- match(theme_name, valid_themes)
-  if (!is.na(match_index)) {
-    return(get_builtin_themes()[match_index])
-  }
-  warning(sprintf("Theme '%s' not found, using 'light'", theme_name))
-  "light"
-}
+#' Theme Definitions for inrep Package
+#' 
+#' Provides comprehensive theme definitions for the UI
+#' 
+#' @name themes
+#' @docType data
+NULL
 
-#' Get All Available Themes
-#' @return Character vector of available themes
+#' Get Theme Configuration
+#' 
+#' Returns complete theme configuration
+#' 
+#' @param theme_name Name of the theme
+#' @return Theme configuration list
 #' @export
-get_builtin_themes <- function() {
-  # Try to get themes from installed package first
-  theme_dir <- system.file("themes", package = "inrep")
+get_theme_config <- function(theme_name = "clean") {
   
-  # If package not installed, try to find themes in current directory
-  if (theme_dir == "") {
-    theme_dir <- "inst/themes"
+  # Validate theme name
+  if (!is.null(theme_name)) {
+    theme_name <- tolower(as.character(theme_name))
+  } else {
+    theme_name <- "clean"
   }
   
-  # Check if theme directory exists
-  if (!dir.exists(theme_dir)) {
-    # Fallback to hardcoded list of known themes
-    return(c("light", "dark", "professional", "clinical", "research", "hildesheim", 
-             "inrep", "accessible-blue", "colorblind-safe", "dyslexia-friendly", 
-             "high-contrast", "large-text", "midnight", "ocean", "forest", 
-             "berry", "sunset", "sepia", "paper", "monochrome", "vibrant", 
-             "darkblue", "dark-mode"))
-  }
-  
-  # Get all CSS files from theme directory
-  theme_files <- list.files(
-    theme_dir, 
-    pattern = "\\.css$", 
-    full.names = FALSE
+  themes <- list(
+    # Clean default theme - professional and minimal
+    clean = list(
+      name = "Clean",
+      description = "Clean, professional theme with excellent readability",
+      colors = list(
+        primary = "#2C3E50",
+        secondary = "#34495E", 
+        success = "#27AE60",
+        info = "#3498DB",
+        warning = "#F39C12",
+        danger = "#E74C3C",
+        background = "#FFFFFF",
+        surface = "#F8F9FA",
+        text = "#2C3E50",
+        text_secondary = "#7F8C8D",
+        border = "#DEE2E6"
+      ),
+      fonts = list(
+        heading = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+        body = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+        mono = "'SF Mono', Monaco, 'Cascadia Code', monospace"
+      ),
+      spacing = list(
+        base = "1rem",
+        compact = "0.5rem",
+        comfortable = "1.5rem",
+        spacious = "2rem"
+      ),
+      borders = list(
+        radius = "8px",
+        width = "1px",
+        style = "solid"
+      ),
+      shadows = list(
+        small = "0 1px 3px rgba(0,0,0,0.12)",
+        medium = "0 4px 6px rgba(0,0,0,0.1)",
+        large = "0 10px 20px rgba(0,0,0,0.15)"
+      )
+    ),
+    
+    # Default theme - alias for clean
+    default = list(
+      name = "Default",
+      description = "Default theme (same as clean)",
+      colors = list(
+        primary = "#2C3E50",
+        secondary = "#34495E",
+        success = "#27AE60",
+        info = "#3498DB",
+        warning = "#F39C12",
+        danger = "#E74C3C",
+        background = "#FFFFFF",
+        surface = "#F8F9FA",
+        text = "#2C3E50",
+        text_secondary = "#7F8C8D",
+        border = "#DEE2E6"
+      ),
+      fonts = list(
+        heading = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+        body = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+        mono = "'SF Mono', Monaco, 'Cascadia Code', monospace"
+      )
+    ),
+    
+    # Minimal theme
+    minimal = list(
+      name = "Minimal",
+      description = "Minimalist black and white theme",
+      colors = list(
+        primary = "#000000",
+        secondary = "#333333",
+        success = "#000000",
+        info = "#666666",
+        warning = "#333333",
+        danger = "#000000",
+        background = "#FFFFFF",
+        surface = "#FAFAFA",
+        text = "#000000",
+        text_secondary = "#666666",
+        border = "#E0E0E0"
+      ),
+      fonts = list(
+        heading = "Georgia, serif",
+        body = "Georgia, serif",
+        mono = "Courier, monospace"
+      )
+    ),
+    
+    # Light theme
+    light = list(
+      name = "Light",
+      description = "Bright and airy theme",
+      colors = list(
+        primary = "#4A90E2",
+        secondary = "#7BB3EC",
+        success = "#7ED321",
+        info = "#50E3C2",
+        warning = "#F5A623",
+        danger = "#D0021B",
+        background = "#FFFFFF",
+        surface = "#F7F9FC",
+        text = "#333333",
+        text_secondary = "#828282",
+        border = "#E1E8ED"
+      )
+    ),
+    
+    # Dark theme
+    dark = list(
+      name = "Dark",
+      description = "Dark mode theme for reduced eye strain",
+      colors = list(
+        primary = "#BB86FC",
+        secondary = "#03DAC6",
+        success = "#00C853",
+        info = "#2196F3",
+        warning = "#FFB300",
+        danger = "#CF6679",
+        background = "#121212",
+        surface = "#1E1E1E",
+        text = "#FFFFFF",
+        text_secondary = "#B3B3B3",
+        border = "#333333"
+      )
+    ),
+    
+    # Midnight theme
+    midnight = list(
+      name = "Midnight",
+      description = "Deep blue dark theme",
+      colors = list(
+        primary = "#5E72E4",
+        secondary = "#825EE4",
+        success = "#2DCE89",
+        info = "#11CDEF",
+        warning = "#FB6340",
+        danger = "#F5365C",
+        background = "#0B1929",
+        surface = "#172B4D",
+        text = "#E9ECEF",
+        text_secondary = "#ADB5BD",
+        border = "#2B3553"
+      )
+    ),
+    
+    # Modern theme
+    modern = list(
+      name = "Modern",
+      description = "Contemporary design with gradients",
+      colors = list(
+        primary = "#667EEA",
+        secondary = "#764BA2",
+        success = "#48BB78",
+        info = "#4299E1",
+        warning = "#ED8936",
+        danger = "#F56565",
+        background = "#F7FAFC",
+        surface = "#FFFFFF",
+        text = "#2D3748",
+        text_secondary = "#718096",
+        border = "#E2E8F0"
+      )
+    ),
+    
+    # Professional theme
+    professional = list(
+      name = "Professional",
+      description = "Business-appropriate theme",
+      colors = list(
+        primary = "#003366",
+        secondary = "#336699",
+        success = "#006600",
+        info = "#0066CC",
+        warning = "#FF9900",
+        danger = "#CC0000",
+        background = "#F5F5F5",
+        surface = "#FFFFFF",
+        text = "#333333",
+        text_secondary = "#666666",
+        border = "#CCCCCC"
+      )
+    ),
+    
+    # Clinical theme
+    clinical = list(
+      name = "Clinical",
+      description = "Medical/clinical setting theme",
+      colors = list(
+        primary = "#0077B5",
+        secondary = "#00A8E1",
+        success = "#00B74A",
+        info = "#17A2B8",
+        warning = "#FFC107",
+        danger = "#DC3545",
+        background = "#FAFBFC",
+        surface = "#FFFFFF",
+        text = "#212529",
+        text_secondary = "#6C757D",
+        border = "#DEE2E6"
+      )
+    ),
+    
+    # Educational theme
+    educational = list(
+      name = "Educational",
+      description = "Friendly educational theme",
+      colors = list(
+        primary = "#4CAF50",
+        secondary = "#8BC34A",
+        success = "#689F38",
+        info = "#03A9F4",
+        warning = "#FF9800",
+        danger = "#F44336",
+        background = "#FAFAFA",
+        surface = "#FFFFFF",
+        text = "#424242",
+        text_secondary = "#757575",
+        border = "#E0E0E0"
+      )
+    ),
+    
+    # Research theme
+    research = list(
+      name = "Research",
+      description = "Academic research theme",
+      colors = list(
+        primary = "#1E3A8A",
+        secondary = "#3B82F6",
+        success = "#10B981",
+        info = "#06B6D4",
+        warning = "#F59E0B",
+        danger = "#EF4444",
+        background = "#F9FAFB",
+        surface = "#FFFFFF",
+        text = "#111827",
+        text_secondary = "#6B7280",
+        border = "#E5E7EB"
+      )
+    ),
+    
+    # Corporate theme
+    corporate = list(
+      name = "Corporate",
+      description = "Corporate professional theme",
+      colors = list(
+        primary = "#1B365D",
+        secondary = "#4A6FA5",
+        success = "#57A773",
+        info = "#5DADE2",
+        warning = "#F4D03F",
+        danger = "#E74C3C",
+        background = "#F8F9FA",
+        surface = "#FFFFFF",
+        text = "#2C3E50",
+        text_secondary = "#7F8C8D",
+        border = "#D5DBDB"
+      )
+    ),
+    
+    # Hildesheim theme (custom)
+    hildesheim = list(
+      name = "Hildesheim",
+      description = "University of Hildesheim theme",
+      colors = list(
+        primary = "#003560",
+        secondary = "#0066A1",
+        success = "#6BA644",
+        info = "#00A9E0",
+        warning = "#FFB81C",
+        danger = "#E4002B",
+        background = "#F5F5F5",
+        surface = "#FFFFFF",
+        text = "#003560",
+        text_secondary = "#5C6670",
+        border = "#D0D3D4"
+      )
+    ),
+    
+    # Colorful themes
+    sunset = list(
+      name = "Sunset",
+      description = "Warm sunset colors",
+      colors = list(
+        primary = "#FF6B6B",
+        secondary = "#4ECDC4",
+        success = "#95E77E",
+        info = "#45B7D1",
+        warning = "#FDCB6E",
+        danger = "#EE5A24",
+        background = "#FFF5F5",
+        surface = "#FFFFFF",
+        text = "#2C3E50",
+        text_secondary = "#7F8C8D",
+        border = "#FFE0E0"
+      )
+    ),
+    
+    forest = list(
+      name = "Forest",
+      description = "Natural forest colors",
+      colors = list(
+        primary = "#2E7D32",
+        secondary = "#558B2F",
+        success = "#689F38",
+        info = "#00ACC1",
+        warning = "#FFB300",
+        danger = "#C62828",
+        background = "#F1F8E9",
+        surface = "#FFFFFF",
+        text = "#1B5E20",
+        text_secondary = "#558B2F",
+        border = "#C8E6C9"
+      )
+    ),
+    
+    ocean = list(
+      name = "Ocean",
+      description = "Deep ocean blues",
+      colors = list(
+        primary = "#006994",
+        secondary = "#0288D1",
+        success = "#00BFA5",
+        info = "#00ACC1",
+        warning = "#FFB300",
+        danger = "#D32F2F",
+        background = "#E0F7FA",
+        surface = "#FFFFFF",
+        text = "#004D66",
+        text_secondary = "#00838F",
+        border = "#B2EBF2"
+      )
+    ),
+    
+    berry = list(
+      name = "Berry",
+      description = "Rich berry tones",
+      colors = list(
+        primary = "#8E24AA",
+        secondary = "#D81B60",
+        success = "#43A047",
+        info = "#1E88E5",
+        warning = "#FB8C00",
+        danger = "#E53935",
+        background = "#FCE4EC",
+        surface = "#FFFFFF",
+        text = "#4A148C",
+        text_secondary = "#7B1FA2",
+        border = "#F8BBD0"
+      )
+    )
   )
   
-  # Remove .css extension and return
-  tools::file_path_sans_ext(theme_files)
+  # Return requested theme or default to clean
+  theme <- themes[[theme_name]]
+  if (is.null(theme)) {
+    message(sprintf(
+      "Theme '%s' not found. Using 'clean' theme instead.",
+      theme_name
+    ))
+    theme <- themes[["clean"]]
+  }
+  
+  return(theme)
 }
 
-#' Generate CSS for Theme
-#' @param theme Theme name (case-insensitive)
-#' @param custom_css Optional custom CSS to append
+#' Generate Theme CSS
+#' 
+#' Generates CSS from theme configuration
+#' 
+#' @param theme_name Name of the theme
 #' @return CSS string
 #' @export
-get_theme_css <- function(theme = "light", custom_css = NULL) {
-  theme <- tolower(theme)
+generate_theme_css <- function(theme_name = "clean") {
   
-  # Get available themes
-  available_themes <- tolower(get_builtin_themes())
-  
-  # Find matching theme
-  match_index <- match(theme, available_themes)
-  
-  if (is.na(match_index)) {
-    warning(sprintf("Theme '%s' not found, using 'light'", theme))
-    theme <- "light"
-  } else {
-    theme <- get_builtin_themes()[match_index]
-  }
-  
-  # Construct CSS file path
-  css_path <- system.file("themes", paste0(theme, ".css"), package = "inrep")
-  
-  # If package not installed, try to find CSS in current directory
-  if (css_path == "") {
-    css_path <- file.path("inst/themes", paste0(theme, ".css"))
-  }
-  
-  if (!file.exists(css_path)) {
-    warning(sprintf("CSS file for theme '%s' not found: %s", theme, css_path))
-    return("")
-  }
-  
-  # Read CSS content
-  css_content <- paste(readLines(css_path, warn = FALSE), collapse = "\n")
-  
-  # Append custom CSS if provided
-  if (!is.null(custom_css)) {
-    css_content <- paste0(css_content, "\n", custom_css)
-  }
-  
-  return(css_content)
-}
-
-#' Get Theme CSS File Path
-#' @param theme Theme name
-#' @return Full path to CSS file
-#' @export
-get_theme_css_path <- function(theme) {
-  theme <- tolower(theme)
-  available_themes <- tolower(get_builtin_themes())
-  
-  match_index <- match(theme, available_themes)
-  if (is.na(match_index)) {
-    theme <- "light"
-  } else {
-    theme <- get_builtin_themes()[match_index]
-  }
-  
-  css_path <- system.file("themes", paste0(theme, ".css"), package = "inrep")
-  
-  # If package not installed, try to find CSS in current directory
-  if (css_path == "") {
-    css_path <- file.path("inst/themes", paste0(theme, ".css"))
-  }
-  
-  css_path
-}
-
-#' List Available Theme Files
-#' @return Data frame with theme names and file paths
-#' @export
-list_theme_files <- function() {
-  theme_dir <- system.file("themes", package = "inrep")
-  files <- list.files(theme_dir, pattern = "\\.css$", full.names = TRUE)
-  
-  data.frame(
-    theme_name = tools::file_path_sans_ext(basename(files)),
-    file_path = files,
-    stringsAsFactors = FALSE
-  )
-}
-
-#' Launch Theme Editor
-#' @description
-#' Launches an interactive web-based theme editor for customizing the appearance
-#' of inrep assessment interfaces. Provides real-time preview and CSS customization
-#' capabilities.
-#' @return A Shiny application object for the theme editor
-#' @export
-launch_theme_editor <- function() {
-  if (!requireNamespace("shiny", quietly = TRUE)) {
-    stop("Shiny package is required for theme editor")
-  }
-  
-  ui <- shiny::fluidPage(
-    shiny::titlePanel("inrep Theme Editor"),
-    shiny::sidebarLayout(
-      shiny::sidebarPanel(
-        shiny::selectInput("theme_select", "Select Theme", choices = get_builtin_themes()),
-        shiny::colourInput("primary_color", "Primary Color", value = "#007bff"),
-        shiny::colourInput("secondary_color", "Secondary Color", value = "#6c757d"),
-        shiny::colourInput("background_color", "Background Color", value = "#ffffff"),
-        shiny::colourInput("text_color", "Text Color", value = "#212529"),
-        shiny::textInput("font_family", "Font Family", value = "Inter, sans-serif"),
-        shiny::sliderInput("border_radius", "Border Radius", min = 0, max = 20, value = 8),
-        shiny::actionButton("apply_changes", "Apply Changes"),
-        shiny::downloadButton("download_css", "Download CSS")
-      ),
-      shiny::mainPanel(
-        shiny::h3("Theme Preview"),
-        shiny::tags$div(
-          id = "theme_preview",
-          style = "padding: 20px; border: 1px solid #ddd; border-radius: 8px;",
-          shiny::tags$h4("Sample Assessment Question"),
-          shiny::tags$p("This is how your assessment will look with the selected theme."),
-          shiny::tags$div(
-            class = "btn-group",
-            shiny::tags$button(class = "btn btn-primary", "Option 1"),
-            shiny::tags$button(class = "btn btn-secondary", "Option 2"),
-            shiny::tags$button(class = "btn btn-success", "Option 3")
-          )
-        ),
-        shiny::verbatimTextOutput("css_output")
-      )
-    )
+  theme <- get_theme_config(theme_name)
+  colors <- theme$colors
+  fonts <- theme$fonts %||% list(
+    heading = "system-ui, sans-serif",
+    body = "system-ui, sans-serif"
   )
   
-  server <- function(input, output, session) {
-    theme_css <- shiny::reactive({
-      css <- sprintf('
-        :root {
-          --primary-color: %s;
-          --secondary-color: %s;
-          --background-color: %s;
-          --text-color: %s;
-          --font-family: %s;
-          --border-radius: %spx;
-        }
-        
-        body {
-          font-family: var(--font-family);
-          background-color: var(--background-color);
-          color: var(--text-color);
-        }
-        
-        .btn-primary {
-          background-color: var(--primary-color);
-          border-color: var(--primary-color);
-          border-radius: var(--border-radius);
-        }
-        
-        .btn-secondary {
-          background-color: var(--secondary-color);
-          border-color: var(--secondary-color);
-          border-radius: var(--border-radius);
-        }
-        
-        .assessment-card {
-          background-color: var(--background-color);
-          color: var(--text-color);
-          border-radius: var(--border-radius);
-          padding: 20px;
-          margin: 10px 0;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-      ', 
-      input$primary_color, 
-      input$secondary_color, 
-      input$background_color, 
-      input$text_color, 
-      input$font_family, 
-      input$border_radius
-      )
-      css
-    })
+  css <- sprintf('
+    :root {
+      --color-primary: %s;
+      --color-secondary: %s;
+      --color-success: %s;
+      --color-info: %s;
+      --color-warning: %s;
+      --color-danger: %s;
+      --color-background: %s;
+      --color-surface: %s;
+      --color-text: %s;
+      --color-text-secondary: %s;
+      --color-border: %s;
+      --font-heading: %s;
+      --font-body: %s;
+    }
     
-    output$css_output <- shiny::renderText({
-      theme_css()
-    })
+    body {
+      background-color: var(--color-background);
+      color: var(--color-text);
+      font-family: var(--font-body);
+    }
     
-    shiny::observeEvent(input$apply_changes, {
-      shiny::runjs(sprintf('
-        document.getElementById("theme_preview").style.cssText = `
-          background-color: %s;
-          color: %s;
-          border-radius: %spx;
-        `;
-      ', input$background_color, input$text_color, input$border_radius))
-    })
+    h1, h2, h3, h4, h5, h6 {
+      font-family: var(--font-heading);
+      color: var(--color-text);
+    }
     
-    output$download_css <- shiny::downloadHandler(
-      filename = function() {
-        paste0("inrep_custom_theme_", Sys.Date(), ".css")
-      },
-      content = function(file) {
-        writeLines(theme_css(), file)
-      }
-    )
-  }
+    .btn-primary {
+      background-color: var(--color-primary);
+      border-color: var(--color-primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--color-secondary);
+      border-color: var(--color-secondary);
+    }
+    
+    .card {
+      background-color: var(--color-surface);
+      border-color: var(--color-border);
+    }
+    
+    .text-muted {
+      color: var(--color-text-secondary) !important;
+    }
+    
+    .border {
+      border-color: var(--color-border) !important;
+    }
+    
+    .alert-success {
+      background-color: var(--color-success);
+      border-color: var(--color-success);
+      color: white;
+    }
+    
+    .alert-info {
+      background-color: var(--color-info);
+      border-color: var(--color-info);
+      color: white;
+    }
+    
+    .alert-warning {
+      background-color: var(--color-warning);
+      border-color: var(--color-warning);
+      color: white;
+    }
+    
+    .alert-danger {
+      background-color: var(--color-danger);
+      border-color: var(--color-danger);
+      color: white;
+    }
+  ',
+    colors$primary %||% "#2C3E50",
+    colors$secondary %||% "#34495E",
+    colors$success %||% "#27AE60",
+    colors$info %||% "#3498DB",
+    colors$warning %||% "#F39C12",
+    colors$danger %||% "#E74C3C",
+    colors$background %||% "#FFFFFF",
+    colors$surface %||% "#F8F9FA",
+    colors$text %||% "#2C3E50",
+    colors$text_secondary %||% "#7F8C8D",
+    colors$border %||% "#DEE2E6",
+    fonts$heading %||% "system-ui, sans-serif",
+    fonts$body %||% "system-ui, sans-serif"
+  )
   
-  shiny::shinyApp(ui = ui, server = server)
+  return(css)
 }

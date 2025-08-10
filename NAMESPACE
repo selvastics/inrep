@@ -113,6 +113,18 @@ export(`%||%`)
 export(force_detach_inrep)
 export(reinstall_inrep)
 
+# Argument Validation Functions
+export(validate_argument)
+export(validate_theme)
+export(validate_model)
+export(validate_progress_style)
+export(validate_numeric)
+export(validate_config_smart)
+
+# Theme Functions
+export(get_theme_config)
+export(generate_theme_css)
+
 # Responsive UI Functions
 export(get_responsive_css)
 export(create_responsive_question)
