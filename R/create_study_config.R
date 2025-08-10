@@ -383,7 +383,7 @@
 create_study_config <- function(
     name = "Personality Assessment",
     demographics = c("Age", "Gender"),
-    study_key = paste0("STUDY_", uuid::UUIDgenerate()),
+    study_key = paste0("STUDY_", if (requireNamespace("uuid", quietly = TRUE)) uuid::UUIDgenerate() else paste0("STUDY_", Sys.time())),
     min_SEM = 0.3,
     min_items = 5,
     max_items = NULL,
@@ -451,6 +451,14 @@ create_study_config <- function(
     study_metadata = NULL,
     ...
 ) {
+  # Set default options to avoid inrep package reference issues
+  if (is.null(getOption("inrep.verbose"))) {
+    options(inrep.verbose = TRUE)
+  }
+  if (is.null(getOption("inrep.llm_assistance"))) {
+    options(inrep.llm_assistance = FALSE)
+  }
+  
   # Initialize logging
   if (getOption("inrep.verbose", TRUE)) {
     message("Creating study configuration for: ", name)
@@ -666,16 +674,16 @@ create_study_config <- function(
       
       # Enhanced study flow features
       show_introduction = show_introduction,
-      introduction_content = introduction_content %||% create_default_introduction_content(),
+      introduction_content = introduction_content %||% create_default_introduction_content(get_language_labels(language)),
       show_briefing = show_briefing,
-      briefing_content = briefing_content %||% create_default_briefing_content(),
+              briefing_content = briefing_content %||% create_default_briefing_content(get_language_labels(language)),
       show_consent = show_consent,
-      consent_content = consent_content %||% create_default_consent_content(),
+              consent_content = consent_content %||% create_default_consent_content(get_language_labels(language)),
       show_gdpr_compliance = show_gdpr_compliance,
-      gdpr_content = gdpr_content %||% create_default_gdpr_content(),
+              gdpr_content = gdpr_content %||% create_default_gdpr_content(get_language_labels(language)),
       show_debriefing = show_debriefing,
-      debriefing_content = debriefing_content %||% create_default_debriefing_content(),
-      demographic_configs = demographic_configs %||% create_default_demographic_configs(demographics, input_types),
+              debriefing_content = debriefing_content %||% create_default_debriefing_content(get_language_labels(language)),
+              demographic_configs = demographic_configs %||% create_default_demographic_configs(demographics, input_types, get_language_labels(language)),
       custom_demographic_ui = custom_demographic_ui,
       study_phases = study_phases,
       page_transitions = page_transitions,
@@ -772,7 +780,7 @@ create_study_config <- function(
         creation_date = Sys.Date(),
         last_modified = Sys.time(),
         config_version = "2.0",
-        package_version = utils::packageVersion("inrep")
+        package_version = if (requireNamespace("inrep", quietly = TRUE)) utils::packageVersion("inrep") else "unknown"
       )
     }
     
