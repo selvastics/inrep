@@ -389,7 +389,7 @@ validate_file_upload <- function(file_path,
   
   # Check for malicious content patterns
   file_content <- readLines(file_path, n = 100, warn = FALSE)
-  dangerous_patterns <- c("<?php", "<%", "<script", "eval(", "system(")
+  dangerous_patterns <- c("<?php", "<%", "<script", "eval\\(", "system\\(")
   
   for (pattern in dangerous_patterns) {
     if (any(grepl(pattern, file_content, ignore.case = TRUE))) {
