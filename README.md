@@ -109,6 +109,42 @@ The package requires R ≥ 4.1.0 and integrates with the following packages:
 ### Adaptive Testing (IRT-based)
 
 ```r
+library(inrep)
+data(bfi_items)
+
+# Adaptive assessment with item selection based on ability
+config <- create_study_config(
+  name = "Adaptive Personality Assessment",
+  model = "GRM",           # Graded Response Model
+  adaptive = TRUE,         # Enable adaptive testing (default)
+  max_items = 15,
+  min_items = 5,
+  min_SEM = 0.3,          # Stop when precision reached
+  demographics = c("Age", "Gender"),
+  theme = "professional"
+)
+
+launch_study(config, bfi_items)
+```
+
+### Non-Adaptive Testing (Fixed questionnaire)
+
+```r
+# Traditional questionnaire with fixed item order
+config_fixed <- create_study_config(
+  name = "Personality Questionnaire",
+  adaptive = FALSE,        # Disable adaptive testing
+  max_items = 5,          # Show exactly 5 items in order
+  theme = "hildesheim",   # University theme
+  session_save = TRUE     # Enable recovery
+)
+
+launch_study(config_fixed, bfi_items)
+```
+
+### Advanced Cognitive Ability Study (2PL) — Fully Specified
+
+```r
 # Fully specified cognitive ability study (2PL) with custom item bank
 library(inrep)
 
@@ -191,73 +227,6 @@ launch_study(
     message("Current theta:", round(session_data$theta, 3))
     message("Standard error:", round(session_data$se, 3))
   }
-)
-```
-
-### Non-Adaptive Testing (Fixed questionnaire)
-
-```r
-# Traditional questionnaire with fixed item order
-config_fixed <- create_study_config(
-  name = "Personality Questionnaire",
-  adaptive = FALSE,        # Disable adaptive testing
-  max_items = 5,          # Show exactly 5 items in order
-  theme = "hildesheim",   # University theme
-  session_save = TRUE     # Enable recovery
-)
-
-launch_study(config_fixed, bfi_items)
-```
-
-### Advanced Cognitive Assessment with Participant Report Controls
-
-```r
-data(cognitive_items)
-
-advanced_config <- create_study_config(
-    name = "Cognitive Ability Assessment",
-    model = "2PL", 
-    estimation_method = "TAM",
-    max_items = 20,
-    min_items = 10,
-    min_SEM = 0.25,
-    criteria = "MI",
-    theta_prior = c(0, 1),
-    demographics = c("Age", "Gender", "Education", "Native_Language"),
-    input_types = list(
-        Age = "numeric",
-        Gender = "select", 
-        Education = "select",
-        Native_Language = "text"
-    ),
-    theme = "Professional",
-    session_save = TRUE,
-    parallel_computation = TRUE,
-    cache_enabled = TRUE,
-    accessibility_enhanced = TRUE,
-    # Control participant report contents
-    participant_report = list(
-      show_theta_plot = TRUE,
-      show_response_table = TRUE,
-      show_recommendations = TRUE,
-      use_enhanced_report = TRUE,
-      show_item_difficulty_trend = TRUE,
-      show_domain_breakdown = TRUE
-    ),
-    # Require at least two non-age demographics to be filled
-    min_required_non_age_demographics = 2
-)
-
-launch_study(
-    config = advanced_config,
-    item_bank = cognitive_items,
-    accessibility = TRUE,
-    admin_dashboard_hook = function(session_data) {
-        message("Participant ID:", session_data$participant_id)
-        message("Progress:", round(session_data$progress, 1), "%")
-        message("Current theta:", round(session_data$theta, 3))
-        message("Standard error:", round(session_data$se, 3))
-    }
 )
 ```
 
