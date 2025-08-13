@@ -211,12 +211,6 @@ force_detach_inrep <- function(restart = FALSE) {
     cleanup_package_state()
     clean_temp_files()
     
-    # Clear from loaded list
-    pos <- match(pkg_name, loadedNamespaces())
-    if (!is.na(pos)) {
-      try(.Internal(unregisterNamespace(pkg_name)), silent = TRUE)
-    }
-    
     message("Package 'inrep' has been detached and unloaded.")
     
     if (restart) {
