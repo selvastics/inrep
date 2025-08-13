@@ -419,18 +419,34 @@ select_next_item <- function(rv, item_bank, config) {
   } else rep(1, length(available))
   
   # Compute item information
+  # Capture current ability safely to avoid reactive access in parallel workers
+  current_theta <- tryCatch(rv$current_ability, error = function(e) config$theta_prior[1] %||% 0)
+  if (requireNamespace("shiny", quietly = TRUE)) {
+    current_theta <- base::tryCatch(shiny::isolate(rv$current_ability), error = function(e) current_theta)
+  }
+  if (!is.numeric(current_theta) || !is.finite(current_theta)) {
+    current_theta <- config$theta_prior[1] %||% 0
+  }
   if (isTRUE(config$parallel_computation)) {
     if (!requireNamespace("parallel", quietly = TRUE)) {
       message("Parallel package not available, falling back to sequential computation")
-      info <- vapply(available, function(i) item_info(rv$current_ability, i), numeric(1))
+      info <- vapply(available, function(i) item_info(current_theta, i), numeric(1))
     } else {
-      cl <- parallel::makeCluster(min(parallel::detectCores() - 1, 2))
+      cores <- base::tryCatch(parallel::detectCores(), error = function(e) 2)
+      n_workers <- max(1, min(cores - 1, 2))
+      cl <- parallel::makeCluster(n_workers)
       on.exit(parallel::stopCluster(cl), add = TRUE)
-      parallel::clusterExport(cl, c("item_bank", "config", "rv", "item_info", "compute_item_info"), envir = environment())
-      info <- parallel::parSapply(cl, available, function(i) item_info(rv$current_ability, i))
+      parallel::clusterExport(cl, c("item_bank", "config", "compute_item_info", "current_theta"), envir = environment())
+      info <- parallel::parSapply(cl, available, function(i) compute_item_info(current_theta, i, item_bank, config))
+      if (isTRUE(config$cache_enabled)) {
+        for (idx in seq_along(available)) {
+          cache_key <- base::paste(current_theta, available[idx], sep = ":")
+          rv$item_info_cache[[cache_key]] <- if (is.finite(info[idx])) info[idx] else 0
+        }
+      }
     }
   } else {
-    info <- vapply(available, function(i) item_info(rv$current_ability, i), numeric(1))
+    info <- vapply(available, function(i) item_info(current_theta, i), numeric(1))
   }
   
   # Handle invalid information values
