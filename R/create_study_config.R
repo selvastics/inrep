@@ -464,6 +464,10 @@ create_study_config <- function(
     integration_config = NULL,
     custom_functions = NULL,
     study_metadata = NULL,
+    
+    # NEW: Participant report controls and demographic requirement
+    participant_report = NULL,
+    min_required_non_age_demographics = 1,
     ...
 ) {
   # Set default options to avoid inrep package reference issues
@@ -638,7 +642,20 @@ create_study_config <- function(
       scoring_fun <- if (model == "GRM") {
         function(response, correct_answer) as.numeric(response)
       } else {
-        function(response, correct_answer) as.numeric(response == correct_answer)
+        function(response, correct_answer) {
+          # Graceful fallback when correct answers are not available
+          if (is.null(correct_answer) || length(correct_answer) == 0 || is.na(correct_answer)) {
+            if (is.numeric(response)) {
+              # If already numeric (0/1), return as-is
+              if (length(response) == 0) NA_real_ else as.numeric(response)
+            } else {
+              # Treat first option ("1") as correct when no key is available
+              as.numeric(as.character(response) == "1")
+            }
+          } else {
+            as.numeric(response == correct_answer)
+          }
+        }
       }
     }
     
@@ -692,6 +709,17 @@ create_study_config <- function(
       parallel_computation = parallel_computation,
       feedback_enabled = feedback_enabled,
       theta_grid = theta_grid,
+      
+      # Participant report controls and demographic requirement
+      participant_report = participant_report %||% list(
+        show_theta_plot = TRUE,
+        show_response_table = TRUE,
+        show_recommendations = TRUE,
+        show_item_difficulty_trend = FALSE,
+        show_domain_breakdown = FALSE,
+        use_enhanced_report = TRUE
+      ),
+      min_required_non_age_demographics = min_required_non_age_demographics,
       
       # Enhanced study flow features
       show_introduction = show_introduction,
