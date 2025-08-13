@@ -5,8 +5,6 @@
 \title{Select Next Item Using TAM-Based Information}
 \usage{
 select_next_item(rv, item_bank, config)
-
-select_next_item(rv, item_bank, config)
 }
 \arguments{
 \item{rv}{Reactive values object containing test state.}

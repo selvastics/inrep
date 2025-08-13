@@ -94,3 +94,6 @@ MIRT_*.md
 
 # Changelog files
 changelog.txt
+
+# Local R library
+.Rlib/

@@ -91,7 +91,7 @@ initialize_logging <- function(path = NULL) {
 #'   study_key = paste0("STUDY_", generate_uuid())
 #' )
 #' }
-generate_uuid <- function() {
+generate_uuid_internal <- function() {
   uuid::UUIDgenerate()
 }
 
@@ -193,8 +193,8 @@ log_open <- function(path) {
 #' @param item_bank Data frame containing item parameters.
 #' @param config Study configuration list.
 #' @return Item index or NULL if no items remain.
-#' @export
-select_next_item <- function(rv, item_bank, config) {
+#' @noRd
+select_next_item_basic_internal <- function(rv, item_bank, config) {
   rv$item_counter <- rv$item_counter + 1
   if (length(rv$administered) >= config$max_items) {
     message("Maximum items reached")

@@ -76,11 +76,7 @@ if (exists("log_print")) {
 }
 \seealso{
 \itemize{
-  \item \code{\link{log_print}} for writing log entries
   \item \code{\link{launch_study}} for assessment execution with logging
   \item \code{logr} package for advanced logging features
 }
-Log Open
-
-Opens a log file connection.
 }
