@@ -221,100 +221,44 @@ create_enhanced_response_report <- function(config, cat_result, item_bank, inclu
     stop("Invalid cat_result: missing responses")
   }
   
-  # Defensive alignment of administered, responses, and response_times
-  items <- cat_result$administered %||% integer(0)
-  responses <- cat_result$responses %||% numeric(0)
-  response_times <- cat_result$response_times %||% numeric(0)
-  
-  # Coerce to atomic vectors
-  items <- as.integer(items)
-  responses <- as.numeric(responses)
-  response_times <- as.numeric(response_times)
-  
-  # Align lengths safely
-  n <- base::min(base::length(items), base::length(responses))
-  if (!is.null(response_times) && length(response_times) > 0) {
-    n <- base::min(n, base::length(response_times))
-  }
-  if (is.infinite(n) || is.na(n)) n <- 0
-  if (n > 0) {
-    items <- items[seq_len(n)]
-    responses <- responses[seq_len(n)]
-    if (length(response_times) == 0) {
-      response_times <- rep(NA_real_, n)
-    } else {
-      response_times <- response_times[seq_len(n)]
-    }
-  } else {
-    items <- integer(0)
-    responses <- numeric(0)
-    response_times <- numeric(0)
-  }
-  
-  # Helper to extract optional image column if present
-  get_image_vec <- function(indices) {
-    image_cols <- intersect(c("Image", "image", "Image_URL", "image_url"), names(item_bank))
-    if (length(image_cols) == 0 || length(indices) == 0) return(character(0))
-    img <- item_bank[[image_cols[1]]][indices]
-    # Coerce to character, replace NA with empty string
-    img <- as.character(img)
-    img[is.na(img)] <- ""
-    # Wrap as <img> HTML if not already an HTML/SVG/data URI fragment
-    is_inline <- grepl("^\n?\s*<svg|^data:|^https?://", img)
-    img[!is_inline & nzchar(img)] <- sprintf('<img src="%s" alt="Item image" style="max-width: 220px; height: auto; border-radius: 6px;"/>', img[!is_inline & nzchar(img)])
-    img
-  }
+  items <- cat_result$administered
+  responses <- cat_result$responses
   
   # Basic table structure
   if (config$model == "GRM") {
+    # For GRM, show actual response values with optional labels
     dat <- data.frame(
       Item = item_bank$Question[items],
       Response = responses,
-      Time = round(response_times, 1),
+      Time = round(cat_result$response_times, 1),
       check.names = FALSE
     )
     
-    # Optional image column
-    img_vec <- get_image_vec(items)
-    if (length(img_vec) == n && n > 0) {
-      dat$Image <- img_vec
-      # Reorder to show Question then Image
-      dat <- dat[, c("Item", "Response", "Time", "Image")]
-    }
-    
     # Add response labels if requested
-    if (include_labels && config$language %in% c("en", "de", "es", "fr") && n > 0) {
+    if (include_labels && config$language %in% c("en", "de", "es", "fr")) {
       response_labels <- switch(config$language,
         "en" = c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"),
         "de" = c("Stark ablehnen", "Ablehnen", "Neutral", "Zustimmen", "Stark zustimmen"),
         "es" = c("Totalmente en desacuerdo", "En desacuerdo", "Neutral", "De acuerdo", "Totalmente de acuerdo"),
         "fr" = c("Fortement en désaccord", "En désaccord", "Neutre", "D'accord", "Fortement d'accord")
       )
-      # Safely map labels within range
-      idx_ok <- !is.na(responses) & responses >= 1 & responses <= length(response_labels)
-      resp_label <- rep(NA_character_, length(responses))
-      resp_label[idx_ok] <- response_labels[responses[idx_ok]]
-      dat$Response_Label <- resp_label
-      # Keep a consistent order
-      cols <- c("Item", "Response", "Response_Label", "Time")
-      if ("Image" %in% names(dat)) cols <- c(cols, "Image")
-      dat <- dat[, cols]
+      
+      # Add response labels column
+      dat$Response_Label <- response_labels[responses]
+      
+      # Reorder columns
+      dat <- dat[, c("Item", "Response", "Response_Label", "Time")]
     }
+    
   } else {
-    # Binary models
+    # For binary models, show correct/incorrect with answers
     dat <- data.frame(
       Item = item_bank$Question[items],
       Response = ifelse(responses == 1, "Correct", "Incorrect"),
-      Correct = item_bank$Answer[items] %||% NA,
-      Time = round(response_times, 1),
+      Correct = item_bank$Answer[items],
+      Time = round(cat_result$response_times, 1),
       check.names = FALSE
     )
-    # Optional image column
-    img_vec <- get_image_vec(items)
-    if (length(img_vec) == n && n > 0) {
-      dat$Image <- img_vec
-      dat <- dat[, c("Item", "Response", "Correct", "Time", "Image")]
-    }
   }
   
   # Add validation metadata

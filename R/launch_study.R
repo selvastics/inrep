@@ -592,7 +592,7 @@ launch_study <- function(
   # Input validation
   extra_params <- list(...)
   if (length(extra_params) > 0) {
-    # Silently ignore unknown extras; core known extras are already handled below
+    if (!is.null(extra_params) && length(extra_params) > 0) logger(paste("Ignoring unused parameters:", paste(names(extra_params), collapse = ", ")), level = "INFO")
   }
   
   # Wire admin_dashboard_hook into config if provided
@@ -920,7 +920,7 @@ launch_study <- function(
                      session_config$session_id, session_config$max_time), level = "INFO")
     }
   
-  # Normalize item bank columns for compatibility
+  # Normalize common alternative column names before validation
   if ("content" %in% names(item_bank) && !"Question" %in% names(item_bank)) item_bank$Question <- item_bank$content
   if ("item_id" %in% names(item_bank) && !"Question" %in% names(item_bank)) item_bank$Question <- as.character(item_bank$item_id)
   if ("discrimination" %in% names(item_bank) && !"a" %in% names(item_bank)) item_bank$a <- item_bank$discrimination
@@ -1452,10 +1452,6 @@ launch_study <- function(
       translations <- config$item_translations[[config$language]][item_idx, ]
       item <- item_bank[item_idx, ]
       item$Question <- translations$Question %||% item$Question
-      # Optional image support via translations
-      if ("Image" %in% base::names(translations)) {
-        item$Image <- translations$Image %||% item$Image
-      }
       if (config$model != "GRM") {
         for (i in 1:4) item[[base::paste0("Option", i)]] <- translations[[base::paste0("Option", i)]] %||% item[[base::paste0("Option", i)]]
         item$Answer <- translations$Answer %||% item$Answer
@@ -1577,85 +1573,66 @@ launch_study <- function(
                      logger(sprintf("Getting content for item %d", rv$current_item))
                      item <- get_item_content(rv$current_item)
                      logger(sprintf("Item content retrieved - Question: %s", substr(item$Question, 1, 50)))
-                     # Determine optional item image (dataset column or generated placeholder)
-                     item_image_ui <- NULL
-                     if ("Image" %in% base::names(item)) {
-                       img_str <- as.character(item$Image[1])
-                       if (!is.na(img_str) && nzchar(img_str)) {
-                         if (grepl("^\\n?\\s*<svg", img_str)) {
-                           item_image_ui <- shiny::HTML(img_str)
-                         } else if (grepl("^data:|^https?://", img_str)) {
-                           item_image_ui <- shiny::tags$img(src = img_str, alt = "Item image", style = "max-width: 420px; height: auto; border-radius: 8px; margin: 10px 0;")
-                         }
+                     response_ui <- if (config$model == "GRM") {
+                       choices <- base::as.numeric(base::unlist(base::strsplit(item$ResponseCategories, ",")))
+                       
+                       # Ensure we have valid choices
+                       if (length(choices) == 0 || all(is.na(choices))) {
+                         choices <- 1:5
                        }
-                     } else if ("domain" %in% base::names(item) && item$domain[1] %in% c("Spatial_Reasoning", "Spatial", "Spatial Reasoning")) {
-                       # Fallback placeholder SVG for spatial items
-                       svg <- sprintf('<svg width="420" height="140" viewBox="0 0 420 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Spatial reasoning figure"><rect width="420" height="140" fill="#f8fafc"/><g fill="#2c3e50">%s</g></svg>', paste(
-                         sprintf('<circle cx="%d" cy="%d" r="%d"/>', c(60, 140, 220, 300), 70, c(18, 12, 16, 10)),
-                         collapse = ''
-                       ))
-                       item_image_ui <- shiny::HTML(svg)
-                     }
-                      response_ui <- if (config$model == "GRM") {
-                        choices <- base::as.numeric(base::unlist(base::strsplit(item$ResponseCategories, ",")))
-                        
-                        # Ensure we have valid choices
-                        if (length(choices) == 0 || all(is.na(choices))) {
-                          choices <- 1:5
-                        }
-                        
-                        labels <- base::switch(config$language,
-                                               de = base::c("Stark ablehnen", "Ablehnen", "Neutral", "Zustimmen", "Stark zustimmen")[1:base::length(choices)],
-                                               en = base::c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")[1:base::length(choices)],
-                                               es = base::c("Totalmente en desacuerdo", "En desacuerdo", "Neutral", "De acuerdo", "Totalmente de acuerdo")[1:base::length(choices)],
-                                               fr = base::c("Fortement en désaccord", "En désaccord", "Neutre", "D'accord", "Fortement d'accord")[1:base::length(choices)]
-                        )
-                        
-                        # Ensure we have valid labels
-                        if (length(labels) == 0 || all(is.na(labels))) {
-                          labels <- base::c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")[1:base::length(choices)]
-                        }
-                        base::switch(config$response_ui_type,
-                                     "slider" = shiny::div(class = "slider-container",
-                                                           shiny::sliderInput(
-                                                             inputId = "item_response",
-                                                             label = NULL,
-                                                             min = base::min(choices),
-                                                             max = base::max(choices),
-                                                             value = base::min(choices),
-                                                             step = 1,
-                                                             ticks = TRUE,
-                                                             width = "100%"
-                                                           )),
-                                     "dropdown" = shiny::selectInput(
-                                       inputId = "item_response",
-                                       label = NULL,
-                                       choices = stats::setNames(choices, labels),
-                                       selected = NULL,
-                                       width = "100%"
-                                     ),
-                                     if (available_packages$shinyWidgets) {
-                                       shinyWidgets::radioGroupButtons(
-                                         inputId = "item_response",
-                                         label = NULL,
-                                         choices = stats::setNames(choices, labels),
-                                         selected = base::character(0),
-                                         direction = "vertical",
-                                         status = "default",
-                                         individual = TRUE,
-                                         width = "100%"
-                                       )
-                                     } else {
-                                       shiny::radioButtons(
-                                         inputId = "item_response",
-                                         label = NULL,
-                                         choices = stats::setNames(choices, labels),
-                                         selected = base::character(0),
-                                         width = "100%"
-                                       )
-                                     }
-                        )
-                                              } else {
+                       
+                       labels <- base::switch(config$language,
+                                              de = base::c("Stark ablehnen", "Ablehnen", "Neutral", "Zustimmen", "Stark zustimmen")[1:base::length(choices)],
+                                              en = base::c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")[1:base::length(choices)],
+                                              es = base::c("Totalmente en desacuerdo", "En desacuerdo", "Neutral", "De acuerdo", "Totalmente de acuerdo")[1:base::length(choices)],
+                                              fr = base::c("Fortement en désaccord", "En désaccord", "Neutre", "D'accord", "Fortement d'accord")[1:base::length(choices)]
+                       )
+                       
+                       # Ensure we have valid labels
+                       if (length(labels) == 0 || all(is.na(labels))) {
+                         labels <- base::c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")[1:base::length(choices)]
+                       }
+                       base::switch(config$response_ui_type,
+                                    "slider" = shiny::div(class = "slider-container",
+                                                          shiny::sliderInput(
+                                                            inputId = "item_response",
+                                                            label = NULL,
+                                                            min = base::min(choices),
+                                                            max = base::max(choices),
+                                                            value = base::min(choices),
+                                                            step = 1,
+                                                            ticks = TRUE,
+                                                            width = "100%"
+                                                          )),
+                                    "dropdown" = shiny::selectInput(
+                                      inputId = "item_response",
+                                      label = NULL,
+                                      choices = stats::setNames(choices, labels),
+                                      selected = NULL,
+                                      width = "100%"
+                                    ),
+                                    if (available_packages$shinyWidgets) {
+                                      shinyWidgets::radioGroupButtons(
+                                        inputId = "item_response",
+                                        label = NULL,
+                                        choices = stats::setNames(choices, labels),
+                                        selected = base::character(0),
+                                        direction = "vertical",
+                                        status = "default",
+                                        individual = TRUE,
+                                        width = "100%"
+                                      )
+                                    } else {
+                                      shiny::radioButtons(
+                                        inputId = "item_response",
+                                        label = NULL,
+                                        choices = stats::setNames(choices, labels),
+                                        selected = base::character(0),
+                                        width = "100%"
+                                      )
+                                    }
+                       )
+                                          } else {
                         choices <- base::c(item$Option1, item$Option2, item$Option3, item$Option4)
                          # If options are missing for dichotomous model, synthesize simple options
                          if (length(choices) == 0 || all(is.na(choices) | choices == "")) {
@@ -1673,37 +1650,249 @@ launch_study <- function(
                           width = "100%"
                         )
                       }
-                      
-                      shiny::tagList(
-                        shiny::div(class = "assessment-card",
-                          shiny::h3(config$name, class = "card-header"),
-                          shiny::div(
-                            style = "display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;",
-                            shiny::div(
-                              class = "progress-container",
-                              shiny::div(
-                                class = paste0("progress-circle ", config$progress_style %||% "modern-circle"),
-                                shiny::div(class = "progress-value", paste0(round((base::length(rv$administered) / (config$max_items %||% 1)) * 100), "%"))
-                              )
-                            ),
-                            shiny::p(
-                              sprintf(ui_labels$question_progress %||% "Question %d of %d", base::length(rv$administered) + 1, config$max_items),
-                              style = "text-align: center; margin: 15px 0; width: 100%;"
-                            )
-                          ),
-                          shiny::div(class = "test-question", item$Question),
-                          if (!base::is.null(item_image_ui)) shiny::div(class = "item-image", item_image_ui),
-                          shiny::div(class = "radio-group-container", response_ui),
-                          if (!base::is.null(rv$error_message)) shiny::div(class = "error-message", rv$error_message),
-                          # ROBUST ERROR BOUNDARY UI
-                          shiny::uiOutput("error_boundary"),
-                          if (!base::is.null(rv$feedback_message)) shiny::div(class = "feedback-message", rv$feedback_message),
-                          shiny::div(class = "nav-buttons",
-                                     shiny::actionButton("submit_response", ui_labels$submit_button, class = "btn-klee")
+                     progress_pct <- base::round((base::length(rv$administered) / (config$max_items %||% max(1, nrow(item_bank)))) * 100)
+                     progress_ui <- base::switch(config$progress_style,
+                       "circle" = {
+                         # Get theme primary color for progress arc and tiny circle
+                         theme_primary <- if (!is.null(theme_config) && !is.null(theme_config$primary_color)) {
+                           theme_config$primary_color
+                         } else if (!is.null(config$theme) && nzchar(config$theme)) {
+                           theme_name <- tolower(config$theme)
+                           switch(theme_name,
+                             "light" = "#007bff",
+                             "midnight" = "#6366f1",
+                             "sunset" = "#ff6f61",
+                             "forest" = "#2e7d32",
+                             "ocean" = "#0288d1",
+                             "berry" = "#c2185b",
+                             "hildesheim" = "#e8041c",
+                             "professional" = "#2c3e50",
+                             "clinical" = "#A23B72",
+                             "research" = "#007bff",
+                             "sepia" = "#8B4513",
+                             "paper" = "#005073",
+                             "monochrome" = "#333333",
+                             "large-text" = "#2E5BBA",
+                             "inrep" = "#000000",
+                             "high-contrast" = "#000000",
+                             "dyslexia-friendly" = "#005F73",
+                             "darkblue" = "#64ffda",
+                             "dark-mode" = "#00D4AA",
+                             "colorblind-safe" = "#0072B2",
+                             "vibrant" = "#e74c3c",
+                             "#007bff"
+                           )
+                         } else {
+                           "#007bff" # Default blue if no theme provided
+                         }
+                         shiny::div(
+                           class = "progress-circle progress-circle-gradient",
+                           shiny::tags$style(base::sprintf("
+                             .progress-circle-gradient {
+                               position: relative;
+                               display: flex;
+                               justify-content: center;
+                               align-items: center;
+                               width: 120px;
+                               height: 120px;
+                               background: transparent;
+                             }
+                             .progress-circle-gradient svg {
+                               position: absolute;
+                               left: 50%%;
+                               top: 50%%;
+                               transform: translate(-50%%, -50%%) rotate(-90deg);
+                               display: block;
+                             }
+                             .progress-circle-gradient .progress-bg {
+                               stroke: #e0e0e0;
+                               stroke-width: 8;
+                               fill: none;
+                             }
+                             .progress-circle-gradient .progress {
+                               transition: stroke-dashoffset 0.5s cubic-bezier(.4,2,.3,1);
+                               stroke: url(#progressGradient);
+                               stroke-width: 8;
+                               fill: none;
+                             }
+                             .progress-circle-gradient .tiny-full {
+                               stroke: %s;
+                               stroke-width: 3;
+                               fill: none;
+                               opacity: 0.5;
+                             }
+                             .progress-circle-gradient span {
+                               position: absolute;
+                               top: 50%%;
+                               left: 50%%;
+                               transform: translate(-50%%, -50%%);
+                               font-family: 'Helvetica Neue', 'Arial', sans-serif;
+                               font-size: 20px;
+                               font-weight: 500;
+                               color: #333;
+                               text-shadow: 0 0 2px rgba(255,255,255,0.8);
+                             }
+                           ", theme_primary)),
+                           shiny::tags$svg(
+                             width = "120", height = "120",
+                             shiny::tags$defs(
+                               shiny::tags$linearGradient(id = "progressGradient",
+                                 shiny::tags$stop(offset = "0%", style = base::sprintf("stop-color: %s;", theme_primary)),
+                                 shiny::tags$stop(offset = "100%", style = base::sprintf("stop-color: %s; stop-opacity: 0.7;", theme_primary))
+                               )
+                             ),
+                             # Tiny full circle indicator (background)
+                             shiny::tags$circle(cx = "60", cy = "60", r = "52", class = "tiny-full"),
+                             # Main progress background circle
+                             shiny::tags$circle(cx = "60", cy = "60", r = "50", class = "progress-bg"),
+                             # Main progress arc (foreground) as SVG path
+                             {
+                               # Calculate arc sweep for progress
+                               pct <- max(0, min(progress_pct, 100))
+                               theta <- (pct / 100) * 2 * pi
+                               r <- 50
+                               cx <- 60
+                               cy <- 60
+                               x <- cx + r * cos(pi/2 - theta)
+                               y <- cy - r * sin(pi/2 - theta)
+                               large_arc <- ifelse(pct > 50, 1, 0)
+                               path_d <- if (pct == 0) {
+                                 # No progress
+                                 sprintf("M %f %f", cx, cy - r)
+                               } else {
+                                 sprintf("M %f %f A %d %d 0 %d 1 %f %f", cx, cy - r, r, r, large_arc, x, y)
+                               }
+                               shiny::tags$path(
+                                 d = path_d,
+                                 class = "progress",
+                                 stroke = "url(#progressGradient)",
+                                 strokeWidth = 8,
+                                 fill = "none"
+                               )
+                             },
+                           ),
+                           shiny::span(base::sprintf("%d%%", progress_pct))
+                         )
+                       },
+                       "bar" = shiny::div(
+                         class = "progress-bar-container",
+                         shiny::div(class = "progress-bar-fill", style = base::sprintf("width: %d%%;", progress_pct))
+                       )
+                     )
+                     shiny::tagList(
+                       shiny::div(class = "assessment-card",
+                         shiny::h3(config$name, class = "card-header"),
+                         shiny::div(
+                           style = "display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;",
+                           progress_ui,
+                                                     shiny::p(
+                            sprintf(ui_labels$question_progress %||% "Question %d of %d", base::length(rv$administered) + 1, config$max_items),
+                            style = "text-align: center; margin: 15px 0; width: 100%;"
                           )
-                        )
-                      )
-                    }
+                         ),
+                         shiny::div(class = "test-question", item$Question),
+                         shiny::div(class = "radio-group-container", response_ui),
+                         if (!base::is.null(rv$error_message)) shiny::div(class = "error-message", rv$error_message),
+                         # ROBUST ERROR BOUNDARY UI
+                         shiny::uiOutput("error_boundary"),
+                         if (!base::is.null(rv$feedback_message)) shiny::div(class = "feedback-message", rv$feedback_message),
+                         shiny::div(class = "nav-buttons",
+                           # ROBUST SUBMIT BUTTON WITH DOUBLE-CLICK PROTECTION
+        shiny::div(
+          style = "position: relative;",
+          shiny::actionButton(
+            "submit_response", 
+            ui_labels$submit_button, 
+            class = "btn-klee",
+            onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 2000);"
+          ),
+          # Visual feedback for submission in progress
+          shiny::uiOutput("submission_status")
+        )
+                         )
+                       )
+                     )
+                   },
+                   "results" = {
+                     if (base::is.null(rv$cat_result)) return()
+                     
+                     results_content <- base::list(
+                       shiny::h3(ui_labels$results_title, class = "card-header"),
+                       shiny::div(class = "results-section",
+                                  shiny::h4("Assessment Summary"),
+                                  shiny::p(base::paste("Items completed:", base::length(rv$cat_result$administered))),
+                                  if (config$adaptive) shiny::p(base::paste("Estimated ability:", base::round(rv$cat_result$theta, 2))),
+                                  if (config$adaptive) shiny::p(base::paste("Standard error:", base::round(rv$cat_result$se, 3)))
+                       )
+                     )
+                     
+                                           # Participant report controls
+                      pr <- config$participant_report %||% list()
+                      if (isTRUE(pr$show_theta_plot) && config$adaptive && base::length(rv$theta_history) > 1 && base::length(rv$se_history) > 1) {
+                         logger(sprintf("Adding plot to results - theta_history length: %d", base::length(rv$theta_history)))
+                         results_content <- base::c(results_content, base::list(
+                           shiny::plotOutput("theta_plot", height = "220px")
+                         ))
+                       } else {
+                         logger(sprintf("Plot not added - adaptive: %s, theta_history length: %d, se_history length: %d", config$adaptive, base::length(rv$theta_history), base::length(rv$se_history)))
+                       }
+                      
+                      # Domain breakdown visualization (if available)
+                      if (isTRUE(pr$show_domain_breakdown) && "domain" %in% base::names(item_bank)) {
+                        results_content <- base::c(results_content, base::list(
+                          shiny::div(class = "results-section",
+                                     shiny::h4("Domain Coverage", class = "results-title"),
+                                     shiny::plotOutput("domain_plot", height = "220px")
+                          )
+                        ))
+                      }
+                      
+                      # Difficulty trend visualization (if available)
+                      if (isTRUE(pr$show_item_difficulty_trend) && "b" %in% base::names(item_bank)) {
+                        results_content <- base::c(results_content, base::list(
+                          shiny::div(class = "results-section",
+                                     shiny::h4("Item Difficulty Trend", class = "results-title"),
+                                     shiny::plotOutput("difficulty_trend", height = "220px")
+                          )
+                        ))
+                      }
+                      
+                      # Response table (enhanced or basic)
+                      if (!isFALSE(pr$show_response_table)) {
+                        results_content <- base::c(results_content, base::list(
+                          shiny::div(class = "results-section",
+                                     shiny::h4(ui_labels$items_administered, class = "results-title"),
+                                     if (available_packages$DT) DT::DTOutput("item_table") else shiny::verbatimTextOutput("item_table")
+                          )
+                        ))
+                      }
+                     
+                     # Recommendations
+                     if (!isFALSE(pr$show_recommendations)) {
+                       results_content <- base::c(results_content, base::list(
+                         shiny::div(class = "results-section",
+                                    shiny::h4(ui_labels$recommendations, class = "results-title"),
+                                    shiny::uiOutput("recommendations")
+                         )
+                       ))
+                     }
+                     
+                     # Footer and controls
+                     results_content <- base::c(results_content, base::list(
+                       shiny::div(class = "footer",
+                                  shiny::p(config$name),
+                                  shiny::p(base::format(base::Sys.time(), "%B %d, %Y"))
+                       ),
+                       shiny::div(class = "nav-buttons",
+                                  shiny::downloadButton("save_report", ui_labels$save_button, class = "btn-klee"),
+                                  shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee")
+                       )
+                     ))
+                     
+                     shiny::tagList(
+                       shiny::div(class = "assessment-card", results_content)
+                     )
+                   }
       )
     })
     
@@ -1715,14 +1904,45 @@ launch_study <- function(
         return(NULL)
       }
       
-      if (!available_packages$ggplot2 || !requireNamespace("ggplot2", quietly = TRUE)) {
-        logger("ggplot2 not available - skipping theta plot", level = "WARNING")
-        return(NULL)
+      # Get theme colors for plot
+      theme_colors <- list(
+        primary = "#007bff",
+        secondary = "#6c757d"
+      )
+      
+      if (!base::is.null(theme_config) && !base::is.null(theme_config$primary_color)) {
+        theme_colors$primary <- theme_config$primary_color
+      } else {
+        theme_name <- tolower(config$theme %||% "Light")
+        theme_colors$primary <- base::switch(theme_name,
+                                             "light" = "#212529",
+                                             "midnight" = "#6366f1",
+                                             "sunset" = "#ff6f61",
+                                             "forest" = "#2e7d32",
+                                             "ocean" = "#0288d1",
+                                             "berry" = "#c2185b",
+                                             "hildesheim" = "#e8041c",
+                                             "professional" = "#2c3e50",
+                                             "clinical" = "#A23B72",
+                                             "research" = "#007bff",
+                                             "sepia" = "#8B4513",
+                                             "paper" = "#005073",
+                                             "monochrome" = "#333333",
+                                             "large-text" = "#2E5BBA",
+                                             "inrep" = "#000000",
+                                             "high-contrast" = "#000000",
+                                             "dyslexia-friendly" = "#005F73",
+                                             "darkblue" = "#64ffda",
+                                             "dark-mode" = "#00D4AA",
+                                             "colorblind-safe" = "#0072B2",
+                                             "vibrant" = "#e74c3c",
+                                             "#007bff"  # Default fallback
+        )
       }
       
       # Align history vectors to same length to avoid rendering errors
       n <- base::min(base::length(rv$theta_history), base::length(rv$se_history))
-      if (is.na(n) || n < 2) return(NULL)
+      if (n < 2) return(NULL)
       data <- base::data.frame(
         Item = 1:n,
         Theta = rv$theta_history[1:n],
@@ -1730,13 +1950,38 @@ launch_study <- function(
       )
       
       # Robust plotting with multiple fallbacks
-      ggplot2::ggplot(data, ggplot2::aes(x = Item, y = Theta)) +
-        ggplot2::geom_line(color = "#2c3e50", linewidth = 1) +
-        ggplot2::geom_point(color = "#2c3e50", size = 2) +
-        ggplot2::geom_ribbon(ggplot2::aes(ymin = Theta - SE, ymax = Theta + SE), fill = "#2c3e5033") +
-        ggplot2::theme_minimal() +
-        ggplot2::labs(title = "Ability Estimate Over Items", x = "Item", y = "Theta") +
-        ggplot2::theme(text = ggplot2::element_text(family = "Inter", size = 11))
+      tryCatch({
+        # Try ggplot2 first
+        if (available_packages$ggplot2 && requireNamespace("ggplot2", quietly = TRUE)) {
+          p <- ggplot2::ggplot(data, ggplot2::aes(x = Item, y = Theta)) +
+            ggplot2::geom_line(color = theme_colors$primary, linewidth = 1) +
+            ggplot2::geom_ribbon(ggplot2::aes(ymin = Theta - SE, ymax = Theta + SE), alpha = 0.2, fill = theme_colors$primary) +
+            ggplot2::theme_minimal() +
+            ggplot2::labs(y = "Trait Score", x = "Item Number", title = "Ability Progression") +
+            ggplot2::theme(
+              text = ggplot2::element_text(family = "Inter", size = 12),
+              plot.title = ggplot2::element_text(face = "bold", size = 14),
+              axis.title = ggplot2::element_text(size = 12)
+            )
+          print(p)  # Explicitly print the plot
+        } else {
+          # Fallback to base R plot
+          plot(data$Item, data$Theta, type = "l", col = theme_colors$primary, 
+               xlab = "Item Number", ylab = "Trait Score", main = "Ability Progression",
+               lwd = 2, ylim = range(c(data$Theta - data$SE, data$Theta + data$SE)))
+          polygon(c(data$Item, rev(data$Item)), 
+                  c(data$Theta - data$SE, rev(data$Theta + data$SE)), 
+                  col = paste0(theme_colors$primary, "20"), border = NA)
+          grid()
+        }
+      }, error = function(e) {
+        # Ultimate fallback to base R plot
+        logger(sprintf("Plot rendering failed: %s", e$message), level = "WARNING")
+        plot(data$Item, data$Theta, type = "l", col = theme_colors$primary, 
+             xlab = "Item Number", ylab = "Trait Score", main = "Ability Progression (Fallback)",
+             lwd = 2)
+        grid()
+      })
     })
     
     # Optional domain breakdown plot
@@ -1798,11 +2043,7 @@ launch_study <- function(
             Item = 1:base::length(items),
             Question = item_bank$Question[items],
             Response = responses,
-            Time = {
-              rt <- rv$cat_result$response_times %||% numeric(0)
-              m <- base::min(base::length(rt), base::length(items))
-              if (m > 0) base::round(rt[seq_len(m)], 1) else numeric(0)
-            },
+            Time = base::round(rv$cat_result$response_times[seq_len(length(items))], 1),
             check.names = FALSE
           )
         } else {
@@ -1811,30 +2052,9 @@ launch_study <- function(
             Question = item_bank$Question[items],
             Response = base::ifelse(responses == 1, "Correct", "Incorrect"),
             Correct = item_bank$Answer[items],
-            Time = {
-              rt <- rv$cat_result$response_times %||% numeric(0)
-              m <- base::min(base::length(rt), base::length(items))
-              if (m > 0) base::round(rt[seq_len(m)], 1) else numeric(0)
-            },
+            Time = base::round(rv$cat_result$response_times[seq_len(length(items))], 1),
             check.names = FALSE
           )
-        }
-      }
-      # If Image column is missing, generate placeholders for spatial items to enrich the table
-      if (!("Image" %in% base::names(dat)) && "domain" %in% base::names(item_bank)) {
-        img_vec <- sapply(items, function(idx) {
-          dom <- as.character(item_bank$domain[idx])
-          if (!is.na(dom) && dom %in% c("Spatial_Reasoning", "Spatial", "Spatial Reasoning")) {
-            svg <- sprintf('<svg width="220" height="120" viewBox="0 0 220 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Spatial item"><rect width="220" height="120" fill="#f8fafc"/><g fill="#2c3e50">%s</g></svg>', paste(
-              sprintf('<rect x="%d" y="%d" width="%d" height="%d" rx="6"/>', c(20, 80, 140), 30, 40, 40),
-              collapse = ''
-            ))
-            return(svg)
-          }
-          return("")
-        })
-        if (any(nzchar(img_vec))) {
-          dat$Image <- img_vec
         }
       }
       columnDefs <- base::list(
@@ -1852,7 +2072,6 @@ launch_study <- function(
       DT::datatable(
         dat,
         rownames = FALSE,
-        escape = FALSE,
         options = base::list(
           dom = 't',
           paging = FALSE,
