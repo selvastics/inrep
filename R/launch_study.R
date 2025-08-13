@@ -1826,24 +1826,59 @@ launch_study <- function(
                        )
                      )
                      
-                     if (config$adaptive && base::length(rv$theta_history) > 1 && base::length(rv$se_history) > 1) {
-                        logger(sprintf("Adding plot to results - theta_history length: %d", base::length(rv$theta_history)))
+                                           # Participant report controls
+                      pr <- config$participant_report %||% list()
+                      if (isTRUE(pr$show_theta_plot) && config$adaptive && base::length(rv$theta_history) > 1 && base::length(rv$se_history) > 1) {
+                         logger(sprintf("Adding plot to results - theta_history length: %d", base::length(rv$theta_history)))
+                         results_content <- base::c(results_content, base::list(
+                           shiny::plotOutput("theta_plot", height = "220px")
+                         ))
+                       } else {
+                         logger(sprintf("Plot not added - adaptive: %s, theta_history length: %d, se_history length: %d", config$adaptive, base::length(rv$theta_history), base::length(rv$se_history)))
+                       }
+                      
+                      # Domain breakdown visualization (if available)
+                      if (isTRUE(pr$show_domain_breakdown) && "domain" %in% base::names(item_bank)) {
                         results_content <- base::c(results_content, base::list(
-                          shiny::plotOutput("theta_plot", height = "200px")
+                          shiny::div(class = "results-section",
+                                     shiny::h4("Domain Coverage", class = "results-title"),
+                                     shiny::plotOutput("domain_plot", height = "220px")
+                          )
                         ))
-                      } else {
-                        logger(sprintf("Plot not added - adaptive: %s, theta_history length: %d, se_history length: %d", config$adaptive, base::length(rv$theta_history), base::length(rv$se_history)))
+                      }
+                      
+                      # Difficulty trend visualization (if available)
+                      if (isTRUE(pr$show_item_difficulty_trend) && "b" %in% base::names(item_bank)) {
+                        results_content <- base::c(results_content, base::list(
+                          shiny::div(class = "results-section",
+                                     shiny::h4("Item Difficulty Trend", class = "results-title"),
+                                     shiny::plotOutput("difficulty_trend", height = "220px")
+                          )
+                        ))
+                      }
+                      
+                      # Response table (enhanced or basic)
+                      if (!isFALSE(pr$show_response_table)) {
+                        results_content <- base::c(results_content, base::list(
+                          shiny::div(class = "results-section",
+                                     shiny::h4(ui_labels$items_administered, class = "results-title"),
+                                     if (available_packages$DT) DT::DTOutput("item_table") else shiny::verbatimTextOutput("item_table")
+                          )
+                        ))
                       }
                      
+                     # Recommendations
+                     if (!isFALSE(pr$show_recommendations)) {
+                       results_content <- base::c(results_content, base::list(
+                         shiny::div(class = "results-section",
+                                    shiny::h4(ui_labels$recommendations, class = "results-title"),
+                                    shiny::uiOutput("recommendations")
+                         )
+                       ))
+                     }
+                     
+                     # Footer and controls
                      results_content <- base::c(results_content, base::list(
-                       shiny::div(class = "results-section",
-                                  shiny::h4(ui_labels$items_administered, class = "results-title"),
-                                  if (available_packages$DT) DT::DTOutput("item_table") else shiny::verbatimTextOutput("item_table")
-                       ),
-                       shiny::div(class = "results-section",
-                                  shiny::h4(ui_labels$recommendations, class = "results-title"),
-                                  shiny::uiOutput("recommendations")
-                       ),
                        shiny::div(class = "footer",
                                   shiny::p(config$name),
                                   shiny::p(base::format(base::Sys.time(), "%B %d, %Y"))
@@ -1949,6 +1984,43 @@ launch_study <- function(
       })
     })
     
+    # Optional domain breakdown plot
+    output$domain_plot <- shiny::renderPlot({
+      pr <- config$participant_report %||% list()
+      if (!isTRUE(pr$show_domain_breakdown) || !("domain" %in% base::names(item_bank))) return(NULL)
+      if (!available_packages$ggplot2 || !requireNamespace("ggplot2", quietly = TRUE)) return(NULL)
+      
+      if (base::length(rv$cat_result$administered) < 1) return(NULL)
+      used <- rv$cat_result$administered
+      dat <- base::as.data.frame(table(item_bank$domain[used]))
+      base::names(dat) <- c("Domain", "Count")
+      ggplot2::ggplot(dat, ggplot2::aes(x = Domain, y = Count)) +
+        ggplot2::geom_col(fill = "#2c3e50") +
+        ggplot2::theme_minimal() +
+        ggplot2::labs(title = "Domain Coverage", x = NULL, y = "Items") +
+        ggplot2::theme(text = ggplot2::element_text(family = "Inter", size = 11))
+    })
+    
+    # Optional difficulty trend plot
+    output$difficulty_trend <- shiny::renderPlot({
+      pr <- config$participant_report %||% list()
+      if (!isTRUE(pr$show_item_difficulty_trend) || !("b" %in% base::names(item_bank))) return(NULL)
+      if (!available_packages$ggplot2 || !requireNamespace("ggplot2", quietly = TRUE)) return(NULL)
+      
+      if (base::length(rv$cat_result$administered) < 2) return(NULL)
+      used <- rv$cat_result$administered
+      dat <- base::data.frame(
+        Order = seq_along(used),
+        Difficulty = item_bank$b[used]
+      )
+      ggplot2::ggplot(dat, ggplot2::aes(x = Order, y = Difficulty)) +
+        ggplot2::geom_line(color = "#2c3e50", linewidth = 1) +
+        ggplot2::geom_point(color = "#2c3e50", size = 2) +
+        ggplot2::theme_minimal() +
+        ggplot2::labs(title = "Item Difficulty Trend", x = "Item Order", y = "b") +
+        ggplot2::theme(text = ggplot2::element_text(family = "Inter", size = 11))
+    })
+    
     output$item_table <- safe_render_dt({
       if (base::is.null(rv$cat_result)) return()
       items <- rv$cat_result$administered
@@ -1959,23 +2031,31 @@ launch_study <- function(
         items <- items[seq_len(n)]
         responses <- responses[seq_len(n)]
       }
-      dat <- if (config$model == "GRM") {
-        base::data.frame(
-          Item = 1:base::length(items),
-          Question = item_bank$Question[items],
-          Response = responses,
-          Time = base::round(rv$cat_result$response_times[seq_len(length(items))], 1),
-          check.names = FALSE
-        )
+      # Use enhanced reporting when requested
+      pr <- config$participant_report %||% list()
+      if (isTRUE(pr$use_enhanced_report) && exists("create_enhanced_response_report", where = asNamespace("inrep"), inherits = FALSE)) {
+        dat <- inrep:::create_enhanced_response_report(config, rv$cat_result, item_bank)
+      } else if (isTRUE(pr$use_enhanced_report) && exists("create_enhanced_response_report")) {
+        dat <- create_enhanced_response_report(config, rv$cat_result, item_bank)
       } else {
-        base::data.frame(
-          Item = 1:base::length(items),
-          Question = item_bank$Question[items],
-          Response = base::ifelse(responses == 1, "Correct", "Incorrect"),
-          Correct = item_bank$Answer[items],
-          Time = base::round(rv$cat_result$response_times[seq_len(length(items))], 1),
-          check.names = FALSE
-        )
+        dat <- if (config$model == "GRM") {
+          base::data.frame(
+            Item = 1:base::length(items),
+            Question = item_bank$Question[items],
+            Response = responses,
+            Time = base::round(rv$cat_result$response_times[seq_len(length(items))], 1),
+            check.names = FALSE
+          )
+        } else {
+          base::data.frame(
+            Item = 1:base::length(items),
+            Question = item_bank$Question[items],
+            Response = base::ifelse(responses == 1, "Correct", "Incorrect"),
+            Correct = item_bank$Answer[items],
+            Time = base::round(rv$cat_result$response_times[seq_len(length(items))], 1),
+            check.names = FALSE
+          )
+        }
       }
       columnDefs <- base::list(
         base::list(width = '50%', targets = 0),
@@ -1983,9 +2063,11 @@ launch_study <- function(
       )
       if (config$model == "GRM") {
         columnDefs[[3]] <- base::list(width = '25%', targets = 2)
-      } else {
+      } else if ("Correct" %in% base::names(dat)) {
         columnDefs[[3]] <- base::list(width = '25%', targets = 2)
         columnDefs[[4]] <- base::list(width = '25%', targets = 3)
+      } else {
+        columnDefs[[3]] <- base::list(width = '25%', targets = 2)
       }
       DT::datatable(
         dat,
@@ -2190,14 +2272,15 @@ launch_study <- function(
       # More flexible demographic validation - allow some empty fields
       non_age_dems <- base::setdiff(config$demographics, "Age")
       if (base::length(non_age_dems) > 0) {
-        # Check if at least one non-age demographic is filled
+        # Check if at least N non-age demographics are filled
         filled_dems <- base::sapply(non_age_dems, function(dem) {
           !base::is.na(rv$demo_data[dem]) && rv$demo_data[dem] != ""
         })
         
-        if (base::sum(filled_dems) == 0) {
+        min_required <- config$min_required_non_age_demographics %||% 1
+        if (base::sum(filled_dems) < min_required) {
           rv$error_message <- ui_labels$demo_error
-          logger("No non-age demographic inputs provided")
+          logger(base::sprintf("Insufficient non-age demographics: %d < required %d", base::sum(filled_dems), min_required))
           return()
         }
       }
