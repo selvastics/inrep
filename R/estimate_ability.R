@@ -386,29 +386,37 @@ estimate_ability <- function(rv, item_bank, config) {
     seq(-4, 4, length.out = 100)
   }
   
-  if (config$model %in% c("1PL", "2PL", "3PL") && config$estimation_method == "TAM" && length(responses) >= 5 && requireNamespace("TAM", quietly = TRUE)) {
-    tryCatch({
-      dat <- matrix(as.integer(responses), nrow = 1)
-      colnames(dat) <- administered
-      if (config$model == "1PL") {
-        mod <- TAM::tam.mml(resp = dat, irtmodel = "1PL", control = list(snodes = 1000))
-      } else if (config$model == "2PL") {
-        mod <- TAM::tam.mml.2pl(resp = dat, irtmodel = "2PL", control = list(snodes = 1000))
-      } else {
-        item_bank_subset <- item_bank[administered, , drop = FALSE]
-        c_params <- if ("c" %in% names(item_bank)) item_bank_subset$c else rep(0, length(administered))
-        mod <- TAM::tam.mml.3pl(resp = dat, gammaslope = item_bank_subset$a, guess = c_params, control = list(snodes = 1000))
-      }
-      est <- TAM::tam.wle(mod)
-      if (nrow(est) == 0 || is.na(est$theta[1])) {
-        message("TAM estimation failed, falling back to EAP")
-      } else {
-        message(sprintf("TAM estimation: theta=%.2f, se=%.3f", est$theta[1], est$error[1]))
-        return(list(theta = est$theta[1], se = est$error[1]))
-      }
-    }, error = function(e) {
-      message(sprintf("TAM estimation error: %s, falling back to EAP", e$message))
-    })
+  # Robust TAM branch for dichotomous models
+  if (config$model %in% c("1PL", "2PL", "3PL") && identical(toupper(config$estimation_method), "TAM") && length(responses) >= 5 && requireNamespace("TAM", quietly = TRUE)) {
+    # Require variability to avoid degenerate fits
+    if (length(unique(na.omit(as.integer(responses)))) > 1) {
+      tryCatch({
+        dat <- matrix(as.integer(responses), nrow = 1)
+        colnames(dat) <- administered
+        ctrl <- list(snodes = 500, progress = FALSE, verbose = FALSE)
+        if (config$model == "1PL") {
+          mod <- suppressMessages(TAM::tam.mml(resp = dat, irtmodel = "1PL", control = ctrl))
+        } else if (config$model == "2PL") {
+          mod <- suppressMessages(TAM::tam.mml.2pl(resp = dat, irtmodel = "2PL", control = ctrl))
+        } else {
+          item_bank_subset <- item_bank[administered, , drop = FALSE]
+          c_params <- if ("c" %in% names(item_bank_subset)) item_bank_subset$c else rep(0, length(administered))
+          slopes <- if ("a" %in% names(item_bank_subset)) item_bank_subset$a else rep(1, length(administered))
+          mod <- suppressMessages(TAM::tam.mml.3pl(resp = dat, gammaslope = slopes, guess = c_params, control = ctrl))
+        }
+        est <- suppressMessages(TAM::tam.wle(mod))
+        if (NROW(est) > 0 && is.finite(est$theta[1]) && is.finite(est$error[1])) {
+          message(sprintf("TAM estimation: theta=%.2f, se=%.3f", est$theta[1], est$error[1]))
+          return(list(theta = est$theta[1], se = est$error[1]))
+        } else {
+          message("TAM estimation produced invalid result, falling back to EAP")
+        }
+      }, error = function(e) {
+        message(sprintf("TAM estimation error: %s, falling back to EAP", e$message))
+      })
+    } else {
+      message("Insufficient response variability for TAM WLE, falling back to EAP")
+    }
   }
   
   # MIRT estimation method
