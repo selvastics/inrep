@@ -311,7 +311,10 @@ select_next_item <- function(rv, item_bank, config) {
     rv$current_ability <- config$theta_prior[1] %||% 0
   }
   
-  # Validate item_bank columns
+  # Validate item_bank columns (after basic normalization)
+  if ("content" %in% names(item_bank) && !"Question" %in% names(item_bank)) item_bank$Question <- item_bank$content
+  if ("discrimination" %in% names(item_bank) && !"a" %in% names(item_bank)) item_bank$a <- item_bank$discrimination
+  if ("difficulty" %in% names(item_bank) && !"b" %in% names(item_bank)) item_bank$b <- item_bank$difficulty
   required_cols <- if (config$model == "GRM") c("a", "b1") else if (config$model == "3PL") c("a", "b", "c") else c("a", "b")
   if (!all(required_cols %in% names(item_bank))) {
     message(sprintf("Item bank missing required columns for %s model: %s", config$model, paste(required_cols, collapse = ", ")))

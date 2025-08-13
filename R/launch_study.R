@@ -514,6 +514,7 @@ launch_study <- function(
     logger = function(msg, ...) message(msg),
     study_key = NULL,
     accessibility = FALSE,
+    admin_dashboard_hook = NULL,
     max_session_time = 7200,
     session_save = TRUE,
     data_preservation_interval = 30,
@@ -591,7 +592,12 @@ launch_study <- function(
   # Input validation
   extra_params <- list(...)
   if (length(extra_params) > 0) {
-    logger(paste("Ignoring unused parameters:", paste(names(extra_params), collapse = ", ")), level = "INFO")
+    if (!is.null(extra_params) && length(extra_params) > 0) logger(paste("Ignoring unused parameters:", paste(names(extra_params), collapse = ", ")), level = "INFO")
+  }
+  
+  # Wire admin_dashboard_hook into config if provided
+  if (!is.null(admin_dashboard_hook) && is.function(admin_dashboard_hook)) {
+    config$admin_dashboard_hook <- admin_dashboard_hook
   }
   
   # Check if item_bank is provided, if not try to extract from config
@@ -805,6 +811,10 @@ launch_study <- function(
   logger(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"))
   logger(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"), level = "INFO")
   
+  if (!is.null(config$admin_dashboard_hook) && is.function(config$admin_dashboard_hook)) {
+    logger("Admin dashboard hook registered", level = "INFO")
+  }
+  
       # Initialize session management if enabled
     if (session_save) {
       logger("Initializing robust session management", level = "INFO")
@@ -910,7 +920,19 @@ launch_study <- function(
                      session_config$session_id, session_config$max_time), level = "INFO")
     }
   
-  inrep::validate_item_bank(item_bank, config$model)
+  # Normalize common alternative column names before validation
+  if ("content" %in% names(item_bank) && !"Question" %in% names(item_bank)) item_bank$Question <- item_bank$content
+  if ("item_id" %in% names(item_bank) && !"Question" %in% names(item_bank)) item_bank$Question <- as.character(item_bank$item_id)
+  if ("discrimination" %in% names(item_bank) && !"a" %in% names(item_bank)) item_bank$a <- item_bank$discrimination
+  if ("difficulty" %in% names(item_bank) && !"b" %in% names(item_bank)) item_bank$b <- item_bank$difficulty
+  
+  # Validate item bank; allow list return and log
+  validation <- inrep::validate_item_bank(item_bank, config$model)
+  if (is.list(validation)) {
+    if (!isTRUE(validation$is_valid)) {
+      logger("Item bank validation reported issues; proceeding with best-effort normalization", level = "WARNING")
+    }
+  }
   
   # Handle model conversion if needed
   if (config$model %in% c("1PL", "2PL", "3PL") && "ResponseCategories" %in% names(item_bank) && 
@@ -1423,6 +1445,8 @@ launch_study <- function(
     
     get_item_content <- function(item_idx) {
       if (base::is.null(config$item_translations) || base::is.null(config$item_translations[[config$language]])) {
+        # Ensure minimal fields exist
+        if (!"Question" %in% base::names(item_bank) && "content" %in% base::names(item_bank)) item_bank$Question <- item_bank$content
         return(item_bank[item_idx, ])
       }
       translations <- config$item_translations[[config$language]][item_idx, ]
@@ -1608,24 +1632,25 @@ launch_study <- function(
                                       )
                                     }
                        )
-                     } else {
-                       choices <- base::c(item$Option1, item$Option2, item$Option3, item$Option4)
-                       choices <- choices[!is.na(choices) & choices != ""]
-                       
-                       # Ensure we have valid choices
-                       if (length(choices) == 0) {
-                         choices <- c("Option 1", "Option 2", "Option 3", "Option 4")
-                       }
-                       
-                       shiny::radioButtons(
-                         inputId = "item_response",
-                         label = NULL,
-                         choices = choices,
-                         selected = base::character(0),
-                         width = "100%"
-                       )
-                     }
-                     progress_pct <- base::round((base::length(rv$administered) / config$max_items) * 100)
+                                          } else {
+                        choices <- base::c(item$Option1, item$Option2, item$Option3, item$Option4)
+                         # If options are missing for dichotomous model, synthesize simple options
+                         if (length(choices) == 0 || all(is.na(choices) | choices == "")) {
+                           choices <- c("1", "2")
+                           item$Answer <- item$Answer %||% "1"
+                         } else {
+                           choices <- choices[!is.na(choices) & choices != ""]
+                         }
+                        
+                        shiny::radioButtons(
+                          inputId = "item_response",
+                          label = NULL,
+                          choices = choices,
+                          selected = base::character(0),
+                          width = "100%"
+                        )
+                      }
+                     progress_pct <- base::round((base::length(rv$administered) / (config$max_items %||% max(1, nrow(item_bank)))) * 100)
                      progress_ui <- base::switch(config$progress_style,
                        "circle" = {
                          # Get theme primary color for progress arc and tiny circle
@@ -1801,14 +1826,14 @@ launch_study <- function(
                        )
                      )
                      
-                     if (config$adaptive && base::length(rv$theta_history) > 1) {
-                       logger(sprintf("Adding plot to results - theta_history length: %d", base::length(rv$theta_history)))
-                       results_content <- base::c(results_content, base::list(
-                         shiny::plotOutput("theta_plot", height = "200px")
-                       ))
-                     } else {
-                       logger(sprintf("Plot not added - adaptive: %s, theta_history length: %d", config$adaptive, base::length(rv$theta_history)))
-                     }
+                     if (config$adaptive && base::length(rv$theta_history) > 1 && base::length(rv$se_history) > 1) {
+                        logger(sprintf("Adding plot to results - theta_history length: %d", base::length(rv$theta_history)))
+                        results_content <- base::c(results_content, base::list(
+                          shiny::plotOutput("theta_plot", height = "200px")
+                        ))
+                      } else {
+                        logger(sprintf("Plot not added - adaptive: %s, theta_history length: %d, se_history length: %d", config$adaptive, base::length(rv$theta_history), base::length(rv$se_history)))
+                      }
                      
                      results_content <- base::c(results_content, base::list(
                        shiny::div(class = "results-section",
@@ -1839,7 +1864,7 @@ launch_study <- function(
     output$theta_plot <- shiny::renderPlot({
       logger(sprintf("Plot rendering triggered - adaptive: %s, theta_history length: %d", config$adaptive, base::length(rv$theta_history)))
       
-      if (!config$adaptive || base::length(rv$theta_history) < 2) {
+      if (!config$adaptive || base::length(rv$theta_history) < 2 || base::length(rv$se_history) < 2) {
         logger("Plot not rendered - conditions not met")
         return(NULL)
       }
@@ -1880,10 +1905,13 @@ launch_study <- function(
         )
       }
       
+      # Align history vectors to same length to avoid rendering errors
+      n <- base::min(base::length(rv$theta_history), base::length(rv$se_history))
+      if (n < 2) return(NULL)
       data <- base::data.frame(
-        Item = base::seq_along(rv$theta_history),
-        Theta = rv$theta_history,
-        SE = rv$se_history
+        Item = 1:n,
+        Theta = rv$theta_history[1:n],
+        SE = rv$se_history[1:n]
       )
       
       # Robust plotting with multiple fallbacks
@@ -1925,12 +1953,18 @@ launch_study <- function(
       if (base::is.null(rv$cat_result)) return()
       items <- rv$cat_result$administered
       responses <- rv$cat_result$responses
+      # Align lengths defensively
+      if (length(items) != length(responses)) {
+        n <- min(length(items), length(responses))
+        items <- items[seq_len(n)]
+        responses <- responses[seq_len(n)]
+      }
       dat <- if (config$model == "GRM") {
         base::data.frame(
           Item = 1:base::length(items),
           Question = item_bank$Question[items],
           Response = responses,
-          Time = base::round(rv$cat_result$response_times, 1),
+          Time = base::round(rv$cat_result$response_times[seq_len(length(items))], 1),
           check.names = FALSE
         )
       } else {
@@ -1939,7 +1973,7 @@ launch_study <- function(
           Question = item_bank$Question[items],
           Response = base::ifelse(responses == 1, "Correct", "Incorrect"),
           Correct = item_bank$Answer[items],
-          Time = base::round(rv$cat_result$response_times, 1),
+          Time = base::round(rv$cat_result$response_times[seq_len(length(items))], 1),
           check.names = FALSE
         )
       }
@@ -2202,6 +2236,20 @@ launch_study <- function(
       logger(sprintf("Item bank columns: %s", paste(names(item_bank), collapse = ", ")))
       
       rv$current_item <- inrep::select_next_item(rv, item_bank, config)
+      if (!is.null(config$admin_dashboard_hook) && is.function(config$admin_dashboard_hook)) {
+        base::tryCatch({
+          config$admin_dashboard_hook(list(
+            participant_id = study_key %||% config$study_key %||% "unknown",
+            progress = (length(rv$administered) / (config$max_items %||% max(1, nrow(item_bank)))) * 100,
+            theta = rv$current_ability,
+            se = rv$current_se,
+            items_administered = rv$administered,
+            responses = rv$responses
+          ))
+        }, error = function(e) {
+          logger(base::sprintf("admin_dashboard_hook failed: %s", e$message), level = "WARNING")
+        })
+      }
       
       logger(sprintf("Item selection result: %s", rv$current_item))
       
@@ -2273,7 +2321,13 @@ launch_study <- function(
             if (config$model == "GRM") {
               as.numeric(input$item_response)
             } else {
-              as.numeric(input$item_response == correct_answer)
+              if (is.null(correct_answer) || is.na(correct_answer) || !(correct_answer %in% base::c(item$Option1, item$Option2, item$Option3, item$Option4))) {
+                # If no explicit correct answer, assume first option is correct for scoring consistency
+                correct_answer_fallback <- (base::c(item$Option1, item$Option2, item$Option3, item$Option4))[1] %||% "1"
+                as.numeric(input$item_response == correct_answer_fallback)
+              } else {
+                as.numeric(input$item_response == correct_answer)
+              }
             }
           }
         )
@@ -2306,6 +2360,22 @@ launch_study <- function(
         }
         
         logger(sprintf("Response successfully processed for item %d", item_index), level = "INFO")
+        
+        # Notify admin dashboard after response capture
+        if (!is.null(config$admin_dashboard_hook) && is.function(config$admin_dashboard_hook)) {
+          base::tryCatch({
+            config$admin_dashboard_hook(list(
+              participant_id = study_key %||% config$study_key %||% "unknown",
+              progress = (length(rv$administered) / (config$max_items %||% max(1, nrow(item_bank)))) * 100,
+              theta = rv$current_ability,
+              se = rv$current_se,
+              items_administered = rv$administered,
+              responses = rv$responses
+            ))
+          }, error = function(e) {
+            logger(base::sprintf("admin_dashboard_hook failed: %s", e$message), level = "WARNING")
+          })
+        }
         
       }, error = function(e) {
         # EMERGENCY ERROR HANDLING WITH AUTOMATIC RECOVERY
@@ -2344,6 +2414,24 @@ launch_study <- function(
           logger(base::sprintf("Estimated ability: theta=%.2f, se=%.3f", ability$theta, ability$se))
           rv$theta_history <- base::c(rv$theta_history, rv$current_ability)
           rv$se_history <- base::c(rv$se_history, rv$current_se)
+          
+          # Push update to admin_dashboard_hook if provided
+          if (!is.null(config$admin_dashboard_hook) && is.function(config$admin_dashboard_hook)) {
+            base::tryCatch({
+              config$admin_dashboard_hook(list(
+            participant_id = study_key %||% config$study_key %||% "unknown",
+            progress = (length(rv$administered) / (config$max_items %||% max(1, nrow(item_bank)))) * 100,
+            theta = rv$current_ability,
+            se = rv$current_se,
+                items_administered = rv$administered,
+                responses = rv$responses,
+                theta_history = rv$theta_history,
+                se_history = rv$se_history
+              ))
+            }, error = function(e) {
+              logger(base::sprintf("admin_dashboard_hook failed: %s", e$message), level = "WARNING")
+            })
+          }
         }, error = function(e) {
           logger(base::sprintf("Ability estimation failed, using fallback: %s", e$message), level = "WARNING")
           # Fallback ability estimation - don't break the assessment
