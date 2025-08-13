@@ -106,6 +106,21 @@ The package requires R ≥ 4.1.0 and integrates with the following packages:
 
 ## Quick Start
 
+### Non-Adaptive Testing (Fixed questionnaire)
+
+```r
+# Traditional questionnaire with fixed item order
+config_fixed <- create_study_config(
+  name = "Personality Questionnaire",
+  adaptive = FALSE,        # Disable adaptive testing
+  max_items = 5,          # Show exactly 5 items in order
+  theme = "hildesheim",   # University theme
+  session_save = TRUE     # Enable recovery
+)
+
+launch_study(config_fixed, bfi_items)
+```
+
 ### Adaptive Testing (IRT-based)
 
 ```r
@@ -125,21 +140,6 @@ config <- create_study_config(
 )
 
 launch_study(config, bfi_items)
-```
-
-### Non-Adaptive Testing (Fixed questionnaire)
-
-```r
-# Traditional questionnaire with fixed item order
-config_fixed <- create_study_config(
-  name = "Personality Questionnaire",
-  adaptive = FALSE,        # Disable adaptive testing
-  max_items = 5,          # Show exactly 5 items in order
-  theme = "hildesheim",   # University theme
-  session_save = TRUE     # Enable recovery
-)
-
-launch_study(config_fixed, bfi_items)
 ```
 
 ### Advanced Cognitive Ability Study (2PL) — Fully Specified
