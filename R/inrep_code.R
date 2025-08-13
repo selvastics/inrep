@@ -166,7 +166,7 @@ generate_compact_script <- function(user_code, auto_run, minimal) {
   # Compact utility functions
   utils <- "
 `%||%`<-function(x,y)if(is.null(x))y else x
-logger<-function(m,l='INFO')message(sprintf('[%s] %s: %s',Sys.time(),l,m))
+logger<-function(m,l='INFO'){try(message(sprintf('[%s] %s: %s',Sys.time(),l,m)), silent=TRUE)}
 "
   
   # Essential inrep functions - extract only the most critical ones

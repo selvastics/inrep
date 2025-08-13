@@ -386,7 +386,7 @@ estimate_ability <- function(rv, item_bank, config) {
     seq(-4, 4, length.out = 100)
   }
   
-  if (config$model %in% c("1PL", "2PL", "3PL") && config$estimation_method == "TAM" && length(responses) >= 5) {
+  if (config$model %in% c("1PL", "2PL", "3PL") && config$estimation_method == "TAM" && length(responses) >= 5 && requireNamespace("TAM", quietly = TRUE)) {
     tryCatch({
       dat <- matrix(as.integer(responses), nrow = 1)
       colnames(dat) <- administered
@@ -412,7 +412,7 @@ estimate_ability <- function(rv, item_bank, config) {
   }
   
   # MIRT estimation method
-  if (config$model %in% c("1PL", "2PL", "3PL", "GRM") && config$estimation_method == "MIRT" && length(rv$responses) >= 3) {
+  if (config$model %in% c("1PL", "2PL", "3PL", "GRM") && config$estimation_method == "MIRT" && length(rv$responses) >= 3 && requireNamespace("mirt", quietly = TRUE)) {
     mirt_result <- estimate_ability_mirt(
       responses = rv$responses,
       administered = rv$administered,

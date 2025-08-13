@@ -4,7 +4,7 @@ library(inrep)
 
 test_that("select_next_item returns NULL when max items reached", {
   config <- create_study_config(model = "GRM", max_items = 2)
-  rv <- reactiveValues(
+  rv <- shiny::reactiveValues(
     administered = c(1, 2),
     responses = c(3, 4),
     current_ability = 0,
@@ -25,7 +25,7 @@ test_that("select_next_item returns NULL when max items reached", {
 
 test_that("select_next_item selects fixed items", {
   config <- create_study_config(model = "GRM", fixed_items = c(1, 2))
-  rv <- reactiveValues(
+  rv <- shiny::reactiveValues(
     administered = c(),
     responses = c(),
     current_ability = 0,

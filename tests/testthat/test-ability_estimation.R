@@ -4,7 +4,7 @@ library(inrep)
 
 test_that("estimate_ability returns prior when no items administered", {
   config <- create_study_config(model = "GRM", theta_prior = c(0, 1))
-  rv <- reactiveValues(
+  rv <- shiny::reactiveValues(
     administered = c(),
     responses = c(),
     current_ability = 0,
@@ -26,7 +26,7 @@ test_that("estimate_ability returns prior when no items administered", {
 
 test_that("estimate_ability handles invalid responses", {
   config <- create_study_config(model = "GRM")
-  rv <- reactiveValues(
+  rv <- shiny::reactiveValues(
     administered = c(1),
     responses = c(NA),
     current_ability = 0,
@@ -47,7 +47,7 @@ test_that("estimate_ability handles invalid responses", {
 
 test_that("estimate_ability computes theta for valid GRM responses", {
   config <- create_study_config(model = "GRM", theta_prior = c(0, 1))
-  rv <- reactiveValues(
+  rv <- shiny::reactiveValues(
     administered = c(1, 2),
     responses = c(3, 4),
     current_ability = 0,
@@ -70,7 +70,7 @@ test_that("estimate_ability computes theta for valid GRM responses", {
 
 test_that("estimate_ability handles 3PL model", {
   config <- create_study_config(model = "3PL")
-  rv <- reactiveValues(
+  rv <- shiny::reactiveValues(
     administered = c(1),
     responses = c(1),
     current_ability = 0,
