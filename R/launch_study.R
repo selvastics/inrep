@@ -808,7 +808,6 @@ launch_study <- function(
     logger("Cloud storage disabled - results will be saved locally only", level = "INFO")
   }
   
-  logger(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"))
   logger(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"), level = "INFO")
   
   if (!is.null(config$admin_dashboard_hook) && is.function(config$admin_dashboard_hook)) {
@@ -2404,9 +2403,12 @@ launch_study <- function(
             if (config$model == "GRM") {
               as.numeric(input$item_response)
             } else {
-              if (is.null(correct_answer) || is.na(correct_answer) || !(correct_answer %in% base::c(item$Option1, item$Option2, item$Option3, item$Option4))) {
-                # If no explicit correct answer, assume first option is correct for scoring consistency
-                correct_answer_fallback <- (base::c(item$Option1, item$Option2, item$Option3, item$Option4))[1] %||% "1"
+              # Use item_bank row to avoid referencing UI item object
+              opts <- base::c(item_bank$Option1[item_index], item_bank$Option2[item_index], item_bank$Option3[item_index], item_bank$Option4[item_index])
+              opts <- opts[!is.na(opts) & opts != ""]
+              if (is.null(correct_answer) || is.na(correct_answer) || !(correct_answer %in% opts)) {
+                # If no explicit correct answer, assume first non-empty option is correct for scoring consistency
+                correct_answer_fallback <- (opts)[1] %||% "1"
                 as.numeric(input$item_response == correct_answer_fallback)
               } else {
                 as.numeric(input$item_response == correct_answer)
