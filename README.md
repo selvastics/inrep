@@ -173,11 +173,21 @@ advanced_config <- create_study_config(
       show_theta_plot = TRUE,
       show_response_table = TRUE,
       show_recommendations = TRUE,
-      use_enhanced_report = TRUE
-    ),
-    # Require at least two non-age demographics to be filled
-    min_required_non_age_demographics = 2
+      use_enhanced_report = TRUE,
+      show_item_difficulty_trend = TRUE,
+      show_domain_breakdown = TRUE
+    )
 )
+
+# Optional: Attach image links or inline SVGs to items for richer content
+# Here we attach placeholder images for spatial reasoning items if an Image column is absent
+if (!"Image" %in% names(cognitive_items)) {
+  cognitive_items$Image <- ""
+}
+spatial_rows <- which(grepl("^Spatial", cognitive_items$domain))
+if (length(spatial_rows) > 0) {
+  cognitive_items$Image[spatial_rows] <- 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="220" height="120"><rect width="220" height="120" fill="%23f8fafc"/><g fill="%232c3e50"><rect x="20" y="30" width="40" height="40" rx="6"/><rect x="80" y="30" width="40" height="40" rx="6"/><rect x="140" y="30" width="40" height="40" rx="6"/></g></svg>'
+}
 
 launch_study(
     config = advanced_config,
@@ -191,74 +201,3 @@ launch_study(
     }
 )
 ```
-
-## Theme Customization 
-
-![inrep themes](man/figures/inrep_themes.png)
-
-> **Themes:** `inrep` supports multiple default UI themes for customizing assessment components.  
-> In addition to built-in options, users can extract CSS styles from institutional websites  
-> or define fully custom themes through direct CSS editing.  
->  
-> New themes are added incrementally. Contributions are welcome to share themes that can be made available to other users.
-
-## Documentation
-
-* `vignette("getting-started", package = "inrep")`
-* `vignette("customizing-appearance", package = "inrep")`
-* `vignette("research-workflows", package = "inrep")`
-
-## Main Functions
-
-* `launch_study()`
-* `create_study_config()`
-* `estimate_ability()`
-* `select_next_item()`
-* `validate_item_bank()`
-* `scrape_website_ui()`
-* `enable_llm_assistance()`
-
-## Example Datasets
-
-* `bfi_items`
-* `math_items`
-
-## Configuration Options
-
-* IRT Models: 1PL, 2PL, 3PL, GRM
-* Stopping Rules
-* Item Selection Criteria
-* Themes and Languages
-* Session Management
-* LLM Integration
-
-## Citation
-
-```
-Selva, C. (2025). inrep: Instant Reports for Adaptive Assessments.  
-R package version 1.0.0. https://github.com/selvastics/inrep
-```
-
-## Contributing
-
-See `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md` on GitHub.
-
-## License
-
-MIT License
-
-## Support
-
-* GitHub: [https://github.com/selvastics/inrep/issues](https://github.com/selvastics/inrep/issues)
-* Email: [selva@uni-hildesheim.de](mailto:selva@uni-hildesheim.de)
-
-## Acknowledgments
-
-I thank Alla Sawatzky and Kathrin Schütz for their early endorsement of this project and their insightful guidance during its conceptualization.
-
----
-
-**Author:** Clievins Selva
-**Affiliation:** University of Hildesheim
-**Contact:** [selva@uni-hildesheim.de](mailto:selva@uni-hildesheim.de)
-
