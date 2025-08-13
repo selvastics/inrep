@@ -142,7 +142,7 @@ config_fixed <- create_study_config(
 launch_study(config_fixed, bfi_items)
 ```
 
-### Advanced Cognitive Assessment
+### Advanced Cognitive Assessment with Participant Report Controls
 
 ```r
 data(cognitive_items)
@@ -167,7 +167,16 @@ advanced_config <- create_study_config(
     session_save = TRUE,
     parallel_computation = TRUE,
     cache_enabled = TRUE,
-    accessibility_enhanced = TRUE
+    accessibility_enhanced = TRUE,
+    # Control participant report contents
+    participant_report = list(
+      show_theta_plot = TRUE,
+      show_response_table = TRUE,
+      show_recommendations = TRUE,
+      use_enhanced_report = TRUE
+    ),
+    # Require at least two non-age demographics to be filled
+    min_required_non_age_demographics = 2
 )
 
 launch_study(
@@ -176,7 +185,7 @@ launch_study(
     accessibility = TRUE,
     admin_dashboard_hook = function(session_data) {
         message("Participant ID:", session_data$participant_id)
-        message("Progress:", session_data$progress, "%")
+        message("Progress:", round(session_data$progress, 1), "%")
         message("Current theta:", round(session_data$theta, 3))
         message("Standard error:", round(session_data$se, 3))
     }
