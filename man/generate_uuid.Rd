@@ -5,12 +5,6 @@
 \title{Generate UUID}
 \usage{
 generate_uuid()
-
-generate_uuid()
-}
-\arguments{
-\item{path}{Optional character string specifying the log file path.
-If NULL, creates a temporary log file in the system temp directory.}
 }
 \value{
 Character string containing a UUID.
@@ -19,12 +13,6 @@ Character string containing a UUID.
 Generates a universally unique identifier (UUID) for study configurations.
 This is a convenience wrapper around uuid::UUIDgenerate().
 
-Provides comprehensive logging capabilities for research platforms and assessment systems.
-This function offers advanced configuration options for structured logging, monitoring,
-and audit trail generation in adaptive testing environments.
-}
-\details{
-The logging system provides advanced configuration options for research environments.
 }
 \examples{
 \dontrun{
