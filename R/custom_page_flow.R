@@ -374,18 +374,33 @@ create_demographic_input <- function(input_id, demo_config, input_type, current_
     "checkbox" = {
       if (length(demo_config$options) == 1) {
         # Single checkbox for consent
-        label_text <- names(demo_config$options)[1]
-        if (is.null(label_text) || is.na(label_text) || label_text == "") {
-          label_text <- as.character(demo_config$options[1])
+        label_text <- tryCatch({
+          lbl <- names(demo_config$options)[1]
+          if (is.null(lbl) || is.na(lbl) || lbl == "") {
+            lbl <- as.character(demo_config$options[1])
+          }
+          if (is.null(lbl) || is.na(lbl) || lbl == "") {
+            lbl <- "Please confirm"
+          }
+          as.character(lbl)
+        }, error = function(e) {
+          "Please confirm"
+        })
+        
+        # Ensure value is boolean
+        checkbox_value <- FALSE
+        if (!is.null(current_value)) {
+          if (is.logical(current_value)) {
+            checkbox_value <- current_value
+          } else if (is.character(current_value)) {
+            checkbox_value <- current_value %in% c("1", "TRUE", "true", "yes")
+          }
         }
-        # Final fallback if still no valid label
-        if (is.null(label_text) || is.na(label_text) || label_text == "") {
-          label_text <- "Option"
-        }
+        
         shiny::checkboxInput(
           inputId = input_id,
           label = label_text,
-          value = current_value %||% FALSE
+          value = checkbox_value
         )
       } else {
         # Multiple checkboxes
