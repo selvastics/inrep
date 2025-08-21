@@ -19,9 +19,14 @@ library(scales)
 # =============================================================================
 # WEBDAV CONFIGURATION
 # =============================================================================
-webdav_url <- "https://sync.academiccloud.de/index.php/s/YourSharedFolder/"
-password <- Sys.getenv("WEBDAV_PASSWORD")
-if (password == "") password <- "your_password_here"
+# Note: Replace with your actual WebDAV credentials if using cloud storage
+webdav_url <- NULL  # Set to NULL to disable cloud storage for testing
+password <- NULL    # Set to NULL to disable cloud storage for testing
+
+# To enable cloud storage, uncomment and configure:
+# webdav_url <- "https://sync.academiccloud.de/index.php/s/YourSharedFolder/"
+# password <- Sys.getenv("WEBDAV_PASSWORD")
+# if (password == "") password <- "your_password_here"
 
 # Initialize logging
 inrep::initialize_logging()
@@ -707,6 +712,28 @@ create_hildesheim_results_with_plots <- function(responses, item_bank) {
 }
 
 # =============================================================================
+# FIX FOR ITEM SELECTION INITIALIZATION
+# =============================================================================
+# Ensure the first item is properly selected when starting assessment
+ensure_first_item_selection <- function(rv, item_bank, config) {
+    if (is.null(rv$administered)) rv$administered <- integer(0)
+    if (is.null(rv$responses)) rv$responses <- numeric(0)
+    if (is.null(rv$current_ability)) rv$current_ability <- 0
+    if (is.null(rv$ability_se)) rv$ability_se <- 1
+    if (is.null(rv$item_counter)) rv$item_counter <- 0
+    if (is.null(rv$session_start)) rv$session_start <- Sys.time()
+    
+    # For non-adaptive mode, select first available item
+    if (!isTRUE(config$adaptive)) {
+        available_items <- setdiff(1:nrow(item_bank), rv$administered)
+        if (length(available_items) > 0) {
+            return(available_items[1])
+        }
+    }
+    return(NULL)
+}
+
+# =============================================================================
 # STUDY CONFIGURATION WITH HILDESHEIM THEME
 # =============================================================================
 session_uuid <- paste0("hildesheim_", format(Sys.time(), "%Y%m%d_%H%M%S"))
@@ -798,7 +825,23 @@ study_config <- inrep::create_study_config(
     ),
     
     # Results processor with plots - ENHANCED VERSION
-    results_processor = create_hildesheim_results_with_plots
+    results_processor = create_hildesheim_results_with_plots,
+    
+    # FIX: Ensure first item is selected when starting assessment
+    # This is a workaround for the NULL item issue
+    assessment_init_hook = function(rv, item_bank, config) {
+        # Initialize the first item for non-adaptive testing
+        if (!config$adaptive && is.null(rv$current_item)) {
+            rv$current_item <- 1
+            cat("Initialized first item:", rv$current_item, "\n")
+        }
+        return(rv)
+    },
+    
+    # Additional configuration to prevent NULL item issues
+    criteria = "RANDOM",  # Use random selection for non-adaptive
+    adaptive_start = 999,  # Effectively disable adaptive selection
+    fixed_items = 1:31    # Specify all items in fixed order
 )
 
 # =============================================================================
