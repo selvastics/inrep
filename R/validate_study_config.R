@@ -32,7 +32,7 @@
 #' if (!validation$valid) {
 #'   cat("Configuration errors found:\n")
 #'   for (error in validation$errors) {
-#'     cat("  ❌", error, "\n")
+#'     cat("  ERROR:", error, "\n")
 #'   }
 #' }
 #' }
@@ -339,7 +339,7 @@ validate_study_config <- function(config, item_bank = NULL, context = "launch") 
     suggestions = suggestions,
     summary = sprintf(
       "Validation %s: %d error(s), %d warning(s), %d suggestion(s)",
-      ifelse(valid, "PASSED ✓", "FAILED ✗"),
+      ifelse(valid, "PASSED", "FAILED"),
       length(errors),
       length(warnings),
       length(suggestions)
@@ -353,21 +353,21 @@ validate_study_config <- function(config, item_bank = NULL, context = "launch") 
     cat(strrep("=", 70), "\n\n")
     
     if (length(errors) > 0) {
-      cat("❌ ERRORS (must fix):\n")
+      cat("ERRORS (must fix):\n")
       for (i in seq_along(errors)) {
         cat(sprintf("  %d. %s\n\n", i, errors[i]))
       }
     }
     
     if (length(warnings) > 0) {
-      cat("⚠️  WARNINGS (should review):\n")
+      cat("WARNINGS (should review):\n")
       for (i in seq_along(warnings)) {
         cat(sprintf("  %d. %s\n\n", i, warnings[i]))
       }
     }
     
     if (length(suggestions) > 0) {
-      cat("💡 SUGGESTIONS (optional improvements):\n")
+      cat("SUGGESTIONS (optional improvements):\n")
       for (i in seq_along(suggestions)) {
         cat(sprintf("  %d. %s\n\n", i, suggestions[i]))
       }

@@ -205,6 +205,13 @@ demographic_configs <- list(
     ),
     required = FALSE
   ),
+  Zufrieden_Hi_7st = list(
+    question = "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (7-stufig)",
+    options = c(
+      "gar nicht zufrieden"="1", "2"="2", "3"="3", "4"="4", "5"="5", "6"="6", "sehr zufrieden"="7"
+    ),
+    required = FALSE
+  ),
   Persönlicher_Code = list(
     question = "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags):",
     type = "text",
@@ -228,6 +235,7 @@ input_types <- list(
   Note_Mathe = "select",
   Vor_Nachbereitung = "radio",
   Zufrieden_Hi_5st = "radio",
+  Zufrieden_Hi_7st = "radio",
   Persönlicher_Code = "text"
 )
 
@@ -367,7 +375,7 @@ custom_page_flow <- list(
     id = "page13",
     type = "demographics",
     title = "Studienzufriedenheit",
-    demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Persönlicher_Code")
+    demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st", "Persönlicher_Code")
   ),
   
   # Page 14: Results
