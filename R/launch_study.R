@@ -1357,7 +1357,8 @@ launch_study <- function(
     if (session_save) {
       # Session timeout monitoring
       shiny::observe({
-        shiny::invalidateLater(1000, session)
+        # DISABLED - causes page jumping
+        # shiny::invalidateLater(1000, session)
         
         # Check session timeout
         if (base::difftime(base::Sys.time(), rv$session_start, units = "secs") > max_session_time) {
@@ -1385,10 +1386,9 @@ launch_study <- function(
         }
       })
       
-      # Automatic data preservation
-      shiny::observe({
-        shiny::invalidateLater(data_preservation_interval * 1000, session)
-        
+      # Automatic data preservation - converted to event-based instead of timer-based
+      # This prevents page jumping while still preserving data on important events
+      observe_data_preservation <- function() {
         if (rv$session_active && exists("preserve_session_data") && is.function(preserve_session_data)) {
           tryCatch({
             preserve_session_data()
@@ -1396,30 +1396,30 @@ launch_study <- function(
             logger(sprintf("Data preservation failed: %s", e$message), level = "ERROR")
           })
         }
-      })
+      }
       
-          # Session status monitoring (with fallback)
+      # Preserve data on page changes instead of timer
+      shiny::observeEvent(rv$current_page, {
+        observe_data_preservation()
+      }, ignoreInit = TRUE)
+      
+      # Preserve data on responses
+      shiny::observeEvent(rv$responses, {
+        observe_data_preservation()
+      }, ignoreInit = TRUE)
+      
+          # Session status monitoring - DISABLED timer-based monitoring
+    # Session is still saved but without constant UI updates that cause page jumping
     if (session_save) {
-      shiny::observe({
-        # DISABLED to prevent UI refreshing
-        #         # shiny::invalidateLater(5000, session)  # Check every 5 seconds
-        
-        # Try to get session status if available, fallback to basic monitoring
-        if (exists("get_session_status") && is.function(get_session_status)) {
-          tryCatch({
-            session_status <- get_session_status()
-            if (session_status$active) {
-              remaining_minutes <- round(session_status$remaining_time / 60, 1)
-              # Silent monitoring - don't log every check to avoid UI refreshing
-              # logger(sprintf("Session active: %s minutes remaining", remaining_minutes), level = "INFO")
-            }
-          }, error = function(e) {
-            logger("Session status check failed, using basic monitoring", level = "WARNING")
-          })
-        } else {
-          logger("Session monitoring active (basic mode)", level = "INFO")
-        }
-      })
+      # Log once that session monitoring is active
+      if (exists("get_session_status") && is.function(get_session_status)) {
+        logger("Session monitoring active (event-based)", level = "INFO")
+      } else {
+        logger("Session monitoring active (basic mode)", level = "INFO")
+      }
+      
+      # Session status is checked on events, not on timer
+      # This prevents the page from jumping to top
     }
     
     
@@ -3166,11 +3166,9 @@ launch_study <- function(
       }
     })
     
-    # AUTOMATIC ERROR RECOVERY - NO USER INTERVENTION REQUIRED
-    shiny::observe({
-      # Check for stuck states every 2 seconds
-      shiny::invalidateLater(2000, session)
-      
+    # AUTOMATIC ERROR RECOVERY - Event-based instead of timer-based
+    # This prevents page jumping while still handling errors
+    check_error_states <- function() {
       # Automatic recovery from submission lock
       if (rv$submission_in_progress && !is.null(rv$submission_lock_time)) {
         lock_duration <- as.numeric(difftime(Sys.time(), rv$submission_lock_time, units = "secs"))
@@ -3216,7 +3214,16 @@ launch_study <- function(
           }
         }
       }
-    })
+    }
+    
+    # Call error checking on specific events instead of timer
+    shiny::observeEvent(rv$stage, {
+      check_error_states()
+    }, ignoreInit = TRUE)
+    
+    shiny::observeEvent(rv$submission_in_progress, {
+      check_error_states()
+    }, ignoreInit = TRUE)
     
     shiny::observeEvent(input$restart_test, {
       # Clean up robust session before restart
