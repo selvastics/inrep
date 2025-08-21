@@ -1225,80 +1225,45 @@ launch_study <- function(
   
   ui <- shiny::fluidPage(
     shinyjs::useShinyjs(),
+
     shiny::tags$head(
       shiny::tags$style(type = "text/css", enhanced_css),
       shiny::tags$style(HTML("
-        .loading-screen {
+        /* Show Shiny's natural busy indicator more prominently */
+        .shiny-busy {
           position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: #ffffff;
-          display: flex !important;
-          justify-content: center;
-          align-items: center;
-          z-index: 99999;
-          transition: opacity 0.5s ease-out;
-          opacity: 1;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: 1000;
         }
-        .loading-content {
-          text-align: center;
-          animation: fadeIn 0.5s ease-in;
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .loading-spinner {
-          width: 40px;
-          height: 40px;
-          border: 3px solid #e0e0e0;
-          border-top: 3px solid #333333;
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-          margin: 0 auto;
-        }
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        /* Text and progress bar removed for minimalistic loading */
-        /* Hide main content initially */
+        
+        /* Simple fade-in for content */
         .container-fluid {
-          opacity: 0;
-          transition: opacity 0.5s ease-in;
+          animation: contentFadeIn 0.3s ease-in;
         }
-        .container-fluid.loaded {
-          opacity: 1;
+        
+        @keyframes contentFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
       ")),
       shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
       shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet"),
       # Include Plotly for interactive plots
       shiny::tags$script(src = "https://cdn.plot.ly/plotly-latest.min.js"),
-      # Ensure loading screen is visible immediately
-      shiny::tags$script(HTML("
-        // Show loading screen immediately on page load
-        document.addEventListener('DOMContentLoaded', function() {
-          var loadingScreen = document.getElementById('loading-screen');
-          if (loadingScreen) {
-            loadingScreen.style.display = 'flex';
-            loadingScreen.style.opacity = '1';
-          }
-        });
-      "))
+
     ),
-    # Loading screen - ALWAYS VISIBLE INITIALLY
-    shiny::div(
-      id = "loading-screen",
-      class = "loading-screen",
-      style = "display: flex !important;",  # Force display initially
-      shiny::div(
-        class = "loading-content",
-        shiny::div(class = "loading-spinner")
-      )
-    ),
+    # Remove blocking loading screen - let Shiny's natural loading work
+    # shiny::div(
+    #   id = "loading-screen",
+    #   class = "loading-screen",
+    #   style = "display: none;",  # Hidden by default
+    #   shiny::div(
+    #     class = "loading-content",
+    #     shiny::div(class = "loading-spinner")
+    #   )
+    # ),
     if (tolower(config$theme %||% "") == "hildesheim") shiny::div(class = "hildesheim-logo"),
     # Session status indicator for session saving
     if (session_save) {
@@ -1433,23 +1398,6 @@ launch_study <- function(
       })
     }
     
-    # Hide loading screen after a delay to ensure content is loaded
-    shiny::observe({
-      # Add loaded class to container for smooth transition
-      shinyjs::runjs("
-        setTimeout(function() {
-          $('.container-fluid').addClass('loaded');
-        }, 300);
-      ")
-      
-      # Wait to ensure all content is rendered, then hide loading screen
-      shinyjs::delay(1000, {
-        shinyjs::hide(id = "loading-screen", anim = TRUE, animType = "fade", time = 0.5)
-        
-        # Ensure content is fully visible
-        shinyjs::runjs("$('.container-fluid').css('opacity', '1');")
-      })
-    })
     
     # Keep-alive mechanism to prevent session timeouts (with fallback)
     if (session_save && exists("start_keep_alive_monitoring") && is.function(start_keep_alive_monitoring)) {
