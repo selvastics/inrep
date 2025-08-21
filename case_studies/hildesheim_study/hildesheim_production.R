@@ -259,8 +259,6 @@ custom_page_flow <- list(
       "<p style='margin-top: 20px;'><strong>Die Befragung dauert etwa 10-15 Minuten.</strong></p>",
       "</div>"
     ),
-    consent = TRUE,
-    consent_text = "Ich bin mit der Teilnahme an der Befragung einverstanden"
   ),
   
   # Page 2: Consent as separate demographics page
