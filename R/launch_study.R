@@ -1191,10 +1191,18 @@ launch_study <- function(
       margin: 10px 0;
       cursor: pointer;
       padding: 12px;
+      padding-left: 12px !important;  /* Ensure consistent left padding */
       border-radius: var(--border-radius);
       transition: background-color 0.2s;
       border: 1px solid var(--secondary-color);
       background-color: rgba(var(--secondary-color), 0.05);
+      text-align: left;  /* Ensure text alignment */
+    }
+    
+    /* Fix first label alignment issue */
+    .shiny-input-radiogroup label:first-child {
+      margin-left: 0 !important;
+      padding-left: 12px !important;
     }
     
     .shiny-input-radiogroup label:hover {
@@ -1203,6 +1211,8 @@ launch_study <- function(
     
     .shiny-input-radiogroup input[type='radio'] {
       margin-right: 10px;
+      margin-left: 0;  /* Ensure consistent left margin */
+      vertical-align: middle;  /* Align with text */
     }
     
     .slider-container {
