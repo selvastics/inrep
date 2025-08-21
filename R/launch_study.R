@@ -1420,19 +1420,19 @@ launch_study <- function(
         shiny::observe({
           # Check session timeout
           if (base::difftime(base::Sys.time(), rv$session_start, units = "secs") > max_session_time) {
-          rv$session_active <- FALSE
-          rv$stage = "timeout"
-          logger("Session timed out due to maximum session time", level = "WARNING")
-          
-          # Force final data preservation
-          if (exists("preserve_session_data") && is.function(preserve_session_data)) {
-            tryCatch({
-              preserve_session_data(force = TRUE)
-            }, error = function(e) {
-              logger(sprintf("Final data preservation failed: %s", e$message), level = "WARNING")
-            })
+            rv$session_active <- FALSE
+            rv$stage = "timeout"
+            logger("Session timed out due to maximum session time", level = "WARNING")
+            
+            # Force final data preservation
+            if (exists("preserve_session_data") && is.function(preserve_session_data)) {
+              tryCatch({
+                preserve_session_data(force = TRUE)
+              }, error = function(e) {
+                logger(sprintf("Final data preservation failed: %s", e$message), level = "WARNING")
+              })
+            }
           }
-        }
         
         # Update activity tracking
         if (exists("update_activity") && is.function(update_activity)) {
@@ -1568,17 +1568,7 @@ launch_study <- function(
       }
     })
     
-  } else {
-    # Basic session monitoring (legacy)
-    shiny::observe({
-      shiny::invalidateLater(1000, session)
-      if (base::difftime(base::Sys.time(), rv$session_start, units = "mins") > config$max_session_duration) {
-        rv$session_active <- FALSE
-        rv$stage = "timeout"
-        logger("Session timed out")
-      }
-    })
-  }
+    # Note: Legacy session monitoring removed - all monitoring is now event-based
     
 
     
