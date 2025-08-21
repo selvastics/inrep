@@ -1510,38 +1510,90 @@ launch_study <- function(
                      )
                    },
                    "demographics" = {
-                     demo_inputs <- base::lapply(base::seq_along(config$demographics), function(i) {
-                       dem <- config$demographics[i]
-                       input_type <- config$input_types[[dem]]
-                       input_id <- base::paste0("demo_", i)
-                       shiny::div(
-                         class = "form-group",
-                         shiny::tags$label(dem, class = "input-label"),
-                         base::switch(input_type,
-                                      "numeric" = shiny::numericInput(
-                                        inputId = input_id,
-                                        label = NULL,
-                                        value = rv$demo_data[i] %||% NA,
-                                        min = 1,
-                                        max = 150,
-                                        width = "100%"
-                                      ),
-                                      "select" = shiny::selectInput(
-                                        inputId = input_id,
-                                        label = NULL,
-                                        choices = base::c("Select..." = "", "Male", "Female", "Other", "Prefer not to say"),
-                                        selected = rv$demo_data[i] %||% "",
-                                        width = "100%"
-                                      ),
-                                      shiny::textInput(
-                                        inputId = input_id,
-                                        label = NULL,
-                                        value = rv$demo_data[i] %||% "",
-                                        width = "100%"
-                                      )
-                         )
-                       )
-                     })
+                                         demo_inputs <- base::lapply(base::seq_along(config$demographics), function(i) {
+                      dem <- config$demographics[i]
+                      input_type <- config$input_types[[dem]]
+                      input_id <- base::paste0("demo_", i)
+                      
+                      # Get demographic configuration if available
+                      demo_config <- NULL
+                      if (!base::is.null(config$demographic_configs) && 
+                          !base::is.null(config$demographic_configs[[dem]])) {
+                        demo_config <- config$demographic_configs[[dem]]
+                      }
+                      
+                      # Use question from config or fall back to variable name
+                      label_text <- if (!base::is.null(demo_config$question)) {
+                        demo_config$question
+                      } else if (!base::is.null(demo_config$label)) {
+                        demo_config$label
+                      } else {
+                        dem
+                      }
+                      
+                      # Create appropriate input based on type
+                      input_element <- base::switch(input_type,
+                        "numeric" = shiny::numericInput(
+                          inputId = input_id,
+                          label = NULL,
+                          value = rv$demo_data[i] %||% NA,
+                          min = if (!base::is.null(demo_config$min)) demo_config$min else 1,
+                          max = if (!base::is.null(demo_config$max)) demo_config$max else 150,
+                          width = "100%"
+                        ),
+                        "select" = shiny::selectInput(
+                          inputId = input_id,
+                          label = NULL,
+                          choices = if (!base::is.null(demo_config$options)) {
+                            base::c("Bitte wählen..." = "", demo_config$options)
+                          } else {
+                            base::c("Select..." = "", "Male", "Female", "Other", "Prefer not to say")
+                          },
+                          selected = rv$demo_data[i] %||% "",
+                          width = "100%"
+                        ),
+                        "radio" = shiny::radioButtons(
+                          inputId = input_id,
+                          label = NULL,
+                          choices = if (!base::is.null(demo_config$options)) {
+                            demo_config$options
+                          } else {
+                            base::c("Yes" = "yes", "No" = "no")
+                          },
+                          selected = rv$demo_data[i] %||% base::character(0),
+                          width = "100%"
+                        ),
+                        "checkbox" = shiny::checkboxGroupInput(
+                          inputId = input_id,
+                          label = NULL,
+                          choices = if (!base::is.null(demo_config$options)) {
+                            demo_config$options
+                          } else {
+                            base::c("Option 1" = "opt1", "Option 2" = "opt2")
+                          },
+                          selected = rv$demo_data[i] %||% base::character(0),
+                          width = "100%"
+                        ),
+                        # Default to text input
+                        shiny::textInput(
+                          inputId = input_id,
+                          label = NULL,
+                          value = rv$demo_data[i] %||% "",
+                          placeholder = if (!base::is.null(demo_config$placeholder)) demo_config$placeholder else "",
+                          width = "100%"
+                        )
+                      )
+                      
+                      # Return the complete form group
+                      shiny::div(
+                        class = "form-group",
+                        shiny::tags$label(label_text, class = "input-label"),
+                        input_element,
+                        if (!base::is.null(demo_config$help_text)) {
+                          shiny::tags$small(class = "form-text text-muted", demo_config$help_text)
+                        }
+                      )
+                    })
                      
                      shiny::tagList(
                        shiny::div(class = "assessment-card",
