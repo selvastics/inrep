@@ -337,6 +337,13 @@ render_page_navigation <- function(rv, config, current_page_idx) {
 
 #' Create demographic input element
 create_demographic_input <- function(input_id, demo_config, input_type, current_value = NULL) {
+  # Debug logging for checkbox issues
+  if (input_type == "checkbox" && getOption("inrep.debug", FALSE)) {
+    cat("DEBUG: Creating checkbox for", input_id, "\n")
+    cat("  Options:", str(demo_config$options), "\n")
+    cat("  Current value:", current_value, "\n")
+  }
+  
   switch(input_type,
     "text" = shiny::textInput(
       inputId = input_id,
@@ -373,34 +380,67 @@ create_demographic_input <- function(input_id, demo_config, input_type, current_
     
     "checkbox" = {
       if (length(demo_config$options) == 1) {
-        # Single checkbox for consent
-        label_text <- tryCatch({
-          lbl <- names(demo_config$options)[1]
-          if (is.null(lbl) || is.na(lbl) || lbl == "") {
-            lbl <- as.character(demo_config$options[1])
+        # Single checkbox - extract label with maximum safety
+        label_text <- "Please confirm"  # Absolute fallback
+        
+        # Try to get label from names
+        tryCatch({
+          if (!is.null(names(demo_config$options))) {
+            potential_label <- names(demo_config$options)[1]
+            if (!is.null(potential_label) && 
+                !is.na(potential_label) && 
+                is.character(potential_label) &&
+                nchar(potential_label) > 0) {
+              label_text <- potential_label
+            } else {
+              # Try the value itself
+              potential_value <- demo_config$options[1]
+              if (!is.null(potential_value) && 
+                  !is.na(potential_value)) {
+                label_text <- as.character(potential_value)
+              }
+            }
           }
-          if (is.null(lbl) || is.na(lbl) || lbl == "") {
-            lbl <- "Please confirm"
-          }
-          as.character(lbl)
         }, error = function(e) {
-          "Please confirm"
+          # Keep default "Please confirm"
         })
         
-        # Ensure value is boolean
+        # Ensure value is a valid boolean (never NA)
         checkbox_value <- FALSE
-        if (!is.null(current_value)) {
-          if (is.logical(current_value)) {
-            checkbox_value <- current_value
-          } else if (is.character(current_value)) {
-            checkbox_value <- current_value %in% c("1", "TRUE", "true", "yes")
+        tryCatch({
+          if (!is.null(current_value) && !is.na(current_value)) {
+            if (is.logical(current_value)) {
+              checkbox_value <- current_value
+            } else {
+              checkbox_value <- as.character(current_value) %in% c("1", "TRUE", "true", "yes", "ja")
+            }
           }
-        }
+        }, error = function(e) {
+          checkbox_value <- FALSE
+        })
         
+        # Final safety check before creating checkbox
+        final_label <- tryCatch({
+          if (is.null(label_text) || is.na(label_text) || !is.character(label_text) || nchar(label_text) == 0) {
+            "Please confirm"
+          } else {
+            as.character(label_text)
+          }
+        }, error = function(e) "Please confirm")
+        
+        final_value <- tryCatch({
+          if (is.null(checkbox_value) || is.na(checkbox_value) || !is.logical(checkbox_value)) {
+            FALSE
+          } else {
+            as.logical(checkbox_value)
+          }
+        }, error = function(e) FALSE)
+        
+        # Create checkbox with absolutely guaranteed non-NA parameters
         shiny::checkboxInput(
           inputId = input_id,
-          label = label_text,
-          value = checkbox_value
+          label = final_label,
+          value = final_value
         )
       } else {
         # Multiple checkboxes
