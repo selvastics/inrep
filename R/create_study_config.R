@@ -98,6 +98,15 @@
 #'   and display formatting.
 #' @param custom_demographic_ui Function to generate custom demographic UI,
 #'   or \code{NULL} for default demographic interface.
+
+#'   instructions instead of demographics. Defaults to FALSE for backward compatibility.
+
+#'   that need non-standard flow (e.g., Hildesheim study). Defaults to NULL for standard flow.
+
+#'   Allows specification of exact page order and subpages (e.g., page_1 = "instructions",
+#'   page_3_1 = "education"). Defaults to NULL for standard flow.
+
+#'   including content, validation rules, and navigation logic.
 #' @param study_phases Character vector specifying order of study phases.
 #'   Default: c("introduction", "briefing", "consent", "demographics", "survey", "debriefing").
 #' @param page_transitions Character string specifying transition animations
@@ -443,6 +452,10 @@ create_study_config <- function(
     debriefing_content = NULL,
     demographic_configs = NULL,
     custom_demographic_ui = NULL,
+  
+  
+  
+  
     study_phases = c("introduction", "briefing", "consent", "demographics", "survey", "debriefing"),
     page_transitions = "fade",
     enable_back_navigation = TRUE,
@@ -734,6 +747,10 @@ create_study_config <- function(
               debriefing_content = debriefing_content %||% create_default_debriefing_content(get_language_labels(language)),
               demographic_configs = demographic_configs %||% create_default_demographic_configs(demographics, input_types, get_language_labels(language)),
       custom_demographic_ui = custom_demographic_ui,
+  
+  
+  
+      
       study_phases = study_phases,
       page_transitions = page_transitions,
       enable_back_navigation = enable_back_navigation,
@@ -852,6 +869,12 @@ create_study_config <- function(
         message("Added ", length(extra_params), " extra parameters to configuration")
       }
     }
+    
+
+    
+
+    
+
     
     if (getOption("inrep.verbose", TRUE)) {
       message("Study configuration created successfully for: ", name)
