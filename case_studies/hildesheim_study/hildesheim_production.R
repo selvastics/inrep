@@ -4,8 +4,7 @@
 # All variables recorded with proper names, cloud storage enabled
 
 library(inrep)
-library(ggplot2)
-library(dplyr)
+# Don't load heavy packages at startup - load them only when needed
 
 # =============================================================================
 # CLOUD STORAGE CREDENTIALS
