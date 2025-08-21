@@ -653,14 +653,14 @@ launch_study <- function(
   # Load suggested packages
   available_packages <- safe_load_packages()
   
-  # Check if TAM package is available (required for psychometric computations)
-  if (!available_packages$TAM) {
+  # Check if TAM package is available (only needed for adaptive mode)
+  if (isTRUE(config$adaptive) && !isTRUE(available_packages$TAM)) {
     message("Package 'TAM' not available. Falling back to basic non-TAM mode for limited checks.")
   }
   
   # Create robust wrapper functions that check package availability
   safe_tam_mml <- function(...) {
-    if (available_packages$TAM) {
+    if (isTRUE(available_packages$TAM)) {
       tryCatch({
         TAM::tam.mml(...)
       }, error = function(e) {
