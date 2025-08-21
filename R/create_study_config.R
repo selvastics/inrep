@@ -108,6 +108,16 @@
 #'   Defaults to NULL for standard flow.
 #' @param enable_custom_navigation Logical indicating whether to enable custom page navigation
 #'   for studies requiring specific flow control. Defaults to FALSE for backward compatibility.
+#' @param custom_study_flow Named list defining custom study flow for specific studies
+#'   (e.g., Hildesheim study). Allows specification of exact page order and content.
+#'   Example: \code{list(start_with = "instructions", page_sequence = c("instructions", "demographics", "assessment", "results"))}.
+#'   Defaults to NULL for standard flow.
+#' @param custom_page_configs Named list providing configuration for each custom page,
+#'   including content, validation rules, and navigation logic.
+#'   Example: \code{list(instructions = list(content = "Custom instructions", validation = "required"))}.
+#'   Defaults to NULL for standard flow.
+#' @param enable_custom_navigation Logical indicating whether to enable custom page navigation
+#'   for studies requiring specific flow control. Defaults to FALSE for backward compatibility.
 
 #'   instructions instead of demographics. Defaults to FALSE for backward compatibility.
 
@@ -462,7 +472,6 @@ create_study_config <- function(
     debriefing_content = NULL,
     demographic_configs = NULL,
     custom_demographic_ui = NULL,
-    
     # Custom study flow support for specific studies (e.g., Hildesheim)
     custom_study_flow = NULL,
     custom_page_configs = NULL,
