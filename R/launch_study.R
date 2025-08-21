@@ -613,7 +613,7 @@ launch_study <- function(
   }
   
   # Safely load suggested packages with fallbacks
-  safe_load_packages <- function() {
+  safe_load_packages <- function(immediate = FALSE) {
     packages <- list(
       TAM = "TAM",
       DT = "DT",
@@ -624,6 +624,16 @@ launch_study <- function(
     
     loaded_packages <- list()
     
+    # If not immediate, just check availability without loading
+    if (!immediate) {
+      for (pkg_name in names(packages)) {
+        pkg <- packages[[pkg_name]]
+        loaded_packages[[pkg_name]] <- requireNamespace(pkg, quietly = TRUE)
+      }
+      return(loaded_packages)
+    }
+    
+    # Load packages (deferred to when actually needed)
     for (pkg_name in names(packages)) {
       pkg <- packages[[pkg_name]]
       if (requireNamespace(pkg, quietly = TRUE)) {
@@ -645,8 +655,8 @@ launch_study <- function(
     return(loaded_packages)
   }
   
-  # Load suggested packages
-  available_packages <- safe_load_packages()
+  # Check package availability without loading (fast)
+  available_packages <- safe_load_packages(immediate = FALSE)
   
   # Check if TAM package is available (required for psychometric computations)
   if (!available_packages$TAM) {
@@ -1338,6 +1348,17 @@ launch_study <- function(
   )
   
   server <- function(input, output, session) {
+    # Lazy load packages when first needed (deferred loading for speed)
+    packages_fully_loaded <- shiny::reactiveVal(FALSE)
+    
+    load_packages_once <- function() {
+      if (!packages_fully_loaded()) {
+        # Actually load the packages now
+        available_packages <<- safe_load_packages(immediate = TRUE)
+        packages_fully_loaded(TRUE)
+      }
+    }
+    
     # Use study_key argument if provided, else config$study_key, else default
     effective_study_key <- study_key %||% config$study_key %||% "default_study"
     data_dir <- base::file.path("study_data", effective_study_key)
