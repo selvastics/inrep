@@ -614,13 +614,18 @@ launch_study <- function(
   
   # Safely load suggested packages with fallbacks
   safe_load_packages <- function() {
+    # Only load TAM if adaptive mode is enabled
     packages <- list(
-      TAM = "TAM",
       DT = "DT",
       ggplot2 = "ggplot2", 
       dplyr = "dplyr",
       shinyWidgets = "shinyWidgets"
     )
+    
+    # Add TAM only if adaptive is TRUE
+    if (isTRUE(config$adaptive)) {
+      packages <- c(list(TAM = "TAM"), packages)
+    }
     
     loaded_packages <- list()
     

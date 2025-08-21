@@ -374,9 +374,13 @@ create_demographic_input <- function(input_id, demo_config, input_type, current_
     "checkbox" = {
       if (length(demo_config$options) == 1) {
         # Single checkbox for consent
+        label_text <- names(demo_config$options)[1]
+        if (is.null(label_text) || is.na(label_text)) {
+          label_text <- demo_config$options[1]
+        }
         shiny::checkboxInput(
           inputId = input_id,
-          label = names(demo_config$options)[1],
+          label = label_text,
           value = current_value %||% FALSE
         )
       } else {

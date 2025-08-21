@@ -97,8 +97,8 @@ all_items <- data.frame(
 
 demographic_configs <- list(
   Einverständnis = list(
-    question = "Ich bin mit der Teilnahme an der Befragung einverstanden",
-    options = c("Ich bin mit der Teilnahme einverstanden" = "1"),
+    question = "Einverständniserklärung",
+    options = c("Ich bin mit der Teilnahme an der Befragung einverstanden" = "1"),
     required = TRUE
   ),
   Alter_VPN = list(
