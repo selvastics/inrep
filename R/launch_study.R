@@ -530,7 +530,9 @@ launch_study <- function(
       "enhanced_config_handler.R",
       "enhanced_session_recovery.R", 
       "enhanced_security.R",
-      "enhanced_performance.R"
+      "enhanced_performance.R",
+      "custom_page_flow.R",
+      "custom_page_flow_validation.R"
     )
     
     for (file in enhanced_files) {
@@ -1609,11 +1611,6 @@ launch_study <- function(
       
       base::switch(rv$stage,
                    "custom_page_flow" = {
-                     # Load custom page flow module if needed
-                     if (!exists("process_page_flow")) {
-                       source(system.file("R", "custom_page_flow.R", package = "inrep"))
-                     }
-                     
                      # Process and render custom page flow
                      process_page_flow(config, rv, input, output, session, item_bank, ui_labels, logger)
                    },
@@ -2430,14 +2427,6 @@ launch_study <- function(
     # Custom page flow navigation observers
     shiny::observeEvent(input$next_page, {
       if (rv$stage == "custom_page_flow" && rv$current_page < rv$total_pages) {
-        # Load validation module if needed
-        if (!exists("validate_page_progression")) {
-          validation_file <- system.file("R", "custom_page_flow_validation.R", package = "inrep")
-          if (file.exists(validation_file)) {
-            source(validation_file)
-          }
-        }
-        
         # Validate current page before progression
         if (exists("validate_page_progression")) {
           validation <- validate_page_progression(rv$current_page, input, config)
@@ -2515,7 +2504,7 @@ launch_study <- function(
           }
         }
         
-        # Collect final page data
+        # Collect final page data (could be demographics or items)
         current_page <- config$custom_page_flow[[rv$current_page]]
         
         if (current_page$type == "demographics") {
@@ -2525,6 +2514,20 @@ launch_study <- function(
             value <- input[[input_id]]
             if (!is.null(value) && value != "") {
               rv$demo_data[[dem]] <- value
+            }
+          }
+        } else if (current_page$type == "items") {
+          # Collect item responses from final page
+          if (!is.null(current_page$item_indices) && !is.null(item_bank)) {
+            for (idx in current_page$item_indices) {
+              if (idx <= nrow(item_bank)) {
+                item <- item_bank[idx, ]
+                item_id <- paste0("item_", item$id %||% idx)
+                value <- input[[item_id]]
+                if (!is.null(value) && value != "") {
+                  rv$responses[idx] <- as.numeric(value)
+                }
+              }
             }
           }
         }
