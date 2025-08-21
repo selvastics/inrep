@@ -240,56 +240,72 @@ custom_page_flow <- list(
   # Page 1: Einleitungstext with consent
   list(
     id = "page1",
-    type = "demographics",
+    type = "instructions",
     title = "Einleitungstext",
     content = paste0(
       "<div style='padding: 20px; font-size: 16px; line-height: 1.8;'>",
       "<h2 style='color: #e8041c;'>Liebe Studierende,</h2>",
       "<p>In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, ",
       "die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.</p>",
+      "<p>Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene ",
+      "Themenbereiche ab, die voneinander teilweise unabhängig sind.</p>",
       "<p style='background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;'>",
       "<strong>Ihre Angaben sind dabei selbstverständlich anonym</strong>, es wird keine personenbezogene ",
-      "Auswertung der Daten stattfinden.</p>",
+      "Auswertung der Daten stattfinden. Die Daten werden von den Erstsemestern Psychologie im ",
+      "Bachelor generiert und in diesem Jahrgang genutzt, möglicherweise auch in späteren Jahrgängen.</p>",
+      "<p>Im Folgenden werden Ihnen dazu Aussagen präsentiert. Wir bitten Sie anzugeben, ",
+      "inwieweit Sie diesen zustimmen. Es gibt keine falschen oder richtigen Antworten. ",
+      "Bitte beantworten Sie die Fragen so, wie es Ihrer Meinung am ehesten entspricht.</p>",
+      "<p style='margin-top: 20px;'><strong>Die Befragung dauert etwa 10-15 Minuten.</strong></p>",
       "</div>"
     ),
+    consent = TRUE,
+    consent_text = "Ich bin mit der Teilnahme an der Befragung einverstanden"
+  ),
+  
+  # Page 2: Consent as separate demographics page
+  list(
+    id = "page2",
+    type = "demographics",
+    title = "Einverständniserklärung",
     demographics = c("Einverständnis")
   ),
   
-  # Page 2: Basic demographics
+  # Page 3: Basic demographics
   list(
-    id = "page2",
+    id = "page3",
     type = "demographics",
     title = "Soziodemographische Angaben",
     demographics = c("Alter_VPN", "Studiengang", "Geschlecht")
   ),
   
-  # Page 3: Living situation
+  # Page 4: Living situation
   list(
-    id = "page3",
+    id = "page4",
     type = "demographics",
     title = "Wohnsituation",
     demographics = c("Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz")
   ),
   
-  # Page 4: Lifestyle
+  # Page 5: Lifestyle
   list(
-    id = "page4",
+    id = "page5",
     type = "demographics",
     title = "Lebensstil",
     demographics = c("Rauchen", "Ernährung", "Ernährung_Zusatz")
   ),
   
-  # Page 5: Education
+  # Page 6: Education
   list(
-    id = "page5",
+    id = "page6",
     type = "demographics",
     title = "Bildung",
     demographics = c("Note_Englisch", "Note_Mathe")
   ),
   
-  # Pages 6-9: BFI items (grouped by trait)
+  # Pages 7-10: BFI items (grouped by trait)
   list(
-    id = "page6",
+    id = "page7",
     type = "items",
     title = "Persönlichkeit - Teil 1",
     instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
@@ -297,30 +313,30 @@ custom_page_flow <- list(
     scale_type = "likert"
   ),
   list(
-    id = "page7",
+    id = "page8",
     type = "items",
     title = "Persönlichkeit - Teil 2",
     item_indices = 6:10,  # Mixed second items
     scale_type = "likert"
   ),
   list(
-    id = "page8",
+    id = "page9",
     type = "items",
     title = "Persönlichkeit - Teil 3",
     item_indices = 11:15,  # Mixed third items
     scale_type = "likert"
   ),
   list(
-    id = "page9",
+    id = "page10",
     type = "items",
     title = "Persönlichkeit - Teil 4",
     item_indices = 16:20,  # Mixed fourth items
     scale_type = "likert"
   ),
   
-  # Page 10: PSQ Stress
+  # Page 11: PSQ Stress
   list(
-    id = "page10",
+    id = "page11",
     type = "items",
     title = "Stress",
     instructions = "Wie sehr treffen die folgenden Aussagen auf Sie zu?",
@@ -328,9 +344,9 @@ custom_page_flow <- list(
     scale_type = "likert"
   ),
   
-  # Page 11: MWS Study Skills
+  # Page 12: MWS Study Skills
   list(
-    id = "page11",
+    id = "page12",
     type = "items",
     title = "Studierfähigkeiten",
     instructions = "Wie leicht oder schwer fällt es Ihnen...",
@@ -338,26 +354,26 @@ custom_page_flow <- list(
     scale_type = "difficulty"
   ),
   
-  # Page 12: Statistics
+  # Page 13: Statistics
   list(
-    id = "page12",
+    id = "page13",
     type = "items",
     title = "Statistik",
     item_indices = 30:31,
     scale_type = "likert"
   ),
   
-  # Page 13: Study satisfaction
+  # Page 14: Study satisfaction
   list(
-    id = "page13",
+    id = "page14",
     type = "demographics",
     title = "Studienzufriedenheit",
     demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Persönlicher_Code")
   ),
   
-  # Page 14: Results
+  # Page 15: Results
   list(
-    id = "page14",
+    id = "page15",
     type = "results",
     title = "Ihre Ergebnisse"
   )
@@ -409,37 +425,45 @@ create_hilfo_report <- function(responses, item_bank) {
   # Add first point at end to close the polygon properly
   bfi_data_closed <- rbind(bfi_data, bfi_data[1,])
   
-  # Create proper radar plot with closed polygon
+  # Create improved radar plot with better connections
   radar_plot <- ggplot(bfi_data_closed, aes(x = dimension, y = score, group = 1)) +
-    # Add grid lines first
-    geom_hline(yintercept = 1:5, color = "gray90", size = 0.5) +
-    # Add polygon fill
-    geom_polygon(fill = "#e8041c", alpha = 0.2) +
-    # Add polygon outline
-    geom_path(color = "#e8041c", size = 1.5) +
-    # Add points
+    # Add circular grid lines
+    geom_hline(yintercept = seq(0, 5, by = 1), color = "gray85", size = 0.3, linetype = "dashed") +
+    # Add radial grid lines
+    geom_vline(xintercept = 1:5, color = "gray85", size = 0.3) +
+    # Add reference circle at mean (3)
+    geom_hline(yintercept = 3, color = "gray60", size = 0.5, linetype = "dotted") +
+    # Add filled polygon
+    geom_polygon(fill = "#e8041c", alpha = 0.15) +
+    # Add polygon outline with smooth connections
+    geom_path(color = "#e8041c", size = 2, lineend = "round", linejoin = "round") +
+    # Add points at vertices
     geom_point(data = bfi_data, aes(x = dimension, y = score), 
-               color = "#e8041c", size = 4) +
-    # Add value labels
-    geom_text(data = bfi_data, aes(label = sprintf("%.1f", score)), 
-              vjust = -1.5, size = 4, color = "#333") +
-    # Convert to polar
-    coord_polar(start = 0) +
-    # Set limits
-    ylim(0, 5.5) +
-    # Theme
-    theme_minimal() +
+               color = "#e8041c", size = 6, shape = 19) +
+    # Add white center to points
+    geom_point(data = bfi_data, aes(x = dimension, y = score), 
+               color = "white", size = 3, shape = 19) +
+    # Add value labels with background
+    geom_label(data = bfi_data, aes(label = sprintf("%.1f", score)), 
+               vjust = -1.8, size = 5, color = "#e8041c", 
+               fill = "white", label.size = 0.3, fontface = "bold") +
+    # Convert to polar coordinates
+    coord_polar(start = -pi/10) +
+    # Set scale limits
+    scale_y_continuous(limits = c(0, 5.5), breaks = 1:5) +
+    # Theme customization
+    theme_minimal(base_size = 14) +
     theme(
-      text = element_text(size = 12),
-      axis.text.x = element_text(size = 11, face = "bold", color = "#333"),
-      axis.text.y = element_blank(),
+      text = element_text(size = 14, family = "sans"),
+      axis.text.x = element_text(size = 14, face = "bold", color = "#333"),
+      axis.text.y = element_text(size = 10, color = "gray60"),
       axis.title = element_blank(),
-      plot.title = element_text(size = 16, face = "bold", hjust = 0.5, color = "#e8041c"),
-      panel.grid.major.x = element_line(color = "gray70", size = 0.5),
-      panel.grid.major.y = element_line(color = "gray85", size = 0.5),
+      plot.title = element_text(size = 20, face = "bold", hjust = 0.5, color = "#e8041c", margin = margin(b = 20)),
+      panel.grid.major = element_line(color = "gray90", size = 0.3),
       panel.grid.minor = element_blank(),
       plot.background = element_rect(fill = "white", color = NA),
-      panel.background = element_rect(fill = "white", color = NA)
+      panel.background = element_rect(fill = "white", color = NA),
+      plot.margin = margin(20, 20, 20, 20)
     ) +
     labs(title = "Ihr Persönlichkeitsprofil (Big Five)")
   
@@ -452,23 +476,33 @@ create_hilfo_report <- function(responses, item_bank) {
   
   bar_plot <- ggplot(all_data, aes(x = dimension, y = score, fill = category)) +
     geom_bar(stat = "identity", width = 0.7) +
-    geom_text(aes(label = sprintf("%.2f", score)), vjust = -0.5, size = 4) +
+    # Add value labels with better formatting
+    geom_text(aes(label = sprintf("%.2f", score)), 
+              vjust = -0.5, size = 6, fontface = "bold", color = "#333") +
+    # Custom color scheme
     scale_fill_manual(values = c(
       "Persönlichkeit" = "#e8041c",
       "Stress" = "#ff6b6b",
       "Studierfähigkeiten" = "#4ecdc4",
       "Statistik" = "#45b7d1"
     )) +
-    ylim(0, 5.5) +
-    theme_minimal() +
+    # Y-axis customization
+    scale_y_continuous(limits = c(0, 5.5), breaks = 0:5) +
+    # Theme with larger text
+    theme_minimal(base_size = 14) +
     theme(
-      axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+      axis.text.x = element_text(angle = 45, hjust = 1, size = 12, face = "bold"),
+      axis.text.y = element_text(size = 12),
       axis.title.x = element_blank(),
-      axis.title.y = element_text(size = 12),
-      plot.title = element_text(size = 16, face = "bold", hjust = 0.5, color = "#e8041c"),
+      axis.title.y = element_text(size = 14, face = "bold"),
+      plot.title = element_text(size = 20, face = "bold", hjust = 0.5, color = "#e8041c", margin = margin(b = 20)),
       panel.grid.major.x = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.grid.major.y = element_line(color = "gray90", size = 0.3),
       legend.position = "bottom",
-      legend.title = element_blank()
+      legend.title = element_blank(),
+      legend.text = element_text(size = 12),
+      plot.margin = margin(20, 20, 20, 20)
     ) +
     labs(title = "Alle Dimensionen im Überblick", y = "Score (1-5)")
   
@@ -477,8 +511,8 @@ create_hilfo_report <- function(responses, item_bank) {
   bar_file <- tempfile(fileext = ".png")
   
   suppressMessages({
-    ggsave(radar_file, radar_plot, width = 8, height = 7, dpi = 100, bg = "white")
-    ggsave(bar_file, bar_plot, width = 10, height = 6, dpi = 100, bg = "white")
+    ggsave(radar_file, radar_plot, width = 10, height = 9, dpi = 150, bg = "white")
+    ggsave(bar_file, bar_plot, width = 12, height = 7, dpi = 150, bg = "white")
   })
   
   # Encode as base64
