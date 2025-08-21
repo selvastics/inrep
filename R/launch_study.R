@@ -2326,6 +2326,27 @@ launch_study <- function(
       
       rv$stage <- "assessment"  # Fixed: was "test", now "assessment"
       rv$start_time <- base::Sys.time()
+    })
+    
+    # CUSTOM STUDY FLOW NAVIGATION - NEW
+    shiny::observeEvent(input$proceed_from_custom_instructions, {
+      if (!is.null(config$custom_study_flow) && config$enable_custom_navigation) {
+        # Get next stage from custom flow configuration
+        current_index <- which(config$custom_study_flow$page_sequence == "custom_instructions")
+        if (length(current_index) > 0 && current_index < length(config$custom_study_flow$page_sequence)) {
+          next_stage <- config$custom_study_flow$page_sequence[current_index + 1]
+          rv$stage <- next_stage
+          logger(sprintf("Custom flow: proceeding from instructions to %s stage", next_stage))
+        } else {
+          # Fallback to standard flow
+          rv$stage <- "demographics"
+          logger("Custom flow: fallback to demographics stage")
+        }
+      } else {
+        # Standard flow
+        rv$stage <- "demographics"
+        logger("Standard flow: proceeding to demographics stage")
+      }
       
 
       

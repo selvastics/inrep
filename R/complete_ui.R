@@ -240,6 +240,61 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
             shiny::div(class = "text-lg text-gray-700 mb-6",
               "Thank you for participating in our study. Your responses have been recorded."
             ),
+            
+            # HILDESHEIM STUDY RESULTS - INTEGRATED PLOTS
+            if (!is.null(config$theme) && config$theme == "hildesheim") {
+              shiny::div(class = "mt-8",
+                shiny::h3(class = "text-xl font-bold mb-4 text-blue-600", "Hildesheim Psychologie Studie 2025 - Results"),
+                
+                # BFI-2 Radar Plot
+                shiny::div(class = "mb-6 p-4 bg-gray-50 rounded-lg",
+                  shiny::h4(class = "text-lg font-semibold mb-3 text-gray-800", "Big Five Personality Profile"),
+                  shiny::plotOutput("bfi_radar_plot", height = "400px")
+                ),
+                
+                # PSQ Stress Plot
+                shiny::div(class = "mb-6 p-4 bg-gray-50 rounded-lg",
+                  shiny::h4(class = "text-lg font-semibold mb-3 text-gray-800", "PSQ Stress Assessment"),
+                  shiny::plotOutput("psq_stress_plot", height = "300px")
+                ),
+                
+                # MWS Study Skills Plot
+                shiny::div(class = "mb-6 p-4 bg-gray-50 rounded-lg",
+                  shiny::h4(class = "text-lg font-semibold mb-3 text-gray-800", "MWS Study Skills Assessment"),
+                  shiny::plotOutput("mws_skills_plot", height = "300px")
+                ),
+                
+                # Statistics Confidence Plot
+                shiny::div(class = "mb-6 p-4 bg-gray-50 rounded-lg",
+                  shiny::h4(class = "text-lg font-semibold mb-3 text-gray-800", "Statistics Self-Efficacy"),
+                  shiny::plotOutput("statistics_confidence_plot", height = "300px")
+                ),
+                
+                # Summary Scores
+                shiny::div(class = "mb-6 p-4 bg-blue-50 rounded-lg",
+                  shiny::h4(class = "text-lg font-semibold mb-3 text-blue-800", "Summary Scores"),
+                  shiny::div(class = "grid grid-cols-2 gap-4 text-left",
+                    shiny::div(class = "p-3 bg-white rounded border",
+                      shiny::h5(class = "font-semibold text-gray-700", "Personality Profile"),
+                      shiny::textOutput("personality_summary")
+                    ),
+                    shiny::div(class = "p-3 bg-white rounded border",
+                      shiny::h5(class = "font-semibold text-gray-700", "Stress Level"),
+                      shiny::textOutput("stress_summary")
+                    ),
+                    shiny::div(class = "p-3 bg-white rounded border",
+                      shiny::h5(class = "font-semibold text-gray-700", "Study Skills"),
+                      shiny::textOutput("study_skills_summary")
+                    ),
+                    shiny::div(class = "p-3 bg-white rounded border",
+                      shiny::h5(class = "font-semibold text-gray-700", "Statistics Confidence"),
+                      shiny::textOutput("statistics_summary")
+                    )
+                  )
+                )
+              )
+            },
+            
             if (!is.null(config$results_processor)) {
               shiny::div(class = "mt-6",
                 config$results_processor(responses, item_bank)
