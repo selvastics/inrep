@@ -1391,7 +1391,8 @@ launch_study <- function(
           # Session status monitoring (with fallback)
     if (session_save) {
       shiny::observe({
-        shiny::invalidateLater(5000, session)  # Check every 5 seconds
+        # DISABLED to prevent UI refreshing
+        #         # shiny::invalidateLater(5000, session)  # Check every 5 seconds
         
         # Try to get session status if available, fallback to basic monitoring
         if (exists("get_session_status") && is.function(get_session_status)) {
@@ -1399,7 +1400,8 @@ launch_study <- function(
             session_status <- get_session_status()
             if (session_status$active) {
               remaining_minutes <- round(session_status$remaining_time / 60, 1)
-              logger(sprintf("Session active: %s minutes remaining", remaining_minutes), level = "INFO")
+              # Silent monitoring - don't log every check to avoid UI refreshing
+              # logger(sprintf("Session active: %s minutes remaining", remaining_minutes), level = "INFO")
             }
           }, error = function(e) {
             logger("Session status check failed, using basic monitoring", level = "WARNING")
@@ -1415,7 +1417,8 @@ launch_study <- function(
     if (session_save && exists("start_keep_alive_monitoring") && is.function(start_keep_alive_monitoring)) {
       tryCatch({
         start_keep_alive_monitoring()
-        logger("Keep-alive monitoring started", level = "INFO")
+        # Log once at startup, then run silently
+        logger("Keep-alive monitoring started (running silently)", level = "INFO")
       }, error = function(e) {
         logger(sprintf("Failed to start keep-alive monitoring: %s", e$message), level = "WARNING")
       })
