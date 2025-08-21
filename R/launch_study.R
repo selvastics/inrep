@@ -613,7 +613,7 @@ launch_study <- function(
   }
   
   # Safely load suggested packages with fallbacks
-  safe_load_packages <- function(immediate = FALSE) {
+  safe_load_packages <- function() {
     packages <- list(
       TAM = "TAM",
       DT = "DT",
@@ -624,16 +624,6 @@ launch_study <- function(
     
     loaded_packages <- list()
     
-    # If not immediate, just check availability without loading
-    if (!immediate) {
-      for (pkg_name in names(packages)) {
-        pkg <- packages[[pkg_name]]
-        loaded_packages[[pkg_name]] <- requireNamespace(pkg, quietly = TRUE)
-      }
-      return(loaded_packages)
-    }
-    
-    # Load packages (deferred to when actually needed)
     for (pkg_name in names(packages)) {
       pkg <- packages[[pkg_name]]
       if (requireNamespace(pkg, quietly = TRUE)) {
@@ -655,8 +645,8 @@ launch_study <- function(
     return(loaded_packages)
   }
   
-  # Check package availability without loading (fast)
-  available_packages <- safe_load_packages(immediate = FALSE)
+  # Load suggested packages
+  available_packages <- safe_load_packages()
   
   # Check if TAM package is available (required for psychometric computations)
   if (!available_packages$TAM) {
@@ -1348,17 +1338,6 @@ launch_study <- function(
   )
   
   server <- function(input, output, session) {
-    # Lazy load packages when first needed (deferred loading for speed)
-    packages_fully_loaded <- shiny::reactiveVal(FALSE)
-    
-    load_packages_once <- function() {
-      if (!packages_fully_loaded()) {
-        # Actually load the packages now
-        available_packages <<- safe_load_packages(immediate = TRUE)
-        packages_fully_loaded(TRUE)
-      }
-    }
-    
     # Use study_key argument if provided, else config$study_key, else default
     effective_study_key <- study_key %||% config$study_key %||% "default_study"
     data_dir <- base::file.path("study_data", effective_study_key)
@@ -1417,22 +1396,38 @@ launch_study <- function(
       })
     }
     
-    # Session monitoring - DEFERRED for performance
+    # Session monitoring with automatic data preservation
     if (session_save) {
-      # Defer session monitoring until after first page loads
-      shiny::observeEvent(rv$current_page, {
-        if (rv$current_page > 1) {
-          # Only start monitoring after user interacts
-          shiny::observeEvent(TRUE, {
-            # Check session timeout occasionally
-            if (base::difftime(base::Sys.time(), rv$session_start, units = "secs") > max_session_time) {
-              rv$session_active <- FALSE
-              rv$stage = "timeout"
-              logger("Session timed out", level = "WARNING")
-            }
-          }, once = TRUE)
+      # Session timeout monitoring
+      shiny::observe({
+        # DISABLED - causes page jumping
+        # shiny::invalidateLater(1000, session)
+        
+        # Check session timeout
+        if (base::difftime(base::Sys.time(), rv$session_start, units = "secs") > max_session_time) {
+          rv$session_active <- FALSE
+          rv$stage = "timeout"
+          logger("Session timed out due to maximum session time", level = "WARNING")
+          
+          # Force final data preservation
+          if (exists("preserve_session_data") && is.function(preserve_session_data)) {
+            tryCatch({
+              preserve_session_data(force = TRUE)
+            }, error = function(e) {
+              logger(sprintf("Final data preservation failed: %s", e$message), level = "WARNING")
+            })
+          }
         }
-      }, once = TRUE)
+        
+        # Update activity tracking
+        if (exists("update_activity") && is.function(update_activity)) {
+          tryCatch({
+            update_activity()
+          }, error = function(e) {
+            logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
+          })
+        }
+      })
       
       # Automatic data preservation - converted to event-based instead of timer-based
       # This prevents page jumping while still preserving data on important events
@@ -1456,27 +1451,30 @@ launch_study <- function(
         observe_data_preservation()
       }, ignoreInit = TRUE)
       
-          # Session status monitoring - SILENT for performance
-    # Session is still saved but without console output
+          # Session status monitoring - DISABLED timer-based monitoring
+    # Session is still saved but without constant UI updates that cause page jumping
     if (session_save) {
-      # Session monitoring is active but silent
-      # No console logging to speed up startup
+      # Log once that session monitoring is active
+      if (exists("get_session_status") && is.function(get_session_status)) {
+        logger("Session monitoring active (event-based)", level = "INFO")
+      } else {
+        logger("Session monitoring active (basic mode)", level = "INFO")
+      }
+      
+      # Session status is checked on events, not on timer
+      # This prevents the page from jumping to top
     }
     
     
-    # Keep-alive mechanism - DEFERRED for performance
-    if (session_save) {
-      # Start keep-alive only after user interaction
-      shiny::observeEvent(input$next_btn, {
-        if (exists("start_keep_alive_monitoring") && is.function(start_keep_alive_monitoring)) {
-          tryCatch({
-            start_keep_alive_monitoring()
-            logger("Keep-alive monitoring started", level = "DEBUG")
-          }, error = function(e) {
-            logger(sprintf("Keep-alive monitoring unavailable: %s", e$message), level = "DEBUG")
-          })
-        }
-      }, once = TRUE)
+    # Keep-alive mechanism to prevent session timeouts (with fallback)
+    if (session_save && exists("start_keep_alive_monitoring") && is.function(start_keep_alive_monitoring)) {
+      tryCatch({
+        start_keep_alive_monitoring()
+        # Log once at startup, then run silently
+        logger("Keep-alive monitoring started (running silently)", level = "INFO")
+      }, error = function(e) {
+        logger(sprintf("Failed to start keep-alive monitoring: %s", e$message), level = "WARNING")
+      })
     }
     
     # Session status UI (hidden by default - only shows when explicitly enabled)
@@ -2536,12 +2534,6 @@ launch_study <- function(
         
         # Clean up responses - remove NAs for final processing
         final_responses <- rv$responses[!is.na(rv$responses)]
-        
-        # Debug responses
-        cat("DEBUG: rv$responses length:", length(rv$responses), "\n")
-        cat("DEBUG: Non-NA responses:", sum(!is.na(rv$responses)), "\n")
-        cat("DEBUG: final_responses length:", length(final_responses), "\n")
-        cat("DEBUG: First few final_responses:", head(final_responses, 10), "\n")
         
         logger(sprintf("Study completed with %d responses collected", length(final_responses)))
         
