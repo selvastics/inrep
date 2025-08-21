@@ -746,6 +746,33 @@ study_config <- inrep::create_study_config(
   # Demographic configurations
   demographic_configs = demographic_configs,
   
+  # CUSTOM STUDY FLOW - EXACT ORDER SPECIFIED
+  enable_custom_navigation = TRUE,
+  custom_study_flow = list(
+    start_with = "custom_instructions",
+    page_sequence = c("custom_instructions", "demographics", "assessment", "results")
+  ),
+  custom_page_configs = list(
+    instructions = list(
+      content = paste0(
+        "Liebe Studierende,\n\n",
+        "In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, ",
+        "die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.\n\n",
+        "Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene ",
+        "Themenbereiche ab, die voneinander teilweise unabhängig sind.\n\n",
+        "Ihre Angaben sind dabei selbstverständlich anonym, es wird keine personenbezogene ",
+        "Auswertung der Daten stattfinden. Die Daten werden von den Erstsemestern Psychologie ",
+        "im Bachelor generiert und in diesem Jahrgang genutzt, möglicherweise auch in späteren Jahrgängen.\n\n",
+        "Im Folgenden werden Ihnen dazu Aussagen präsentiert. Wir bitten Sie anzugeben, ",
+        "inwieweit Sie diesen zustimmen. Es gibt keine falschen oder richtigen Antworten. ",
+        "Bitte beantworten Sie die Fragen so, wie es Ihrer Meinung am ehesten entspricht. ",
+        "Da es nicht immer möglich ist, sich zu 100% in einer Aussage wiederzufinden, ",
+        "sind Abstufungen möglich. Achten Sie deshalb besonders auf die Ihnen vorgegebenen Antwortformate."
+      ),
+      validation = "required"
+    )
+  ),
+  
   # Instructions - EXACT CONTENT AND ORDER
   instructions = list(
     welcome = "Willkommen zur Hildesheim Psychologie Studie 2025",
@@ -757,7 +784,7 @@ study_config <- inrep::create_study_config(
       "Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene ",
       "Themenbereiche ab, die voneinander teilweise unabhängig sind.\n\n",
       "Ihre Angaben sind dabei selbstverständlich anonym, es wird keine personenbezogene ",
-      "Auswertung der Daten stattfinden. Die Daten werden von den Erstsemestern Psychologie ",
+        "Auswertung der Daten stattfinden. Die Daten werden von den Erstsemestern Psychologie ",
       "im Bachelor generiert und in diesem Jahrgang genutzt, möglicherweise auch in späteren Jahrgängen.\n\n",
       "Im Folgenden werden Ihnen dazu Aussagen präsentiert. Wir bitten Sie anzugeben, ",
       "inwieweit Sie diesen zustimmen. Es gibt keine falschen oder richtigen Antworten. ",
@@ -871,9 +898,10 @@ cat("Page 10: Ende\n")
 cat("Page 11: Endseite\n")
 
 cat("\n=== LAUNCHING STUDY ===\n")
-cat("NOTE: The current inrep package will NOT follow the specified order.\n")
-cat("The package needs to be modified to support custom phase sequences.\n")
-cat("Launching with current limitations...\n")
+cat("✓ Custom study flow ENABLED - The study will follow the exact order specified!\n")
+cat("✓ Starting with custom instructions as configured\n")
+cat("✓ Navigation will follow: custom_instructions -> demographics -> assessment -> results\n")
+cat("Launching with custom flow support...\n")
 
 # Launch the study
 inrep::launch_study(

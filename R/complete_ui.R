@@ -153,6 +153,25 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
           )
         ),
         
+        # CUSTOM STUDY FLOW SUPPORT - NEW
+        shiny::conditionalPanel(
+          condition = "input.phase === 'custom_instructions'",
+          shiny::div(class = "text-center p-8",
+            shiny::h2(class = "text-2xl font-bold mb-6 text-blue-600", "Study Instructions"),
+            shiny::div(class = "text-lg text-gray-700 mb-6 text-left max-h-96 overflow-y-auto",
+              if (!is.null(config$custom_page_configs$instructions$content)) {
+                config$custom_page_configs$instructions$content
+              } else if (!is.null(config$instructions$structure)) {
+                config$instructions$structure
+              } else {
+                "Please read the following instructions carefully before beginning the assessment..."
+              }
+            ),
+            shiny::actionButton("proceed_from_custom_instructions", "I Understand - Continue", 
+              class = "bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg")
+          )
+        ),
+        
         # ORIGINAL ASSESSMENT PHASE - PRESERVED
         shiny::conditionalPanel(
           condition = "input.phase === 'assessment'",

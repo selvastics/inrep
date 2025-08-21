@@ -98,6 +98,16 @@
 #'   and display formatting.
 #' @param custom_demographic_ui Function to generate custom demographic UI,
 #'   or \code{NULL} for default demographic interface.
+#' @param custom_study_flow Named list defining custom study flow for specific studies
+#'   (e.g., Hildesheim study). Allows specification of exact page order and content.
+#'   Example: \code{list(start_with = "instructions", page_sequence = c("instructions", "demographics", "assessment", "results"))}.
+#'   Defaults to NULL for standard flow.
+#' @param custom_page_configs Named list providing configuration for each custom page,
+#'   including content, validation rules, and navigation logic.
+#'   Example: \code{list(instructions = list(content = "Custom instructions", validation = "required"))}.
+#'   Defaults to NULL for standard flow.
+#' @param enable_custom_navigation Logical indicating whether to enable custom page navigation
+#'   for studies requiring specific flow control. Defaults to FALSE for backward compatibility.
 
 #'   instructions instead of demographics. Defaults to FALSE for backward compatibility.
 
@@ -452,10 +462,12 @@ create_study_config <- function(
     debriefing_content = NULL,
     demographic_configs = NULL,
     custom_demographic_ui = NULL,
-  
-  
-  
-  
+    
+    # Custom study flow support for specific studies (e.g., Hildesheim)
+    custom_study_flow = NULL,
+    custom_page_configs = NULL,
+    enable_custom_navigation = FALSE,
+    
     study_phases = c("introduction", "briefing", "consent", "demographics", "survey", "debriefing"),
     page_transitions = "fade",
     enable_back_navigation = TRUE,
@@ -747,9 +759,11 @@ create_study_config <- function(
               debriefing_content = debriefing_content %||% create_default_debriefing_content(get_language_labels(language)),
               demographic_configs = demographic_configs %||% create_default_demographic_configs(demographics, input_types, get_language_labels(language)),
       custom_demographic_ui = custom_demographic_ui,
-  
-  
-  
+      
+      # Custom study flow support for specific studies (e.g., Hildesheim)
+      custom_study_flow = custom_study_flow,
+      custom_page_configs = custom_page_configs,
+      enable_custom_navigation = enable_custom_navigation,
       
       study_phases = study_phases,
       page_transitions = page_transitions,
