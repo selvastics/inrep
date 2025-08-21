@@ -240,7 +240,7 @@ custom_page_flow <- list(
   # Page 1: Einleitungstext with consent
   list(
     id = "page1",
-    type = "instructions",
+    type = "demographics",  # Changed to demographics to show consent checkbox
     title = "Einleitungstext",
     content = paste0(
       "<div style='padding: 20px; font-size: 16px; line-height: 1.8;'>",
@@ -259,51 +259,44 @@ custom_page_flow <- list(
       "<p style='margin-top: 20px;'><strong>Die Befragung dauert etwa 10-15 Minuten.</strong></p>",
       "</div>"
     ),
+    demographics = c("Einverständnis")  # Include consent on the instruction page
   ),
   
-  # Page 2: Consent as separate demographics page
+  # Page 2: Basic demographics
   list(
     id = "page2",
-    type = "demographics",
-    title = "Einverständniserklärung",
-    demographics = c("Einverständnis")
-  ),
-  
-  # Page 3: Basic demographics
-  list(
-    id = "page3",
     type = "demographics",
     title = "Soziodemographische Angaben",
     demographics = c("Alter_VPN", "Studiengang", "Geschlecht")
   ),
   
-  # Page 4: Living situation
+  # Page 3: Living situation
   list(
-    id = "page4",
+    id = "page3",
     type = "demographics",
     title = "Wohnsituation",
     demographics = c("Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz")
   ),
   
-  # Page 5: Lifestyle
+  # Page 4: Lifestyle
   list(
-    id = "page5",
+    id = "page4",
     type = "demographics",
     title = "Lebensstil",
     demographics = c("Rauchen", "Ernährung", "Ernährung_Zusatz")
   ),
   
-  # Page 6: Education
+  # Page 5: Education
   list(
-    id = "page6",
+    id = "page5",
     type = "demographics",
     title = "Bildung",
     demographics = c("Note_Englisch", "Note_Mathe")
   ),
   
-  # Pages 7-10: BFI items (grouped by trait)
+  # Pages 6-9: BFI items (grouped by trait)
   list(
-    id = "page7",
+    id = "page6",
     type = "items",
     title = "Persönlichkeit - Teil 1",
     instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
@@ -311,30 +304,30 @@ custom_page_flow <- list(
     scale_type = "likert"
   ),
   list(
-    id = "page8",
+    id = "page7",
     type = "items",
     title = "Persönlichkeit - Teil 2",
     item_indices = 6:10,  # Mixed second items
     scale_type = "likert"
   ),
   list(
-    id = "page9",
+    id = "page8",
     type = "items",
     title = "Persönlichkeit - Teil 3",
     item_indices = 11:15,  # Mixed third items
     scale_type = "likert"
   ),
   list(
-    id = "page10",
+    id = "page9",
     type = "items",
     title = "Persönlichkeit - Teil 4",
     item_indices = 16:20,  # Mixed fourth items
     scale_type = "likert"
   ),
   
-  # Page 11: PSQ Stress
+  # Page 10: PSQ Stress
   list(
-    id = "page11",
+    id = "page10",
     type = "items",
     title = "Stress",
     instructions = "Wie sehr treffen die folgenden Aussagen auf Sie zu?",
@@ -342,9 +335,9 @@ custom_page_flow <- list(
     scale_type = "likert"
   ),
   
-  # Page 12: MWS Study Skills
+  # Page 11: MWS Study Skills
   list(
-    id = "page12",
+    id = "page11",
     type = "items",
     title = "Studierfähigkeiten",
     instructions = "Wie leicht oder schwer fällt es Ihnen...",
@@ -352,26 +345,26 @@ custom_page_flow <- list(
     scale_type = "difficulty"
   ),
   
-  # Page 13: Statistics
+  # Page 12: Statistics
   list(
-    id = "page13",
+    id = "page12",
     type = "items",
     title = "Statistik",
     item_indices = 30:31,
     scale_type = "likert"
   ),
   
-  # Page 14: Study satisfaction
+  # Page 13: Study satisfaction
   list(
-    id = "page14",
+    id = "page13",
     type = "demographics",
     title = "Studienzufriedenheit",
     demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Persönlicher_Code")
   ),
   
-  # Page 15: Results
+  # Page 14: Results
   list(
-    id = "page15",
+    id = "page14",
     type = "results",
     title = "Ihre Ergebnisse"
   )
@@ -423,19 +416,27 @@ create_hilfo_report <- function(responses, item_bank) {
   # Add first point at end to close the polygon properly
   bfi_data_closed <- rbind(bfi_data, bfi_data[1,])
   
-  # Create improved radar plot with better connections
+  # Create proper radar plot with correct connections
+  # First, ensure the data is properly ordered for radar plot
+  angles <- seq(0, 2*pi, length.out = 6)[-6]  # 5 dimensions
+  
   radar_plot <- ggplot(bfi_data_closed, aes(x = dimension, y = score, group = 1)) +
-    # Add circular grid lines
-    geom_hline(yintercept = seq(0, 5, by = 1), color = "gray85", size = 0.3, linetype = "dashed") +
-    # Add radial grid lines
-    geom_vline(xintercept = 1:5, color = "gray85", size = 0.3) +
-    # Add reference circle at mean (3)
-    geom_hline(yintercept = 3, color = "gray60", size = 0.5, linetype = "dotted") +
-    # Add filled polygon
-    geom_polygon(fill = "#e8041c", alpha = 0.15) +
-    # Add polygon outline with smooth connections
-    geom_path(color = "#e8041c", size = 2, lineend = "round", linejoin = "round") +
-    # Add points at vertices
+    # Add concentric circles for grid
+    annotate("path",
+             x = rep(1:5, each = 100),
+             y = rep(seq(0, 5, length.out = 100), 5),
+             group = rep(1:5, each = 100),
+             color = "gray85", size = 0.3, linetype = "dashed") +
+    # Add reference line at mean
+    annotate("path",
+             x = c(1:5, 1),
+             y = rep(3, 6),
+             color = "gray60", size = 0.5, linetype = "dotted") +
+    # Add the data polygon with proper connections
+    geom_polygon(aes(group = 1), fill = "#e8041c", alpha = 0.15) +
+    # Add the outline path
+    geom_path(aes(group = 1), color = "#e8041c", size = 2) +
+    # Add points at vertices (only for original data, not closed)
     geom_point(data = bfi_data, aes(x = dimension, y = score), 
                color = "#e8041c", size = 6, shape = 19) +
     # Add white center to points
@@ -445,19 +446,20 @@ create_hilfo_report <- function(responses, item_bank) {
     geom_label(data = bfi_data, aes(label = sprintf("%.1f", score)), 
                vjust = -1.8, size = 5, color = "#e8041c", 
                fill = "white", label.size = 0.3, fontface = "bold") +
-    # Convert to polar coordinates
-    coord_polar(start = -pi/10) +
+    # Convert to polar coordinates with proper start
+    coord_polar(theta = "x", start = 0) +
     # Set scale limits
     scale_y_continuous(limits = c(0, 5.5), breaks = 1:5) +
+    scale_x_discrete() +
     # Theme customization
     theme_minimal(base_size = 14) +
     theme(
       text = element_text(size = 14, family = "sans"),
       axis.text.x = element_text(size = 14, face = "bold", color = "#333"),
-      axis.text.y = element_text(size = 10, color = "gray60"),
+      axis.text.y = element_blank(),
       axis.title = element_blank(),
       plot.title = element_text(size = 20, face = "bold", hjust = 0.5, color = "#e8041c", margin = margin(b = 20)),
-      panel.grid.major = element_line(color = "gray90", size = 0.3),
+      panel.grid = element_line(color = "gray90", size = 0.3),
       panel.grid.minor = element_blank(),
       plot.background = element_rect(fill = "white", color = NA),
       panel.background = element_rect(fill = "white", color = NA),
@@ -522,11 +524,24 @@ create_hilfo_report <- function(responses, item_bank) {
   }
   unlink(c(radar_file, bar_file))
   
-  # Generate HTML report
+  # Create detailed item responses table
+  item_details <- data.frame(
+    Item = item_bank$Question[1:31],
+    Response = responses[1:31],
+    Category = c(
+      rep("Extraversion", 4), rep("Verträglichkeit", 4), 
+      rep("Gewissenhaftigkeit", 4), rep("Neurotizismus", 4), rep("Offenheit", 4),
+      rep("Stress", 5), rep("Studierfähigkeiten", 4), rep("Statistik", 2)
+    )
+  )
+  
+  # Generate HTML report with download button
   html <- paste0(
     '<div style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
     '<div style="background: linear-gradient(135deg, #e8041c 0%, #b30315 100%); color: white; padding: 40px; border-radius: 10px; margin-bottom: 30px; text-align: center;">',
     '<h1 style="margin: 0;">HilFo Studie - Ihre Ergebnisse</h1>',
+    '<button onclick="downloadPDF()" style="margin-top: 20px; padding: 10px 30px; background: white; color: #e8041c; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer;">',
+    '📥 Als PDF herunterladen</button>',
     '</div>',
     
     # Radar plot
@@ -571,6 +586,69 @@ create_hilfo_report <- function(responses, item_bank) {
   html <- paste0(html,
     '</table>',
     '</div>',
+    
+    # Detailed item responses
+    '<div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-top: 25px;">',
+    '<h2 style="color: #e8041c;">Detaillierte Einzelantworten</h2>',
+    '<table style="width: 100%; border-collapse: collapse; font-size: 14px;">',
+    '<tr style="background: #f8f8f8;">',
+    '<th style="padding: 10px; border-bottom: 2px solid #e8041c; text-align: left;">Frage</th>',
+    '<th style="padding: 10px; border-bottom: 2px solid #e8041c; text-align: center;">Antwort</th>',
+    '<th style="padding: 10px; border-bottom: 2px solid #e8041c; text-align: left;">Kategorie</th>',
+    '</tr>'
+  )
+  
+  # Add each item response
+  for (i in 1:nrow(item_details)) {
+    response_text <- switch(as.character(item_details$Response[i]),
+      "1" = "Stimme überhaupt nicht zu",
+      "2" = "Stimme eher nicht zu", 
+      "3" = "Teils, teils",
+      "4" = "Stimme eher zu",
+      "5" = "Stimme voll und ganz zu",
+      as.character(item_details$Response[i])
+    )
+    
+    html <- paste0(html,
+      '<tr>',
+      '<td style="padding: 10px; border-bottom: 1px solid #e0e0e0;">', 
+      substr(item_details$Item[i], 1, 80), 
+      ifelse(nchar(item_details$Item[i]) > 80, "...", ""),
+      '</td>',
+      '<td style="padding: 10px; text-align: center; border-bottom: 1px solid #e0e0e0; font-weight: bold;">',
+      response_text, '</td>',
+      '<td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #666;">',
+      item_details$Category[i], '</td>',
+      '</tr>'
+    )
+  }
+  
+  html <- paste0(html,
+    '</table>',
+    '</div>',
+    
+    # Add JavaScript for PDF download
+    '<script>',
+    'function downloadPDF() {',
+    '  if (typeof window.print === "function") {',
+    '    window.print();',
+    '  } else {',
+    '    alert("PDF-Download wird vorbereitet...");',
+    '    // In Shiny app, we would trigger server-side PDF generation',
+    '    Shiny.setInputValue("download_pdf", Date.now());',
+    '  }',
+    '}',
+    '</script>',
+    
+    # Add print styles
+    '<style>',
+    '@media print {',
+    '  button { display: none !important; }',
+    '  div { page-break-inside: avoid; }',
+    '  body { font-size: 12pt; }',
+    '}',
+    '</style>',
+    
     '</div>'
   )
   
