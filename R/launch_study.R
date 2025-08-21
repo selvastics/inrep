@@ -1317,7 +1317,11 @@ launch_study <- function(
       current_ability = config$theta_prior[1],
       current_se = config$theta_prior[2],
       administered = base::c(),
-      responses = base::c(),
+      responses = if (!is.null(config$custom_page_flow)) {
+        rep(NA_real_, nrow(item_bank))  # Pre-allocate responses vector
+      } else {
+        base::c()
+      },
       response_times = base::c(),
       start_time = NULL,
       session_start = base::Sys.time(),
@@ -2384,7 +2388,30 @@ launch_study <- function(
     # Custom page flow navigation observers
     shiny::observeEvent(input$next_page, {
       if (rv$stage == "custom_page_flow" && rv$current_page < rv$total_pages) {
-        # Save current page data if needed
+        # Load validation module if needed
+        if (!exists("validate_page_progression")) {
+          validation_file <- system.file("R", "custom_page_flow_validation.R", package = "inrep")
+          if (file.exists(validation_file)) {
+            source(validation_file)
+          }
+        }
+        
+        # Validate current page before progression
+        if (exists("validate_page_progression")) {
+          validation <- validate_page_progression(rv$current_page, input, config)
+          if (!validation$valid) {
+            # Show error messages
+            output$validation_errors <- shiny::renderUI({
+              show_validation_errors(validation$errors)
+            })
+            return()  # Don't proceed if validation fails
+          }
+        }
+        
+        # Clear any previous validation errors
+        output$validation_errors <- shiny::renderUI({ NULL })
+        
+        # Save current page data
         current_page <- config$custom_page_flow[[rv$current_page]]
         
         # Collect demographics from current page
@@ -2392,31 +2419,26 @@ launch_study <- function(
           demo_vars <- current_page$demographics %||% config$demographics
           for (dem in demo_vars) {
             input_id <- paste0("demo_", dem)
-            if (!is.null(input[[input_id]])) {
-              rv$demo_data[[dem]] <- input[[input_id]]
+            value <- input[[input_id]]
+            if (!is.null(value) && value != "") {
+              rv$demo_data[[dem]] <- value
+              logger(sprintf("Saved demographic %s: %s", dem, substr(as.character(value), 1, 20)))
             }
           }
         }
         
         # Collect item responses from current page
         if (current_page$type == "items") {
-          page_items <- if (!is.null(current_page$item_indices)) {
-            item_bank[current_page$item_indices, ]
-          } else if (!is.null(current_page$item_range)) {
-            item_bank[current_page$item_range[1]:current_page$item_range[2], ]
-          } else {
-            items_per_page <- current_page$items_per_page %||% config$items_per_page %||% 5
-            start_idx <- ((rv$item_page %||% 1) - 1) * items_per_page + 1
-            end_idx <- min(start_idx + items_per_page - 1, nrow(item_bank))
-            item_bank[start_idx:end_idx, ]
-          }
-          
-          for (i in seq_len(nrow(page_items))) {
-            item <- page_items[i, ]
-            item_id <- paste0("item_", item$id %||% i)
-            if (!is.null(input[[item_id]])) {
-              rv$item_responses[[item_id]] <- input[[item_id]]
-              rv$responses <- c(rv$responses, as.numeric(input[[item_id]]))
+          if (!is.null(current_page$item_indices)) {
+            for (idx in current_page$item_indices) {
+              item_id <- paste0("item_", idx)
+              value <- input[[item_id]]
+              if (!is.null(value) && value != "") {
+                rv$item_responses[[item_id]] <- value
+                # Store in responses vector at the correct position
+                rv$responses[idx] <- as.numeric(value)
+                logger(sprintf("Saved item response %d: %s", idx, value))
+              }
             }
           }
         }
@@ -2436,24 +2458,50 @@ launch_study <- function(
     
     shiny::observeEvent(input$submit_study, {
       if (rv$stage == "custom_page_flow") {
+        # Validate final page before submission
+        if (exists("validate_page_progression")) {
+          validation <- validate_page_progression(rv$current_page, input, config)
+          if (!validation$valid) {
+            output$validation_errors <- shiny::renderUI({
+              show_validation_errors(validation$errors)
+            })
+            return()
+          }
+        }
+        
         # Collect final page data
         current_page <- config$custom_page_flow[[rv$current_page]]
         
-        if (current_page$type == "items") {
-          # Collect final item responses
-          # ... (same as in next_page)
+        if (current_page$type == "demographics") {
+          demo_vars <- current_page$demographics
+          for (dem in demo_vars) {
+            input_id <- paste0("demo_", dem)
+            value <- input[[input_id]]
+            if (!is.null(value) && value != "") {
+              rv$demo_data[[dem]] <- value
+            }
+          }
         }
+        
+        # Clean up responses - remove NAs for final processing
+        final_responses <- rv$responses[!is.na(rv$responses)]
+        
+        logger(sprintf("Study completed with %d responses collected", length(final_responses)))
         
         # Generate results
         if (!is.null(config$results_processor)) {
           rv$cat_result <- list(
             theta = rv$current_ability,
             se = rv$current_se,
-            administered = rv$administered,
-            responses = rv$responses,
-            response_times = rv$response_times
+            administered = 1:length(final_responses),
+            responses = final_responses,
+            response_times = rv$response_times,
+            demo_data = rv$demo_data
           )
-          rv$stage <- "results"
+          
+          # Move to last page (results)
+          rv$current_page <- length(config$custom_page_flow)
+          rv$stage <- "custom_page_flow"  # Stay in custom flow to show results page
         }
         
         logger("Study completed via custom page flow")

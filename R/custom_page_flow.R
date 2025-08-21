@@ -52,7 +52,7 @@ process_page_flow <- function(config, rv, input, output, session, item_bank, ui_
     
     "items" = render_items_page(current_page, config, rv, item_bank, ui_labels),
     
-    "custom" = render_custom_page(current_page, config, rv, ui_labels),
+    "custom" = render_custom_page(current_page, config, rv, ui_labels, input),
     
     "results" = render_results_page(current_page, config, rv, item_bank, ui_labels),
     
@@ -198,7 +198,23 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
 }
 
 #' Render custom page
-render_custom_page <- function(page, config, rv, ui_labels) {
+render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
+  # Special handling for filter page
+  if (page$id == "page3" || page$title == "Filter") {
+    # Load validation module if needed for filter functionality
+    if (!exists("create_filter_page")) {
+      validation_file <- system.file("R", "custom_page_flow_validation.R", package = "inrep")
+      if (file.exists(validation_file)) {
+        source(validation_file)
+      }
+    }
+    
+    if (exists("create_filter_page") && !is.null(input)) {
+      return(create_filter_page(input, config))
+    }
+  }
+  
+  # Default rendering
   if (!is.null(page$render_function) && is.function(page$render_function)) {
     page$render_function(page, config, rv, ui_labels)
   } else {
@@ -218,7 +234,18 @@ render_custom_page <- function(page, config, rv, ui_labels) {
 render_results_page <- function(page, config, rv, item_bank, ui_labels) {
   # Use custom results processor if available
   if (!is.null(config$results_processor) && is.function(config$results_processor)) {
-    results_content <- config$results_processor(rv$responses, item_bank)
+    # Use cat_result if available (contains cleaned responses), otherwise use raw responses
+    if (!is.null(rv$cat_result) && !is.null(rv$cat_result$responses)) {
+      results_content <- config$results_processor(rv$cat_result$responses, item_bank)
+    } else {
+      # Clean responses before passing to processor
+      clean_responses <- rv$responses[!is.na(rv$responses)]
+      if (length(clean_responses) > 0) {
+        results_content <- config$results_processor(clean_responses, item_bank)
+      } else {
+        results_content <- shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>")
+      }
+    }
   } else {
     results_content <- shiny::HTML("<p>Assessment completed. Thank you!</p>")
   }
@@ -233,39 +260,61 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels) {
 #' Render page navigation
 render_page_navigation <- function(rv, config, current_page_idx) {
   total_pages <- length(config$custom_page_flow)
+  current_page <- config$custom_page_flow[[current_page_idx]]
+  
+  # Don't show navigation on results page
+  if (!is.null(current_page$type) && current_page$type == "results") {
+    return(NULL)
+  }
   
   shiny::div(
     class = "nav-buttons",
+    style = "display: flex; justify-content: space-between; align-items: center; margin-top: 30px;",
     
     # Previous button
-    if (current_page_idx > 1) {
-      shiny::actionButton(
-        "prev_page",
-        "Zurück",
-        class = "btn-secondary"
-      )
-    },
+    shiny::div(
+      if (current_page_idx > 1) {
+        shiny::actionButton(
+          "prev_page",
+          shiny::icon("arrow-left"),
+          "Zurück",
+          class = "btn-secondary"
+        )
+      } else {
+        shiny::div(style = "width: 100px;")  # Spacer
+      }
+    ),
     
     # Progress indicator
-    shiny::span(
+    shiny::div(
       class = "page-indicator",
+      style = "font-size: 14px; color: #666;",
       sprintf("Seite %d von %d", current_page_idx, total_pages)
     ),
     
     # Next/Submit button
-    if (current_page_idx < total_pages) {
-      shiny::actionButton(
-        "next_page",
-        "Weiter",
-        class = "btn-primary"
-      )
-    } else {
-      shiny::actionButton(
-        "submit_study",
-        "Abschließen",
-        class = "btn-success"
-      )
-    }
+    shiny::div(
+      if (current_page_idx < total_pages) {
+        shiny::actionButton(
+          "next_page",
+          "Weiter",
+          shiny::icon("arrow-right"),
+          class = "btn-primary",
+          style = "min-width: 100px;"
+        )
+      } else {
+        shiny::actionButton(
+          "submit_study",
+          "Abschließen",
+          shiny::icon("check"),
+          class = "btn-success",
+          style = "min-width: 120px;"
+        )
+      }
+    ),
+    
+    # Validation errors placeholder
+    shiny::uiOutput("validation_errors")
   )
 }
 
