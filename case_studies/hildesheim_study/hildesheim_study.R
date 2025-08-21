@@ -475,21 +475,48 @@ study_config <- inrep::create_study_config(
     # Results processor
     results_processor = create_results_with_plots,
     
-    # FIX for item selection
+    # FIX for item selection in non-adaptive mode
     criteria = "RANDOM",
-    fixed_items = 1:31
+    fixed_items = 1:31,
+    adaptive_start = 999  # Ensure non-adaptive mode works properly
 )
 
 # =============================================================================
-# STEP 5: LAUNCH THE STUDY
+# STEP 5: VALIDATION AND LAUNCH
 # =============================================================================
 
+# Validate configuration before launching
 cat("\n=============================================================================\n")
-cat("HILDESHEIM PSYCHOLOGIE STUDIE 2025\n")
+cat("HILDESHEIM PSYCHOLOGIE STUDIE 2025 - VALIDATION\n")
 cat("=============================================================================\n")
-cat("Items:", nrow(all_items), "\n")
-cat("Demographics:", length(study_config$demographics), "\n")
-cat("Theme:", study_config$theme, "\n")
+
+# Check items
+cat("✓ Total Items:", nrow(all_items), "\n")
+cat("  - BFI-2:", sum(grepl("^BF", all_items$id)), "items\n")
+cat("  - PSQ:", sum(grepl("^PSQ", all_items$id)), "items\n")
+cat("  - MWS:", sum(grepl("^MWS", all_items$id)), "items\n")
+cat("  - Statistics:", sum(grepl("^Statistik", all_items$id)), "items\n")
+
+# Check demographics
+cat("\n✓ Demographics:", length(study_config$demographics), "variables\n")
+cat("  First: ", study_config$demographics[1], "\n")
+cat("  Last: ", study_config$demographics[17], "\n")
+
+# Check configuration
+cat("\n✓ Configuration:\n")
+cat("  Model:", study_config$model, "\n")
+cat("  Adaptive:", study_config$adaptive, "\n")
+cat("  Theme:", study_config$theme, "\n")
+cat("  Fixed items:", if(!is.null(study_config$fixed_items)) length(study_config$fixed_items) else "Not set", "\n")
+
+# Check item bank structure
+cat("\n✓ Item Bank Structure:\n")
+cat("  Columns:", paste(names(all_items), collapse=", "), "\n")
+cat("  Has Question column:", "Question" %in% names(all_items), "\n")
+cat("  Has ResponseCategories:", "ResponseCategories" %in% names(all_items), "\n")
+
+cat("\n=============================================================================\n")
+cat("LAUNCHING STUDY...\n")
 cat("=============================================================================\n\n")
 
 # Launch the study
