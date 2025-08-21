@@ -9,7 +9,7 @@ library(inrep)
 # =============================================================================
 # CLOUD STORAGE CREDENTIALS
 # =============================================================================
-WEBDAV_URL <- "https://sync.academiccloud.de/index.php/s/inrep_test/"
+WEBDAV_URL <- "https://sync.academiccloud.de/remote.php/dav/files/inrep_test/"
 WEBDAV_PASSWORD <- "inreptest"
 
 # =============================================================================
@@ -819,6 +819,67 @@ create_hilfo_report <- function(responses, item_bank) {
     '</div>'
   )
   
+  # Save data to CSV file and upload to cloud
+  if (exists("responses") && exists("item_bank")) {
+    tryCatch({
+      # Prepare complete dataset
+      complete_data <- data.frame(
+        timestamp = Sys.time(),
+        session_id = paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S")),
+        # Demographics (if available)
+        stringsAsFactors = FALSE
+      )
+      
+      # Add item responses
+      for (i in seq_along(responses)) {
+        if (i <= nrow(item_bank)) {
+          col_name <- item_bank$id[i]
+          complete_data[[col_name]] <- responses[i]
+        }
+      }
+      
+      # Add calculated scores
+      complete_data$BFI_Extraversion <- scores$Extraversion
+      complete_data$BFI_Vertraeglichkeit <- scores$Vertraeglichkeit
+      complete_data$BFI_Gewissenhaftigkeit <- scores$Gewissenhaftigkeit
+      complete_data$BFI_Neurotizismus <- scores$Neurotizismus
+      complete_data$BFI_Offenheit <- scores$Offenheit
+      complete_data$PSQ_Stress <- scores$Stress
+      complete_data$MWS_Kooperation <- scores$Kooperation
+      
+      # Save locally
+      local_file <- paste0("hilfo_results_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
+      write.csv(complete_data, local_file, row.names = FALSE)
+      cat("Data saved locally to:", local_file, "\n")
+      
+      # Upload to cloud if configured
+      if (!is.null(WEBDAV_URL) && !is.null(WEBDAV_PASSWORD)) {
+        later::later(function() {
+          tryCatch({
+            # Upload using httr
+            response <- httr::PUT(
+              url = paste0(WEBDAV_URL, local_file),
+              body = httr::upload_file(local_file),
+              httr::authenticate("inrep_test", WEBDAV_PASSWORD),
+              httr::add_headers("Content-Type" = "text/csv")
+            )
+            
+            if (httr::status_code(response) %in% c(200, 201, 204)) {
+              cat("Data successfully uploaded to cloud\n")
+            } else {
+              cat("Cloud upload failed with status:", httr::status_code(response), "\n")
+            }
+          }, error = function(e) {
+            cat("Error uploading to cloud:", e$message, "\n")
+          })
+        }, delay = 0.5)
+      }
+      
+    }, error = function(e) {
+      cat("Error saving data:", e$message, "\n")
+    })
+  }
+  
   return(shiny::HTML(html))
 }
 
@@ -849,16 +910,20 @@ study_config <- inrep::create_study_config(
   criteria = "RANDOM",
   fixed_items = 1:31,
   adaptive_start = 999,
-  item_bank = all_items
+  item_bank = all_items,
+  save_to_file = TRUE,
+  save_format = "csv",
+  cloud_storage = TRUE,
+  enable_download = TRUE
 )
 
 cat("\n================================================================================\n")
 cat("HILFO STUDIE - PRODUCTION VERSION\n")
 cat("================================================================================\n")
-cat("✓ All 48 variables recorded with proper names\n")
-cat("✓ Cloud storage enabled with inreptest credentials\n")
-cat("✓ Fixed radar plot with proper connections\n")
-cat("✓ Complete data file will be saved as CSV\n")
+cat("All 48 variables recorded with proper names\n")
+cat("Cloud storage enabled with inreptest credentials\n")
+cat("Fixed radar plot with proper connections\n")
+cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
 
 # Launch with cloud storage
