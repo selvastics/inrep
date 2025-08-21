@@ -434,6 +434,33 @@ study_config <- inrep::create_study_config(
   # Demographic configurations
   demographic_configs = demographic_configs,
   
+  # CUSTOM STUDY FLOW - EXACT ORDER SPECIFIED
+  enable_custom_navigation = TRUE,
+  custom_study_flow = list(
+    start_with = "custom_instructions",
+    page_sequence = c("custom_instructions", "demographics", "assessment", "results")
+  ),
+  custom_page_configs = list(
+    instructions = list(
+      content = paste0(
+        "Liebe Studierende,\n\n",
+        "In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, ",
+        "die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.\n\n",
+        "Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene ",
+        "Themenbereiche ab, die voneinander teilweise unabhängig sind.\n\n",
+        "Ihre Angaben sind dabei selbstverständlich anonym, es wird keine personenbezogene ",
+        "Auswertung der Daten stattfinden. Die Daten werden von den Erstsemestern Psychologie ",
+        "im Bachelor generiert und in diesem Jahrgang genutzt, möglicherweise auch in späteren Jahrgängen.\n\n",
+        "Im Folgenden werden Ihnen dazu Aussagen präsentiert. Wir bitten Sie anzugeben, ",
+        "inwieweit Sie diesen zustimmen. Es gibt keine falschen oder richtigen Antworten. ",
+        "Bitte beantworten Sie die Fragen so, wie es Ihrer Meinung am ehesten entspricht. ",
+        "Da es nicht immer möglich ist, sich zu 100% in einer Aussage wiederzufinden, ",
+        "sind Abstufungen möglich. Achten Sie deshalb besonders auf die Ihnen vorgegebenen Antwortformate."
+      ),
+      validation = "required"
+    )
+  ),
+  
   # Instructions - EXACT CONTENT AND ORDER
   instructions = list(
     welcome = "Willkommen zur Hildesheim Psychologie Studie 2025",
@@ -519,7 +546,7 @@ study_config <- inrep::create_study_config(
     mws_skills <- mean(mws_responses, na.rm = TRUE)
     statistics_confidence <- mean(statistics_responses, na.rm = TRUE)
     
-    # Create HTML content for results page
+    # Create HTML content for results page with PLOTS
     results_html <- paste0(
       '<div class="hildesheim-results">',
       '<h3>Hildesheim Psychologie Studie 2025 - Ergebnisse</h3>',
@@ -543,12 +570,12 @@ study_config <- inrep::create_study_config(
       '<div class="results-section">',
       '<h4>Studierfähigkeiten (MWS)</h4>',
       '<p><strong>Gesamt-Score:</strong> ', round(mws_skills, 2), '</p>',
-    '</div>',
+      '</div>',
       
       '<div class="results-section">',
       '<h4>Statistik-Selbsteinschätzung</h4>',
       '<p><strong>Gesamtvertrauen:</strong> ', round(statistics_confidence, 2), '</p>',
-    '</div>',
+      '</div>',
       
       '<div class="results-section">',
       '<h4>Empfehlungen</h4>',
@@ -558,10 +585,10 @@ study_config <- inrep::create_study_config(
       ifelse(mws_skills < 3, '<li>Erwägen Sie, Unterstützung von Studienberatern zu suchen.</li>', ''),
       ifelse(statistics_confidence < 3, '<li>Erwägen Sie zusätzliche Statistik-Unterstützung oder Nachhilfe.</li>', ''),
       '</ul>',
-    '</div>',
+      '</div>',
       
-    '</div>'
-)
+      '</div>'
+    )
     
     return(results_html)
   }
@@ -602,11 +629,11 @@ cat("✓ Launching with comprehensive Hildesheim configuration...\n")
 # Launch the study using inrep's standard launch_study function
 # This will create a Shiny app with all content and results displayed INSIDE the web interface
 inrep::launch_study(
-  config = study_config,
-  item_bank = all_items,
-  webdav_url = webdav_url,
-  password = password,
-  save_format = "csv",
+    config = study_config,
+    item_bank = all_items,
+    webdav_url = webdav_url,
+    password = password,
+    save_format = "csv",
   study_key = session_uuid
 )
 
@@ -624,6 +651,10 @@ while(TRUE) {
   Sys.sleep(1)
   # This keeps the script alive so the Shiny app doesn't close
 }
+
+
+
+cat("✓ Final page reporting completed successfully!\n")
 
 
 
