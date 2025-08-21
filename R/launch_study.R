@@ -1235,15 +1235,21 @@ launch_study <- function(
           width: 100%;
           height: 100%;
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          display: flex;
+          display: flex !important;
           justify-content: center;
           align-items: center;
-          z-index: 9999;
+          z-index: 99999;
           transition: opacity 0.5s ease-out;
+          opacity: 1;
         }
         .loading-content {
           text-align: center;
           color: white;
+          animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
         .loading-spinner {
           width: 60px;
@@ -1262,26 +1268,72 @@ launch_study <- function(
           font-size: 24px;
           font-weight: 300;
           margin-bottom: 10px;
+          text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         .loading-subtext {
           font-size: 14px;
-          opacity: 0.8;
+          opacity: 0.9;
+        }
+        .loading-progress {
+          width: 200px;
+          height: 3px;
+          background: rgba(255,255,255,0.3);
+          border-radius: 3px;
+          margin: 20px auto 0;
+          overflow: hidden;
+        }
+        .loading-progress-bar {
+          height: 100%;
+          background: white;
+          border-radius: 3px;
+          animation: progress 2s ease-in-out infinite;
+        }
+        @keyframes progress {
+          0% { width: 0%; }
+          50% { width: 70%; }
+          100% { width: 100%; }
+        }
+        /* Hide main content initially */
+        .container-fluid {
+          opacity: 0;
+          transition: opacity 0.5s ease-in;
+        }
+        .container-fluid.loaded {
+          opacity: 1;
         }
       ")),
       shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
       shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet"),
       # Include Plotly for interactive plots
-      shiny::tags$script(src = "https://cdn.plot.ly/plotly-latest.min.js")
+      shiny::tags$script(src = "https://cdn.plot.ly/plotly-latest.min.js"),
+      # Ensure loading screen is visible immediately
+      shiny::tags$script(HTML("
+        // Show loading screen immediately on page load
+        document.addEventListener('DOMContentLoaded', function() {
+          var loadingScreen = document.getElementById('loading-screen');
+          if (loadingScreen) {
+            loadingScreen.style.display = 'flex';
+            loadingScreen.style.opacity = '1';
+          }
+        });
+      "))
     ),
-    # Loading screen
+    # Loading screen - ALWAYS VISIBLE INITIALLY
     shiny::div(
       id = "loading-screen",
       class = "loading-screen",
+      style = "display: flex !important;",  # Force display initially
       shiny::div(
         class = "loading-content",
         shiny::div(class = "loading-spinner"),
-        shiny::div(class = "loading-text", config$name %||% "Study Loading..."),
-        shiny::div(class = "loading-subtext", "Preparing your assessment experience")
+        shiny::div(class = "loading-text", config$name %||% "Loading Study..."),
+        shiny::div(class = "loading-subtext", 
+                   if (config$language == "de") "Studie wird vorbereitet..." 
+                   else "Preparing your assessment experience"),
+        shiny::div(
+          class = "loading-progress",
+          shiny::div(class = "loading-progress-bar")
+        )
       )
     ),
     if (tolower(config$theme %||% "") == "hildesheim") shiny::div(class = "hildesheim-logo"),
@@ -1418,9 +1470,22 @@ launch_study <- function(
       })
     }
     
-    # Hide loading screen after initialization
+    # Hide loading screen after a delay to ensure content is loaded
     shiny::observe({
-      shinyjs::hide(id = "loading-screen", anim = TRUE, animType = "fade", time = 0.5)
+      # Add loaded class to container for smooth transition
+      shinyjs::runjs("
+        setTimeout(function() {
+          $('.container-fluid').addClass('loaded');
+        }, 300);
+      ")
+      
+      # Wait to ensure all content is rendered, then hide loading screen
+      shinyjs::delay(1000, {
+        shinyjs::hide(id = "loading-screen", anim = TRUE, animType = "fade", time = 0.5)
+        
+        # Ensure content is fully visible
+        shinyjs::runjs("$('.container-fluid').css('opacity', '1');")
+      })
     })
     
     # Keep-alive mechanism to prevent session timeouts (with fallback)
