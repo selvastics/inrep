@@ -2535,6 +2535,12 @@ launch_study <- function(
         # Clean up responses - remove NAs for final processing
         final_responses <- rv$responses[!is.na(rv$responses)]
         
+        # Debug responses
+        cat("DEBUG: rv$responses length:", length(rv$responses), "\n")
+        cat("DEBUG: Non-NA responses:", sum(!is.na(rv$responses)), "\n")
+        cat("DEBUG: final_responses length:", length(final_responses), "\n")
+        cat("DEBUG: First few final_responses:", head(final_responses, 10), "\n")
+        
         logger(sprintf("Study completed with %d responses collected", length(final_responses)))
         
         # Generate results

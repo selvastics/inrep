@@ -469,11 +469,21 @@ custom_page_flow <- list(
 # =============================================================================
 
 create_hilfo_report <- function(responses, item_bank) {
+  # Debug: Check what we received
+  cat("DEBUG: create_hilfo_report called\n")
+  cat("DEBUG: Responses received:", length(responses), "\n")
+  cat("DEBUG: First few responses:", head(responses, 10), "\n")
+  
   # Ensure responses are numeric
   responses <- as.numeric(responses)
   
+  if (is.null(responses) || length(responses) == 0) {
+    return(shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>"))
+  }
+  
   if (length(responses) < 31) {
-    return(shiny::HTML("<p>Nicht genügend Antworten für eine vollständige Auswertung.</p>"))
+    return(shiny::HTML(paste0("<p>Nicht genügend Antworten für eine vollständige Auswertung. Erhalten: ", 
+                              length(responses), " von 31 benötigten Antworten.</p>")))
   }
   
   # Calculate BFI scores

@@ -232,14 +232,25 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
 
 #' Render results page
 render_results_page <- function(page, config, rv, item_bank, ui_labels) {
+  # Debug what we have
+  cat("DEBUG: render_results_page called\n")
+  cat("DEBUG: rv$cat_result exists:", !is.null(rv$cat_result), "\n")
+  if (!is.null(rv$cat_result)) {
+    cat("DEBUG: rv$cat_result$responses length:", length(rv$cat_result$responses), "\n")
+  }
+  cat("DEBUG: rv$responses length:", length(rv$responses), "\n")
+  cat("DEBUG: Non-NA in rv$responses:", sum(!is.na(rv$responses)), "\n")
+  
   # Use custom results processor if available
   if (!is.null(config$results_processor) && is.function(config$results_processor)) {
     # Use cat_result if available (contains cleaned responses), otherwise use raw responses
     if (!is.null(rv$cat_result) && !is.null(rv$cat_result$responses)) {
+      cat("DEBUG: Using rv$cat_result$responses\n")
       results_content <- config$results_processor(rv$cat_result$responses, item_bank)
     } else {
       # Clean responses before passing to processor
       clean_responses <- rv$responses[!is.na(rv$responses)]
+      cat("DEBUG: Using cleaned rv$responses, length:", length(clean_responses), "\n")
       if (length(clean_responses) > 0) {
         results_content <- config$results_processor(clean_responses, item_bank)
       } else {
