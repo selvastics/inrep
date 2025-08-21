@@ -656,9 +656,9 @@ cat("✓ 3 Parts: Teil 1 (BFI), Teil 2 (PSQ), Teil 3 (MWS)\n")
 cat("✓ Results with interactive plots\n")
 cat("================================================================================\n\n")
 
+# Launch with proper parameters
 inrep::launch_study(
   config = study_config,
   item_bank = all_items,
-  save_format = "csv",
-  study_key = session_uuid
+  save_format = "csv"
 )

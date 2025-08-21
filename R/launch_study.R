@@ -988,7 +988,19 @@ launch_study <- function(
     
     .container-fluid { 
       max-width: 800px; 
-      margin: 0 auto; 
+      margin: 0 auto;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    
+    /* Prevent weird scaling */
+    * {
+      box-sizing: border-box;
+    }
+    
+    html {
+      overflow-x: hidden;
+      width: 100%;
     }
     
     .assessment-card {

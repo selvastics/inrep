@@ -276,8 +276,7 @@ render_page_navigation <- function(rv, config, current_page_idx) {
       if (current_page_idx > 1) {
         shiny::actionButton(
           "prev_page",
-          shiny::icon("arrow-left"),
-          "Zurück",
+          label = shiny::tagList(shiny::icon("arrow-left"), " Zurück"),
           class = "btn-secondary"
         )
       } else {
@@ -297,16 +296,14 @@ render_page_navigation <- function(rv, config, current_page_idx) {
       if (current_page_idx < total_pages) {
         shiny::actionButton(
           "next_page",
-          "Weiter",
-          shiny::icon("arrow-right"),
+          label = shiny::tagList("Weiter ", shiny::icon("arrow-right")),
           class = "btn-primary",
           style = "min-width: 100px;"
         )
       } else {
         shiny::actionButton(
           "submit_study",
-          "Abschließen",
-          shiny::icon("check"),
+          label = shiny::tagList("Abschließen ", shiny::icon("check")),
           class = "btn-success",
           style = "min-width: 120px;"
         )
