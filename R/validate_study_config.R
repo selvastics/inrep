@@ -9,6 +9,7 @@
 #' @description
 #' Performs comprehensive validation of study configuration parameters
 #' with detailed, actionable error messages to guide users in fixing issues.
+#' This function helps prevent common errors like NULL current_item issues.
 #'
 #' @param config Study configuration list from create_study_config()
 #' @param item_bank Data frame containing assessment items
@@ -83,6 +84,20 @@ validate_study_config <- function(config, item_bank = NULL, context = "launch") 
       "Adaptive testing not specified. Defaulting to TRUE.\nTo use fixed order: config$adaptive <- FALSE"
     )
     config$adaptive <- TRUE
+  }
+  
+  # Check for non-adaptive mode requirements
+  if (isFALSE(config$adaptive)) {
+    if (is.null(config$criteria)) {
+      warnings <- c(warnings,
+        "Non-adaptive mode: Consider setting criteria to 'RANDOM'.\nExample: config$criteria <- 'RANDOM'"
+      )
+    }
+    if (is.null(config$fixed_items) && !is.null(item_bank)) {
+      suggestions <- c(suggestions,
+        sprintf("Non-adaptive mode: Consider specifying item order.\nExample: config$fixed_items <- 1:%d", nrow(item_bank))
+      )
+    }
   }
   
   # =============================================================================
