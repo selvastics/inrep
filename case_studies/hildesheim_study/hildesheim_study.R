@@ -36,139 +36,171 @@ demographic_configs <- list(
     # 1. CONSENT - Must be first
     Einverständnis = list(
         question = "Ich bin mit der Teilnahme an der Befragung einverstanden",
-        options = c("1" = "Ich bin mit der Teilnahme an der Befragung einverstanden"),
+        options = c("Ja" = "Ich bin mit der Teilnahme an der Befragung einverstanden"),
+        type = "checkbox",
         required = TRUE
     ),
     
     # 2. AGE
     Alter_VPN = list(
+        label = "Alter",
         question = "Wie alt sind Sie?",
         options = c("17" = "17", "18" = "18", "19" = "19", "20" = "20", "21" = "21",
                     "22" = "22", "23" = "23", "24" = "24", "25" = "25", "26" = "26",
                     "27" = "27", "28" = "28", "29" = "29", "30" = "30", "0" = "älter als 30"),
+        type = "select",
         required = TRUE
     ),
     
     # 3. STUDY PROGRAM (Filter)
     Studiengang = list(
+        label = "Studiengang",
         question = "In welchem Studiengang befinden Sie sich?",
         options = c("1" = "Bachelor Psychologie", "2" = "Master Psychologie"),
+        type = "radio",
         required = TRUE
     ),
     
     # 4. GENDER
     Geschlecht = list(
+        label = "Geschlecht",
         question = "Welches Geschlecht haben Sie?",
         options = c("1" = "weiblich", "2" = "männlich", "3" = "divers"),
+        type = "radio",
         required = TRUE
     ),
     
     # 5. LIVING SITUATION
     Wohnstatus = list(
+        label = "Wohnsituation",
         question = "Wie wohnen Sie?",
         options = c("1" = "Bei meinen Eltern/Elternteil",
                     "2" = "In einer WG/WG in einem Wohnheim",
                     "3" = "Alleine/in abgeschlossener Wohneinheit in einem Wohnheim",
                     "4" = "Mit meinem/r Partner*In (mit oder ohne Kinder)",
                     "6" = "Anders:"),
+        type = "radio",
         required = TRUE
     ),
     
     # 6. LIVING ADDITIONAL
     Wohn_Zusatz = list(
+        label = "Wohnsituation (Zusatz)",
         question = "Falls 'Anders', bitte spezifizieren:",
         options = NULL,  # Text field
+        type = "text",
         required = FALSE
     ),
     
     # 7. PET PREFERENCE
     Haustier = list(
+        label = "Haustier-Präferenz",
         question = "Welches Haustier würden Sie gerne halten?",
         options = c("1" = "Hund", "2" = "Katze", "3" = "Fische", "4" = "Vogel",
                     "5" = "Nager", "6" = "Reptil", "7" = "Ich möchte kein Haustier.",
                     "8" = "Sonstiges:"),
+        type = "radio",
         required = TRUE
     ),
     
     # 8. PET ADDITIONAL
     Haustier_Zusatz = list(
+        label = "Haustier (Zusatz)",
         question = "Falls 'Sonstiges', bitte spezifizieren:",
         options = NULL,
+        type = "text",
         required = FALSE
     ),
     
     # 9. SMOKING
     Rauchen = list(
+        label = "Rauchen",
         question = "Rauchen Sie regelmäßig Zigaretten, Vapes oder Shisha?",
         options = c("1" = "Ja", "2" = "Nein"),
+        type = "radio",
         required = TRUE
     ),
     
     # 10. DIET
     Ernährung = list(
+        label = "Ernährung",
         question = "Welchem Ernährungstyp ordnen Sie sich am ehesten zu?",
         options = c("1" = "Vegan", "2" = "Vegetarisch", "7" = "Pescetarisch",
                     "4" = "Flexitarisch", "5" = "Omnivor (alles)", "6" = "Andere:"),
+        type = "radio",
         required = TRUE
     ),
     
     # 11. DIET ADDITIONAL
     Ernährung_Zusatz = list(
+        label = "Ernährung (Zusatz)",
         question = "Falls 'Andere', bitte spezifizieren:",
         options = NULL,
+        type = "text",
         required = FALSE
     ),
     
     # 12. ENGLISH GRADE (Bildung)
     Note_Englisch = list(
+        label = "Englischnote",
         question = "Was war Ihre letzte Schulnote im Fach Englisch?",
         options = c("1" = "sehr gut (15-13 Punkte)", "2" = "gut (12-10 Punkte)",
                     "3" = "befriedigend (9-7 Punkte)", "4" = "ausreichend (6-4 Punkte)",
                     "5" = "mangelhaft (3-0 Punkte)"),
+        type = "radio",
         required = TRUE
     ),
     
     # 13. MATH GRADE (Bildung)
     Note_Mathe = list(
+        label = "Mathematiknote",
         question = "Was war Ihre letzte Schulnote im Fach Mathematik?",
         options = c("1" = "sehr gut (15-13 Punkte)", "2" = "gut (12-10 Punkte)",
                     "3" = "befriedigend (9-7 Punkte)", "4" = "ausreichend (6-4 Punkte)",
                     "5" = "mangelhaft (3-0 Punkte)"),
+        type = "radio",
         required = TRUE
     ),
     
     # 14. STUDY HOURS (Page 7)
     Vor_Nachbereitung = list(
+        label = "Vor-/Nachbereitung",
         question = "Wieviele Stunden pro Woche planen Sie (ohne den Besuch der Veranstaltungen) für die Vor- und Nachbereitung der Statistikveranstaltungen zu investieren?",
         options = c("1" = "0 Stunden", "2" = "maximal eine Stunde",
                     "3" = "mehr als eine, aber weniger als 2 Stunden",
                     "4" = "mehr als zwei, aber weniger als 3 Stunden",
                     "5" = "mehr als drei, aber weniger als 4 Stunden",
                     "6" = "mehr als 4 Stunden"),
+        type = "radio",
         required = TRUE
     ),
     
     # 15. SATISFACTION 5-POINT (Page 8.1)
     Zufrieden_Hi_5st = list(
+        label = "Zufriedenheit Hildesheim (5-stufig)",
         question = "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim?",
         options = c("1" = "gar nicht zufrieden", "2" = "wenig zufrieden",
                     "3" = "teils zufrieden", "4" = "ziemlich zufrieden",
                     "5" = "sehr zufrieden"),
+        type = "radio",
         required = TRUE
     ),
     
     # 16. SATISFACTION 7-POINT (Page 8.2)
     Zufrieden_Hi_7st = list(
+        label = "Zufriedenheit Hildesheim (7-stufig)",
         question = "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim?",
         options = c("1" = "gar nicht zufrieden", "2" = "sehr unzufrieden",
                     "3" = "unzufrieden", "4" = "teils zufrieden",
                     "5" = "zufrieden", "6" = "sehr zufrieden",
                     "7" = "extrem zufrieden"),
+        type = "radio",
         required = TRUE
     ),
     
     # 17. PERSONAL CODE (Page 9)
     Persönlicher_Code = list(
+        label = "Persönlicher Code",
         question = paste0(
             "Zum Ende des Semesters soll es eine zweite Befragung geben. ",
             "Damit die Befragung anonym bleibt, wir die Fragebögen aber trotzdem ",
@@ -181,6 +213,7 @@ demographic_configs <- list(
             "Für die Beispiele würde der Code also BE0751 lauten."
         ),
         options = NULL,  # Text field
+        type = "text",
         required = TRUE
     )
 )
@@ -422,7 +455,7 @@ study_config <- inrep::create_study_config(
                     "Zufrieden_Hi_7st", "Persönlicher_Code"),
     
     input_types = list(
-        Einverständnis = "radio",
+        Einverständnis = "checkbox",  # Changed to checkbox for consent
         Alter_VPN = "select",
         Studiengang = "radio",
         Geschlecht = "radio",
@@ -442,7 +475,7 @@ study_config <- inrep::create_study_config(
     ),
     
     # Assessment settings
-    model = "GRM",
+    model = "GRM",  # Using GRM for scoring even in non-adaptive mode
     adaptive = FALSE,
     max_items = 31,
     min_items = 31,
@@ -458,19 +491,46 @@ study_config <- inrep::create_study_config(
     # Provide configurations
     demographic_configs = demographic_configs,
     
-    # Instructions
+    # Instructions - Full German text
     instructions = list(
         welcome = "Willkommen zur Hildesheim Psychologie Studie 2025",
         purpose = paste0(
-            "Liebe Studierende,\n\n",
-            "In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, ",
-            "die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.\n\n",
-            "Ihre Angaben sind dabei selbstverständlich anonym."
+            "<h3>Liebe Studierende,</h3>",
+            "<p>In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, ",
+            "die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.</p>",
+            "<p>Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene ",
+            "Themenbereiche ab, die voneinander teilweise unabhängig sind.</p>",
+            "<p><strong>Ihre Angaben sind dabei selbstverständlich anonym</strong>, es wird keine personenbezogene ",
+            "Auswertung der Daten stattfinden. Die Daten werden von den Erstsemestern Psychologie ",
+            "im Bachelor generiert und in diesem Jahrgang genutzt, möglicherweise auch in späteren Jahrgängen.</p>",
+            "<p>Im Folgenden werden Ihnen dazu Aussagen präsentiert. Wir bitten Sie anzugeben, ",
+            "inwieweit Sie diesen zustimmen. Es gibt keine falschen oder richtigen Antworten. ",
+            "Bitte beantworten Sie die Fragen so, wie es Ihrer Meinung am ehesten entspricht. ",
+            "Da es nicht immer möglich ist, sich zu 100% in einer Aussage wiederzufinden, ",
+            "sind Abstufungen möglich. Achten Sie deshalb besonders auf die Ihnen vorgegebenen Antwortformate.</p>"
         ),
         duration = "Die Studie dauert etwa 15-20 Minuten.",
+        structure = paste0(
+            "<h4>Ablauf der Befragung:</h4>",
+            "<ol>",
+            "<li>Einverständniserklärung</li>",
+            "<li>Soziodemographische Angaben</li>",
+            "<li>Persönlichkeitsfragebogen (BFI-2)</li>",
+            "<li>Stressfragebogen (PSQ)</li>",
+            "<li>Studierfähigkeiten (MWS)</li>",
+            "<li>Statistik-Selbsteinschätzung</li>",
+            "<li>Zufriedenheit mit dem Studienort</li>",
+            "<li>Persönlicher Code für Folgebefragung</li>",
+            "</ol>"
+        ),
         consent_text = "Ich bin mit der Teilnahme an der Befragung einverstanden",
-        contact = "Bei Fragen: forschung@uni-hildesheim.de"
+        contact = "Bei Fragen wenden Sie sich bitte an das Forschungsteam: forschung@uni-hildesheim.de"
     ),
+    
+    # Enable custom instructions page
+    show_introduction = TRUE,
+    show_consent = FALSE,  # Consent is part of demographics
+    show_briefing = FALSE,
     
     # Results processor
     results_processor = create_results_with_plots,
@@ -504,9 +564,10 @@ cat("  Last: ", study_config$demographics[17], "\n")
 
 # Check configuration
 cat("\n✓ Configuration:\n")
-cat("  Model:", study_config$model, "\n")
+cat("  Model:", ifelse(is.null(study_config$model), "None (non-adaptive)", study_config$model), "\n")
 cat("  Adaptive:", study_config$adaptive, "\n")
 cat("  Theme:", study_config$theme, "\n")
+cat("  Instructions:", !is.null(study_config$instructions), "\n")
 cat("  Fixed items:", if(!is.null(study_config$fixed_items)) length(study_config$fixed_items) else "Not set", "\n")
 
 # Check item bank structure
