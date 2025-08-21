@@ -537,11 +537,15 @@ create_hilfo_report <- function(responses, item_bank) {
   
   # Generate HTML report with download button
   html <- paste0(
-    '<div style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
-    '<div style="background: linear-gradient(135deg, #e8041c 0%, #b30315 100%); color: white; padding: 40px; border-radius: 10px; margin-bottom: 30px; text-align: center;">',
-    '<h1 style="margin: 0;">HilFo Studie - Ihre Ergebnisse</h1>',
-    '<button onclick="downloadPDF()" style="margin-top: 20px; padding: 10px 30px; background: white; color: #e8041c; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer;">',
-    '📥 Als PDF herunterladen</button>',
+    '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
+    '<div style="background: #e8041c; color: white; padding: 40px; border-radius: 10px; margin-bottom: 30px; position: relative;">',
+    '<img src="https://www.uni-hildesheim.de/media/_processed_/7/5/csm_UHi-Logo-2020_57e0e5e1f1.png" ',
+    'style="position: absolute; left: 40px; top: 50%; transform: translateY(-50%); height: 60px; background: white; padding: 10px; border-radius: 5px;">',
+    '<h1 style="margin: 0; text-align: center;">HilFo Studie - Ihre Ergebnisse</h1>',
+    '<div style="text-align: center; margin-top: 20px;">',
+    '<button onclick="window.print()" style="padding: 10px 30px; background: white; color: #e8041c; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer;">',
+    'Als PDF herunterladen</button>',
+    '</div>',
     '</div>',
     
     # Radar plot
@@ -627,25 +631,16 @@ create_hilfo_report <- function(responses, item_bank) {
     '</table>',
     '</div>',
     
-    # Add JavaScript for PDF download
-    '<script>',
-    'function downloadPDF() {',
-    '  if (typeof window.print === "function") {',
-    '    window.print();',
-    '  } else {',
-    '    alert("PDF-Download wird vorbereitet...");',
-    '    // In Shiny app, we would trigger server-side PDF generation',
-    '    Shiny.setInputValue("download_pdf", Date.now());',
-    '  }',
-    '}',
-    '</script>',
-    
-    # Add print styles
+    # Add print styles for PDF generation
     '<style>',
     '@media print {',
     '  button { display: none !important; }',
+    '  .no-print { display: none !important; }',
     '  div { page-break-inside: avoid; }',
-    '  body { font-size: 12pt; }',
+    '  body { font-size: 11pt; }',
+    '  h1, h2 { color: #e8041c !important; -webkit-print-color-adjust: exact; }',
+    '  img { max-width: 100% !important; }',
+    '  table { font-size: 10pt; }',
     '}',
     '</style>',
     
