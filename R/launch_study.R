@@ -612,9 +612,9 @@ launch_study <- function(
     }
   }
   
-  # Safely load suggested packages with fallbacks
-  safe_load_packages <- function() {
-    # Only load TAM if adaptive mode is enabled
+  # Safely check package availability WITHOUT loading them (for speed)
+  safe_load_packages <- function(immediate = FALSE) {
+    # Only check TAM if adaptive mode is enabled
     packages <- list(
       DT = "DT",
       ggplot2 = "ggplot2", 
@@ -629,29 +629,40 @@ launch_study <- function(
     
     loaded_packages <- list()
     
-    for (pkg_name in names(packages)) {
-      pkg <- packages[[pkg_name]]
-      if (requireNamespace(pkg, quietly = TRUE)) {
-        loaded_packages[[pkg_name]] <- TRUE
-        # Load the package into the namespace
-        tryCatch({
-          library(pkg, character.only = TRUE, quietly = TRUE)
-          logger(sprintf("Successfully loaded package: %s", pkg), level = "INFO")
-        }, error = function(e) {
-          logger(sprintf("Warning: Could not load package %s: %s", pkg, e$message), level = "WARNING")
+    if (!immediate) {
+      # Just check availability, don't load (FAST)
+      for (pkg_name in names(packages)) {
+        pkg <- packages[[pkg_name]]
+        loaded_packages[[pkg_name]] <- requireNamespace(pkg, quietly = TRUE)
+        if (!loaded_packages[[pkg_name]]) {
+          logger(sprintf("Package %s not available. Some features may be limited.", pkg), level = "INFO")
+        }
+      }
+    } else {
+      # Actually load packages (only when needed)
+      for (pkg_name in names(packages)) {
+        pkg <- packages[[pkg_name]]
+        if (requireNamespace(pkg, quietly = TRUE)) {
+          loaded_packages[[pkg_name]] <- TRUE
+          tryCatch({
+            suppressPackageStartupMessages(library(pkg, character.only = TRUE, quietly = TRUE))
+            logger(sprintf("Loaded package: %s", pkg), level = "DEBUG")
+          }, error = function(e) {
+            loaded_packages[[pkg_name]] <- FALSE
+          })
+        } else {
           loaded_packages[[pkg_name]] <- FALSE
-        })
-      } else {
-        loaded_packages[[pkg_name]] <- FALSE
-        logger(sprintf("Package %s not available. Some features may be limited.", pkg), level = "WARNING")
+        }
       }
     }
     
     return(loaded_packages)
   }
   
-  # Load suggested packages
-  available_packages <- safe_load_packages()
+  # Check package availability WITHOUT loading (fast)
+  # Only load immediately if explicitly disabled fast mode
+  immediate_load <- isFALSE(config$fast_mode) && isFALSE(config$defer_packages)
+  available_packages <- safe_load_packages(immediate = immediate_load)
   
   # Check if TAM package is available (only needed for adaptive mode)
   if (isTRUE(config$adaptive) && !isTRUE(available_packages$TAM)) {
@@ -1401,15 +1412,14 @@ launch_study <- function(
       })
     }
     
-    # Session monitoring with automatic data preservation
+    # Defer session monitoring until after first page loads
     if (session_save) {
-      # Session timeout monitoring
-      shiny::observe({
-        # DISABLED - causes page jumping
-        # shiny::invalidateLater(1000, session)
-        
-        # Check session timeout
-        if (base::difftime(base::Sys.time(), rv$session_start, units = "secs") > max_session_time) {
+      # Delay session monitoring to not block initial load
+      shiny::later(function() {
+        # Session timeout monitoring
+        shiny::observe({
+          # Check session timeout
+          if (base::difftime(base::Sys.time(), rv$session_start, units = "secs") > max_session_time) {
           rv$session_active <- FALSE
           rv$stage = "timeout"
           logger("Session timed out due to maximum session time", level = "WARNING")
@@ -1432,7 +1442,7 @@ launch_study <- function(
             logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
           })
         }
-      })
+      })  # Close observe
       
       # Automatic data preservation - converted to event-based instead of timer-based
       # This prevents page jumping while still preserving data on important events
@@ -1456,7 +1466,10 @@ launch_study <- function(
         observe_data_preservation()
       }, ignoreInit = TRUE)
       
-          # Session status monitoring - DISABLED timer-based monitoring
+      }, delay = 1)  # Close the later() function
+    }
+    
+    # Session status monitoring - DISABLED timer-based monitoring
     # Session is still saved but without constant UI updates that cause page jumping
     if (session_save) {
       # Log once that session monitoring is active
@@ -1602,7 +1615,23 @@ launch_study <- function(
         (base::length(rv$administered) >= config$max_items || rv$current_se <= config$min_SEM)
     }
     
+    # Lazy load packages only when first needed
+    .packages_loaded <- FALSE
+    .load_packages_once <- function() {
+      if (!.packages_loaded) {
+        # Load packages in background
+        shiny::later(function() {
+          safe_load_packages(immediate = TRUE)
+          .packages_loaded <<- TRUE
+        }, delay = 0.1)
+      }
+    }
+    
     output$study_ui <- shiny::renderUI({
+      # Load packages after first render
+      if (!.packages_loaded && rv$stage != "demographics") {
+        .load_packages_once()
+      }
       if (!rv$session_active) {
         return(
           shiny::div(class = "assessment-card",
