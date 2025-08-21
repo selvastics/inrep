@@ -591,6 +591,14 @@ launch_study <- function(
     stop("Package 'shiny' is required but not available. Please install it with: install.packages('shiny')")
   }
   
+  # The later package is required for deferred loading - load it immediately
+  if (!requireNamespace("later", quietly = TRUE)) {
+    logger("Package 'later' not available - deferred loading will be disabled", level = "WARNING")
+  } else {
+    # Load later immediately as it's needed for the deferred loading mechanism
+    suppressPackageStartupMessages(library(later, quietly = TRUE))
+  }
+  
   # Input validation
   extra_params <- list(...)
   if (length(extra_params) > 0) {
@@ -1414,8 +1422,12 @@ launch_study <- function(
     
     # Defer session monitoring until after first page loads
     if (session_save) {
-      # Delay session monitoring to not block initial load
-      shiny::later(function() {
+      # Ensure later package is available
+      if (!requireNamespace("later", quietly = TRUE)) {
+        logger("Package 'later' not available - session monitoring will be immediate", level = "WARNING")
+      } else {
+        # Delay session monitoring to not block initial load
+        later::later(function() {
         # Session timeout monitoring
         shiny::observe({
           # Check session timeout
@@ -1466,7 +1478,8 @@ launch_study <- function(
         observe_data_preservation()
       }, ignoreInit = TRUE)
       
-      }, delay = 1)  # Close the later() function
+        }, delay = 1)  # Close the later() function
+      }  # Close the else block for later availability check
     }
     
     # Session status monitoring - DISABLED timer-based monitoring
@@ -1610,10 +1623,16 @@ launch_study <- function(
     .load_packages_once <- function() {
       if (!.packages_loaded) {
         # Load packages in background
-        shiny::later(function() {
+        if (requireNamespace("later", quietly = TRUE)) {
+          later::later(function() {
+            safe_load_packages(immediate = TRUE)
+            .packages_loaded <<- TRUE
+          }, delay = 0.1)
+        } else {
+          # If later not available, load immediately
           safe_load_packages(immediate = TRUE)
-          .packages_loaded <<- TRUE
-        }, delay = 0.1)
+          .packages_loaded <- TRUE
+        }
       }
     }
     
