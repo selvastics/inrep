@@ -1012,6 +1012,18 @@ launch_study <- function(
       border: 1px solid var(--secondary-color);
       background-color: var(--background-color);
       color: var(--text-color);
+      animation: fadeInCard 0.3s ease-in;
+    }
+    
+    @keyframes fadeInCard {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
     
     .card-header {
@@ -2459,15 +2471,19 @@ launch_study <- function(
         
         # Collect item responses from current page
         if (current_page$type == "items") {
-          if (!is.null(current_page$item_indices)) {
+          if (!is.null(current_page$item_indices) && !is.null(item_bank)) {
             for (idx in current_page$item_indices) {
-              item_id <- paste0("item_", idx)
-              value <- input[[item_id]]
-              if (!is.null(value) && value != "") {
-                rv$item_responses[[item_id]] <- value
-                # Store in responses vector at the correct position
-                rv$responses[idx] <- as.numeric(value)
-                logger(sprintf("Saved item response %d: %s", idx, value))
+              # Get the actual item to get its ID
+              if (idx <= nrow(item_bank)) {
+                item <- item_bank[idx, ]
+                item_id <- paste0("item_", item$id %||% idx)
+                value <- input[[item_id]]
+                if (!is.null(value) && value != "") {
+                  rv$item_responses[[item_id]] <- value
+                  # Store in responses vector at the correct position
+                  rv$responses[idx] <- as.numeric(value)
+                  logger(sprintf("Saved item response %d (id: %s): %s", idx, item$id %||% idx, value))
+                }
               }
             }
           }

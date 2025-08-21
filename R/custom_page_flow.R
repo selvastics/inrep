@@ -268,31 +268,25 @@ render_page_navigation <- function(rv, config, current_page_idx) {
   }
   
   shiny::div(
-    class = "nav-buttons",
-    style = "display: flex; justify-content: space-between; align-items: center; margin-top: 30px;",
+    class = "nav-container",
+    style = "margin-top: 30px;",
     
-    # Previous button
+    # Navigation buttons row
     shiny::div(
+      class = "nav-buttons",
+      style = "display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 15px;",
+      
+      # Previous button
       if (current_page_idx > 1) {
         shiny::actionButton(
           "prev_page",
           label = shiny::tagList(shiny::icon("arrow-left"), " Zurück"),
-          class = "btn-secondary"
+          class = "btn-secondary",
+          style = "min-width: 100px;"
         )
-      } else {
-        shiny::div(style = "width: 100px;")  # Spacer
-      }
-    ),
-    
-    # Progress indicator
-    shiny::div(
-      class = "page-indicator",
-      style = "font-size: 14px; color: #666;",
-      sprintf("Seite %d von %d", current_page_idx, total_pages)
-    ),
-    
-    # Next/Submit button
-    shiny::div(
+      },
+      
+      # Next/Submit button
       if (current_page_idx < total_pages) {
         shiny::actionButton(
           "next_page",
@@ -308,6 +302,13 @@ render_page_navigation <- function(rv, config, current_page_idx) {
           style = "min-width: 120px;"
         )
       }
+    ),
+    
+    # Progress indicator centered below buttons
+    shiny::div(
+      class = "page-indicator",
+      style = "text-align: center; font-size: 14px; color: #666; margin-top: 10px;",
+      sprintf("Seite %d von %d", current_page_idx, total_pages)
     ),
     
     # Validation errors placeholder
