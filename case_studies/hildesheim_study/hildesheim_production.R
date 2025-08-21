@@ -403,69 +403,123 @@ create_hilfo_report <- function(responses, item_bank) {
   scores$Studierfähigkeiten <- mean(responses[26:29], na.rm=TRUE)
   scores$Statistik <- mean(responses[30:31], na.rm=TRUE)
   
-  # Create data for FIXED radar plot
-  bfi_data <- data.frame(
-    dimension = factor(
-      c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", "Neurotizismus", "Offenheit"),
-      levels = c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", "Neurotizismus", "Offenheit")
-    ),
-    score = c(scores$Extraversion, scores$Verträglichkeit, scores$Gewissenhaftigkeit, 
-              scores$Neurotizismus, scores$Offenheit)
+  # Create radar plot using ggradar approach
+  # Install ggradar if not available
+  if (!requireNamespace("ggradar", quietly = TRUE)) {
+    if (!requireNamespace("devtools", quietly = TRUE)) {
+      install.packages("devtools")
+    }
+    devtools::install_github("ricardo-bion/ggradar")
+  }
+  
+  # Prepare data for ggradar - needs to be scaled 0-1
+  radar_data <- data.frame(
+    group = "Ihr Profil",
+    Extraversion = scores$Extraversion / 5,
+    Verträglichkeit = scores$Verträglichkeit / 5,
+    Gewissenhaftigkeit = scores$Gewissenhaftigkeit / 5,
+    Neurotizismus = scores$Neurotizismus / 5,
+    Offenheit = scores$Offenheit / 5
   )
   
-  # Add first point at end to close the polygon properly
-  bfi_data_closed <- rbind(bfi_data, bfi_data[1,])
-  
-  # Create proper radar plot with correct connections
-  # First, ensure the data is properly ordered for radar plot
-  angles <- seq(0, 2*pi, length.out = 6)[-6]  # 5 dimensions
-  
-  radar_plot <- ggplot(bfi_data_closed, aes(x = dimension, y = score, group = 1)) +
-    # Add concentric circles for grid
-    annotate("path",
-             x = rep(1:5, each = 100),
-             y = rep(seq(0, 5, length.out = 100), 5),
-             group = rep(1:5, each = 100),
-             color = "gray85", size = 0.3, linetype = "dashed") +
-    # Add reference line at mean
-    annotate("path",
-             x = c(1:5, 1),
-             y = rep(3, 6),
-             color = "gray60", size = 0.5, linetype = "dotted") +
-    # Add the data polygon with proper connections
-    geom_polygon(aes(group = 1), fill = "#e8041c", alpha = 0.15) +
-    # Add the outline path
-    geom_path(aes(group = 1), color = "#e8041c", size = 2) +
-    # Add points at vertices (only for original data, not closed)
-    geom_point(data = bfi_data, aes(x = dimension, y = score), 
-               color = "#e8041c", size = 6, shape = 19) +
-    # Add white center to points
-    geom_point(data = bfi_data, aes(x = dimension, y = score), 
-               color = "white", size = 3, shape = 19) +
-    # Add value labels with background
-    geom_label(data = bfi_data, aes(label = sprintf("%.1f", score)), 
-               vjust = -1.8, size = 5, color = "#e8041c", 
-               fill = "white", label.size = 0.3, fontface = "bold") +
-    # Convert to polar coordinates with proper start
-    coord_polar(theta = "x", start = 0) +
-    # Set scale limits
-    scale_y_continuous(limits = c(0, 5.5), breaks = 1:5) +
-    scale_x_discrete() +
-    # Theme customization
-    theme_minimal(base_size = 14) +
+  # Create radar plot with ggradar
+  if (requireNamespace("ggradar", quietly = TRUE)) {
+    radar_plot <- ggradar::ggradar(
+      radar_data,
+      values.radar = c("1", "3", "5"),  # Min, mid, max labels
+      grid.min = 0,
+      grid.mid = 0.6,
+      grid.max = 1,
+      grid.label.size = 5,
+      axis.label.size = 5,
+      group.point.size = 4,
+      group.line.width = 1.5,
+      background.circle.colour = "white",
+      gridline.min.colour = "gray90",
+      gridline.mid.colour = "gray80",
+      gridline.max.colour = "gray70",
+      group.colours = c("#e8041c"),
+      plot.extent.x.sf = 1.3,
+      plot.extent.y.sf = 1.2,
+      legend.position = "none"
+    ) +
     theme(
-      text = element_text(size = 14, family = "sans"),
-      axis.text.x = element_text(size = 14, face = "bold", color = "#333"),
-      axis.text.y = element_blank(),
-      axis.title = element_blank(),
-      plot.title = element_text(size = 20, face = "bold", hjust = 0.5, color = "#e8041c", margin = margin(b = 20)),
-      panel.grid = element_line(color = "gray90", size = 0.3),
-      panel.grid.minor = element_blank(),
+      plot.title = element_text(size = 20, face = "bold", hjust = 0.5, 
+                                color = "#e8041c", margin = margin(b = 20)),
       plot.background = element_rect(fill = "white", color = NA),
-      panel.background = element_rect(fill = "white", color = NA),
       plot.margin = margin(20, 20, 20, 20)
     ) +
     labs(title = "Ihr Persönlichkeitsprofil (Big Five)")
+  } else {
+    # Fallback to simple ggplot2 approach if ggradar not available
+    library(ggplot2)
+    
+    # Create coordinates for manual radar plot
+    n_vars <- 5
+    angles <- seq(0, 2*pi, length.out = n_vars + 1)[-(n_vars + 1)]
+    
+    # Prepare data
+    bfi_scores <- c(scores$Extraversion, scores$Verträglichkeit, 
+                    scores$Gewissenhaftigkeit, scores$Neurotizismus, scores$Offenheit)
+    bfi_labels <- c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", 
+                    "Neurotizismus", "Offenheit")
+    
+    # Calculate positions
+    x_pos <- bfi_scores * cos(angles - pi/2)
+    y_pos <- bfi_scores * sin(angles - pi/2)
+    
+    # Create data frame for plotting
+    plot_data <- data.frame(
+      x = c(x_pos, x_pos[1]),  # Close the polygon
+      y = c(y_pos, y_pos[1]),
+      label = c(bfi_labels, ""),
+      score = c(bfi_scores, bfi_scores[1])
+    )
+    
+    # Grid lines data
+    grid_data <- expand.grid(
+      r = 1:5,
+      angle = seq(0, 2*pi, length.out = 50)
+    )
+    grid_data$x <- grid_data$r * cos(grid_data$angle)
+    grid_data$y <- grid_data$r * sin(grid_data$angle)
+    
+    # Create plot
+    radar_plot <- ggplot() +
+      # Grid circles
+      geom_path(data = grid_data, aes(x = x, y = y, group = r),
+                color = "gray85", size = 0.3) +
+      # Spokes
+      geom_segment(data = data.frame(angle = angles),
+                   aes(x = 0, y = 0, 
+                       xend = 5 * cos(angle - pi/2), 
+                       yend = 5 * sin(angle - pi/2)),
+                   color = "gray85", size = 0.3) +
+      # Data polygon
+      geom_polygon(data = plot_data, aes(x = x, y = y),
+                   fill = "#e8041c", alpha = 0.2) +
+      geom_path(data = plot_data, aes(x = x, y = y),
+                color = "#e8041c", size = 2) +
+      # Points
+      geom_point(data = plot_data[1:5,], aes(x = x, y = y),
+                 color = "#e8041c", size = 5) +
+      # Labels
+      geom_text(data = plot_data[1:5,], 
+                aes(x = x * 1.3, y = y * 1.3, label = label),
+                size = 5, fontface = "bold") +
+      geom_text(data = plot_data[1:5,],
+                aes(x = x * 1.1, y = y * 1.1, label = sprintf("%.1f", score)),
+                size = 4, color = "#e8041c") +
+      coord_equal() +
+      xlim(-6, 6) + ylim(-6, 6) +
+      theme_void() +
+      theme(
+        plot.title = element_text(size = 20, face = "bold", hjust = 0.5,
+                                  color = "#e8041c", margin = margin(b = 20)),
+        plot.margin = margin(30, 30, 30, 30)
+      ) +
+      labs(title = "Ihr Persönlichkeitsprofil (Big Five)")
+  }
   
   # Create bar chart
   all_data <- data.frame(
@@ -536,32 +590,32 @@ create_hilfo_report <- function(responses, item_bank) {
   )
   
   # Generate HTML report with download button
+  report_id <- paste0("report_", format(Sys.time(), "%Y%m%d_%H%M%S"))
+  
   html <- paste0(
     '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
-    '<div style="background: #e8041c; color: white; padding: 40px; border-radius: 10px; margin-bottom: 30px; position: relative;">',
-    '<img src="https://www.uni-hildesheim.de/media/_processed_/7/5/csm_UHi-Logo-2020_57e0e5e1f1.png" ',
-    'style="position: absolute; left: 40px; top: 50%; transform: translateY(-50%); height: 60px; background: white; padding: 10px; border-radius: 5px;">',
-    '<h1 style="margin: 0; text-align: center;">HilFo Studie - Ihre Ergebnisse</h1>',
-    '<div style="text-align: center; margin-top: 20px;">',
-    '<button onclick="window.print()" style="padding: 10px 30px; background: white; color: #e8041c; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer;">',
-    'Als PDF herunterladen</button>',
+    '<div style="background: #e8041c; color: white; padding: 40px; border-radius: 10px; margin-bottom: 30px;">',
+    '<h1 style="margin: 0; text-align: center; font-size: 32px;">HilFo Studie - Ihre Ergebnisse</h1>',
+    '<div style="text-align: center; margin-top: 25px;">',
+    '<a id="downloadLink" href="#" onclick="downloadReport()" style="display: inline-block; padding: 12px 35px; background: white; color: #e8041c; text-decoration: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s;">',
+    'Als PDF speichern</a>',
     '</div>',
     '</div>',
     
     # Radar plot
-    '<div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 25px;">',
-    '<h2 style="color: #e8041c; text-align: center;">Persönlichkeitsprofil</h2>',
-    if (radar_base64 != "") paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 600px; display: block; margin: 0 auto;">'),
+    '<div class="report-section">',
+    '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Persönlichkeitsprofil</h2>',
+    if (radar_base64 != "") paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">'),
     '</div>',
     
     # Bar chart
-    '<div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 25px;">',
-    '<h2 style="color: #e8041c; text-align: center;">Alle Dimensionen</h2>',
-    if (bar_base64 != "") paste0('<img src="data:image/png;base64,', bar_base64, '" style="width: 100%; max-width: 800px; display: block; margin: 0 auto;">'),
+    '<div class="report-section">',
+    '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Alle Dimensionen im Überblick</h2>',
+    if (bar_base64 != "") paste0('<img src="data:image/png;base64,', bar_base64, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 8px;">'),
     '</div>',
     
     # Table
-    '<div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">',
+    '<div class="report-section">',
     '<h2 style="color: #e8041c;">Detaillierte Auswertung</h2>',
     '<table style="width: 100%; border-collapse: collapse;">',
     '<tr style="background: #f8f8f8;">',
@@ -592,7 +646,7 @@ create_hilfo_report <- function(responses, item_bank) {
     '</div>',
     
     # Detailed item responses
-    '<div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-top: 25px;">',
+    '<div class="report-section">',
     '<h2 style="color: #e8041c;">Detaillierte Einzelantworten</h2>',
     '<table style="width: 100%; border-collapse: collapse; font-size: 14px;">',
     '<tr style="background: #f8f8f8;">',
@@ -631,16 +685,58 @@ create_hilfo_report <- function(responses, item_bank) {
     '</table>',
     '</div>',
     
-    # Add print styles for PDF generation
+    # Add JavaScript for PDF download and styles
+    '<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>',
+    '<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>',
+    '<script>',
+    'function downloadReport() {',
+    '  const element = document.getElementById("report-content");',
+    '  const opt = {',
+    '    margin: [10, 10, 10, 10],',
+    '    filename: "HilFo_Studie_Ergebnisse_', format(Sys.Date(), "%Y%m%d"), '.pdf",',
+    '    image: { type: "jpeg", quality: 0.98 },',
+    '    html2canvas: { scale: 2, useCORS: true, logging: false },',
+    '    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }',
+    '  };',
+    '  ',
+    '  // Use html2canvas and jsPDF for better PDF generation',
+    '  html2canvas(element, { scale: 2 }).then(canvas => {',
+    '    const imgData = canvas.toDataURL("image/png");',
+    '    const pdf = new jspdf.jsPDF("p", "mm", "a4");',
+    '    const imgWidth = 210;',
+    '    const pageHeight = 297;',
+    '    const imgHeight = (canvas.height * imgWidth) / canvas.width;',
+    '    let heightLeft = imgHeight;',
+    '    let position = 0;',
+    '    ',
+    '    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);',
+    '    heightLeft -= pageHeight;',
+    '    ',
+    '    while (heightLeft >= 0) {',
+    '      position = heightLeft - imgHeight;',
+    '      pdf.addPage();',
+    '      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);',
+    '      heightLeft -= pageHeight;',
+    '    }',
+    '    ',
+    '    pdf.save("HilFo_Studie_Ergebnisse_', format(Sys.Date(), "%Y%m%d"), '.pdf");',
+    '  });',
+    '}',
+    '</script>',
+    
+    # Add beautiful styles for the report
     '<style>',
+    'body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }',
+    '#report-content { background: #f8f9fa; }',
+    '#downloadLink:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }',
+    'table { border-collapse: collapse; width: 100%; }',
+    'table tr:hover { background: #f5f5f5; }',
+    'h1, h2 { font-family: "Segoe UI", sans-serif; }',
+    '.report-section { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 25px; }',
     '@media print {',
-    '  button { display: none !important; }',
-    '  .no-print { display: none !important; }',
-    '  div { page-break-inside: avoid; }',
+    '  #downloadLink { display: none !important; }',
     '  body { font-size: 11pt; }',
     '  h1, h2 { color: #e8041c !important; -webkit-print-color-adjust: exact; }',
-    '  img { max-width: 100% !important; }',
-    '  table { font-size: 10pt; }',
     '}',
     '</style>',
     
