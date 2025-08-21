@@ -596,13 +596,7 @@ create_hilfo_report <- function(responses, item_bank) {
   
   html <- paste0(
     '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
-    '<div style="background: #e8041c; color: white; padding: 40px; border-radius: 10px; margin-bottom: 30px;">',
-    '<h1 style="margin: 0; text-align: center; font-size: 32px;">HilFo Studie - Ihre Ergebnisse</h1>',
-    '<div style="text-align: center; margin-top: 25px;">',
-    '<a id="downloadLink" href="javascript:void(0);" onclick="window.downloadReport(); return false;" style="display: inline-block; padding: 12px 35px; background: white; color: #e8041c; text-decoration: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s;">',
-    'Als PDF speichern</a>',
-    '</div>',
-    '</div>',
+    '<h1 style="color: #e8041c; text-align: center; font-size: 32px; margin-bottom: 30px;">HilFo Studie - Ihre Ergebnisse</h1>',
     
     # Radar plot
     '<div class="report-section">',
@@ -622,13 +616,39 @@ create_hilfo_report <- function(responses, item_bank) {
     '<table style="width: 100%; border-collapse: collapse;">',
     '<tr style="background: #f8f8f8;">',
     '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">Dimension</th>',
-    '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">Wert</th>',
+    '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">Mittelwert</th>',
+    '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">Standardabweichung</th>',
     '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">Interpretation</th>',
     '</tr>'
   )
   
+  # Calculate standard deviations for each dimension
+  sds <- list()
+  
+  # Big Five dimensions - each has 4 items
+  bfi_dims <- list(
+    Extraversion = c(bfi_responses[c(1, 6, 11, 16)]),
+    Vertraeglichkeit = c(bfi_responses[c(2, 7, 12, 17)]),
+    Gewissenhaftigkeit = c(bfi_responses[c(3, 8, 13, 18)]),
+    Neurotizismus = c(bfi_responses[c(4, 9, 14, 19)]),
+    Offenheit = c(bfi_responses[c(5, 10, 15, 20)])
+  )
+  
+  for (dim_name in names(bfi_dims)) {
+    sds[[dim_name]] <- round(sd(bfi_dims[[dim_name]], na.rm = TRUE), 2)
+  }
+  
+  # PSQ Stress - 5 items
+  psq_items <- responses[21:25]
+  sds[["Stress"]] <- round(sd(psq_items, na.rm = TRUE), 2)
+  
+  # MWS Kooperation - 4 items
+  mws_items <- responses[26:29]
+  sds[["Kooperation"]] <- round(sd(mws_items, na.rm = TRUE), 2)
+  
   for (name in names(scores)) {
     value <- round(scores[[name]], 2)
+    sd_value <- ifelse(name %in% names(sds), sds[[name]], NA)
     level <- ifelse(value >= 3.7, "Hoch", ifelse(value >= 2.3, "Mittel", "Niedrig"))
     color <- ifelse(value >= 3.7, "#28a745", ifelse(value >= 2.3, "#ffc107", "#dc3545"))
     
@@ -637,6 +657,8 @@ create_hilfo_report <- function(responses, item_bank) {
       '<td style="padding: 12px; border-bottom: 1px solid #e0e0e0;">', name, '</td>',
       '<td style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
       '<strong style="color: ', color, ';">', value, '</strong></td>',
+      '<td style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
+      ifelse(is.na(sd_value), "-", as.character(sd_value)), '</td>',
       '<td style="padding: 12px; border-bottom: 1px solid #e0e0e0; color: #666;">',
       level, '</td>',
       '</tr>'
@@ -646,171 +668,17 @@ create_hilfo_report <- function(responses, item_bank) {
   html <- paste0(html,
     '</table>',
     '</div>',
-    
-    # Detailed item responses
-    '<div class="report-section">',
-    '<h2 style="color: #e8041c;">Detaillierte Einzelantworten</h2>',
-    '<table style="width: 100%; border-collapse: collapse; font-size: 14px;">',
-    '<tr style="background: #f8f8f8;">',
-    '<th style="padding: 10px; border-bottom: 2px solid #e8041c; text-align: left;">Frage</th>',
-    '<th style="padding: 10px; border-bottom: 2px solid #e8041c; text-align: center;">Antwort</th>',
-    '<th style="padding: 10px; border-bottom: 2px solid #e8041c; text-align: left;">Kategorie</th>',
-    '</tr>'
-  )
-  
-  # Add each item response
-  for (i in 1:nrow(item_details)) {
-    response_text <- switch(as.character(item_details$Response[i]),
-      "1" = "Stimme überhaupt nicht zu",
-      "2" = "Stimme eher nicht zu", 
-      "3" = "Teils, teils",
-      "4" = "Stimme eher zu",
-      "5" = "Stimme voll und ganz zu",
-      as.character(item_details$Response[i])
-    )
-    
-    html <- paste0(html,
-      '<tr>',
-      '<td style="padding: 10px; border-bottom: 1px solid #e0e0e0;">', 
-      substr(item_details$Item[i], 1, 80), 
-      ifelse(nchar(item_details$Item[i]) > 80, "...", ""),
-      '</td>',
-      '<td style="padding: 10px; text-align: center; border-bottom: 1px solid #e0e0e0; font-weight: bold;">',
-      response_text, '</td>',
-      '<td style="padding: 10px; border-bottom: 1px solid #e0e0e0; color: #666;">',
-      item_details$Category[i], '</td>',
-      '</tr>'
-    )
-  }
-  
-  html <- paste0(html,
-    '</table>',
-    '</div>',
-    
-    # Add JavaScript for PDF download and styles
-    '<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>',
-    '<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>',
-    '<script>',
-    'window.downloadReport = function() {',
-    '  console.log("Starting PDF download...");',
-    '  const element = document.getElementById("report-content");',
-    '  if (!element) {',
-    '    console.error("Report content element not found");',
-    '    alert("Fehler: Report-Inhalt nicht gefunden");',
-    '    return;',
-    '  }',
-    '  ',
-    '  // Check if libraries are loaded',
-    '  if (typeof html2canvas === "undefined" || typeof window.jspdf === "undefined") {',
-    '    console.error("PDF libraries not loaded");',
-    '    alert("PDF-Bibliotheken werden geladen, bitte versuchen Sie es in einem Moment erneut.");',
-    '    return;',
-    '  }',
-    '  ',
-    '  // Show loading indicator',
-    '  const downloadBtn = document.getElementById("downloadLink");',
-    '  const originalText = downloadBtn ? downloadBtn.innerText : "";',
-    '  if (downloadBtn) {',
-    '    downloadBtn.innerText = "PDF wird erstellt...";',
-    '    downloadBtn.style.opacity = "0.6";',
-    '    downloadBtn.style.pointerEvents = "none";',
-    '  }',
-    '  ',
-    '  // Use html2canvas and jsPDF for PDF generation',
-    '  html2canvas(element, {',
-    '    scale: 2,',
-    '    useCORS: true,',
-    '    logging: false,',
-    '    backgroundColor: "#ffffff"',
-    '  }).then(function(canvas) {',
-    '    try {',
-    '      const imgData = canvas.toDataURL("image/png");',
-    '      const { jsPDF } = window.jspdf;',
-    '      const pdf = new jsPDF("p", "mm", "a4");',
-    '      const imgWidth = 190;  // Leave margins',
-    '      const pageHeight = 277; // A4 height minus margins',
-    '      const imgHeight = (canvas.height * imgWidth) / canvas.width;',
-    '      let heightLeft = imgHeight;',
-    '      let position = 10; // Top margin',
-    '      ',
-    '      // Add first page',
-    '      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);',
-    '      heightLeft -= pageHeight;',
-    '      ',
-    '      // Add additional pages if needed',
-    '      while (heightLeft > 0) {',
-    '        position = heightLeft - imgHeight + 10;',
-    '        pdf.addPage();',
-    '        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);',
-    '        heightLeft -= pageHeight;',
-    '      }',
-    '      ',
-    '      // Save the PDF',
-    '      pdf.save("HilFo_Studie_Ergebnisse_', format(Sys.Date(), "%Y%m%d"), '.pdf");',
-    '      console.log("PDF saved successfully");',
-    '      ',
-    '      // Restore button',
-    '      if (downloadBtn) {',
-    '        downloadBtn.innerText = originalText;',
-    '        downloadBtn.style.opacity = "1";',
-    '        downloadBtn.style.pointerEvents = "auto";',
-    '      }',
-    '    } catch (error) {',
-    '      console.error("Error creating PDF:", error);',
-    '      alert("Fehler beim Erstellen der PDF: " + error.message);',
-    '      // Restore button on error',
-    '      if (downloadBtn) {',
-    '        downloadBtn.innerText = originalText;',
-    '        downloadBtn.style.opacity = "1";',
-    '        downloadBtn.style.pointerEvents = "auto";',
-    '      }',
-    '    }',
-    '  }).catch(function(error) {',
-    '    console.error("Error capturing content:", error);',
-    '    alert("Fehler beim Erfassen des Inhalts: " + error.message);',
-    '    // Restore button on error',
-    '    if (downloadBtn) {',
-    '      downloadBtn.innerText = originalText;',
-    '      downloadBtn.style.opacity = "1";',
-    '      downloadBtn.style.pointerEvents = "auto";',
-    '    }',
-    '  });',
-    '};',
-    '',
-    '// Ensure libraries are loaded before enabling the button',
-    'document.addEventListener("DOMContentLoaded", function() {',
-    '  setTimeout(function() {',
-    '    if (typeof html2canvas !== "undefined" && typeof window.jspdf !== "undefined") {',
-    '      console.log("PDF libraries loaded successfully");',
-    '    } else {',
-    '      console.warn("PDF libraries not fully loaded, retrying...");',
-    '      // Try loading again',
-    '      if (typeof html2canvas === "undefined") {',
-    '        const script1 = document.createElement("script");',
-    '        script1.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";',
-    '        document.head.appendChild(script1);',
-    '      }',
-    '      if (typeof window.jspdf === "undefined") {',
-    '        const script2 = document.createElement("script");',
-    '        script2.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";',
-    '        document.head.appendChild(script2);',
-    '      }',
-    '    }',
-    '  }, 1000);',
-    '});',
-    '</script>',
+
     
     # Add beautiful styles for the report
     '<style>',
     'body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }',
     '#report-content { background: #f8f9fa; }',
-    '#downloadLink:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }',
     'table { border-collapse: collapse; width: 100%; }',
     'table tr:hover { background: #f5f5f5; }',
     'h1, h2 { font-family: "Segoe UI", sans-serif; }',
     '.report-section { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 25px; }',
     '@media print {',
-    '  #downloadLink { display: none !important; }',
     '  body { font-size: 11pt; }',
     '  h1, h2 { color: #e8041c !important; -webkit-print-color-adjust: exact; }',
     '}',
