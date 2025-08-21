@@ -2429,7 +2429,10 @@ launch_study <- function(
       if (rv$stage == "custom_page_flow" && rv$current_page < rv$total_pages) {
         # Validate current page before progression
         if (exists("validate_page_progression")) {
-          validation <- validate_page_progression(rv$current_page, input, config)
+          # Pass item_bank in config for validation
+          config_with_items <- config
+          config_with_items$item_bank <- item_bank
+          validation <- validate_page_progression(rv$current_page, input, config_with_items)
           if (!validation$valid) {
             # Show error messages
             output$validation_errors <- shiny::renderUI({
@@ -2495,7 +2498,10 @@ launch_study <- function(
       if (rv$stage == "custom_page_flow") {
         # Validate final page before submission
         if (exists("validate_page_progression")) {
-          validation <- validate_page_progression(rv$current_page, input, config)
+          # Pass item_bank in config for validation
+          config_with_items <- config
+          config_with_items$item_bank <- item_bank
+          validation <- validate_page_progression(rv$current_page, input, config_with_items)
           if (!validation$valid) {
             output$validation_errors <- shiny::renderUI({
               show_validation_errors(validation$errors)

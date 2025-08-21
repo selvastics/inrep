@@ -38,16 +38,24 @@ validate_page_progression <- function(current_page, input, config) {
     }
   } else if (page$type == "items") {
     # Check all items have responses
-    if (!is.null(page$item_indices) && !is.null(config$item_bank)) {
-      for (i in page$item_indices) {
-        # Get the actual item from the item bank
-        if (i <= nrow(config$item_bank)) {
-          item <- config$item_bank[i, ]
-          # Use the item's id field if available, otherwise use index
-          item_id <- paste0("item_", item$id %||% i)
-          if (is.null(input[[item_id]]) || input[[item_id]] == "") {
-            errors <- c(errors, paste0("Bitte beantworten Sie alle Fragen auf dieser Seite."))
-            break  # Only show one error for items
+    if (!is.null(page$item_indices)) {
+      # Try to get item_bank from config or parent environment
+      item_bank <- config$item_bank
+      if (is.null(item_bank) && exists("item_bank", envir = parent.frame())) {
+        item_bank <- get("item_bank", envir = parent.frame())
+      }
+      
+      if (!is.null(item_bank)) {
+        for (i in page$item_indices) {
+          # Get the actual item from the item bank
+          if (i <= nrow(item_bank)) {
+            item <- item_bank[i, ]
+            # Use the item's id field if available, otherwise use index
+            item_id <- paste0("item_", item$id %||% i)
+            if (is.null(input[[item_id]]) || input[[item_id]] == "") {
+              errors <- c(errors, paste0("Bitte beantworten Sie alle Fragen auf dieser Seite."))
+              break  # Only show one error for items
+            }
           }
         }
       }
