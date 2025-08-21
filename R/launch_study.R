@@ -1227,8 +1227,62 @@ launch_study <- function(
     shinyjs::useShinyjs(),
     shiny::tags$head(
       shiny::tags$style(type = "text/css", enhanced_css),
+      shiny::tags$style(HTML("
+        .loading-screen {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 9999;
+          transition: opacity 0.5s ease-out;
+        }
+        .loading-content {
+          text-align: center;
+          color: white;
+        }
+        .loading-spinner {
+          width: 60px;
+          height: 60px;
+          border: 4px solid rgba(255,255,255,0.3);
+          border-top: 4px solid white;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin: 0 auto 20px;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .loading-text {
+          font-size: 24px;
+          font-weight: 300;
+          margin-bottom: 10px;
+        }
+        .loading-subtext {
+          font-size: 14px;
+          opacity: 0.8;
+        }
+      ")),
       shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
-      shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet")
+      shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet"),
+      # Include Plotly for interactive plots
+      shiny::tags$script(src = "https://cdn.plot.ly/plotly-latest.min.js")
+    ),
+    # Loading screen
+    shiny::div(
+      id = "loading-screen",
+      class = "loading-screen",
+      shiny::div(
+        class = "loading-content",
+        shiny::div(class = "loading-spinner"),
+        shiny::div(class = "loading-text", config$name %||% "Study Loading..."),
+        shiny::div(class = "loading-subtext", "Preparing your assessment experience")
+      )
     ),
     if (tolower(config$theme %||% "") == "hildesheim") shiny::div(class = "hildesheim-logo"),
     # Session status indicator for session saving
@@ -1251,6 +1305,8 @@ launch_study <- function(
         "custom_page_flow"
       } else if (!is.null(config$custom_study_flow) && config$enable_custom_navigation) {
         config$custom_study_flow$start_with %||% "demographics"
+      } else if (config$show_introduction) {
+        "instructions"
       } else {
         "demographics"
       },
@@ -1357,6 +1413,11 @@ launch_study <- function(
         }
       })
     }
+    
+    # Hide loading screen after initialization
+    shiny::observe({
+      shinyjs::hide(id = "loading-screen", anim = TRUE, animType = "fade", time = 0.5)
+    })
     
     # Keep-alive mechanism to prevent session timeouts (with fallback)
     if (session_save && exists("start_keep_alive_monitoring") && is.function(start_keep_alive_monitoring)) {
