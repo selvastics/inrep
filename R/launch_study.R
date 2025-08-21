@@ -1417,38 +1417,22 @@ launch_study <- function(
       })
     }
     
-    # Session monitoring with automatic data preservation
+    # Session monitoring - DEFERRED for performance
     if (session_save) {
-      # Session timeout monitoring
-      shiny::observe({
-        # DISABLED - causes page jumping
-        # shiny::invalidateLater(1000, session)
-        
-        # Check session timeout
-        if (base::difftime(base::Sys.time(), rv$session_start, units = "secs") > max_session_time) {
-          rv$session_active <- FALSE
-          rv$stage = "timeout"
-          logger("Session timed out due to maximum session time", level = "WARNING")
-          
-          # Force final data preservation
-          if (exists("preserve_session_data") && is.function(preserve_session_data)) {
-            tryCatch({
-              preserve_session_data(force = TRUE)
-            }, error = function(e) {
-              logger(sprintf("Final data preservation failed: %s", e$message), level = "WARNING")
-            })
-          }
+      # Defer session monitoring until after first page loads
+      shiny::observeEvent(rv$current_page, {
+        if (rv$current_page > 1) {
+          # Only start monitoring after user interacts
+          shiny::observeEvent(TRUE, {
+            # Check session timeout occasionally
+            if (base::difftime(base::Sys.time(), rv$session_start, units = "secs") > max_session_time) {
+              rv$session_active <- FALSE
+              rv$stage = "timeout"
+              logger("Session timed out", level = "WARNING")
+            }
+          }, once = TRUE)
         }
-        
-        # Update activity tracking
-        if (exists("update_activity") && is.function(update_activity)) {
-          tryCatch({
-            update_activity()
-          }, error = function(e) {
-            logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
-          })
-        }
-      })
+      }, once = TRUE)
       
       # Automatic data preservation - converted to event-based instead of timer-based
       # This prevents page jumping while still preserving data on important events
@@ -1472,30 +1456,27 @@ launch_study <- function(
         observe_data_preservation()
       }, ignoreInit = TRUE)
       
-          # Session status monitoring - DISABLED timer-based monitoring
-    # Session is still saved but without constant UI updates that cause page jumping
+          # Session status monitoring - SILENT for performance
+    # Session is still saved but without console output
     if (session_save) {
-      # Log once that session monitoring is active
-      if (exists("get_session_status") && is.function(get_session_status)) {
-        logger("Session monitoring active (event-based)", level = "INFO")
-      } else {
-        logger("Session monitoring active (basic mode)", level = "INFO")
-      }
-      
-      # Session status is checked on events, not on timer
-      # This prevents the page from jumping to top
+      # Session monitoring is active but silent
+      # No console logging to speed up startup
     }
     
     
-    # Keep-alive mechanism to prevent session timeouts (with fallback)
-    if (session_save && exists("start_keep_alive_monitoring") && is.function(start_keep_alive_monitoring)) {
-      tryCatch({
-        start_keep_alive_monitoring()
-        # Log once at startup, then run silently
-        logger("Keep-alive monitoring started (running silently)", level = "INFO")
-      }, error = function(e) {
-        logger(sprintf("Failed to start keep-alive monitoring: %s", e$message), level = "WARNING")
-      })
+    # Keep-alive mechanism - DEFERRED for performance
+    if (session_save) {
+      # Start keep-alive only after user interaction
+      shiny::observeEvent(input$next_btn, {
+        if (exists("start_keep_alive_monitoring") && is.function(start_keep_alive_monitoring)) {
+          tryCatch({
+            start_keep_alive_monitoring()
+            logger("Keep-alive monitoring started", level = "DEBUG")
+          }, error = function(e) {
+            logger(sprintf("Keep-alive monitoring unavailable: %s", e$message), level = "DEBUG")
+          })
+        }
+      }, once = TRUE)
     }
     
     # Session status UI (hidden by default - only shows when explicitly enabled)
