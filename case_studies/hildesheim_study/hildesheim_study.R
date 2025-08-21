@@ -576,6 +576,20 @@ cat("  Columns:", paste(names(all_items), collapse=", "), "\n")
 cat("  Has Question column:", "Question" %in% names(all_items), "\n")
 cat("  Has ResponseCategories:", "ResponseCategories" %in% names(all_items), "\n")
 
+# Check demographic configs
+cat("\n✓ Demographic Configs:\n")
+cat("  Configs provided:", !is.null(study_config$demographic_configs), "\n")
+if (!is.null(study_config$demographic_configs)) {
+    cat("  Number of configs:", length(study_config$demographic_configs), "\n")
+    # Show first demographic as example
+    first_demo <- study_config$demographic_configs[[1]]
+    cat("  Example (", names(study_config$demographic_configs)[1], "):\n")
+    cat("    Question:", substr(first_demo$question, 1, 50), "...\n")
+    if (!is.null(first_demo$options)) {
+        cat("    Options:", length(first_demo$options), "choices\n")
+    }
+}
+
 cat("\n=============================================================================\n")
 cat("LAUNCHING STUDY...\n")
 cat("=============================================================================\n\n")

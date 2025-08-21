@@ -1608,10 +1608,36 @@ launch_study <- function(
                      )
                    },
                    "instructions" = {
+                     # Use custom instructions if provided, otherwise use default labels
+                     instructions_content <- if (!base::is.null(config$instructions)) {
+                       shiny::tagList(
+                         if (!base::is.null(config$instructions$welcome)) {
+                           shiny::h3(config$instructions$welcome, class = "card-header")
+                         } else {
+                           shiny::h3(ui_labels$instructions_title, class = "card-header")
+                         },
+                         if (!base::is.null(config$instructions$purpose)) {
+                           shiny::HTML(paste0("<div class='welcome-text'>", config$instructions$purpose, "</div>"))
+                         } else {
+                           shiny::p(ui_labels$instructions_text, class = "welcome-text")
+                         },
+                         if (!base::is.null(config$instructions$duration)) {
+                           shiny::p(config$instructions$duration, class = "welcome-text")
+                         },
+                         if (!base::is.null(config$instructions$structure)) {
+                           shiny::HTML(paste0("<div class='welcome-text'>", config$instructions$structure, "</div>"))
+                         }
+                       )
+                     } else {
+                       shiny::tagList(
+                         shiny::h3(ui_labels$instructions_title, class = "card-header"),
+                         shiny::p(ui_labels$instructions_text, class = "welcome-text"),
+                         shiny::p("The assessment will adapt based on your responses.", class = "welcome-text")
+                       )
+                     }
+                     
                      shiny::div(class = "assessment-card",
-                                shiny::h3(ui_labels$instructions_title, class = "card-header"),
-                                shiny::p(ui_labels$instructions_text, class = "welcome-text"),
-                                shiny::p("The assessment will adapt based on your responses.", class = "welcome-text"),
+                                instructions_content,
                                 shiny::div(class = "nav-buttons",
                                            shiny::actionButton("begin_test", ui_labels$begin_button, class = "btn-klee")
                                 )
@@ -2378,6 +2404,27 @@ launch_study <- function(
       
       rv$stage <- "assessment"  # Fixed: was "test", now "assessment"
       rv$start_time <- base::Sys.time()
+      
+      # Initialize item selection for assessment stage
+      if (!config$adaptive) {
+        # For non-adaptive mode, start with first item
+        if (!base::is.null(config$fixed_items)) {
+          rv$current_item <- config$fixed_items[1]
+        } else {
+          rv$current_item <- 1
+        }
+        logger(sprintf("Non-adaptive mode: Starting with item %s", rv$current_item))
+      } else {
+        # For adaptive mode, select first item
+        first_item <- inrep::select_next_item(
+          administered = base::integer(0),
+          responses = base::numeric(0),
+          item_bank = item_bank,
+          config = config
+        )
+        rv$current_item <- first_item
+        logger(sprintf("Adaptive mode: Starting with item %s", first_item))
+      }
     })
     
     # CUSTOM STUDY FLOW NAVIGATION - NEW
