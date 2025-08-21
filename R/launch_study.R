@@ -1052,7 +1052,28 @@ launch_study <- function(
     }
     
     .btn-klee:hover {
-      background-color: var(--secondary-color);
+      background-color: var(--button-hover-color, var(--secondary-color));
+    }
+    
+    /* Override Bootstrap button colors for Hildesheim theme */
+    .btn-primary {
+      background-color: var(--primary-color) !important;
+      border-color: var(--primary-color) !important;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--button-hover-color, var(--secondary-color)) !important;
+      border-color: var(--button-hover-color, var(--secondary-color)) !important;
+    }
+    
+    .btn-success {
+      background-color: var(--success-color, var(--primary-color)) !important;
+      border-color: var(--success-color, var(--primary-color)) !important;
+    }
+    
+    .btn-secondary {
+      background-color: #6c757d !important;
+      border-color: #6c757d !important;
     }
     
     .test-question {
@@ -1191,18 +1212,18 @@ launch_study <- function(
       margin: 10px 0;
       cursor: pointer;
       padding: 12px;
-      padding-left: 12px !important;  /* Ensure consistent left padding */
+      padding-left: 40px !important;  /* More space for radio button */
       border-radius: var(--border-radius);
       transition: background-color 0.2s;
       border: 1px solid var(--secondary-color);
       background-color: rgba(var(--secondary-color), 0.05);
-      text-align: left;  /* Ensure text alignment */
+      text-align: left;
+      position: relative;  /* For absolute positioning of radio */
     }
     
-    /* Fix first label alignment issue */
-    .shiny-input-radiogroup label:first-child {
+    /* Fix all labels to have same alignment */
+    .shiny-input-radiogroup label {
       margin-left: 0 !important;
-      padding-left: 12px !important;
     }
     
     .shiny-input-radiogroup label:hover {
@@ -1210,9 +1231,17 @@ launch_study <- function(
     }
     
     .shiny-input-radiogroup input[type='radio'] {
-      margin-right: 10px;
-      margin-left: 0;  /* Ensure consistent left margin */
-      vertical-align: middle;  /* Align with text */
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      margin: 0;
+    }
+    
+    /* Ensure text doesn't overlap with radio button */
+    .shiny-input-radiogroup label span {
+      display: inline-block;
+      margin-left: 0;
     }
     
     .slider-container {

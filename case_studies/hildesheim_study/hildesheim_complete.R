@@ -637,7 +637,10 @@ study_config <- inrep::create_study_config(
   # Non-adaptive settings
   criteria = "RANDOM",
   fixed_items = 1:31,
-  adaptive_start = 999
+  adaptive_start = 999,
+  
+  # Pass item_bank for validation
+  item_bank = all_items
 )
 
 # =============================================================================
