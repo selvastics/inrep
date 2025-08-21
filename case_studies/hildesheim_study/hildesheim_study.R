@@ -443,7 +443,7 @@ session_uuid <- paste0("hildesheim_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 
 study_config <- inrep::create_study_config(
     # Basic info
-    name = "Hildesheim Psychologie Studie 2025",
+    name = "HilFo Studie - Hildesheimer Forschungsmethoden Studie",
     study_key = session_uuid,
     theme = "hildesheim",
     
