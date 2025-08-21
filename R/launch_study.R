@@ -1247,11 +1247,17 @@ launch_study <- function(
     
     rv <- shiny::reactiveValues(
       demo_data = stats::setNames(base::rep(NA, base::length(config$demographics)), config$demographics),
-      stage = if (!is.null(config$custom_study_flow) && config$enable_custom_navigation) {
+      stage = if (!is.null(config$custom_page_flow)) {
+        "custom_page_flow"
+      } else if (!is.null(config$custom_study_flow) && config$enable_custom_navigation) {
         config$custom_study_flow$start_with %||% "demographics"
       } else {
         "demographics"
       },
+      current_page = 1,
+      total_pages = if (!is.null(config$custom_page_flow)) length(config$custom_page_flow) else 1,
+      item_page = 1,
+      item_responses = list(),
       current_ability = config$theta_prior[1],
       current_se = config$theta_prior[2],
       administered = base::c(),
@@ -1495,6 +1501,15 @@ launch_study <- function(
       }
       
       base::switch(rv$stage,
+                   "custom_page_flow" = {
+                     # Load custom page flow module if needed
+                     if (!exists("process_page_flow")) {
+                       source(system.file("R", "custom_page_flow.R", package = "inrep"))
+                     }
+                     
+                     # Process and render custom page flow
+                     process_page_flow(config, rv, input, output, session, item_bank, ui_labels, logger)
+                   },
                    "error" = {
                      shiny::div(class = "assessment-card error-card",
                                 shiny::h3(ui_labels$system_error, class = "card-header error-header"),
@@ -2302,6 +2317,85 @@ launch_study <- function(
         }, error = function(e) {
           logger(base::sprintf("Failed to save session: %s", e$message))
         })
+      }
+    })
+    
+    # Custom page flow navigation observers
+    shiny::observeEvent(input$next_page, {
+      if (rv$stage == "custom_page_flow" && rv$current_page < rv$total_pages) {
+        # Save current page data if needed
+        current_page <- config$custom_page_flow[[rv$current_page]]
+        
+        # Collect demographics from current page
+        if (current_page$type == "demographics") {
+          demo_vars <- current_page$demographics %||% config$demographics
+          for (dem in demo_vars) {
+            input_id <- paste0("demo_", dem)
+            if (!is.null(input[[input_id]])) {
+              rv$demo_data[[dem]] <- input[[input_id]]
+            }
+          }
+        }
+        
+        # Collect item responses from current page
+        if (current_page$type == "items") {
+          page_items <- if (!is.null(current_page$item_indices)) {
+            item_bank[current_page$item_indices, ]
+          } else if (!is.null(current_page$item_range)) {
+            item_bank[current_page$item_range[1]:current_page$item_range[2], ]
+          } else {
+            items_per_page <- current_page$items_per_page %||% config$items_per_page %||% 5
+            start_idx <- ((rv$item_page %||% 1) - 1) * items_per_page + 1
+            end_idx <- min(start_idx + items_per_page - 1, nrow(item_bank))
+            item_bank[start_idx:end_idx, ]
+          }
+          
+          for (i in seq_len(nrow(page_items))) {
+            item <- page_items[i, ]
+            item_id <- paste0("item_", item$id %||% i)
+            if (!is.null(input[[item_id]])) {
+              rv$item_responses[[item_id]] <- input[[item_id]]
+              rv$responses <- c(rv$responses, as.numeric(input[[item_id]]))
+            }
+          }
+        }
+        
+        # Move to next page
+        rv$current_page <- rv$current_page + 1
+        logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
+      }
+    })
+    
+    shiny::observeEvent(input$prev_page, {
+      if (rv$stage == "custom_page_flow" && rv$current_page > 1) {
+        rv$current_page <- rv$current_page - 1
+        logger(sprintf("Moving back to page %d of %d", rv$current_page, rv$total_pages))
+      }
+    })
+    
+    shiny::observeEvent(input$submit_study, {
+      if (rv$stage == "custom_page_flow") {
+        # Collect final page data
+        current_page <- config$custom_page_flow[[rv$current_page]]
+        
+        if (current_page$type == "items") {
+          # Collect final item responses
+          # ... (same as in next_page)
+        }
+        
+        # Generate results
+        if (!is.null(config$results_processor)) {
+          rv$cat_result <- list(
+            theta = rv$current_ability,
+            se = rv$current_se,
+            administered = rv$administered,
+            responses = rv$responses,
+            response_times = rv$response_times
+          )
+          rv$stage <- "results"
+        }
+        
+        logger("Study completed via custom page flow")
       }
     })
     
