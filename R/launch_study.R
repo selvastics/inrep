@@ -1234,7 +1234,7 @@ launch_study <- function(
           left: 0;
           width: 100%;
           height: 100%;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: #ffffff;
           display: flex !important;
           justify-content: center;
           align-items: center;
@@ -1244,7 +1244,6 @@ launch_study <- function(
         }
         .loading-content {
           text-align: center;
-          color: white;
           animation: fadeIn 0.5s ease-in;
         }
         @keyframes fadeIn {
@@ -1252,47 +1251,19 @@ launch_study <- function(
           to { opacity: 1; transform: translateY(0); }
         }
         .loading-spinner {
-          width: 60px;
-          height: 60px;
-          border: 4px solid rgba(255,255,255,0.3);
-          border-top: 4px solid white;
+          width: 40px;
+          height: 40px;
+          border: 3px solid #e0e0e0;
+          border-top: 3px solid #333333;
           border-radius: 50%;
-          animation: spin 1s linear infinite;
-          margin: 0 auto 20px;
+          animation: spin 0.8s linear infinite;
+          margin: 0 auto;
         }
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
-        .loading-text {
-          font-size: 24px;
-          font-weight: 300;
-          margin-bottom: 10px;
-          text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        .loading-subtext {
-          font-size: 14px;
-          opacity: 0.9;
-        }
-        .loading-progress {
-          width: 200px;
-          height: 3px;
-          background: rgba(255,255,255,0.3);
-          border-radius: 3px;
-          margin: 20px auto 0;
-          overflow: hidden;
-        }
-        .loading-progress-bar {
-          height: 100%;
-          background: white;
-          border-radius: 3px;
-          animation: progress 2s ease-in-out infinite;
-        }
-        @keyframes progress {
-          0% { width: 0%; }
-          50% { width: 70%; }
-          100% { width: 100%; }
-        }
+        /* Text and progress bar removed for minimalistic loading */
         /* Hide main content initially */
         .container-fluid {
           opacity: 0;
@@ -1325,15 +1296,7 @@ launch_study <- function(
       style = "display: flex !important;",  # Force display initially
       shiny::div(
         class = "loading-content",
-        shiny::div(class = "loading-spinner"),
-        shiny::div(class = "loading-text", config$name %||% "Loading Study..."),
-        shiny::div(class = "loading-subtext", 
-                   if (config$language == "de") "Studie wird vorbereitet..." 
-                   else "Preparing your assessment experience"),
-        shiny::div(
-          class = "loading-progress",
-          shiny::div(class = "loading-progress-bar")
-        )
+        shiny::div(class = "loading-spinner")
       )
     ),
     if (tolower(config$theme %||% "") == "hildesheim") shiny::div(class = "hildesheim-logo"),
