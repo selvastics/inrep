@@ -237,11 +237,11 @@ input_types <- list(
 # =============================================================================
 
 custom_page_flow <- list(
-  # Page 1: Einleitungstext with consent
+  # Page 1: Einleitungstext with mandatory consent
   list(
     id = "page1",
-    type = "demographics",  # Changed to demographics to show consent checkbox
-    title = "Einleitungstext",
+    type = "custom",
+    title = "Willkommen zur HilFo Studie",
     content = paste0(
       "<div style='padding: 20px; font-size: 16px; line-height: 1.8;'>",
       "<h2 style='color: #e8041c;'>Liebe Studierende,</h2>",
@@ -257,9 +257,18 @@ custom_page_flow <- list(
       "inwieweit Sie diesen zustimmen. Es gibt keine falschen oder richtigen Antworten. ",
       "Bitte beantworten Sie die Fragen so, wie es Ihrer Meinung am ehesten entspricht.</p>",
       "<p style='margin-top: 20px;'><strong>Die Befragung dauert etwa 10-15 Minuten.</strong></p>",
+      "<hr style='margin: 30px 0; border: 1px solid #e8041c;'>",
+      "<div style='background: #f8f9fa; padding: 20px; border-radius: 8px;'>",
+      "<h3 style='color: #e8041c; margin-bottom: 15px;'>Einverständniserklärung</h3>",
+      "<label style='display: flex; align-items: center; cursor: pointer; font-size: 16px;'>",
+      "<input type='checkbox' id='consent_check' style='margin-right: 10px; width: 20px; height: 20px;' required>",
+      "<span><strong>Ich bin mit der Teilnahme an der Befragung einverstanden</strong></span>",
+      "</label>",
+      "</div>",
       "</div>"
     ),
-    demographics = c("Einverständnis")  # Include consent on the instruction page
+    validate = "function(inputs) { return document.getElementById('consent_check').checked; }",
+    required = TRUE
   ),
   
   # Page 2: Basic demographics
@@ -404,13 +413,7 @@ create_hilfo_report <- function(responses, item_bank) {
   scores$Statistik <- mean(responses[30:31], na.rm=TRUE)
   
   # Create radar plot using ggradar approach
-  # Install ggradar if not available
-  if (!requireNamespace("ggradar", quietly = TRUE)) {
-    if (!requireNamespace("devtools", quietly = TRUE)) {
-      install.packages("devtools")
-    }
-    devtools::install_github("ricardo-bion/ggradar")
-  }
+  # Check for ggradar (should be pre-installed)
   
   # Prepare data for ggradar - needs to be scaled 0-1
   radar_data <- data.frame(
