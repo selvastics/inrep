@@ -6,13 +6,13 @@ Thank you for your interest in contributing to the **inrep** package! This docum
 
 We welcome contributions from researchers, developers, and users in the psychological assessment community. There are many ways to contribute:
 
-### 🐛 Report Issues
+### Report Issues
 - **Bug reports**: Help us identify and fix problems
 - **Feature requests**: Suggest new capabilities or improvements
 - **Documentation issues**: Report unclear or missing documentation
 - **Performance problems**: Identify areas for optimization
 
-### 💻 Code Contributions
+### Code Contributions
 - **Bug fixes**: Resolve identified issues
 - **New features**: Implement requested capabilities
 - **Performance improvements**: Optimize existing code
@@ -72,7 +72,7 @@ We welcome contributions from researchers, developers, and users in the psycholo
    devtools::check()
    ```
 
-## 📋 Contribution Guidelines
+##  Contribution Guidelines
 
 ### Code Standards
 
@@ -172,7 +172,7 @@ test_that("function_name works correctly", {
 - **Best practices**: Demonstrate optimal usage patterns
 - **Troubleshooting**: Include common issues and solutions
 
-## 🔄 Contribution Workflow
+##  Contribution Workflow
 
 ### 1. Issue Discussion
 - **Search existing issues**: Check if your concern is already reported
@@ -270,7 +270,7 @@ inrep/
 - **Examples**: Maintain working, tested examples
 - **Links**: Keep external links and references current
 
-## 🚧 Common Issues and Solutions
+## Common Issues and Solutions
 
 ### R-CMD-Check Failures
 - **Missing documentation**: Ensure all exported functions are documented
@@ -344,7 +344,7 @@ inrep/
 - **Testing**: Test development and quality assurance
 - **Community support**: Helping other users and contributors
 
-## 📋 Checklist for Contributors
+## Checklist for Contributors
 
 Before submitting a contribution, please ensure:
 

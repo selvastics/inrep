@@ -1267,7 +1267,8 @@ launch_study <- function(
       # ROBUST SUBMISSION PROTECTION
       submission_in_progress = FALSE,
       submission_lock_time = NULL,
-      last_submission_time = NULL
+      last_submission_time = NULL,
+
     )
     
     if (config$session_save && base::file.exists(session_file)) {
@@ -1441,6 +1442,8 @@ launch_study <- function(
       }
     })
   }
+    
+
     
     get_item_content <- function(item_idx) {
       if (base::is.null(config$item_translations) || base::is.null(config$item_translations[[config$language]])) {
@@ -2285,6 +2288,8 @@ launch_study <- function(
       }
       
       rv$error_message <- NULL
+      
+      # Standard flow: proceed to instructions
       rv$stage <- "instructions"
       logger("Demographic data validated, proceeding to instructions stage")
     })
@@ -2309,6 +2314,8 @@ launch_study <- function(
       
       rv$stage <- "assessment"  # Fixed: was "test", now "assessment"
       rv$start_time <- base::Sys.time()
+      
+
       
       # Debug: Log the item selection process
       logger("Attempting to select next item...")
