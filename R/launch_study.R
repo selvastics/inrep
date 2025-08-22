@@ -1313,6 +1313,75 @@ launch_study <- function(
     shiny::tags$head(
       shiny::tags$style(type = "text/css", enhanced_css),
       shiny::tags$style(HTML("
+        /* Smooth page transitions */
+        .smooth-transition {
+          animation: smoothFadeIn 0.3s ease-in-out;
+          transition: all 0.3s ease-in-out;
+        }
+        
+        @keyframes smoothFadeIn {
+          from { 
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to { 
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        /* Validation highlighting for required fields */
+        .shiny-input-container.has-error input,
+        .shiny-input-container.has-error select,
+        .shiny-input-container.has-error textarea {
+          border: 2px solid #dc3545 !important;
+          background-color: #fff5f5 !important;
+          animation: shake 0.3s;
+        }
+        
+        .shiny-input-container.has-error label {
+          color: #dc3545 !important;
+          font-weight: bold;
+        }
+        
+        .shiny-input-container.has-error::after {
+          content: 'This field is required';
+          color: #dc3545;
+          font-size: 12px;
+          display: block;
+          margin-top: 5px;
+        }
+        
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
+        }
+        
+        /* Smooth validation error messages */
+        .validation-error {
+          animation: slideDown 0.3s ease-out;
+          background-color: #f8d7da;
+          border: 1px solid #f5c6cb;
+          border-radius: 4px;
+          color: #721c24;
+          padding: 12px;
+          margin: 10px 0;
+        }
+        
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            max-height: 0;
+            margin: 0;
+          }
+          to {
+            opacity: 1;
+            max-height: 200px;
+            margin: 10px 0;
+          }
+        }
+        
         /* Show Shiny's natural busy indicator more prominently */
         .shiny-busy {
           position: fixed;
@@ -1637,7 +1706,11 @@ launch_study <- function(
         )
       }
       
-      base::switch(rv$stage,
+      # Wrap content in a div with fade transition
+      shiny::div(
+        class = "smooth-transition",
+        id = paste0("page-", rv$current_page),
+        base::switch(rv$stage,
                    "custom_page_flow" = {
                      # Process and render custom page flow
                      process_page_flow(config, rv, input, output, session, item_bank, ui_labels, logger)
@@ -2121,10 +2194,11 @@ launch_study <- function(
                      ))
                      
                      shiny::tagList(
-                       shiny::div(class = "assessment-card", results_content)
-                     )
-                   }
-      )
+                                             shiny::div(class = "assessment-card", results_content)
+                    )
+                  }
+        ) # End of switch
+      ) # End of smooth-transition div
     })
     
     output$theta_plot <- shiny::renderPlot({
@@ -2466,12 +2540,26 @@ launch_study <- function(
             output$validation_errors <- shiny::renderUI({
               show_validation_errors(validation$errors)
             })
+            
+            # Highlight fields with errors using JavaScript
+            if (!is.null(validation$missing_fields)) {
+              for (field in validation$missing_fields) {
+                shinyjs::runjs(sprintf("
+                  $('#%s').closest('.shiny-input-container').addClass('has-error');
+                  $('#%s').focus();
+                ", field, field))
+              }
+            }
+            
             return()  # Don't proceed if validation fails
           }
         }
         
         # Clear any previous validation errors
         output$validation_errors <- shiny::renderUI({ NULL })
+        
+        # Clear error highlighting from all fields
+        shinyjs::runjs("$('.has-error').removeClass('has-error');")
         
         # Save current page data
         current_page <- config$custom_page_flow[[rv$current_page]]
@@ -2510,15 +2598,27 @@ launch_study <- function(
         }
         
         # Move to next page
-        rv$current_page <- rv$current_page + 1
-        logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
+        # Smooth transition to next page
+        shinyjs::runjs("$('.smooth-transition').fadeOut(150);")
+        shinyjs::delay(150, {
+          rv$current_page <- rv$current_page + 1
+          logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
+        })
       }
     })
     
     shiny::observeEvent(input$prev_page, {
       if (rv$stage == "custom_page_flow" && rv$current_page > 1) {
-        rv$current_page <- rv$current_page - 1
-        logger(sprintf("Moving back to page %d of %d", rv$current_page, rv$total_pages))
+        # Clear any validation errors when going back
+        output$validation_errors <- shiny::renderUI({ NULL })
+        shinyjs::runjs("$('.has-error').removeClass('has-error');")
+        
+        # Smooth transition to previous page
+        shinyjs::runjs("$('.smooth-transition').fadeOut(150);")
+        shinyjs::delay(150, {
+          rv$current_page <- rv$current_page - 1
+          logger(sprintf("Moving back to page %d of %d", rv$current_page, rv$total_pages))
+        })
       }
     })
     

@@ -10,6 +10,7 @@ validate_page_progression <- function(current_page, input, config) {
   if (is.null(page)) return(list(valid = TRUE))
   
   errors <- character()
+  missing_fields <- character()
   
   # Check based on page type
   if (page$type == "instructions" && isTRUE(page$consent)) {
@@ -33,6 +34,7 @@ validate_page_progression <- function(current_page, input, config) {
             question <- paste0(substr(question, 1, 47), "...")
           }
           errors <- c(errors, paste0("Bitte beantworten Sie: ", question))
+          missing_fields <- c(missing_fields, input_id)
         }
       }
     }
@@ -54,7 +56,8 @@ validate_page_progression <- function(current_page, input, config) {
             item_id <- paste0("item_", item$id %||% i)
             if (is.null(input[[item_id]]) || input[[item_id]] == "") {
               errors <- c(errors, paste0("Bitte beantworten Sie alle Fragen auf dieser Seite."))
-              break  # Only show one error for items
+              missing_fields <- c(missing_fields, item_id)
+              # Don't break, collect all missing fields for highlighting
             }
           }
         }
@@ -64,7 +67,8 @@ validate_page_progression <- function(current_page, input, config) {
   
   return(list(
     valid = length(errors) == 0,
-    errors = errors
+    errors = errors,
+    missing_fields = missing_fields
   ))
 }
 
@@ -125,10 +129,10 @@ show_validation_errors <- function(errors) {
   if (length(errors) == 0) return(NULL)
   
   shiny::div(
-    class = "alert alert-danger",
-    style = "margin: 20px; padding: 15px; border-radius: 5px;",
-    shiny::h4(shiny::icon("exclamation-triangle"), " Bitte vervollständigen Sie Ihre Angaben:"),
+    class = "validation-error",
+    shiny::h4("Please complete the following:"),
     shiny::tags$ul(
+      style = "margin: 10px 0; padding-left: 20px;",
       lapply(errors, function(e) shiny::tags$li(e))
     )
   )
