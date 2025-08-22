@@ -635,11 +635,11 @@ create_hilfo_report <- function(responses, item_bank) {
   
   # Big Five dimensions - each has 4 items
   bfi_dims <- list(
-    Extraversion = c(bfi_responses[c(1, 6, 11, 16)]),
-    Vertraeglichkeit = c(bfi_responses[c(2, 7, 12, 17)]),
-    Gewissenhaftigkeit = c(bfi_responses[c(3, 8, 13, 18)]),
-    Neurotizismus = c(bfi_responses[c(4, 9, 14, 19)]),
-    Offenheit = c(bfi_responses[c(5, 10, 15, 20)])
+    Extraversion = c(responses[c(1, 6, 11, 16)]),
+    Vertraeglichkeit = c(responses[c(2, 7, 12, 17)]),
+    Gewissenhaftigkeit = c(responses[c(3, 8, 13, 18)]),
+    Neurotizismus = c(responses[c(4, 9, 14, 19)]),
+    Offenheit = c(responses[c(5, 10, 15, 20)])
   )
   
   for (dim_name in names(bfi_dims)) {
