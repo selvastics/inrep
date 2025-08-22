@@ -1316,13 +1316,7 @@ launch_study <- function(
             float: none !important;
           }
           
-          /* Page visibility - ensure visible by default */
-          .page-wrapper {
-            opacity: 1 !important;
-            visibility: visible !important;
-            display: block !important;
-          }
-          
+
 
           
           /* Prevent absolute positioning except for specific elements */
@@ -1548,14 +1542,7 @@ launch_study <- function(
           -webkit-text-size-adjust: 100% !important;
         }
         
-        /* Critical: Hide content until properly positioned */
-        .page-wrapper:not([data-positioned]) {
-          visibility: hidden !important;
-        }
-        
-        .page-wrapper {
-          visibility: visible !important;
-        }
+
         
                             /* Override any theme-specific positioning */
           .container, .container-fluid, .row, .col, .card, .assessment-card,
@@ -1881,13 +1868,11 @@ launch_study <- function(
           .load_packages_once()
         }
         
-        # Create the main container structure - always centered with inline styles
+        # Create the main container
         shiny::div(
           id = "main-study-container",
-          style = "min-height: 600px !important; width: 100% !important; max-width: 1200px !important; margin: 0 auto !important; position: relative !important; overflow: hidden !important; display: flex !important; justify-content: center !important; left: auto !important; right: auto !important; top: auto !important; bottom: auto !important;",
-          shiny::uiOutput("page_content", 
-            style = "width: 100% !important; display: flex !important; justify-content: center !important; position: relative !important; margin: 0 auto !important;"
-          )
+          style = "min-height: 500px; width: 100%; max-width: 1200px; margin: 0 auto;",
+          shiny::uiOutput("page_content")
         )
       })
       
@@ -1908,26 +1893,11 @@ launch_study <- function(
           )
         }
         
-        # Wrapper with smart fade control
-        shiny::tagList(
-          
-          # Simple JavaScript to ensure visibility
-          shiny::tags$script(HTML(sprintf("
-            setTimeout(function() {
-              var elem = document.getElementById('page-%d');
-              if (elem) {
-                elem.style.opacity = '1';
-                elem.style.display = 'block';
-                elem.style.visibility = 'visible';
-              }
-            }, 10);
-          ", current_page))),
-          
-          shiny::div(
-            id = paste0("page-", current_page),
-            class = "page-wrapper",
-            # Start visible
-            style = "width: 100% !important; max-width: 1200px !important; margin: 0 auto !important; display: block !important; position: relative !important; left: auto !important; right: auto !important; top: 0 !important; bottom: auto !important; transform: none !important; float: none !important; opacity: 1;",
+        # Simple wrapper - no animations
+        shiny::div(
+          id = paste0("page-", current_page),
+          class = "page-wrapper",
+          style = "width: 100%; max-width: 1200px; margin: 0 auto;",
           base::switch(stage,
                    "custom_page_flow" = {
                      # Process and render custom page flow
@@ -2417,7 +2387,6 @@ launch_study <- function(
                   }
           ) # End of switch
         ) # End of page-wrapper div
-        ) # End of tagList
       })
     
     output$theta_plot <- shiny::renderPlot({
