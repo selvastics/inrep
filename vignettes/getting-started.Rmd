@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 library(inrep)
 ```
 
-# Welcome to inrep!
+# Welcome to inrep
 
 The **inrep** package is a comprehensive framework for creating and administering adaptive assessments using Item Response Theory (IRT) models. Whether you're an educator, researcher, or assessment professional, inrep provides the tools you need to create sophisticated adaptive tests with minimal effort.
 
@@ -312,4 +312,4 @@ clinical_config <- create_study_config(
 - **Vignettes**: `vignette(package = "inrep")`
 - **Issues**: Report bugs on GitHub
 
-Welcome to the world of adaptive testing with inrep! Let's get you started with your first adaptive assessment.
+Welcome to adaptive testing with inrep. Let's get you started with your first adaptive assessment.

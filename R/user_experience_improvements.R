@@ -31,7 +31,7 @@ initialize_ux_enhancements <- function(
   )
   
   if (beginner_mode) {
-    message("Welcome to inrep! Beginner mode enabled.")
+    message("Welcome to inrep. Beginner mode enabled.")
     message("You'll receive extra guidance throughout the process.")
     message("To disable, set beginner_mode = FALSE")
   }

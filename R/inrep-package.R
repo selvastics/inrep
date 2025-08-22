@@ -37,8 +37,8 @@
 #'
 #' @section Enhanced LLM Assistance:
 #'
-#' The package includes a sophisticated LLM assistance system that implements 
-#' Anthropic's Claude 4 best practices for prompt engineering:
+#' The package includes a consultation assistance system that implements 
+#' best practices for prompt generation:
 #'
 #' - **`enable_llm_assistance()`**: Enable and configure the enhanced LLM assistance system
 #' - **`enable_llm_assistance()`**: Enable and configure the enhanced LLM assistance system
