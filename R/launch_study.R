@@ -1002,14 +1002,35 @@ launch_study <- function(
       font-family: var(--font-family);
       color: var(--text-color);
       background-color: var(--background-color);
-      margin: 0;
-      padding: 20px;
+      margin: 0 !important;
+      padding: 0 !important;
       line-height: 1.6;
     }
     
+    /* Remove ALL white space on sides */
+    * {
+      box-sizing: border-box;
+    }
+    
+    #main-study-container,
+    .container,
+    .container-fluid {
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    
+    /* Add padding only to content cards */
+    .assessment-card {
+      margin: 20px !important;
+      padding: 30px !important;
+    }
+    
     .container-fluid { 
-      max-width: 800px; 
-      margin: 0 auto;
+      width: 100%;
+      max-width: 100%;
+      margin: 0;
       overflow-x: hidden;
       min-height: 100vh;
     }
@@ -1641,8 +1662,9 @@ launch_study <- function(
             /* Landscape phones */
             .assessment-card {
               padding: 20px !important;
-              max-width: 540px !important;
-              margin: 15px auto !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              margin: 0 !important;
             }
             
             .btn-klee {
@@ -1650,8 +1672,10 @@ launch_study <- function(
             }
             
             .container-fluid {
-              max-width: 540px !important;
-              margin: 0 auto !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              margin: 0 !important;
+              padding: 15px !important;
             }
           }
           
@@ -1659,14 +1683,16 @@ launch_study <- function(
             /* Tablets */
             .assessment-card {
               padding: 25px !important;
-              max-width: 720px !important;
-              margin: 20px auto !important;
+              width: calc(100% - 40px) !important;
+              max-width: 100% !important;
+              margin: 20px !important;
             }
             
             .container-fluid {
-              max-width: 750px !important;
-              margin: 0 auto !important;
-              padding: 0 15px !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              margin: 0 !important;
+              padding: 0 !important;
             }
             
             .nav-buttons {
@@ -1680,13 +1706,16 @@ launch_study <- function(
             /* Desktop */
             .assessment-card {
               padding: 30px !important;
+              width: calc(100% - 50px) !important;
               max-width: 960px !important;
               margin: 25px auto !important;
             }
             
             .container-fluid {
-              max-width: 970px !important;
-              margin: 0 auto !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              margin: 0 !important;
+              padding: 0 !important;
             }
           }
           
@@ -1694,29 +1723,48 @@ launch_study <- function(
             /* Large desktop */
             .assessment-card {
               padding: 35px !important;
+              width: calc(100% - 60px) !important;
               max-width: 1140px !important;
               margin: 30px auto !important;
             }
             
             .container-fluid {
-              max-width: 1170px !important;
-              margin: 0 auto !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              margin: 0 !important;
+              padding: 0 !important;
             }
           }
           
-          /* Flexible containers */
+          /* Flexible containers - FIXED LEFT ALIGNMENT */
           .container-fluid {
             width: 100% !important;
-            padding-right: 15px !important;
-            padding-left: 15px !important;
-            margin-right: auto !important;
-            margin-left: auto !important;
+            padding: 0 !important;
+            margin: 0 !important;
             box-sizing: border-box !important;
           }
           
           .assessment-card {
             width: 100% !important;
             box-sizing: border-box !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+          }
+          
+          /* Remove all left margins and padding */
+          #main-study-container {
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          
+          .page-wrapper {
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          
+          #page_content {
+            padding: 0 !important;
+            margin: 0 !important;
           }
           
           /* Responsive form elements */
