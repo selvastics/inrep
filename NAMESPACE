@@ -35,6 +35,7 @@ export(simulate_item_bank)
 export(validate_demographic_config)
 export(validate_item_bank)
 export(validate_response_mapping)
+export(validate_study_config)
 export(validate_response_report)
 export(validate_session)
 

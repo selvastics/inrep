@@ -408,14 +408,27 @@ create_profile_plot <- function(dimension_scores) {
     Score = scores
   )
   
+  # Enhanced plot with larger labels and better styling
   p <- ggplot(plot_data, aes(x = reorder(Dimension, Score), y = Score)) +
-    geom_bar(stat = "identity", fill = "steelblue", alpha = 0.7) +
-    geom_text(aes(label = sprintf("%.2f", Score)), vjust = -0.5) +
+    geom_bar(stat = "identity", fill = "steelblue", alpha = 0.7, width = 0.8) +
+    # Larger value labels with better formatting
+    geom_text(aes(label = sprintf("%.2f", Score)), 
+              vjust = -0.5, size = 6, fontface = "bold", color = "#333") +
     labs(title = "Big Five Personality Profile",
          x = "Dimension",
          y = "Score") +
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    # Use larger base theme
+    theme_minimal(base_size = 14) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, size = 12, face = "bold"),
+      axis.text.y = element_text(size = 12),
+      axis.title = element_text(size = 14, face = "bold"),
+      plot.title = element_text(size = 20, face = "bold", hjust = 0.5, 
+                                color = "steelblue", margin = margin(b = 20)),
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor = element_blank(),
+      plot.margin = margin(20, 20, 20, 20)
+    )
   
   return(p)
 }
@@ -427,21 +440,55 @@ create_radar_plot <- function(dimension_scores) {
   
   if (length(scores) == 0) return(NULL)
   
-  # Normalize scores to 0-1 range for radar plot
-  normalized_scores <- (scores - min(scores)) / (max(scores) - min(scores))
-  
+  # Keep original scale for better interpretation
   plot_data <- data.frame(
-    Dimension = names(scores),
-    Score = normalized_scores
+    Dimension = factor(names(scores), levels = names(scores)),
+    Score = scores
   )
   
-  # Create radar plot (simplified)
-  p <- ggplot(plot_data, aes(x = Dimension, y = Score)) +
-    geom_polygon(fill = "steelblue", alpha = 0.3) +
-    geom_point(size = 3, color = "steelblue") +
-    coord_polar() +
-    labs(title = "Personality Radar Plot") +
-    theme_minimal()
+  # Add first point at end to close polygon properly
+  plot_data_closed <- rbind(plot_data, plot_data[1,])
+  
+  # Create improved radar plot with smooth connections
+  p <- ggplot(plot_data_closed, aes(x = Dimension, y = Score, group = 1)) +
+    # Add circular grid lines
+    geom_hline(yintercept = seq(floor(min(scores)), ceiling(max(scores)), by = 0.5), 
+               color = "gray85", size = 0.3, linetype = "dashed") +
+    # Add radial grid lines
+    geom_vline(xintercept = 1:length(unique(plot_data$Dimension)), 
+               color = "gray85", size = 0.3) +
+    # Add filled polygon
+    geom_polygon(fill = "steelblue", alpha = 0.15) +
+    # Add polygon outline with smooth connections
+    geom_path(color = "steelblue", size = 2, lineend = "round", linejoin = "round") +
+    # Add points at vertices
+    geom_point(data = plot_data, aes(x = Dimension, y = Score), 
+               color = "steelblue", size = 6, shape = 19) +
+    # Add white center to points
+    geom_point(data = plot_data, aes(x = Dimension, y = Score), 
+               color = "white", size = 3, shape = 19) +
+    # Add value labels
+    geom_label(data = plot_data, aes(label = sprintf("%.2f", Score)), 
+               vjust = -1.8, size = 5, color = "steelblue", 
+               fill = "white", label.size = 0.3, fontface = "bold") +
+    # Convert to polar coordinates
+    coord_polar(start = -pi/10) +
+    # Theme customization
+    theme_minimal(base_size = 14) +
+    theme(
+      text = element_text(size = 14),
+      axis.text.x = element_text(size = 14, face = "bold", color = "#333"),
+      axis.text.y = element_text(size = 10, color = "gray60"),
+      axis.title = element_blank(),
+      plot.title = element_text(size = 20, face = "bold", hjust = 0.5, 
+                                color = "steelblue", margin = margin(b = 20)),
+      panel.grid.major = element_line(color = "gray90", size = 0.3),
+      panel.grid.minor = element_blank(),
+      plot.background = element_rect(fill = "white", color = NA),
+      panel.background = element_rect(fill = "white", color = NA),
+      plot.margin = margin(20, 20, 20, 20)
+    ) +
+    labs(title = "Personality Radar Plot")
   
   return(p)
 }
