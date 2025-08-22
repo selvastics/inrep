@@ -1571,8 +1571,226 @@ launch_study <- function(
           justify-content: center !important;
           align-items: flex-start !important;
         }
-      ")),
-      shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
+              ")),
+        
+        # Responsive design CSS
+        shiny::tags$style(HTML("
+          /* Responsive Layout System */
+          @media (max-width: 575px) {
+            /* Mobile phones */
+            .assessment-card {
+              padding: 15px !important;
+              margin: 10px 0 !important;
+            }
+            
+            .btn-klee, .btn-primary, .btn-secondary {
+              width: 100% !important;
+              margin: 5px 0 !important;
+              padding: 12px 20px !important;
+              font-size: 16px !important;
+            }
+            
+            .nav-buttons {
+              display: flex !important;
+              flex-direction: column !important;
+              gap: 10px !important;
+            }
+            
+            h1, .card-header {
+              font-size: 1.5rem !important;
+            }
+            
+            h2 {
+              font-size: 1.3rem !important;
+            }
+            
+            h3 {
+              font-size: 1.1rem !important;
+            }
+            
+            .container-fluid {
+              padding: 10px !important;
+            }
+            
+            .shiny-input-container {
+              margin-bottom: 15px !important;
+            }
+            
+            /* Stack radio buttons vertically on mobile */
+            .shiny-input-radiogroup .radio {
+              display: block !important;
+              margin: 10px 0 !important;
+            }
+            
+            /* Adjust text size */
+            body {
+              font-size: 14px !important;
+            }
+            
+            /* Progress indicators */
+            .progress {
+              height: 30px !important;
+            }
+            
+            .progress-text {
+              font-size: 12px !important;
+            }
+          }
+          
+          @media (min-width: 576px) and (max-width: 767px) {
+            /* Landscape phones */
+            .assessment-card {
+              padding: 20px !important;
+              max-width: 540px !important;
+              margin: 15px auto !important;
+            }
+            
+            .btn-klee {
+              min-width: 120px !important;
+            }
+            
+            .container-fluid {
+              max-width: 540px !important;
+              margin: 0 auto !important;
+            }
+          }
+          
+          @media (min-width: 768px) and (max-width: 991px) {
+            /* Tablets */
+            .assessment-card {
+              padding: 25px !important;
+              max-width: 720px !important;
+              margin: 20px auto !important;
+            }
+            
+            .container-fluid {
+              max-width: 750px !important;
+              margin: 0 auto !important;
+              padding: 0 15px !important;
+            }
+            
+            .nav-buttons {
+              display: flex !important;
+              justify-content: space-between !important;
+              gap: 15px !important;
+            }
+          }
+          
+          @media (min-width: 992px) and (max-width: 1199px) {
+            /* Desktop */
+            .assessment-card {
+              padding: 30px !important;
+              max-width: 960px !important;
+              margin: 25px auto !important;
+            }
+            
+            .container-fluid {
+              max-width: 970px !important;
+              margin: 0 auto !important;
+            }
+          }
+          
+          @media (min-width: 1200px) {
+            /* Large desktop */
+            .assessment-card {
+              padding: 35px !important;
+              max-width: 1140px !important;
+              margin: 30px auto !important;
+            }
+            
+            .container-fluid {
+              max-width: 1170px !important;
+              margin: 0 auto !important;
+            }
+          }
+          
+          /* Flexible containers */
+          .container-fluid {
+            width: 100% !important;
+            padding-right: 15px !important;
+            padding-left: 15px !important;
+            margin-right: auto !important;
+            margin-left: auto !important;
+            box-sizing: border-box !important;
+          }
+          
+          .assessment-card {
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          
+          /* Responsive form elements */
+          input[type='text'],
+          input[type='number'],
+          input[type='email'],
+          select,
+          textarea {
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          
+          /* Responsive images and plots */
+          img, svg {
+            max-width: 100% !important;
+            height: auto !important;
+          }
+          
+          /* Responsive tables */
+          @media (max-width: 767px) {
+            table {
+              font-size: 12px !important;
+            }
+            
+            th, td {
+              padding: 5px !important;
+            }
+          }
+          
+          /* Viewport meta tag support */
+          body {
+            min-width: 320px !important;
+          }
+          
+          /* Prevent horizontal scroll */
+          html, body {
+            overflow-x: hidden !important;
+          }
+          
+          #main-study-container {
+            overflow-x: hidden !important;
+          }
+          
+          /* Responsive navigation */
+          .nav-buttons {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 10px !important;
+            justify-content: center !important;
+            margin-top: 20px !important;
+          }
+          
+          @media (min-width: 768px) {
+            .nav-buttons {
+              justify-content: space-between !important;
+            }
+          }
+          
+          /* Responsive progress bars */
+          .progress {
+            width: 100% !important;
+            margin: 10px 0 !important;
+          }
+          
+          /* Touch-friendly buttons */
+          @media (hover: none) {
+            .btn, button {
+              min-height: 44px !important;
+              min-width: 44px !important;
+            }
+          }
+        ")),
+        
+        shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1, maximum-scale=5"),
       shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet"),
       # Include Plotly for interactive plots
       shiny::tags$script(src = "https://cdn.plot.ly/plotly-latest.min.js"),
