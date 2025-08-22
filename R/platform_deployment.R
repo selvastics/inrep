@@ -51,7 +51,7 @@
 #' @param advanced_features List of advanced features to include:
 #' \itemize{
 #'   \item "multilingual" - Multi-language support
-#'   \item "accessibility" - Enhanced accessibility features
+#'   \item "accessibility" - Accessibility features
 #'   \item "mobile_optimized" - Mobile-responsive design
 #'   \item "real_time_monitoring" - Live study monitoring  
 #'   \item "automated_reporting" - Automated result generation
@@ -363,7 +363,7 @@
 #'\code{\link{create_study_config}}forcreatingstudyconfigurations,
 #'\code{\link{validate_item_bank}}foritembankvalidation,
 #'\code{\link{build_study_ui}}forUIcomponents,
-#'\code{\link{create_enhanced_response_report}}forresultsprocessing
+#'\code{\link{create_response_report}}forresultsprocessing
 #'
 #'@references
 #'Forofficialinrepplatformdeployment,contact:selva@uni-hildesheim.de
@@ -936,11 +936,11 @@ paste0("-**MaximumItems:**",deployment_results$study_metadata$max_items),
 paste0("-**MinimumSEM:**",deployment_results$study_metadata$min_SEM),
 "",
 "##DeploymentPackageContents",
-"-✅Applicationfiles(app.R,ui.R,server.R)",
-"-✅Studyconfigurationanditembank",
-"-✅Deploymentinstructionsanddocumentation",
-"-✅Contacttemplateforplatformteam",
-"-✅Validationreportsandqualitychecks",
+"- Application files (app.R, ui.R, server.R)",
+"- Study configuration and item bank",
+"- Deployment instructions and documentation",
+"- Contact template for platform team",
+"- Validation reports and quality checks",
 "",
 "##NextSteps",
 "1.Reviewthecontacttemplateindocs/contact_template.md",

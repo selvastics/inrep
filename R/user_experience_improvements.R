@@ -31,7 +31,7 @@ initialize_ux_enhancements <- function(
   )
   
   if (beginner_mode) {
-    message("Welcome to inrep! Beginner mode enabled.")
+    message("Welcome to inrep. Beginner mode enabled.")
     message("You'll receive extra guidance throughout the process.")
     message("To disable, set beginner_mode = FALSE")
   }
@@ -623,7 +623,7 @@ cli_rule <- function(text = "") {
   }
 }
 
-cli_check <- function() "[✓]"
+cli_check <- function() "[OK]"
 cli_cross <- function() "[✗]"
 cli_warning <- function() "[!]"
 cli_tip <- function() "[TIP]"

@@ -18,7 +18,7 @@
 
 ## Overview
 
-**inrep** provides a comprehensive framework for adaptive testing using Item Response Theory (IRT) models. The package offers web-based interfaces for test administration via Shiny, supports multiple IRT models through TAM integration, implements adaptive item selection algorithms, and includes comprehensive reporting capabilities with LLM integration for enhanced user assistance. It is designed for psychological assessments, educational testing, and survey research with large item pools.
+**inrep** provides a framework for adaptive testing using Item Response Theory (IRT) models. The package offers web-based interfaces for test administration via Shiny, supports multiple IRT models through TAM integration, implements adaptive item selection algorithms, and includes reporting capabilities. It is designed for psychological assessments, educational testing, and survey research with large item pools.
 
 <!-- Demo: See the package in action! -->
 ![inrep demo](man/figures/inrep_previewer.gif)
@@ -27,19 +27,19 @@
 
 ### Key Features
 
-- **Adaptive & Non-Adaptive Testing**: Support for multiple IRT models (1PL, 2PL, 3PL, GRM) with sophisticated item selection algorithms, plus fixed-order questionnaires
+- **Adaptive & Non-Adaptive Testing**: Support for multiple IRT models (1PL, 2PL, 3PL, GRM) with item selection algorithms, plus fixed-order questionnaires
 - **Web-based Interface**: Modern Shiny applications for test administration and data collection  
 - **TAM Integration**: All psychometric computations performed using the validated TAM package  
 - **Professional Survey Features**: 30+ question types, branching logic, randomization, piping, quota control, and participant management
 - **Enhanced Security**: Input validation, rate limiting, CSRF protection, encryption, and audit logging
 - **Multilingual Support**: Interface available in English, German, Spanish, and French with complete translations
 - **10+ Beautiful Themes**: Including Light, Professional, Ocean, Forest, Midnight, Sunset, Hildesheim, and more
-- **Comprehensive Reporting**: Multiple export formats (CSV, JSON, SPSS, PDF) with detailed analytics and visualizations  
-- **Session Recovery**: Robust session handling with automatic save and crash recovery capabilities
+- **Reporting**: Multiple export formats (CSV, JSON, SPSS, PDF) with detailed analytics and visualizations  
+- **Session Recovery**: Session handling with automatic save and crash recovery capabilities
 - **Smart Argument Validation**: Fuzzy matching for typos, case-insensitive parameters, helpful error messages
 - **Performance Optimized**: Caching, parallel processing, memory management for large-scale deployments
 - **Accessibility Options**: WCAG-compliant with colorblind-safe palettes, large text, dyslexia-friendly fonts, and high-contrast modes
-- **CRAN-Ready**: Clean code, comprehensive documentation, full test coverage
+- **CRAN-Ready**: Clean code, documentation, full test coverage
 
 ## Installation
 

@@ -364,8 +364,8 @@ generate_complete_script <- function(user_code, auto_run, console_ready = FALSE,
     # Validation and response mapping
     "validate_response_mapping",
     
-    # Enhanced reporting
-    "create_enhanced_response_report"
+    # Reporting
+    "create_response_report"
   )
   
   # Extract function definitions

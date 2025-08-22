@@ -6,12 +6,13 @@ Date: 2025-07-20
 Authors@R: person(given = "Clievins", family = "Selva", email = "selva@uni-hildesheim.de", role = c("aut", "cre"), comment = c(ORCID = "0000-0001-9980-7127"))
 Author: Clievins Selva [aut, cre] (<ORCID = "0000-0001-9980-7127">)
 Maintainer: Clievins Selva <selva@uni-hildesheim.de>
-Description: A comprehensive framework for adaptive testing using Item Response Theory (IRT) models. Provides web-based interfaces for test administration via 'Shiny', supports multiple IRT models including the Graded Response Model through 'TAM' integration, implements adaptive item selection algorithms, includes LLM integration for enhanced user assistance and study configuration, website theme scraping for automatic branding, and comprehensive reporting capabilities. Designed for psychological assessments, educational testing, and survey research with large item pools. All psychometric computations are performed by the 'TAM' package, with 'inrep' serving as a modern workflow and interface layer. Includes complete replication of 'TAM' examples with enhanced usability and professional reporting capabilities.
+Description: A framework for adaptive testing using Item Response Theory (IRT) models. Provides web-based interfaces for test administration via 'Shiny', supports multiple IRT models including the Graded Response Model through 'TAM' integration, implements adaptive item selection algorithms, includes external consultation assistance for user guidance and study configuration, website theme customization for automatic branding, and reporting capabilities. Designed for psychological assessments, educational testing, and survey research with large item pools. All psychometric computations are performed by the 'TAM' package, with 'inrep' serving as a modern workflow and interface layer. Includes complete replication of 'TAM' examples with improved usability and professional reporting capabilities.
 URL: https://github.com/selvastics/inrep
 BugReports: https://github.com/selvastics/inrep/issues
 Depends: R (>= 4.1.0)
 Imports:
     shiny (>= 1.7.0),
+    later (>= 1.3.0),
     methods,
     stats,
     utils,

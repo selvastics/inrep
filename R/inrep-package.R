@@ -1,33 +1,33 @@
-#' inrep: Intelligent Psychological Assessment Platform
+#' inrep: Instant Reports for Adaptive Assessments
 #'
 #' @description
-#' **inrep** is a comprehensive R package that transforms psychological assessment 
-#' development through intelligent LLM assistance, robust session management, and 
-#' advanced psychometric capabilities. Built with modern R development practices 
-#' and Claude 4 best practices for AI assistance, it provides researchers and 
-#' practitioners with a powerful, secure, and user-friendly platform for creating, 
+#' **inrep** is an R package for psychological assessment 
+#' development with consultation assistance, session management, and 
+#' psychometric capabilities. Built with modern R development practices 
+#' and best practices for external consultation, it provides researchers and 
+#' practitioners with a secure and user-friendly platform for creating, 
 #' deploying, and analyzing psychological assessments.
 #'
 #' @section Key Features:
 #'
-#' **Enhanced LLM Assistance System**
-#' - Claude 4 Best Practices Implementation: Advanced prompt engineering following Anthropic's latest recommendations
-#' - Context-Aware Assistance: Intelligent guidance that adapts to your specific assessment needs and constraints
+#' **Consultation Assistance System**
+#' - Professional Consultation Support: Prompt generation for expert consultation
+#' - Context-Aware Assistance: Guidance that adapts to your specific assessment needs and constraints
 #' - Complexity Scaling: Assistance that scales from basic to expert levels based on your expertise
 #' - Task-Specific Optimization: Specialized prompts for study design, item bank optimization, ability estimation, UI design, analysis planning, and deployment strategy
 #' - Quick Assistance Functions: Immediate guidance for common assessment tasks
 #'
-#' **Robust Session Management**
+#' **Session Management**
 #' - Data Persistence: Automatic saving and recovery of participant responses and session state
 #' - Keep-Alive Mechanisms: Prevents session timeouts during long assessments
 #' - Error Recovery: Graceful handling of network issues and system interruptions
 #' - Secure Data Handling: Built-in security measures for sensitive participant data
 #'
-#' **Advanced Psychometric Capabilities**
+#' **Psychometric Capabilities**
 #' - Multiple IRT Models: Support for GRM, PCM, and other item response theory models
-#' - Adaptive Testing: Intelligent item selection and ability estimation
+#' - Adaptive Testing: Item selection and ability estimation
 #' - Item Bank Optimization: Tools for improving item quality and measurement precision
-#' - Comprehensive Validation: Built-in psychometric validation and quality assessment
+#' - Validation: Built-in psychometric validation and quality assessment
 #'
 #' **User Experience Excellence**
 #' - Responsive Design: Works seamlessly across desktop, tablet, and mobile devices
@@ -35,13 +35,12 @@
 #' - Intuitive Interface: Clean, modern UI that reduces participant anxiety and improves completion rates
 #' - Real-Time Feedback: Immediate progress indicators and support throughout the assessment
 #'
-#' @section Enhanced LLM Assistance:
+#' @section Consultation Assistance:
 #'
-#' The package includes a sophisticated LLM assistance system that implements 
-#' Anthropic's Claude 4 best practices for prompt engineering:
+#' The package includes a consultation assistance system that implements 
+#' best practices for prompt generation:
 #'
-#' - **`enable_llm_assistance()`**: Enable and configure the enhanced LLM assistance system
-#' - **`enable_llm_assistance()`**: Enable and configure the enhanced LLM assistance system
+#' - **`enable_llm_assistance()`**: Enable and configure the consultation assistance system
 #'
 #' @section Robust Session Management:
 #'
@@ -60,14 +59,14 @@
 #'
 #' @section Case Studies and Examples:
 #'
-#' The package includes comprehensive case studies demonstrating the enhanced LLM assistance system:
+#' The package includes case studies demonstrating the consultation assistance system:
 #'
-#' - **`enable_llm_assistance()`**: Enable and configure the enhanced LLM assistance system
+#' - **`enable_llm_assistance()`**: Enable and configure the consultation assistance system
 #'
 #' @section Quick Start:
 #'
 #' ```r
-#' # Enable enhanced LLM assistance
+#' # Enable consultation assistance
 #' enable_llm_assistance(
 #'   enable = TRUE,
 #'   enhanced_mode = TRUE,
@@ -85,7 +84,7 @@
 #' @section Advanced Usage:
 #'
 #' ```r
-#' # Enable enhanced LLM assistance with expert complexity
+#' # Enable consultation assistance with expert complexity
 #' enable_llm_assistance(
 #'   enable = TRUE,
 #'   enhanced_mode = TRUE,
@@ -106,7 +105,7 @@
 #' @section Configuration:
 #'
 #' ```r
-#' # Configure enhanced LLM assistance
+#' # Configure consultation assistance
 #' enable_llm_assistance(
 #'   enable = TRUE,
 #'   enhanced_mode = TRUE,
@@ -179,22 +178,12 @@
 #' - **R Community**: For the excellent tools and packages that make this possible
 #' - **Contributors**: All those who have helped improve and expand the package
 #'
-#' @author Enhanced LLM Assistance System
+#' @author inrep Development Team
 #' @keywords package
 #' @seealso
 #' \code{\link{enable_llm_assistance}}, \code{\link{launch_study}}, 
 #' \code{\link{create_study_config}}, \code{\link{estimate_ability}}, 
 #' \code{\link{validate_item_bank}}
-#'
-#' @examples
-#' \dontrun{
-#' # Enable enhanced LLM assistance
-#' enable_llm_assistance(enable = TRUE, enhanced_mode = TRUE)
-#'
-#' # Create and launch a study
-#' config <- create_study_config(name = "My Study", model = "GRM")
-#' launch_study(config, bfi_items)
-#' }
 #'
 #' @docType package
 #' @name inrep-package

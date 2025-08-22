@@ -30,7 +30,7 @@ A sophisticated assessment system where multiple raters evaluate participants, f
 
 ---
 
-### 2. **Programming Anxiety Assessment** 🧠
+### 2. **Programming Anxiety Assessment** 
 **Location**: `programming_anxiety_assessment/`
 
 A comprehensive assessment focused on Programming Anxiety with advanced analytics:
@@ -54,7 +54,7 @@ A comprehensive assessment focused on Programming Anxiety with advanced analytic
 
 ---
 
-### 3. **Basic Assessment** 📝
+### 3. **Basic Assessment** 
 **Location**: `basic_assessment/`
 
 A foundational case study demonstrating core `inrep` functionality:
@@ -77,7 +77,7 @@ A foundational case study demonstrating core `inrep` functionality:
 
 ---
 
-### 4. **Advanced Analytics** 🔬
+### 4. **Advanced Analytics** 
 **Location**: `advanced_analytics/`
 
 Advanced statistical analysis and reporting capabilities:

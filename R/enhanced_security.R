@@ -1,4 +1,4 @@
-#' @title Enhanced Security Module
+#' @title Security Module
 #' @description Provides comprehensive security features including rate limiting, CSRF protection,
 #' XSS prevention, secure password handling, and audit logging for the inrep package.
 #' @details This module implements security best practices to protect assessment data
@@ -15,7 +15,7 @@ NULL
 .security_state$failed_attempts <- list()
 .security_state$blocked_ips <- list()
 
-#' Initialize Enhanced Security
+#' Initialize Security
 #' 
 #' @param enable_rate_limiting Enable rate limiting for API endpoints
 #' @param enable_csrf_protection Enable CSRF token validation
@@ -24,7 +24,7 @@ NULL
 #' @param max_attempts Maximum failed attempts before blocking
 #' @return List with security configuration
 #' @export
-initialize_enhanced_security <- function(
+initialize_security <- function(
   enable_rate_limiting = TRUE,
   enable_csrf_protection = TRUE,
   enable_xss_prevention = TRUE,
