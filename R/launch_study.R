@@ -1326,6 +1326,7 @@ launch_study <- function(
   ui_labels <- get_language_labels(config$language %||% "en")
   
   ui <- shiny::fluidPage(
+    style = "width: 100vw !important; margin: 0 !important; padding: 0 !important; position: absolute; left: 0; top: 0;",
     shinyjs::useShinyjs(),
 
           shiny::tags$head(
@@ -1337,8 +1338,27 @@ launch_study <- function(
             float: none !important;
           }
           
-
-
+          /* FIX 50/50 SPLIT - Force full width */
+          body > .container-fluid:first-child {
+            width: 100vw !important;
+            max-width: 100vw !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          
+          /* Override any Bootstrap grid causing split */
+          .row {
+            width: 100% !important;
+            margin: 0 !important;
+            display: block !important;
+          }
+          
+          .col, [class*="col-"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            flex: none !important;
+            padding: 0 !important;
+          }
           
           /* Prevent absolute positioning except for specific elements */
           div:not(.dropdown-menu):not(.modal):not(.tooltip):not(.popover) {
@@ -2134,10 +2154,10 @@ launch_study <- function(
           .load_packages_once()
         }
         
-        # Create the main container
+        # Create the main container - FULL WIDTH NO CENTERING
         shiny::div(
           id = "main-study-container",
-          style = "min-height: 500px; width: 100%; max-width: 1200px; margin: 0 auto;",
+          style = "min-height: 500px; width: 100vw !important; max-width: 100vw !important; margin: 0 !important; padding: 0 !important; position: absolute; left: 0; top: 0;",
           shiny::uiOutput("page_content")
         )
       })
