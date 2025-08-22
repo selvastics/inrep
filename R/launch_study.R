@@ -1305,21 +1305,49 @@ launch_study <- function(
   ui_labels <- get_language_labels(config$language %||% "en")
   
   ui <- shiny::fluidPage(
+    class = "full-width-app",
     shinyjs::useShinyjs(),
 
           shiny::tags$head(
+        shiny::tags$style(HTML("
+          /* IMMEDIATE FIX for 50/50 split */
+          .full-width-app > .container-fluid {
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          
+          /* Remove any default Shiny columns */
+          .full-width-app .row > .col-sm-12 {
+            padding: 0 !important;
+            width: 100% !important;
+          }
+          
+          /* Ensure study UI uses full width */
+          #study_ui, .shiny-html-output {
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+        ")),
         shiny::tags$style(type = "text/css", enhanced_css),
         shiny::tags$style(HTML("
-        /* Fixed layout - always centered, no jumping */
+        /* Fixed layout - FULL WIDTH FROM LEFT */
+        body > .container-fluid {
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+          margin: 0 !important;
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+        
         #main-study-container {
           width: 100%;
           max-width: 1200px;
           margin: 0 auto !important;
           overflow: hidden;
           min-height: 600px;
-          display: flex !important;
-          justify-content: center !important;
-          align-items: flex-start !important;
         }
         
         #page_content {
@@ -1977,11 +2005,22 @@ launch_study <- function(
           .load_packages_once()
         }
         
-        # Create the main container
-        shiny::div(
-          id = "main-study-container",
-          style = "min-height: 500px;",
-          shiny::uiOutput("page_content")
+        # Create the main container - Force full width
+        shiny::tagList(
+          shiny::tags$style(HTML("
+            /* Force container to use full width */
+            body > .container-fluid > .row {
+              margin: 0 !important;
+            }
+            body > .container-fluid > .row > * {
+              padding: 0 !important;
+            }
+          ")),
+          shiny::div(
+            id = "main-study-container",
+            style = "min-height: 500px; width: 100%; margin: 0; padding: 0;",
+            shiny::uiOutput("page_content")
+          )
         )
       })
       
