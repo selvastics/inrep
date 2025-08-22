@@ -1316,14 +1316,31 @@ launch_study <- function(
             float: none !important;
           }
           
-          /* Hide new content until positioned */
+          /* Smooth white fade transition */
           .page-wrapper {
-            visibility: hidden !important;
             opacity: 0 !important;
+            transition: opacity 0.3s ease-in-out !important;
           }
           
           .page-wrapper[data-ready='true'] {
-            visibility: visible !important;
+            opacity: 1 !important;
+          }
+          
+          /* White overlay for smooth transition */
+          .fade-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: white !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            z-index: 9999 !important;
+            transition: opacity 0.2s ease-in-out !important;
+          }
+          
+          .fade-overlay.active {
             opacity: 1 !important;
           }
           
@@ -1910,58 +1927,64 @@ launch_study <- function(
           )
         }
         
-        # Wrapper with loading control
+        # Wrapper with smooth fade transition
         shiny::tagList(
-          # JavaScript to control visibility
+          # Add fade overlay if it doesn't exist
+          shiny::tags$script(HTML("
+            if (!document.getElementById('fade-overlay')) {
+              var overlay = document.createElement('div');
+              overlay.id = 'fade-overlay';
+              overlay.className = 'fade-overlay';
+              document.body.appendChild(overlay);
+            }
+          ")),
+          
+          # JavaScript for smooth fade transition
           shiny::tags$script(HTML(sprintf("
-            // Hide content initially to prevent flash
+            // Smooth fade transition
             var pageId = 'page-%s';
-            var checkExist = setInterval(function() {
-              var elem = document.getElementById(pageId);
-              if (elem) {
-                // First ensure it's hidden completely
-                elem.style.visibility = 'hidden';
-                elem.style.opacity = '0';
-                
-                // Also hide all children to prevent any flash
-                var children = elem.getElementsByTagName('*');
-                for (var i = 0; i < children.length; i++) {
-                  children[i].style.visibility = 'hidden';
-                }
-                
-                // Force centering
-                elem.style.position = 'relative';
-                elem.style.margin = '0 auto';
-                elem.style.left = 'auto';
-                elem.style.right = 'auto';
-                elem.style.top = '0';
-                elem.style.bottom = 'auto';
-                elem.style.width = '100%%';
-                elem.style.maxWidth = '1200px';
-                
-                // Then show after positioning is set
-                setTimeout(function() {
-                  elem.setAttribute('data-ready', 'true');
-                  elem.style.visibility = 'visible';
-                  elem.style.opacity = '1';
+            var overlay = document.getElementById('fade-overlay');
+            
+            // First show white overlay
+            if (overlay) {
+              overlay.classList.add('active');
+            }
+            
+            // Wait for overlay to fade in, then switch content
+            setTimeout(function() {
+              var checkExist = setInterval(function() {
+                var elem = document.getElementById(pageId);
+                if (elem) {
+                  // Ensure proper positioning
+                  elem.style.position = 'relative';
+                  elem.style.margin = '0 auto';
+                  elem.style.left = 'auto';
+                  elem.style.right = 'auto';
+                  elem.style.top = '0';
+                  elem.style.width = '100%%';
+                  elem.style.maxWidth = '1200px';
+                  elem.style.opacity = '0';
                   
-                  // Show all children
-                  var children = elem.getElementsByTagName('*');
-                  for (var i = 0; i < children.length; i++) {
-                    children[i].style.visibility = 'visible';
-                  }
-                }, 40);
-                
-                clearInterval(checkExist);
-              }
-            }, 5);
+                  // Fade out overlay and fade in content
+                  setTimeout(function() {
+                    if (overlay) {
+                      overlay.classList.remove('active');
+                    }
+                    elem.setAttribute('data-ready', 'true');
+                    elem.style.opacity = '1';
+                  }, 100);
+                  
+                  clearInterval(checkExist);
+                }
+              }, 5);
+            }, 200);
           ", current_page))),
           
           shiny::div(
             id = paste0("page-", current_page),
             class = "page-wrapper",
-            # Start hidden
-            style = "width: 100% !important; max-width: 1200px !important; margin: 0 auto !important; display: block !important; position: relative !important; left: auto !important; right: auto !important; top: 0 !important; bottom: auto !important; transform: none !important; float: none !important; visibility: hidden; opacity: 0;",
+            # Start with opacity 0 for smooth fade-in
+            style = "width: 100% !important; max-width: 1200px !important; margin: 0 auto !important; display: block !important; position: relative !important; left: auto !important; right: auto !important; top: 0 !important; bottom: auto !important; transform: none !important; float: none !important; opacity: 0;",
           base::switch(stage,
                    "custom_page_flow" = {
                      # Process and render custom page flow

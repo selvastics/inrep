@@ -5,7 +5,7 @@ cat("========================================\n")
 cat("INREP PACKAGE FIX SCRIPT\n")
 cat("========================================\n\n")
 
-# Step 1: Remove old package
+# Step 1: Remove old package completely
 cat("Step 1: Removing old package version...\n")
 tryCatch({
   remove.packages("inrep")
@@ -13,6 +13,22 @@ tryCatch({
 }, error = function(e) {
   cat("  - Package not installed (OK)\n")
 })
+
+# Also remove from all library paths
+lib_paths <- .libPaths()
+for (lib_path in lib_paths) {
+  pkg_path <- file.path(lib_path, "inrep")
+  if (dir.exists(pkg_path)) {
+    unlink(pkg_path, recursive = TRUE)
+    cat("  - Removed from:", lib_path, "\n")
+  }
+}
+
+# Clear namespace if loaded
+if ("inrep" %in% loadedNamespaces()) {
+  unloadNamespace("inrep")
+  cat("  - Namespace unloaded\n")
+}
 
 # Step 2: Clear R temp files
 cat("\nStep 2: Clearing temporary files...\n")
