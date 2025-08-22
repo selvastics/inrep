@@ -196,7 +196,7 @@
 #' @seealso
 #' \itemize{
 #'   \item \code{\link{create_study_config}} for creating configuration objects
-#'   \item \code{\link{create_enhanced_response_report}} for response reporting
+#'   \item \code{\link{create_response_report}} for response reporting
 #'   \item \code{\link{validate_response_report}} for report validation
 #'   \item \code{\link{launch_study}} for complete assessment workflow
 #' }

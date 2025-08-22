@@ -1,33 +1,33 @@
 #' inrep: Instant Reports for Adaptive Assessments
 #'
 #' @description
-#' **inrep** is a comprehensive R package that transforms psychological assessment 
-#' development through intelligent consultation assistance, robust session management, and 
-#' advanced psychometric capabilities. Built with modern R development practices 
+#' **inrep** is an R package for psychological assessment 
+#' development with consultation assistance, session management, and 
+#' psychometric capabilities. Built with modern R development practices 
 #' and best practices for external consultation, it provides researchers and 
-#' practitioners with a powerful, secure, and user-friendly platform for creating, 
+#' practitioners with a secure and user-friendly platform for creating, 
 #' deploying, and analyzing psychological assessments.
 #'
 #' @section Key Features:
 #'
-#' **Enhanced Consultation Assistance System**
-#' - Professional Consultation Support: Advanced prompt generation for expert consultation
-#' - Context-Aware Assistance: Intelligent guidance that adapts to your specific assessment needs and constraints
+#' **Consultation Assistance System**
+#' - Professional Consultation Support: Prompt generation for expert consultation
+#' - Context-Aware Assistance: Guidance that adapts to your specific assessment needs and constraints
 #' - Complexity Scaling: Assistance that scales from basic to expert levels based on your expertise
 #' - Task-Specific Optimization: Specialized prompts for study design, item bank optimization, ability estimation, UI design, analysis planning, and deployment strategy
 #' - Quick Assistance Functions: Immediate guidance for common assessment tasks
 #'
-#' **Robust Session Management**
+#' **Session Management**
 #' - Data Persistence: Automatic saving and recovery of participant responses and session state
 #' - Keep-Alive Mechanisms: Prevents session timeouts during long assessments
 #' - Error Recovery: Graceful handling of network issues and system interruptions
 #' - Secure Data Handling: Built-in security measures for sensitive participant data
 #'
-#' **Advanced Psychometric Capabilities**
+#' **Psychometric Capabilities**
 #' - Multiple IRT Models: Support for GRM, PCM, and other item response theory models
-#' - Adaptive Testing: Intelligent item selection and ability estimation
+#' - Adaptive Testing: Item selection and ability estimation
 #' - Item Bank Optimization: Tools for improving item quality and measurement precision
-#' - Comprehensive Validation: Built-in psychometric validation and quality assessment
+#' - Validation: Built-in psychometric validation and quality assessment
 #'
 #' **User Experience Excellence**
 #' - Responsive Design: Works seamlessly across desktop, tablet, and mobile devices

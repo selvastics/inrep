@@ -1,4 +1,4 @@
-#' @title Enhanced Performance Optimization Module
+#' @title Performance Optimization Module
 #' @description Provides comprehensive performance improvements including caching, memory management,
 #' query optimization, and concurrent user handling for the inrep package.
 #' @details This module implements performance optimizations to handle large-scale

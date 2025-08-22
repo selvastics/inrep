@@ -1,7 +1,7 @@
-#' @title Enhanced Session Recovery System
+#' @title Session Recovery System
 #' @description Provides comprehensive session recovery with auto-save, browser refresh handling,
 #' crash recovery, and data loss prevention mechanisms for the inrep package.
-#' @details This module implements robust session management to prevent data loss
+#' @details This module implements session management to prevent data loss
 #' during assessment administration. It includes automatic saving, browser storage
 #' integration, and recovery mechanisms for interrupted sessions.
 #' @name enhanced_session_recovery
@@ -15,7 +15,7 @@ NULL
 .recovery_state$recovery_cache <- list()
 .recovery_state$browser_storage_key <- "inrep_session_backup"
 
-#' Initialize Enhanced Session Recovery
+#' Initialize Session Recovery
 #' 
 #' @param auto_save_interval Interval for automatic saves in seconds (default: 30)
 #' @param enable_browser_storage Enable browser localStorage for refresh handling
@@ -23,7 +23,7 @@ NULL
 #' @param recovery_retention_days Days to retain recovery data (default: 7)
 #' @return List with recovery configuration
 #' @export
-initialize_enhanced_recovery <- function(
+initialize_recovery <- function(
   auto_save_interval = 30,
   enable_browser_storage = TRUE,
   enable_cloud_backup = FALSE,

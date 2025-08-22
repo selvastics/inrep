@@ -2263,10 +2263,10 @@ launch_study <- function(
       }
       # Use enhanced reporting when requested
       pr <- config$participant_report %||% list()
-      if (isTRUE(pr$use_enhanced_report) && exists("create_enhanced_response_report", where = asNamespace("inrep"), inherits = FALSE)) {
-        dat <- inrep:::create_enhanced_response_report(config, rv$cat_result, item_bank)
-      } else if (isTRUE(pr$use_enhanced_report) && exists("create_enhanced_response_report")) {
-        dat <- create_enhanced_response_report(config, rv$cat_result, item_bank)
+      if (isTRUE(pr$use_enhanced_report) && exists("create_response_report", where = asNamespace("inrep"), inherits = FALSE)) {
+        dat <- inrep:::create_response_report(config, rv$cat_result, item_bank)
+      } else if (isTRUE(pr$use_enhanced_report) && exists("create_response_report")) {
+        dat <- create_response_report(config, rv$cat_result, item_bank)
       } else {
         dat <- if (config$model == "GRM") {
           base::data.frame(
