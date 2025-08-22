@@ -1313,22 +1313,27 @@ launch_study <- function(
     shiny::tags$head(
       shiny::tags$style(type = "text/css", enhanced_css),
       shiny::tags$style(HTML("
-        /* Smooth page transitions */
-        .smooth-transition {
-          animation: smoothFadeIn 0.2s ease-out;
-          transition: opacity 0.2s ease-out, transform 0.2s ease-out;
-          will-change: opacity, transform;
+        /* Smooth page transitions - CSS only, no shake */
+        .page-wrapper {
+          opacity: 0;
+          animation: gentleFadeIn 0.25s ease-out forwards;
         }
         
-        @keyframes smoothFadeIn {
+        @keyframes gentleFadeIn {
           from { 
             opacity: 0;
-            transform: translateY(5px);
           }
           to { 
             opacity: 1;
-            transform: translateY(0);
           }
+        }
+        
+        /* Prevent any transform-based animations that cause shake */
+        .smooth-transition {
+          transition: opacity 0.25s ease-out;
+          backface-visibility: hidden;
+          -webkit-font-smoothing: antialiased;
+          transform: translateZ(0);
         }
         
         /* Prevent layout shift */
@@ -1754,34 +1759,44 @@ launch_study <- function(
       }
     }
     
-    output$study_ui <- shiny::renderUI({
-      # Only trigger re-render on specific changes
-      rv$current_page  # Explicit dependency
-      rv$stage  # Explicit dependency
-      
-      # Load packages after first render
-      if (!.packages_loaded && rv$stage != "demographics") {
-        .load_packages_once()
-      }
-      if (!rv$session_active) {
-        return(
-          shiny::div(class = "assessment-card",
-                     shiny::h3(ui_labels$timeout_message, class = "card-header"),
-                     shiny::div(class = "nav-buttons",
-                                shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee")
-                     )
-          )
-        )
-      }
-      
-      # Isolate everything else to prevent unnecessary re-renders
-      shiny::isolate({
-        # Wrap content in a div with fade transition
+          # Render the main container only once
+      output$study_ui <- shiny::renderUI({
+        # Load packages after first render
+        if (!.packages_loaded) {
+          .load_packages_once()
+        }
+        
+        # Create the main container structure
         shiny::div(
-          class = "smooth-transition",
-          id = paste0("page-", rv$current_page),
-          style = "min-height: 400px;", # Prevent height jumping
-          base::switch(rv$stage,
+          id = "main-study-container",
+          style = "min-height: 500px; position: relative;",
+          shiny::uiOutput("page_content")
+        )
+      })
+      
+      # Separate reactive output for page content
+      output$page_content <- shiny::renderUI({
+        # Dependencies
+        current_page <- rv$current_page
+        stage <- rv$stage
+        
+        if (!rv$session_active) {
+          return(
+            shiny::div(class = "assessment-card",
+                       shiny::h3(ui_labels$timeout_message, class = "card-header"),
+                       shiny::div(class = "nav-buttons",
+                                  shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee")
+                       )
+            )
+          )
+        }
+        
+        # Wrap in transition div
+        shiny::div(
+          id = paste0("page-wrapper-", current_page),
+          class = "page-wrapper smooth-transition",
+          style = "width: 100%;",
+          base::switch(stage,
                    "custom_page_flow" = {
                      # Process and render custom page flow
                      process_page_flow(config, rv, input, output, session, item_bank, ui_labels, logger)
@@ -2269,9 +2284,8 @@ launch_study <- function(
                     )
                   }
           ) # End of switch
-        ) # End of smooth-transition div
-      }) # End of isolate
-    })
+        ) # End of page-wrapper div
+      })
     
     output$theta_plot <- shiny::renderPlot({
       logger(sprintf("Plot rendering triggered - adaptive: %s, theta_history length: %d", config$adaptive, base::length(rv$theta_history)))
@@ -2669,25 +2683,12 @@ launch_study <- function(
           }
         }
         
-                  # Move to next page
-          # Add loading state for smooth transition
-          shinyjs::runjs("
-            $('.smooth-transition').addClass('transitioning').css('opacity', '0.5');
-            $('.nav-buttons button').prop('disabled', true);
-          ")
+                  # Move to next page immediately - CSS handles the transition
+          rv$current_page <- rv$current_page + 1
+          logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
           
-          # Small delay for visual feedback
-          shinyjs::delay(100, {
-            rv$current_page <- rv$current_page + 1
-            logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
-            
-            # Re-enable buttons and restore opacity
-            shinyjs::runjs("
-              $('.smooth-transition').removeClass('transitioning').css('opacity', '1');
-              $('.nav-buttons button').prop('disabled', false);
-              window.scrollTo({top: 0, behavior: 'smooth'});
-            ")
-          })
+          # Scroll to top smoothly
+          shinyjs::runjs("window.scrollTo({top: 0, behavior: 'smooth'});")
       }
     })
     
@@ -2697,24 +2698,12 @@ launch_study <- function(
         output$validation_errors <- shiny::renderUI({ NULL })
         shinyjs::runjs("$('.has-error').removeClass('has-error');")
         
-                  # Add loading state for smooth transition
-          shinyjs::runjs("
-            $('.smooth-transition').addClass('transitioning').css('opacity', '0.5');
-            $('.nav-buttons button').prop('disabled', true);
-          ")
+                  # Move to previous page immediately - CSS handles the transition
+          rv$current_page <- rv$current_page - 1
+          logger(sprintf("Moving back to page %d of %d", rv$current_page, rv$total_pages))
           
-          # Small delay for visual feedback
-          shinyjs::delay(100, {
-            rv$current_page <- rv$current_page - 1
-            logger(sprintf("Moving back to page %d of %d", rv$current_page, rv$total_pages))
-            
-            # Re-enable buttons and restore opacity
-            shinyjs::runjs("
-              $('.smooth-transition').removeClass('transitioning').css('opacity', '1');
-              $('.nav-buttons button').prop('disabled', false);
-              window.scrollTo({top: 0, behavior: 'smooth'});
-            ")
-          })
+          # Scroll to top smoothly
+          shinyjs::runjs("window.scrollTo({top: 0, behavior: 'smooth'});")
       }
     })
     
