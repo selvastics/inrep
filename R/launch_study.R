@@ -3048,12 +3048,14 @@ launch_study <- function(
         logger(sprintf("Non-adaptive mode: Starting with item %s", rv$current_item))
       } else {
         # For adaptive mode, select first item
-        first_item <- inrep::select_next_item(
+        # Initialize rv with minimal required values for first item selection
+        temp_rv <- list(
           administered = base::integer(0),
           responses = base::numeric(0),
-          item_bank = item_bank,
-          config = config
+          current_ability = config$theta_prior[1] %||% 0,
+          current_se = config$theta_prior[2] %||% 1
         )
+        first_item <- inrep::select_next_item(temp_rv, item_bank, config)
         rv$current_item <- first_item
         logger(sprintf("Adaptive mode: Starting with item %s", first_item))
       }

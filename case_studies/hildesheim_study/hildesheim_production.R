@@ -779,10 +779,11 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
             } else {
               cat("Cloud upload failed with status:", httr::status_code(response), "\n")
               if (httr::status_code(response) == 401) {
-                cat("Authentication failed. Trying with share token.\n")
-                cat("Share token used:", webdav_user, "\n")
-              }
-          }, error = function(e) {
+                                            cat("Authentication failed. Trying with share token.\n")
+                            cat("Share token used:", webdav_user, "\n")
+                        }
+                    }
+                    }, error = function(e) {
             cat("Error uploading to cloud:", e$message, "\n")
           })
         }, delay = 0.5)
