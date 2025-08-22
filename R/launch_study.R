@@ -1336,12 +1336,13 @@ launch_study <- function(
             background: white !important;
             opacity: 0 !important;
             pointer-events: none !important;
-            z-index: 9999 !important;
-            transition: opacity 0.2s ease-in-out !important;
+            z-index: 9998 !important;
+            transition: opacity 0.15s ease-in-out !important;
+            display: none !important;
           }
           
-          .fade-overlay.active {
-            opacity: 1 !important;
+          #fade-overlay {
+            display: block !important;
           }
           
           /* Prevent absolute positioning except for specific elements */
@@ -1927,27 +1928,66 @@ launch_study <- function(
           )
         }
         
-        # Wrapper with positioning control
+        # Wrapper with smart fade control
         shiny::tagList(
           
-          # JavaScript for page positioning (simplified - no fade for now)
+          # JavaScript for positioning and fade (only after first page)
           shiny::tags$script(HTML(sprintf("
-            // Ensure page is positioned correctly
-            setTimeout(function() {
-              var elem = document.getElementById('page-%s');
-              if (elem) {
-                // Ensure proper positioning
-                elem.style.position = 'relative';
-                elem.style.margin = '0 auto';
-                elem.style.left = 'auto';
-                elem.style.right = 'auto';
-                elem.style.top = '0';
-                elem.style.width = '100%%';
-                elem.style.maxWidth = '1200px';
-                elem.style.opacity = '1';
-                elem.setAttribute('data-ready', 'true');
+            (function() {
+              var currentPage = %d;
+              var elem = document.getElementById('page-' + currentPage);
+              
+              // Check if this is the first page load or a page switch
+              var isFirstPage = (currentPage === 1 && !window.hasLoadedFirstPage);
+              
+              if (isFirstPage) {
+                // First page - no fade, just show immediately
+                window.hasLoadedFirstPage = true;
+                if (elem) {
+                  elem.style.position = 'relative';
+                  elem.style.margin = '0 auto';
+                  elem.style.width = '100%%';
+                  elem.style.maxWidth = '1200px';
+                  elem.style.opacity = '1';
+                  elem.setAttribute('data-ready', 'true');
+                }
+              } else {
+                // Page switch - use smooth fade
+                if (!document.getElementById('fade-overlay')) {
+                  var overlay = document.createElement('div');
+                  overlay.id = 'fade-overlay';
+                  overlay.className = 'fade-overlay';
+                  document.body.appendChild(overlay);
+                }
+                
+                var overlay = document.getElementById('fade-overlay');
+                
+                // Show white overlay
+                if (overlay) {
+                  overlay.style.opacity = '1';
+                }
+                
+                // After fade in, position content and fade out
+                setTimeout(function() {
+                  if (elem) {
+                    elem.style.position = 'relative';
+                    elem.style.margin = '0 auto';
+                    elem.style.width = '100%%';
+                    elem.style.maxWidth = '1200px';
+                    elem.style.opacity = '0';
+                    
+                    // Fade out overlay and fade in content
+                    setTimeout(function() {
+                      if (overlay) {
+                        overlay.style.opacity = '0';
+                      }
+                      elem.style.opacity = '1';
+                      elem.setAttribute('data-ready', 'true');
+                    }, 50);
+                  }
+                }, 150);
               }
-            }, 10);
+            })();
           ", current_page))),
           
           shiny::div(
