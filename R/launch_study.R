@@ -1313,51 +1313,52 @@ launch_study <- function(
     shiny::tags$head(
       shiny::tags$style(type = "text/css", enhanced_css),
       shiny::tags$style(HTML("
-        /* Smooth page transitions - CSS only, no shake */
+        /* Fixed layout - no animations, no scaling, no shake */
+        #main-study-container {
+          width: 100%;
+          max-width: 100%;
+          overflow-x: hidden;
+        }
+        
         .page-wrapper {
-          opacity: 0;
-          animation: gentleFadeIn 0.25s ease-out forwards;
+          opacity: 1 !important;
+          width: 100%;
+          transform: none !important;
         }
         
-        @keyframes gentleFadeIn {
-          from { 
-            opacity: 0;
-          }
-          to { 
-            opacity: 1;
-          }
-        }
-        
-        /* Prevent any transform-based animations that cause shake */
+        /* Remove ALL animations and transitions */
         .smooth-transition {
-          transition: opacity 0.25s ease-out;
-          backface-visibility: hidden;
-          -webkit-font-smoothing: antialiased;
-          transform: translateZ(0);
+          animation: none !important;
+          transition: none !important;
+          transform: none !important;
         }
         
-        /* Prevent layout shift */
+        /* Fixed card size to prevent scaling */
         .assessment-card {
-          min-height: 300px;
-          transition: all 0.2s ease-out;
+          min-height: 400px;
+          width: 100%;
+          max-width: 100%;
+          box-sizing: border-box;
+          animation: none !important;
+          transition: none !important;
         }
         
-        /* Smooth button transitions */
+        /* Stable buttons - no animations */
         .btn-klee, .nav-buttons button {
-          transition: all 0.15s ease-out;
+          transition: none !important;
+          transform: none !important;
         }
         
         .btn-klee:active, .nav-buttons button:active {
-          transform: scale(0.98);
+          transform: none !important;
         }
         
-        /* Validation highlighting for required fields */
+        /* Validation highlighting - no animations */
         .shiny-input-container.has-error input,
         .shiny-input-container.has-error select,
         .shiny-input-container.has-error textarea {
           border: 2px solid #dc3545 !important;
           background-color: #fff5f5 !important;
-          animation: shake 0.3s;
         }
         
         .shiny-input-container.has-error label {
@@ -1373,34 +1374,15 @@ launch_study <- function(
           margin-top: 5px;
         }
         
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-5px); }
-          75% { transform: translateX(5px); }
-        }
-        
-        /* Smooth validation error messages */
+        /* Validation error messages - no animation */
         .validation-error {
-          animation: slideDown 0.3s ease-out;
           background-color: #f8d7da;
           border: 1px solid #f5c6cb;
           border-radius: 4px;
           color: #721c24;
           padding: 12px;
           margin: 10px 0;
-        }
-        
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            max-height: 0;
-            margin: 0;
-          }
-          to {
-            opacity: 1;
-            max-height: 200px;
-            margin: 10px 0;
-          }
+          opacity: 1;
         }
         
         /* Custom loading indicator */
@@ -1444,30 +1426,41 @@ launch_study <- function(
           z-index: 1000;
         }
         
-        /* Simple fade-in for content */
+        /* Stable content - no animations */
         .container-fluid {
-          animation: contentFadeIn 0.2s ease-out;
+          opacity: 1;
         }
         
-        @keyframes contentFadeIn {
-          from { opacity: 0.8; }
-          to { opacity: 1; }
-        }
-        
-        /* Disable text selection during transitions */
-        .smooth-transition.transitioning {
-          user-select: none;
-          pointer-events: none;
-        }
-        
-        /* Smooth opacity transitions */
-        .smooth-transition {
-          transition: opacity 0.15s ease-out !important;
-        }
-        
-        /* Prevent form input flash */
+        /* Stable form inputs */
         input, select, textarea {
-          transition: border-color 0.15s ease-out, background-color 0.15s ease-out;
+          transition: none !important;
+        }
+        
+        /* Aggressive reset - no animations, transitions, or transforms */
+        * {
+          animation: none !important;
+          transition: none !important;
+          transform: none !important;
+          animation-duration: 0s !important;
+          transition-duration: 0s !important;
+        }
+        
+        /* Ensure stable rendering */
+        body {
+          overflow-x: hidden;
+          overflow-y: auto;
+        }
+        
+        /* Force hardware acceleration off to prevent flicker */
+        .page-wrapper, .assessment-card {
+          transform: translateZ(0) !important;
+          will-change: auto !important;
+        }
+        
+        /* Prevent any zoom or scale */
+        html, body {
+          zoom: 1 !important;
+          -webkit-text-size-adjust: 100% !important;
         }
       ")),
       shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
@@ -1766,10 +1759,10 @@ launch_study <- function(
           .load_packages_once()
         }
         
-        # Create the main container structure
+        # Create the main container structure with fixed dimensions
         shiny::div(
           id = "main-study-container",
-          style = "min-height: 500px; position: relative;",
+          style = "min-height: 500px; width: 100%; max-width: 1200px; margin: 0 auto; position: relative; overflow: hidden;",
           shiny::uiOutput("page_content")
         )
       })
@@ -1791,11 +1784,11 @@ launch_study <- function(
           )
         }
         
-        # Wrap in transition div
+        # Simple wrapper without transitions
         shiny::div(
-          id = paste0("page-wrapper-", current_page),
-          class = "page-wrapper smooth-transition",
-          style = "width: 100%;",
+          id = paste0("page-", current_page),
+          class = "page-wrapper",
+          style = "width: 100%; opacity: 1;",
           base::switch(stage,
                    "custom_page_flow" = {
                      # Process and render custom page flow
@@ -2686,9 +2679,6 @@ launch_study <- function(
                   # Move to next page immediately - CSS handles the transition
           rv$current_page <- rv$current_page + 1
           logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
-          
-          # Scroll to top smoothly
-          shinyjs::runjs("window.scrollTo({top: 0, behavior: 'smooth'});")
       }
     })
     
@@ -2701,9 +2691,6 @@ launch_study <- function(
                   # Move to previous page immediately - CSS handles the transition
           rv$current_page <- rv$current_page - 1
           logger(sprintf("Moving back to page %d of %d", rv$current_page, rv$total_pages))
-          
-          # Scroll to top smoothly
-          shinyjs::runjs("window.scrollTo({top: 0, behavior: 'smooth'});")
       }
     })
     
