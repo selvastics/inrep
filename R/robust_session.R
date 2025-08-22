@@ -33,6 +33,8 @@ initialize_robust_session <- function(
   .session_state$data_preservation_interval <- data_preservation_interval
   .session_state$keep_alive_interval <- keep_alive_interval
   .session_state$enable_logging <- enable_logging
+  .session_state$termination_logged <- FALSE  # Prevent duplicate termination messages
+  .session_state$observers_created <- FALSE   # Prevent duplicate observer creation
   
   # Create session log file
   session_id <- generate_session_id()
@@ -47,11 +49,16 @@ initialize_robust_session <- function(
                           keep_alive_interval = keep_alive_interval))
   }
   
-  # Start keep-alive monitoring
-  start_keep_alive_monitoring()
-  
-  # Start data preservation monitoring
-  start_data_preservation_monitoring()
+  # Start monitoring only if not already started
+  if (!isTRUE(.session_state$observers_created)) {
+    .session_state$observers_created <- TRUE
+    
+    # Start keep-alive monitoring
+    start_keep_alive_monitoring()
+    
+    # Start data preservation monitoring
+    start_data_preservation_monitoring()
+  }
   
   return(list(
     session_id = session_id,
