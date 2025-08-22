@@ -1316,34 +1316,14 @@ launch_study <- function(
             float: none !important;
           }
           
-          /* Smooth white fade transition */
+          /* Page visibility - ensure visible by default */
           .page-wrapper {
-            opacity: 0 !important;
-            transition: opacity 0.3s ease-in-out !important;
-          }
-          
-          .page-wrapper[data-ready='true'] {
             opacity: 1 !important;
-          }
-          
-          /* White overlay for smooth transition */
-          .fade-overlay {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            background: white !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-            z-index: 9998 !important;
-            transition: opacity 0.15s ease-in-out !important;
-            display: none !important;
-          }
-          
-          #fade-overlay {
+            visibility: visible !important;
             display: block !important;
           }
+          
+
           
           /* Prevent absolute positioning except for specific elements */
           div:not(.dropdown-menu):not(.modal):not(.tooltip):not(.popover) {
@@ -1931,70 +1911,23 @@ launch_study <- function(
         # Wrapper with smart fade control
         shiny::tagList(
           
-          # JavaScript for positioning and fade (only after first page)
+          # Simple JavaScript to ensure visibility
           shiny::tags$script(HTML(sprintf("
-            (function() {
-              var currentPage = %d;
-              var elem = document.getElementById('page-' + currentPage);
-              
-              // Check if this is the first page load or a page switch
-              var isFirstPage = (currentPage === 1 && !window.hasLoadedFirstPage);
-              
-              if (isFirstPage) {
-                // First page - no fade, just show immediately
-                window.hasLoadedFirstPage = true;
-                if (elem) {
-                  elem.style.position = 'relative';
-                  elem.style.margin = '0 auto';
-                  elem.style.width = '100%%';
-                  elem.style.maxWidth = '1200px';
-                  elem.style.opacity = '1';
-                  elem.setAttribute('data-ready', 'true');
-                }
-              } else {
-                // Page switch - use smooth fade
-                if (!document.getElementById('fade-overlay')) {
-                  var overlay = document.createElement('div');
-                  overlay.id = 'fade-overlay';
-                  overlay.className = 'fade-overlay';
-                  document.body.appendChild(overlay);
-                }
-                
-                var overlay = document.getElementById('fade-overlay');
-                
-                // Show white overlay
-                if (overlay) {
-                  overlay.style.opacity = '1';
-                }
-                
-                // After fade in, position content and fade out
-                setTimeout(function() {
-                  if (elem) {
-                    elem.style.position = 'relative';
-                    elem.style.margin = '0 auto';
-                    elem.style.width = '100%%';
-                    elem.style.maxWidth = '1200px';
-                    elem.style.opacity = '0';
-                    
-                    // Fade out overlay and fade in content
-                    setTimeout(function() {
-                      if (overlay) {
-                        overlay.style.opacity = '0';
-                      }
-                      elem.style.opacity = '1';
-                      elem.setAttribute('data-ready', 'true');
-                    }, 50);
-                  }
-                }, 150);
+            setTimeout(function() {
+              var elem = document.getElementById('page-%d');
+              if (elem) {
+                elem.style.opacity = '1';
+                elem.style.display = 'block';
+                elem.style.visibility = 'visible';
               }
-            })();
+            }, 10);
           ", current_page))),
           
           shiny::div(
             id = paste0("page-", current_page),
             class = "page-wrapper",
-            # Start with opacity 0 for smooth fade-in
-            style = "width: 100% !important; max-width: 1200px !important; margin: 0 auto !important; display: block !important; position: relative !important; left: auto !important; right: auto !important; top: 0 !important; bottom: auto !important; transform: none !important; float: none !important; opacity: 0;",
+            # Start visible
+            style = "width: 100% !important; max-width: 1200px !important; margin: 0 auto !important; display: block !important; position: relative !important; left: auto !important; right: auto !important; top: 0 !important; bottom: auto !important; transform: none !important; float: none !important; opacity: 1;",
           base::switch(stage,
                    "custom_page_flow" = {
                      # Process and render custom page flow
