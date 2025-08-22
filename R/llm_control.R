@@ -1,31 +1,31 @@
-#' Enable or Disable LLM Assistance Throughout inrep Package
+#' Enable or Disable External Assistance Throughout inrep Package
 #'
 #' @description
-#' Controls whether LLM assistance prompts are displayed during package operations.
-#' When enabled, relevant functions will generate detailed prompts for ChatGPT, Claude,
-#' or other Large Language Models to provide expert-level optimization advice.
+#' Controls whether assistance prompts are displayed during package operations.
+#' When enabled, relevant functions will generate detailed prompts for external
+#' consultation to provide expert-level optimization advice.
 #'
-#' @param enable Logical indicating whether to enable LLM assistance prompts.
+#' @param enable Logical indicating whether to enable assistance prompts.
 #'   Default is TRUE.
 #' @param output_format Character string specifying how to display prompts.
 #'   Options: "console" (default), "file", "clipboard".
 #' @param prompt_types Character vector specifying which types of prompts to enable.
 #'   Options: "all" (default), "validation", "configuration", "estimation", "analysis".
-#' @param enhanced_mode Logical indicating whether to use enhanced Claude 4 best practices.
+#' @param enhanced_mode Logical indicating whether to use enhanced formatting practices.
 #'   Default is TRUE for optimal assistance quality.
 #' @param complexity_level Character string specifying the complexity level for enhanced prompts.
 #'   Options: "basic", "intermediate", "advanced", "expert". Default is "intermediate".
 #' @param verbose Logical indicating whether to display status messages.
 #'   Default is TRUE.
 #'
-#' @return Invisibly returns the previous setting for LLM assistance.
+#' @return Invisibly returns the previous setting for assistance.
 #'
 #' @export
 #'
 #' @details
-#' The inrep package includes comprehensive LLM assistance capabilities that generate
+#' The inrep package includes comprehensive assistance capabilities that generate
 #' expert-level prompts for optimizing various aspects of adaptive testing studies.
-#' These prompts leverage the knowledge of Large Language Models to provide:
+#' These prompts can be used with external consultation services to provide:
 #'
 #' \strong{Available Assistance Types:}
 #' \itemize{
@@ -68,7 +68,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Enable enhanced LLM assistance with console output
+#' # Enable enhanced assistance with console output
 #' enable_llm_assistance(TRUE, enhanced_mode = TRUE)
 #'
 #' # Now when you run package functions, you'll get optimization prompts:
@@ -96,7 +96,7 @@
 #'   enhanced_mode = TRUE
 #' )
 #'
-#' # Disable all LLM assistance
+#' # Disable all assistance
 #' enable_llm_assistance(FALSE)
 #' }
 enable_llm_assistance <- function(enable = TRUE,

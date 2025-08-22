@@ -1,17 +1,17 @@
-#' inrep: Intelligent Psychological Assessment Platform
+#' inrep: Instant Reports for Adaptive Assessments
 #'
 #' @description
 #' **inrep** is a comprehensive R package that transforms psychological assessment 
-#' development through intelligent LLM assistance, robust session management, and 
+#' development through intelligent consultation assistance, robust session management, and 
 #' advanced psychometric capabilities. Built with modern R development practices 
-#' and Claude 4 best practices for AI assistance, it provides researchers and 
+#' and best practices for external consultation, it provides researchers and 
 #' practitioners with a powerful, secure, and user-friendly platform for creating, 
 #' deploying, and analyzing psychological assessments.
 #'
 #' @section Key Features:
 #'
-#' **Enhanced LLM Assistance System**
-#' - Claude 4 Best Practices Implementation: Advanced prompt engineering following Anthropic's latest recommendations
+#' **Enhanced Consultation Assistance System**
+#' - Professional Consultation Support: Advanced prompt generation for expert consultation
 #' - Context-Aware Assistance: Intelligent guidance that adapts to your specific assessment needs and constraints
 #' - Complexity Scaling: Assistance that scales from basic to expert levels based on your expertise
 #' - Task-Specific Optimization: Specialized prompts for study design, item bank optimization, ability estimation, UI design, analysis planning, and deployment strategy
