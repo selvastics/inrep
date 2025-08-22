@@ -1307,9 +1307,37 @@ launch_study <- function(
   ui <- shiny::fluidPage(
     shinyjs::useShinyjs(),
 
-    shiny::tags$head(
-      shiny::tags$style(type = "text/css", enhanced_css),
-      shiny::tags$style(HTML("
+          shiny::tags$head(
+        # CRITICAL: First CSS to prevent bottom-right positioning
+        shiny::tags$style(HTML("
+          /* Emergency CSS - Applied FIRST to prevent positioning issues */
+          * :not(.fixed-element) {
+            position: relative !important;
+            float: none !important;
+          }
+          
+          /* Prevent absolute positioning except for specific elements */
+          div:not(.dropdown-menu):not(.modal):not(.tooltip):not(.popover) {
+            position: relative !important;
+          }
+          body, html {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+          }
+          .container-fluid, .page-wrapper, .assessment-card {
+            margin: 0 auto !important;
+            position: relative !important;
+            left: auto !important;
+            right: auto !important;
+            top: auto !important;
+            bottom: auto !important;
+            float: none !important;
+            transform: none !important;
+          }
+        ")),
+        shiny::tags$style(type = "text/css", enhanced_css),
+        shiny::tags$style(HTML("
         /* Fixed layout - always centered, no jumping */
         #main-study-container {
           width: 100%;
@@ -1844,11 +1872,13 @@ launch_study <- function(
           .load_packages_once()
         }
         
-        # Create the main container structure - always centered
+        # Create the main container structure - always centered with inline styles
         shiny::div(
           id = "main-study-container",
-          style = "min-height: 600px; width: 100%; max-width: 1200px; margin: 0 auto; position: relative; overflow: hidden; display: flex; justify-content: center;",
-          shiny::uiOutput("page_content", style = "width: 100%; display: flex; justify-content: center;")
+          style = "min-height: 600px !important; width: 100% !important; max-width: 1200px !important; margin: 0 auto !important; position: relative !important; overflow: hidden !important; display: flex !important; justify-content: center !important; left: auto !important; right: auto !important; top: auto !important; bottom: auto !important;",
+          shiny::uiOutput("page_content", 
+            style = "width: 100% !important; display: flex !important; justify-content: center !important; position: relative !important; margin: 0 auto !important;"
+          )
         )
       })
       
@@ -1869,11 +1899,12 @@ launch_study <- function(
           )
         }
         
-        # Wrapper that maintains centering
+        # Wrapper with immediate centering styles
         shiny::div(
           id = paste0("page-", current_page),
           class = "page-wrapper",
-          style = "width: 100%; max-width: 1200px; opacity: 1; margin: 0 auto; display: block;",
+          # Critical inline styles to prevent bottom-right positioning
+          style = "width: 100% !important; max-width: 1200px !important; margin: 0 auto !important; display: block !important; position: relative !important; left: auto !important; right: auto !important; top: auto !important; bottom: auto !important; transform: none !important; float: none !important;",
           base::switch(stage,
                    "custom_page_flow" = {
                      # Process and render custom page flow

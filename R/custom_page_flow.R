@@ -59,6 +59,7 @@ process_page_flow <- function(config, rv, input, output, session, item_bank, ui_
     # Default fallback
     shiny::div(
       class = "assessment-card",
+      style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
       shiny::h3(current_page$title %||% "Page", class = "card-header"),
       shiny::p("Page type not recognized")
     )
@@ -77,6 +78,7 @@ process_page_flow <- function(config, rv, input, output, session, item_bank, ui_
 render_instructions_page <- function(page, config, ui_labels) {
   shiny::div(
     class = "assessment-card",
+    style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
     shiny::h3(page$title, class = "card-header"),
     if (!is.null(page$content)) {
       shiny::HTML(page$content)
@@ -136,6 +138,7 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
   
   shiny::div(
     class = "assessment-card",
+    style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
     shiny::h3(page$title %||% ui_labels$demo_title, class = "card-header"),
     if (!is.null(page$description)) {
       shiny::p(page$description, class = "welcome-text")
@@ -189,6 +192,7 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
   
   shiny::div(
     class = "assessment-card",
+    style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
     shiny::h3(page$title %||% "Questionnaire", class = "card-header"),
     if (!is.null(page$instructions)) {
       shiny::p(page$instructions, class = "instructions-text")
@@ -220,6 +224,7 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
   } else {
     shiny::div(
       class = "assessment-card",
+      style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
       shiny::h3(page$title, class = "card-header"),
       if (!is.null(page$content)) {
         shiny::HTML(page$content)
