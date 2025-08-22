@@ -35,13 +35,12 @@
 #' - Intuitive Interface: Clean, modern UI that reduces participant anxiety and improves completion rates
 #' - Real-Time Feedback: Immediate progress indicators and support throughout the assessment
 #'
-#' @section Enhanced LLM Assistance:
+#' @section Consultation Assistance:
 #'
 #' The package includes a consultation assistance system that implements 
 #' best practices for prompt generation:
 #'
-#' - **`enable_llm_assistance()`**: Enable and configure the enhanced LLM assistance system
-#' - **`enable_llm_assistance()`**: Enable and configure the enhanced LLM assistance system
+#' - **`enable_llm_assistance()`**: Enable and configure the consultation assistance system
 #'
 #' @section Robust Session Management:
 #'
@@ -60,14 +59,14 @@
 #'
 #' @section Case Studies and Examples:
 #'
-#' The package includes comprehensive case studies demonstrating the enhanced LLM assistance system:
+#' The package includes case studies demonstrating the consultation assistance system:
 #'
-#' - **`enable_llm_assistance()`**: Enable and configure the enhanced LLM assistance system
+#' - **`enable_llm_assistance()`**: Enable and configure the consultation assistance system
 #'
 #' @section Quick Start:
 #'
 #' ```r
-#' # Enable enhanced LLM assistance
+#' # Enable consultation assistance
 #' enable_llm_assistance(
 #'   enable = TRUE,
 #'   enhanced_mode = TRUE,
@@ -85,7 +84,7 @@
 #' @section Advanced Usage:
 #'
 #' ```r
-#' # Enable enhanced LLM assistance with expert complexity
+#' # Enable consultation assistance with expert complexity
 #' enable_llm_assistance(
 #'   enable = TRUE,
 #'   enhanced_mode = TRUE,
@@ -106,7 +105,7 @@
 #' @section Configuration:
 #'
 #' ```r
-#' # Configure enhanced LLM assistance
+#' # Configure consultation assistance
 #' enable_llm_assistance(
 #'   enable = TRUE,
 #'   enhanced_mode = TRUE,
@@ -179,7 +178,7 @@
 #' - **R Community**: For the excellent tools and packages that make this possible
 #' - **Contributors**: All those who have helped improve and expand the package
 #'
-#' @author Enhanced LLM Assistance System
+#' @author inrep Development Team
 #' @keywords package
 #' @seealso
 #' \code{\link{enable_llm_assistance}}, \code{\link{launch_study}}, 
@@ -188,7 +187,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Enable enhanced LLM assistance
+#' # Enable consultation assistance
 #' enable_llm_assistance(enable = TRUE, enhanced_mode = TRUE)
 #'
 #' # Create and launch a study

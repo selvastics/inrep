@@ -51,7 +51,7 @@
 #' @param advanced_features List of advanced features to include:
 #' \itemize{
 #'   \item "multilingual" - Multi-language support
-#'   \item "accessibility" - Enhanced accessibility features
+#'   \item "accessibility" - Accessibility features
 #'   \item "mobile_optimized" - Mobile-responsive design
 #'   \item "real_time_monitoring" - Live study monitoring  
 #'   \item "automated_reporting" - Automated result generation
