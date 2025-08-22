@@ -1927,57 +1927,27 @@ launch_study <- function(
           )
         }
         
-        # Wrapper with smooth fade transition
+        # Wrapper with positioning control
         shiny::tagList(
-          # Add fade overlay if it doesn't exist
-          shiny::tags$script(HTML("
-            if (!document.getElementById('fade-overlay')) {
-              var overlay = document.createElement('div');
-              overlay.id = 'fade-overlay';
-              overlay.className = 'fade-overlay';
-              document.body.appendChild(overlay);
-            }
-          ")),
           
-          # JavaScript for smooth fade transition
+          # JavaScript for page positioning (simplified - no fade for now)
           shiny::tags$script(HTML(sprintf("
-            // Smooth fade transition
-            var pageId = 'page-%s';
-            var overlay = document.getElementById('fade-overlay');
-            
-            // First show white overlay
-            if (overlay) {
-              overlay.classList.add('active');
-            }
-            
-            // Wait for overlay to fade in, then switch content
+            // Ensure page is positioned correctly
             setTimeout(function() {
-              var checkExist = setInterval(function() {
-                var elem = document.getElementById(pageId);
-                if (elem) {
-                  // Ensure proper positioning
-                  elem.style.position = 'relative';
-                  elem.style.margin = '0 auto';
-                  elem.style.left = 'auto';
-                  elem.style.right = 'auto';
-                  elem.style.top = '0';
-                  elem.style.width = '100%%';
-                  elem.style.maxWidth = '1200px';
-                  elem.style.opacity = '0';
-                  
-                  // Fade out overlay and fade in content
-                  setTimeout(function() {
-                    if (overlay) {
-                      overlay.classList.remove('active');
-                    }
-                    elem.setAttribute('data-ready', 'true');
-                    elem.style.opacity = '1';
-                  }, 100);
-                  
-                  clearInterval(checkExist);
-                }
-              }, 5);
-            }, 200);
+              var elem = document.getElementById('page-%s');
+              if (elem) {
+                // Ensure proper positioning
+                elem.style.position = 'relative';
+                elem.style.margin = '0 auto';
+                elem.style.left = 'auto';
+                elem.style.right = 'auto';
+                elem.style.top = '0';
+                elem.style.width = '100%%';
+                elem.style.maxWidth = '1200px';
+                elem.style.opacity = '1';
+                elem.setAttribute('data-ready', 'true');
+              }
+            }, 10);
           ", current_page))),
           
           shiny::div(
