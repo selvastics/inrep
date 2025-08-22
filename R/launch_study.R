@@ -1002,35 +1002,14 @@ launch_study <- function(
       font-family: var(--font-family);
       color: var(--text-color);
       background-color: var(--background-color);
-      margin: 0 !important;
-      padding: 0 !important;
+      margin: 0;
+      padding: 20px;
       line-height: 1.6;
     }
     
-    /* Remove ALL white space on sides */
-    * {
-      box-sizing: border-box;
-    }
-    
-    #main-study-container,
-    .container,
-    .container-fluid {
-      width: 100% !important;
-      max-width: 100% !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-    
-    /* Add padding only to content cards */
-    .assessment-card {
-      margin: 20px !important;
-      padding: 30px !important;
-    }
-    
     .container-fluid { 
-      width: 100%;
-      max-width: 100%;
-      margin: 0;
+      max-width: 1200px;
+      margin: 0 auto;
       overflow-x: hidden;
       min-height: 100vh;
     }
@@ -1326,60 +1305,9 @@ launch_study <- function(
   ui_labels <- get_language_labels(config$language %||% "en")
   
   ui <- shiny::fluidPage(
-    style = "width: 100vw !important; margin: 0 !important; padding: 0 !important; position: absolute; left: 0; top: 0;",
     shinyjs::useShinyjs(),
 
           shiny::tags$head(
-        # CRITICAL: First CSS to prevent bottom-right positioning
-        shiny::tags$style(HTML("
-          /* Emergency CSS - Applied FIRST to prevent positioning issues */
-          * :not(.fixed-element) {
-            position: relative !important;
-            float: none !important;
-          }
-          
-          /* FIX 50/50 SPLIT - Force full width */
-          body > .container-fluid:first-child {
-            width: 100vw !important;
-            max-width: 100vw !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-          
-          /* Override any Bootstrap grid causing split */
-          .row {
-            width: 100% !important;
-            margin: 0 !important;
-            display: block !important;
-          }
-          
-          .col, [class*="col-"] {
-            width: 100% !important;
-            max-width: 100% !important;
-            flex: none !important;
-            padding: 0 !important;
-          }
-          
-          /* Prevent absolute positioning except for specific elements */
-          div:not(.dropdown-menu):not(.modal):not(.tooltip):not(.popover) {
-            position: relative !important;
-          }
-          body, html {
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
-          }
-          .container-fluid, .page-wrapper, .assessment-card {
-            margin: 0 auto !important;
-            position: relative !important;
-            left: auto !important;
-            right: auto !important;
-            top: auto !important;
-            bottom: auto !important;
-            float: none !important;
-            transform: none !important;
-          }
-        ")),
         shiny::tags$style(type = "text/css", enhanced_css),
         shiny::tags$style(HTML("
         /* Fixed layout - always centered, no jumping */
@@ -1678,114 +1606,9 @@ launch_study <- function(
             }
           }
           
-          @media (min-width: 576px) and (max-width: 767px) {
-            /* Landscape phones */
-            .assessment-card {
-              padding: 20px !important;
-              width: 100% !important;
-              max-width: 100% !important;
-              margin: 0 !important;
-            }
-            
-            .btn-klee {
-              min-width: 120px !important;
-            }
-            
-            .container-fluid {
-              width: 100% !important;
-              max-width: 100% !important;
-              margin: 0 !important;
-              padding: 15px !important;
-            }
-          }
+
           
-          @media (min-width: 768px) and (max-width: 991px) {
-            /* Tablets */
-            .assessment-card {
-              padding: 25px !important;
-              width: calc(100% - 40px) !important;
-              max-width: 100% !important;
-              margin: 20px !important;
-            }
-            
-            .container-fluid {
-              width: 100% !important;
-              max-width: 100% !important;
-              margin: 0 !important;
-              padding: 0 !important;
-            }
-            
-            .nav-buttons {
-              display: flex !important;
-              justify-content: space-between !important;
-              gap: 15px !important;
-            }
-          }
-          
-          @media (min-width: 992px) and (max-width: 1199px) {
-            /* Desktop */
-            .assessment-card {
-              padding: 30px !important;
-              width: calc(100% - 50px) !important;
-              max-width: 960px !important;
-              margin: 25px auto !important;
-            }
-            
-            .container-fluid {
-              width: 100% !important;
-              max-width: 100% !important;
-              margin: 0 !important;
-              padding: 0 !important;
-            }
-          }
-          
-          @media (min-width: 1200px) {
-            /* Large desktop */
-            .assessment-card {
-              padding: 35px !important;
-              width: calc(100% - 60px) !important;
-              max-width: 1140px !important;
-              margin: 30px auto !important;
-            }
-            
-            .container-fluid {
-              width: 100% !important;
-              max-width: 100% !important;
-              margin: 0 !important;
-              padding: 0 !important;
-            }
-          }
-          
-          /* Flexible containers - FIXED LEFT ALIGNMENT */
-          .container-fluid {
-            width: 100% !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            box-sizing: border-box !important;
-          }
-          
-          .assessment-card {
-            width: 100% !important;
-            box-sizing: border-box !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
-          }
-          
-          /* Remove all left margins and padding */
-          #main-study-container {
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-          
-          .page-wrapper {
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-          
-          #page_content {
-            padding: 0 !important;
-            margin: 0 !important;
-          }
+
           
           /* Responsive form elements */
           input[type='text'],
@@ -2154,10 +1977,10 @@ launch_study <- function(
           .load_packages_once()
         }
         
-        # Create the main container - FULL WIDTH NO CENTERING
+        # Create the main container
         shiny::div(
           id = "main-study-container",
-          style = "min-height: 500px; width: 100vw !important; max-width: 100vw !important; margin: 0 !important; padding: 0 !important; position: absolute; left: 0; top: 0;",
+          style = "min-height: 500px;",
           shiny::uiOutput("page_content")
         )
       })
