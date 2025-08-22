@@ -1315,19 +1315,35 @@ launch_study <- function(
       shiny::tags$style(HTML("
         /* Smooth page transitions */
         .smooth-transition {
-          animation: smoothFadeIn 0.3s ease-in-out;
-          transition: all 0.3s ease-in-out;
+          animation: smoothFadeIn 0.2s ease-out;
+          transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+          will-change: opacity, transform;
         }
         
         @keyframes smoothFadeIn {
           from { 
             opacity: 0;
-            transform: translateY(10px);
+            transform: translateY(5px);
           }
           to { 
             opacity: 1;
             transform: translateY(0);
           }
+        }
+        
+        /* Prevent layout shift */
+        .assessment-card {
+          min-height: 300px;
+          transition: all 0.2s ease-out;
+        }
+        
+        /* Smooth button transitions */
+        .btn-klee, .nav-buttons button {
+          transition: all 0.15s ease-out;
+        }
+        
+        .btn-klee:active, .nav-buttons button:active {
+          transform: scale(0.98);
         }
         
         /* Validation highlighting for required fields */
@@ -1382,6 +1398,38 @@ launch_study <- function(
           }
         }
         
+        /* Custom loading indicator */
+        .loading-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(255, 255, 255, 0.8);
+          z-index: 9999;
+          display: none;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .loading-overlay.active {
+          display: flex;
+        }
+        
+        .loading-spinner {
+          width: 40px;
+          height: 40px;
+          border: 3px solid #f3f3f3;
+          border-top: 3px solid #e8041c;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
         /* Show Shiny's natural busy indicator more prominently */
         .shiny-busy {
           position: fixed;
@@ -1393,12 +1441,28 @@ launch_study <- function(
         
         /* Simple fade-in for content */
         .container-fluid {
-          animation: contentFadeIn 0.3s ease-in;
+          animation: contentFadeIn 0.2s ease-out;
         }
         
         @keyframes contentFadeIn {
-          from { opacity: 0; }
+          from { opacity: 0.8; }
           to { opacity: 1; }
+        }
+        
+        /* Disable text selection during transitions */
+        .smooth-transition.transitioning {
+          user-select: none;
+          pointer-events: none;
+        }
+        
+        /* Smooth opacity transitions */
+        .smooth-transition {
+          transition: opacity 0.15s ease-out !important;
+        }
+        
+        /* Prevent form input flash */
+        input, select, textarea {
+          transition: border-color 0.15s ease-out, background-color 0.15s ease-out;
         }
       ")),
       shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
@@ -1691,6 +1755,10 @@ launch_study <- function(
     }
     
     output$study_ui <- shiny::renderUI({
+      # Only trigger re-render on specific changes
+      rv$current_page  # Explicit dependency
+      rv$stage  # Explicit dependency
+      
       # Load packages after first render
       if (!.packages_loaded && rv$stage != "demographics") {
         .load_packages_once()
@@ -1706,11 +1774,14 @@ launch_study <- function(
         )
       }
       
-      # Wrap content in a div with fade transition
-      shiny::div(
-        class = "smooth-transition",
-        id = paste0("page-", rv$current_page),
-        base::switch(rv$stage,
+      # Isolate everything else to prevent unnecessary re-renders
+      shiny::isolate({
+        # Wrap content in a div with fade transition
+        shiny::div(
+          class = "smooth-transition",
+          id = paste0("page-", rv$current_page),
+          style = "min-height: 400px;", # Prevent height jumping
+          base::switch(rv$stage,
                    "custom_page_flow" = {
                      # Process and render custom page flow
                      process_page_flow(config, rv, input, output, session, item_bank, ui_labels, logger)
@@ -2197,8 +2268,9 @@ launch_study <- function(
                                              shiny::div(class = "assessment-card", results_content)
                     )
                   }
-        ) # End of switch
-      ) # End of smooth-transition div
+          ) # End of switch
+        ) # End of smooth-transition div
+      }) # End of isolate
     })
     
     output$theta_plot <- shiny::renderPlot({
@@ -2597,13 +2669,25 @@ launch_study <- function(
           }
         }
         
-        # Move to next page
-        # Smooth transition to next page
-        shinyjs::runjs("$('.smooth-transition').fadeOut(150);")
-        shinyjs::delay(150, {
-          rv$current_page <- rv$current_page + 1
-          logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
-        })
+                  # Move to next page
+          # Add loading state for smooth transition
+          shinyjs::runjs("
+            $('.smooth-transition').addClass('transitioning').css('opacity', '0.5');
+            $('.nav-buttons button').prop('disabled', true);
+          ")
+          
+          # Small delay for visual feedback
+          shinyjs::delay(100, {
+            rv$current_page <- rv$current_page + 1
+            logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
+            
+            # Re-enable buttons and restore opacity
+            shinyjs::runjs("
+              $('.smooth-transition').removeClass('transitioning').css('opacity', '1');
+              $('.nav-buttons button').prop('disabled', false);
+              window.scrollTo({top: 0, behavior: 'smooth'});
+            ")
+          })
       }
     })
     
@@ -2613,12 +2697,24 @@ launch_study <- function(
         output$validation_errors <- shiny::renderUI({ NULL })
         shinyjs::runjs("$('.has-error').removeClass('has-error');")
         
-        # Smooth transition to previous page
-        shinyjs::runjs("$('.smooth-transition').fadeOut(150);")
-        shinyjs::delay(150, {
-          rv$current_page <- rv$current_page - 1
-          logger(sprintf("Moving back to page %d of %d", rv$current_page, rv$total_pages))
-        })
+                  # Add loading state for smooth transition
+          shinyjs::runjs("
+            $('.smooth-transition').addClass('transitioning').css('opacity', '0.5');
+            $('.nav-buttons button').prop('disabled', true);
+          ")
+          
+          # Small delay for visual feedback
+          shinyjs::delay(100, {
+            rv$current_page <- rv$current_page - 1
+            logger(sprintf("Moving back to page %d of %d", rv$current_page, rv$total_pages))
+            
+            # Re-enable buttons and restore opacity
+            shinyjs::runjs("
+              $('.smooth-transition').removeClass('transitioning').css('opacity', '1');
+              $('.nav-buttons button').prop('disabled', false);
+              window.scrollTo({top: 0, behavior: 'smooth'});
+            ")
+          })
       }
     })
     
