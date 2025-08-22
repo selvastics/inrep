@@ -171,13 +171,7 @@
 #' @section License:
 #'
 #' This project is licensed under the MIT License - see the LICENSE file for details.
-#'
-#' @section Acknowledgments:
-#'
-#' - **Anthropic**: For Claude 4 best practices in prompt engineering
-#' - **R Community**: For the excellent tools and packages that make this possible
-#' - **Contributors**: All those who have helped improve and expand the package
-#'
+
 #' @author inrep Development Team
 #' @keywords package
 #' @seealso
