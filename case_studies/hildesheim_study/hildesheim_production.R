@@ -732,11 +732,18 @@ create_hilfo_report <- function(responses, item_bank) {
       if (!is.null(WEBDAV_URL) && !is.null(WEBDAV_PASSWORD)) {
         later::later(function() {
           tryCatch({
+            # Extract username from WebDAV URL
+            webdav_user <- "inrep_test"  # Default
+            if (grepl("/remote.php/dav/files/([^/]+)/", WEBDAV_URL)) {
+              webdav_user <- sub(".*/remote.php/dav/files/([^/]+)/.*", "\\1", WEBDAV_URL)
+              cat("Using WebDAV username:", webdav_user, "\n")
+            }
+            
             # Upload using httr
             response <- httr::PUT(
               url = paste0(WEBDAV_URL, local_file),
               body = httr::upload_file(local_file),
-              httr::authenticate("inrep_test", WEBDAV_PASSWORD),
+              httr::authenticate(webdav_user, WEBDAV_PASSWORD, type = "basic"),
               httr::add_headers("Content-Type" = "text/csv")
             )
             
@@ -744,6 +751,11 @@ create_hilfo_report <- function(responses, item_bank) {
               cat("Data successfully uploaded to cloud\n")
             } else {
               cat("Cloud upload failed with status:", httr::status_code(response), "\n")
+              if (httr::status_code(response) == 401) {
+                cat("Authentication failed. Check username and password.\n")
+                cat("Username used:", webdav_user, "\n")
+                cat("URL:", WEBDAV_URL, "\n")
+              }
             }
           }, error = function(e) {
             cat("Error uploading to cloud:", e$message, "\n")

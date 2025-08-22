@@ -166,9 +166,12 @@ start_keep_alive_monitoring <- function() {
     
     # Check session validity
     if (!is_session_valid()) {
-      # Log session termination to file only for background operations
-      if (.session_state$enable_logging) {
-        log_session_event("SESSION_TERMINATED", "Session terminated due to time limit")
+      # Only log termination once
+      if (!isTRUE(.session_state$termination_logged)) {
+        .session_state$termination_logged <- TRUE
+        if (.session_state$enable_logging) {
+          log_session_event("SESSION_TERMINATED", "Session terminated due to time limit")
+        }
       }
       stop_keep_alive_monitoring()
       return()
