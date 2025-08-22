@@ -197,7 +197,7 @@ get_responsive_css <- function(theme = "modern") {
   }
   
   .card:hover {
-    transform: translateY(-2px);
+    /* Removed transform to prevent positioning issues */
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   }
   
@@ -651,7 +651,7 @@ get_theme_styles <- function(theme_name) {
       
       .btn-primary:hover {
         background: #0056b3;
-        transform: translateY(-1px);
+        /* Removed transform to prevent positioning issues */
       }
     ',
     

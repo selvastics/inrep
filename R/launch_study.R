@@ -1039,11 +1039,9 @@ launch_study <- function(
     @keyframes fadeInCard {
       from {
         opacity: 0;
-        transform: translateY(-10px);
       }
       to {
         opacity: 1;
-        transform: translateY(0);
       }
     }
     
@@ -1146,7 +1144,8 @@ launch_study <- function(
     }
     
     .session-status-indicator:hover {
-      transform: scale(1.05);
+      /* Removed transform to prevent positioning issues */
+      opacity: 0.95;
     }
     
     .feedback-message {
@@ -1264,11 +1263,9 @@ launch_study <- function(
     }
     
     .shiny-input-radiogroup input[type='radio'] {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      margin: 0;
+      position: relative;
+      margin-right: 8px;
+      vertical-align: middle;
     }
     
     /* Ensure text doesn't overlap with radio button */
@@ -1461,8 +1458,10 @@ launch_study <- function(
         }
         
         @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+          /* Removed rotation to prevent positioning issues */
+          0% { opacity: 0.3; }
+          50% { opacity: 1; }
+          100% { opacity: 0.3; }
         }
         
         /* Show Shiny's natural busy indicator more prominently */
@@ -1470,7 +1469,8 @@ launch_study <- function(
           position: fixed;
           top: 50%;
           left: 50%;
-          transform: translate(-50%, -50%);
+          margin-left: -50px;
+          margin-top: -50px;
           z-index: 1000;
         }
         
@@ -1499,10 +1499,10 @@ launch_study <- function(
           overflow-y: auto;
         }
         
-        /* Force hardware acceleration off to prevent flicker */
+        /* Prevent flicker without transform */
         .page-wrapper, .assessment-card {
-          transform: translateZ(0) !important;
           will-change: auto !important;
+          backface-visibility: hidden !important;
         }
         
         /* Prevent any zoom or scale */
@@ -1529,6 +1529,23 @@ launch_study <- function(
           right: auto !important;
           margin-left: auto !important;
           margin-right: auto !important;
+        }
+        
+        /* Force centering on initial render */
+        body > div:first-child {
+          text-align: center !important;
+        }
+        
+        body > div:first-child > * {
+          text-align: left;
+          margin: 0 auto;
+        }
+        
+        /* Ensure Shiny container centers */
+        .container-fluid:first-child {
+          display: flex !important;
+          justify-content: center !important;
+          align-items: flex-start !important;
         }
       ")),
       shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
@@ -2150,9 +2167,8 @@ launch_study <- function(
                              }
                              .progress-circle-gradient svg {
                                position: absolute;
-                               left: 50%%;
-                               top: 50%%;
-                               transform: translate(-50%%, -50%%) rotate(-90deg);
+                               left: 0;
+                               top: 0;
                                display: block;
                              }
                              .progress-circle-gradient .progress-bg {
@@ -2176,7 +2192,8 @@ launch_study <- function(
                                position: absolute;
                                top: 50%%;
                                left: 50%%;
-                               transform: translate(-50%%, -50%%);
+                               margin-left: -30px;
+                               margin-top: -15px;
                                font-family: 'Helvetica Neue', 'Arial', sans-serif;
                                font-size: 20px;
                                font-weight: 500;
