@@ -756,7 +756,8 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
         later::later(function() {
           tryCatch({
             # For public WebDAV folders, use share token as username
-            webdav_user <- WEBDAV_SHARE_TOKEN
+            webdav_user <- "OUarlqGbhYopkBc"  # Share token is the username
+            webdav_pass <- "ws2526"  # Password for the share
             
             cat("Uploading to cloud storage...\n")
             
@@ -764,7 +765,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
             response <- httr::PUT(
               url = paste0(WEBDAV_URL, local_file),
               body = httr::upload_file(local_file),
-              httr::authenticate(webdav_user, WEBDAV_PASSWORD, type = "basic"),
+              httr::authenticate(webdav_user, webdav_pass, type = "basic"),
               httr::add_headers(
                 "Content-Type" = "text/csv",
                 "X-Requested-With" = "XMLHttpRequest"
@@ -774,12 +775,12 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
             if (httr::status_code(response) %in% c(200, 201, 204)) {
               cat("Data successfully uploaded to cloud\n")
               cat("File:", local_file, "\n")
+              cat("Upload complete to: https://sync.academiccloud.de/index.php/s/OUarlqGbhYopkBc\n")
             } else {
               cat("Cloud upload failed with status:", httr::status_code(response), "\n")
               if (httr::status_code(response) == 401) {
-                cat("Authentication failed. Check share token and password.\n")
-                cat("Share token:", webdav_user, "\n")
-                cat("Password: ws2526\n")
+                cat("Authentication failed. Trying with share token.\n")
+                cat("Share token used:", webdav_user, "\n")
               }
           }, error = function(e) {
             cat("Error uploading to cloud:", e$message, "\n")

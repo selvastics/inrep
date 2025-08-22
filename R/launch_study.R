@@ -1313,17 +1313,29 @@ launch_study <- function(
     shiny::tags$head(
       shiny::tags$style(type = "text/css", enhanced_css),
       shiny::tags$style(HTML("
-        /* Fixed layout - no animations, no scaling, no shake */
+        /* Fixed layout - prevent content jumping from bottom-right */
         #main-study-container {
           width: 100%;
           max-width: 100%;
-          overflow-x: hidden;
+          overflow: hidden;
+          min-height: 600px;
         }
         
         .page-wrapper {
           opacity: 1 !important;
-          width: 100%;
+          width: 100% !important;
           transform: none !important;
+          position: static !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        
+        /* Ensure content starts at top-left */
+        .container-fluid, .assessment-card {
+          position: relative !important;
+          top: 0 !important;
+          left: 0 !important;
+          margin: 0 auto !important;
         }
         
         /* Remove ALL animations and transitions */
@@ -1341,6 +1353,16 @@ launch_study <- function(
           box-sizing: border-box;
           animation: none !important;
           transition: none !important;
+          transform-origin: top left !important;
+        }
+        
+        /* Force initial render position */
+        .shiny-html-output {
+          position: relative !important;
+          top: 0 !important;
+          left: 0 !important;
+          transform: none !important;
+          transform-origin: top left !important;
         }
         
         /* Stable buttons - no animations */
@@ -1762,8 +1784,8 @@ launch_study <- function(
         # Create the main container structure with fixed dimensions
         shiny::div(
           id = "main-study-container",
-          style = "min-height: 500px; width: 100%; max-width: 1200px; margin: 0 auto; position: relative; overflow: hidden;",
-          shiny::uiOutput("page_content")
+          style = "min-height: 600px; width: 100%; max-width: 1200px; margin: 0 auto; position: relative; overflow: hidden; display: block;",
+          shiny::uiOutput("page_content", style = "position: relative; top: 0; left: 0; width: 100%;")
         )
       })
       
@@ -1784,11 +1806,11 @@ launch_study <- function(
           )
         }
         
-        # Simple wrapper without transitions
+        # Simple wrapper with fixed positioning
         shiny::div(
           id = paste0("page-", current_page),
           class = "page-wrapper",
-          style = "width: 100%; opacity: 1;",
+          style = "width: 100%; opacity: 1; position: relative; top: 0; left: 0;",
           base::switch(stage,
                    "custom_page_flow" = {
                      # Process and render custom page flow
