@@ -540,7 +540,7 @@ create_ranking_question <- function(input_id, options, config = list()) {
           `data-value` = i,
           shiny::span(class = "rank-number", paste0(i, ".")),
           shiny::span(class = "rank-text", options[i]),
-          shiny::span(class = "drag-handle", "☰")
+          shiny::span(class = "drag-handle", "---")
         )
       })
     ),

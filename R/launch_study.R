@@ -3423,7 +3423,7 @@ launch_study <- function(
         shiny::div(
           class = "submission-status",
           style = "color: #007bff; font-weight: bold; margin-top: 10px; padding: 10px; background-color: #f8f9fa; border: 2px solid #007bff; border-radius: 5px;",
-          shiny::icon("spinner", class = "fa-spin"),
+
           " Processing your response... Please wait."
         )
       } else {

@@ -97,7 +97,7 @@ create_filter_page <- function(input, config) {
       shiny::div(
         class = "alert alert-info",
         style = "margin-top: 20px;",
-        shiny::icon("info-circle"),
+
         " Die folgenden Fragen beziehen sich auf Ihre schulischen Leistungen."
       )
     )
@@ -110,7 +110,7 @@ create_filter_page <- function(input, config) {
       shiny::div(
         class = "alert alert-info",
         style = "margin-top: 20px;",
-        shiny::icon("graduation-cap"),
+
         " Die folgenden Fragen beziehen sich auf Ihre akademischen Leistungen."
       )
     )

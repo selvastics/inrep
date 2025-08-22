@@ -293,7 +293,7 @@ render_page_navigation <- function(rv, config, current_page_idx) {
         if (current_page_idx > 1) {
           shiny::actionButton(
             "prev_page",
-            label = shiny::tagList(shiny::icon("arrow-left"), " Zurück"),
+            label = "Zurück",
             class = "btn-secondary",
             style = "width: 100px;"
           )
@@ -313,7 +313,7 @@ render_page_navigation <- function(rv, config, current_page_idx) {
         if (current_page_idx < total_pages) {
           shiny::actionButton(
             "next_page",
-            label = shiny::tagList("Weiter ", shiny::icon("arrow-right")),
+            label = "Weiter",
             class = "btn-primary",
             style = "width: 100px;"
           )
@@ -324,7 +324,7 @@ render_page_navigation <- function(rv, config, current_page_idx) {
             # Show submit button before results page
             shiny::actionButton(
               "submit_study",
-              label = shiny::tagList("Abschließen ", shiny::icon("check")),
+              label = "Abschließen",
               class = "btn-success",
               style = "width: 120px;"
             )
@@ -332,7 +332,7 @@ render_page_navigation <- function(rv, config, current_page_idx) {
             # Still show next button
             shiny::actionButton(
               "next_page",
-              label = shiny::tagList("Weiter ", shiny::icon("arrow-right")),
+              label = "Weiter",
               class = "btn-primary",
               style = "width: 100px;"
             )
