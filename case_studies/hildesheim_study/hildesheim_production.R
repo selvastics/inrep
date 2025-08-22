@@ -633,26 +633,35 @@ create_hilfo_report <- function(responses, item_bank) {
   # Calculate standard deviations for each dimension
   sds <- list()
   
-  # Big Five dimensions - each has 4 items
+  # Big Five dimensions - each has 4 items (with reverse scoring applied)
+  # Items are in order: E1-E4 (1-4), V1-V4 (5-8), G1-G4 (9-12), N1-N4 (13-16), O1-O4 (17-20)
   bfi_dims <- list(
-    Extraversion = c(responses[c(1, 6, 11, 16)]),
-    Vertraeglichkeit = c(responses[c(2, 7, 12, 17)]),
-    Gewissenhaftigkeit = c(responses[c(3, 8, 13, 18)]),
-    Neurotizismus = c(responses[c(4, 9, 14, 19)]),
-    Offenheit = c(responses[c(5, 10, 15, 20)])
+    Extraversion = c(responses[1], 6-responses[2], 6-responses[3], responses[4]),
+    Verträglichkeit = c(responses[5], 6-responses[6], responses[7], 6-responses[8]),
+    Gewissenhaftigkeit = c(6-responses[9], responses[10], responses[11], 6-responses[12]),
+    Neurotizismus = c(6-responses[13], responses[14], responses[15], 6-responses[16]),
+    Offenheit = c(responses[17], 6-responses[18], responses[19], 6-responses[20])
   )
   
   for (dim_name in names(bfi_dims)) {
-    sds[[dim_name]] <- round(sd(bfi_dims[[dim_name]], na.rm = TRUE), 2)
+    sd_val <- sd(bfi_dims[[dim_name]], na.rm = TRUE)
+    sds[[dim_name]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
   }
   
-  # PSQ Stress - 5 items
-  psq_items <- responses[21:25]
-  sds[["Stress"]] <- round(sd(psq_items, na.rm = TRUE), 2)
+  # PSQ Stress - 5 items (with reverse scoring for item 4)
+  psq_items <- c(responses[21:23], 6-responses[24], responses[25])
+  sd_val <- sd(psq_items, na.rm = TRUE)
+  sds[["Stress"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
   
-  # MWS Kooperation - 4 items
+  # MWS Studierfähigkeiten - 4 items
   mws_items <- responses[26:29]
-  sds[["Kooperation"]] <- round(sd(mws_items, na.rm = TRUE), 2)
+  sd_val <- sd(mws_items, na.rm = TRUE)
+  sds[["Studierfähigkeiten"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
+  
+  # Statistik - 2 items
+  stat_items <- responses[30:31]
+  sd_val <- sd(stat_items, na.rm = TRUE)
+  sds[["Statistik"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
   
   for (name in names(scores)) {
     value <- round(scores[[name]], 2)
