@@ -1576,16 +1576,16 @@ launch_study <- function(
           visibility: visible !important;
         }
         
-        /* Override any theme-specific positioning */
-        .container, .container-fluid, .row, .col, 
-        [class*="col-"], .card, .assessment-card {
-          float: none !important;
-          position: relative !important;
-          left: auto !important;
-          right: auto !important;
-          margin-left: auto !important;
-          margin-right: auto !important;
-        }
+                            /* Override any theme-specific positioning */
+          .container, .container-fluid, .row, .col, .card, .assessment-card,
+          [class*='col-'] {
+            float: none !important;
+            position: relative !important;
+            left: auto !important;
+            right: auto !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+          }
         
         /* Force centering on initial render */
         body > div:first-child {
