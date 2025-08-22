@@ -7,10 +7,12 @@ library(inrep)
 # Don't load heavy packages at startup - load them only when needed
 
 # =============================================================================
-# CLOUD STORAGE CREDENTIALS
+# CLOUD STORAGE CREDENTIALS - Hildesheim Study Folder
 # =============================================================================
-WEBDAV_URL <- "https://sync.academiccloud.de/remote.php/dav/files/inrep_test/"
-WEBDAV_PASSWORD <- "inreptest"
+# Public WebDAV folder: https://sync.academiccloud.de/index.php/s/OUarlqGbhYopkBc
+WEBDAV_URL <- "https://sync.academiccloud.de/public.php/webdav/"
+WEBDAV_PASSWORD <- "ws2526"
+WEBDAV_SHARE_TOKEN <- "OUarlqGbhYopkBc"  # Share token for authentication
 
 # =============================================================================
 # COMPLETE ITEM BANK WITH PROPER VARIABLE NAMES
@@ -390,9 +392,14 @@ custom_page_flow <- list(
 # RESULTS PROCESSOR WITH FIXED RADAR PLOT
 # =============================================================================
 
-create_hilfo_report <- function(responses, item_bank) {
+create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
   if (is.null(responses) || length(responses) == 0) {
     return(shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>"))
+  }
+  
+  # Ensure demographics is a list
+  if (is.null(demographics)) {
+    demographics <- list()
   }
   
   # Ensure we have all 31 item responses
@@ -604,7 +611,6 @@ create_hilfo_report <- function(responses, item_bank) {
   
   html <- paste0(
     '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
-    '<h1 style="color: #e8041c; text-align: center; font-size: 32px; margin-bottom: 30px;">HilFo Studie - Ihre Ergebnisse</h1>',
     
     # Radar plot
     '<div class="report-section">',
@@ -711,9 +717,15 @@ create_hilfo_report <- function(responses, item_bank) {
       complete_data <- data.frame(
         timestamp = Sys.time(),
         session_id = paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S")),
-        # Demographics (if available)
         stringsAsFactors = FALSE
       )
+      
+      # Add demographics from the session
+      if (exists("demographics") && is.list(demographics)) {
+        for (demo_name in names(demographics)) {
+          complete_data[[demo_name]] <- demographics[[demo_name]]
+        }
+      }
       
       # Add item responses
       for (i in seq_along(responses)) {
@@ -731,6 +743,8 @@ create_hilfo_report <- function(responses, item_bank) {
       complete_data$BFI_Offenheit <- scores$Offenheit
       complete_data$PSQ_Stress <- scores$Stress
       complete_data$MWS_Kooperation <- scores$Kooperation
+      complete_data$Studierfähigkeiten <- scores$Studierfähigkeiten
+      complete_data$Statistik <- scores$Statistik
       
       # Save locally
       local_file <- paste0("hilfo_results_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
@@ -741,31 +755,32 @@ create_hilfo_report <- function(responses, item_bank) {
       if (!is.null(WEBDAV_URL) && !is.null(WEBDAV_PASSWORD)) {
         later::later(function() {
           tryCatch({
-            # Extract username from WebDAV URL
-            webdav_user <- "inrep_test"  # Default
-            if (grepl("/remote.php/dav/files/([^/]+)/", WEBDAV_URL)) {
-              webdav_user <- sub(".*/remote.php/dav/files/([^/]+)/.*", "\\1", WEBDAV_URL)
-              cat("Using WebDAV username:", webdav_user, "\n")
-            }
+            # For public WebDAV folders, use share token as username
+            webdav_user <- WEBDAV_SHARE_TOKEN
             
-            # Upload using httr
+            cat("Uploading to cloud storage...\n")
+            
+            # Upload using httr with public folder authentication
             response <- httr::PUT(
               url = paste0(WEBDAV_URL, local_file),
               body = httr::upload_file(local_file),
               httr::authenticate(webdav_user, WEBDAV_PASSWORD, type = "basic"),
-              httr::add_headers("Content-Type" = "text/csv")
+              httr::add_headers(
+                "Content-Type" = "text/csv",
+                "X-Requested-With" = "XMLHttpRequest"
+              )
             )
             
             if (httr::status_code(response) %in% c(200, 201, 204)) {
               cat("Data successfully uploaded to cloud\n")
+              cat("File:", local_file, "\n")
             } else {
               cat("Cloud upload failed with status:", httr::status_code(response), "\n")
               if (httr::status_code(response) == 401) {
-                cat("Authentication failed. Check username and password.\n")
-                cat("Username used:", webdav_user, "\n")
-                cat("URL:", WEBDAV_URL, "\n")
+                cat("Authentication failed. Check share token and password.\n")
+                cat("Share token:", webdav_user, "\n")
+                cat("Password: ws2526\n")
               }
-            }
           }, error = function(e) {
             cat("Error uploading to cloud:", e$message, "\n")
           })

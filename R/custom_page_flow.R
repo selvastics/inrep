@@ -234,14 +234,25 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
 render_results_page <- function(page, config, rv, item_bank, ui_labels) {
   # Use custom results processor if available
   if (!is.null(config$results_processor) && is.function(config$results_processor)) {
+    # Check if function accepts demographics parameter
+    processor_args <- names(formals(config$results_processor))
+    
     # Use cat_result if available (contains cleaned responses), otherwise use raw responses
     if (!is.null(rv$cat_result) && !is.null(rv$cat_result$responses)) {
-      results_content <- config$results_processor(rv$cat_result$responses, item_bank)
+      if ("demographics" %in% processor_args) {
+        results_content <- config$results_processor(rv$cat_result$responses, item_bank, rv$demographics)
+      } else {
+        results_content <- config$results_processor(rv$cat_result$responses, item_bank)
+      }
     } else {
       # Clean responses before passing to processor
       clean_responses <- rv$responses[!is.na(rv$responses)]
       if (length(clean_responses) > 0) {
-        results_content <- config$results_processor(clean_responses, item_bank)
+        if ("demographics" %in% processor_args) {
+          results_content <- config$results_processor(clean_responses, item_bank, rv$demographics)
+        } else {
+          results_content <- config$results_processor(clean_responses, item_bank)
+        }
       } else {
         results_content <- shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>")
       }
