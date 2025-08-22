@@ -907,7 +907,7 @@ launch_study <- function(
       if (session_save && exists("start_data_preservation_monitoring") && is.function(start_data_preservation_monitoring)) {
         tryCatch({
           start_data_preservation_monitoring()
-          logger("Periodic data preservation monitoring started", level = "INFO")
+          # logger("Periodic data preservation monitoring started", level = "INFO") # Disabled to reduce spam
         }, error = function(e) {
           logger(sprintf("Failed to start data preservation monitoring: %s", e$message), level = "WARNING")
         })
@@ -1477,9 +1477,9 @@ launch_study <- function(
     if (session_save) {
       # Log once that session monitoring is active
       if (exists("get_session_status") && is.function(get_session_status)) {
-        logger("Session monitoring active (event-based)", level = "INFO")
+        # logger("Session monitoring active (event-based)", level = "INFO") # Disabled to reduce spam
       } else {
-        logger("Session monitoring active (basic mode)", level = "INFO")
+        # logger("Session monitoring active (basic mode)", level = "INFO") # Disabled to reduce spam
       }
       
       # Session status is checked on events, not on timer
@@ -1487,16 +1487,17 @@ launch_study <- function(
     }
     
     
-    # Keep-alive mechanism to prevent session timeouts (with fallback)
-    if (session_save && exists("start_keep_alive_monitoring") && is.function(start_keep_alive_monitoring)) {
-      tryCatch({
-        start_keep_alive_monitoring()
-        # Log once at startup, then run silently
-        logger("Keep-alive monitoring started (running silently)", level = "INFO")
-      }, error = function(e) {
-        logger(sprintf("Failed to start keep-alive monitoring: %s", e$message), level = "WARNING")
-      })
-    }
+    # Keep-alive mechanism - DISABLED (already started in initialize_robust_session)
+    # This was causing duplicate observers and SESSION_TERMINATED messages
+    # if (session_save && exists("start_keep_alive_monitoring") && is.function(start_keep_alive_monitoring)) {
+    #   tryCatch({
+    #     start_keep_alive_monitoring()
+    #     # Log once at startup, then run silently
+    #     logger("Keep-alive monitoring started (running silently)", level = "INFO")
+    #   }, error = function(e) {
+    #     logger(sprintf("Failed to start keep-alive monitoring: %s", e$message), level = "WARNING")
+    #   })
+    # }
     
     # Session status UI (hidden by default - only shows when explicitly enabled)
     if (session_save && isTRUE(config$show_session_time)) {
