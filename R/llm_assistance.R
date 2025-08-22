@@ -1,7 +1,7 @@
-#' Generate LLM Prompts for Advanced Package Customization
+#' Generate Consultation Prompts for Advanced Package Customization
 #'
 #' @description
-#' Provides comprehensive LLM assistance prompts for various aspects of inrep package
+#' Provides comprehensive assistance prompts for various aspects of inrep package
 #' customization, including study configuration, item bank optimization, demographic
 #' questionnaires, validation procedures, and advanced UI customization.
 #'
@@ -18,10 +18,10 @@
 #'   in the prompt. Default is TRUE.
 #' @param verbose Logical indicating whether to display detailed information.
 #'   Default is TRUE.
-#' @param llm_model Character string specifying the target LLM model for optimization.
+#' @param llm_model Character string specifying the target consultation format.
 #'   Options: "claude", "gpt4", "gemini", "generic". Default is "generic".
 #'
-#' @return Character string containing the LLM prompt, or invisibly returns the prompt
+#' @return Character string containing the consultation prompt, or invisibly returns the prompt
 #'   if output_format is "file" or "clipboard".
 #'
 #' @export

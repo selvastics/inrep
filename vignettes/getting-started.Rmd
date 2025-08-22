@@ -19,9 +19,9 @@ knitr::opts_chunk$set(
 library(inrep)
 ```
 
-# Welcome to inrep!
+# Welcome to inrep
 
-The **inrep** package is a comprehensive framework for creating and administering adaptive assessments using Item Response Theory (IRT) models. Whether you're an educator, researcher, or assessment professional, inrep provides the tools you need to create sophisticated adaptive tests with minimal effort.
+The **inrep** package is a framework for creating and administering adaptive assessments using Item Response Theory (IRT) models. Whether you're an educator, researcher, or assessment professional, inrep provides the tools you need to create adaptive tests with minimal effort.
 
 ## What Makes inrep Special?
 
@@ -29,7 +29,7 @@ The **inrep** package is a comprehensive framework for creating and administerin
 - **Dual Estimation Engines**: Choose between TAM and MIRT for ability estimation
 - **Adaptive & Fixed Testing**: Flexible testing modes for different scenarios
 - **Beautiful UI**: Customizable themes and multilingual support
-- **Research Ready**: Comprehensive logging and data export capabilities
+- **Research Ready**: Logging and data export capabilities
 - **CRAN Quality**: Production-ready code with extensive documentation
 
 ## Installation
@@ -145,7 +145,7 @@ config_grm <- create_study_config(
 
 ## Estimation Methods: TAM vs MIRT
 
-inrep offers two powerful estimation engines:
+inrep offers two estimation engines:
 
 ### TAM (Test Analysis Modules)
 - **Best for**: Quick, reliable estimates
@@ -312,4 +312,4 @@ clinical_config <- create_study_config(
 - **Vignettes**: `vignette(package = "inrep")`
 - **Issues**: Report bugs on GitHub
 
-Welcome to the world of adaptive testing with inrep! Let's get you started with your first adaptive assessment.
+Welcome to adaptive testing with inrep. Let's get you started with your first adaptive assessment.

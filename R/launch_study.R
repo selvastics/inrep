@@ -530,7 +530,9 @@ launch_study <- function(
       "enhanced_config_handler.R",
       "enhanced_session_recovery.R", 
       "enhanced_security.R",
-      "enhanced_performance.R"
+      "enhanced_performance.R",
+      "custom_page_flow.R",
+      "custom_page_flow_validation.R"
     )
     
     for (file in enhanced_files) {
@@ -589,6 +591,9 @@ launch_study <- function(
     stop("Package 'shiny' is required but not available. Please install it with: install.packages('shiny')")
   }
   
+  # Load the later package (now a required dependency)
+  suppressPackageStartupMessages(library(later, quietly = TRUE))
+  
   # Input validation
   extra_params <- list(...)
   if (length(extra_params) > 0) {
@@ -610,50 +615,66 @@ launch_study <- function(
     }
   }
   
-  # Safely load suggested packages with fallbacks
-  safe_load_packages <- function() {
+  # Safely check package availability WITHOUT loading them (for speed)
+  safe_load_packages <- function(immediate = FALSE) {
+    # Only check TAM if adaptive mode is enabled
     packages <- list(
-      TAM = "TAM",
       DT = "DT",
       ggplot2 = "ggplot2", 
       dplyr = "dplyr",
       shinyWidgets = "shinyWidgets"
     )
     
+    # Add TAM only if adaptive is TRUE
+    if (isTRUE(config$adaptive)) {
+      packages <- c(list(TAM = "TAM"), packages)
+    }
+    
     loaded_packages <- list()
     
-    for (pkg_name in names(packages)) {
-      pkg <- packages[[pkg_name]]
-      if (requireNamespace(pkg, quietly = TRUE)) {
-        loaded_packages[[pkg_name]] <- TRUE
-        # Load the package into the namespace
-        tryCatch({
-          library(pkg, character.only = TRUE, quietly = TRUE)
-          logger(sprintf("Successfully loaded package: %s", pkg), level = "INFO")
-        }, error = function(e) {
-          logger(sprintf("Warning: Could not load package %s: %s", pkg, e$message), level = "WARNING")
+    if (!immediate) {
+      # Just check availability, don't load (FAST)
+      for (pkg_name in names(packages)) {
+        pkg <- packages[[pkg_name]]
+        loaded_packages[[pkg_name]] <- requireNamespace(pkg, quietly = TRUE)
+        if (!loaded_packages[[pkg_name]]) {
+          logger(sprintf("Package %s not available. Some features may be limited.", pkg), level = "INFO")
+        }
+      }
+    } else {
+      # Actually load packages (only when needed)
+      for (pkg_name in names(packages)) {
+        pkg <- packages[[pkg_name]]
+        if (requireNamespace(pkg, quietly = TRUE)) {
+          loaded_packages[[pkg_name]] <- TRUE
+          tryCatch({
+            suppressPackageStartupMessages(library(pkg, character.only = TRUE, quietly = TRUE))
+            logger(sprintf("Loaded package: %s", pkg), level = "DEBUG")
+          }, error = function(e) {
+            loaded_packages[[pkg_name]] <- FALSE
+          })
+        } else {
           loaded_packages[[pkg_name]] <- FALSE
-        })
-      } else {
-        loaded_packages[[pkg_name]] <- FALSE
-        logger(sprintf("Package %s not available. Some features may be limited.", pkg), level = "WARNING")
+        }
       }
     }
     
     return(loaded_packages)
   }
   
-  # Load suggested packages
-  available_packages <- safe_load_packages()
+  # Check package availability WITHOUT loading (fast)
+  # Only load immediately if explicitly disabled fast mode
+  immediate_load <- isFALSE(config$fast_mode) && isFALSE(config$defer_packages)
+  available_packages <- safe_load_packages(immediate = immediate_load)
   
-  # Check if TAM package is available (required for psychometric computations)
-  if (!available_packages$TAM) {
+  # Check if TAM package is available (only needed for adaptive mode)
+  if (isTRUE(config$adaptive) && !isTRUE(available_packages$TAM)) {
     message("Package 'TAM' not available. Falling back to basic non-TAM mode for limited checks.")
   }
   
   # Create robust wrapper functions that check package availability
   safe_tam_mml <- function(...) {
-    if (available_packages$TAM) {
+    if (isTRUE(available_packages$TAM)) {
       tryCatch({
         TAM::tam.mml(...)
       }, error = function(e) {
@@ -988,7 +1009,19 @@ launch_study <- function(
     
     .container-fluid { 
       max-width: 800px; 
-      margin: 0 auto; 
+      margin: 0 auto;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    
+    /* Prevent weird scaling */
+    * {
+      box-sizing: border-box;
+    }
+    
+    html {
+      overflow-x: hidden;
+      width: 100%;
     }
     
     .assessment-card {
@@ -1000,6 +1033,18 @@ launch_study <- function(
       border: 1px solid var(--secondary-color);
       background-color: var(--background-color);
       color: var(--text-color);
+      animation: fadeInCard 0.3s ease-in;
+    }
+    
+    @keyframes fadeInCard {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
     
     .card-header {
@@ -1040,7 +1085,28 @@ launch_study <- function(
     }
     
     .btn-klee:hover {
-      background-color: var(--secondary-color);
+      background-color: var(--button-hover-color, var(--secondary-color));
+    }
+    
+    /* Override Bootstrap button colors for Hildesheim theme */
+    .btn-primary {
+      background-color: var(--primary-color) !important;
+      border-color: var(--primary-color) !important;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--button-hover-color, var(--secondary-color)) !important;
+      border-color: var(--button-hover-color, var(--secondary-color)) !important;
+    }
+    
+    .btn-success {
+      background-color: var(--success-color, var(--primary-color)) !important;
+      border-color: var(--success-color, var(--primary-color)) !important;
+    }
+    
+    .btn-secondary {
+      background-color: #6c757d !important;
+      border-color: #6c757d !important;
     }
     
     .test-question {
@@ -1179,10 +1245,18 @@ launch_study <- function(
       margin: 10px 0;
       cursor: pointer;
       padding: 12px;
+      padding-left: 40px !important;  /* More space for radio button */
       border-radius: var(--border-radius);
       transition: background-color 0.2s;
       border: 1px solid var(--secondary-color);
       background-color: rgba(var(--secondary-color), 0.05);
+      text-align: left;
+      position: relative;  /* For absolute positioning of radio */
+    }
+    
+    /* Fix all labels to have same alignment */
+    .shiny-input-radiogroup label {
+      margin-left: 0 !important;
     }
     
     .shiny-input-radiogroup label:hover {
@@ -1190,7 +1264,17 @@ launch_study <- function(
     }
     
     .shiny-input-radiogroup input[type='radio'] {
-      margin-right: 10px;
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      margin: 0;
+    }
+    
+    /* Ensure text doesn't overlap with radio button */
+    .shiny-input-radiogroup label span {
+      display: inline-block;
+      margin-left: 0;
     }
     
     .slider-container {
@@ -1225,11 +1309,45 @@ launch_study <- function(
   
   ui <- shiny::fluidPage(
     shinyjs::useShinyjs(),
+
     shiny::tags$head(
       shiny::tags$style(type = "text/css", enhanced_css),
+      shiny::tags$style(HTML("
+        /* Show Shiny's natural busy indicator more prominently */
+        .shiny-busy {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: 1000;
+        }
+        
+        /* Simple fade-in for content */
+        .container-fluid {
+          animation: contentFadeIn 0.3s ease-in;
+        }
+        
+        @keyframes contentFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      ")),
       shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
-      shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet")
+      shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet"),
+      # Include Plotly for interactive plots
+      shiny::tags$script(src = "https://cdn.plot.ly/plotly-latest.min.js"),
+
     ),
+    # Remove blocking loading screen - let Shiny's natural loading work
+    # shiny::div(
+    #   id = "loading-screen",
+    #   class = "loading-screen",
+    #   style = "display: none;",  # Hidden by default
+    #   shiny::div(
+    #     class = "loading-content",
+    #     shiny::div(class = "loading-spinner")
+    #   )
+    # ),
     if (tolower(config$theme %||% "") == "hildesheim") shiny::div(class = "hildesheim-logo"),
     # Session status indicator for session saving
     if (session_save) {
@@ -1247,15 +1365,27 @@ launch_study <- function(
     
     rv <- shiny::reactiveValues(
       demo_data = stats::setNames(base::rep(NA, base::length(config$demographics)), config$demographics),
-      stage = if (!is.null(config$custom_study_flow) && config$enable_custom_navigation) {
+      stage = if (!is.null(config$custom_page_flow)) {
+        "custom_page_flow"
+      } else if (!is.null(config$custom_study_flow) && config$enable_custom_navigation) {
         config$custom_study_flow$start_with %||% "demographics"
+      } else if (config$show_introduction) {
+        "instructions"
       } else {
         "demographics"
       },
+      current_page = 1,
+      total_pages = if (!is.null(config$custom_page_flow)) length(config$custom_page_flow) else 1,
+      item_page = 1,
+      item_responses = list(),
       current_ability = config$theta_prior[1],
       current_se = config$theta_prior[2],
       administered = base::c(),
-      responses = base::c(),
+      responses = if (!is.null(config$custom_page_flow)) {
+        rep(NA_real_, nrow(item_bank))  # Pre-allocate responses vector
+      } else {
+        base::c()
+      },
       response_times = base::c(),
       start_time = NULL,
       session_start = base::Sys.time(),
@@ -1285,27 +1415,27 @@ launch_study <- function(
       })
     }
     
-    # Session monitoring with automatic data preservation
+    # Defer session monitoring until after first page loads
     if (session_save) {
-      # Session timeout monitoring
-      shiny::observe({
-        shiny::invalidateLater(1000, session)
-        
-        # Check session timeout
-        if (base::difftime(base::Sys.time(), rv$session_start, units = "secs") > max_session_time) {
-          rv$session_active <- FALSE
-          rv$stage = "timeout"
-          logger("Session timed out due to maximum session time", level = "WARNING")
-          
-          # Force final data preservation
-          if (exists("preserve_session_data") && is.function(preserve_session_data)) {
-            tryCatch({
-              preserve_session_data(force = TRUE)
-            }, error = function(e) {
-              logger(sprintf("Final data preservation failed: %s", e$message), level = "WARNING")
-            })
+      # Delay session monitoring to not block initial load
+      later::later(function() {
+        # Session timeout monitoring
+        shiny::observe({
+          # Check session timeout
+          if (base::difftime(base::Sys.time(), rv$session_start, units = "secs") > max_session_time) {
+            rv$session_active <- FALSE
+            rv$stage = "timeout"
+            logger("Session timed out due to maximum session time", level = "WARNING")
+            
+            # Force final data preservation
+            if (exists("preserve_session_data") && is.function(preserve_session_data)) {
+              tryCatch({
+                preserve_session_data(force = TRUE)
+              }, error = function(e) {
+                logger(sprintf("Final data preservation failed: %s", e$message), level = "WARNING")
+              })
+            }
           }
-        }
         
         # Update activity tracking
         if (exists("update_activity") && is.function(update_activity)) {
@@ -1315,12 +1445,11 @@ launch_study <- function(
             logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
           })
         }
-      })
+      })  # Close observe
       
-      # Automatic data preservation
-      shiny::observe({
-        shiny::invalidateLater(data_preservation_interval * 1000, session)
-        
+      # Automatic data preservation - converted to event-based instead of timer-based
+      # This prevents page jumping while still preserving data on important events
+      observe_data_preservation <- function() {
         if (rv$session_active && exists("preserve_session_data") && is.function(preserve_session_data)) {
           tryCatch({
             preserve_session_data()
@@ -1328,35 +1457,42 @@ launch_study <- function(
             logger(sprintf("Data preservation failed: %s", e$message), level = "ERROR")
           })
         }
-      })
+      }
       
-          # Session status monitoring (with fallback)
-    if (session_save) {
-      shiny::observe({
-        shiny::invalidateLater(5000, session)  # Check every 5 seconds
-        
-        # Try to get session status if available, fallback to basic monitoring
-        if (exists("get_session_status") && is.function(get_session_status)) {
-          tryCatch({
-            session_status <- get_session_status()
-            if (session_status$active) {
-              remaining_minutes <- round(session_status$remaining_time / 60, 1)
-              logger(sprintf("Session active: %s minutes remaining", remaining_minutes), level = "INFO")
-            }
-          }, error = function(e) {
-            logger("Session status check failed, using basic monitoring", level = "WARNING")
-          })
-        } else {
-          logger("Session monitoring active (basic mode)", level = "INFO")
-        }
-      })
+      # Preserve data on page changes instead of timer
+      shiny::observeEvent(rv$current_page, {
+        observe_data_preservation()
+      }, ignoreInit = TRUE)
+      
+      # Preserve data on responses
+      shiny::observeEvent(rv$responses, {
+        observe_data_preservation()
+      }, ignoreInit = TRUE)
+      
+      }, delay = 1)  # Close the later() function
     }
+    
+    # Session status monitoring - DISABLED timer-based monitoring
+    # Session is still saved but without constant UI updates that cause page jumping
+    if (session_save) {
+      # Log once that session monitoring is active
+      if (exists("get_session_status") && is.function(get_session_status)) {
+        logger("Session monitoring active (event-based)", level = "INFO")
+      } else {
+        logger("Session monitoring active (basic mode)", level = "INFO")
+      }
+      
+      # Session status is checked on events, not on timer
+      # This prevents the page from jumping to top
+    }
+    
     
     # Keep-alive mechanism to prevent session timeouts (with fallback)
     if (session_save && exists("start_keep_alive_monitoring") && is.function(start_keep_alive_monitoring)) {
       tryCatch({
         start_keep_alive_monitoring()
-        logger("Keep-alive monitoring started", level = "INFO")
+        # Log once at startup, then run silently
+        logger("Keep-alive monitoring started (running silently)", level = "INFO")
       }, error = function(e) {
         logger(sprintf("Failed to start keep-alive monitoring: %s", e$message), level = "WARNING")
       })
@@ -1435,17 +1571,7 @@ launch_study <- function(
       }
     })
     
-  } else {
-    # Basic session monitoring (legacy)
-    shiny::observe({
-      shiny::invalidateLater(1000, session)
-      if (base::difftime(base::Sys.time(), rv$session_start, units = "mins") > config$max_session_duration) {
-        rv$session_active <- FALSE
-        rv$stage = "timeout"
-        logger("Session timed out")
-      }
-    })
-  }
+    # Note: Legacy session monitoring removed - all monitoring is now event-based
     
 
     
@@ -1482,7 +1608,23 @@ launch_study <- function(
         (base::length(rv$administered) >= config$max_items || rv$current_se <= config$min_SEM)
     }
     
+    # Lazy load packages only when first needed
+    .packages_loaded <- FALSE
+    .load_packages_once <- function() {
+      if (!.packages_loaded) {
+        # Load packages in background
+        later::later(function() {
+          safe_load_packages(immediate = TRUE)
+          .packages_loaded <<- TRUE
+        }, delay = 0.1)
+      }
+    }
+    
     output$study_ui <- shiny::renderUI({
+      # Load packages after first render
+      if (!.packages_loaded && rv$stage != "demographics") {
+        .load_packages_once()
+      }
       if (!rv$session_active) {
         return(
           shiny::div(class = "assessment-card",
@@ -1495,6 +1637,10 @@ launch_study <- function(
       }
       
       base::switch(rv$stage,
+                   "custom_page_flow" = {
+                     # Process and render custom page flow
+                     process_page_flow(config, rv, input, output, session, item_bank, ui_labels, logger)
+                   },
                    "error" = {
                      shiny::div(class = "assessment-card error-card",
                                 shiny::h3(ui_labels$system_error, class = "card-header error-header"),
@@ -1510,38 +1656,90 @@ launch_study <- function(
                      )
                    },
                    "demographics" = {
-                     demo_inputs <- base::lapply(base::seq_along(config$demographics), function(i) {
-                       dem <- config$demographics[i]
-                       input_type <- config$input_types[[dem]]
-                       input_id <- base::paste0("demo_", i)
-                       shiny::div(
-                         class = "form-group",
-                         shiny::tags$label(dem, class = "input-label"),
-                         base::switch(input_type,
-                                      "numeric" = shiny::numericInput(
-                                        inputId = input_id,
-                                        label = NULL,
-                                        value = rv$demo_data[i] %||% NA,
-                                        min = 1,
-                                        max = 150,
-                                        width = "100%"
-                                      ),
-                                      "select" = shiny::selectInput(
-                                        inputId = input_id,
-                                        label = NULL,
-                                        choices = base::c("Select..." = "", "Male", "Female", "Other", "Prefer not to say"),
-                                        selected = rv$demo_data[i] %||% "",
-                                        width = "100%"
-                                      ),
-                                      shiny::textInput(
-                                        inputId = input_id,
-                                        label = NULL,
-                                        value = rv$demo_data[i] %||% "",
-                                        width = "100%"
-                                      )
-                         )
-                       )
-                     })
+                                         demo_inputs <- base::lapply(base::seq_along(config$demographics), function(i) {
+                      dem <- config$demographics[i]
+                      input_type <- config$input_types[[dem]]
+                      input_id <- base::paste0("demo_", i)
+                      
+                      # Get demographic configuration if available
+                      demo_config <- NULL
+                      if (!base::is.null(config$demographic_configs) && 
+                          !base::is.null(config$demographic_configs[[dem]])) {
+                        demo_config <- config$demographic_configs[[dem]]
+                      }
+                      
+                      # Use question from config or fall back to variable name
+                      label_text <- if (!base::is.null(demo_config$question)) {
+                        demo_config$question
+                      } else if (!base::is.null(demo_config$label)) {
+                        demo_config$label
+                      } else {
+                        dem
+                      }
+                      
+                      # Create appropriate input based on type
+                      input_element <- base::switch(input_type,
+                        "numeric" = shiny::numericInput(
+                          inputId = input_id,
+                          label = NULL,
+                          value = rv$demo_data[i] %||% NA,
+                          min = if (!base::is.null(demo_config$min)) demo_config$min else 1,
+                          max = if (!base::is.null(demo_config$max)) demo_config$max else 150,
+                          width = "100%"
+                        ),
+                        "select" = shiny::selectInput(
+                          inputId = input_id,
+                          label = NULL,
+                          choices = if (!base::is.null(demo_config$options)) {
+                            base::c("Bitte wählen..." = "", demo_config$options)
+                          } else {
+                            base::c("Select..." = "", "Male", "Female", "Other", "Prefer not to say")
+                          },
+                          selected = rv$demo_data[i] %||% "",
+                          width = "100%"
+                        ),
+                        "radio" = shiny::radioButtons(
+                          inputId = input_id,
+                          label = NULL,
+                          choices = if (!base::is.null(demo_config$options)) {
+                            demo_config$options
+                          } else {
+                            base::c("Yes" = "yes", "No" = "no")
+                          },
+                          selected = rv$demo_data[i] %||% base::character(0),
+                          width = "100%"
+                        ),
+                        "checkbox" = shiny::checkboxGroupInput(
+                          inputId = input_id,
+                          label = NULL,
+                          choices = if (!base::is.null(demo_config$options)) {
+                            demo_config$options
+                          } else {
+                            base::c("Option 1" = "opt1", "Option 2" = "opt2")
+                          },
+                          selected = rv$demo_data[i] %||% base::character(0),
+                          width = "100%"
+                        ),
+                        # Default to text input
+                        shiny::textInput(
+                          inputId = input_id,
+                          label = NULL,
+                          value = rv$demo_data[i] %||% "",
+                          placeholder = if (!base::is.null(demo_config$placeholder)) demo_config$placeholder else "",
+                          width = "100%"
+                        )
+                      )
+                      
+                      # Return the complete form group
+                      shiny::div(
+                        class = "form-group",
+                        shiny::tags$label(label_text, class = "input-label"),
+                        input_element,
+                        if (!base::is.null(demo_config$help_text)) {
+                          shiny::tags$small(class = "form-text text-muted", demo_config$help_text)
+                        }
+                      )
+                    })
                      
                      shiny::tagList(
                        shiny::div(class = "assessment-card",
@@ -1556,10 +1754,36 @@ launch_study <- function(
                      )
                    },
                    "instructions" = {
+                     # Use custom instructions if provided, otherwise use default labels
+                     instructions_content <- if (!base::is.null(config$instructions)) {
+                       shiny::tagList(
+                         if (!base::is.null(config$instructions$welcome)) {
+                           shiny::h3(config$instructions$welcome, class = "card-header")
+                         } else {
+                           shiny::h3(ui_labels$instructions_title, class = "card-header")
+                         },
+                         if (!base::is.null(config$instructions$purpose)) {
+                           shiny::HTML(paste0("<div class='welcome-text'>", config$instructions$purpose, "</div>"))
+                         } else {
+                           shiny::p(ui_labels$instructions_text, class = "welcome-text")
+                         },
+                         if (!base::is.null(config$instructions$duration)) {
+                           shiny::p(config$instructions$duration, class = "welcome-text")
+                         },
+                         if (!base::is.null(config$instructions$structure)) {
+                           shiny::HTML(paste0("<div class='welcome-text'>", config$instructions$structure, "</div>"))
+                         }
+                       )
+                     } else {
+                       shiny::tagList(
+                         shiny::h3(ui_labels$instructions_title, class = "card-header"),
+                         shiny::p(ui_labels$instructions_text, class = "welcome-text"),
+                         shiny::p("The assessment will adapt based on your responses.", class = "welcome-text")
+                       )
+                     }
+                     
                      shiny::div(class = "assessment-card",
-                                shiny::h3(ui_labels$instructions_title, class = "card-header"),
-                                shiny::p(ui_labels$instructions_text, class = "welcome-text"),
-                                shiny::p("The assessment will adapt based on your responses.", class = "welcome-text"),
+                                instructions_content,
                                 shiny::div(class = "nav-buttons",
                                            shiny::actionButton("begin_test", ui_labels$begin_button, class = "btn-klee")
                                 )
@@ -2039,10 +2263,10 @@ launch_study <- function(
       }
       # Use enhanced reporting when requested
       pr <- config$participant_report %||% list()
-      if (isTRUE(pr$use_enhanced_report) && exists("create_enhanced_response_report", where = asNamespace("inrep"), inherits = FALSE)) {
-        dat <- inrep:::create_enhanced_response_report(config, rv$cat_result, item_bank)
-      } else if (isTRUE(pr$use_enhanced_report) && exists("create_enhanced_response_report")) {
-        dat <- create_enhanced_response_report(config, rv$cat_result, item_bank)
+      if (isTRUE(pr$use_enhanced_report) && exists("create_response_report", where = asNamespace("inrep"), inherits = FALSE)) {
+        dat <- inrep:::create_response_report(config, rv$cat_result, item_bank)
+      } else if (isTRUE(pr$use_enhanced_report) && exists("create_response_report")) {
+        dat <- create_response_report(config, rv$cat_result, item_bank)
       } else {
         dat <- if (config$model == "GRM") {
           base::data.frame(
@@ -2227,6 +2451,145 @@ launch_study <- function(
       }
     })
     
+    # Custom page flow navigation observers
+    shiny::observeEvent(input$next_page, {
+      if (rv$stage == "custom_page_flow" && rv$current_page < rv$total_pages) {
+        # Validate current page before progression
+        if (exists("validate_page_progression")) {
+          # Pass item_bank in config for validation
+          config_with_items <- config
+          config_with_items$item_bank <- item_bank
+          validation <- validate_page_progression(rv$current_page, input, config_with_items)
+          if (!validation$valid) {
+            # Show error messages
+            output$validation_errors <- shiny::renderUI({
+              show_validation_errors(validation$errors)
+            })
+            return()  # Don't proceed if validation fails
+          }
+        }
+        
+        # Clear any previous validation errors
+        output$validation_errors <- shiny::renderUI({ NULL })
+        
+        # Save current page data
+        current_page <- config$custom_page_flow[[rv$current_page]]
+        
+        # Collect demographics from current page
+        if (current_page$type == "demographics") {
+          demo_vars <- current_page$demographics %||% config$demographics
+          for (dem in demo_vars) {
+            input_id <- paste0("demo_", dem)
+            value <- input[[input_id]]
+            if (!is.null(value) && value != "") {
+              rv$demo_data[[dem]] <- value
+              logger(sprintf("Saved demographic %s: %s", dem, substr(as.character(value), 1, 20)))
+            }
+          }
+        }
+        
+        # Collect item responses from current page
+        if (current_page$type == "items") {
+          if (!is.null(current_page$item_indices) && !is.null(item_bank)) {
+            for (idx in current_page$item_indices) {
+              # Get the actual item to get its ID
+              if (idx <= nrow(item_bank)) {
+                item <- item_bank[idx, ]
+                item_id <- paste0("item_", item$id %||% idx)
+                value <- input[[item_id]]
+                if (!is.null(value) && value != "") {
+                  rv$item_responses[[item_id]] <- value
+                  # Store in responses vector at the correct position
+                  rv$responses[idx] <- as.numeric(value)
+                  logger(sprintf("Saved item response %d (id: %s): %s", idx, item$id %||% idx, value))
+                }
+              }
+            }
+          }
+        }
+        
+        # Move to next page
+        rv$current_page <- rv$current_page + 1
+        logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
+      }
+    })
+    
+    shiny::observeEvent(input$prev_page, {
+      if (rv$stage == "custom_page_flow" && rv$current_page > 1) {
+        rv$current_page <- rv$current_page - 1
+        logger(sprintf("Moving back to page %d of %d", rv$current_page, rv$total_pages))
+      }
+    })
+    
+    shiny::observeEvent(input$submit_study, {
+      if (rv$stage == "custom_page_flow") {
+        # Validate final page before submission
+        if (exists("validate_page_progression")) {
+          # Pass item_bank in config for validation
+          config_with_items <- config
+          config_with_items$item_bank <- item_bank
+          validation <- validate_page_progression(rv$current_page, input, config_with_items)
+          if (!validation$valid) {
+            output$validation_errors <- shiny::renderUI({
+              show_validation_errors(validation$errors)
+            })
+            return()
+          }
+        }
+        
+        # Collect final page data (could be demographics or items)
+        current_page <- config$custom_page_flow[[rv$current_page]]
+        
+        if (current_page$type == "demographics") {
+          demo_vars <- current_page$demographics
+          for (dem in demo_vars) {
+            input_id <- paste0("demo_", dem)
+            value <- input[[input_id]]
+            if (!is.null(value) && value != "") {
+              rv$demo_data[[dem]] <- value
+            }
+          }
+        } else if (current_page$type == "items") {
+          # Collect item responses from final page
+          if (!is.null(current_page$item_indices) && !is.null(item_bank)) {
+            for (idx in current_page$item_indices) {
+              if (idx <= nrow(item_bank)) {
+                item <- item_bank[idx, ]
+                item_id <- paste0("item_", item$id %||% idx)
+                value <- input[[item_id]]
+                if (!is.null(value) && value != "") {
+                  rv$responses[idx] <- as.numeric(value)
+                }
+              }
+            }
+          }
+        }
+        
+        # Clean up responses - remove NAs for final processing
+        final_responses <- rv$responses[!is.na(rv$responses)]
+        
+        logger(sprintf("Study completed with %d responses collected", length(final_responses)))
+        
+        # Generate results
+        if (!is.null(config$results_processor)) {
+          rv$cat_result <- list(
+            theta = rv$current_ability,
+            se = rv$current_se,
+            administered = 1:length(final_responses),
+            responses = final_responses,
+            response_times = rv$response_times,
+            demo_data = rv$demo_data
+          )
+          
+          # Move to last page (results)
+          rv$current_page <- length(config$custom_page_flow)
+          rv$stage <- "custom_page_flow"  # Stay in custom flow to show results page
+        }
+        
+        logger("Study completed via custom page flow")
+      }
+    })
+    
     shiny::observeEvent(input$start_test, {
       # Log demographic submission
       if (session_save && exists("log_session_event") && is.function(log_session_event)) {
@@ -2326,6 +2689,27 @@ launch_study <- function(
       
       rv$stage <- "assessment"  # Fixed: was "test", now "assessment"
       rv$start_time <- base::Sys.time()
+      
+      # Initialize item selection for assessment stage
+      if (!config$adaptive) {
+        # For non-adaptive mode, start with first item
+        if (!base::is.null(config$fixed_items)) {
+          rv$current_item <- config$fixed_items[1]
+        } else {
+          rv$current_item <- 1
+        }
+        logger(sprintf("Non-adaptive mode: Starting with item %s", rv$current_item))
+      } else {
+        # For adaptive mode, select first item
+        first_item <- inrep::select_next_item(
+          administered = base::integer(0),
+          responses = base::numeric(0),
+          item_bank = item_bank,
+          config = config
+        )
+        rv$current_item <- first_item
+        logger(sprintf("Adaptive mode: Starting with item %s", first_item))
+      }
     })
     
     # CUSTOM STUDY FLOW NAVIGATION - NEW
@@ -2795,12 +3179,12 @@ launch_study <- function(
         shiny::div(
           class = "error-boundary",
           style = "background-color: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 15px; margin: 15px 0;",
-          shiny::h4("⚠️ Assessment Paused", style = "color: #856404; margin-top: 0;"),
+          shiny::h4("Assessment Paused", style = "color: #856404; margin-top: 0;"),
           shiny::p(rv$error_message, style = "color: #856404; margin-bottom: 15px;"),
           shiny::div(
             style = "display: flex; gap: 10px;",
-            shiny::actionButton("auto_recover", "🔄 Auto-Recover", class = "btn-warning"),
-            shiny::actionButton("manual_recover", "🔧 Manual Recovery", class = "btn-info")
+            shiny::actionButton("auto_recover", "Auto-Recover", class = "btn-warning"),
+            shiny::actionButton("manual_recover", "Manual Recovery", class = "btn-info")
           )
         )
       } else {
@@ -2863,11 +3247,9 @@ launch_study <- function(
       }
     })
     
-    # AUTOMATIC ERROR RECOVERY - NO USER INTERVENTION REQUIRED
-    shiny::observe({
-      # Check for stuck states every 2 seconds
-      shiny::invalidateLater(2000, session)
-      
+    # AUTOMATIC ERROR RECOVERY - Event-based instead of timer-based
+    # This prevents page jumping while still handling errors
+    check_error_states <- function() {
       # Automatic recovery from submission lock
       if (rv$submission_in_progress && !is.null(rv$submission_lock_time)) {
         lock_duration <- as.numeric(difftime(Sys.time(), rv$submission_lock_time, units = "secs"))
@@ -2913,7 +3295,16 @@ launch_study <- function(
           }
         }
       }
-    })
+    }
+    
+    # Call error checking on specific events instead of timer
+    shiny::observeEvent(rv$stage, {
+      check_error_states()
+    }, ignoreInit = TRUE)
+    
+    shiny::observeEvent(rv$submission_in_progress, {
+      check_error_states()
+    }, ignoreInit = TRUE)
     
     shiny::observeEvent(input$restart_test, {
       # Clean up robust session before restart
