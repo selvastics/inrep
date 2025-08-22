@@ -1313,29 +1313,47 @@ launch_study <- function(
     shiny::tags$head(
       shiny::tags$style(type = "text/css", enhanced_css),
       shiny::tags$style(HTML("
-        /* Fixed layout - prevent content jumping from bottom-right */
+        /* Fixed layout - always centered, no jumping */
         #main-study-container {
           width: 100%;
-          max-width: 100%;
+          max-width: 1200px;
+          margin: 0 auto !important;
           overflow: hidden;
           min-height: 600px;
+          display: flex !important;
+          justify-content: center !important;
+          align-items: flex-start !important;
+        }
+        
+        #page_content {
+          width: 100% !important;
+          display: flex !important;
+          justify-content: center !important;
         }
         
         .page-wrapper {
           opacity: 1 !important;
           width: 100% !important;
+          max-width: 1200px !important;
           transform: none !important;
-          position: static !important;
-          margin: 0 !important;
+          position: relative !important;
+          margin: 0 auto !important;
           padding: 0 !important;
+          display: block !important;
         }
         
-        /* Ensure content starts at top-left */
-        .container-fluid, .assessment-card {
-          position: relative !important;
-          top: 0 !important;
-          left: 0 !important;
+        /* Center all content immediately */
+        .container-fluid {
           margin: 0 auto !important;
+          padding: 15px !important;
+          max-width: 100% !important;
+        }
+        
+        .assessment-card {
+          margin: 0 auto !important;
+          position: relative !important;
+          left: auto !important;
+          right: auto !important;
         }
         
         /* Remove ALL animations and transitions */
@@ -1345,24 +1363,32 @@ launch_study <- function(
           transform: none !important;
         }
         
-        /* Fixed card size to prevent scaling */
+        /* Fixed card size - always centered */
         .assessment-card {
           min-height: 400px;
           width: 100%;
-          max-width: 100%;
+          max-width: 800px !important;
+          margin: 0 auto !important;
           box-sizing: border-box;
           animation: none !important;
           transition: none !important;
-          transform-origin: top left !important;
+          transform: none !important;
+          position: relative !important;
+          left: auto !important;
+          right: auto !important;
         }
         
-        /* Force initial render position */
+        /* Force centered rendering */
         .shiny-html-output {
-          position: relative !important;
-          top: 0 !important;
-          left: 0 !important;
+          width: 100% !important;
           transform: none !important;
-          transform-origin: top left !important;
+          position: relative !important;
+          margin: 0 auto !important;
+        }
+        
+        /* Ensure all divs are centered */
+        #study_ui > div {
+          margin: 0 auto !important;
         }
         
         /* Stable buttons - no animations */
@@ -1483,6 +1509,26 @@ launch_study <- function(
         html, body {
           zoom: 1 !important;
           -webkit-text-size-adjust: 100% !important;
+        }
+        
+        /* Critical: Hide content until properly positioned */
+        .page-wrapper:not([data-positioned]) {
+          visibility: hidden !important;
+        }
+        
+        .page-wrapper {
+          visibility: visible !important;
+        }
+        
+        /* Override any theme-specific positioning */
+        .container, .container-fluid, .row, .col, 
+        [class*="col-"], .card, .assessment-card {
+          float: none !important;
+          position: relative !important;
+          left: auto !important;
+          right: auto !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
         }
       ")),
       shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
@@ -1781,11 +1827,11 @@ launch_study <- function(
           .load_packages_once()
         }
         
-        # Create the main container structure with fixed dimensions
+        # Create the main container structure - always centered
         shiny::div(
           id = "main-study-container",
-          style = "min-height: 600px; width: 100%; max-width: 1200px; margin: 0 auto; position: relative; overflow: hidden; display: block;",
-          shiny::uiOutput("page_content", style = "position: relative; top: 0; left: 0; width: 100%;")
+          style = "min-height: 600px; width: 100%; max-width: 1200px; margin: 0 auto; position: relative; overflow: hidden; display: flex; justify-content: center;",
+          shiny::uiOutput("page_content", style = "width: 100%; display: flex; justify-content: center;")
         )
       })
       
@@ -1806,11 +1852,11 @@ launch_study <- function(
           )
         }
         
-        # Simple wrapper with fixed positioning
+        # Wrapper that maintains centering
         shiny::div(
           id = paste0("page-", current_page),
           class = "page-wrapper",
-          style = "width: 100%; opacity: 1; position: relative; top: 0; left: 0;",
+          style = "width: 100%; max-width: 1200px; opacity: 1; margin: 0 auto; display: block;",
           base::switch(stage,
                    "custom_page_flow" = {
                      # Process and render custom page flow
