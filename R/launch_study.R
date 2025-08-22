@@ -3179,12 +3179,12 @@ launch_study <- function(
         shiny::div(
           class = "error-boundary",
           style = "background-color: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 15px; margin: 15px 0;",
-          shiny::h4("⚠️ Assessment Paused", style = "color: #856404; margin-top: 0;"),
+          shiny::h4("Assessment Paused", style = "color: #856404; margin-top: 0;"),
           shiny::p(rv$error_message, style = "color: #856404; margin-bottom: 15px;"),
           shiny::div(
             style = "display: flex; gap: 10px;",
-            shiny::actionButton("auto_recover", "🔄 Auto-Recover", class = "btn-warning"),
-            shiny::actionButton("manual_recover", "🔧 Manual Recovery", class = "btn-info")
+            shiny::actionButton("auto_recover", "Auto-Recover", class = "btn-warning"),
+            shiny::actionButton("manual_recover", "Manual Recovery", class = "btn-info")
           )
         )
       } else {
