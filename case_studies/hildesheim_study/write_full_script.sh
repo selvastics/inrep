@@ -1,5 +1,10 @@
+#!/bin/bash
+
+# Create the complete hildesheim_production.R file
+
+cat > hildesheim_production.R << 'RSCRIPTEND'
 # =============================================================================
-# HILFO STUDIE - PRODUCTION VERSION WITH COMPLETE DATA RECORDING
+# HILFO STUDIE - PRODUCTION VERSION WITH COMPLETE DATA RECORDING  
 # =============================================================================
 # All variables recorded with proper names, cloud storage enabled
 # NOW WITH PROGRAMMING ANXIETY ADDED (2 pages before BFI)
@@ -14,3 +19,7 @@ library(inrep)
 WEBDAV_URL <- "https://sync.academiccloud.de/public.php/webdav/"
 WEBDAV_PASSWORD <- "ws2526"
 WEBDAV_SHARE_TOKEN <- "OUarlqGbhYopkBc"  # Share token for authentication
+RSCRIPTEND
+
+echo "Header written. File size so far:"
+wc -l hildesheim_production.R

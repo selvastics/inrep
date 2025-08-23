@@ -380,3 +380,41 @@ validate_study_config <- function(config, item_bank = NULL, context = "launch") 
   return(report)
 }
 
+#' Validate Item Bank Structure
+#'
+#' @description
+#' Validates item bank structure with detailed error messages
+#'
+#' @param item_bank Data frame containing items
+#' @param model IRT model to use
+#'
+#' @return List with validation results
+#' @export
+validate_item_bank <- function(item_bank, model = "GRM") {
+  
+  errors <- character()
+  warnings <- character()
+  
+  if (!is.data.frame(item_bank)) {
+    return(list(
+      valid = FALSE,
+      errors = "Item bank must be a data frame",
+      warnings = character()
+    ))
+  }
+  
+  # Model-specific validation
+  if (model == "GRM") {
+    if (!"ResponseCategories" %in% names(item_bank)) {
+      errors <- c(errors,
+        "GRM requires ResponseCategories column. Add: item_bank$ResponseCategories <- '1,2,3,4,5'"
+      )
+    }
+  }
+  
+  return(list(
+    valid = length(errors) == 0,
+    errors = errors,
+    warnings = warnings
+  ))
+}

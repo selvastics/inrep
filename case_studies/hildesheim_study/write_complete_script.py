@@ -1,4 +1,6 @@
-# =============================================================================
+# This Python script writes the complete hildesheim_production.R file
+
+complete_script = '''# =============================================================================
 # HILFO STUDIE - PRODUCTION VERSION WITH COMPLETE DATA RECORDING
 # =============================================================================
 # All variables recorded with proper names, cloud storage enabled
@@ -14,3 +16,9 @@ library(inrep)
 WEBDAV_URL <- "https://sync.academiccloud.de/public.php/webdav/"
 WEBDAV_PASSWORD <- "ws2526"
 WEBDAV_SHARE_TOKEN <- "OUarlqGbhYopkBc"  # Share token for authentication
+'''
+
+with open('hildesheim_production.R', 'w') as f:
+    f.write(complete_script)
+
+print("File started. Now appending the rest...")

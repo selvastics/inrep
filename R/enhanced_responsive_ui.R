@@ -197,7 +197,7 @@ get_responsive_css <- function(theme = "modern") {
   }
   
   .card:hover {
-    transform: translateY(-2px);
+    /* Removed transform to prevent positioning issues */
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   }
   
@@ -540,7 +540,7 @@ create_ranking_question <- function(input_id, options, config = list()) {
           `data-value` = i,
           shiny::span(class = "rank-number", paste0(i, ".")),
           shiny::span(class = "rank-text", options[i]),
-          shiny::span(class = "drag-handle", "☰")
+          shiny::span(class = "drag-handle", "---")
         )
       })
     ),
@@ -651,7 +651,7 @@ get_theme_styles <- function(theme_name) {
       
       .btn-primary:hover {
         background: #0056b3;
-        transform: translateY(-1px);
+        /* Removed transform to prevent positioning issues */
       }
     ',
     

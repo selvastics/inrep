@@ -136,7 +136,10 @@ generate_llm_prompt <- function(component = "study_config",
   }
 }
 
-
+# Helper function for string repetition
+`%r%` <- function(string, times) {
+  paste(rep(string, times), collapse = "")
+}
 
 #' Add LLM Model-Specific Instructions to Prompts
 #' @noRd
@@ -1029,6 +1032,61 @@ is_llm_assistance_enabled <- function(component = "all") {
 }
 
 # Display LLM prompt based on current settings
+quick_llm_assistance <- function(task = "personality_assessment",
+                                complexity = "standard",
+                                llm_model = "generic",
+                                output_format = "console") {
+  
+  # Validate inputs
+  valid_tasks <- c("personality_assessment", "cognitive_testing", "clinical_evaluation", 
+                   "educational_assessment", "organizational_survey", "research_study")
+  valid_complexities <- c("basic", "standard", "advanced", "expert")
+  valid_llm_models <- c("claude", "gpt4", "gemini", "generic")
+  valid_formats <- c("console", "file", "clipboard")
+  
+  if (!task %in% valid_tasks) {
+    stop("Invalid task. Must be one of: ", paste(valid_tasks, collapse = ", "))
+  }
+  
+  if (!complexity %in% valid_complexities) {
+    stop("Invalid complexity. Must be one of: ", paste(valid_complexities, collapse = ", "))
+  }
+  
+  if (!llm_model %in% valid_llm_models) {
+    stop("Invalid llm_model. Must be one of: ", paste(valid_llm_models, collapse = ", "))
+  }
+  
+  if (!output_format %in% valid_formats) {
+    stop("Invalid output_format. Must be one of: ", paste(valid_formats, collapse = ", "))
+  }
+  
+  # Generate task-specific context
+  context <- generate_task_context(task, complexity)
+  
+  # Determine appropriate component based on task
+  component <- switch(task,
+    "personality_assessment" = "study_config",
+    "cognitive_testing" = "item_bank",
+    "clinical_evaluation" = "validation",
+    "educational_assessment" = "study_config",
+    "organizational_survey" = "demographics",
+    "research_study" = "deployment"
+  )
+  
+  # Generate the prompt using the main function
+  generate_llm_prompt(
+    component = component,
+    context = context,
+    study_type = map_task_to_study_type(task),
+    output_format = output_format,
+    include_examples = TRUE,
+    verbose = TRUE,
+    llm_model = llm_model
+  )
+}
+
+#' Generate Task-Specific Context for Quick Assistance
+#' @noRd
 generate_task_context <- function(task, complexity) {
   base_context <- switch(task,
     "personality_assessment" = list(
@@ -1110,3 +1168,83 @@ map_task_to_study_type <- function(task) {
   )
 }
 
+#' Display LLM Prompt with Enhanced Formatting
+#'
+#' @description
+#' Displays and formats LLM prompts for optimal use with external LLM services.
+#' This function provides enhanced formatting and guidance for users.
+#'
+#' @param prompt Character string containing the LLM prompt to display.
+#' @param component Character string specifying the component type for context.
+#' @param format_type Character string specifying the display format.
+#'   Options: "enhanced", "minimal", "copy_ready"
+#'
+#' @return Invisibly returns the formatted prompt.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Display a prompt with enhanced formatting
+#' prompt <- generate_llm_prompt("study_config", study_type = "personality")
+#' display_llm_prompt(prompt, "study_config", "enhanced")
+#' }
+display_llm_prompt <- function(prompt, component = "unknown", format_type = "enhanced") {
+  
+  # Validate format type
+  valid_formats <- c("enhanced", "minimal", "copy_ready")
+  if (!format_type %in% valid_formats) {
+    stop("Invalid format_type. Must be one of: ", paste(valid_formats, collapse = ", "))
+  }
+  
+  if (format_type == "enhanced") {
+    message("=" %r% 80)
+    message("ENHANCED LLM PROMPT DISPLAY")
+    message("=" %r% 80)
+    message("")
+    message("Component: ", toupper(component))
+    message("Format: Enhanced with guidance")
+    message("")
+    message("Copy this prompt to your preferred LLM service:")
+    message("")
+    message("- ChatGPT (OpenAI)")
+    message("- Claude (Anthropic)")
+    message("- Gemini (Google)")
+    message("- Other LLM services")
+    message("")
+    message("=" %r% 80)
+    message("PROMPT START")
+    message("=" %r% 80)
+    message("")
+    message(prompt)
+    message("")
+    message("=" %r% 80)
+    message("PROMPT END")
+    message("=" %r% 80)
+    message("")
+    message("IMPORTANT GUIDANCE:")
+    message("1. Copy the entire prompt (from PROMPT START to PROMPT END)")
+    message("2. Paste into your LLM service")
+    message("3. Review the response for completeness")
+    message("4. Use the provided R code directly in inrep")
+    message("5. Test the implementation before production use")
+    message("=" %r% 80)
+    
+  } else if (format_type == "minimal") {
+    message("LLM PROMPT FOR ", toupper(component))
+    message("=" %r% 50)
+    message(prompt)
+    message("=" %r% 50)
+    
+  } else if (format_type == "copy_ready") {
+    message("COPY-READY LLM PROMPT")
+    message("=" %r% 50)
+    message("")
+    message(prompt)
+    message("")
+    message("=" %r% 50)
+    message("Copy the above text to your LLM service")
+  }
+  
+  invisible(prompt)
+}

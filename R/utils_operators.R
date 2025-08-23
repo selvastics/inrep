@@ -12,3 +12,18 @@
 `%||%` <- function(lhs, rhs) {
   if (is.null(lhs)) rhs else lhs
 }
+
+#' String Repetition Operator
+#' 
+#' Repeats a string a specified number of times
+#' 
+#' @param string Character string to repeat
+#' @param times Number of times to repeat
+#' @return Character string repeated the specified number of times
+#' @export
+#' @examples
+#' "=" %r% 50  # Returns "=================================================="
+#' "-" %r% 10  # Returns "----------"
+`%r%` <- function(string, times) {
+  paste(rep(string, times), collapse = "")
+}

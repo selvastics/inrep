@@ -33,6 +33,8 @@ initialize_robust_session <- function(
   .session_state$data_preservation_interval <- data_preservation_interval
   .session_state$keep_alive_interval <- keep_alive_interval
   .session_state$enable_logging <- enable_logging
+  .session_state$termination_logged <- FALSE  # Prevent duplicate termination messages
+  .session_state$observers_created <- FALSE   # Prevent duplicate observer creation
   
   # Create session log file
   session_id <- generate_session_id()
@@ -47,11 +49,16 @@ initialize_robust_session <- function(
                           keep_alive_interval = keep_alive_interval))
   }
   
-  # Start keep-alive monitoring
-  start_keep_alive_monitoring()
-  
-  # Start data preservation monitoring
-  start_data_preservation_monitoring()
+  # Start monitoring only if not already started
+  if (!isTRUE(.session_state$observers_created)) {
+    .session_state$observers_created <- TRUE
+    
+    # Start keep-alive monitoring
+    start_keep_alive_monitoring()
+    
+    # Start data preservation monitoring
+    start_data_preservation_monitoring()
+  }
   
   return(list(
     session_id = session_id,
@@ -115,7 +122,8 @@ log_session_event <- function(event_type, message, details = NULL) {
   })
   
   # Only log to console for critical events, not background operations
-  if (event_type %in% c("SESSION_INIT", "SESSION_TERMINATED", "ERROR")) {
+  # Disabled SESSION_TERMINATED to avoid spam
+  if (event_type %in% c("SESSION_INIT", "ERROR")) {
     message(sprintf("[SESSION] %s: %s", event_type, message))
   }
 }
@@ -166,9 +174,13 @@ start_keep_alive_monitoring <- function() {
     
     # Check session validity
     if (!is_session_valid()) {
-      # Log session termination to file only for background operations
-      if (.session_state$enable_logging) {
-        log_session_event("SESSION_TERMINATED", "Session terminated due to time limit")
+      # Only log termination once - DISABLED to prevent spam
+      if (!isTRUE(.session_state$termination_logged)) {
+        .session_state$termination_logged <- TRUE
+        # Disabled to prevent repeated messages
+        # if (.session_state$enable_logging) {
+        #   log_session_event("SESSION_TERMINATED", "Session terminated due to time limit")
+        # }
       }
       stop_keep_alive_monitoring()
       return()
