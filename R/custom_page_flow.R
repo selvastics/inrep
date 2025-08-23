@@ -140,12 +140,20 @@ render_demographics_page <- function(page, config, rv, ui_labels, current_lang =
       input_id, 
       demo_config, 
       input_type,
-      rv$demo_data[[dem]]
+      rv$demo_data[[dem]],
+      current_lang
     )
+    
+    # Use language-specific question
+    question_text <- if (current_lang == "en" && !is.null(demo_config$question_en)) {
+      demo_config$question_en
+    } else {
+      demo_config$question %||% dem
+    }
     
     shiny::div(
       class = "form-group",
-      shiny::tags$label(demo_config$question %||% dem, class = "input-label"),
+      shiny::tags$label(question_text, class = "input-label"),
       input_element,
       if (!is.null(demo_config$help_text)) {
         shiny::tags$small(class = "form-text text-muted", demo_config$help_text)
@@ -192,11 +200,18 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, current_la
     }
     
     # Get response labels based on scale type
-    labels <- get_response_labels(page$scale_type %||% "likert", choices, config$language)
+    labels <- get_response_labels(page$scale_type %||% "likert", choices, current_lang)
+    
+    # Get question text in the correct language
+    question_text <- if (current_lang == "en" && !is.null(item$Question_EN)) {
+      item$Question_EN
+    } else {
+      item$Question %||% item$content %||% paste("Item", i)
+    }
     
     shiny::div(
       class = "item-container",
-      shiny::h4(item$Question %||% item$content %||% paste("Item", i)),
+      shiny::h4(question_text),
       shiny::radioButtons(
         inputId = item_id,
         label = NULL,
@@ -369,7 +384,7 @@ render_page_navigation <- function(rv, config, current_page_idx) {
 }
 
 #' Create demographic input element
-create_demographic_input <- function(input_id, demo_config, input_type, current_value = NULL) {
+create_demographic_input <- function(input_id, demo_config, input_type, current_value = NULL, current_lang = "de") {
   # Debug logging for checkbox issues
   if (input_type == "checkbox" && getOption("inrep.debug", FALSE)) {
     cat("DEBUG: Creating checkbox for", input_id, "\n")
@@ -398,7 +413,11 @@ create_demographic_input <- function(input_id, demo_config, input_type, current_
     "select" = shiny::selectInput(
       inputId = input_id,
       label = NULL,
-      choices = c("Bitte wählen..." = "", demo_config$options),
+      choices = if (current_lang == "en" && !is.null(demo_config$options_en)) {
+        c("Please select..." = "", demo_config$options_en)
+      } else {
+        c("Bitte wählen..." = "", demo_config$options)
+      },
       selected = current_value %||% "",
       width = "100%"
     ),
@@ -406,7 +425,11 @@ create_demographic_input <- function(input_id, demo_config, input_type, current_
     "radio" = shiny::radioButtons(
       inputId = input_id,
       label = NULL,
-      choices = demo_config$options,
+      choices = if (current_lang == "en" && !is.null(demo_config$options_en)) {
+        demo_config$options_en
+      } else {
+        demo_config$options
+      },
       selected = current_value %||% character(0),
       width = "100%"
     ),

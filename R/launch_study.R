@@ -1770,6 +1770,9 @@ launch_study <- function(
         # Update config language
         config$language <<- new_lang
         
+        # Force re-render of current page by incrementing a counter
+        rv$language_change_trigger <- (rv$language_change_trigger %||% 0) + 1
+        
         # Log the change
         cat("Language switched to:", new_lang, "\n")
       }
@@ -2075,6 +2078,8 @@ launch_study <- function(
         # Dependencies
         current_page <- rv$current_page
         stage <- rv$stage
+        language_trigger <- rv$language_change_trigger  # Force re-render on language change
+        ui_labels <- reactive_ui_labels()  # Use reactive UI labels
         
         if (!rv$session_active) {
           return(
