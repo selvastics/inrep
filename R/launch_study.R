@@ -713,12 +713,40 @@ launch_study <- function(
   # This ensures < 100ms to first page render
   available_packages <- safe_load_packages(immediate = FALSE)
   
-  # Pre-calculate static content to avoid runtime computation
+  # Pre-calculate static content AND first page HTML for instant display
   static_content_cache <- list(
     has_custom_css = !is.null(custom_css),
     has_theme_config = !is.null(theme_config),
     has_custom_flow = !is.null(config$custom_page_flow),
-    is_adaptive = isTRUE(config$adaptive)
+    is_adaptive = isTRUE(config$adaptive),
+    # Pre-render first page HTML for INSTANT display
+    first_page = if (!is.null(config$custom_page_flow) && length(config$custom_page_flow) > 0) {
+      first_page_config <- config$custom_page_flow[[1]]
+      shiny::div(
+        class = "container",
+        style = "max-width: 800px; margin: 0 auto; padding: 20px;",
+        shiny::div(
+          class = "card",
+          style = "padding: 30px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);",
+          shiny::h2(first_page_config$title %||% "Welcome", style = "color: #333; margin-bottom: 20px;"),
+          if (!is.null(first_page_config$content)) {
+            shiny::HTML(first_page_config$content)
+          } else if (!is.null(first_page_config$instructions)) {
+            shiny::p(first_page_config$instructions, style = "color: #666; line-height: 1.6;")
+          } else {
+            shiny::p("Loading assessment...", style = "color: #666;")
+          },
+          shiny::div(
+            style = "margin-top: 30px; text-align: right;",
+            shiny::actionButton("next_page", "Next", 
+              class = "btn btn-primary",
+              style = "padding: 10px 30px; font-size: 16px;")
+          )
+        )
+      )
+    } else {
+      NULL
+    }
   )
   
   # Check if TAM package is available (only needed for adaptive mode)
@@ -1843,24 +1871,36 @@ launch_study <- function(
   )
   
   server <- function(input, output, session) {
-    # PERFORMANCE: Use lazy evaluation for all reactive values
-    # This ensures nothing is computed until actually needed
+    # ULTRA-FAST STARTUP: Show UI immediately, initialize everything else later
     
-    # Create reactive values with lazy initialization
+    # Step 1: Create minimal reactive values (no computation!)
     current_language <- shiny::reactiveVal(default_language)
     reactive_ui_labels <- shiny::reactiveVal(ui_labels)
-    
-    # Lazy load heavy computations
     heavy_computations_done <- shiny::reactiveVal(FALSE)
     
-    # Schedule heavy initialization after UI is rendered
+    # Step 2: Render UI IMMEDIATELY (within 1ms)
+    output$study_ui <- shiny::renderUI({
+      # Return pre-cached first page instantly
+      if (exists("static_content_cache") && !is.null(static_content_cache$first_page)) {
+        return(static_content_cache$first_page)
+      }
+      # Fallback: simple loading message
+      shiny::div(
+        class = "container",
+        style = "text-align: center; padding: 50px;",
+        shiny::h3("Loading study..."),
+        shiny::div(class = "spinner")
+      )
+    })
+    
+    # Step 3: Schedule ALL initialization for next tick (0ms delay)
     if (has_later) {
       later::later(function() {
-        # Initialize heavy components in background
+        # Now do the heavy initialization in background
         session$userData$heavy_init_complete <- TRUE
         heavy_computations_done(TRUE)
         logger("Heavy initialization complete", level = "DEBUG")
-      }, delay = 0.2)
+      }, delay = 0)  # 0ms - next tick, not 200ms!
     }
     
     # Observe language changes from Hildesheim study
@@ -1895,63 +1935,74 @@ launch_study <- function(
     }
   }
   
-  # Use study_key argument if provided, else config$study_key, else generate one
-  effective_study_key <- study_key %||% config$study_key %||% generate_study_key()
-    data_dir <- base::file.path("study_data", effective_study_key)
-    if (!base::dir.exists(data_dir)) base::dir.create(data_dir, recursive = TRUE)
-    session_file <- base::file.path(data_dir, "session.rds")
-    
-    rv <- shiny::reactiveValues(
-      demo_data = stats::setNames(base::rep(NA, base::length(config$demographics)), config$demographics),
-      stage = if (!is.null(config$custom_page_flow)) {
-        "custom_page_flow"
-      } else if (!is.null(config$custom_study_flow) && config$enable_custom_navigation) {
-        config$custom_study_flow$start_with %||% "demographics"
-      } else if (config$show_introduction) {
-        "instructions"
-      } else {
-        "demographics"
-      },
-      current_page = 1,
-      total_pages = if (!is.null(config$custom_page_flow)) length(config$custom_page_flow) else 1,
-      item_page = 1,
-      item_responses = list(),
-      current_ability = config$theta_prior[1],
-      current_se = config$theta_prior[2],
-      administered = base::c(),
-      responses = if (!is.null(config$custom_page_flow)) {
-        rep(NA_real_, nrow(item_bank))  # Pre-allocate responses vector
-      } else {
-        base::c()
-      },
-      response_times = base::c(),
-      start_time = NULL,
-      session_start = base::Sys.time(),
-      current_item = NULL,
-      theta_history = as.numeric(base::c()),
-      se_history = as.numeric(base::c()),
-      cat_result = NULL,
-      item_counter = 0,
-      error_message = NULL,
-      feedback_message = NULL,
-      item_info_cache = base::list(),
-      session_active = TRUE,
-      # ROBUST SUBMISSION PROTECTION
-      submission_in_progress = FALSE,
-      submission_lock_time = NULL,
-      last_submission_time = NULL,
-
-    )
-    
-    if (config$session_save && base::file.exists(session_file)) {
-      base::tryCatch({
-        saved_state <- base::readRDS(session_file)
-        for (name in base::names(saved_state)) rv[[name]] <- saved_state[[name]]
-        logger(base::sprintf("Restored session from %s", session_file))
-      }, error = function(e) {
-        logger(base::sprintf("Failed to restore session: %s", e$message))
-      })
-    }
+  # DEFER all heavy initialization - just create empty rv first
+  rv <- shiny::reactiveValues()
+  
+  # Initialize rv values asynchronously
+  shiny::observe({
+    shiny::isolate({
+      if (is.null(rv$initialized)) {
+        # Use study_key argument if provided, else config$study_key, else generate one
+        effective_study_key <- study_key %||% config$study_key %||% generate_study_key()
+        data_dir <- base::file.path("study_data", effective_study_key)
+        if (!base::dir.exists(data_dir)) base::dir.create(data_dir, recursive = TRUE)
+        session_file <- base::file.path(data_dir, "session.rds")
+        
+        # Now populate rv
+        rv$demo_data <- stats::setNames(base::rep(NA, base::length(config$demographics)), config$demographics)
+        rv$stage <- if (!is.null(config$custom_page_flow)) {
+          "custom_page_flow"
+        } else if (!is.null(config$custom_study_flow) && config$enable_custom_navigation) {
+          config$custom_study_flow$start_with %||% "demographics"
+        } else if (config$show_introduction) {
+          "instructions"
+        } else {
+          "demographics"
+        }
+        rv$current_page <- 1
+        rv$total_pages <- if (!is.null(config$custom_page_flow)) length(config$custom_page_flow) else 1
+        rv$item_page <- 1
+        rv$item_responses <- list()
+        rv$current_ability <- config$theta_prior[1]
+        rv$current_se <- config$theta_prior[2]
+        rv$administered <- base::c()
+        rv$responses <- if (!is.null(config$custom_page_flow)) {
+          rep(NA_real_, nrow(item_bank))  # Pre-allocate responses vector
+        } else {
+          base::c()
+        }
+        rv$response_times <- base::c()
+        rv$start_time <- NULL
+        rv$session_start <- base::Sys.time()
+        rv$current_item <- NULL
+        rv$theta_history <- as.numeric(base::c())
+        rv$se_history <- as.numeric(base::c())
+        rv$cat_result <- NULL
+        rv$item_counter <- 0
+        rv$error_message <- NULL
+        rv$feedback_message <- NULL
+        rv$item_info_cache <- base::list()
+        rv$session_active <- TRUE
+        # ROBUST SUBMISSION PROTECTION
+        rv$submission_in_progress <- FALSE
+        rv$submission_lock_time <- NULL
+        rv$last_submission_time <- NULL
+        
+        # Session restoration (moved inside initialization)
+        if (config$session_save && base::file.exists(session_file)) {
+          base::tryCatch({
+            saved_state <- base::readRDS(session_file)
+            for (name in base::names(saved_state)) rv[[name]] <- saved_state[[name]]
+            logger(base::sprintf("Restored session from %s", session_file))
+          }, error = function(e) {
+            logger(base::sprintf("Failed to restore session: %s", e$message))
+          })
+        }
+        
+        rv$initialized <- TRUE  # Mark as initialized
+      }
+    })
+  })
     
     # Defer session monitoring until after first page loads
     if (session_save) {
