@@ -593,6 +593,15 @@ launch_study <- function(
   
   # Check if later package is available (for deferred operations)
   has_later <- requireNamespace("later", quietly = TRUE)
+  if (!has_later) {
+    # Try to install later package for better performance
+    tryCatch({
+      utils::install.packages("later", quiet = TRUE, repos = "https://cran.r-project.org")
+      has_later <- requireNamespace("later", quietly = TRUE)
+    }, error = function(e) {
+      logger("Could not install 'later' package. Performance may be reduced.", level = "INFO")
+    })
+  }
   
   # Check for UUID if study_key uses UUIDgenerate
   if (!missing(study_key) && is.character(study_key)) {
@@ -649,6 +658,18 @@ launch_study <- function(
         if (!loaded_packages[[pkg_name]]) {
           logger(sprintf("Package %s not available. Some features may be limited.", pkg), level = "INFO")
         }
+      }
+      
+      # Schedule deferred loading of heavy packages using later
+      if (has_later) {
+        later::later(function() {
+          # Load heavy packages after UI is ready
+          for (pkg in c("ggplot2", "DT", "dplyr")) {
+            if (requireNamespace(pkg, quietly = TRUE)) {
+              logger(sprintf("Deferred loading of %s complete", pkg), level = "DEBUG")
+            }
+          }
+        }, delay = 0.1)
       }
     } else {
       # Load packages only if not already loaded
@@ -1310,8 +1331,8 @@ launch_study <- function(
   ")
   
   # Get language labels from the comprehensive multilingual system
-  # Start with default language
-  default_language <- config$language %||% "en"
+  # Start with default language (German for Hildesheim)
+  default_language <- config$language %||% "de"
   ui_labels <- get_language_labels(default_language)
   
   ui <- shiny::fluidPage(
