@@ -4,10 +4,10 @@
 # All variables recorded with proper names, cloud storage enabled
 # NOW WITH PROGRAMMING ANXIETY ADDED (2 pages before BFI)
 
-# Load only essential package with suppressed messages for faster startup
-suppressPackageStartupMessages({
-  library(inrep)
-})
+# ULTRA-FAST STARTUP: Check package but don't load until needed
+if (!requireNamespace("inrep", quietly = TRUE)) {
+  stop("Package 'inrep' is required. Please install it.")
+}
 
 # Use later package for deferred loading of heavy packages
 if (!requireNamespace("later", quietly = TRUE)) {
