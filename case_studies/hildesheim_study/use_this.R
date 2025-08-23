@@ -4,8 +4,17 @@
 # All variables recorded with proper names, cloud storage enabled
 # NOW WITH PROGRAMMING ANXIETY ADDED (2 pages before BFI)
 
-library(inrep)
-# Don't load heavy packages at startup - load them only when needed
+# Load only essential package with suppressed messages for faster startup
+suppressPackageStartupMessages({
+  library(inrep)
+})
+
+# Helper function for lazy loading
+.load_if_needed <- function(pkg) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    stop(paste("Package", pkg, "is required but not installed"))
+  }
+}
 
 # =============================================================================
 # CLOUD STORAGE CREDENTIALS - Hildesheim Study Folder
@@ -768,40 +777,55 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
   
   # Compute IRT-based ability estimate using TAM
   pa_theta <- pa_score  # Default to classical score
-  if (requireNamespace("TAM", quietly = TRUE)) {
+  if (requireNamespace("TAM", quietly = TRUE) && length(pa_responses) == 10) {
     tryCatch({
-      # Prepare data for TAM (0-based for dichotomous)
-      pa_data <- matrix(pa_responses - 1, nrow = 1)
-      
-      # Fit 2PL model with item parameters from our item bank
       cat("\n================================================================================\n")
       cat("PROGRAMMING ANXIETY - IRT ANALYSIS (TAM Package)\n")
       cat("================================================================================\n")
       
-      # Get item parameters for the 10 PA items that were shown
+      # For single-person estimation, use simplified approach
+      # Calculate theta based on item parameters and responses
       shown_items <- all_items_de[1:10, ]
+      a_params <- shown_items$a
+      b_params <- shown_items$b
       
-      tam_model <- suppressMessages(TAM::tam.mml.2pl(
-        resp = pa_data,
-        irtmodel = "2PL",
-        control = list(progress = FALSE, verbose = FALSE)
-      ))
+      # Simple theta estimation using Newton-Raphson
+      theta_est <- 0  # Start with prior mean
+      for (iter in 1:10) {
+        # Calculate probabilities for current theta
+        probs <- 1 / (1 + exp(-a_params * (theta_est - b_params)))
+        
+        # First derivative (score function)
+        first_deriv <- sum(a_params * (pa_responses/5 - probs))
+        
+        # Second derivative (information)
+        second_deriv <- -sum(a_params^2 * probs * (1 - probs))
+        
+        # Update theta
+        if (abs(second_deriv) > 0.01) {
+          theta_est <- theta_est - first_deriv / second_deriv
+        }
+        
+        # Check convergence
+        if (abs(first_deriv) < 0.001) break
+      }
       
-      # Estimate ability
-      tam_ability <- suppressMessages(TAM::tam.wle(tam_model))
+      # Calculate standard error
+      info <- sum(a_params^2 * (1 / (1 + exp(-a_params * (theta_est - b_params)))) * 
+                  (1 - 1 / (1 + exp(-a_params * (theta_est - b_params)))))
+      se_est <- 1 / sqrt(info)
       
       cat(sprintf("Classical Score (mean): %.2f (range 1-5)\n", pa_score))
-      cat(sprintf("IRT Ability Estimate (theta): %.3f\n", tam_ability$theta[1]))
-      cat(sprintf("Standard Error (SE): %.3f\n", tam_ability$error[1]))
-      cat(sprintf("Reliability (WLE): %.3f\n", tam_ability$WLE.rel[1]))
+      cat(sprintf("IRT Ability Estimate (theta): %.3f\n", theta_est))
+      cat(sprintf("Standard Error (SE): %.3f\n", se_est))
+      cat(sprintf("Information: %.3f\n", info))
       
       # Interpretation
-      theta_val <- tam_ability$theta[1]
-      if (theta_val < -1) {
+      if (theta_est < -1) {
         cat("Interpretation: Very low programming anxiety\n")
-      } else if (theta_val < 0) {
+      } else if (theta_est < 0) {
         cat("Interpretation: Low programming anxiety\n")
-      } else if (theta_val < 1) {
+      } else if (theta_est < 1) {
         cat("Interpretation: Moderate programming anxiety\n")
       } else {
         cat("Interpretation: High programming anxiety\n")
@@ -809,10 +833,13 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
       cat("================================================================================\n\n")
       
       # Store IRT estimate
-      pa_theta <- tam_ability$theta[1]
+      pa_theta <- theta_est
     }, error = function(e) {
-      cat("Note: TAM estimation failed, using classical scoring\n")
+      cat(sprintf("Note: IRT estimation error: %s\n", e$message))
+      cat("Using classical scoring as fallback\n")
     })
+  } else {
+    cat("Note: TAM package not available or insufficient responses, using classical scoring\n")
   }
   
   # Calculate BFI scores - PROPER GROUPING BY TRAIT (now starting at index 21)
@@ -954,7 +981,8 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
   all_data <- data.frame(
     dimension = factor(names(scores), levels = names(scores)),
     score = unlist(scores),
-    category = c(rep("Persönlichkeit", 5), "Stress", "Studierfähigkeiten", "Statistik")
+    category = c("Programmierangst", "Programmierangst (IRT)", 
+                 rep("Persönlichkeit", 5), "Stress", "Studierfähigkeiten", "Statistik")
   )
   
   bar_plot <- ggplot2::ggplot(all_data, ggplot2::aes(x = dimension, y = score, fill = category)) +
@@ -964,6 +992,8 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
               vjust = -0.5, size = 6, fontface = "bold", color = "#333") +
     # Custom color scheme
     ggplot2::scale_fill_manual(values = c(
+      "Programmierangst" = "#9b59b6",
+      "Programmierangst (IRT)" = "#8e44ad",
       "Persönlichkeit" = "#e8041c",
       "Stress" = "#ff6b6b",
       "Studierfähigkeiten" = "#4ecdc4",
@@ -1439,30 +1469,34 @@ custom_item_selection <- function(rv, item_bank, config) {
     responses_so_far <- rv$responses[1:length(rv$responses)]
     cat(sprintf("Responses collected so far: %d items\n", length(responses_so_far)))
     
-    # Estimate current ability using TAM
+    # Estimate current ability using simplified IRT approach
     current_theta <- 0  # Default
-    if (requireNamespace("TAM", quietly = TRUE) && length(responses_so_far) >= 3) {
+    if (length(responses_so_far) >= 3) {
       tryCatch({
-        # Prepare response matrix (TAM expects 0-based)
-        resp_matrix <- matrix(responses_so_far - 1, nrow = 1)
+        # Use simplified Newton-Raphson for speed
+        # Get item parameters for items shown so far
+        shown_indices <- rv$administered[rv$administered <= 20]
+        a_params <- item_bank$a[shown_indices]
+        b_params <- item_bank$b[shown_indices]
+        item_responses <- responses_so_far
         
-        # Fit 2PL model
-        cat("Fitting 2PL IRT model...\n")
-        tam_fit <- suppressMessages(TAM::tam.mml.2pl(
-          resp = resp_matrix,
-          control = list(progress = FALSE, verbose = FALSE, snodes = 200)
-        ))
+        # Quick theta estimation (3 iterations max for speed)
+        for (iter in 1:3) {
+          probs <- 1 / (1 + exp(-a_params * (current_theta - b_params)))
+          first_deriv <- sum(a_params * (item_responses/5 - probs))
+          second_deriv <- -sum(a_params^2 * probs * (1 - probs))
+          
+          if (abs(second_deriv) > 0.01) {
+            current_theta <- current_theta - first_deriv / second_deriv
+          }
+        }
         
-        # Estimate ability
-        ability_est <- suppressMessages(TAM::tam.wle(tam_fit))
-        current_theta <- ability_est$theta[1]
-        current_se <- ability_est$error[1]
-        
+        current_se <- 1 / sqrt(abs(second_deriv))
         cat(sprintf("Current ability estimate: θ = %.3f (SE = %.3f)\n", current_theta, current_se))
         
-      }, error = function(e) {
-        cat(sprintf("TAM estimation failed: %s\n", e$message))
-        cat("Using mean response as fallback\n")
+              }, error = function(e) {
+          cat(sprintf("IRT estimation failed: %s\n", e$message))
+          cat("Using mean response as fallback\n")
         current_theta <- mean(responses_so_far) - 3  # Center around 0
       })
     } else {
@@ -1586,10 +1620,57 @@ var currentLang = "de";
 function toggleLanguage() {
   currentLang = currentLang === "de" ? "en" : "de";
   
-  // Update all bilingual content
-  document.querySelectorAll("[data-lang-de], [data-lang-en]").forEach(function(el) {
+  // Update all text content based on language
+  // Handle instructions and titles
+  document.querySelectorAll(".page-title, .page-instructions, .item-text, h1, h2, h3, h4, p, label").forEach(function(el) {
+    // Check for German/English versions in various formats
+    var text = el.textContent || el.innerText;
+    
+    // Look for pattern "German text / English text"
+    if (text.includes(" / ")) {
+      var parts = text.split(" / ");
+      if (parts.length === 2) {
+        el.textContent = currentLang === "de" ? parts[0].trim() : parts[1].trim();
+      }
+    }
+    
+    // Also check data attributes
     if (el.hasAttribute("data-lang-de") && el.hasAttribute("data-lang-en")) {
       el.textContent = currentLang === "de" ? el.getAttribute("data-lang-de") : el.getAttribute("data-lang-en");
+    }
+  });
+  
+  // Update radio button labels
+  document.querySelectorAll("input[type=radio] + label, .radio-label").forEach(function(label) {
+    var text = label.textContent || label.innerText;
+    // Handle Likert scale translations
+    var translations = {
+      "Stimme überhaupt nicht zu": "Strongly disagree",
+      "Stimme nicht zu": "Disagree", 
+      "Neutral": "Neutral",
+      "Stimme zu": "Agree",
+      "Stimme voll zu": "Strongly agree",
+      "Sehr schwer": "Very difficult",
+      "Schwer": "Difficult",
+      "Mittel": "Medium",
+      "Leicht": "Easy",
+      "Sehr leicht": "Very easy"
+    };
+    
+    if (currentLang === "en") {
+      for (var de in translations) {
+        if (text === de) {
+          label.textContent = translations[de];
+          break;
+        }
+      }
+    } else {
+      for (var de in translations) {
+        if (text === translations[de]) {
+          label.textContent = de;
+          break;
+        }
+      }
     }
   });
   
