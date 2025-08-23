@@ -571,6 +571,12 @@ launch_study <- function(
   # Check if later package is available (for deferred operations)
   has_later <- requireNamespace("later", quietly = TRUE)
   
+  # OPTIMIZATION: Load TAM only if actually needed for adaptive testing
+  if (isTRUE(config$adaptive) && !requireNamespace("TAM", quietly = TRUE)) {
+    warning("TAM package not available. Adaptive testing disabled.")
+    config$adaptive <- FALSE
+  }
+  
   # Check for UUID if study_key uses UUIDgenerate
   if (!missing(study_key) && is.character(study_key)) {
     if (grepl("UUIDgenerate", deparse(substitute(study_key)))) {
@@ -603,49 +609,39 @@ launch_study <- function(
   
   # Safely check package availability WITHOUT loading them (for speed)
   safe_load_packages <- function(immediate = FALSE) {
-    # Only check TAM if adaptive mode is enabled
-    packages <- list(
-      DT = "DT",
-      ggplot2 = "ggplot2", 
-      dplyr = "dplyr",
-      shinyWidgets = "shinyWidgets"
-    )
+    # OPTIMIZATION: Don't load ANY packages at startup - only check availability
+    packages <- list()
     
-    # Add TAM only if adaptive is TRUE
+    # Only add packages that are ABSOLUTELY needed
     if (isTRUE(config$adaptive)) {
-      packages <- c(list(TAM = "TAM"), packages)
+      packages[["TAM"]] <- "TAM"
     }
     
-    loaded_packages <- list()
+    loaded_packages <- list(
+      DT = FALSE,
+      ggplot2 = FALSE,
+      dplyr = FALSE,
+      shinyWidgets = FALSE,
+      TAM = FALSE
+    )
     
     if (!immediate) {
-      # Just check availability, don't load (FAST)
+      # Just check availability, don't load (ULTRA FAST)
       for (pkg_name in names(packages)) {
         pkg <- packages[[pkg_name]]
         loaded_packages[[pkg_name]] <- requireNamespace(pkg, quietly = TRUE)
-        if (!loaded_packages[[pkg_name]]) {
-          logger(sprintf("Package %s not available. Some features may be limited.", pkg), level = "INFO")
-        }
       }
     } else {
-      # Load packages only if not already loaded
+      # Lazy load only when actually needed
       for (pkg_name in names(packages)) {
         pkg <- packages[[pkg_name]]
         if (requireNamespace(pkg, quietly = TRUE)) {
-          # Check if already loaded to avoid redundant loading
           if (!pkg %in% loadedNamespaces()) {
-            tryCatch({
-              suppressPackageStartupMessages(library(pkg, character.only = TRUE, quietly = TRUE))
-              logger(sprintf("Loaded package: %s", pkg), level = "DEBUG")
-              loaded_packages[[pkg_name]] <- TRUE
-            }, error = function(e) {
-              loaded_packages[[pkg_name]] <- FALSE
-            })
+            # Don't actually load - just mark as available
+            loaded_packages[[pkg_name]] <- TRUE
           } else {
             loaded_packages[[pkg_name]] <- TRUE
           }
-        } else {
-          loaded_packages[[pkg_name]] <- FALSE
         }
       }
     }
@@ -1014,6 +1010,9 @@ launch_study <- function(
       padding: 30px;
       margin: 20px 0;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
       border: 1px solid var(--secondary-color);
       background-color: var(--background-color);
       color: var(--text-color);
@@ -1297,12 +1296,14 @@ launch_study <- function(
 
           shiny::tags$head(
         shiny::tags$style(HTML("
-          /* Simple full-width fix */
+          /* CRITICAL FIX for corner display bug */
           .full-width-app > .container-fluid {
-            padding: 0 15px !important;
-            margin: 0 auto !important;
+            padding: 15px !important;
+            margin: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
+            position: relative !important;
+            display: block !important;
           }
           
           /* Ensure columns use full width */
@@ -1311,11 +1312,14 @@ launch_study <- function(
             padding: 0 !important;
           }
           
-          /* Study UI full width */
+          /* Study UI full width - PREVENT CORNER BUG */
           #study_ui {
             width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
+            display: block !important;
+            position: relative !important;
+            min-height: 500px !important;
           }
         ")),
         shiny::tags$style(type = "text/css", enhanced_css),
@@ -1351,6 +1355,9 @@ launch_study <- function(
           position: relative !important;
           top: 0 !important;
           left: 0 !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          box-sizing: border-box !important;
         }
         
         @keyframes smoothPageFade {
@@ -1383,12 +1390,12 @@ launch_study <- function(
           transform: none !important;
         }
         
-        /* Fixed card size - always centered */
+        /* Fixed card size - FULL WIDTH to prevent corner */
         .assessment-card {
           min-height: 400px;
-          width: 100%;
-          max-width: 800px !important;
-          margin: 0 auto !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          margin: 0 !important;
           box-sizing: border-box;
           animation: none !important;
           transition: none !important;
@@ -1843,10 +1850,10 @@ launch_study <- function(
     }
     
     # Defer session monitoring until after first page loads
-    if (session_save) {
-      # Start session monitoring immediately
-      # Session timeout monitoring
-      shiny::observe({
+    if (session_save && has_later) {
+      # Use later package for deferred monitoring (non-blocking)
+      later::later(function() {
+        shiny::observe({
           # Check session timeout
           if (base::difftime(base::Sys.time(), rv$session_start, units = "secs") > max_session_time) {
             rv$session_active <- FALSE
@@ -1862,16 +1869,8 @@ launch_study <- function(
               })
             }
           }
-        
-        # Update activity tracking
-        if (exists("update_activity") && is.function(update_activity)) {
-          tryCatch({
-            update_activity()
-          }, error = function(e) {
-            logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
-          })
-        }
-      })  # Close observe
+        })  # Close observe
+      }, delay = 2)  # Delay 2 seconds to let UI load first
       
       # Automatic data preservation - converted to event-based instead of timer-based
       # This prevents page jumping while still preserving data on important events
@@ -2097,11 +2096,11 @@ launch_study <- function(
           )
         }
         
-                  # Simple wrapper like main branch - no complex JavaScript
+                  # Simple wrapper with FIXED layout to prevent corner bug
           shiny::div(
             id = paste0("page-", current_page),
             class = "page-wrapper",
-            style = "width: 100%; max-width: 1200px; margin: 0 auto;",
+            style = "width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 15px !important;",
           base::switch(stage,
                                      "custom_page_flow" = {
                     # Process and render custom page flow
