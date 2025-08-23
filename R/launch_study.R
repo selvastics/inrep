@@ -1007,12 +1007,7 @@ launch_study <- function(
       line-height: 1.6;
     }
     
-    .container-fluid { 
-      max-width: 1200px;
-      margin: 0 auto;
-      overflow-x: hidden;
-      min-height: 100vh;
-    }
+    /* Container fluid - removed conflicting rules, handled by layout fixes below */
     
     /* Prevent weird scaling */
     * {
@@ -1310,36 +1305,86 @@ launch_study <- function(
 
           shiny::tags$head(
         shiny::tags$style(HTML("
-          /* IMMEDIATE FIX for 50/50 split */
+          /* COMPREHENSIVE FIX for 50/50 split issue */
+          
+          /* Reset all Bootstrap grid defaults */
           .full-width-app > .container-fluid {
             padding: 0 !important;
             margin: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
+            display: block !important;
           }
           
-          /* Remove any default Shiny columns */
-          .full-width-app .row > .col-sm-12 {
+          /* Force all columns to full width */
+          .full-width-app .row {
+            margin: 0 !important;
+            display: block !important;
+            width: 100% !important;
+          }
+          
+          .full-width-app .row > [class*='col-'] {
             padding: 0 !important;
             width: 100% !important;
+            float: none !important;
+            position: relative !important;
+            min-height: 1px !important;
+            display: block !important;
+          }
+          
+          /* Specific fix for col-sm-12 */
+          .full-width-app .col-sm-12 {
+            width: 100% !important;
+            flex: 0 0 100% !important;
+            max-width: 100% !important;
           }
           
           /* Ensure study UI uses full width */
-          #study_ui, .shiny-html-output {
+          #study_ui {
             width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
+            display: block !important;
+          }
+          
+          /* Fix any Shiny HTML output */
+          .shiny-html-output {
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: block !important;
+          }
+          
+          /* Override any flexbox layouts that might cause issues */
+          body > div:first-child,
+          body > .container-fluid {
+            display: block !important;
+            flex-direction: unset !important;
+            justify-content: unset !important;
+            align-items: unset !important;
           }
         ")),
         shiny::tags$style(type = "text/css", enhanced_css),
         shiny::tags$style(HTML("
-        /* Fixed layout - FULL WIDTH FROM LEFT */
+        /* Fixed layout - FULL WIDTH */
         body > .container-fluid {
-          padding-left: 0 !important;
-          padding-right: 0 !important;
+          padding: 0 !important;
           margin: 0 !important;
           width: 100% !important;
           max-width: 100% !important;
+        }
+        
+        /* Remove Bootstrap's default grid system constraints */
+        .container-fluid > .row {
+          margin: 0 !important;
+          display: block !important;
+        }
+        
+        .container-fluid > .row > [class*='col-'] {
+          padding: 0 !important;
+          width: 100% !important;
+          float: none !important;
+          position: relative !important;
         }
         
         #main-study-container {
@@ -1352,8 +1397,7 @@ launch_study <- function(
         
         #page_content {
           width: 100% !important;
-          display: flex !important;
-          justify-content: center !important;
+          display: block !important;
         }
         
         .page-wrapper {
@@ -1365,13 +1409,6 @@ launch_study <- function(
           margin: 0 auto !important;
           padding: 0 !important;
           display: block !important;
-        }
-        
-        /* Center all content immediately */
-        .container-fluid {
-          margin: 0 auto !important;
-          padding: 15px !important;
-          max-width: 100% !important;
         }
         
         .assessment-card {
@@ -1503,7 +1540,7 @@ launch_study <- function(
         }
         
         /* Stable content - no animations */
-        .container-fluid {
+        body {
           opacity: 1;
         }
         
@@ -1541,32 +1578,13 @@ launch_study <- function(
         
 
         
-                            /* Override any theme-specific positioning */
-          .container, .container-fluid, .row, .col, .card, .assessment-card,
-          [class*='col-'] {
-            float: none !important;
-            position: relative !important;
-            left: auto !important;
-            right: auto !important;
-            margin-left: auto !important;
-            margin-right: auto !important;
-          }
-        
-        /* Force centering on initial render */
-        body > div:first-child {
-          text-align: center !important;
-        }
-        
-        body > div:first-child > * {
-          text-align: left;
-          margin: 0 auto;
-        }
-        
-        /* Ensure Shiny container centers */
-        .container-fluid:first-child {
-          display: flex !important;
-          justify-content: center !important;
-          align-items: flex-start !important;
+        /* Override any theme-specific positioning for cards only */
+        .card, .assessment-card {
+          position: relative !important;
+          left: auto !important;
+          right: auto !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
         }
               ")),
         
@@ -2006,21 +2024,10 @@ launch_study <- function(
         }
         
         # Create the main container - Force full width
-        shiny::tagList(
-          shiny::tags$style(HTML("
-            /* Force container to use full width */
-            body > .container-fluid > .row {
-              margin: 0 !important;
-            }
-            body > .container-fluid > .row > * {
-              padding: 0 !important;
-            }
-          ")),
-          shiny::div(
-            id = "main-study-container",
-            style = "min-height: 500px; width: 100%; margin: 0; padding: 0;",
-            shiny::uiOutput("page_content")
-          )
+        shiny::div(
+          id = "main-study-container",
+          style = "min-height: 500px; width: 100%; margin: 0 auto; padding: 0;",
+          shiny::uiOutput("page_content")
         )
       })
       
