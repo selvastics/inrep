@@ -1748,26 +1748,12 @@ study_config <- inrep::create_study_config(
   session_timeout = 7200,
   results_processor = create_hilfo_report,
   estimation_method = "EAP",  # Use EAP for ability estimation
-  page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
   item_bank = all_items,  # Full item bank
   save_to_file = TRUE,
   save_format = "csv",
   cloud_storage = TRUE,
   enable_download = TRUE,
-  # Enhanced download options for Hildesheim
-  download_formats = c("pdf", "csv", "json"),
-  download_handler = create_hilfo_download_handler(),
-  export_options = list(
-    include_raw_responses = TRUE,
-    include_demographics = TRUE,
-    include_timestamps = TRUE,
-    include_plots = TRUE,
-    pdf_template = "hildesheim",
-    csv_separator = ";",  # German standard
-    json_pretty = TRUE
-  ),
-  # Add minimal custom CSS
-  custom_css = ""
+  allow_deselect = TRUE  # Allow response deselection
 )
 
 cat("\n================================================================================\n")
