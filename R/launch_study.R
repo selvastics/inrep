@@ -1318,176 +1318,76 @@ launch_study <- function(
 
           shiny::tags$head(
         shiny::tags$style(HTML("
-          /* COMPREHENSIVE FIX for 50/50 split issue */
-          
-          /* Reset all Bootstrap grid defaults */
+          /* Simple full-width fix */
           .full-width-app > .container-fluid {
-            padding: 0 !important;
-            margin: 0 !important;
+            padding: 0 15px !important;
+            margin: 0 auto !important;
             width: 100% !important;
             max-width: 100% !important;
-            display: block !important;
           }
           
-          /* Force all columns to full width */
-          .full-width-app .row {
-            margin: 0 !important;
-            display: block !important;
-            width: 100% !important;
-          }
-          
-          .full-width-app .row > [class*='col-'] {
-            padding: 0 !important;
-            width: 100% !important;
-            float: none !important;
-            position: relative !important;
-            min-height: 1px !important;
-            display: block !important;
-          }
-          
-          /* Specific fix for col-sm-12 */
+          /* Ensure columns use full width */
           .full-width-app .col-sm-12 {
             width: 100% !important;
-            flex: 0 0 100% !important;
-            max-width: 100% !important;
+            padding: 0 !important;
           }
           
-          /* Ensure study UI uses full width */
+          /* Study UI full width */
           #study_ui {
             width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
-            display: block !important;
-          }
-          
-          /* Fix any Shiny HTML output */
-          .shiny-html-output {
-            width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            display: block !important;
-          }
-          
-          /* Override any flexbox layouts that might cause issues */
-          body > div:first-child,
-          body > .container-fluid {
-            display: block !important;
-            flex-direction: unset !important;
-            justify-content: unset !important;
-            align-items: unset !important;
           }
         ")),
         shiny::tags$style(type = "text/css", enhanced_css),
         shiny::tags$style(HTML("
-        /* Fixed layout - FULL WIDTH */
+        /* Simple centered layout */
         body > .container-fluid {
-          padding: 0 !important;
-          margin: 0 !important;
-          width: 100% !important;
+          padding: 15px !important;
+          margin: 0 auto !important;
           max-width: 100% !important;
-        }
-        
-        /* Remove Bootstrap's default grid system constraints */
-        .container-fluid > .row {
-          margin: 0 !important;
-          display: block !important;
-        }
-        
-        .container-fluid > .row > [class*='col-'] {
-          padding: 0 !important;
-          width: 100% !important;
-          float: none !important;
-          position: relative !important;
         }
         
         #main-study-container {
           width: 100%;
           max-width: 1200px;
-          margin: 0 auto !important;
-          overflow: hidden;
+          margin: 0 auto;
           min-height: 600px;
         }
         
-        #page_content {
-          width: 100% !important;
-          display: block !important;
-        }
-        
         .page-wrapper {
-          opacity: 1 !important;
-          width: 100% !important;
-          max-width: 1200px !important;
-          transform: none !important;
-          position: relative !important;
-          margin: 0 auto !important;
-          padding: 0 !important;
-          display: block !important;
-          top: 0 !important;
-          left: 0 !important;
+          width: 100%;
+          max-width: 1200px;
+          margin: 0 auto;
+          position: relative;
         }
         
-        /* Prevent page jumping on load */
-        #main-study-container {
-          position: relative !important;
-          min-height: 600px !important;
-        }
-        
-        /* Hide ALL pages during initial render */
+        /* Simple smooth fade-in for all pages (like main branch) */
         .page-wrapper,
+        .assessment-card,
         .demographics-page,
         .instructions-page,
-        .results-page,
-        .assessment-page {
-          visibility: hidden !important;
-          position: absolute !important;
-          top: 0 !important;
-          left: 50% !important;
-          transform: translateX(-50%) !important;
-          width: 100% !important;
-          max-width: 1200px !important;
-        }
-        
-        .page-wrapper[data-ready='true'],
-        .demographics-page[data-ready='true'],
-        .instructions-page[data-ready='true'],
-        .results-page[data-ready='true'],
-        .assessment-page[data-ready='true'] {
-          visibility: visible !important;
+        .results-page {
+          animation: smoothPageFade 0.3s ease-in;
           position: relative !important;
-          transform: none !important;
-          left: 0 !important;
-        }
-        
-        /* Loading overlay during computation */
-        .computation-overlay {
-          position: fixed !important;
           top: 0 !important;
           left: 0 !important;
-          right: 0 !important;
-          bottom: 0 !important;
-          background: rgba(255, 255, 255, 0.95) !important;
-          z-index: 9999 !important;
-          display: none;
-          align-items: center !important;
-          justify-content: center !important;
         }
         
-        .computation-overlay.active {
-          display: flex !important;
+        @keyframes smoothPageFade {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
         
-        .computation-spinner {
-          width: 60px !important;
-          height: 60px !important;
-          border: 4px solid #f3f3f3 !important;
-          border-top: 4px solid var(--primary-color, #007bff) !important;
-          border-radius: 50% !important;
-          animation: spin 1s linear infinite !important;
-        }
-        
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+        /* Ensure container uses full width */
+        .container-fluid {
+          animation: smoothPageFade 0.2s ease-in;
         }
         
         .assessment-card {
@@ -2155,66 +2055,11 @@ launch_study <- function(
           )
         }
         
-        # Wrapper with smooth positioning
-        shiny::tagList(
-          # JavaScript for smooth page positioning with loading overlay
-          shiny::tags$script(HTML(sprintf("
-            // Ensure smooth page transition
-            (function() {
-              var pageId = 'page-%d';
-              
-              // Create or show loading overlay
-              var overlay = document.getElementById('computation-overlay');
-              if (!overlay) {
-                overlay = document.createElement('div');
-                overlay.id = 'computation-overlay';
-                overlay.className = 'computation-overlay';
-                overlay.innerHTML = '<div class=\"computation-spinner\"></div>';
-                document.body.appendChild(overlay);
-              }
-              
-              // Show overlay immediately for smooth transition
-              overlay.classList.add('active');
-              
-              // Immediate positioning to prevent flash
-              var elem = document.getElementById(pageId);
-              if (elem) {
-                // Hide and position immediately
-                elem.style.visibility = 'hidden';
-                elem.style.position = 'relative';
-                elem.style.top = '0';
-                elem.style.left = '0';
-                elem.style.transform = 'none';
-                elem.style.margin = '0 auto';
-                elem.style.opacity = '1';
-                
-                // Use requestAnimationFrame for smooth reveal
-                requestAnimationFrame(function() {
-                  // Small delay to ensure layout is complete
-                  setTimeout(function() {
-                    elem.style.visibility = 'visible';
-                    elem.setAttribute('data-ready', 'true');
-                    overlay.classList.remove('active');
-                  }, 20);
-                });
-              } else {
-                // If element not ready, try again
-                setTimeout(function() {
-                  var elem = document.getElementById(pageId);
-                  if (elem) {
-                    elem.style.visibility = 'visible';
-                    elem.setAttribute('data-ready', 'true');
-                  }
-                  overlay.classList.remove('active');
-                }, 150);
-              }
-            })();
-          ", current_page))),
-          
+                  # Simple wrapper like main branch - no complex JavaScript
           shiny::div(
             id = paste0("page-", current_page),
             class = "page-wrapper",
-            style = "width: 100%; max-width: 1200px; margin: 0 auto; visibility: hidden; position: relative; top: 0; left: 0;",
+            style = "width: 100%; max-width: 1200px; margin: 0 auto;",
           base::switch(stage,
                    "custom_page_flow" = {
                      # Process and render custom page flow
@@ -2704,7 +2549,6 @@ launch_study <- function(
                   }
           ) # End of switch
           ) # End of page-wrapper div
-        ) # End of tagList
       })
     
     output$theta_plot <- shiny::renderPlot({
