@@ -1419,6 +1419,114 @@ Basierend auf Ihren Ergebnissen empfehlen wir:
 
 session_uuid <- paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 
+# Custom item selection function for PA adaptive testing
+custom_item_selection <- function(rv, item_bank, config) {
+  item_num <- length(rv$administered) + 1
+  
+  # First 5 items: Fixed PA items (1-5)
+  if (item_num <= 5) {
+    cat(sprintf("\n[ITEM SELECTION] Fixed PA item %d\n", item_num))
+    return(item_num)
+  }
+  
+  # Items 6-10: Adaptive PA items (select from pool 6-20)
+  if (item_num >= 6 && item_num <= 10) {
+    cat("\n================================================================================\n")
+    cat("ADAPTIVE ITEM SELECTION FOR PROGRAMMING ANXIETY\n")
+    cat("================================================================================\n")
+    
+    # Get responses so far
+    responses_so_far <- rv$responses[1:length(rv$responses)]
+    cat(sprintf("Responses collected so far: %d items\n", length(responses_so_far)))
+    
+    # Estimate current ability using TAM
+    current_theta <- 0  # Default
+    if (requireNamespace("TAM", quietly = TRUE) && length(responses_so_far) >= 3) {
+      tryCatch({
+        # Prepare response matrix (TAM expects 0-based)
+        resp_matrix <- matrix(responses_so_far - 1, nrow = 1)
+        
+        # Fit 2PL model
+        cat("Fitting 2PL IRT model...\n")
+        tam_fit <- suppressMessages(TAM::tam.mml.2pl(
+          resp = resp_matrix,
+          control = list(progress = FALSE, verbose = FALSE, snodes = 200)
+        ))
+        
+        # Estimate ability
+        ability_est <- suppressMessages(TAM::tam.wle(tam_fit))
+        current_theta <- ability_est$theta[1]
+        current_se <- ability_est$error[1]
+        
+        cat(sprintf("Current ability estimate: θ = %.3f (SE = %.3f)\n", current_theta, current_se))
+        
+      }, error = function(e) {
+        cat(sprintf("TAM estimation failed: %s\n", e$message))
+        cat("Using mean response as fallback\n")
+        current_theta <- mean(responses_so_far) - 3  # Center around 0
+      })
+    } else {
+      cat("Not enough responses for IRT estimation, using prior\n")
+    }
+    
+    # Get available PA items (6-20) that haven't been shown
+    pa_pool <- 6:20
+    already_shown <- rv$administered[rv$administered <= 20]
+    available_items <- setdiff(pa_pool, already_shown)
+    
+    cat(sprintf("Available items from PA pool: %s\n", paste(available_items, collapse = ", ")))
+    
+    if (length(available_items) == 0) {
+      cat("ERROR: No available items in PA pool!\n")
+      return(NULL)
+    }
+    
+    # Calculate Fisher Information for each available item
+    item_info <- sapply(available_items, function(item_idx) {
+      a <- item_bank$a[item_idx]  # discrimination
+      b <- item_bank$b[item_idx]  # difficulty
+      
+      # Fisher Information for 2PL: I(θ) = a^2 * P(θ) * Q(θ)
+      p <- 1 / (1 + exp(-a * (current_theta - b)))
+      q <- 1 - p
+      info <- a^2 * p * q
+      
+      return(info)
+    })
+    
+    # Select item with maximum information
+    best_idx <- which.max(item_info)
+    selected_item <- available_items[best_idx]
+    
+    cat("\nItem Information Values:\n")
+    for (i in seq_along(available_items)) {
+      cat(sprintf("  Item %2d (PA_%02d): I = %.4f, b = %5.2f, a = %.2f %s\n", 
+                  available_items[i], available_items[i],
+                  item_info[i], 
+                  item_bank$b[available_items[i]], 
+                  item_bank$a[available_items[i]],
+                  ifelse(i == best_idx, "<-- SELECTED", "")))
+    }
+    
+    cat(sprintf("\n✓ Selected item %d (PA_%02d) with Maximum Information = %.4f\n", 
+                selected_item, selected_item, item_info[best_idx]))
+    cat("================================================================================\n")
+    
+    return(selected_item)
+  }
+  
+  # Items 11+: Fixed non-PA items (21-51 in order)
+  if (item_num > 10) {
+    non_pa_item <- item_num + 10  # Map to items 21-51
+    if (non_pa_item <= nrow(item_bank)) {
+      cat(sprintf("\n[ITEM SELECTION] Fixed non-PA item %d\n", non_pa_item))
+      return(non_pa_item)
+    }
+  }
+  
+  return(NULL)
+}
+
 study_config <- inrep::create_study_config(
   name = "HilFo Studie",
   study_key = session_uuid,
@@ -1428,9 +1536,9 @@ study_config <- inrep::create_study_config(
   demographic_configs = demographic_configs,
   input_types = input_types,
   model = "2PL",  # Use 2PL for adaptive IRT for PA items
-  adaptive = TRUE,  # Enable adaptive testing
-  max_items = 36,  # Total: 10 PA (5 fixed + 5 adaptive) + 20 BFI + 5 PSQ + 4 MWS + 2 Stats = 41
-  min_items = 36,  # Minimum items to show
+  adaptive = FALSE,  # Disable default adaptive (we'll use custom selection)
+  max_items = 41,  # Total: 10 PA + 20 BFI + 5 PSQ + 4 MWS + 2 Stats = 41
+  min_items = 41,  # Minimum items to show
   response_ui_type = "radio",
   progress_style = "bar",
   language = "de",
@@ -1438,8 +1546,7 @@ study_config <- inrep::create_study_config(
   session_timeout = 7200,
   results_processor = create_hilfo_report,
   criteria = "MFI",  # Maximum Fisher Information for adaptive selection
-  adaptive_start = 6,  # Start adaptive after first 5 PA items
-  fixed_items = c(1:5, 21:51),  # Fixed: first 5 PA + all non-PA items (21-51)
+  item_selection_fun = custom_item_selection,  # Custom selection function
   item_bank = all_items,
   save_to_file = TRUE,
   save_format = "csv",
@@ -1532,66 +1639,6 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>
 '
 
-# Custom adaptive selection function for Programming Anxiety items
-# This will be called after each response to select the next item
-adaptive_selection_hook <- function(rv, item_bank, config) {
-  if (length(rv$responses) >= 5 && length(rv$responses) < 10) {
-    # We're in the adaptive phase for PA items
-    cat("\n--- ADAPTIVE ITEM SELECTION ---\n")
-    
-    # Get responses so far (items 1-5 are fixed, now selecting from 6-20)
-    current_responses <- rv$responses[1:length(rv$responses)]
-    
-    # Estimate current ability using TAM
-    if (requireNamespace("TAM", quietly = TRUE)) {
-      tryCatch({
-        resp_matrix <- matrix(current_responses - 1, nrow = 1)
-        tam_fit <- suppressMessages(TAM::tam.mml.2pl(
-          resp = resp_matrix,
-          control = list(progress = FALSE, verbose = FALSE)
-        ))
-        ability_est <- suppressMessages(TAM::tam.wle(tam_fit))
-        current_theta <- ability_est$theta[1]
-        
-        cat(sprintf("Current ability estimate: theta = %.3f (SE = %.3f)\n", 
-                    current_theta, ability_est$error[1]))
-        
-        # Calculate information for remaining items (6-20)
-        available_items <- 6:20
-        already_shown <- rv$administered[rv$administered <= 20]
-        available_items <- setdiff(available_items, already_shown)
-        
-        if (length(available_items) > 0) {
-          # Calculate Fisher Information for each available item
-          item_info <- sapply(available_items, function(item_idx) {
-            a <- item_bank$a[item_idx]  # discrimination
-            b <- item_bank$b[item_idx]  # difficulty
-            # Fisher Information for 2PL: I(theta) = a^2 * P(theta) * Q(theta)
-            p <- 1 / (1 + exp(-a * (current_theta - b)))
-            info <- a^2 * p * (1 - p)
-            return(info)
-          })
-          
-          # Select item with maximum information
-          best_item_idx <- which.max(item_info)
-          selected_item <- available_items[best_item_idx]
-          
-          cat(sprintf("Selected item %d (PA_%02d) with Information = %.3f\n", 
-                      selected_item, selected_item, item_info[best_item_idx]))
-          cat(sprintf("Item difficulty: b = %.2f, discrimination: a = %.2f\n",
-                      item_bank$b[selected_item], item_bank$a[selected_item]))
-          cat("-------------------------------\n")
-          
-          return(selected_item)
-        }
-      }, error = function(e) {
-        cat(sprintf("Adaptive selection error: %s\n", e$message))
-      })
-    }
-  }
-  return(NULL)  # Let default selection continue
-}
-
 # Launch with cloud storage, adaptive testing, and custom JavaScript
 inrep::launch_study(
   config = study_config,
@@ -1599,6 +1646,5 @@ inrep::launch_study(
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
   save_format = "csv",
-  custom_css = custom_js,  # Add custom JavaScript for language toggle and deselection
-  admin_dashboard_hook = adaptive_selection_hook  # Hook for adaptive selection logging
+  custom_css = custom_js  # Add custom JavaScript for language toggle and deselection
 )
