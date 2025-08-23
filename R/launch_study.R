@@ -1043,27 +1043,10 @@ launch_study <- function(
     }
   }
   
-  # Handle model conversion if needed
-  if (config$model %in% c("1PL", "2PL", "3PL") && "ResponseCategories" %in% names(item_bank) && 
-      !all(c("Option1", "Option2", "Option3", "Option4", "Answer") %in% names(item_bank))) {
-    logger("Converting GRM item bank for dichotomous model", level = "INFO")
-    
-    # Add b parameter if missing
-    if (!"b" %in% names(item_bank) && "b1" %in% names(item_bank)) {
-      item_bank$b <- item_bank$b1
-      logger("Using b1 as b parameter", level = "INFO")
-    }
-    
-    # Add dummy options for compatibility (these won't be used with GRM response UI)
-    if (!"Option1" %in% names(item_bank)) {
-      item_bank$Option1 <- "Option 1"
-      item_bank$Option2 <- "Option 2" 
-      item_bank$Option3 <- "Option 3"
-      item_bank$Option4 <- "Option 4"
-      item_bank$Answer <- "Option 1"  # Dummy answer
-      logger("Added dummy options for dichotomous model compatibility", level = "INFO")
-    }
-  }
+  # DEFER model conversion - will be done in server after UI shows
+  .needs_conversion <- config$model %in% c("1PL", "2PL", "3PL") && 
+                       "ResponseCategories" %in% names(item_bank) && 
+                       !all(c("Option1", "Option2", "Option3", "Option4", "Answer") %in% names(item_bank))
   
   # Adjust max_items if necessary
   if (base::is.null(config$max_items) || config$max_items > base::nrow(item_bank)) {
@@ -1909,6 +1892,27 @@ launch_study <- function(
     # Step 3: Schedule ALL initialization for next tick (0ms delay)
     if (has_later) {
       later::later(function() {
+        # Do model conversion if needed (was deferred from startup)
+        if (exists(".needs_conversion") && .needs_conversion) {
+          logger("Converting GRM item bank for dichotomous model", level = "INFO")
+          
+          # Add b parameter if missing
+          if (!"b" %in% names(item_bank) && "b1" %in% names(item_bank)) {
+            item_bank$b <- item_bank$b1
+            logger("Using b1 as b parameter", level = "INFO")
+          }
+          
+          # Add dummy options for compatibility
+          if (!"Option1" %in% names(item_bank)) {
+            item_bank$Option1 <- "Option 1"
+            item_bank$Option2 <- "Option 2" 
+            item_bank$Option3 <- "Option 3"
+            item_bank$Option4 <- "Option 4"
+            item_bank$Answer <- "Option 1"
+            logger("Added dummy options for dichotomous model compatibility", level = "INFO")
+          }
+        }
+        
         # Now do the heavy initialization in background
         session$userData$heavy_init_complete <- TRUE
         heavy_computations_done(TRUE)
