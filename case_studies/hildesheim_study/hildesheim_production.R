@@ -434,7 +434,13 @@ custom_page_flow <- list(
       # JavaScript for language switching - use HTML() to avoid quote issues
       '<script>
 var currentLang = "de";
+var isToggling = false;
+
 function toggleLanguage() {
+  // Prevent multiple rapid clicks
+  if (isToggling) return;
+  isToggling = true;
+  
   console.log("Toggle language clicked!");
   var btn = document.getElementById("lang_switch");
   var deContent = document.getElementById("content_de");
@@ -442,6 +448,7 @@ function toggleLanguage() {
   
   if (!deContent || !enContent) {
     console.log("Content divs not found!");
+    isToggling = false;
     return;
   }
   
@@ -449,10 +456,13 @@ function toggleLanguage() {
     currentLang = "en";
     deContent.style.display = "none";
     enContent.style.display = "block";
-    if (btn) btn.innerHTML = "🇩🇪 Deutsche Version";
+    if (btn) {
+      btn.innerHTML = "🇩🇪 Deutsche Version";
+      btn.disabled = true; // Disable button temporarily
+    }
     console.log("Switched to English");
     
-    // Tell Shiny immediately
+    // Tell Shiny once
     if (typeof Shiny !== "undefined") {
       Shiny.setInputValue("study_language", "en", {priority: "event"});
     }
@@ -460,14 +470,23 @@ function toggleLanguage() {
     currentLang = "de";
     deContent.style.display = "block";
     enContent.style.display = "none";
-    if (btn) btn.innerHTML = "🇬🇧 English Version";
+    if (btn) {
+      btn.innerHTML = "🇬🇧 English Version";
+      btn.disabled = true; // Disable button temporarily
+    }
     console.log("Switched to German");
     
-    // Tell Shiny immediately
+    // Tell Shiny once
     if (typeof Shiny !== "undefined") {
       Shiny.setInputValue("study_language", "de", {priority: "event"});
     }
   }
+  
+  // Re-enable button after a short delay
+  setTimeout(function() {
+    if (btn) btn.disabled = false;
+    isToggling = false;
+  }, 500);
   
   // Sync checkboxes
   var deCheck = document.getElementById("consent_check");

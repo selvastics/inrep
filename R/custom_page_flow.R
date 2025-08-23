@@ -83,7 +83,7 @@ process_page_flow <- function(config, rv, input, output, session, item_bank, ui_
   )
   
   # Add navigation
-  nav_ui <- render_page_navigation(rv, config, current_page_idx)
+  nav_ui <- render_page_navigation(rv, config, current_page_idx, current_lang)
   
   shiny::tagList(
     page_ui,
@@ -306,7 +306,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, current_
 }
 
 #' Render page navigation
-render_page_navigation <- function(rv, config, current_page_idx) {
+render_page_navigation <- function(rv, config, current_page_idx, current_lang = "de") {
   total_pages <- length(config$custom_page_flow)
   current_page <- config$custom_page_flow[[current_page_idx]]
   
@@ -330,7 +330,7 @@ render_page_navigation <- function(rv, config, current_page_idx) {
         if (current_page_idx > 1) {
           shiny::actionButton(
             "prev_page",
-            label = "Zurück",
+            label = if (current_lang == "en") "Back" else "Zurück",
             class = "btn-secondary",
             style = "width: 100px;"
           )
@@ -341,7 +341,11 @@ render_page_navigation <- function(rv, config, current_page_idx) {
       shiny::div(
         class = "page-indicator",
         style = "font-size: 14px; color: #666; white-space: nowrap;",
-        sprintf("Seite %d von %d", current_page_idx, total_pages)
+        if (current_lang == "en") {
+          sprintf("Page %d of %d", current_page_idx, total_pages)
+        } else {
+          sprintf("Seite %d von %d", current_page_idx, total_pages)
+        }
       ),
       
       # Next/Submit button or spacer
@@ -350,7 +354,7 @@ render_page_navigation <- function(rv, config, current_page_idx) {
         if (current_page_idx < total_pages) {
           shiny::actionButton(
             "next_page",
-            label = "Weiter",
+            label = if (current_lang == "en") "Next" else "Weiter",
             class = "btn-primary",
             style = "width: 100px;"
           )
@@ -361,7 +365,7 @@ render_page_navigation <- function(rv, config, current_page_idx) {
             # Show submit button before results page
             shiny::actionButton(
               "submit_study",
-              label = "Abschließen",
+              label = if (current_lang == "en") "Complete" else "Abschließen",
               class = "btn-success",
               style = "width: 120px;"
             )
@@ -369,7 +373,7 @@ render_page_navigation <- function(rv, config, current_page_idx) {
             # Still show next button
             shiny::actionButton(
               "next_page",
-              label = "Weiter",
+              label = if (current_lang == "en") "Next" else "Weiter",
               class = "btn-primary",
               style = "width: 100px;"
             )

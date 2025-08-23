@@ -1755,28 +1755,36 @@ launch_study <- function(
     reactive_ui_labels <- shiny::reactiveVal(ui_labels)
     
     # Observe language changes from Hildesheim study
+    # Track last language to prevent duplicate triggers
+    last_language <- shiny::reactiveVal(default_language)
+    
     shiny::observeEvent(input$study_language, {
       if (!is.null(input$study_language)) {
         new_lang <- input$study_language
-        current_language(new_lang)
         
-        # Update UI labels
-        new_labels <- get_language_labels(new_lang)
-        reactive_ui_labels(new_labels)
-        
-        # Store in session
-        session$userData$language <- new_lang
-        
-        # Update config language
-        config$language <<- new_lang
-        
-        # Force re-render of current page by incrementing a counter
-        rv$language_change_trigger <- (rv$language_change_trigger %||% 0) + 1
-        
-        # Log the change
-        cat("Language switched to:", new_lang, "\n")
+        # Only process if language actually changed
+        if (new_lang != last_language()) {
+          last_language(new_lang)
+          current_language(new_lang)
+          
+          # Update UI labels
+          new_labels <- get_language_labels(new_lang)
+          reactive_ui_labels(new_labels)
+          
+          # Store in session
+          session$userData$language <- new_lang
+          
+          # Update config language
+          config$language <<- new_lang
+          
+          # Force re-render of current page by incrementing a counter
+          rv$language_change_trigger <- (rv$language_change_trigger %||% 0) + 1
+          
+          # Log the change
+          cat("Language switched to:", new_lang, "\n")
+        }
       }
-    })
+    }, ignoreInit = TRUE)
     
       # Generate UUID-based study key if needed
   generate_study_key <- function() {
