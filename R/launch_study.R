@@ -1112,6 +1112,7 @@ launch_study <- function(
     
     .radio-group-container {
       margin: 25px 0;
+      padding-left: 30px;
     }
     
     .error-message {
@@ -1564,9 +1565,8 @@ launch_study <- function(
           overflow-y: auto;
         }
         
-        /* Prevent flicker without transform */
+        /* Prevent flicker */
         .page-wrapper, .assessment-card {
-          will-change: auto !important;
           backface-visibility: hidden !important;
         }
         
@@ -1697,18 +1697,32 @@ launch_study <- function(
             overflow-x: hidden !important;
           }
           
-          /* Responsive navigation */
+          /* Responsive navigation - buttons closer together */
           .nav-buttons {
             display: flex !important;
             flex-wrap: wrap !important;
-            gap: 10px !important;
+            gap: 20px !important;
             justify-content: center !important;
-            margin-top: 20px !important;
+            margin-top: 30px !important;
+            padding: 0 20px !important;
           }
           
           @media (min-width: 768px) {
             .nav-buttons {
-              justify-content: space-between !important;
+              justify-content: center !important;
+              gap: 30px !important;
+            }
+            
+            /* For pages with only one button, center it */
+            .nav-buttons:has(button:only-child) {
+              justify-content: center !important;
+            }
+            
+            /* For pages with two buttons, bring them closer */
+            .nav-buttons:has(button:nth-child(2):last-child) {
+              max-width: 400px !important;
+              margin-left: auto !important;
+              margin-right: auto !important;
             }
           }
           
