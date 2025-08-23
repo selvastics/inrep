@@ -461,12 +461,12 @@ custom_page_flow <- list(
     title_en = "Welcome to the HilFo Study",
     content = paste0(
       '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
-      # Language switcher in top right corner
+            # Language switcher in top right corner (uses global toggle function)
       '<div style="position: absolute; top: 10px; right: 10px;">',
-                  '<button type="button" id="lang_switch" onclick="toggleLanguage()" style="',
-            'background: white; border: 2px solid #e8041c; color: #e8041c; ',
-            'padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">',
-            'English Version</button>',
+      '<button type="button" id="lang_switch" onclick="window.toggleLanguage()" style="',
+      'background: white; border: 2px solid #e8041c; color: #e8041c; ',
+      'padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">',
+      '<span id="lang_switch_text">English Version</span></button>',
       '</div>',
       # German content (default)
       '<div id="content_de">',
@@ -517,66 +517,25 @@ custom_page_flow <- list(
       '</div>',
       '</div>',
       '</div>',
-      # JavaScript for language switching - use HTML() to avoid quote issues
+      # JavaScript for checkbox syncing only (language toggle uses global function)
       '<script>
-var currentLang = "de";
-function toggleLanguage() {
-  console.log("Toggle language clicked!");
-  var btn = document.getElementById("lang_switch");
-  var deContent = document.getElementById("content_de");
-  var enContent = document.getElementById("content_en");
-  
-  if (!deContent || !enContent) {
-    console.log("Content divs not found!");
-    return;
-  }
-  
-  if (currentLang === "de") {
-    currentLang = "en";
-    deContent.style.display = "none";
-    enContent.style.display = "block";
-    if (btn) btn.innerHTML = "Deutsche Version";
-    console.log("Switched to English");
-    
-    // Tell Shiny immediately
-    if (typeof Shiny !== "undefined") {
-      Shiny.setInputValue("study_language", "en", {priority: "event"});
-    }
-  } else {
-    currentLang = "de";
-    deContent.style.display = "block";
-    enContent.style.display = "none";
-    if (btn) btn.innerHTML = "English Version";
-    console.log("Switched to German");
-    
-    // Tell Shiny immediately
-    if (typeof Shiny !== "undefined") {
-      Shiny.setInputValue("study_language", "de", {priority: "event"});
-    }
-  }
-  
-  // Sync checkboxes
+// Sync consent checkboxes when they change
+document.addEventListener("DOMContentLoaded", function() {
   var deCheck = document.getElementById("consent_check");
   var enCheck = document.getElementById("consent_check_en");
-  if (deCheck && enCheck) {
-    if (currentLang === "en") {
-      enCheck.checked = deCheck.checked;
-    } else {
-      deCheck.checked = enCheck.checked;
-    }
+  
+  if (deCheck) {
+    deCheck.addEventListener("change", function() {
+      if (enCheck) enCheck.checked = deCheck.checked;
+    });
   }
   
-  // Store language preference
-  try {
-    localStorage.setItem("hilfo_language", currentLang);
-    sessionStorage.setItem("hilfo_language", currentLang);
-  } catch(e) {
-    console.log("Could not save language preference");
+  if (enCheck) {
+    enCheck.addEventListener("change", function() {
+      if (deCheck) deCheck.checked = enCheck.checked;
+    });
   }
-}
-
-// Make sure the function is available globally
-window.toggleLanguage = toggleLanguage;
+});
 </script>'
     ),
     validate = "function(inputs) { return document.getElementById('consent_check').checked || document.getElementById('consent_check_en').checked; }",
@@ -2294,14 +2253,39 @@ function translatePage() {
   }
 }
 
-// Global language toggle function
+// Global language toggle function with debouncing
+var toggleInProgress = false;
 window.toggleLanguage = function() {
+  // Prevent multiple rapid clicks
+  if (toggleInProgress) return;
+  toggleInProgress = true;
+  setTimeout(function() { toggleInProgress = false; }, 500); // 500ms debounce
+  
   currentLang = currentLang === "de" ? "en" : "de";
   
   // Update button text
   var btn = document.getElementById("language-toggle-btn");
   if (btn) {
     btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+  }
+  
+  // Also update the welcome page button if it exists
+  var welcomeBtn = document.getElementById("lang_switch");
+  if (welcomeBtn) {
+    welcomeBtn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+  }
+  
+  // Toggle welcome page content if on page 1
+  var deContent = document.getElementById("content_de");
+  var enContent = document.getElementById("content_en");
+  if (deContent && enContent) {
+    if (currentLang === "en") {
+      deContent.style.display = "none";
+      enContent.style.display = "block";
+    } else {
+      deContent.style.display = "block";
+      enContent.style.display = "none";
+    }
   }
   
   // Send to Shiny
@@ -2312,19 +2296,45 @@ window.toggleLanguage = function() {
   // Store preference
   sessionStorage.setItem("hilfo_language", currentLang);
   
-  // Reload page to apply translations
-  location.reload();
+  // Apply translations to current page without reload
+  translatePage();
 };
 
 // Apply translations on page load
 document.addEventListener("DOMContentLoaded", function() {
+  // Check stored language preference
+  var storedLang = sessionStorage.getItem("hilfo_language");
+  if (storedLang) {
+    currentLang = storedLang;
+  }
+  
   // Create language toggle button if it doesn\'t exist
   if (!document.getElementById("language-toggle-btn")) {
     var btn = document.createElement("button");
     btn.id = "language-toggle-btn";
-    btn.textContent = "English Version";
+    btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
     btn.onclick = toggleLanguage;
     document.body.appendChild(btn);
+  }
+  
+  // Apply initial translation if English
+  if (currentLang === "en") {
+    // Toggle welcome page if present
+    var deContent = document.getElementById("content_de");
+    var enContent = document.getElementById("content_en");
+    if (deContent && enContent) {
+      deContent.style.display = "none";
+      enContent.style.display = "block";
+    }
+    
+    // Update welcome button if present
+    var welcomeBtn = document.getElementById("lang_switch");
+    if (welcomeBtn) {
+      welcomeBtn.textContent = "Deutsche Version";
+    }
+    
+    // Apply translations
+    translatePage();
   }
   
   // Check stored language
