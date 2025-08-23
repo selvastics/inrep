@@ -135,12 +135,11 @@ create_filter_page <- function(input, config) {
 
 #' Show validation errors in UI
 #' @export
-show_validation_errors <- function(errors) {
+show_validation_errors <- function(errors, language = "de") {
   if (length(errors) == 0) return(NULL)
   
-  # Get language
-  current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
-  header_text <- if (current_lang == "en") {
+  # Use passed language or default to German
+  header_text <- if (language == "en") {
     "Please complete the following:"
   } else {
     "Bitte vervollständigen Sie die folgenden Angaben:"

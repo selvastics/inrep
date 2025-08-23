@@ -3024,7 +3024,8 @@ launch_study <- function(
           if (!validation$valid) {
             # Show error messages
             output$validation_errors <- shiny::renderUI({
-              show_validation_errors(validation$errors)
+              current_lang <- rv$language %||% config$language %||% "de"
+              show_validation_errors(validation$errors, language = current_lang)
             })
             
             # Highlight fields with errors using JavaScript
@@ -3111,7 +3112,8 @@ launch_study <- function(
           validation <- validate_page_progression(rv$current_page, input, config_with_items)
           if (!validation$valid) {
             output$validation_errors <- shiny::renderUI({
-              show_validation_errors(validation$errors)
+              current_lang <- rv$language %||% config$language %||% "de"
+              show_validation_errors(validation$errors, language = current_lang)
             })
             return()
           }

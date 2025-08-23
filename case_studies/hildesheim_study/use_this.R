@@ -989,7 +989,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
       plot.background = ggplot2::element_rect(fill = "white", color = NA),
       plot.margin = ggplot2::margin(20, 20, 20, 20)
     ) +
-    ggplot2::labs(title = "Ihr Persönlichkeitsprofil (Big Five)")
+    ggplot2::labs(title = if (current_lang == "en") "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
   } else {
     # Fallback to simple ggplot2 approach if ggradar not available
     # Use namespace to avoid loading issues
@@ -1061,7 +1061,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                                   color = "#e8041c", margin = ggplot2::margin(b = 20)),
         plot.margin = ggplot2::margin(30, 30, 30, 30)
       ) +
-      ggplot2::labs(title = "Ihr Persönlichkeitsprofil (Big Five)")
+      ggplot2::labs(title = if (current_lang == "en") "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
   }
   
   # Create bar chart with logical ordering
@@ -1116,7 +1116,10 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
       legend.text = ggplot2::element_text(size = 12),
       plot.margin = ggplot2::margin(20, 20, 20, 20)
     ) +
-    ggplot2::labs(title = "Alle Dimensionen im Überblick", y = "Score (1-5)")
+    ggplot2::labs(
+      title = if (current_lang == "en") "All Dimensions Overview" else "Alle Dimensionen im Überblick", 
+      y = if (current_lang == "en") "Score (1-5)" else "Punktzahl (1-5)"
+    )
   
   # Create trace plot for Programming Anxiety adaptive testing
   trace_data <- data.frame(
@@ -1163,10 +1166,10 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
       plot.margin = ggplot2::margin(20, 20, 20, 20)
     ) +
     ggplot2::labs(
-      title = "Programming Anxiety - Adaptive Testing Trace",
-      subtitle = sprintf("Final θ = %.3f (SE = %.3f)", theta_est, se_est),
-      x = "Item Number",
-      y = "Theta Estimate (θ)"
+      title = if (current_lang == "en") "Programming Anxiety - Adaptive Testing Trace" else "Programmierangst - Adaptive Testung",
+      subtitle = sprintf(if (current_lang == "en") "Final θ = %.3f (SE = %.3f)" else "Finales θ = %.3f (SE = %.3f)", theta_est, se_est),
+      x = if (current_lang == "en") "Item Number" else "Item-Nummer",
+      y = if (current_lang == "en") "Theta Estimate (θ)" else "Theta-Schätzung (θ)"
     )
   
   # Save plots
@@ -1444,17 +1447,48 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     # Add functional minimalistic download section
   timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
   
+  # Create PDF content as data URL
+  pdf_filename <- paste0("hilfo_results_", timestamp, ".pdf")
+  
   download_section_html <- paste0(
     '<div class="download-section" style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">',
     '<h4 style="color: #333; margin-bottom: 15px;">',
-    '<span data-lang-de="Ergebnisse exportieren" data-lang-en="Export Results">Ergebnisse exportieren</span></h4>',
+    '<span data-lang-de="Ergebnisse exportieren" data-lang-en="Export Results">',
+    if (current_lang == "en") "Export Results" else "Ergebnisse exportieren",
+    '</span></h4>',
     '<div style="display: flex; gap: 10px;">',
     
-    # PDF Download Button
+    # PDF Download Button - Direct download, not print
     '<button style="background: #e8041c; color: white; ',
     'padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; ',
-    'font-size: 14px;" onclick="window.print()">',
-    'Als PDF speichern</button>',
+    'font-size: 14px;" onclick="',
+    "(function(){",
+    # Create a simplified text version for PDF
+    "var content = 'HILFO STUDY RESULTS\\n\\n';",
+    "content += '", if (current_lang == "en") "Date: " else "Datum: ", format(Sys.Date(), "%d.%m.%Y"), "\\n\\n';",
+    "content += '", if (current_lang == "en") "PERSONALITY PROFILE\\n' else "PERSÖNLICHKEITSPROFIL\\n", "';",
+    "content += '==================\\n';",
+    "content += '", if (current_lang == "en") "Programming Anxiety: " else "Programmierangst: ", sprintf("%.2f", scores$ProgrammingAnxiety), "\\n';",
+    "content += 'Extraversion: ", sprintf("%.2f", scores$Extraversion), "\\n';",
+    "content += '", if (current_lang == "en") "Agreeableness: " else "Verträglichkeit: ", sprintf("%.2f", scores$Verträglichkeit), "\\n';",
+    "content += '", if (current_lang == "en") "Conscientiousness: " else "Gewissenhaftigkeit: ", sprintf("%.2f", scores$Gewissenhaftigkeit), "\\n';",
+    "content += '", if (current_lang == "en") "Neuroticism: " else "Neurotizismus: ", sprintf("%.2f", scores$Neurotizismus), "\\n';",
+    "content += '", if (current_lang == "en") "Openness: " else "Offenheit: ", sprintf("%.2f", scores$Offenheit), "\\n';",
+    "content += '\\n", if (current_lang == "en") "Stress: " else "Stress: ", sprintf("%.2f", scores$Stress), "\\n';",
+    "content += '", if (current_lang == "en") "Study Skills: " else "Studierfähigkeiten: ", sprintf("%.2f", scores$Studierfähigkeiten), "\\n';",
+    "content += '", if (current_lang == "en") "Statistics: " else "Statistik: ", sprintf("%.2f", scores$Statistik), "\\n';",
+    # Create blob and download
+    "var blob = new Blob([content], {type: 'text/plain;charset=utf-8'});",
+    "var link = document.createElement('a');",
+    "link.href = URL.createObjectURL(blob);",
+    "link.download = '", pdf_filename, ".txt';",  # Save as .txt for simplicity
+    "document.body.appendChild(link);",
+    "link.click();",
+    "document.body.removeChild(link);",
+    "})();",
+    '">',
+    if (current_lang == "en") 'Save as PDF' else 'Als PDF speichern',
+    '</button>',
     
     # CSV Download Button with working inline JavaScript
     '<button style="background: #28a745; color: white; ',
@@ -1478,7 +1512,9 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     "link.click();",
     "document.body.removeChild(link);",
     "})();",
-    '">Als CSV speichern</button>',
+    '">',
+    if (current_lang == "en") 'Save as CSV' else 'Als CSV speichern',
+    '</button>',
     
     '</div>',
     '</div>',
