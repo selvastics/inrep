@@ -2148,62 +2148,110 @@ var translations = {
 
 var currentLang = "de";
 
-// Function to translate entire page
+// Function to translate entire page - AGGRESSIVE VERSION
 function translatePage() {
   if (currentLang === "en") {
-    // Translate all text nodes
-    var walker = document.createTreeWalker(
-      document.body,
-      NodeFilter.SHOW_TEXT,
-      null,
-      false
-    );
-    
-    var node;
-    while (node = walker.nextNode()) {
-      var text = node.nodeValue.trim();
-      if (text && translations[text]) {
-        node.nodeValue = node.nodeValue.replace(text, translations[text]);
-      }
-    }
-    
-    // Translate select options
-    document.querySelectorAll("select option").forEach(function(option) {
-      var text = option.textContent.trim();
-      if (translations[text]) {
-        option.textContent = translations[text];
+    // First, translate all headings and titles
+    document.querySelectorAll("h1, h2, h3, h4, h5, h6, .shiny-title, .panel-title").forEach(function(el) {
+      for (var de in translations) {
+        if (el.innerHTML.indexOf(de) !== -1) {
+          el.innerHTML = el.innerHTML.replace(new RegExp(de, "g"), translations[de]);
+        }
       }
     });
     
-    // Translate labels
-    document.querySelectorAll("label").forEach(function(label) {
-      var text = label.textContent.trim();
-      if (translations[text]) {
-        label.textContent = translations[text];
+    // Translate all labels including nested text
+    document.querySelectorAll("label, .control-label, .shiny-label").forEach(function(label) {
+      for (var de in translations) {
+        if (label.innerHTML.indexOf(de) !== -1) {
+          label.innerHTML = label.innerHTML.replace(new RegExp(de, "g"), translations[de]);
+        }
+      }
+    });
+    
+    // Translate select options more aggressively
+    document.querySelectorAll("select").forEach(function(select) {
+      // Update the placeholder option
+      if (select.options[0] && select.options[0].text === "Bitte wählen...") {
+        select.options[0].text = "Please select...";
+      }
+      
+      // Translate all options
+      for (var i = 0; i < select.options.length; i++) {
+        var option = select.options[i];
+        for (var de in translations) {
+          if (option.text === de) {
+            option.text = translations[de];
+            break;
+          }
+        }
+      }
+    });
+    
+    // Translate radio button labels
+    document.querySelectorAll(".radio label, .checkbox label").forEach(function(label) {
+      var spans = label.querySelectorAll("span");
+      spans.forEach(function(span) {
+        for (var de in translations) {
+          if (span.textContent.trim() === de) {
+            span.textContent = translations[de];
+            break;
+          }
+        }
+      });
+      
+      // Also check direct text nodes
+      for (var i = 0; i < label.childNodes.length; i++) {
+        var node = label.childNodes[i];
+        if (node.nodeType === 3) { // Text node
+          var text = node.nodeValue.trim();
+          if (translations[text]) {
+            node.nodeValue = " " + translations[text] + " ";
+          }
+        }
       }
     });
     
     // Translate buttons
-    document.querySelectorAll("button").forEach(function(button) {
-      var text = button.textContent.trim();
-      if (translations[text]) {
-        button.textContent = translations[text];
+    document.querySelectorAll("button, .btn").forEach(function(button) {
+      for (var de in translations) {
+        if (button.textContent.trim() === de) {
+          button.textContent = translations[de];
+          break;
+        }
       }
     });
     
-    // Translate headings
-    document.querySelectorAll("h1, h2, h3, h4, h5, h6").forEach(function(heading) {
-      var text = heading.textContent.trim();
-      if (translations[text]) {
-        heading.textContent = translations[text];
+    // Translate any divs or spans with text
+    document.querySelectorAll("div, span, p").forEach(function(el) {
+      if (el.children.length === 0) { // Only leaf nodes
+        var text = el.textContent.trim();
+        if (translations[text]) {
+          el.textContent = translations[text];
+        }
       }
     });
     
     // Translate placeholders
     document.querySelectorAll("[placeholder]").forEach(function(elem) {
-      var text = elem.placeholder;
-      if (translations[text]) {
-        elem.placeholder = translations[text];
+      if (translations[elem.placeholder]) {
+        elem.placeholder = translations[elem.placeholder];
+      }
+    });
+    
+    // Special handling for page navigation
+    document.querySelectorAll(".progress-text, .page-number").forEach(function(el) {
+      el.innerHTML = el.innerHTML.replace(/Seite/g, "Page").replace(/von/g, "of");
+    });
+    
+    // Force update any remaining German text
+    var allElements = document.querySelectorAll("*");
+    allElements.forEach(function(el) {
+      if (el.children.length === 0 && el.textContent) {
+        var text = el.textContent.trim();
+        if (text && translations[text]) {
+          el.textContent = translations[text];
+        }
       }
     });
   }
