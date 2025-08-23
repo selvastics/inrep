@@ -801,49 +801,29 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
     })
   }
   
-  # Add integrated download section
+    # Add minimalistic download section
   download_section_html <- paste0(
-    '<div class="download-section" style="background: #f8f9fa; padding: 30px; border-radius: 10px; margin: 30px 0;">',
-    '<h2 style="color: #e8041c; text-align: center; margin-bottom: 20px;">Ergebnisse herunterladen</h2>',
-    '<p style="text-align: center; color: #666; margin-bottom: 25px;">',
-    'Speichern Sie Ihre Ergebnisse in verschiedenen Formaten:</p>',
-    '<div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">',
+    '<div class="download-section" style="background: #f8f9fa; padding: 25px; border-radius: 8px; margin: 25px 0;">',
+    '<h3 style="color: #333; margin-bottom: 15px;">Ergebnisse exportieren</h3>',
+    '<div style="display: flex; gap: 15px; flex-wrap: wrap;">',
     
-    # PDF Download Card
-    '<div class="download-card" style="background: white; padding: 20px; border-radius: 8px; ',
-    'box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; min-width: 200px;">',
-    '<div style="font-size: 48px; margin-bottom: 10px;">📄</div>',
-    '<h3 style="color: #e8041c; margin: 10px 0;">PDF Bericht</h3>',
-    '<p style="color: #666; font-size: 14px; margin: 10px 0;">',
-    'Vollständiger Bericht mit Grafiken</p>',
+    # PDF Download Button
     '<button class="download-btn" style="background: #e8041c; color: white; ',
-    'padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; ',
-    'font-weight: bold;" onclick="window.print()">PDF erstellen</button>',
-    '</div>',
+    'padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; ',
+    'font-size: 14px;" onclick="downloadPDF()">',
+    'Als PDF speichern</button>',
     
-    # CSV Download Card
-    '<div class="download-card" style="background: white; padding: 20px; border-radius: 8px; ',
-    'box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; min-width: 200px;">',
-    '<div style="font-size: 48px; margin-bottom: 10px;">📊</div>',
-    '<h3 style="color: #28a745; margin: 10px 0;">CSV Export</h3>',
-    '<p style="color: #666; font-size: 14px; margin: 10px 0;">',
-    'Rohdaten für Excel/SPSS</p>',
+    # CSV Download Button
     '<button class="download-btn" style="background: #28a745; color: white; ',
-    'padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; ',
-    'font-weight: bold;" onclick="downloadCSV()">CSV speichern</button>',
-    '</div>',
+    'padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; ',
+    'font-size: 14px;" onclick="downloadCSV()">',
+    'Als CSV speichern</button>',
     
-    # JSON Download Card  
-    '<div class="download-card" style="background: white; padding: 20px; border-radius: 8px; ',
-    'box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; min-width: 200px;">',
-    '<div style="font-size: 48px; margin-bottom: 10px;">📋</div>',
-    '<h3 style="color: #007bff; margin: 10px 0;">JSON Daten</h3>',
-    '<p style="color: #666; font-size: 14px; margin: 10px 0;">',
-    'Strukturierte Daten für APIs</p>',
+    # JSON Download Button
     '<button class="download-btn" style="background: #007bff; color: white; ',
-    'padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; ',
-    'font-weight: bold;" onclick="downloadJSON()">JSON speichern</button>',
-    '</div>',
+    'padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; ',
+    'font-size: 14px;" onclick="downloadJSON()">',
+    'Als JSON speichern</button>',
     
     '</div>',
     '</div>',
