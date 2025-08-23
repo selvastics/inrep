@@ -525,62 +525,39 @@ launch_study <- function(
   
   # Enhanced validation and error handling for robustness
   tryCatch({
-    # Source enhanced modules if available
-    enhanced_files <- c(
-      "enhanced_config_handler.R",
-      "enhanced_session_recovery.R", 
-      "enhanced_security.R",
-      "enhanced_performance.R",
-      "custom_page_flow.R",
-      "custom_page_flow_validation.R"
-    )
-    
-    for (file in enhanced_files) {
+    # Load only critical modules immediately for fast startup
+    # Custom page flow is needed for Hildesheim study
+    critical_files <- c("custom_page_flow.R", "custom_page_flow_validation.R")
+    for (file in critical_files) {
       file_path <- system.file("R", file, package = "inrep")
       if (file.exists(file_path)) {
         source(file_path, local = TRUE)
       }
     }
     
-    # Validate and fix configuration
-    if (exists("validate_and_fix_config")) {
-      config <- validate_and_fix_config(config, item_bank)
-      
-      # Show warnings if any
-      if (!is.null(config$validation_warnings)) {
-        for (warning_name in names(config$validation_warnings)) {
-          logger(paste("Config warning:", config$validation_warnings[[warning_name]]))
+    # Defer loading other enhanced modules
+    .other_modules_loaded <- FALSE
+    .load_other_modules <- function() {
+      if (!.other_modules_loaded) {
+        other_files <- c(
+          "enhanced_config_handler.R",
+          "enhanced_session_recovery.R", 
+          "enhanced_security.R",
+          "enhanced_performance.R"
+        )
+        for (file in other_files) {
+          file_path <- system.file("R", file, package = "inrep")
+          if (file.exists(file_path)) {
+            source(file_path, local = TRUE)
+          }
         }
+        .other_modules_loaded <<- TRUE
       }
     }
     
-    # Handle extreme parameters
-    if (exists("handle_extreme_parameters")) {
-      config <- handle_extreme_parameters(config)
-    }
+    # Skip all optimizations on startup for instant loading
     
-    # Optimize for scale if needed
-    if (!is.null(config$expected_n) && exists("optimize_for_scale")) {
-      config <- optimize_for_scale(config, config$expected_n)
-    }
-    
-    # Initialize enhanced features if available
-    if (enable_error_recovery && exists("initialize_enhanced_recovery")) {
-      initialize_enhanced_recovery(
-        auto_save_interval = data_preservation_interval,
-        enable_browser_storage = TRUE
-      )
-    }
-    
-    if (exists("initialize_enhanced_security")) {
-      initialize_enhanced_security()
-    }
-    
-    if (exists("initialize_performance_optimization")) {
-      initialize_performance_optimization(
-        max_concurrent_users = config$expected_n %||% 100
-      )
-    }
+    # Skip ALL feature initialization for instant loading
   }, error = function(e) {
     logger(paste("Enhanced features initialization:", e$message))
     # Continue with standard functionality
@@ -2076,22 +2053,30 @@ launch_study <- function(
       }
     }
     
-          # Render the main container immediately
+          # Render the main container immediately - NO DELAYS
       output$study_ui <- shiny::renderUI({
-        # Defer package loading to background
-        if (!.packages_loaded && requireNamespace("later", quietly = TRUE)) {
-          later::later(function() {
-            .load_packages_once()
-          }, delay = 0.1)  # Small delay to let UI render first
-        }
-        
-        # Create the main container immediately
+        # Return UI immediately - no package checks, no delays
         shiny::div(
           id = "main-study-container",
           style = "min-height: 500px; width: 100%; margin: 0 auto; padding: 0;",
           shiny::uiOutput("page_content")
         )
       })
+      
+      # Load packages in background AFTER UI is rendered
+      shiny::observe({
+        if (!.packages_loaded) {
+          .packages_loaded <<- TRUE
+          # Use isolate to prevent reactive dependencies
+          shiny::isolate({
+            if (requireNamespace("later", quietly = TRUE)) {
+              later::later(function() {
+                safe_load_packages(immediate = FALSE)
+              }, delay = 0.5)  # Load after UI is stable
+            }
+          })
+        }
+      }, priority = -100)  # Low priority - run after everything else
       
       # Separate reactive output for page content
       output$page_content <- shiny::renderUI({
