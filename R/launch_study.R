@@ -1403,9 +1403,66 @@ launch_study <- function(
     ),
 
           shiny::tags$head(
+      # CRITICAL: Prevent corner flash - must be FIRST CSS rule
+      shiny::tags$style(HTML("
+        /* IMMEDIATE CORNER FLASH PREVENTION - Applied before any other CSS */
+        * {
+          box-sizing: border-box;
+        }
+        
+        body, html {
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        
+        .page-wrapper,
+        #study_ui,
+        #study_ui > *,
+        #study_ui > div,
+        .shiny-html-output,
+        .shiny-html-output > *,
+        .assessment-card,
+        .container-fluid,
+        .shiny-bound-output {
+          position: relative !important;
+          left: 0 !important;
+          right: 0 !important;
+          top: 0 !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          transform: none !important;
+          width: 100% !important;
+          max-width: 1200px !important;
+        }
+        
+        /* Hide ALL content initially to prevent corner flash */
+        #study_ui {
+          visibility: hidden !important;
+        }
+        
+        #study_ui.positioned {
+          visibility: visible !important;
+        }
+        
+        /* Force immediate centering */
+        .container-fluid {
+          display: block !important;
+          width: 100% !important;
+          max-width: 1200px !important;
+          margin: 0 auto !important;
+          padding: 0 15px !important;
+        }
+      ")),
+      
       # Hide loading placeholder once app loads
       shiny::tags$script(HTML("
         document.addEventListener('DOMContentLoaded', function() {
+          // IMMEDIATELY show content in correct position
+          setTimeout(function() {
+            document.getElementById('study_ui').className += ' positioned';
+            document.getElementById('study_ui').style.visibility = 'visible';
+          }, 1);
+          
           setTimeout(function() {
             var loader = document.getElementById('loading-placeholder');
             if (loader) {
@@ -1494,10 +1551,17 @@ launch_study <- function(
             });
           }
           
-          // Apply immediately and on next tick
+          // Apply immediately and repeatedly to catch all cases
           positionContent();
           setTimeout(positionContent, 1);
           setTimeout(positionContent, 10);
+          setTimeout(positionContent, 50);
+          
+          // Also position the main study UI immediately
+          setTimeout(function() {
+            document.getElementById('study_ui').className += ' positioned';
+            document.getElementById('study_ui').style.visibility = 'visible';
+          }, 1);
           
           // Simple transition function with debouncing
           function smoothTransition() {
@@ -1597,9 +1661,24 @@ launch_study <- function(
               });
             });
           
-          observer.observe(document.getElementById('main-study-container'), {
-            childList: true,
-            subtree: true
+          // Start observing immediately
+          if (document.getElementById('main-study-container')) {
+            observer.observe(document.getElementById('main-study-container'), {
+              childList: true,
+              subtree: true
+            });
+          } else {
+            // Observe the body if main container not found
+            observer.observe(document.body, {
+              childList: true,
+              subtree: true
+            });
+          }
+          
+          // Additional immediate positioning on page load
+          window.addEventListener('load', function() {
+            document.getElementById('study_ui').className += ' positioned';
+            document.getElementById('study_ui').style.visibility = 'visible';
           });
         });
       ")),
