@@ -228,6 +228,7 @@ demographic_configs <- list(
   Einverständnis = list(
     question = "Einverständniserklärung",
     question_en = "Declaration of Consent",
+    question_text = "Einverständniserklärung",  # For inrep compatibility
     options = c("Ich bin mit der Teilnahme an der Befragung einverstanden" = "1"),
     options_en = c("I agree to participate in the survey" = "1"),
     required = TRUE
@@ -1932,17 +1933,25 @@ cat("Fixed radar plot with proper connections\n")
 cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
 
-# Custom JavaScript for COMPLETE bilingual support
-# This will translate EVERYTHING on the page including validation messages
+# Custom JavaScript for AGGRESSIVE bilingual support
+# This will forcefully translate EVERYTHING that appears on the page
 custom_js <- paste0(
+  "<style>",
+  "/* Hildesheim Theme Colors */",
+  ".btn-primary, .progress-bar { background-color: #e8041c !important; }",
+  "h1, h2, h3, h4 { color: #e8041c !important; }",
+  ".btn-navigation { background-color: #e8041c !important; border-color: #e8041c !important; }",
+  ".btn-navigation:hover { background-color: #c70318 !important; }",
+  "input[type='radio']:checked { accent-color: #e8041c; }",
+  "</style>",
   "<script>",
   "var currentLang='de';",
   "",
-  "// Comprehensive translation function that translates EVERYTHING",
+  "// AGGRESSIVE translation function",
   "function translateEverything(){",
-  "  console.log('Translating entire page to:', currentLang);",
+  "  console.log('AGGRESSIVE TRANSLATION to:', currentLang);",
   "  ",
-  "  // Define all translations",
+  "  // Complete translation dictionary",
   "  var translations={",
   "'Soziodemographische Angaben':'Sociodemographic Information',",
   "'Wohnsituation':'Living Situation',",
@@ -2061,19 +2070,15 @@ custom_js <- paste0(
   "'Ich bin in der Lage, Statistik zu erlernen.':'I am able to learn statistics.'",
   "  };",
   "  ",
-  "  // Translation logic - translate ALL elements",
+  "  // AGGRESSIVE translation - scan and replace EVERYTHING",
   "  if(currentLang==='en'){",
-  "    // ENGLISH MODE - Replace all German with English",
+  "    // Translate to ENGLISH",
   "    ",
-  "    // First handle validation messages that have both languages",
-  "    document.querySelectorAll('*').forEach(function(el){",
-  "      if(el.innerHTML && el.innerHTML.indexOf('Please complete the following:')>=0){",
-  "        el.innerHTML = el.innerHTML.replace('Please complete the following:<br>','');",
-  "      }",
-  "      if(el.textContent && el.textContent.indexOf('Bitte beantworten Sie:')>=0){",
-  "        el.textContent = el.textContent.replace('Bitte beantworten Sie:','Please answer:');",
-  "      }",
-  "    });",
+  "    // First clean up any mixed language validation messages",
+  "    var allText = document.body.innerHTML;",
+  "    allText = allText.replace(/Please complete the following:<br>/g, '');",
+  "    allText = allText.replace(/Bitte beantworten Sie:/g, 'Please answer:');",
+  "    document.body.innerHTML = allText;",
   "    ",
   "    // Now translate all text nodes",
   "    var allElements = document.querySelectorAll('*');",
@@ -2234,26 +2239,30 @@ inrep::launch_study(
                 cat("Language switched to:", lang, "\n")
                 session$userData$current_language <- lang
                 
-                # Force UI refresh to apply translations
-                # The JavaScript will handle the translation
+                # Update config language for inrep
+                config$language <<- lang
+                
+                # Force UI refresh
                 session$sendCustomMessage("language_changed", lang)
             }
         })
         
-        # Override the item rendering to use correct language
-        session$userData$get_item_text <- function(item_id) {
-            lang <- session$userData$current_language
-            if (is.null(lang)) lang <- "de"
+        # Override demographic rendering to support bilingual
+        session$userData$get_demographic_text <- function(dem_name, field = "question") {
+            lang <- session$userData$current_language %||% "de"
+            demo_config <- demographic_configs[[dem_name]]
             
-            item_row <- all_items_de[all_items_de$id == item_id, ]
-            if (nrow(item_row) > 0) {
-                if (lang == "en" && "Question_EN" %in% names(item_row)) {
-                    return(item_row$Question_EN[1])
-                } else {
-                    return(item_row$Question[1])
+            if (field == "question") {
+                if (lang == "en" && !is.null(demo_config$question_en)) {
+                    return(demo_config$question_en)
                 }
+                return(demo_config$question)
+            } else if (field == "options") {
+                if (lang == "en" && !is.null(demo_config$options_en)) {
+                    return(demo_config$options_en)
+                }
+                return(demo_config$options)
             }
-            return("")
         }
     }
 )
