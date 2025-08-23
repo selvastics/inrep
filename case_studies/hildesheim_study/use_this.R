@@ -755,6 +755,10 @@ window.toggleLanguage = toggleLanguage;
 # =============================================================================
 
 create_hilfo_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
+  # Lazy load packages only when needed for faster startup
+  .load_if_needed("ggplot2")
+  .load_if_needed("base64enc")
+  
   # Get current language from session if available
   current_lang <- "de"  # Default to German
   if (!is.null(session) && !is.null(session$userData$current_language)) {
@@ -1042,14 +1046,14 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   }
   
   # Create bar chart with logical ordering
-  # Reorder scores for better visualization
+  # Show BFI scales first, then Programming Anxiety, then others
   ordered_scores <- list(
-    ProgrammingAnxiety = scores$ProgrammingAnxiety,
     Extraversion = scores$Extraversion,
     Verträglichkeit = scores$Verträglichkeit,
     Gewissenhaftigkeit = scores$Gewissenhaftigkeit,
     Neurotizismus = scores$Neurotizismus,
     Offenheit = scores$Offenheit,
+    ProgrammingAnxiety = scores$ProgrammingAnxiety,
     Stress = scores$Stress,
     Studierfähigkeiten = scores$Studierfähigkeiten,
     Statistik = scores$Statistik
@@ -1058,8 +1062,8 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   all_data <- data.frame(
     dimension = factor(names(ordered_scores), levels = names(ordered_scores)),
     score = unlist(ordered_scores),
-    category = c("Programmierangst", 
-                 rep("Persönlichkeit", 5), "Stress", "Studierfähigkeiten", "Statistik")
+    category = c(rep("Persönlichkeit", 5), 
+                 "Programmierangst", "Stress", "Studierfähigkeiten", "Statistik")
   )
   
   bar_plot <- ggplot2::ggplot(all_data, ggplot2::aes(x = dimension, y = score, fill = category)) +
@@ -1230,14 +1234,22 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   # Calculate standard deviations for each dimension
   sds <- list()
   
+  # Programming Anxiety - 10 items (items 1-10)
+  # Apply reverse scoring for items 1, 10, and 15 (but we only have 10 items, so items 1 and 10)
+  pa_items_scored <- responses[1:10]
+  pa_items_scored[1] <- 6 - pa_items_scored[1]  # Reverse item 1
+  pa_items_scored[10] <- 6 - pa_items_scored[10]  # Reverse item 10
+  sd_val <- sd(pa_items_scored, na.rm = TRUE)
+  sds[["ProgrammingAnxiety"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
+  
   # Big Five dimensions - each has 4 items (with reverse scoring applied)
-  # Items are in order: E1-E4 (1-4), V1-V4 (5-8), G1-G4 (9-12), N1-N4 (13-16), O1-O4 (17-20)
+  # Items are now 21-40 (after PA items)
   bfi_dims <- list(
-    Extraversion = c(responses[1], 6-responses[2], 6-responses[3], responses[4]),
-    Verträglichkeit = c(responses[5], 6-responses[6], responses[7], 6-responses[8]),
-    Gewissenhaftigkeit = c(6-responses[9], responses[10], responses[11], 6-responses[12]),
-    Neurotizismus = c(6-responses[13], responses[14], responses[15], 6-responses[16]),
-    Offenheit = c(responses[17], 6-responses[18], responses[19], 6-responses[20])
+    Extraversion = c(responses[21], 6-responses[22], 6-responses[23], responses[24]),
+    Verträglichkeit = c(responses[25], 6-responses[26], responses[27], 6-responses[28]),
+    Gewissenhaftigkeit = c(6-responses[29], responses[30], responses[31], 6-responses[32]),
+    Neurotizismus = c(6-responses[33], responses[34], responses[35], 6-responses[36]),
+    Offenheit = c(responses[37], 6-responses[38], responses[39], 6-responses[40])
   )
   
   for (dim_name in names(bfi_dims)) {
@@ -1246,17 +1258,18 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   }
   
   # PSQ Stress - 5 items (with reverse scoring for item 4)
-  psq_items <- c(responses[21:23], 6-responses[24], responses[25])
+  # Items are now 41-45 (after PA and BFI)
+  psq_items <- c(responses[41:43], 6-responses[44], responses[45])
   sd_val <- sd(psq_items, na.rm = TRUE)
   sds[["Stress"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
   
-  # MWS Studierfähigkeiten - 4 items
-  mws_items <- responses[26:29]
+  # MWS Studierfähigkeiten - 4 items (items 46-49)
+  mws_items <- responses[46:49]
   sd_val <- sd(mws_items, na.rm = TRUE)
   sds[["Studierfähigkeiten"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
   
-  # Statistik - 2 items
-  stat_items <- responses[30:31]
+  # Statistik - 2 items (items 50-51)
+  stat_items <- responses[50:51]
   sd_val <- sd(stat_items, na.rm = TRUE)
   sds[["Statistik"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
   
