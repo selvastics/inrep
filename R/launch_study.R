@@ -1432,6 +1432,65 @@ launch_study <- function(
           to { opacity: 1; transform: translateX(0); }
         }
       ")),
+      
+      # JavaScript to ensure proper positioning
+      shiny::tags$script(HTML("
+        // Immediate positioning fix
+        (function() {
+          // Add style rules immediately
+          var style = document.createElement('style');
+          style.innerHTML = `
+            .page-wrapper, .assessment-card {
+              position: relative !important;
+              left: 0 !important;
+              right: 0 !important;
+              margin-left: auto !important;
+              margin-right: auto !important;
+              transform: translateX(0) !important;
+            }
+          `;
+          document.head.appendChild(style);
+        })();
+        
+        // Fix positioning on page load
+        $(document).ready(function() {
+          // Ensure all content is centered
+          function fixPositioning() {
+            $('.page-wrapper').css({
+              'position': 'relative',
+              'left': '0',
+              'right': '0',
+              'margin': '0 auto',
+              'transform': 'none'
+            });
+            
+            $('.assessment-card').css({
+              'position': 'relative',
+              'left': '0',
+              'right': '0',
+              'margin': '20px auto'
+            });
+          }
+          
+          // Run immediately and after Shiny updates
+          fixPositioning();
+          
+          // Monitor for new content
+          $(document).on('shiny:value', function(event) {
+            setTimeout(fixPositioning, 10);
+          });
+          
+          // Also fix on any DOM changes
+          var observer = new MutationObserver(function(mutations) {
+            fixPositioning();
+          });
+          
+          observer.observe(document.getElementById('main-study-container'), {
+            childList: true,
+            subtree: true
+          });
+        });
+      ")),
         shiny::tags$style(HTML("
           /* Simple full-width fix */
           .full-width-app > .container-fluid {
@@ -1481,25 +1540,31 @@ launch_study <- function(
         .page-wrapper,
         .assessment-card,
         /* SMOOTH PAGE TRANSITIONS - Fixed positioning issues */
+        /* Initial state - prevent corner sticking */
         .page-wrapper {
           opacity: 0;
-          animation: smoothFadeIn 0.25s ease-out forwards;
           position: relative !important;
           width: 100% !important;
           margin: 0 auto !important;
           left: 0 !important;
           right: 0 !important;
           top: 0 !important;
+          transform: translateX(0) !important;
+          animation: smoothFadeIn 0.3s ease-out forwards;
+        }
+        
+        /* Ensure content starts centered, not in corner */
+        .page-wrapper:not(.animated) {
+          opacity: 0;
+          transform: translateX(0) scale(1) !important;
         }
         
         @keyframes smoothFadeIn {
-          from {
+          0% {
             opacity: 0;
-            transform: scale(0.98);
           }
-          to {
+          100% {
             opacity: 1;
-            transform: scale(1);
           }
         }
         
@@ -1539,6 +1604,24 @@ launch_study <- function(
           position: relative !important;
           margin: 0 auto !important;
           transform: none !important;
+          left: 0 !important;
+          right: 0 !important;
+        }
+        
+        /* Fix Shiny's default positioning */
+        .shiny-html-output > * {
+          position: relative !important;
+          margin: 0 auto !important;
+        }
+        
+        /* Prevent any absolute positioning */
+        #page_content {
+          position: relative !important;
+          width: 100% !important;
+          left: 0 !important;
+          right: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
         }
         
         /* Main study container */
@@ -1892,7 +1975,7 @@ launch_study <- function(
       # Return container with page_content that will be filled immediately
       shiny::div(
         id = "main-study-container",
-        style = "min-height: 500px; width: 100%; margin: 0 auto; padding: 0;",
+        style = "min-height: 500px; width: 100%; max-width: 100%; margin: 0 auto; padding: 0; position: relative; overflow: hidden;",
         shiny::uiOutput("page_content")  # This will be filled by renderUI below
       )
     })
