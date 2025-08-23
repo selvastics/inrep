@@ -1310,7 +1310,9 @@ launch_study <- function(
   ")
   
   # Get language labels from the comprehensive multilingual system
-  ui_labels <- get_language_labels(config$language %||% "en")
+  # Start with default language
+  default_language <- config$language %||% "en"
+  ui_labels <- get_language_labels(default_language)
   
   ui <- shiny::fluidPage(
     class = "full-width-app",
@@ -1748,6 +1750,31 @@ launch_study <- function(
   )
   
   server <- function(input, output, session) {
+    # Create reactive values for language support
+    current_language <- shiny::reactiveVal(default_language)
+    reactive_ui_labels <- shiny::reactiveVal(ui_labels)
+    
+    # Observe language changes from Hildesheim study
+    shiny::observeEvent(input$study_language, {
+      if (!is.null(input$study_language)) {
+        new_lang <- input$study_language
+        current_language(new_lang)
+        
+        # Update UI labels
+        new_labels <- get_language_labels(new_lang)
+        reactive_ui_labels(new_labels)
+        
+        # Store in session
+        session$userData$language <- new_lang
+        
+        # Update config language
+        config$language <<- new_lang
+        
+        # Log the change
+        cat("Language switched to:", new_lang, "\n")
+      }
+    })
+    
       # Generate UUID-based study key if needed
   generate_study_key <- function() {
     if (requireNamespace("uuid", quietly = TRUE)) {
@@ -1976,12 +2003,22 @@ launch_study <- function(
 
     
     get_item_content <- function(item_idx) {
-      if (base::is.null(config$item_translations) || base::is.null(config$item_translations[[config$language]])) {
+      # Get current language dynamically
+      lang <- current_language()
+      
+      # Check for Hildesheim bilingual items first
+      if ("Question_EN" %in% names(item_bank) && lang == "en") {
+        item <- item_bank[item_idx, ]
+        item$Question <- item$Question_EN
+        return(item)
+      }
+      
+      if (base::is.null(config$item_translations) || base::is.null(config$item_translations[[lang]])) {
         # Ensure minimal fields exist
         if (!"Question" %in% base::names(item_bank) && "content" %in% base::names(item_bank)) item_bank$Question <- item_bank$content
         return(item_bank[item_idx, ])
       }
-      translations <- config$item_translations[[config$language]][item_idx, ]
+      translations <- config$item_translations[[lang]][item_idx, ]
       item <- item_bank[item_idx, ]
       item$Question <- translations$Question %||% item$Question
       if (config$model != "GRM") {
@@ -2235,7 +2272,7 @@ launch_study <- function(
                          choices <- 1:5
                        }
                        
-                       labels <- base::switch(config$language,
+                       labels <- base::switch(current_language(),
                                               de = base::c("Stark ablehnen", "Ablehnen", "Neutral", "Zustimmen", "Stark zustimmen")[1:base::length(choices)],
                                               en = base::c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")[1:base::length(choices)],
                                               es = base::c("Totalmente en desacuerdo", "En desacuerdo", "Neutral", "De acuerdo", "Totalmente de acuerdo")[1:base::length(choices)],

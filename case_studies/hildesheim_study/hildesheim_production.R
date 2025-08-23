@@ -168,12 +168,16 @@ demographic_configs <- list(
   ),
   Studiengang = list(
     question = "In welchem Studiengang befinden Sie sich?",
+    question_en = "Which study program are you in?",
     options = c("Bachelor Psychologie"="1", "Master Psychologie"="2"),
+    options_en = c("Bachelor Psychology"="1", "Master Psychology"="2"),
     required = TRUE
   ),
   Geschlecht = list(
     question = "Welches Geschlecht haben Sie?",
+    question_en = "What is your gender?",
     options = c("weiblich oder divers"="1", "männlich"="2"),
+    options_en = c("female or diverse"="1", "male"="2"),
     required = TRUE
   ),
   Wohnstatus = list(
@@ -1215,18 +1219,11 @@ cat("Fixed radar plot with proper connections\n")
 cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
 
-# Prepare bilingual items - duplicate items for English
-all_items_bilingual <- rbind(
-  all_items_de,
-  transform(all_items_de, 
-            id = paste0(id, "_EN"),
-            Question = Question_EN)
-)
-
 # Launch with cloud storage and full language support
+# Pass both German and English items
 inrep::launch_study(
   config = study_config,
-  item_bank = all_items_de,  # Start with German
+  item_bank = all_items_de,  # Contains both Question and Question_EN
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
   save_format = "csv"
