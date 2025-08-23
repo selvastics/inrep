@@ -1381,79 +1381,143 @@ launch_study <- function(
     class = "full-width-app",
     if (requireNamespace("shinyjs", quietly = TRUE)) shinyjs::useShinyjs(),
     
-    # AGGRESSIVE corner flash prevention - MUST BE FIRST!
+    # ULTIMATE CORNER FLASH ELIMINATION - ALL METHODS COMBINED!
     shiny::tags$head(
       shiny::tags$style(shiny::HTML("
-        /* TARGETED corner flash prevention - Only main containers */
+        /* UNIVERSAL RESET - PREVENT ALL CORNER POSITIONING */
+        * {
+          box-sizing: border-box !important;
+        }
+        
+        body, html {
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow-x: hidden !important;
+        }
+        
+        /* FORCE ALL SHINY ELEMENTS TO CENTER */
         .page-wrapper, .assessment-card, #study_ui, 
         .shiny-html-output, .shiny-bound-output, #stable-page-container,
-        .container-fluid {
-          margin: 0 auto !important;
+        .container-fluid, #main-study-container, .shiny-output-binding {
           position: relative !important;
           left: 0 !important;
           right: 0 !important;
           top: 0 !important;
+          margin: 0 auto !important;
           transform: none !important;
           width: 100% !important;
           max-width: 1200px !important;
+          display: block !important;
         }
         
-        /* PREVENT corner positioning for new elements */
-        [style*='position: absolute'], [style*='position: fixed'] {
+        /* OVERRIDE ANY POSITIONING ATTEMPTS */
+        [style*='position: absolute'], [style*='position: fixed'],
+        [style*='left:'], [style*='right:'], [style*='top:'] {
           position: relative !important;
           left: 0 !important;
           right: 0 !important;
           top: 0 !important;
           margin: 0 auto !important;
+          transform: none !important;
         }
         
-        /* ALLOW normal positioning for progress elements */
-        .progress-circle-gradient, .progress-circle-gradient svg, 
-        .progress-circle-gradient span, .session-status-indicator {
+        /* PERFECT PROGRESS CIRCLE - MULTIPLE APPROACHES */
+        .progress-circle-gradient {
           position: relative !important;
-          display: block !important;
-          margin: 0 auto !important;
-          text-align: center !important;
+          width: 120px !important;
+          height: 120px !important;
+          margin: 20px auto !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
         }
         
         .progress-circle-gradient svg {
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 120px !important;
+          height: 120px !important;
           display: block !important;
-          margin: 0 auto !important;
         }
         
         .progress-circle-gradient span {
-          display: block !important;
-          margin-top: -80px !important;
+          position: absolute !important;
+          top: 50% !important;
+          left: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          font-size: 18px !important;
+          font-weight: bold !important;
+          color: #333 !important;
           text-align: center !important;
+          z-index: 100 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          line-height: 1 !important;
+          width: auto !important;
+          height: auto !important;
+        }
+        
+        .session-status-indicator {
+          position: relative !important;
+          display: block !important;
+          margin: 10px auto !important;
+          text-align: center !important;
+          max-width: 300px !important;
+        }
+        
+        /* IMMEDIATE VISIBILITY */
+        #study_ui {
+          visibility: visible !important;
+          opacity: 1 !important;
         }
       ")),
       
-      # JAVASCRIPT: Targeted positioning enforcement
+      # JAVASCRIPT: ULTIMATE positioning enforcement
       shiny::tags$script(shiny::HTML("
-        // IMMEDIATE EXECUTION - Before anything else loads
+        // IMMEDIATE EXECUTION - Multiple layers of protection
         (function() {
-          // Override positioning attempts for main containers only
+          // FORCE CENTER POSITIONING FUNCTION
+          function forceCenter(element) {
+            if (element && element.style) {
+              element.style.position = 'relative';
+              element.style.left = '0';
+              element.style.right = '0';
+              element.style.top = '0';
+              element.style.margin = '0 auto';
+              element.style.transform = 'none';
+              element.style.width = '100%';
+              element.style.maxWidth = '1200px';
+            }
+          }
+          
+          // AGGRESSIVE MUTATION OBSERVER
           var observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
               if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach(function(node) {
                   if (node.nodeType === 1) { // Element node
-                    // Only apply to main containers, not progress elements
-                    var isMainContainer = node.classList && (
-                      node.classList.contains('page-wrapper') ||
-                      node.classList.contains('assessment-card') ||
+                    // Apply to ALL main containers
+                    var isMainContainer = (
+                      (node.classList && (
+                        node.classList.contains('page-wrapper') ||
+                        node.classList.contains('assessment-card') ||
+                        node.classList.contains('shiny-html-output') ||
+                        node.classList.contains('shiny-bound-output')
+                      )) ||
                       node.id === 'study_ui' ||
                       node.id === 'stable-page-container' ||
-                      node.classList.contains('shiny-html-output')
+                      node.id === 'main-study-container'
                     );
                     
-                    if (isMainContainer && node.style) {
-                      node.style.position = 'relative';
-                      node.style.left = '0';
-                      node.style.right = '0';
-                      node.style.top = '0';
-                      node.style.margin = '0 auto';
-                      node.style.transform = 'none';
+                    if (isMainContainer) {
+                      forceCenter(node);
+                    }
+                    
+                    // Also check child elements
+                    var children = node.querySelectorAll('.page-wrapper, .assessment-card, .shiny-html-output');
+                    for (var i = 0; i < children.length; i++) {
+                      forceCenter(children[i]);
                     }
                   }
                 });
@@ -1464,7 +1528,27 @@ launch_study <- function(
           // Start observing immediately
           observer.observe(document.body, {
             childList: true,
-            subtree: true
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['style', 'class']
+          });
+          
+          // PERIODIC ENFORCEMENT - every 100ms
+          setInterval(function() {
+            var elements = document.querySelectorAll('.page-wrapper, .assessment-card, #study_ui, #stable-page-container');
+            for (var i = 0; i < elements.length; i++) {
+              forceCenter(elements[i]);
+            }
+          }, 100);
+          
+          // IMMEDIATE APPLICATION on DOM ready
+          document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+              var elements = document.querySelectorAll('.page-wrapper, .assessment-card, #study_ui, #stable-page-container');
+              for (var i = 0; i < elements.length; i++) {
+                forceCenter(elements[i]);
+              }
+            }, 1);
           });
         })();
       "))
