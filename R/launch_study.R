@@ -1384,18 +1384,10 @@ launch_study <- function(
     # AGGRESSIVE corner flash prevention - MUST BE FIRST!
     shiny::tags$head(
       shiny::tags$style(shiny::HTML("
-        /* IMMEDIATE UNIVERSAL RESET - Applied to EVERYTHING */
-        * {
-          position: relative !important;
-          left: 0 !important;
-          right: 0 !important;
-          top: 0 !important;
-          transform: none !important;
-        }
-        
-        /* FORCE ALL CONTAINERS TO CENTER */
-        body, html, .container-fluid, .page-wrapper, .assessment-card, #study_ui, 
-        .shiny-html-output, .shiny-bound-output, #stable-page-container {
+        /* TARGETED corner flash prevention - Only main containers */
+        .page-wrapper, .assessment-card, #study_ui, 
+        .shiny-html-output, .shiny-bound-output, #stable-page-container,
+        .container-fluid {
           margin: 0 auto !important;
           position: relative !important;
           left: 0 !important;
@@ -1406,29 +1398,56 @@ launch_study <- function(
           max-width: 1200px !important;
         }
         
-        /* OVERRIDE ANY POSITIONING ATTEMPTS */
-        [style*='position: absolute'], [style*='position: fixed'],
-        [style*='left:'], [style*='right:'], [style*='top:'] {
+        /* PREVENT corner positioning for new elements */
+        [style*='position: absolute'], [style*='position: fixed'] {
           position: relative !important;
           left: 0 !important;
           right: 0 !important;
           top: 0 !important;
           margin: 0 auto !important;
         }
+        
+        /* ALLOW normal positioning for progress elements */
+        .progress-circle-gradient, .progress-circle-gradient svg, 
+        .progress-circle-gradient span, .session-status-indicator {
+          position: relative !important;
+          display: block !important;
+          margin: 0 auto !important;
+          text-align: center !important;
+        }
+        
+        .progress-circle-gradient svg {
+          display: block !important;
+          margin: 0 auto !important;
+        }
+        
+        .progress-circle-gradient span {
+          display: block !important;
+          margin-top: -80px !important;
+          text-align: center !important;
+        }
       ")),
       
-      # JAVASCRIPT: Immediate positioning enforcement
+      # JAVASCRIPT: Targeted positioning enforcement
       shiny::tags$script(shiny::HTML("
         // IMMEDIATE EXECUTION - Before anything else loads
         (function() {
-          // Override ANY positioning attempts at browser level
+          // Override positioning attempts for main containers only
           var observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
               if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach(function(node) {
                   if (node.nodeType === 1) { // Element node
-                    // FORCE CENTER POSITIONING IMMEDIATELY
-                    if (node.style) {
+                    // Only apply to main containers, not progress elements
+                    var isMainContainer = node.classList && (
+                      node.classList.contains('page-wrapper') ||
+                      node.classList.contains('assessment-card') ||
+                      node.id === 'study_ui' ||
+                      node.id === 'stable-page-container' ||
+                      node.classList.contains('shiny-html-output')
+                    );
+                    
+                    if (isMainContainer && node.style) {
                       node.style.position = 'relative';
                       node.style.left = '0';
                       node.style.right = '0';
