@@ -595,27 +595,30 @@ window.toggleLanguage = toggleLanguage;
     demographics = c("Note_Englisch", "Note_Mathe")
   ),
   
-  # Page 6: Programming Anxiety Part 1 - NEW (first 5 fixed items)
+  # Page 6: Programming Anxiety Part 1 - FIXED (first 5 items together)
   list(
-    id = "page6_pa1",
+    id = "page6_pa_fixed",
     type = "items",
     title = "Programmierangst - Teil 1",
     title_en = "Programming Anxiety - Part 1",
     instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
     instructions_en = "Please indicate to what extent the following statements apply to you.",
-    item_indices = 1:5,  # First 5 PA items (fixed)
+    item_indices = 1:5,  # First 5 PA items (fixed, all on one page)
     scale_type = "likert"
   ),
   
-  # Page 7: Programming Anxiety Part 2 - NEW (5 adaptive items from pool)
+  # Page 7: Programming Anxiety - Adaptive Section
+  # This will handle the adaptive selection of 5 items from pool 6-20
   list(
-    id = "page7_pa2",
+    id = "page7_pa_adaptive",
     type = "items",
-    title = "Programmierangst - Teil 2",
-    title_en = "Programming Anxiety - Part 2",
+    title = "Programmierangst - Adaptive",
+    title_en = "Programming Anxiety - Adaptive",
     instructions = "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.",
     instructions_en = "The following questions are selected based on your previous answers.",
-    item_indices = 6:10,  # Next 5 PA items (can be adaptively selected from 6-20)
+    item_indices = 6:20,  # Pool of items for adaptive selection
+    items_per_page = 1,  # Show one item per page for adaptive testing
+    max_items = 5,  # Only show 5 items from this pool
     scale_type = "likert"
   ),
   
@@ -655,7 +658,7 @@ window.toggleLanguage = toggleLanguage;
     scale_type = "likert"
   ),
   
-  # Page 12: PSQ Stress - RENUMBERED
+  # Page 12: PSQ Stress
   list(
     id = "page12",
     type = "items",
@@ -667,7 +670,7 @@ window.toggleLanguage = toggleLanguage;
     scale_type = "likert"
   ),
   
-  # Page 13: MWS Study Skills - RENUMBERED
+  # Page 13: MWS Study Skills
   list(
     id = "page13",
     type = "items",
@@ -679,7 +682,7 @@ window.toggleLanguage = toggleLanguage;
     scale_type = "difficulty"
   ),
   
-  # Page 14: Statistics - RENUMBERED
+  # Page 14: Statistics
   list(
     id = "page14",
     type = "items",
@@ -689,7 +692,7 @@ window.toggleLanguage = toggleLanguage;
     scale_type = "likert"
   ),
   
-  # Page 15: Study satisfaction - RENUMBERED
+  # Page 15: Study satisfaction
   list(
     id = "page15",
     type = "demographics",
@@ -698,7 +701,7 @@ window.toggleLanguage = toggleLanguage;
     demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st", "Persönlicher_Code")
   ),
   
-  # Page 16: Results - RENUMBERED (now with PA results included)
+  # Page 16: Results (now with PA results included)
   list(
     id = "page16",
     type = "results",
@@ -1347,8 +1350,6 @@ study_config <- inrep::create_study_config(
   input_types = input_types,
   model = "2PL",  # Use 2PL for adaptive IRT
   adaptive = TRUE,  # Enable adaptive testing for PA items
-  max_items = 51,  # Total items (20 PA + 31 original)
-  min_items = 51,
   response_ui_type = "radio",
   progress_style = "bar",
   language = "de",
@@ -1356,8 +1357,16 @@ study_config <- inrep::create_study_config(
   session_timeout = 7200,
   results_processor = create_hilfo_report,
   criteria = "MFI",  # Maximum Fisher Information for adaptive selection
-  fixed_items = c(1:5, 21:51),  # Fixed: first 5 PA items + all non-PA items
-  adaptive_start = 6,  # Start adaptive after first 5 PA items
+  # Adaptive settings for PA section
+  adaptive_sections = list(
+    pa = list(
+      item_pool = 1:20,  # All PA items
+      fixed_items = 1:5,  # First 5 are fixed
+      adaptive_items = 6:20,  # Items 6-20 are the adaptive pool
+      max_adaptive = 5,  # Select 5 items from the adaptive pool
+      adaptive_start = 6  # Start adaptive after item 5
+    )
+  ),
   item_bank = all_items,
   save_to_file = TRUE,
   save_format = "csv",
