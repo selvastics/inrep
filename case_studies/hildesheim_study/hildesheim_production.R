@@ -18,14 +18,15 @@ WEBDAV_SHARE_TOKEN <- "OUarlqGbhYopkBc"  # Share token for authentication
 # COMPLETE ITEM BANK WITH PROPER VARIABLE NAMES
 # =============================================================================
 
-all_items <- data.frame(
+# Create bilingual item bank
+all_items_de <- data.frame(
   id = c(
     # BFI items with proper naming convention
-    "BFE_01", "BFE_02", "BFE_03", "BFE_04",  # Extraversion
-    "BFV_01", "BFV_02", "BFV_03", "BFV_04",  # Verträglichkeit (Agreeableness)
-    "BFG_01", "BFG_02", "BFG_03", "BFG_04",  # Gewissenhaftigkeit (Conscientiousness)
-    "BFN_01", "BFN_02", "BFN_03", "BFN_04",  # Neurotizismus
-    "BFO_01", "BFO_02", "BFO_03", "BFO_04",  # Offenheit (Openness)
+    "BFE_01", "BFE_02", "BFE_03", "BFE_04", # Extraversion
+    "BFV_01", "BFV_02", "BFV_03", "BFV_04", # Verträglichkeit (Agreeableness)
+    "BFG_01", "BFG_02", "BFG_03", "BFG_04", # Gewissenhaftigkeit (Conscientiousness)
+    "BFN_01", "BFN_02", "BFN_03", "BFN_04", # Neurotizismus
+    "BFO_01", "BFO_02", "BFO_03", "BFO_04", # Offenheit (Openness)
     # PSQ items
     "PSQ_02", "PSQ_04", "PSQ_16", "PSQ_29", "PSQ_30",
     # MWS items
@@ -74,13 +75,54 @@ all_items <- data.frame(
     "Bislang konnte ich den Inhalten der Statistikveranstaltungen gut folgen.",
     "Ich bin in der Lage, Statistik zu erlernen."
   ),
+  Question_EN = c(
+    # BFI Extraversion
+    "I am outgoing, sociable.",
+    "I am rather quiet.",
+    "I am rather shy.",
+    "I am talkative.",
+    # BFI Agreeableness
+    "I am empathetic, warm-hearted.",
+    "I have little sympathy for others.",
+    "I am helpful and selfless.",
+    "Others are rather indifferent to me.",
+    # BFI Conscientiousness
+    "I am rather disorganized.",
+    "I am systematic, keep my things in order.",
+    "I like it clean and tidy.",
+    "I am rather the chaotic type, rarely clean up.",
+    # BFI Neuroticism
+    "I remain calm even in stressful situations.",
+    "I react easily tensed.",
+    "I often worry.",
+    "I rarely become nervous and insecure.",
+    # BFI Openness
+    "I have diverse interests.",
+    "I avoid philosophical discussions.",
+    "I enjoy thinking thoroughly about complex things and understanding them.",
+    "Abstract considerations interest me little.",
+    # PSQ Stress
+    "I feel that too many demands are placed on me.",
+    "I have too much to do.",
+    "I feel rushed.",
+    "I have enough time for myself.",
+    "I feel under deadline pressure.",
+    # MWS Study Skills
+    "coping with the social climate in the program (e.g., handling competition)",
+    "organizing teamwork (e.g., finding study groups)",
+    "making contacts with fellow students (e.g., for study groups, leisure)",
+    "working together in a team (e.g., working on tasks together, preparing presentations)",
+    # Statistics
+    "So far I have been able to follow the content of the statistics courses well.",
+    "I am able to learn statistics."
+  ),
   reverse_coded = c(
     # BFI reverse coding
-    FALSE, TRUE, TRUE, FALSE,  # Extraversion
-    FALSE, TRUE, FALSE, TRUE,   # Verträglichkeit
-    TRUE, FALSE, FALSE, TRUE,   # Gewissenhaftigkeit
-    TRUE, FALSE, FALSE, TRUE,   # Neurotizismus
-    FALSE, TRUE, FALSE, TRUE,   # Offenheit
+    FALSE, TRUE, TRUE, FALSE, # Extraversion
+    FALSE, TRUE, FALSE, TRUE, # Verträglichkeit
+    TRUE, FALSE, FALSE, TRUE, # Gewissenhaftigkeit
+    TRUE, FALSE, FALSE, TRUE, # Neurotizismus
+    FALSE, TRUE, FALSE, TRUE, # Offenheit
     # PSQ
     FALSE, FALSE, FALSE, TRUE, FALSE,
     # MWS & Statistics
@@ -91,6 +133,9 @@ all_items <- data.frame(
   a = 1,
   stringsAsFactors = FALSE
 )
+
+# Default to German
+all_items <- all_items_de
 
 # =============================================================================
 # COMPLETE DEMOGRAPHICS (ALL VARIABLES FROM SPSS)
@@ -250,112 +295,112 @@ custom_page_flow <- list(
   list(
     id = "page1",
     type = "custom",
-    title = "Willkommen zur HilFo Studie",
+    title = "Willkommen zur HilFo Studie / Welcome to the HilFo Study",
     content = paste0(
-      "<div style='position: relative; padding: 20px; font-size: 16px; line-height: 1.8;'>",
+      '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
       # Language switcher in top right corner
-      "<div style='position: absolute; top: 10px; right: 10px;'>",
-      "<button id='lang_switch' onclick='toggleLanguage()' style='",
-      "background: white; border: 2px solid #e8041c; color: #e8041c; ",
-      "padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;'>",
-      "🇬🇧 English Version</button>",
-      "</div>",
+      '<div style="position: absolute; top: 10px; right: 10px;">',
+      '<button id="lang_switch" style="',
+      'background: white; border: 2px solid #e8041c; color: #e8041c; ',
+      'padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">',
+      '🇬🇧 English Version</button>',
+      '</div>',
       # German content (default)
-      "<div id='content_de'>",
-      "<h2 style='color: #e8041c;'>Liebe Studierende,</h2>",
-      "<p>In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, ",
-      "die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.</p>",
-      "<p>Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene ",
-      "Themenbereiche ab, die voneinander teilweise unabhängig sind.</p>",
-      "<p style='background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;'>",
-      "<strong>Ihre Angaben sind dabei selbstverständlich anonym</strong>, es wird keine personenbezogene ",
-      "Auswertung der Daten stattfinden. Die Daten werden von den Erstsemestern Psychologie im ",
-      "Bachelor generiert und in diesem Jahrgang genutzt, möglicherweise auch in späteren Jahrgängen.</p>",
-      "<p>Im Folgenden werden Ihnen dazu Aussagen präsentiert. Wir bitten Sie anzugeben, ",
-      "inwieweit Sie diesen zustimmen. Es gibt keine falschen oder richtigen Antworten. ",
-      "Bitte beantworten Sie die Fragen so, wie es Ihrer Meinung am ehesten entspricht.</p>",
-      "<p style='margin-top: 20px;'><strong>Die Befragung dauert etwa 10-15 Minuten.</strong></p>",
-      "<hr style='margin: 30px 0; border: 1px solid #e8041c;'>",
-      "<div style='background: #f8f9fa; padding: 20px; border-radius: 8px;'>",
-      "<h3 style='color: #e8041c; margin-bottom: 15px;'>Einverständniserklärung</h3>",
-      "<label style='display: flex; align-items: center; cursor: pointer; font-size: 16px;'>",
-      "<input type='checkbox' id='consent_check' style='margin-right: 10px; width: 20px; height: 20px;' required>",
-      "<span><strong>Ich bin mit der Teilnahme an der Befragung einverstanden</strong></span>",
-      "</label>",
-      "</div>",
-      "</div>",
+      '<div id="content_de">',
+      '<h2 style="color: #e8041c;">Liebe Studierende,</h2>',
+      '<p>In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, ',
+      'die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.</p>',
+      '<p>Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene ',
+      'Themenbereiche ab, die voneinander teilweise unabhängig sind.</p>',
+      '<p style="background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;">',
+      '<strong>Ihre Angaben sind dabei selbstverständlich anonym</strong>, es wird keine personenbezogene ',
+      'Auswertung der Daten stattfinden. Die Daten werden von den Erstsemestern Psychologie im ',
+      'Bachelor generiert und in diesem Jahrgang genutzt, möglicherweise auch in späteren Jahrgängen.</p>',
+      '<p>Im Folgenden werden Ihnen dazu Aussagen präsentiert. Wir bitten Sie anzugeben, ',
+      'inwieweit Sie diesen zustimmen. Es gibt keine falschen oder richtigen Antworten. ',
+      'Bitte beantworten Sie die Fragen so, wie es Ihrer Meinung am ehesten entspricht.</p>',
+      '<p style="margin-top: 20px;"><strong>Die Befragung dauert etwa 10-15 Minuten.</strong></p>',
+      '<hr style="margin: 30px 0; border: 1px solid #e8041c;">',
+      '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">',
+      '<h3 style="color: #e8041c; margin-bottom: 15px;">Einverständniserklärung</h3>',
+      '<label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">',
+      '<input type="checkbox" id="consent_check" style="margin-right: 10px; width: 20px; height: 20px;" required>',
+      '<span><strong>Ich bin mit der Teilnahme an der Befragung einverstanden</strong></span>',
+      '</label>',
+      '</div>',
+      '</div>',
       # English content (hidden by default)
-      "<div id='content_en' style='display: none;'>",
-      "<h2 style='color: #e8041c;'>Dear Students,</h2>",
-      "<p>In the statistics exercises, we want to work with illustrative data ",
-      "that comes from you. Therefore, we would like to learn a few things about you.</p>",
-      "<p>Since we want to enable various analyses, the questionnaire covers different ",
-      "topic areas that are partially independent of each other.</p>",
-      "<p style='background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;'>",
-      "<strong>Your information is completely anonymous</strong>, there will be no personal ",
-      "evaluation of the data. The data is generated by first-semester psychology ",
-      "bachelor students and used in this cohort, possibly also in later cohorts.</p>",
-      "<p>In the following, you will be presented with statements. We ask you to indicate ",
-      "to what extent you agree with them. There are no wrong or right answers. ",
-      "Please answer the questions as they best reflect your opinion.</p>",
-      "<p style='margin-top: 20px;'><strong>The survey takes about 10-15 minutes.</strong></p>",
-      "<hr style='margin: 30px 0; border: 1px solid #e8041c;'>",
-      "<div style='background: #f8f9fa; padding: 20px; border-radius: 8px;'>",
-      "<h3 style='color: #e8041c; margin-bottom: 15px;'>Declaration of Consent</h3>",
-      "<label style='display: flex; align-items: center; cursor: pointer; font-size: 16px;'>",
-      "<input type='checkbox' id='consent_check_en' style='margin-right: 10px; width: 20px; height: 20px;' required>",
-      "<span><strong>I agree to participate in the survey</strong></span>",
-      "</label>",
-      "</div>",
-      "</div>",
-      # JavaScript for language switching
-      "<script>",
-      "var currentLang = 'de';",
-      "function toggleLanguage() {",
-      "  var btn = document.getElementById('lang_switch');",
-      "  var deContent = document.getElementById('content_de');",
-      "  var enContent = document.getElementById('content_en');",
-      "  if (currentLang === 'de') {",
-      "    currentLang = 'en';",
-      "    deContent.style.display = 'none';",
-      "    enContent.style.display = 'block';",
-      "    btn.innerHTML = '🇩🇪 Deutsche Version';",
-      "    // Sync checkboxes",
-      "    var deCheck = document.getElementById('consent_check');",
-      "    var enCheck = document.getElementById('consent_check_en');",
-      "    if (deCheck && enCheck) enCheck.checked = deCheck.checked;",
-      "  } else {",
-      "    currentLang = 'de';",
-      "    deContent.style.display = 'block';",
-      "    enContent.style.display = 'none';",
-      "    btn.innerHTML = '🇬🇧 English Version';",
-      "    // Sync checkboxes",
-      "    var deCheck = document.getElementById('consent_check');",
-      "    var enCheck = document.getElementById('consent_check_en');",
-      "    if (enCheck && deCheck) deCheck.checked = enCheck.checked;",
-      "  }",
-      "  // Store language preference",
-      "  if (window.Shiny) {",
-      "    Shiny.setInputValue('study_language', currentLang);",
-      "  }",
-      "}",
-      "// Sync checkbox states",
-      "document.addEventListener('DOMContentLoaded', function() {",
-      "  var deCheck = document.getElementById('consent_check');",
-      "  var enCheck = document.getElementById('consent_check_en');",
-      "  if (deCheck) {",
-      "    deCheck.addEventListener('change', function() {",
-      "      if (enCheck) enCheck.checked = deCheck.checked;",
-      "    });",
-      "  }",
-      "  if (enCheck) {",
-      "    enCheck.addEventListener('change', function() {",
-      "      if (deCheck) deCheck.checked = enCheck.checked;",
-      "    });",
-      "  }",
-      "});",
-      "</script>",
-      "</div>"
+      '<div id="content_en" style="display: none;">',
+      '<h2 style="color: #e8041c;">Dear Students,</h2>',
+      '<p>In the statistics exercises, we want to work with illustrative data ',
+      'that comes from you. Therefore, we would like to learn a few things about you.</p>',
+      '<p>Since we want to enable various analyses, the questionnaire covers different ',
+      'topic areas that are partially independent of each other.</p>',
+      '<p style="background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;">',
+      '<strong>Your information is completely anonymous</strong>, there will be no personal ',
+      'evaluation of the data. The data is generated by first-semester psychology ',
+      'bachelor students and used in this cohort, possibly also in later cohorts.</p>',
+      '<p>In the following, you will be presented with statements. We ask you to indicate ',
+      'to what extent you agree with them. There are no wrong or right answers. ',
+      'Please answer the questions as they best reflect your opinion.</p>',
+      '<p style="margin-top: 20px;"><strong>The survey takes about 10-15 minutes.</strong></p>',
+      '<hr style="margin: 30px 0; border: 1px solid #e8041c;">',
+      '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">',
+      '<h3 style="color: #e8041c; margin-bottom: 15px;">Declaration of Consent</h3>',
+      '<label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">',
+      '<input type="checkbox" id="consent_check_en" style="margin-right: 10px; width: 20px; height: 20px;" required>',
+      '<span><strong>I agree to participate in the survey</strong></span>',
+      '</label>',
+      '</div>',
+      '</div>',
+      '</div>',
+      # JavaScript for language switching - FIXED
+      '<script>',
+      'var currentLang = "de";',
+      'window.toggleLanguage = function() {',
+      '  var btn = document.getElementById("lang_switch");',
+      '  var deContent = document.getElementById("content_de");',
+      '  var enContent = document.getElementById("content_en");',
+      '  if (currentLang === "de") {',
+      '    currentLang = "en";',
+      '    deContent.style.display = "none";',
+      '    enContent.style.display = "block";',
+      '    btn.innerHTML = "🇩🇪 Deutsche Version";',
+      '    var deCheck = document.getElementById("consent_check");',
+      '    var enCheck = document.getElementById("consent_check_en");',
+      '    if (deCheck && enCheck) enCheck.checked = deCheck.checked;',
+      '  } else {',
+      '    currentLang = "de";',
+      '    deContent.style.display = "block";',
+      '    enContent.style.display = "none";',
+      '    btn.innerHTML = "🇬🇧 English Version";',
+      '    var deCheck = document.getElementById("consent_check");',
+      '    var enCheck = document.getElementById("consent_check_en");',
+      '    if (enCheck && deCheck) deCheck.checked = enCheck.checked;',
+      '  }',
+      '  if (window.Shiny) {',
+      '    Shiny.setInputValue("study_language", currentLang);',
+      '  }',
+      '};',
+      'setTimeout(function() {',
+      '  var btn = document.getElementById("lang_switch");',
+      '  if (btn) {',
+      '    btn.onclick = window.toggleLanguage;',
+      '  }',
+      '  var deCheck = document.getElementById("consent_check");',
+      '  var enCheck = document.getElementById("consent_check_en");',
+      '  if (deCheck) {',
+      '    deCheck.addEventListener("change", function() {',
+      '      if (enCheck) enCheck.checked = deCheck.checked;',
+      '    });',
+      '  }',
+      '  if (enCheck) {',
+      '    enCheck.addEventListener("change", function() {',
+      '      if (deCheck) deCheck.checked = enCheck.checked;',
+      '    });',
+      '  }',
+      '}, 100);',
+      '</script>'
     ),
     validate = "function(inputs) { return document.getElementById('consent_check').checked || document.getElementById('consent_check_en').checked; }",
     required = TRUE
@@ -1128,6 +1173,20 @@ study_config <- inrep::create_study_config(
     pdf_template = "hildesheim",
     csv_separator = ";",  # German standard
     json_pretty = TRUE
+  ),
+  # Add custom CSS for Hildesheim-specific indentation and language switcher
+  custom_css = paste0(
+    ".shiny-input-radiogroup { padding-left: 35px !important; }",
+    ".shiny-input-checkboxgroup { padding-left: 35px !important; }",
+    ".shiny-options-group { padding-left: 35px !important; }",
+    "select.form-control { padding-left: 35px !important; }",
+    ".selectize-control { padding-left: 35px !important; }",
+    ".demographics-section input[type='text'] { padding-left: 10px !important; }",
+    ".demographics-section input[type='number'] { padding-left: 10px !important; }",
+    "/* Keep questions/labels unindented */",
+    ".shiny-input-container > label { padding-left: 0 !important; }",
+    ".form-group > label { padding-left: 0 !important; }",
+    ".control-label { padding-left: 0 !important; }"
   )
 )
 
