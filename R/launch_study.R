@@ -591,8 +591,8 @@ launch_study <- function(
     stop("Package 'shiny' is required but not available. Please install it with: install.packages('shiny')")
   }
   
-  # Load the later package (now a required dependency)
-  suppressPackageStartupMessages(library(later, quietly = TRUE))
+  # Check if later package is available (for deferred operations)
+  has_later <- requireNamespace("later", quietly = TRUE)
   
   # Input validation
   extra_params <- list(...)
@@ -642,17 +642,22 @@ launch_study <- function(
         }
       }
     } else {
-      # Actually load packages (only when needed)
+      # Load packages only if not already loaded
       for (pkg_name in names(packages)) {
         pkg <- packages[[pkg_name]]
         if (requireNamespace(pkg, quietly = TRUE)) {
-          loaded_packages[[pkg_name]] <- TRUE
-          tryCatch({
-            suppressPackageStartupMessages(library(pkg, character.only = TRUE, quietly = TRUE))
-            logger(sprintf("Loaded package: %s", pkg), level = "DEBUG")
-          }, error = function(e) {
-            loaded_packages[[pkg_name]] <- FALSE
-          })
+          # Check if already loaded to avoid redundant loading
+          if (!pkg %in% loadedNamespaces()) {
+            tryCatch({
+              suppressPackageStartupMessages(library(pkg, character.only = TRUE, quietly = TRUE))
+              logger(sprintf("Loaded package: %s", pkg), level = "DEBUG")
+              loaded_packages[[pkg_name]] <- TRUE
+            }, error = function(e) {
+              loaded_packages[[pkg_name]] <- FALSE
+            })
+          } else {
+            loaded_packages[[pkg_name]] <- TRUE
+          }
         } else {
           loaded_packages[[pkg_name]] <- FALSE
         }
@@ -1420,8 +1425,9 @@ launch_study <- function(
           min-height: 600px !important;
         }
         
-        /* Ensure new pages render at top */
-        .page-wrapper:not([data-ready]) {
+        /* Hide pages during computation */
+        .page-wrapper {
+          visibility: hidden !important;
           position: absolute !important;
           top: 0 !important;
           left: 50% !important;
@@ -1431,9 +1437,42 @@ launch_study <- function(
         }
         
         .page-wrapper[data-ready='true'] {
+          visibility: visible !important;
           position: relative !important;
           transform: none !important;
           left: 0 !important;
+        }
+        
+        /* Loading overlay during computation */
+        .computation-overlay {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          background: rgba(255, 255, 255, 0.95) !important;
+          z-index: 9999 !important;
+          display: none;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+        
+        .computation-overlay.active {
+          display: flex !important;
+        }
+        
+        .computation-spinner {
+          width: 60px !important;
+          height: 60px !important;
+          border: 4px solid #f3f3f3 !important;
+          border-top: 4px solid var(--primary-color, #007bff) !important;
+          border-radius: 50% !important;
+          animation: spin 1s linear infinite !important;
+        }
+        
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
         
         .assessment-card {
@@ -2053,14 +2092,19 @@ launch_study <- function(
       }
     }
     
-          # Render the main container only once
+          # Render the main container immediately
       output$study_ui <- shiny::renderUI({
-        # Load packages after first render
-        if (!.packages_loaded) {
+        # Defer package loading to avoid blocking UI
+        if (!.packages_loaded && has_later) {
+          later::later(function() {
+            .load_packages_once()
+          }, delay = 0.01)  # Minimal delay to allow UI to render first
+        } else if (!.packages_loaded) {
+          # Fallback if later not available
           .load_packages_once()
         }
         
-        # Create the main container - Force full width
+        # Create the main container immediately
         shiny::div(
           id = "main-study-container",
           style = "min-height: 500px; width: 100%; margin: 0 auto; padding: 0;",
@@ -2087,28 +2131,52 @@ launch_study <- function(
         
         # Wrapper with smooth positioning
         shiny::tagList(
-          # JavaScript for immediate positioning
+          # JavaScript for smooth page positioning with loading overlay
           shiny::tags$script(HTML(sprintf("
-            // Position page immediately
+            // Ensure smooth page transition
             (function() {
               var pageId = 'page-%d';
-              var elem = document.getElementById(pageId);
-              if (elem) {
-                elem.style.position = 'relative';
-                elem.style.top = '0';
-                elem.style.left = '0';
-                elem.style.transform = 'none';
-                elem.style.transition = 'opacity 0.15s ease-in';
-                elem.style.opacity = '1';
-                elem.setAttribute('data-ready', 'true');
+              
+              // Create or show loading overlay
+              var overlay = document.getElementById('computation-overlay');
+              if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'computation-overlay';
+                overlay.className = 'computation-overlay';
+                overlay.innerHTML = '<div class=\"computation-spinner\"></div>';
+                document.body.appendChild(overlay);
               }
+              
+              // Show overlay briefly during transition
+              overlay.classList.add('active');
+              
+              // Position page correctly
+              setTimeout(function() {
+                var elem = document.getElementById(pageId);
+                if (elem) {
+                  // Ensure element is properly positioned
+                  elem.style.visibility = 'hidden';
+                  elem.style.position = 'relative';
+                  elem.style.top = '0';
+                  elem.style.left = '0';
+                  elem.style.transform = 'none';
+                  elem.style.opacity = '1';
+                  
+                  // Make visible and remove overlay
+                  setTimeout(function() {
+                    elem.style.visibility = 'visible';
+                    elem.setAttribute('data-ready', 'true');
+                    overlay.classList.remove('active');
+                  }, 50);
+                }
+              }, 100);
             })();
           ", current_page))),
           
           shiny::div(
             id = paste0("page-", current_page),
             class = "page-wrapper",
-            style = "width: 100%; max-width: 1200px; margin: 0 auto; opacity: 0;",
+            style = "width: 100%; max-width: 1200px; margin: 0 auto; visibility: hidden; position: relative; top: 0; left: 0;",
           base::switch(stage,
                    "custom_page_flow" = {
                      # Process and render custom page flow
