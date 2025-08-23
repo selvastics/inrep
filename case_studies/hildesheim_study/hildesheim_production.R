@@ -2,6 +2,7 @@
 # HILFO STUDIE - PRODUCTION VERSION WITH COMPLETE DATA RECORDING
 # =============================================================================
 # All variables recorded with proper names, cloud storage enabled
+# Now includes Programming Anxiety Scale with adaptive IRT
 
 library(inrep)
 # Don't load heavy packages at startup - load them only when needed
@@ -15,7 +16,72 @@ WEBDAV_PASSWORD <- "ws2526"
 WEBDAV_SHARE_TOKEN <- "OUarlqGbhYopkBc"  # Share token for authentication
 
 # =============================================================================
-# COMPLETE ITEM BANK WITH PROPER VARIABLE NAMES
+# PROGRAMMING ANXIETY ITEMS WITH IRT PARAMETERS
+# =============================================================================
+
+# Create Programming Anxiety item bank with plausible IRT parameters
+programming_anxiety_items <- data.frame(
+  id = paste0("PA_", sprintf("%02d", 1:20)),
+  Question = c(
+    # Type 1: Items Inferring Programming Expertise (15)
+    "Wie sicher fühlen Sie sich, einen Fehler in Ihrem Code ohne Hilfe zu beheben?",
+    "Fühlen Sie sich überfordert, wenn Sie mit einem neuen Programmierprojekt beginnen?",
+    "Ich mache mir Sorgen, dass meine Programmierkenntnisse für komplexere Aufgaben nicht ausreichen.",
+    "Beim Lesen von Dokumentation fühle ich mich oft verloren oder verwirrt.",
+    "Das Debuggen von Code macht mich nervös, besonders wenn ich den Fehler nicht sofort finde.",
+    "Ich vermeide es, neue Programmiersprachen zu nutzen, weil ich Angst habe, Fehler zu machen.",
+    "In Gruppencodier-Sitzungen bin ich nervös, dass meine Beiträge nicht geschätzt werden.",
+    "Ich habe Sorge, Programmieraufgaben nicht rechtzeitig aufgrund fehlender Fähigkeiten abschließen zu können.",
+    "Wenn ich bei einem Programmierproblem nicht weiterkomme, ist es mir peinlich, um Hilfe zu bitten.",
+    "Ich fühle mich wohl dabei, meinen Code anderen zu erklären.", # Reverse-scored
+    "Fortgeschrittene Programmierkonzepte (z.B. Rekursion, Multithreading) finde ich einschüchternd.",
+    "Ich zweifle oft daran, Programmieren über die Grundlagen hinaus lernen zu können.",
+    "Wenn mein Code nicht funktioniert, glaube ich, dass es an meinem mangelnden Talent liegt.",
+    "Es macht mich nervös, Code ohne Schritt-für-Schritt-Anleitung zu schreiben.",
+    "Ich bin zuversichtlich, bestehenden Code zu verändern, um neue Funktionen hinzuzufügen.", # Reverse-scored
+    # Type 2: General Programming Anxiety (5)
+    "Ich fühle mich manchmal ängstlich, noch bevor ich mit dem Programmieren beginne.",
+    "Allein der Gedanke an das Debuggen macht mich angespannt, selbst bei kleineren Fehlern.",
+    "Ich mache mir Sorgen, für die Qualität meines Codes beurteilt zu werden.",
+    "Wenn mir jemand beim Programmieren zuschaut, werde ich nervös und mache Fehler.",
+    "Schon der Gedanke an bevorstehende Programmieraufgaben setzt mich unter Stress."
+  ),
+  Question_EN = c(
+    # Type 1: Items Inferring Programming Expertise (15)
+    "How confident are you in your ability to fix an error in your code without help?",
+    "Do you feel overwhelmed when starting a new programming project?",
+    "I worry that my programming skills are not good enough for more complex tasks.",
+    "When reading documentation, I often feel lost or confused.",
+    "Debugging code makes me anxious, especially when I cannot immediately spot the issue.",
+    "I avoid using new programming languages because I am afraid of making mistakes.",
+    "During group coding sessions, I am nervous that my contributions will not be valued.",
+    "I worry that I will be unable to finish a coding assignment on time due to lack of skills.",
+    "When I get stuck on a programming problem, I feel embarrassed to ask for help.",
+    "I feel comfortable explaining my code to others.", # Reverse-scored
+    "I find advanced coding concepts (e.g., recursion, multithreading) intimidating.",
+    "I often doubt my ability to learn programming beyond the basics.",
+    "When my code does not work, I worry it is because I lack programming talent.",
+    "I feel anxious when asked to write code without step-by-step instructions.",
+    "I am confident in modifying existing code to add new features.", # Reverse-scored
+    # Type 2: General Programming Anxiety (5)
+    "I sometimes feel anxious even before sitting down to start programming.",
+    "The thought of debugging makes me tense, even if the bug is minor.",
+    "I worry about being judged for the quality of my code.",
+    "When someone watches me code, I get nervous and make mistakes.",
+    "I feel stressed just by thinking about upcoming programming tasks."
+  ),
+  # IRT parameters (2PL model): discrimination (a) and difficulty (b)
+  # Reverse-scored items have negative discrimination
+  a = c(1.2, 1.5, 1.3, 1.1, 1.4, 1.0, 0.9, 1.2, 1.3, -1.4, 
+        1.5, 1.2, 1.1, 1.3, -1.2, 1.0, 1.1, 1.3, 1.4, 1.2),
+  b = c(-0.5, 0.2, 0.5, 0.3, 0.7, 0.8, 0.4, 0.6, 0.3, -0.2,
+        1.0, 0.9, 0.7, 0.6, 0.1, 0.0, 0.2, 0.4, 0.5, 0.3),
+  ResponseCategories = rep("1,2,3,4,5", 20),
+  stringsAsFactors = FALSE
+)
+
+# =============================================================================
+# COMPLETE ITEM BANK WITH PROPER VARIABLE NAMES (BILINGUAL)
 # =============================================================================
 
 # Create bilingual item bank
@@ -100,15 +166,15 @@ all_items_de <- data.frame(
     "I have diverse interests.",
     "I avoid philosophical discussions.",
     "I enjoy thinking thoroughly about complex things and understanding them.",
-    "Abstract considerations interest me little.",
+    "I have little interest in abstract considerations.",
     # PSQ Stress
     "I feel that too many demands are placed on me.",
     "I have too much to do.",
     "I feel rushed.",
     "I have enough time for myself.",
-    "I feel under deadline pressure.",
+    "I feel under time pressure.",
     # MWS Study Skills
-    "coping with the social climate in the program (e.g., handling competition)",
+    "coping with the social climate in the study program (e.g., dealing with competition)",
     "organizing teamwork (e.g., finding study groups)",
     "making contacts with fellow students (e.g., for study groups, leisure)",
     "working together in a team (e.g., working on tasks together, preparing presentations)",
@@ -116,21 +182,7 @@ all_items_de <- data.frame(
     "So far I have been able to follow the content of the statistics courses well.",
     "I am able to learn statistics."
   ),
-  reverse_coded = c(
-    # BFI reverse coding
-    FALSE, TRUE, TRUE, FALSE, # Extraversion
-    FALSE, TRUE, FALSE, TRUE, # Verträglichkeit
-    TRUE, FALSE, FALSE, TRUE, # Gewissenhaftigkeit
-    TRUE, FALSE, FALSE, TRUE, # Neurotizismus
-    FALSE, TRUE, FALSE, TRUE, # Offenheit
-    # PSQ
-    FALSE, FALSE, FALSE, TRUE, FALSE,
-    # MWS & Statistics
-    rep(FALSE, 6)
-  ),
-  ResponseCategories = "1,2,3,4,5",
-  b = 0,
-  a = 1,
+  ResponseCategories = rep("1,2,3,4,5", 31),
   stringsAsFactors = FALSE
 )
 
