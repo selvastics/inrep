@@ -448,10 +448,10 @@ custom_page_flow <- list(
       '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
       # Language switcher in top right corner
       '<div style="position: absolute; top: 10px; right: 10px;">',
-      '<button type="button" id="lang_switch" onclick="toggleLanguage()" style="',
-      'background: white; border: 2px solid #e8041c; color: #e8041c; ',
-      'padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">',
-      '🇬🇧 English Version</button>',
+                  '<button type="button" id="lang_switch" onclick="toggleLanguage()" style="',
+            'background: white; border: 2px solid #e8041c; color: #e8041c; ',
+            'padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">',
+            'English Version</button>',
       '</div>',
       # German content (default)
       '<div id="content_de">',
@@ -520,7 +520,7 @@ function toggleLanguage() {
     currentLang = "en";
     deContent.style.display = "none";
     enContent.style.display = "block";
-    if (btn) btn.innerHTML = "🇩🇪 Deutsche Version";
+    if (btn) btn.innerHTML = "Deutsche Version";
     console.log("Switched to English");
     
     // Tell Shiny immediately
@@ -531,7 +531,7 @@ function toggleLanguage() {
     currentLang = "de";
     deContent.style.display = "block";
     enContent.style.display = "none";
-    if (btn) btn.innerHTML = "🇬🇧 English Version";
+    if (btn) btn.innerHTML = "English Version";
     console.log("Switched to German");
     
     // Tell Shiny immediately
@@ -1174,38 +1174,47 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
   html <- paste0(
       '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
   
-    # Radar plot
-  '<div class="report-section">',
-  '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;" data-lang-de="Persönlichkeitsprofil" data-lang-en="Personality Profile">Persönlichkeitsprofil / Personality Profile</h2>',
+        # Radar plot
+    '<div class="report-section">',
+    '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
+    '<span data-lang-de="Persönlichkeitsprofil" data-lang-en="Personality Profile">Persönlichkeitsprofil</span></h2>',
   if (radar_base64 != "") paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">'),
   '</div>',
   
-  # Trace plot for Programming Anxiety
-  '<div class="report-section">',
-  '<h2 style="color: #9b59b6; text-align: center; margin-bottom: 25px;" data-lang-de="Programmierangst - Adaptive Testung" data-lang-en="Programming Anxiety - Adaptive Testing Trace">Programmierangst - Adaptive Testung / Programming Anxiety - Adaptive Testing Trace</h2>',
-  if (exists("trace_base64") && trace_base64 != "") paste0('<img src="data:image/png;base64,', trace_base64, '" style="width: 100%; max-width: 800px; display: block; margin: 0 auto; border-radius: 8px;">'),
-  '<p style="text-align: center; color: #666; margin-top: 10px; font-size: 14px;" data-lang-de="Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items." data-lang-en="This trace plot shows how the theta estimate evolved during the assessment. The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.">',
-  'Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. / This trace plot shows how the theta estimate evolved during the assessment.<br>',
-  'Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items. / The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.',
-  '</p>',
-  '</div>',
+      # Trace plot for Programming Anxiety
+    '<div class="report-section">',
+    '<h2 style="color: #9b59b6; text-align: center; margin-bottom: 25px;">',
+    '<span data-lang-de="Programmierangst - Adaptive Testung" data-lang-en="Programming Anxiety - Adaptive Testing Trace">Programmierangst - Adaptive Testung</span></h2>',
+    if (exists("trace_base64") && trace_base64 != "") paste0('<img src="data:image/png;base64,', trace_base64, '" style="width: 100%; max-width: 800px; display: block; margin: 0 auto; border-radius: 8px;">'),
+    '<p style="text-align: center; color: #666; margin-top: 10px; font-size: 14px;">',
+    '<span data-lang-de="Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items." ',
+    'data-lang-en="This trace plot shows how the theta estimate evolved during the assessment. The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.">',
+    'Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items.',
+    '</span></p>',
+    '</div>',
   
     # Bar chart
     '<div class="report-section">',
-    '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;" data-lang-de="Alle Dimensionen im Überblick" data-lang-en="All Dimensions Overview">Alle Dimensionen im Überblick / All Dimensions Overview</h2>',
+    '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
+    '<span data-lang-de="Alle Dimensionen im Überblick" data-lang-en="All Dimensions Overview">Alle Dimensionen im Überblick</span></h2>',
     if (bar_base64 != "") paste0('<img src="data:image/png;base64,', bar_base64, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 8px;">'),
     '</div>',
     
-      # Table
-  '<div class="report-section">',
-  '<h2 style="color: #e8041c;" data-lang-de="Detaillierte Auswertung" data-lang-en="Detailed Results">Detaillierte Auswertung / Detailed Results</h2>',
-  '<table style="width: 100%; border-collapse: collapse;">',
-  '<tr style="background: #f8f8f8;">',
-  '<th style="padding: 12px; border-bottom: 2px solid #e8041c;" data-lang-de="Dimension" data-lang-en="Dimension">Dimension</th>',
-  '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;" data-lang-de="Mittelwert" data-lang-en="Mean">Mittelwert / Mean</th>',
-  '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;" data-lang-de="Standardabweichung" data-lang-en="Standard Deviation">Standardabweichung / SD</th>',
-  '<th style="padding: 12px; border-bottom: 2px solid #e8041c;" data-lang-de="Interpretation" data-lang-en="Interpretation">Interpretation</th>',
-  '</tr>'
+          # Table
+    '<div class="report-section">',
+    '<h2 style="color: #e8041c;">',
+    '<span data-lang-de="Detaillierte Auswertung" data-lang-en="Detailed Results">Detaillierte Auswertung</span></h2>',
+    '<table style="width: 100%; border-collapse: collapse;">',
+    '<tr style="background: #f8f8f8;">',
+    '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">',
+    '<span data-lang-de="Dimension" data-lang-en="Dimension">Dimension</span></th>',
+    '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">',
+    '<span data-lang-de="Mittelwert" data-lang-en="Mean">Mittelwert</span></th>',
+    '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">',
+    '<span data-lang-de="Standardabweichung" data-lang-en="Standard Deviation">Standardabweichung</span></th>',
+    '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">',
+    '<span data-lang-de="Interpretation" data-lang-en="Interpretation">Interpretation</span></th>',
+    '</tr>'
   )
   
   # Calculate standard deviations for each dimension
@@ -1244,25 +1253,25 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
   for (name in names(scores)) {
     value <- round(scores[[name]], 2)
     sd_value <- ifelse(name %in% names(sds), sds[[name]], NA)
-    level <- ifelse(value >= 3.7, 
-                   '<span data-lang-de="Hoch" data-lang-en="High">Hoch / High</span>', 
-                   ifelse(value >= 2.3, 
-                          '<span data-lang-de="Mittel" data-lang-en="Medium">Mittel / Medium</span>', 
-                          '<span data-lang-de="Niedrig" data-lang-en="Low">Niedrig / Low</span>'))
+        level <- ifelse(value >= 3.7, 
+                    '<span data-lang-de="Hoch" data-lang-en="High">Hoch</span>', 
+                    ifelse(value >= 2.3, 
+                           '<span data-lang-de="Mittel" data-lang-en="Medium">Mittel</span>', 
+                           '<span data-lang-de="Niedrig" data-lang-en="Low">Niedrig</span>'))
     color <- ifelse(value >= 3.7, "#28a745", ifelse(value >= 2.3, "#ffc107", "#dc3545"))
     
-    # Translate dimension names
+        # Translate dimension names
     name_display <- switch(name,
-      "ProgrammingAnxiety" = '<span data-lang-de="Programmierangst" data-lang-en="Programming Anxiety">Programmierangst / Programming Anxiety</span>',
-      "Extraversion" = '<span data-lang-de="Extraversion" data-lang-en="Extraversion">Extraversion</span>',
-      "Verträglichkeit" = '<span data-lang-de="Verträglichkeit" data-lang-en="Agreeableness">Verträglichkeit / Agreeableness</span>',
-      "Gewissenhaftigkeit" = '<span data-lang-de="Gewissenhaftigkeit" data-lang-en="Conscientiousness">Gewissenhaftigkeit / Conscientiousness</span>',
-      "Neurotizismus" = '<span data-lang-de="Neurotizismus" data-lang-en="Neuroticism">Neurotizismus / Neuroticism</span>',
-      "Offenheit" = '<span data-lang-de="Offenheit" data-lang-en="Openness">Offenheit / Openness</span>',
-      "Stress" = '<span data-lang-de="Stress" data-lang-en="Stress">Stress</span>',
-      "Studierfähigkeiten" = '<span data-lang-de="Studierfähigkeiten" data-lang-en="Study Skills">Studierfähigkeiten / Study Skills</span>',
-      "Statistik" = '<span data-lang-de="Statistik" data-lang-en="Statistics">Statistik / Statistics</span>',
-      name  # Default fallback
+                           "ProgrammingAnxiety" = '<span data-lang-de="Programmierangst" data-lang-en="Programming Anxiety">Programmierangst</span>',
+                           "Extraversion" = '<span data-lang-de="Extraversion" data-lang-en="Extraversion">Extraversion</span>',
+                           "Verträglichkeit" = '<span data-lang-de="Verträglichkeit" data-lang-en="Agreeableness">Verträglichkeit</span>',
+                           "Gewissenhaftigkeit" = '<span data-lang-de="Gewissenhaftigkeit" data-lang-en="Conscientiousness">Gewissenhaftigkeit</span>',
+                           "Neurotizismus" = '<span data-lang-de="Neurotizismus" data-lang-en="Neuroticism">Neurotizismus</span>',
+                           "Offenheit" = '<span data-lang-de="Offenheit" data-lang-en="Openness">Offenheit</span>',
+                           "Stress" = '<span data-lang-de="Stress" data-lang-en="Stress">Stress</span>',
+                           "Studierfähigkeiten" = '<span data-lang-de="Studierfähigkeiten" data-lang-en="Study Skills">Studierfähigkeiten</span>',
+                           "Statistik" = '<span data-lang-de="Statistik" data-lang-en="Statistics">Statistik</span>',
+                           name  # Default fallback
     )
     
     html <- paste0(html,
@@ -1395,7 +1404,8 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
   
   download_section_html <- paste0(
     '<div class="download-section" style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">',
-    '<h4 style="color: #333; margin-bottom: 15px;" data-lang-de="Ergebnisse exportieren" data-lang-en="Export Results">Ergebnisse exportieren / Export Results</h4>',
+    '<h4 style="color: #333; margin-bottom: 15px;">',
+    '<span data-lang-de="Ergebnisse exportieren" data-lang-en="Export Results">Ergebnisse exportieren</span></h4>',
     '<div style="display: flex; gap: 10px;">',
     
     # PDF Download Button
@@ -1833,10 +1843,19 @@ function toggleLanguage() {
   currentLang = currentLang === "de" ? "en" : "de";
   
   // Update all text content based on language
-  // Handle instructions and titles
+  // First update all elements with data-lang attributes (including spans)
+  document.querySelectorAll("[data-lang-de][data-lang-en]").forEach(function(el) {
+    el.textContent = currentLang === "de" ? el.getAttribute("data-lang-de") : el.getAttribute("data-lang-en");
+  });
+  
+  // Handle instructions, titles, and other text elements
   document.querySelectorAll(".page-title, .page-instructions, .item-text, h1, h2, h3, h4, p, label").forEach(function(el) {
-    // Check for German/English versions in various formats
     var text = el.textContent || el.innerText;
+    
+    // Skip if already handled by data-lang attributes
+    if (el.hasAttribute("data-lang-de") && el.hasAttribute("data-lang-en")) {
+      return;
+    }
     
     // Look for pattern "German text / English text"
     if (text.includes(" / ")) {
@@ -1844,11 +1863,6 @@ function toggleLanguage() {
       if (parts.length === 2) {
         el.textContent = currentLang === "de" ? parts[0].trim() : parts[1].trim();
       }
-    }
-    
-    // Also check data attributes
-    if (el.hasAttribute("data-lang-de") && el.hasAttribute("data-lang-en")) {
-      el.textContent = currentLang === "de" ? el.getAttribute("data-lang-de") : el.getAttribute("data-lang-en");
     }
   });
   
@@ -1886,10 +1900,10 @@ function toggleLanguage() {
     }
   });
   
-  // Update button text
+  // Update button text (no emojis)
   var btn = document.getElementById("lang_toggle");
   if (btn) {
-    btn.textContent = currentLang === "de" ? "🇬🇧 English" : "🇩🇪 Deutsch";
+    btn.textContent = currentLang === "de" ? "English" : "Deutsch";
   }
   
   // Send language change to Shiny
@@ -1903,7 +1917,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // Create language toggle button
   var langBtn = document.createElement("button");
   langBtn.id = "lang_toggle";
-  langBtn.textContent = "🇬🇧 English";
+  langBtn.textContent = "English";
   langBtn.style.cssText = "position: fixed; top: 10px; right: 10px; z-index: 9999; " +
                           "background: white; border: 2px solid #e8041c; color: #e8041c; " +
                           "padding: 8px 16px; border-radius: 4px; cursor: pointer;";
