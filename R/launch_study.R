@@ -1878,18 +1878,31 @@ launch_study <- function(
     reactive_ui_labels <- shiny::reactiveVal(ui_labels)
     heavy_computations_done <- shiny::reactiveVal(FALSE)
     
-    # Step 2: Render UI IMMEDIATELY (within 1ms)
+    # Step 2: Render UI IMMEDIATELY (within 1ms) - SINGLE definition
     output$study_ui <- shiny::renderUI({
-      # Return pre-cached first page instantly
-      if (exists("static_content_cache") && !is.null(static_content_cache$first_page)) {
-        return(static_content_cache$first_page)
+      # Defer package loading to background - AFTER UI is fully visible
+      if (!.packages_loaded && has_later) {
+        later::later(function() {
+          .load_packages_once()
+        }, delay = 0.5)  # 500ms delay ensures UI is fully rendered first
       }
-      # Fallback: simple loading message
+      
+      # Return pre-cached first page INSTANTLY
+      if (exists("static_content_cache") && !is.null(static_content_cache$first_page)) {
+        # Wrap in main container
+        return(shiny::div(
+          id = "main-study-container",
+          style = "min-height: 500px; width: 100%; margin: 0 auto; padding: 0;",
+          static_content_cache$first_page,
+          shiny::uiOutput("page_content", inline = TRUE)  # For subsequent pages
+        ))
+      }
+      
+      # Fallback: simple container with page_content
       shiny::div(
-        class = "container",
-        style = "text-align: center; padding: 50px;",
-        shiny::h3("Loading study..."),
-        shiny::div(class = "spinner")
+        id = "main-study-container",
+        style = "min-height: 500px; width: 100%; margin: 0 auto; padding: 0;",
+        shiny::uiOutput("page_content")
       )
     })
     
@@ -1938,15 +1951,19 @@ launch_study <- function(
   # DEFER all heavy initialization - just create empty rv first
   rv <- shiny::reactiveValues()
   
+  # Variables needed for session management (define early)
+  effective_study_key <- NULL
+  session_file <- NULL
+  
   # Initialize rv values asynchronously
   shiny::observe({
     shiny::isolate({
       if (is.null(rv$initialized)) {
         # Use study_key argument if provided, else config$study_key, else generate one
-        effective_study_key <- study_key %||% config$study_key %||% generate_study_key()
+        effective_study_key <<- study_key %||% config$study_key %||% generate_study_key()
         data_dir <- base::file.path("study_data", effective_study_key)
         if (!base::dir.exists(data_dir)) base::dir.create(data_dir, recursive = TRUE)
-        session_file <- base::file.path(data_dir, "session.rds")
+        session_file <<- base::file.path(data_dir, "session.rds")
         
         # Now populate rv
         rv$demo_data <- stats::setNames(base::rep(NA, base::length(config$demographics)), config$demographics)
@@ -2215,25 +2232,8 @@ launch_study <- function(
       }
     }
     
-          # Render the main container immediately
-      output$study_ui <- shiny::renderUI({
-        # Defer package loading to avoid blocking UI
-        if (!.packages_loaded && has_later) {
-          later::later(function() {
-            .load_packages_once()
-          }, delay = 0.01)  # Minimal delay to allow UI to render first
-        } else if (!.packages_loaded) {
-          # Fallback if later not available
-          .load_packages_once()
-        }
-        
-        # Create the main container immediately
-        shiny::div(
-          id = "main-study-container",
-          style = "min-height: 500px; width: 100%; margin: 0 auto; padding: 0;",
-          shiny::uiOutput("page_content")
-        )
-      })
+    # REMOVED: Duplicate output$study_ui definition that was overriding the instant one
+    # The first definition now handles everything including package loading
       
       # Separate reactive output for page content
       output$page_content <- shiny::renderUI({
