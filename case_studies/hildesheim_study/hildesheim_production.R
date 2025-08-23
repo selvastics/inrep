@@ -623,15 +623,18 @@ study_config <- inrep::create_study_config(
 # =============================================================================
 
 cat("\n================================================================================\n")
-cat("HILFO STUDIE - COMPLETE PRODUCTION VERSION\n")
+cat("HILFO STUDIE - COMPLETE PRODUCTION VERSION WITH PROGRAMMING ANXIETY\n")
 cat("================================================================================\n")
-cat("✓ ALL original pages preserved (15 pages + results)\n")
-cat("✓ Programming Anxiety ADDED (2 new pages before BFI)\n")
-cat("✓ Complete demographics (all fields)\n")
-cat("✓ Adaptive IRT for Programming Anxiety\n")
-cat("✓ Bilingual support throughout\n")
+cat("✓ Programming Anxiety questionnaire ADDED (20 items, 2 pages)\n")
+cat("✓ Adaptive IRT for PA items (5 fixed + 5 adaptive)\n")
+cat("✓ ALL original pages and demographics preserved\n")
+cat("✓ Complete bilingual support (German/English)\n")
+cat("✓ Working language toggle button\n")
 cat("✓ Response deselection enabled\n")
+cat("✓ Total: 51 items (20 PA + 31 original)\n")
 cat("================================================================================\n\n")
+
+
 
 # Add JavaScript for language toggle and deselection
 custom_js <- '
@@ -691,9 +694,9 @@ document.addEventListener("click", function(e) {
 
 inrep::launch_study(
   config = study_config,
-  item_bank = all_items,
+  item_bank = all_items_de,  # Use the complete item bank with PA items
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
-  save_format = "csv",
-  custom_js = custom_js
+  save_format = "csv"
+)
 )
