@@ -1844,15 +1844,9 @@ cat("Fixed radar plot with proper connections\n")
 cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
 
-# Custom JavaScript for language toggle and radio button deselection
-# Try to read from external file if it exists
-if (file.exists("custom_js.js")) {
-  custom_js_content <- readLines("custom_js.js", warn = FALSE)
-  custom_js <- paste0('<script>', paste(custom_js_content, collapse = '\n'), '</script>')
-} else {
-  # Fallback to inline version
-  custom_js <- '
-<script>
+# Custom JavaScript for language toggle and radio button deselection  
+# Everything in one R script - properly formatted as a single string
+custom_js <- '<script>
 var currentLang = "de";
 
 // COMPLETE TRANSLATION DICTIONARY - EVERYTHING MUST BE TRANSLATED!
@@ -2507,9 +2501,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   });
 });
-</script>
-'
-}
+</script>'
 
 # Add adaptive monitoring function
 monitor_adaptive <- function(session_data) {
