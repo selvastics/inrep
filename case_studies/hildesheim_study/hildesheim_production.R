@@ -433,21 +433,39 @@ custom_page_flow <- list(
       '</div>',
       # JavaScript for language switching - use HTML() to avoid quote issues
       '<script>
-var currentLang = "de";
+// Initialize from stored preference or default
+var currentLang = localStorage.getItem("hilfo_language") || "de";
 var isToggling = false;
-var lastToggleTime = 0;
+
+// Apply initial language state on page load
+document.addEventListener("DOMContentLoaded", function() {
+  var btn = document.getElementById("lang_switch");
+  var deContent = document.getElementById("content_de");
+  var enContent = document.getElementById("content_en");
+  
+  if (currentLang === "en" && deContent && enContent) {
+    deContent.style.display = "none";
+    enContent.style.display = "block";
+    if (btn) btn.innerHTML = "🇩🇪 Deutsche Version";
+    
+    // Notify Shiny of initial state
+    if (typeof Shiny !== "undefined") {
+      setTimeout(function() {
+        Shiny.setInputValue("study_language", "en_init", {priority: "event"});
+      }, 100);
+    }
+  }
+});
 
 function toggleLanguage() {
-  // Prevent multiple rapid clicks with timestamp check
-  var now = Date.now();
-  if (isToggling || (now - lastToggleTime) < 1000) {
-    console.log("Toggle ignored - too fast");
+  // Prevent multiple rapid clicks
+  if (isToggling) {
+    console.log("Toggle ignored - already toggling");
     return;
   }
   isToggling = true;
-  lastToggleTime = now;
   
-  console.log("Toggle language clicked!");
+  console.log("Toggle language clicked! Current:", currentLang);
   var btn = document.getElementById("lang_switch");
   var deContent = document.getElementById("content_de");
   var enContent = document.getElementById("content_en");
@@ -464,42 +482,38 @@ function toggleLanguage() {
     btn.style.opacity = "0.6";
   }
   
-  if (currentLang === "de") {
-    currentLang = "en";
+  var newLang = (currentLang === "de") ? "en" : "de";
+  currentLang = newLang;
+  
+  // Update display
+  if (newLang === "en") {
     deContent.style.display = "none";
     enContent.style.display = "block";
-    if (btn) {
-      btn.innerHTML = "🇩🇪 Deutsche Version";
-    }
-    console.log("Switched to English");
-    
-    // Tell Shiny once with a unique timestamp to prevent duplicates
-    if (typeof Shiny !== "undefined") {
-      Shiny.setInputValue("study_language", "en_" + now, {priority: "event"});
-    }
+    if (btn) btn.innerHTML = "🇩🇪 Deutsche Version";
   } else {
-    currentLang = "de";
     deContent.style.display = "block";
     enContent.style.display = "none";
-    if (btn) {
-      btn.innerHTML = "🇬🇧 English Version";
-    }
-    console.log("Switched to German");
-    
-    // Tell Shiny once with a unique timestamp to prevent duplicates
-    if (typeof Shiny !== "undefined") {
-      Shiny.setInputValue("study_language", "de_" + now, {priority: "event"});
-    }
+    if (btn) btn.innerHTML = "🇬🇧 English Version";
   }
   
-  // Re-enable button after a delay
+  // Store preference
+  localStorage.setItem("hilfo_language", newLang);
+  console.log("Switched to:", newLang);
+  
+  // Tell Shiny immediately with timestamp
+  if (typeof Shiny !== "undefined") {
+    var timestamp = Date.now();
+    Shiny.setInputValue("study_language", newLang + "_" + timestamp, {priority: "event"});
+  }
+  
+  // Re-enable button after a short delay
   setTimeout(function() {
     if (btn) {
       btn.disabled = false;
       btn.style.opacity = "1";
     }
     isToggling = false;
-  }, 1000);
+  }, 500);
   
   // Sync checkboxes
   var deCheck = document.getElementById("consent_check");

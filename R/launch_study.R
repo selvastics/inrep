@@ -1760,14 +1760,15 @@ launch_study <- function(
     
     shiny::observeEvent(input$study_language, {
       if (!is.null(input$study_language)) {
-        # Extract language from the format "lang_timestamp"
+        # Extract language from the format "lang_timestamp" or "lang_init"
         lang_parts <- strsplit(input$study_language, "_")[[1]]
         new_lang <- lang_parts[1]
+        is_init <- length(lang_parts) > 1 && lang_parts[2] == "init"
         
         # Validate language
         if (new_lang %in% c("de", "en")) {
-          # Only process if language actually changed
-          if (new_lang != last_language()) {
+          # For initial state, always apply; for toggles, check if changed
+          if (is_init || new_lang != last_language()) {
             last_language(new_lang)
             current_language(new_lang)
             
@@ -1785,11 +1786,15 @@ launch_study <- function(
             rv$language_change_trigger <- (rv$language_change_trigger %||% 0) + 1
             
             # Log the change
-            cat("Language switched to:", new_lang, "\n")
+            if (!is_init) {
+              cat("Language switched to:", new_lang, "\n")
+            } else {
+              cat("Language initialized to:", new_lang, "\n")
+            }
           }
         }
       }
-    }, ignoreInit = TRUE)
+    }, ignoreInit = FALSE)  # Don't ignore init to catch initial state
     
       # Generate UUID-based study key if needed
   generate_study_key <- function() {
@@ -2061,22 +2066,24 @@ launch_study <- function(
         (base::length(rv$administered) >= config$max_items || rv$current_se <= config$min_SEM)
     }
     
-    # Load packages immediately for better performance
+    # Load packages in background for better performance
     .packages_loaded <- FALSE
     .load_packages_once <- function() {
       if (!.packages_loaded) {
-        # Load packages immediately without delay
-        safe_load_packages(immediate = TRUE)
+        # Load packages without blocking UI
+        safe_load_packages(immediate = FALSE)
         .packages_loaded <<- TRUE
       }
     }
     
           # Render the main container immediately
       output$study_ui <- shiny::renderUI({
-              # Load packages immediately if needed
-      if (!.packages_loaded) {
-        .load_packages_once()
-      }
+        # Defer package loading to background
+        if (!.packages_loaded && requireNamespace("later", quietly = TRUE)) {
+          later::later(function() {
+            .load_packages_once()
+          }, delay = 0.1)  # Small delay to let UI render first
+        }
         
         # Create the main container immediately
         shiny::div(
