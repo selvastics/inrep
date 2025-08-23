@@ -1174,38 +1174,38 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
   html <- paste0(
       '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
   
-  # Radar plot
+    # Radar plot
   '<div class="report-section">',
-  '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Persönlichkeitsprofil</h2>',
+  '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;" data-lang-de="Persönlichkeitsprofil" data-lang-en="Personality Profile">Persönlichkeitsprofil / Personality Profile</h2>',
   if (radar_base64 != "") paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">'),
   '</div>',
   
   # Trace plot for Programming Anxiety
   '<div class="report-section">',
-  '<h2 style="color: #9b59b6; text-align: center; margin-bottom: 25px;">Programming Anxiety - Adaptive Testing Trace</h2>',
+  '<h2 style="color: #9b59b6; text-align: center; margin-bottom: 25px;" data-lang-de="Programmierangst - Adaptive Testung" data-lang-en="Programming Anxiety - Adaptive Testing Trace">Programmierangst - Adaptive Testung / Programming Anxiety - Adaptive Testing Trace</h2>',
   if (exists("trace_base64") && trace_base64 != "") paste0('<img src="data:image/png;base64,', trace_base64, '" style="width: 100%; max-width: 800px; display: block; margin: 0 auto; border-radius: 8px;">'),
-  '<p style="text-align: center; color: #666; margin-top: 10px; font-size: 14px;">',
-  'This trace plot shows how the theta estimate evolved during the assessment.<br>',
-  'The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.',
+  '<p style="text-align: center; color: #666; margin-top: 10px; font-size: 14px;" data-lang-de="Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items." data-lang-en="This trace plot shows how the theta estimate evolved during the assessment. The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.">',
+  'Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. / This trace plot shows how the theta estimate evolved during the assessment.<br>',
+  'Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items. / The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.',
   '</p>',
   '</div>',
-    
+  
     # Bar chart
     '<div class="report-section">',
-    '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Alle Dimensionen im Überblick</h2>',
+    '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;" data-lang-de="Alle Dimensionen im Überblick" data-lang-en="All Dimensions Overview">Alle Dimensionen im Überblick / All Dimensions Overview</h2>',
     if (bar_base64 != "") paste0('<img src="data:image/png;base64,', bar_base64, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 8px;">'),
     '</div>',
     
-    # Table
-    '<div class="report-section">',
-    '<h2 style="color: #e8041c;">Detaillierte Auswertung</h2>',
-    '<table style="width: 100%; border-collapse: collapse;">',
-    '<tr style="background: #f8f8f8;">',
-    '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">Dimension</th>',
-    '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">Mittelwert</th>',
-    '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">Standardabweichung</th>',
-    '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">Interpretation</th>',
-    '</tr>'
+      # Table
+  '<div class="report-section">',
+  '<h2 style="color: #e8041c;" data-lang-de="Detaillierte Auswertung" data-lang-en="Detailed Results">Detaillierte Auswertung / Detailed Results</h2>',
+  '<table style="width: 100%; border-collapse: collapse;">',
+  '<tr style="background: #f8f8f8;">',
+  '<th style="padding: 12px; border-bottom: 2px solid #e8041c;" data-lang-de="Dimension" data-lang-en="Dimension">Dimension</th>',
+  '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;" data-lang-de="Mittelwert" data-lang-en="Mean">Mittelwert / Mean</th>',
+  '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;" data-lang-de="Standardabweichung" data-lang-en="Standard Deviation">Standardabweichung / SD</th>',
+  '<th style="padding: 12px; border-bottom: 2px solid #e8041c;" data-lang-de="Interpretation" data-lang-en="Interpretation">Interpretation</th>',
+  '</tr>'
   )
   
   # Calculate standard deviations for each dimension
@@ -1244,12 +1244,30 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
   for (name in names(scores)) {
     value <- round(scores[[name]], 2)
     sd_value <- ifelse(name %in% names(sds), sds[[name]], NA)
-    level <- ifelse(value >= 3.7, "Hoch", ifelse(value >= 2.3, "Mittel", "Niedrig"))
+    level <- ifelse(value >= 3.7, 
+                   '<span data-lang-de="Hoch" data-lang-en="High">Hoch / High</span>', 
+                   ifelse(value >= 2.3, 
+                          '<span data-lang-de="Mittel" data-lang-en="Medium">Mittel / Medium</span>', 
+                          '<span data-lang-de="Niedrig" data-lang-en="Low">Niedrig / Low</span>'))
     color <- ifelse(value >= 3.7, "#28a745", ifelse(value >= 2.3, "#ffc107", "#dc3545"))
+    
+    # Translate dimension names
+    name_display <- switch(name,
+      "ProgrammingAnxiety" = '<span data-lang-de="Programmierangst" data-lang-en="Programming Anxiety">Programmierangst / Programming Anxiety</span>',
+      "Extraversion" = '<span data-lang-de="Extraversion" data-lang-en="Extraversion">Extraversion</span>',
+      "Verträglichkeit" = '<span data-lang-de="Verträglichkeit" data-lang-en="Agreeableness">Verträglichkeit / Agreeableness</span>',
+      "Gewissenhaftigkeit" = '<span data-lang-de="Gewissenhaftigkeit" data-lang-en="Conscientiousness">Gewissenhaftigkeit / Conscientiousness</span>',
+      "Neurotizismus" = '<span data-lang-de="Neurotizismus" data-lang-en="Neuroticism">Neurotizismus / Neuroticism</span>',
+      "Offenheit" = '<span data-lang-de="Offenheit" data-lang-en="Openness">Offenheit / Openness</span>',
+      "Stress" = '<span data-lang-de="Stress" data-lang-en="Stress">Stress</span>',
+      "Studierfähigkeiten" = '<span data-lang-de="Studierfähigkeiten" data-lang-en="Study Skills">Studierfähigkeiten / Study Skills</span>',
+      "Statistik" = '<span data-lang-de="Statistik" data-lang-en="Statistics">Statistik / Statistics</span>',
+      name  # Default fallback
+    )
     
     html <- paste0(html,
       '<tr>',
-      '<td style="padding: 12px; border-bottom: 1px solid #e0e0e0;">', name, '</td>',
+      '<td style="padding: 12px; border-bottom: 1px solid #e0e0e0;">', name_display, '</td>',
       '<td style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
       '<strong style="color: ', color, ';">', value, '</strong></td>',
       '<td style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
@@ -1377,7 +1395,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
   
   download_section_html <- paste0(
     '<div class="download-section" style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">',
-    '<h4 style="color: #333; margin-bottom: 15px;">Ergebnisse exportieren</h4>',
+    '<h4 style="color: #333; margin-bottom: 15px;" data-lang-de="Ergebnisse exportieren" data-lang-en="Export Results">Ergebnisse exportieren / Export Results</h4>',
     '<div style="display: flex; gap: 10px;">',
     
     # PDF Download Button
