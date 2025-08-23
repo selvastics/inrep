@@ -71,9 +71,9 @@ programming_anxiety_items <- data.frame(
     "I feel stressed just by thinking about upcoming programming tasks."
   ),
   # IRT parameters (2PL model): discrimination (a) and difficulty (b)
-  # Reverse-scored items have negative discrimination
-  a = c(1.2, 1.5, 1.3, 1.1, 1.4, 1.0, 0.9, 1.2, 1.3, -1.4, 
-        1.5, 1.2, 1.1, 1.3, -1.2, 1.0, 1.1, 1.3, 1.4, 1.2),
+  # Reverse-scored items have positive discrimination for consistency
+  a = c(1.2, 1.5, 1.3, 1.1, 1.4, 1.0, 0.9, 1.2, 1.3, 1.4, 
+        1.5, 1.2, 1.1, 1.3, 1.2, 1.0, 1.1, 1.3, 1.4, 1.2),
   b = c(-0.5, 0.2, 0.5, 0.3, 0.7, 0.8, 0.4, 0.6, 0.3, -0.2,
         1.0, 0.9, 0.7, 0.6, 0.1, 0.0, 0.2, 0.4, 0.5, 0.3),
   ResponseCategories = rep("1,2,3,4,5", 20),
@@ -84,9 +84,11 @@ programming_anxiety_items <- data.frame(
 # COMPLETE ITEM BANK WITH PROPER VARIABLE NAMES (BILINGUAL)
 # =============================================================================
 
-# Create bilingual item bank
+# Create bilingual item bank - combine Programming Anxiety with other items
 all_items_de <- data.frame(
   id = c(
+    # Programming Anxiety items (20 items)
+    programming_anxiety_items$id,
     # BFI items with proper naming convention
     "BFE_01", "BFE_02", "BFE_03", "BFE_04", # Extraversion
     "BFV_01", "BFV_02", "BFV_03", "BFV_04", # Verträglichkeit (Agreeableness)
@@ -101,6 +103,8 @@ all_items_de <- data.frame(
     "Statistik_gutfolgen", "Statistik_selbstwirksam"
   ),
   Question = c(
+    # Programming Anxiety items
+    programming_anxiety_items$Question,
     # BFI Extraversion
     "Ich gehe aus mir heraus, bin gesellig.",
     "Ich bin eher ruhig.",
@@ -142,6 +146,8 @@ all_items_de <- data.frame(
     "Ich bin in der Lage, Statistik zu erlernen."
   ),
   Question_EN = c(
+    # Programming Anxiety items
+    programming_anxiety_items$Question_EN,
     # BFI Extraversion
     "I am outgoing, sociable.",
     "I am rather quiet.",
@@ -182,7 +188,10 @@ all_items_de <- data.frame(
     "So far I have been able to follow the content of the statistics courses well.",
     "I am able to learn statistics."
   ),
-  ResponseCategories = rep("1,2,3,4,5", 31),
+  ResponseCategories = rep("1,2,3,4,5", 51),  # 20 PA + 31 original items
+  # Add IRT parameters for adaptive testing (only PA items have real values)
+  a = c(programming_anxiety_items$a, rep(1, 31)),  # discrimination parameters
+  b = c(programming_anxiety_items$b, rep(0, 31)),  # difficulty parameters
   stringsAsFactors = FALSE
 )
 
@@ -368,7 +377,7 @@ custom_page_flow <- list(
       '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
       # Language switcher in top right corner
       '<div style="position: absolute; top: 10px; right: 10px;">',
-      '<button type="button" id="lang_switch" onclick="toggleLanguage()" style="',
+      '<button type="button" id="lang_switch" style="',
       'background: white; border: 2px solid #e8041c; color: #e8041c; ',
       'padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">',
       '🇬🇧 English Version</button>',
@@ -425,7 +434,15 @@ custom_page_flow <- list(
       '<script type="text/javascript">',
       'var currentLang = "de";',
       '',
-      'window.toggleLanguage = function() {',
+      '// Add event listener when DOM is ready',
+      'document.addEventListener("DOMContentLoaded", function() {',
+      '  var btn = document.getElementById("lang_switch");',
+      '  if (btn) {',
+      '    btn.addEventListener("click", toggleLanguage);',
+      '  }',
+      '});',
+      '',
+      'function toggleLanguage() {',
       '  console.log("Toggle language clicked!");',
       '  var btn = document.getElementById("lang_switch");',
       '  var deContent = document.getElementById("content_de");',
@@ -474,7 +491,7 @@ custom_page_flow <- list(
       '    Shiny.setInputValue("study_language", currentLang, {priority: "event"});',
       '    console.log("Sent language to Shiny:", currentLang);',
       '  }',
-      '};',
+      '}',
       '</script>',
       '</div>'
     ),
@@ -514,79 +531,106 @@ custom_page_flow <- list(
     demographics = c("Note_Englisch", "Note_Mathe")
   ),
   
-  # Pages 6-9: BFI items (grouped by trait)
+  # Page 6: Programming Anxiety - Adaptive Part 1 (first 5 fixed items)
   list(
-    id = "page6",
-    type = "items",
-    title = "Persönlichkeit - Teil 1",
-    instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
-    item_indices = 1:5,  # Mixed first items
-    scale_type = "likert"
+    id = "page6_pa1",
+    type = "adaptive",
+    title = "Programmierangst - Teil 1 / Programming Anxiety - Part 1",
+    instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen. / Please indicate to what extent the following statements apply to you.",
+    item_indices = 1:5,  # First 5 PA items (fixed)
+    scale_type = "likert",
+    adaptive = FALSE  # These are fixed items
   ),
+  
+  # Page 7: Programming Anxiety - Adaptive Part 2 (5 adaptive items)
   list(
-    id = "page7",
-    type = "items",
-    title = "Persönlichkeit - Teil 2",
-    item_indices = 6:10,  # Mixed second items
-    scale_type = "likert"
+    id = "page7_pa2",
+    type = "adaptive",
+    title = "Programmierangst - Teil 2 / Programming Anxiety - Part 2",
+    instructions = "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt. / The following questions are selected based on your previous answers.",
+    n_items = 5,  # Show 5 adaptive items
+    item_pool = 6:20,  # Select from remaining PA items
+    scale_type = "likert",
+    adaptive = TRUE,
+    criteria = "MFI",  # Maximum Fisher Information
+    model = "2PL"
   ),
+  
+  # Pages 8-11: BFI items (grouped by trait) - renumbered
   list(
     id = "page8",
     type = "items",
-    title = "Persönlichkeit - Teil 3",
-    item_indices = 11:15,  # Mixed third items
+    title = "Persönlichkeit - Teil 1 / Personality - Part 1",
+    instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen. / Please indicate to what extent the following statements apply to you.",
+    item_indices = 21:25,  # BFI items start at index 21 (after 20 PA items)
     scale_type = "likert"
   ),
   list(
     id = "page9",
     type = "items",
-    title = "Persönlichkeit - Teil 4",
-    item_indices = 16:20,  # Mixed fourth items
+    title = "Persönlichkeit - Teil 2 / Personality - Part 2",
+    item_indices = 26:30,  # Next BFI items
     scale_type = "likert"
   ),
-  
-  # Page 10: PSQ Stress
   list(
     id = "page10",
     type = "items",
-    title = "Stress",
-    instructions = "Wie sehr treffen die folgenden Aussagen auf Sie zu?",
-    item_indices = 21:25,
+    title = "Persönlichkeit - Teil 3 / Personality - Part 3",
+    item_indices = 31:35,  # Next BFI items
     scale_type = "likert"
   ),
-  
-  # Page 11: MWS Study Skills
   list(
     id = "page11",
     type = "items",
-    title = "Studierfähigkeiten",
-    instructions = "Wie leicht oder schwer fällt es Ihnen...",
-    item_indices = 26:29,
-    scale_type = "difficulty"
-  ),
-  
-  # Page 12: Statistics
-  list(
-    id = "page12",
-    type = "items",
-    title = "Statistik",
-    item_indices = 30:31,
+    title = "Persönlichkeit - Teil 4 / Personality - Part 4",
+    item_indices = 36:40,  # Last BFI items
     scale_type = "likert"
   ),
   
-  # Page 13: Study satisfaction
+  # Page 12: PSQ Stress
+  list(
+    id = "page12",
+    type = "items",
+    title = "Stress",
+    instructions = "Wie sehr treffen die folgenden Aussagen auf Sie zu? / How much do the following statements apply to you?",
+    item_indices = 41:45,  # PSQ items (after 20 PA + 20 BFI)
+    scale_type = "likert"
+  ),
+  
+  # Page 13: MWS Study Skills
   list(
     id = "page13",
+    type = "items",
+    title = "Studierfähigkeiten / Study Skills",
+    instructions = "Wie leicht oder schwer fällt es Ihnen... / How easy or difficult is it for you to...",
+    item_indices = 46:49,  # MWS items
+    scale_type = "difficulty"
+  ),
+  
+  # Page 14: Statistics
+  list(
+    id = "page14",
+    type = "items",
+    title = "Statistik / Statistics",
+    instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen. / Please indicate to what extent the following statements apply to you.",
+    item_indices = 50:51,  # Statistics items
+    scale_type = "likert"
+  ),
+  
+  # Page 15: Study satisfaction
+  list(
+    id = "page15",
     type = "demographics",
-    title = "Studienzufriedenheit",
+    title = "Studienzufriedenheit / Study Satisfaction",
     demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st", "Persönlicher_Code")
   ),
   
-  # Page 14: Results
+  # Page 16: Results with IRT report
   list(
-    id = "page14",
+    id = "page16",
     type = "results",
-    title = "Ihre Ergebnisse"
+    title = "Ihre Ergebnisse / Your Results",
+    include_irt_report = TRUE  # Add IRT report for Programming Anxiety
   )
 )
 
@@ -604,29 +648,40 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
     demographics <- list()
   }
   
-  # Ensure we have all 31 item responses
-  if (length(responses) < 31) {
-    responses <- c(responses, rep(3, 31 - length(responses)))
+  # Ensure we have all 51 item responses (20 PA + 31 original)
+  if (length(responses) < 51) {
+    responses <- c(responses, rep(3, 51 - length(responses)))
   }
   responses <- as.numeric(responses)
   
+  # Extract Programming Anxiety responses (first 20 items)
+  pa_responses <- responses[1:20]
+  # Reverse score items 10 and 15
+  pa_responses[10] <- 6 - pa_responses[10]
+  pa_responses[15] <- 6 - pa_responses[15]
+  pa_score <- mean(pa_responses, na.rm = TRUE)
+  
+  # Extract other responses (items 21-51)
+  other_responses <- responses[21:51]
+  
   # Calculate BFI scores - PROPER GROUPING BY TRAIT
-  # Items are ordered: E1, E2, E3, E4, V1, V2, V3, V4, G1, G2, G3, G4, N1, N2, N3, N4, O1, O2, O3, O4
+  # BFI items are now in other_responses[1:20]
   scores <- list(
-    Extraversion = mean(c(responses[1], 6-responses[2], 6-responses[3], responses[4]), na.rm=TRUE),
-    Verträglichkeit = mean(c(responses[5], 6-responses[6], responses[7], 6-responses[8]), na.rm=TRUE),
-    Gewissenhaftigkeit = mean(c(6-responses[9], responses[10], responses[11], 6-responses[12]), na.rm=TRUE),
-    Neurotizismus = mean(c(6-responses[13], responses[14], responses[15], 6-responses[16]), na.rm=TRUE),
-    Offenheit = mean(c(responses[17], 6-responses[18], responses[19], 6-responses[20]), na.rm=TRUE)
+    ProgrammingAnxiety = pa_score,  # Add PA score
+    Extraversion = mean(c(other_responses[1], 6-other_responses[2], 6-other_responses[3], other_responses[4]), na.rm=TRUE),
+    Verträglichkeit = mean(c(other_responses[5], 6-other_responses[6], other_responses[7], 6-other_responses[8]), na.rm=TRUE),
+    Gewissenhaftigkeit = mean(c(6-other_responses[9], other_responses[10], other_responses[11], 6-other_responses[12]), na.rm=TRUE),
+    Neurotizismus = mean(c(6-other_responses[13], other_responses[14], other_responses[15], 6-other_responses[16]), na.rm=TRUE),
+    Offenheit = mean(c(other_responses[17], 6-other_responses[18], other_responses[19], 6-other_responses[20]), na.rm=TRUE)
   )
   
-  # PSQ Stress score
-  psq <- responses[21:25]
+  # PSQ Stress score (now at indices 21:25 of other_responses)
+  psq <- other_responses[21:25]
   scores$Stress <- mean(c(psq[1:3], 6-psq[4], psq[5]), na.rm=TRUE)
   
-  # MWS & Statistics
-  scores$Studierfähigkeiten <- mean(responses[26:29], na.rm=TRUE)
-  scores$Statistik <- mean(responses[30:31], na.rm=TRUE)
+  # MWS & Statistics (now at indices 26:31 of other_responses)
+  scores$Studierfähigkeiten <- mean(other_responses[26:29], na.rm=TRUE)
+  scores$Statistik <- mean(other_responses[30:31], na.rm=TRUE)
   
   # Create radar plot using ggradar approach
   # Check for ggradar (should be pre-installed)
@@ -814,8 +869,38 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
   # Generate HTML report with download button
   report_id <- paste0("report_", format(Sys.time(), "%Y%m%d_%H%M%S"))
   
+  # Add Programming Anxiety report section
+  pa_section <- ""
+  if (!is.null(pa_score)) {
+    pa_interpretation <- if (pa_score < 2) "Sehr niedrig / Very low"
+                        else if (pa_score < 2.5) "Niedrig / Low"
+                        else if (pa_score < 3.5) "Mittel / Medium"
+                        else if (pa_score < 4) "Hoch / High"
+                        else "Sehr hoch / Very high"
+    
+    pa_section <- paste0(
+      '<div class="report-section" style="margin-bottom: 30px;">',
+      '<h2 style="color: #e8041c; text-align: center;">Programmierangst-Profil / Programming Anxiety Profile</h2>',
+      '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">',
+      '<p style="font-size: 18px; text-align: center;">',
+      '<strong>Ihr Angstwert / Your anxiety score:</strong> ', round(pa_score, 2), ' / 5.00',
+      '</p>',
+      '<p style="font-size: 16px; text-align: center;">',
+      '<strong>Interpretation:</strong> ', pa_interpretation,
+      '</p>',
+      '<div style="background: #e0e0e0; height: 30px; border-radius: 15px; position: relative; margin: 20px auto; max-width: 500px;">',
+      '<div style="background: #e8041c; height: 30px; border-radius: 15px; width: ', (pa_score/5)*100, '%;"></div>',
+      '</div>',
+      '</div>',
+      '</div>'
+    )
+  }
+  
   html <- paste0(
     '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
+    
+    # Programming Anxiety section first
+    pa_section,
     
     # Radar plot
     '<div class="report-section">',
@@ -1220,10 +1305,10 @@ study_config <- inrep::create_study_config(
   demographics = names(demographic_configs),
   demographic_configs = demographic_configs,
   input_types = input_types,
-  model = "GRM",
-  adaptive = FALSE,
-  max_items = 31,
-  min_items = 31,
+  model = "2PL",  # Use 2PL for Programming Anxiety adaptive testing
+  adaptive = TRUE,  # Enable adaptive for PA items
+  max_items = 51,  # Total items including PA
+  min_items = 51,
   response_ui_type = "radio",
   progress_style = "bar",
   language = "de",
