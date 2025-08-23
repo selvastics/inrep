@@ -594,6 +594,15 @@ launch_study <- function(
   # Check if later package is available (for deferred operations)
   has_later <- requireNamespace("later", quietly = TRUE)
   
+  # Check for UUID if study_key uses UUIDgenerate
+  if (!missing(study_key) && is.character(study_key)) {
+    if (grepl("UUIDgenerate", deparse(substitute(study_key)))) {
+      if (!requireNamespace("uuid", quietly = TRUE)) {
+        stop("Package 'uuid' is required for UUIDgenerate(). Please install it with: install.packages('uuid')")
+      }
+    }
+  }
+  
   # Input validation
   extra_params <- list(...)
   if (length(extra_params) > 0) {
@@ -667,10 +676,8 @@ launch_study <- function(
     return(loaded_packages)
   }
   
-  # Check package availability WITHOUT loading (fast)
-  # Only load immediately if explicitly disabled fast mode
-  immediate_load <- isFALSE(config$fast_mode) && isFALSE(config$defer_packages)
-  available_packages <- safe_load_packages(immediate = immediate_load)
+  # NEVER load packages at startup - always defer for fast first page
+  available_packages <- safe_load_packages(immediate = FALSE)
   
   # Check if TAM package is available (only needed for adaptive mode)
   if (isTRUE(config$adaptive) && !isTRUE(available_packages$TAM)) {
@@ -1307,7 +1314,7 @@ launch_study <- function(
   
   ui <- shiny::fluidPage(
     class = "full-width-app",
-    shinyjs::useShinyjs(),
+    if (requireNamespace("shinyjs", quietly = TRUE)) shinyjs::useShinyjs(),
 
           shiny::tags$head(
         shiny::tags$style(HTML("
@@ -1425,8 +1432,12 @@ launch_study <- function(
           min-height: 600px !important;
         }
         
-        /* Hide pages during computation */
-        .page-wrapper {
+        /* Hide ALL pages during initial render */
+        .page-wrapper,
+        .demographics-page,
+        .instructions-page,
+        .results-page,
+        .assessment-page {
           visibility: hidden !important;
           position: absolute !important;
           top: 0 !important;
@@ -1436,7 +1447,11 @@ launch_study <- function(
           max-width: 1200px !important;
         }
         
-        .page-wrapper[data-ready='true'] {
+        .page-wrapper[data-ready='true'],
+        .demographics-page[data-ready='true'],
+        .instructions-page[data-ready='true'],
+        .results-page[data-ready='true'],
+        .assessment-page[data-ready='true'] {
           visibility: visible !important;
           position: relative !important;
           transform: none !important;
@@ -1833,8 +1848,19 @@ launch_study <- function(
   )
   
   server <- function(input, output, session) {
-    # Use study_key argument if provided, else config$study_key, else default
-    effective_study_key <- study_key %||% config$study_key %||% "default_study"
+      # Generate UUID-based study key if needed
+  generate_study_key <- function() {
+    if (requireNamespace("uuid", quietly = TRUE)) {
+      return(uuid::UUIDgenerate())
+    } else {
+      # Fallback to timestamp-based key
+      return(paste0("study_", format(Sys.time(), "%Y%m%d_%H%M%S_"), 
+                    paste0(sample(c(letters, 0:9), 8, replace = TRUE), collapse = "")))
+    }
+  }
+  
+  # Use study_key argument if provided, else config$study_key, else generate one
+  effective_study_key <- study_key %||% config$study_key %||% generate_study_key()
     data_dir <- base::file.path("study_data", effective_study_key)
     if (!base::dir.exists(data_dir)) base::dir.create(data_dir, recursive = TRUE)
     session_file <- base::file.path(data_dir, "session.rds")
@@ -2147,29 +2173,41 @@ launch_study <- function(
                 document.body.appendChild(overlay);
               }
               
-              // Show overlay briefly during transition
+              // Show overlay immediately for smooth transition
               overlay.classList.add('active');
               
-              // Position page correctly
-              setTimeout(function() {
-                var elem = document.getElementById(pageId);
-                if (elem) {
-                  // Ensure element is properly positioned
-                  elem.style.visibility = 'hidden';
-                  elem.style.position = 'relative';
-                  elem.style.top = '0';
-                  elem.style.left = '0';
-                  elem.style.transform = 'none';
-                  elem.style.opacity = '1';
-                  
-                  // Make visible and remove overlay
+              // Immediate positioning to prevent flash
+              var elem = document.getElementById(pageId);
+              if (elem) {
+                // Hide and position immediately
+                elem.style.visibility = 'hidden';
+                elem.style.position = 'relative';
+                elem.style.top = '0';
+                elem.style.left = '0';
+                elem.style.transform = 'none';
+                elem.style.margin = '0 auto';
+                elem.style.opacity = '1';
+                
+                // Use requestAnimationFrame for smooth reveal
+                requestAnimationFrame(function() {
+                  // Small delay to ensure layout is complete
                   setTimeout(function() {
                     elem.style.visibility = 'visible';
                     elem.setAttribute('data-ready', 'true');
                     overlay.classList.remove('active');
-                  }, 50);
-                }
-              }, 100);
+                  }, 20);
+                });
+              } else {
+                // If element not ready, try again
+                setTimeout(function() {
+                  var elem = document.getElementById(pageId);
+                  if (elem) {
+                    elem.style.visibility = 'visible';
+                    elem.setAttribute('data-ready', 'true');
+                  }
+                  overlay.classList.remove('active');
+                }, 150);
+              }
             })();
           ", current_page))),
           
