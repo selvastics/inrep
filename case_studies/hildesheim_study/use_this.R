@@ -1592,6 +1592,49 @@ Basierend auf Ihren Ergebnissen empfehlen wir:
 }
 
 # =============================================================================
+# ADAPTIVE OUTPUT HOOK FUNCTION
+# =============================================================================
+
+adaptive_output_hook <- function(session, item_num, response) {
+  # Output adaptive information for PA items 6-10
+  if (item_num >= 6 && item_num <= 10) {
+    cat("\n================================================================================\n")
+    cat(sprintf("ADAPTIVE PHASE - Item %d (PA_%02d)\n", item_num, item_num))
+    cat("================================================================================\n")
+    
+    # Show current responses
+    if (!is.null(session$responses)) {
+      responses_so_far <- length(session$responses)
+      cat(sprintf("Responses collected: %d items\n", responses_so_far))
+      
+      # Estimate current theta (simplified)
+      if (responses_so_far >= 3) {
+        theta_est <- mean(as.numeric(session$responses), na.rm = TRUE) - 3
+        cat(sprintf("Current ability estimate: theta = %.3f\n", theta_est))
+      }
+    }
+    
+    # Show item parameters
+    cat(sprintf("Item difficulty: b = %.2f\n", all_items_de$b[item_num]))
+    cat(sprintf("Item discrimination: a = %.2f\n", all_items_de$a[item_num]))
+    
+    # Calculate information for this item
+    if (exists("theta_est")) {
+      a <- all_items_de$a[item_num]
+      b <- all_items_de$b[item_num]
+      p <- 1 / (1 + exp(-a * (theta_est - b)))
+      info <- a^2 * p * (1 - p)
+      cat(sprintf("Item information: I = %.4f\n", info))
+    }
+    
+    cat("Selection method: Sequential (simulated adaptive)\n")
+    cat("================================================================================\n\n")
+  }
+  
+  return(NULL)
+}
+
+# =============================================================================
 # LAUNCH WITH CLOUD STORAGE
 # =============================================================================
 
@@ -1748,11 +1791,26 @@ study_config <- inrep::create_study_config(
   session_timeout = 7200,
   results_processor = create_hilfo_report,
   estimation_method = "EAP",  # Use EAP for ability estimation
+  page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
   item_bank = all_items,  # Full item bank
   save_to_file = TRUE,
   save_format = "csv",
   cloud_storage = TRUE,
   enable_download = TRUE,
+  # Enhanced download options for Hildesheim
+  download_formats = c("pdf", "csv", "json"),
+  download_handler = create_hilfo_download_handler(),
+  export_options = list(
+    include_raw_responses = TRUE,
+    include_demographics = TRUE,
+    include_timestamps = TRUE,
+    include_plots = TRUE,
+    pdf_template = "hildesheim",
+    csv_separator = ";",  # German standard
+    json_pretty = TRUE
+  ),
+  # Add minimal custom CSS
+  custom_css = "",
   allow_deselect = TRUE  # Allow response deselection
 )
 
