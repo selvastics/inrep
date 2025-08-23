@@ -460,16 +460,19 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
       plot.extent.y.sf = 1.2,
       legend.position = "none"
     ) +
-    theme(
-      plot.title = element_text(size = 20, face = "bold", hjust = 0.5, 
-                                color = "#e8041c", margin = margin(b = 20)),
-      plot.background = element_rect(fill = "white", color = NA),
-      plot.margin = margin(20, 20, 20, 20)
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5, 
+                                color = "#e8041c", margin = ggplot2::margin(b = 20)),
+      plot.background = ggplot2::element_rect(fill = "white", color = NA),
+      plot.margin = ggplot2::margin(20, 20, 20, 20)
     ) +
-    labs(title = "Ihr Persönlichkeitsprofil (Big Five)")
+    ggplot2::labs(title = "Ihr Persönlichkeitsprofil (Big Five)")
   } else {
     # Fallback to simple ggplot2 approach if ggradar not available
-    library(ggplot2)
+    # Use namespace to avoid loading issues
+    if (!requireNamespace("ggplot2", quietly = TRUE)) {
+      stop("ggplot2 package is required for plotting")
+    }
     
     # Create coordinates for manual radar plot
     n_vars <- 5
@@ -501,41 +504,41 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
     grid_data$x <- grid_data$r * cos(grid_data$angle)
     grid_data$y <- grid_data$r * sin(grid_data$angle)
     
-    # Create plot
-    radar_plot <- ggplot() +
+        # Create plot
+    radar_plot <- ggplot2::ggplot() +
       # Grid circles
-      geom_path(data = grid_data, aes(x = x, y = y, group = r),
+      ggplot2::geom_path(data = grid_data, ggplot2::aes(x = x, y = y, group = r),
                 color = "gray85", size = 0.3) +
       # Spokes
-      geom_segment(data = data.frame(angle = angles),
-                   aes(x = 0, y = 0, 
-                       xend = 5 * cos(angle - pi/2), 
+      ggplot2::geom_segment(data = data.frame(angle = angles),
+                   ggplot2::aes(x = 0, y = 0,
+                       xend = 5 * cos(angle - pi/2),
                        yend = 5 * sin(angle - pi/2)),
                    color = "gray85", size = 0.3) +
       # Data polygon
-      geom_polygon(data = plot_data, aes(x = x, y = y),
+      ggplot2::geom_polygon(data = plot_data, ggplot2::aes(x = x, y = y),
                    fill = "#e8041c", alpha = 0.2) +
-      geom_path(data = plot_data, aes(x = x, y = y),
+      ggplot2::geom_path(data = plot_data, ggplot2::aes(x = x, y = y),
                 color = "#e8041c", size = 2) +
       # Points
-      geom_point(data = plot_data[1:5,], aes(x = x, y = y),
+      ggplot2::geom_point(data = plot_data[1:5,], ggplot2::aes(x = x, y = y),
                  color = "#e8041c", size = 5) +
       # Labels
-      geom_text(data = plot_data[1:5,], 
-                aes(x = x * 1.3, y = y * 1.3, label = label),
+      ggplot2::geom_text(data = plot_data[1:5,],
+                ggplot2::aes(x = x * 1.3, y = y * 1.3, label = label),
                 size = 5, fontface = "bold") +
-      geom_text(data = plot_data[1:5,],
-                aes(x = x * 1.1, y = y * 1.1, label = sprintf("%.1f", score)),
+      ggplot2::geom_text(data = plot_data[1:5,],
+                ggplot2::aes(x = x * 1.1, y = y * 1.1, label = sprintf("%.1f", score)),
                 size = 4, color = "#e8041c") +
-      coord_equal() +
-      xlim(-6, 6) + ylim(-6, 6) +
-      theme_void() +
-      theme(
-        plot.title = element_text(size = 20, face = "bold", hjust = 0.5,
-                                  color = "#e8041c", margin = margin(b = 20)),
-        plot.margin = margin(30, 30, 30, 30)
+      ggplot2::coord_equal() +
+      ggplot2::xlim(-6, 6) + ggplot2::ylim(-6, 6) +
+      ggplot2::theme_void() +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5,
+                                  color = "#e8041c", margin = ggplot2::margin(b = 20)),
+        plot.margin = ggplot2::margin(30, 30, 30, 30)
       ) +
-      labs(title = "Ihr Persönlichkeitsprofil (Big Five)")
+      ggplot2::labs(title = "Ihr Persönlichkeitsprofil (Big Five)")
   }
   
   # Create bar chart
@@ -545,45 +548,45 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
     category = c(rep("Persönlichkeit", 5), "Stress", "Studierfähigkeiten", "Statistik")
   )
   
-  bar_plot <- ggplot(all_data, aes(x = dimension, y = score, fill = category)) +
-    geom_bar(stat = "identity", width = 0.7) +
+  bar_plot <- ggplot2::ggplot(all_data, ggplot2::aes(x = dimension, y = score, fill = category)) +
+    ggplot2::geom_bar(stat = "identity", width = 0.7) +
     # Add value labels with better formatting
-    geom_text(aes(label = sprintf("%.2f", score)), 
+    ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", score)), 
               vjust = -0.5, size = 6, fontface = "bold", color = "#333") +
     # Custom color scheme
-    scale_fill_manual(values = c(
+    ggplot2::scale_fill_manual(values = c(
       "Persönlichkeit" = "#e8041c",
       "Stress" = "#ff6b6b",
       "Studierfähigkeiten" = "#4ecdc4",
       "Statistik" = "#45b7d1"
     )) +
     # Y-axis customization
-    scale_y_continuous(limits = c(0, 5.5), breaks = 0:5) +
+    ggplot2::scale_y_continuous(limits = c(0, 5.5), breaks = 0:5) +
     # Theme with larger text
-    theme_minimal(base_size = 14) +
-    theme(
-      axis.text.x = element_text(angle = 45, hjust = 1, size = 12, face = "bold"),
-      axis.text.y = element_text(size = 12),
-      axis.title.x = element_blank(),
-      axis.title.y = element_text(size = 14, face = "bold"),
-      plot.title = element_text(size = 20, face = "bold", hjust = 0.5, color = "#e8041c", margin = margin(b = 20)),
-      panel.grid.major.x = element_blank(),
-      panel.grid.minor = element_blank(),
-      panel.grid.major.y = element_line(color = "gray90", size = 0.3),
+    ggplot2::theme_minimal(base_size = 14) +
+    ggplot2::theme(
+      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = 12, face = "bold"),
+      axis.text.y = ggplot2::element_text(size = 12),
+      axis.title.x = ggplot2::element_blank(),
+      axis.title.y = ggplot2::element_text(size = 14, face = "bold"),
+      plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5, color = "#e8041c", margin = ggplot2::margin(b = 20)),
+      panel.grid.major.x = ggplot2::element_blank(),
+      panel.grid.minor = ggplot2::element_blank(),
+      panel.grid.major.y = ggplot2::element_line(color = "gray90", size = 0.3),
       legend.position = "bottom",
-      legend.title = element_blank(),
-      legend.text = element_text(size = 12),
-      plot.margin = margin(20, 20, 20, 20)
+      legend.title = ggplot2::element_blank(),
+      legend.text = ggplot2::element_text(size = 12),
+      plot.margin = ggplot2::margin(20, 20, 20, 20)
     ) +
-    labs(title = "Alle Dimensionen im Überblick", y = "Score (1-5)")
+    ggplot2::labs(title = "Alle Dimensionen im Überblick", y = "Score (1-5)")
   
   # Save plots
   radar_file <- tempfile(fileext = ".png")
   bar_file <- tempfile(fileext = ".png")
   
   suppressMessages({
-    ggsave(radar_file, radar_plot, width = 10, height = 9, dpi = 150, bg = "white")
-    ggsave(bar_file, bar_plot, width = 12, height = 7, dpi = 150, bg = "white")
+    ggplot2::ggsave(radar_file, radar_plot, width = 10, height = 9, dpi = 150, bg = "white")
+    ggplot2::ggsave(bar_file, bar_plot, width = 12, height = 7, dpi = 150, bg = "white")
   })
   
   # Encode as base64
