@@ -754,9 +754,19 @@ window.toggleLanguage = toggleLanguage;
 # RESULTS PROCESSOR WITH FIXED RADAR PLOT
 # =============================================================================
 
-create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
+create_hilfo_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
+  # Get current language from session if available
+  current_lang <- "de"  # Default to German
+  if (!is.null(session) && !is.null(session$userData$current_language)) {
+    current_lang <- session$userData$current_language
+  }
+  
   if (is.null(responses) || length(responses) == 0) {
-    return(shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>"))
+    if (current_lang == "en") {
+      return(shiny::HTML("<p>No responses available for evaluation.</p>"))
+    } else {
+      return(shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>"))
+    }
   }
   
   # Ensure demographics is a list
@@ -1783,20 +1793,21 @@ custom_item_selection <- function(rv, item_bank, config) {
 }
 
 study_config <- inrep::create_study_config(
-  name = "HilFo Studie",
-  study_key = session_uuid,
-  theme = "hildesheim",
-  custom_page_flow = custom_page_flow,
-  demographics = names(demographic_configs),
-  demographic_configs = demographic_configs,
-  input_types = input_types,
-  model = "2PL",  # Use 2PL model for IRT
-  adaptive = FALSE,  # Disable adaptive for now since we use custom_page_flow
-  max_items = 51,  # Total items in bank
-  min_items = 51,  # Must show all items
-  response_ui_type = "radio",
-  progress_style = "bar",
-  language = "de",
+    name = "HilFo Studie",
+    study_key = session_uuid,
+    theme = "hildesheim",
+    custom_page_flow = custom_page_flow,
+    demographics = names(demographic_configs),
+    demographic_configs = demographic_configs,
+    input_types = input_types,
+    model = "2PL",  # Use 2PL model for IRT
+    adaptive = FALSE,  # Disable adaptive for now since we use custom_page_flow
+    max_items = 51,  # Total items in bank
+    min_items = 51,  # Must show all items
+    response_ui_type = "radio",
+    progress_style = "bar",
+    language = "de",
+    bilingual = TRUE,  # Enable bilingual support
   session_save = TRUE,
   session_timeout = 7200,
   results_processor = create_hilfo_report,
@@ -1841,6 +1852,7 @@ var currentLang = "de";
 // Language toggle function
 function toggleLanguage() {
   currentLang = currentLang === "de" ? "en" : "de";
+  console.log("Switching language to:", currentLang);
   
   // Update all text content based on language
   // First update all elements with data-lang attributes (including spans)
@@ -1848,8 +1860,18 @@ function toggleLanguage() {
     el.textContent = currentLang === "de" ? el.getAttribute("data-lang-de") : el.getAttribute("data-lang-en");
   });
   
+  // Update item questions specifically
+  document.querySelectorAll(".item-question, .item-text, .assessment-item-text").forEach(function(el) {
+    // Check if element has translation data
+    if (el.dataset && el.dataset.questionEn && currentLang === "en") {
+      el.textContent = el.dataset.questionEn;
+    } else if (el.dataset && el.dataset.questionDe && currentLang === "de") {
+      el.textContent = el.dataset.questionDe;
+    }
+  });
+  
   // Handle instructions, titles, and other text elements
-  document.querySelectorAll(".page-title, .page-instructions, .item-text, h1, h2, h3, h4, p, label").forEach(function(el) {
+  document.querySelectorAll(".page-title, .page-instructions, h1, h2, h3, h4, p, label, td, th").forEach(function(el) {
     var text = el.textContent || el.innerText;
     
     // Skip if already handled by data-lang attributes
@@ -1909,7 +1931,75 @@ function toggleLanguage() {
   // Send language change to Shiny
   if (typeof Shiny !== "undefined") {
     Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+    
+    // Force update of current page content
+    setTimeout(function() {
+      // Try to update any remaining untranslated elements
+      updateAllContent();
+    }, 100);
   }
+}
+
+// Comprehensive content update function
+function updateAllContent() {
+  // Update navigation buttons
+  document.querySelectorAll("button, .btn").forEach(function(btn) {
+    var text = btn.textContent;
+    var translations = {
+      "Weiter": "Next",
+      "Zurück": "Back",
+      "Absenden": "Submit",
+      "Fertig": "Finish",
+      "Speichern": "Save",
+      "Abbrechen": "Cancel"
+    };
+    
+    if (currentLang === "en") {
+      for (var de in translations) {
+        if (text === de) {
+          btn.textContent = translations[de];
+          break;
+        }
+      }
+    } else {
+      for (var de in translations) {
+        if (text === translations[de]) {
+          btn.textContent = de;
+          break;
+        }
+      }
+    }
+  });
+  
+  // Update progress text
+  document.querySelectorAll(".progress-text, .progress-label").forEach(function(el) {
+    var text = el.textContent;
+    if (text.includes("von")) {
+      if (currentLang === "en") {
+        el.textContent = text.replace(" von ", " of ");
+      }
+    } else if (text.includes(" of ")) {
+      if (currentLang === "de") {
+        el.textContent = text.replace(" of ", " von ");
+      }
+    }
+  });
+}
+
+// Store translations for dynamic content
+var itemTranslations = {};
+
+// Function to apply translations to current page
+function applyTranslations() {
+  // Update all elements with stored translations
+  document.querySelectorAll(".item-question, .item-text").forEach(function(el) {
+    var itemId = el.closest(".item-container")?.dataset?.itemId || el.id;
+    if (itemTranslations[itemId]) {
+      el.textContent = currentLang === "de" ? 
+        itemTranslations[itemId].de : 
+        itemTranslations[itemId].en;
+    }
+  });
 }
 
 // Add language toggle button on page load
@@ -1923,6 +2013,23 @@ document.addEventListener("DOMContentLoaded", function() {
                           "padding: 8px 16px; border-radius: 4px; cursor: pointer;";
   langBtn.onclick = toggleLanguage;
   document.body.appendChild(langBtn);
+  
+  // Watch for page changes to reapply translations
+  var observer = new MutationObserver(function(mutations) {
+    setTimeout(function() {
+      if (currentLang === "en") {
+        applyTranslations();
+        toggleLanguage(); // Apply English
+        toggleLanguage(); // Toggle back to trigger update
+        currentLang = "en"; // Keep English
+      }
+    }, 100);
+  });
+  
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
   
   // Enable radio button deselection
   document.addEventListener("click", function(e) {
@@ -1990,12 +2097,32 @@ monitor_adaptive <- function(session_data) {
 }
 
 # Launch with cloud storage, adaptive testing, and custom JavaScript
+# Add a reactive hook to handle language switching for items
 inrep::launch_study(
-  config = study_config,
-  item_bank = all_items_de,  # Contains both Question and Question_EN
-  webdav_url = WEBDAV_URL,
-  password = WEBDAV_PASSWORD,
-  save_format = "csv",
-  custom_css = custom_js,  # Add custom JavaScript for language toggle and deselection
-  admin_dashboard_hook = monitor_adaptive  # Monitor adaptive selection
+    config = study_config,
+    item_bank = all_items_de,  # Contains both Question and Question_EN
+    webdav_url = WEBDAV_URL,
+    password = WEBDAV_PASSWORD,
+    save_format = "csv",
+    custom_css = custom_js,  # Add custom JavaScript for language toggle and deselection
+    admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
+    # Add server-side logic to handle language switching
+    server_extensions = function(input, output, session) {
+        # Observe language changes
+        observeEvent(input$study_language, {
+            lang <- input$study_language
+            if (!is.null(lang)) {
+                cat("Language switched to:", lang, "\n")
+                
+                # Update the item bank to use the correct language
+                if (lang == "en") {
+                    # Use English questions
+                    session$userData$current_language <- "en"
+                    # This will be used by the results processor
+                } else {
+                    session$userData$current_language <- "de"
+                }
+            }
+        })
+    }
 )
