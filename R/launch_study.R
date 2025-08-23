@@ -537,22 +537,9 @@ launch_study <- function(
     
     # Defer loading other enhanced modules
     .other_modules_loaded <- FALSE
+    # SKIP MODULE LOADING - This was slowing startup!
     .load_other_modules <- function() {
-      if (!.other_modules_loaded) {
-        other_files <- c(
-          "enhanced_config_handler.R",
-          "enhanced_session_recovery.R", 
-          "enhanced_security.R",
-          "enhanced_performance.R"
-        )
-        for (file in other_files) {
-          file_path <- system.file("R", file, package = "inrep")
-          if (file.exists(file_path)) {
-            source(file_path, local = TRUE)
-          }
-        }
-        .other_modules_loaded <<- TRUE
-      }
+      # Do nothing - modules will be loaded on-demand if needed
     }
     
     # Skip all optimizations on startup for instant loading
@@ -2424,18 +2411,19 @@ launch_study <- function(
                                fill: none;
                                opacity: 0.5;
                              }
-                             .progress-circle-gradient span {
-                               position: absolute;
-                               top: 50%%;
-                               left: 50%%;
-                               margin-left: -30px;
-                               margin-top: -15px;
-                               font-family: 'Helvetica Neue', 'Arial', sans-serif;
-                               font-size: 20px;
-                               font-weight: 500;
-                               color: #333;
-                               text-shadow: 0 0 2px rgba(255,255,255,0.8);
-                             }
+                                                         .progress-circle-gradient span {
+                              position: absolute;
+                              top: 50%%;
+                              left: 50%%;
+                              transform: translate(-50%%, -50%%);
+                              font-family: 'Helvetica Neue', 'Arial', sans-serif;
+                              font-size: 20px;
+                              font-weight: 500;
+                              color: #333;
+                              text-shadow: 0 0 2px rgba(255,255,255,0.8);
+                              width: 60px;
+                              text-align: center;
+                            }
                            ", theme_primary)),
                            shiny::tags$svg(
                              width = "120", height = "120",
