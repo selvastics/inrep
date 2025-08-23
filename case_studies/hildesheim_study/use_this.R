@@ -1834,31 +1834,31 @@ study_config <- inrep::create_study_config(
     progress_style = "bar",
     language = "de",
     bilingual = TRUE,  # Enable bilingual support
-  session_save = TRUE,
-  session_timeout = 7200,
-  results_processor = create_hilfo_report,
-  estimation_method = "EAP",  # Use EAP for ability estimation
-  page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
-  item_bank = all_items,  # Full item bank
-  save_to_file = TRUE,
-  save_format = "csv",
-  cloud_storage = TRUE,
-  enable_download = TRUE,
-  # Enhanced download options for Hildesheim
-  download_formats = c("pdf", "csv", "json"),
-  download_handler = create_hilfo_download_handler(),
-  export_options = list(
-    include_raw_responses = TRUE,
-    include_demographics = TRUE,
-    include_timestamps = TRUE,
-    include_plots = TRUE,
-    pdf_template = "hildesheim",
-    csv_separator = ";",  # German standard
-    json_pretty = TRUE
-  ),
-  # Add minimal custom CSS
-  custom_css = "",
-  allow_deselect = TRUE  # Allow response deselection
+    session_save = TRUE,
+    session_timeout = 7200,
+    results_processor = create_hilfo_report,
+    estimation_method = "EAP",  # Use EAP for ability estimation
+    page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
+    item_bank = all_items,  # Full item bank
+    save_to_file = TRUE,
+    save_format = "csv",
+    cloud_storage = TRUE,
+    enable_download = TRUE,
+    # Enhanced download options for Hildesheim
+    download_formats = c("pdf", "csv", "json"),
+    download_handler = create_hilfo_download_handler(),
+    export_options = list(
+        include_raw_responses = TRUE,
+        include_demographics = TRUE,
+        include_timestamps = TRUE,
+        include_plots = TRUE,
+        pdf_template = "hildesheim",
+        csv_separator = ";",  # German standard
+        json_pretty = TRUE
+    ),
+    # Add minimal custom CSS
+    custom_css = "",
+    allow_deselect = TRUE  # Allow response deselection
 )
 
 cat("\n================================================================================\n")
@@ -2047,12 +2047,12 @@ custom_js <- paste0(
   '  "Ich bin in der Lage, Statistik zu erlernen.": "I am able to learn statistics."',
   '};',
   '',
-  '// AGGRESSIVE TRANSLATION FUNCTION',
+  '// TRANSLATION FUNCTION WITHOUT CONSOLE SYMBOLS',
   'function translateEverything() {',
   '  if (isTranslating) return;',
   '  isTranslating = true;',
   '  ',
-  '  console.log("🌐 TRANSLATING EVERYTHING TO:", currentLang.toUpperCase());',
+  '  console.log("TRANSLATING EVERYTHING TO:", currentLang.toUpperCase());',
   '  ',
   '  try {',
   '    if (currentLang === "en") {',
@@ -2124,7 +2124,7 @@ custom_js <- paste0(
   '    }',
   '  });',
   '  ',
-  '  console.log("✅ Translation to English completed");',
+  '  console.log("Translation to English completed");',
   '}',
   '',
   'function translateToGerman() {',
@@ -2171,7 +2171,7 @@ custom_js <- paste0(
   '    }',
   '  });',
   '  ',
-  '  console.log("✅ Translation to German completed");',
+  '  console.log("Translation to German completed");',
   '}',
   '',
   'function escapeRegex(string) {',
@@ -2181,7 +2181,7 @@ custom_js <- paste0(
   '// TOGGLE LANGUAGE FUNCTION',
   'function toggleLanguage() {',
   '  currentLang = currentLang === "de" ? "en" : "de";',
-  '  console.log("🔄 LANGUAGE SWITCHED TO:", currentLang.toUpperCase());',
+  '  console.log("LANGUAGE SWITCHED TO:", currentLang.toUpperCase());',
   '  ',
   '  // Update button text',
   '  var btn = document.getElementById("lang_toggle");',
@@ -2205,7 +2205,7 @@ custom_js <- paste0(
   '',
   '// INITIALIZE WHEN PAGE LOADS',
   'document.addEventListener("DOMContentLoaded", function() {',
-  '  console.log("🚀 BILINGUAL SYSTEM INITIALIZED");',
+  '  console.log("BILINGUAL SYSTEM INITIALIZED");',
   '  ',
   '  // Create language toggle button',
   '  var btn = document.createElement("button");',
@@ -2229,7 +2229,29 @@ custom_js <- paste0(
   '    attributes: true',
   '  });',
   '  ',
-  '  console.log("👁️ MUTATION OBSERVER ACTIVE - watching for page changes");',
+  '  console.log("MUTATION OBSERVER ACTIVE - watching for page changes");',
+  '});',
+  '',
+  '// ENABLE RADIO BUTTON DESELECTION',
+  'document.addEventListener("click", function(e) {',
+  '  if (e.target && e.target.type === "radio") {',
+  '    var wasChecked = e.target.getAttribute("data-was-checked") === "true";',
+  '    ',
+  '    // Clear all radios in group',
+  '    var radios = document.querySelectorAll("input[name=\\"" + e.target.name + "\\"]");',
+  '    for (var i = 0; i < radios.length; i++) {',
+  '      radios[i].setAttribute("data-was-checked", "false");',
+  '    }',
+  '    ',
+  '    if (wasChecked) {',
+  '      e.target.checked = false;',
+  '      if (typeof Shiny !== "undefined") {',
+  '        Shiny.setInputValue(e.target.name, null, {priority: "event"});',
+  '      }',
+  '    } else {',
+  '      e.target.setAttribute("data-was-checked", "true");',
+  '    }',
+  '  }',
   '});',
   '</script>'
 )
@@ -2296,7 +2318,7 @@ inrep::launch_study(
         observeEvent(input$study_language, {
             lang <- input$study_language
             if (!is.null(lang) && lang %in% c("de", "en")) {
-                cat("🌐 SERVER: Language switched to:", toupper(lang), "\n")
+                cat("SERVER: Language switched to:", toupper(lang), "\n")
                 
                 # Update session language
                 session$userData$current_language <- lang
@@ -2306,12 +2328,12 @@ inrep::launch_study(
                     # Switch to English item bank
                     updated_items <- get_items_for_language("en")
                     session$userData$item_bank <- updated_items
-                    cat("✅ SERVER: Item bank switched to English\n")
+                    cat("SERVER: Item bank switched to English\n")
                 } else {
                     # Switch to German item bank
                     updated_items <- get_items_for_language("de") 
                     session$userData$item_bank <- updated_items
-                    cat("✅ SERVER: Item bank switched to German\n")
+                    cat("SERVER: Item bank switched to German\n")
                 }
                 
                 # Update demographic configs for current language
@@ -2322,7 +2344,7 @@ inrep::launch_study(
                     invalidateLater(100, session)
                 }
                 
-                cat("🔄 SERVER: All language-dependent content updated\n")
+                cat("SERVER: All language-dependent content updated\n")
             }
         }, ignoreInit = FALSE)
         
