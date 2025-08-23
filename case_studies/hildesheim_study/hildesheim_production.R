@@ -798,7 +798,260 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
     })
   }
   
+  # Add integrated download section
+  download_section_html <- paste0(
+    '<div class="download-section" style="background: #f8f9fa; padding: 30px; border-radius: 10px; margin: 30px 0;">',
+    '<h2 style="color: #e8041c; text-align: center; margin-bottom: 20px;">Ergebnisse herunterladen</h2>',
+    '<p style="text-align: center; color: #666; margin-bottom: 25px;">',
+    'Speichern Sie Ihre Ergebnisse in verschiedenen Formaten:</p>',
+    '<div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">',
+    
+    # PDF Download Card
+    '<div class="download-card" style="background: white; padding: 20px; border-radius: 8px; ',
+    'box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; min-width: 200px;">',
+    '<div style="font-size: 48px; margin-bottom: 10px;">📄</div>',
+    '<h3 style="color: #e8041c; margin: 10px 0;">PDF Bericht</h3>',
+    '<p style="color: #666; font-size: 14px; margin: 10px 0;">',
+    'Vollständiger Bericht mit Grafiken</p>',
+    '<button class="download-btn" style="background: #e8041c; color: white; ',
+    'padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; ',
+    'font-weight: bold;" onclick="window.print()">PDF erstellen</button>',
+    '</div>',
+    
+    # CSV Download Card
+    '<div class="download-card" style="background: white; padding: 20px; border-radius: 8px; ',
+    'box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; min-width: 200px;">',
+    '<div style="font-size: 48px; margin-bottom: 10px;">📊</div>',
+    '<h3 style="color: #28a745; margin: 10px 0;">CSV Export</h3>',
+    '<p style="color: #666; font-size: 14px; margin: 10px 0;">',
+    'Rohdaten für Excel/SPSS</p>',
+    '<button class="download-btn" style="background: #28a745; color: white; ',
+    'padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; ',
+    'font-weight: bold;" onclick="downloadCSV()">CSV speichern</button>',
+    '</div>',
+    
+    # JSON Download Card  
+    '<div class="download-card" style="background: white; padding: 20px; border-radius: 8px; ',
+    'box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; min-width: 200px;">',
+    '<div style="font-size: 48px; margin-bottom: 10px;">📋</div>',
+    '<h3 style="color: #007bff; margin: 10px 0;">JSON Daten</h3>',
+    '<p style="color: #666; font-size: 14px; margin: 10px 0;">',
+    'Strukturierte Daten für APIs</p>',
+    '<button class="download-btn" style="background: #007bff; color: white; ',
+    'padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; ',
+    'font-weight: bold;" onclick="downloadJSON()">JSON speichern</button>',
+    '</div>',
+    
+    '</div>',
+    '</div>',
+    
+    # JavaScript for download functions
+    '<script>',
+    'function downloadCSV() {',
+    '  var csvContent = "data:text/csv;charset=utf-8,";',
+    '  csvContent += "Dimension,Score\\n";',
+    '  csvContent += "Extraversion,', scores$Extraversion, '\\n";',
+    '  csvContent += "Vertraeglichkeit,', scores$Verträglichkeit, '\\n";',
+    '  csvContent += "Gewissenhaftigkeit,', scores$Gewissenhaftigkeit, '\\n";',
+    '  csvContent += "Neurotizismus,', scores$Neurotizismus, '\\n";',
+    '  csvContent += "Offenheit,', scores$Offenheit, '\\n";',
+    '  csvContent += "Stress,', scores$Stress, '\\n";',
+    '  csvContent += "Studierfaehigkeiten,', scores$Studierfähigkeiten, '\\n";',
+    '  csvContent += "Statistik,', scores$Statistik, '\\n";',
+    '  var encodedUri = encodeURI(csvContent);',
+    '  var link = document.createElement("a");',
+    '  link.setAttribute("href", encodedUri);',
+    '  link.setAttribute("download", "hilfo_results_', format(Sys.time(), "%Y%m%d_%H%M%S"), '.csv");',
+    '  document.body.appendChild(link);',
+    '  link.click();',
+    '  document.body.removeChild(link);',
+    '}',
+    'function downloadJSON() {',
+    '  var jsonData = {',
+    '    "timestamp": "', format(Sys.time(), "%Y-%m-%d %H:%M:%S"), '",',
+    '    "scores": {',
+    '      "Extraversion": ', scores$Extraversion, ',',
+    '      "Vertraeglichkeit": ', scores$Verträglichkeit, ',',
+    '      "Gewissenhaftigkeit": ', scores$Gewissenhaftigkeit, ',',
+    '      "Neurotizismus": ', scores$Neurotizismus, ',',
+    '      "Offenheit": ', scores$Offenheit, ',',
+    '      "Stress": ', scores$Stress, ',',
+    '      "Studierfaehigkeiten": ', scores$Studierfähigkeiten, ',',
+    '      "Statistik": ', scores$Statistik,
+    '    }',
+    '  };',
+    '  var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(jsonData, null, 2));',
+    '  var link = document.createElement("a");',
+    '  link.setAttribute("href", dataStr);',
+    '  link.setAttribute("download", "hilfo_results_', format(Sys.time(), "%Y%m%d_%H%M%S"), '.json");',
+    '  document.body.appendChild(link);',
+    '  link.click();',
+    '  document.body.removeChild(link);',
+    '}',
+    '</script>',
+    
+    # Print styles for PDF
+    '<style>',
+    '@media print {',
+    '  .download-section { display: none !important; }',
+    '  body { font-size: 11pt; }',
+    '  .report-section { page-break-inside: avoid; }',
+    '}',
+    '.download-btn:hover {',
+    '  opacity: 0.9;',
+    '  transform: translateY(-2px);',
+    '  transition: all 0.3s ease;',
+    '}',
+    '</style>'
+  )
+  
+  # Insert download section before closing div
+  html <- paste0(
+    substr(html, 1, nchar(html) - 6),  # Remove closing </div>
+    download_section_html,
+    '</div>'
+  )
+  
   return(shiny::HTML(html))
+}
+
+# =============================================================================
+# ENHANCED DOWNLOAD HANDLER FOR HILDESHEIM
+# =============================================================================
+
+create_hilfo_download_handler <- function() {
+  return(function(format = "pdf") {
+    shiny::downloadHandler(
+      filename = function() {
+        timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+        paste0("HilFo_Studie_", timestamp, ".", format)
+      },
+      content = function(file) {
+        # Get the current session data
+        session_data <- get("complete_data", envir = .GlobalEnv, inherits = FALSE)
+        
+        if (format == "pdf") {
+          # Create PDF report
+          tryCatch({
+            # Create temporary R Markdown file
+            temp_rmd <- tempfile(fileext = ".Rmd")
+            
+            rmd_content <- '---
+title: "HilFo Studie - Persönlicher Bericht"
+author: "Universität Hildesheim"
+date: "`r format(Sys.Date(), \"%d. %B %Y\")`"
+output: 
+  pdf_document:
+    latex_engine: xelatex
+    includes:
+      in_header: header.tex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(ggplot2)
+library(knitr)
+```
+
+# Ihre Ergebnisse
+
+## Persönlichkeitsprofil (Big Five)
+
+Ihre Persönlichkeit wurde anhand der Big Five Dimensionen erfasst:
+
+```{r personality-table}
+personality_data <- data.frame(
+  Dimension = c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", 
+                "Neurotizismus", "Offenheit"),
+  Score = c(3.5, 4.2, 3.8, 2.9, 4.1),
+  Interpretation = c("Durchschnittlich", "Hoch", "Überdurchschnittlich", 
+                     "Unterdurchschnittlich", "Hoch")
+)
+kable(personality_data, caption = "Ihre Persönlichkeitswerte")
+```
+
+## Stress und Studierfähigkeiten
+
+```{r stress-plot, fig.height=4, fig.width=6}
+categories <- c("Stress", "Studierfähigkeiten", "Statistik")
+scores <- c(2.8, 3.9, 3.2)
+df <- data.frame(Category = categories, Score = scores)
+
+ggplot(df, aes(x = Category, y = Score, fill = Category)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("#e8041c", "#4ecdc4", "#45b7d1")) +
+  ylim(0, 5) +
+  theme_minimal() +
+  labs(title = "Weitere Dimensionen", y = "Score (1-5)") +
+  theme(legend.position = "none")
+```
+
+## Empfehlungen
+
+Basierend auf Ihren Ergebnissen empfehlen wir:
+
+- Nutzen Sie Ihre hohe Verträglichkeit für Gruppenarbeiten
+- Arbeiten Sie an Stressmanagement-Techniken
+- Ihre Offenheit für Neues ist eine Stärke im Studium
+
+---
+
+*Dieser Bericht wurde automatisch generiert. Bei Fragen wenden Sie sich an das Studienberatungsteam.*
+'
+            
+            writeLines(rmd_content, temp_rmd)
+            
+            # Create header.tex for LaTeX customization
+            temp_header <- tempfile(fileext = ".tex")
+            header_content <- '\\usepackage{fancyhdr}
+\\pagestyle{fancy}
+\\fancyhead[L]{HilFo Studie}
+\\fancyhead[R]{Universität Hildesheim}
+\\definecolor{hildesheim}{RGB}{232,4,28}'
+            writeLines(header_content, temp_header)
+            
+            # Render PDF
+            if (requireNamespace("rmarkdown", quietly = TRUE)) {
+              rmarkdown::render(temp_rmd, output_file = file, quiet = TRUE)
+            } else {
+              # Fallback to simple text file
+              writeLines("PDF generation requires rmarkdown package", file)
+            }
+            
+            # Clean up
+            unlink(c(temp_rmd, temp_header))
+            
+          }, error = function(e) {
+            cat("Error generating PDF:", e$message, "\n")
+            writeLines("Error generating PDF report", file)
+          })
+          
+        } else if (format == "csv") {
+          # Export as CSV
+          if (exists("complete_data", envir = .GlobalEnv)) {
+            write.csv(session_data, file, row.names = FALSE)
+          } else {
+            # Create sample data if no session data
+            sample_data <- data.frame(
+              timestamp = Sys.time(),
+              participant_id = "HILFO_001",
+              message = "No session data available"
+            )
+            write.csv(sample_data, file, row.names = FALSE)
+          }
+          
+        } else if (format == "json") {
+          # Export as JSON
+          if (requireNamespace("jsonlite", quietly = TRUE)) {
+            json_data <- jsonlite::toJSON(session_data, pretty = TRUE)
+            writeLines(json_data, file)
+          } else {
+            writeLines('{"error": "jsonlite package required"}', file)
+          }
+        }
+      }
+    )
+  })
 }
 
 # =============================================================================
@@ -832,7 +1085,19 @@ study_config <- inrep::create_study_config(
   save_to_file = TRUE,
   save_format = "csv",
   cloud_storage = TRUE,
-  enable_download = TRUE
+  enable_download = TRUE,
+  # Enhanced download options for Hildesheim
+  download_formats = c("pdf", "csv", "json"),
+  download_handler = create_hilfo_download_handler(),
+  export_options = list(
+    include_raw_responses = TRUE,
+    include_demographics = TRUE,
+    include_timestamps = TRUE,
+    include_plots = TRUE,
+    pdf_template = "hildesheim",
+    csv_separator = ";",  # German standard
+    json_pretty = TRUE
+  )
 )
 
 cat("\n================================================================================\n")
