@@ -107,6 +107,9 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
     return(shiny::div("No demographics configured for this page"))
   }
   
+  # Get current language
+  current_lang <- rv$language %||% config$language %||% "de"
+  
   # Create inputs for each demographic
   demo_inputs <- lapply(demo_vars, function(dem) {
     demo_config <- config$demographic_configs[[dem]]
@@ -115,20 +118,28 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
       return(NULL)
     }
     
+    # Get question text based on language
+    question_text <- if (current_lang == "en" && !is.null(demo_config$question_en)) {
+      demo_config$question_en
+    } else {
+      demo_config$question %||% demo_config$question_de %||% dem
+    }
+    
     input_id <- paste0("demo_", dem)
     input_type <- config$input_types[[dem]] %||% "text"
     
-    # Create input based on type
+    # Pass language to create_demographic_input
     input_element <- create_demographic_input(
       input_id, 
       demo_config, 
       input_type,
-      rv$demo_data[[dem]]
+      rv$demo_data[[dem]],
+      current_lang
     )
     
     shiny::div(
       class = "form-group",
-      shiny::tags$label(demo_config$question %||% dem, class = "input-label"),
+      shiny::tags$label(question_text, class = "input-label"),
       input_element,
       if (!is.null(demo_config$help_text)) {
         shiny::tags$small(class = "form-text text-muted", demo_config$help_text)
@@ -136,10 +147,17 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
     )
   })
   
+  # Get page title based on language
+  page_title <- if (current_lang == "en" && !is.null(page$title_en)) {
+    page$title_en
+  } else {
+    page$title %||% ui_labels$demo_title
+  }
+  
   shiny::div(
     class = "assessment-card",
     style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
-    shiny::h3(page$title %||% ui_labels$demo_title, class = "card-header"),
+    shiny::h3(page_title, class = "card-header"),
     if (!is.null(page$description)) {
       shiny::p(page$description, class = "welcome-text")
     },
@@ -352,13 +370,23 @@ render_page_navigation <- function(rv, config, current_page_idx) {
 }
 
 #' Create demographic input element
-create_demographic_input <- function(input_id, demo_config, input_type, current_value = NULL) {
+create_demographic_input <- function(input_id, demo_config, input_type, current_value = NULL, language = "de") {
   # Debug logging for checkbox issues
   if (input_type == "checkbox" && getOption("inrep.debug", FALSE)) {
     cat("DEBUG: Creating checkbox for", input_id, "\n")
     cat("  Options:", str(demo_config$options), "\n")
     cat("  Current value:", current_value, "\n")
   }
+  
+  # Get language-specific options
+  options_to_use <- if (language == "en" && !is.null(demo_config$options_en)) {
+    demo_config$options_en
+  } else {
+    demo_config$options
+  }
+  
+  # Get language-specific placeholder
+  placeholder_text <- if (language == "en") "Please select..." else "Bitte wählen..."
   
   switch(input_type,
     "text" = shiny::textInput(
@@ -381,7 +409,7 @@ create_demographic_input <- function(input_id, demo_config, input_type, current_
     "select" = shiny::selectInput(
       inputId = input_id,
       label = NULL,
-      choices = c("Bitte wählen..." = "", demo_config$options),
+      choices = c(setNames("", placeholder_text), options_to_use),
       selected = current_value %||% "",
       width = "100%"
     ),
@@ -389,7 +417,7 @@ create_demographic_input <- function(input_id, demo_config, input_type, current_
     "radio" = shiny::radioButtons(
       inputId = input_id,
       label = NULL,
-      choices = demo_config$options,
+      choices = options_to_use,
       selected = current_value %||% character(0),
       width = "100%"
     ),
