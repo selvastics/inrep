@@ -1381,7 +1381,7 @@ launch_study <- function(
     class = "full-width-app",
     if (requireNamespace("shinyjs", quietly = TRUE)) shinyjs::useShinyjs(),
     
-    # CORNER FLASH FIX - Targeted positioning prevention
+    # AGGRESSIVE corner flash prevention - MUST BE FIRST!
     shiny::tags$head(
       shiny::tags$style(shiny::HTML("
         /* TARGETED corner flash prevention - Only main containers */
@@ -1407,8 +1407,9 @@ launch_study <- function(
           margin: 0 auto !important;
         }
         
-        /* PERFECT centering for progress elements */
-        .progress-circle-gradient {
+        /* ALLOW normal positioning for progress elements */
+        .progress-circle-gradient, .progress-circle-gradient svg, 
+        .progress-circle-gradient span, .session-status-indicator {
           position: relative !important;
           display: block !important;
           margin: 0 auto !important;
@@ -1421,21 +1422,9 @@ launch_study <- function(
         }
         
         .progress-circle-gradient span {
-          position: absolute !important;
-          top: 50% !important;
-          left: 50% !important;
-          transform: translate(-50%, -50%) !important;
-          margin: 0 !important;
-          text-align: center !important;
-          font-weight: bold !important;
-        }
-        
-        .session-status-indicator {
-          position: relative !important;
           display: block !important;
-          margin: 10px auto !important;
+          margin-top: -80px !important;
           text-align: center !important;
-          max-width: 300px !important;
         }
       ")),
       
