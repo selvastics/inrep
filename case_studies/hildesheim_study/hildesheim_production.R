@@ -134,8 +134,17 @@ all_items_de <- data.frame(
   stringsAsFactors = FALSE
 )
 
+# Create a function to get items in the correct language
+get_items_for_language <- function(lang = "de") {
+  items <- all_items_de
+  if (lang == "en" && "Question_EN" %in% names(items)) {
+    items$Question <- items$Question_EN
+  }
+  return(items)
+}
+
 # Default to German
-all_items <- all_items_de
+all_items <- get_items_for_language("de")
 
 # =============================================================================
 # COMPLETE DEMOGRAPHICS (ALL VARIABLES FROM SPSS) - BILINGUAL
@@ -356,53 +365,56 @@ custom_page_flow <- list(
       '</label>',
       '</div>',
       '</div>',
-      '</div>',
-      # JavaScript for language switching with full questionnaire support
-      '<script>',
+      # JavaScript for complete language switching
+      '<script type="text/javascript">',
       'var currentLang = "de";',
-      'window.toggleLanguage = function() {',
+      '',
+      'function toggleLanguage() {',
       '  var btn = document.getElementById("lang_switch");',
       '  var deContent = document.getElementById("content_de");',
       '  var enContent = document.getElementById("content_en");',
+      '  ',
       '  if (currentLang === "de") {',
       '    currentLang = "en";',
-      '    deContent.style.display = "none";',
-      '    enContent.style.display = "block";',
-      '    btn.innerHTML = "🇩🇪 Deutsche Version";',
-      '    // Update page title',
-      '    var title = document.querySelector(".card-header, h2, h3");',
-      '    if (title && title.textContent.includes("Willkommen")) {',
-      '      title.textContent = "Welcome to the HilFo Study";',
-      '    }',
+      '    if (deContent) deContent.style.display = "none";',
+      '    if (enContent) enContent.style.display = "block";',
+      '    if (btn) btn.innerHTML = "🇩🇪 Deutsche Version";',
+      '    ',
+      '    // Sync checkboxes',
       '    var deCheck = document.getElementById("consent_check");',
       '    var enCheck = document.getElementById("consent_check_en");',
       '    if (deCheck && enCheck) enCheck.checked = deCheck.checked;',
       '  } else {',
       '    currentLang = "de";',
-      '    deContent.style.display = "block";',
-      '    enContent.style.display = "none";',
-      '    btn.innerHTML = "🇬🇧 English Version";',
-      '    // Update page title',
-      '    var title = document.querySelector(".card-header, h2, h3");',
-      '    if (title && title.textContent.includes("Welcome")) {',
-      '      title.textContent = "Willkommen zur HilFo Studie";',
-      '    }',
+      '    if (deContent) deContent.style.display = "block";',
+      '    if (enContent) enContent.style.display = "none";',
+      '    if (btn) btn.innerHTML = "🇬🇧 English Version";',
+      '    ',
+      '    // Sync checkboxes',
       '    var deCheck = document.getElementById("consent_check");',
       '    var enCheck = document.getElementById("consent_check_en");',
       '    if (enCheck && deCheck) deCheck.checked = enCheck.checked;',
       '  }',
-      '  // Store language preference globally and in Shiny',
-      '  window.studyLanguage = currentLang;',
+      '  ',
+      '  // Store language preference for entire assessment',
       '  localStorage.setItem("hilfo_language", currentLang);',
-      '  if (window.Shiny) {',
+      '  sessionStorage.setItem("hilfo_language", currentLang);',
+      '  ',
+      '  // Tell Shiny to switch language for all pages',
+      '  if (window.Shiny && Shiny.setInputValue) {',
       '    Shiny.setInputValue("study_language", currentLang, {priority: "event"});',
       '  }',
-      '};',
-      'setTimeout(function() {',
+      '}',
+      '',
+      '// Initialize on page load',
+      'window.addEventListener("DOMContentLoaded", function() {',
+      '  // Attach click handler to button',
       '  var btn = document.getElementById("lang_switch");',
       '  if (btn) {',
-      '    btn.onclick = window.toggleLanguage;',
+      '    btn.addEventListener("click", toggleLanguage);',
       '  }',
+      '  ',
+      '  // Sync checkbox changes',
       '  var deCheck = document.getElementById("consent_check");',
       '  var enCheck = document.getElementById("consent_check_en");',
       '  if (deCheck) {',
@@ -415,7 +427,7 @@ custom_page_flow <- list(
       '      if (deCheck) deCheck.checked = enCheck.checked;',
       '    });',
       '  }',
-      '}, 100);',
+      '});',
       '</script>'
     ),
     validate = "function(inputs) { return document.getElementById('consent_check').checked || document.getElementById('consent_check_en').checked; }",
@@ -1190,22 +1202,8 @@ study_config <- inrep::create_study_config(
     csv_separator = ";",  # German standard
     json_pretty = TRUE
   ),
-  # Add minimal custom CSS and language persistence script for Hildesheim
-  custom_css = paste0(
-    "<script>",
-    "// Check for saved language preference on every page",
-    "document.addEventListener('DOMContentLoaded', function() {",
-    "  var savedLang = localStorage.getItem('hilfo_language');",
-    "  if (savedLang === 'en') {",
-    "    // Apply English to all text elements",
-    "    window.studyLanguage = 'en';",
-    "    if (window.Shiny) {",
-    "      Shiny.setInputValue('study_language', 'en');",
-    "    }",
-    "  }",
-    "});",
-    "</script>"
-  )
+  # Add minimal custom CSS
+  custom_css = ""
 )
 
 cat("\n================================================================================\n")
@@ -1217,34 +1215,19 @@ cat("Fixed radar plot with proper connections\n")
 cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
 
+# Prepare bilingual items - duplicate items for English
+all_items_bilingual <- rbind(
+  all_items_de,
+  transform(all_items_de, 
+            id = paste0(id, "_EN"),
+            Question = Question_EN)
+)
+
 # Launch with cloud storage and full language support
 inrep::launch_study(
   config = study_config,
-  item_bank = all_items_de,  # Use the bilingual item bank
+  item_bank = all_items_de,  # Start with German
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
-  save_format = "csv",
-  # Custom handler for language preference
-  session_handler = function(session, input, output) {
-    # Create reactive value for language
-    language <- reactiveVal("de")
-    
-    # Store language preference when changed
-    observeEvent(input$study_language, {
-      if (!is.null(input$study_language)) {
-        language(input$study_language)
-        session$userData$language <- input$study_language
-        cat("Language switched to:", input$study_language, "\n")
-        
-        # Update item bank to use English questions if needed
-        if (input$study_language == "en") {
-          # Switch to English questions
-          all_items$Question <<- all_items_de$Question_EN
-        } else {
-          # Switch back to German questions
-          all_items$Question <<- all_items_de$Question
-        }
-      }
-    })
-  }
+  save_format = "csv"
 )
