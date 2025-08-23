@@ -1381,17 +1381,73 @@ launch_study <- function(
     class = "full-width-app",
     if (requireNamespace("shinyjs", quietly = TRUE)) shinyjs::useShinyjs(),
     
-    # SIMPLE corner flash prevention
+    # AGGRESSIVE corner flash prevention - MUST BE FIRST!
     shiny::tags$head(
       shiny::tags$style(shiny::HTML("
-        .page-wrapper, .assessment-card, #study_ui {
-          margin: 0 auto !important;
+        /* IMMEDIATE UNIVERSAL RESET - Applied to EVERYTHING */
+        * {
           position: relative !important;
           left: 0 !important;
           right: 0 !important;
           top: 0 !important;
           transform: none !important;
         }
+        
+        /* FORCE ALL CONTAINERS TO CENTER */
+        body, html, .container-fluid, .page-wrapper, .assessment-card, #study_ui, 
+        .shiny-html-output, .shiny-bound-output, #stable-page-container {
+          margin: 0 auto !important;
+          position: relative !important;
+          left: 0 !important;
+          right: 0 !important;
+          top: 0 !important;
+          transform: none !important;
+          width: 100% !important;
+          max-width: 1200px !important;
+        }
+        
+        /* OVERRIDE ANY POSITIONING ATTEMPTS */
+        [style*='position: absolute'], [style*='position: fixed'],
+        [style*='left:'], [style*='right:'], [style*='top:'] {
+          position: relative !important;
+          left: 0 !important;
+          right: 0 !important;
+          top: 0 !important;
+          margin: 0 auto !important;
+        }
+      ")),
+      
+      # JAVASCRIPT: Immediate positioning enforcement
+      shiny::tags$script(shiny::HTML("
+        // IMMEDIATE EXECUTION - Before anything else loads
+        (function() {
+          // Override ANY positioning attempts at browser level
+          var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+              if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach(function(node) {
+                  if (node.nodeType === 1) { // Element node
+                    // FORCE CENTER POSITIONING IMMEDIATELY
+                    if (node.style) {
+                      node.style.position = 'relative';
+                      node.style.left = '0';
+                      node.style.right = '0';
+                      node.style.top = '0';
+                      node.style.margin = '0 auto';
+                      node.style.transform = 'none';
+                    }
+                  }
+                });
+              }
+            });
+          });
+          
+          // Start observing immediately
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true
+          });
+        })();
       "))
     ),
     
@@ -2620,11 +2676,11 @@ launch_study <- function(
           )
         }
         
-                  # STABLE container - ID never changes to prevent DOM replacement
+                  # STABLE container with IMMEDIATE positioning
           shiny::div(
             id = "stable-page-container", # ← NEVER CHANGES!
             class = "page-wrapper",
-            style = "width: 100%; max-width: 1200px; margin: 0 auto; position: relative;",
+            style = "width: 100% !important; max-width: 1200px !important; margin: 0 auto !important; position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; transform: none !important; display: block !important;",
           base::switch(stage,
                    "custom_page_flow" = {
                      # Process and render custom page flow
