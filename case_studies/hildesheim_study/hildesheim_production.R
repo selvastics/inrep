@@ -31,7 +31,7 @@ TRANSLATIONS <- list(
     welcome_duration = "Die Befragung dauert etwa 10-15 Minuten.",
     consent_title = "Einverständniserklärung",
     consent_text = "Ich bin mit der Teilnahme an der Befragung einverstanden",
-    button_switch = "🇬🇧 English Version",
+    button_switch = "English Version",
     nav_back = "Zurück",
     nav_next = "Weiter",
     nav_complete = "Abschließen",
@@ -48,7 +48,7 @@ TRANSLATIONS <- list(
     welcome_duration = "The survey takes about 10-15 minutes.",
     consent_title = "Declaration of Consent",
     consent_text = "I agree to participate in the survey",
-    button_switch = "🇩🇪 Deutsche Version",
+    button_switch = "Deutsche Version",
     nav_back = "Back",
     nav_next = "Next",
     nav_complete = "Complete",
@@ -423,7 +423,7 @@ custom_page_flow <- list(
       'background: white; border: 2px solid #e8041c; color: #e8041c; ',
       'padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; ',
       'transition: all 0.3s ease;">',
-      '<span id="lang_switch_text">🇬🇧 English Version</span>',
+      '<span id="lang_switch_text">English Version</span>',
       '</button>',
       '</div>',
       # Content container with smooth transitions
@@ -489,7 +489,7 @@ var LanguageManager = (function() {
   // Preload all UI text to avoid delays
   var uiText = {
     de: {
-      buttonText: "🇬🇧 English Version",
+      buttonText: "English Version",
       nextButton: "Weiter",
       prevButton: "Zurück",
       completeButton: "Abschließen",
@@ -498,7 +498,7 @@ var LanguageManager = (function() {
       instructions: "Anweisungen"
     },
     en: {
-      buttonText: "🇩🇪 Deutsche Version",
+      buttonText: "Deutsche Version",
       nextButton: "Next",
       prevButton: "Back",
       completeButton: "Complete",
@@ -607,7 +607,7 @@ var LanguageManager = (function() {
     // Update page indicator
     var pageIndicator = document.querySelector(".page-indicator");
     if (pageIndicator) {
-      var match = pageIndicator.textContent.match(/\d+/g);
+      var match = pageIndicator.textContent.match(/\\d+/g);
       if (match && match.length >= 2) {
         pageIndicator.textContent = uiText[currentLang].pageIndicator
           .replace("%d", match[0])

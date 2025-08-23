@@ -154,7 +154,7 @@ ui <- fluidPage(
   ),
   
   # Language button
-  actionButton("lang_btn", "🇬🇧 English", class = "lang-btn"),
+  actionButton("lang_btn", "English", class = "lang-btn"),
   
   # Progress bar
   div(class = "progress-bar",
@@ -178,13 +178,13 @@ ui <- fluidPage(
     var currentLang = 'de';
     var translations = {
       de: {
-        langBtn: '🇬🇧 English',
+        langBtn: 'English',
         next: 'Weiter',
         prev: 'Zurück',
         submit: 'Abschließen'
       },
       en: {
-        langBtn: '🇩🇪 Deutsch',
+        langBtn: 'Deutsch',
         next: 'Next',
         prev: 'Back',
         submit: 'Complete'
@@ -372,12 +372,12 @@ server <- function(input, output, session) {
 cat("\n================================================================================\n")
 cat("HILFO STUDIE - ULTRA-FAST VERSION\n")
 cat("================================================================================\n")
-cat("✓ Minimal dependencies (only shiny + TAM)\n")
-cat("✓ No inrep package overhead\n")
-cat("✓ Instant page transitions (150ms fade)\n")
-cat("✓ Fixed layout - no corner display issues\n")
-cat("✓ Smooth language switching\n")
-cat("✓ Optimized for speed\n")
+cat("- Minimal dependencies (only shiny + TAM)\n")
+cat("- No inrep package overhead\n")
+cat("- Instant page transitions (150ms fade)\n")
+cat("- Fixed layout - no corner display issues\n")
+cat("- Smooth language switching\n")
+cat("- Optimized for speed\n")
 cat("================================================================================\n\n")
 
 shinyApp(ui = ui, server = server)
