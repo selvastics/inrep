@@ -1381,12 +1381,45 @@ launch_study <- function(
     class = "full-width-app",
     if (requireNamespace("shinyjs", quietly = TRUE)) shinyjs::useShinyjs(),
     
+    # STATIC FIRST PAGE - Shows IMMEDIATELY, prevents any corner flash
+    shiny::tags$div(
+      id = "nuclear-static-page",
+      style = "position: fixed !important; top: 0 !important; left: 0 !important; 
+              width: 100% !important; height: 100% !important; background: white !important; 
+              z-index: 999999 !important; display: flex !important; 
+              align-items: center !important; justify-content: center !important;",
+      shiny::tags$div(
+        style = "text-align: center; max-width: 600px; padding: 40px;",
+        shiny::tags$h1(
+          style = "color: #e8041c; margin-bottom: 30px; font-size: 2.5em;",
+          config$name %||% "Assessment Loading..."
+        ),
+        shiny::tags$div(
+          style = "margin: 30px 0;",
+          shiny::tags$div(
+            style = "width: 60px; height: 60px; border: 6px solid #f3f3f3; 
+                    border-top: 6px solid #e8041c; border-radius: 50%; 
+                    animation: spin 1s linear infinite; margin: 0 auto;"
+          )
+        ),
+        shiny::tags$p(
+          style = "color: #666; font-size: 1.2em; margin-top: 20px;",
+          if (default_language == "de") "Wird geladen..." else "Loading..."
+        )
+      )
+    ),
+    
     # ULTIMATE CORNER FLASH ELIMINATION - ALL METHODS COMBINED!
     shiny::tags$head(
       shiny::tags$style(shiny::HTML("
-        /* UNIVERSAL RESET - PREVENT ALL CORNER POSITIONING */
+        /* NUCLEAR UNIVERSAL RESET - FORCE EVERYTHING TO CENTER */
         * {
           box-sizing: border-box !important;
+          position: relative !important;
+          left: 0 !important;
+          right: 0 !important;
+          top: 0 !important;
+          transform: none !important;
         }
         
         body, html {
@@ -1471,6 +1504,12 @@ launch_study <- function(
           visibility: visible !important;
           opacity: 1 !important;
         }
+        
+        /* SPINNER ANIMATION */
+        @keyframes spin {
+          0% { transform: rotate(0deg) !important; }
+          100% { transform: rotate(360deg) !important; }
+        }
       ")),
       
       # JAVASCRIPT: ULTIMATE positioning enforcement
@@ -1541,15 +1580,35 @@ launch_study <- function(
             }
           }, 100);
           
-          // IMMEDIATE APPLICATION on DOM ready
-          document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(function() {
-              var elements = document.querySelectorAll('.page-wrapper, .assessment-card, #study_ui, #stable-page-container');
-              for (var i = 0; i < elements.length; i++) {
-                forceCenter(elements[i]);
-              }
-            }, 1);
-          });
+                     // IMMEDIATE APPLICATION on DOM ready
+           document.addEventListener('DOMContentLoaded', function() {
+             setTimeout(function() {
+               var elements = document.querySelectorAll('.page-wrapper, .assessment-card, #study_ui, #stable-page-container');
+               for (var i = 0; i < elements.length; i++) {
+                 forceCenter(elements[i]);
+               }
+             }, 1);
+           });
+           
+           // HIDE STATIC PAGE when Shiny content loads
+           $(document).on('shiny:connected', function() {
+             setTimeout(function() {
+               var staticPage = document.getElementById('nuclear-static-page');
+               if (staticPage) {
+                 staticPage.style.display = 'none';
+               }
+             }, 100);
+           });
+           
+           // BACKUP: Hide static page when page content appears
+           var hideStaticPage = setInterval(function() {
+             var pageContent = document.querySelector('#page_content .page-wrapper, #page_content .assessment-card');
+             var staticPage = document.getElementById('nuclear-static-page');
+             if (pageContent && staticPage) {
+               staticPage.style.display = 'none';
+               clearInterval(hideStaticPage);
+             }
+           }, 200);
         })();
       "))
     ),
@@ -2361,7 +2420,7 @@ launch_study <- function(
     if (session_save) {
       shiny::uiOutput("session_status_ui")
     },
-    shiny::uiOutput("study_ui", style = "position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; margin: 0 auto !important; transform: none !important; width: 100% !important; max-width: 1200px !important;")
+    shiny::uiOutput("study_ui", style = "position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; margin: 0 auto !important; transform: none !important; width: 100% !important; max-width: 1200px !important; display: block !important; visibility: visible !important; opacity: 1 !important;")
   )
   
   server <- function(input, output, session) {
