@@ -1384,10 +1384,10 @@ launch_study <- function(
     # AGGRESSIVE corner flash prevention - MUST BE FIRST!
     shiny::tags$head(
       shiny::tags$style(shiny::HTML("
-        /* TARGETED corner flash prevention - ALL containers including loading */
+        /* TARGETED corner flash prevention - Only main containers */
         .page-wrapper, .assessment-card, #study_ui, 
         .shiny-html-output, .shiny-bound-output, #stable-page-container,
-        .container-fluid, #main-study-container, #instant-loading {
+        .container-fluid {
           margin: 0 auto !important;
           position: relative !important;
           left: 0 !important;
@@ -1438,14 +1438,12 @@ launch_study <- function(
               if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach(function(node) {
                   if (node.nodeType === 1) { // Element node
-                    // Apply to main containers including loading elements
+                    // Only apply to main containers, not progress elements
                     var isMainContainer = node.classList && (
                       node.classList.contains('page-wrapper') ||
                       node.classList.contains('assessment-card') ||
                       node.id === 'study_ui' ||
                       node.id === 'stable-page-container' ||
-                      node.id === 'main-study-container' ||
-                      node.id === 'instant-loading' ||
                       node.classList.contains('shiny-html-output')
                     );
                     
@@ -1468,16 +1466,6 @@ launch_study <- function(
             childList: true,
             subtree: true
           });
-          
-          // Hide loading message when page content appears
-          var checkForContent = setInterval(function() {
-            var pageContent = document.querySelector('#page_content .page-wrapper, #page_content .assessment-card');
-            var loadingDiv = document.getElementById('instant-loading');
-            if (pageContent && loadingDiv) {
-              loadingDiv.style.display = 'none';
-              clearInterval(checkForContent);
-            }
-          }, 100);
         })();
       "))
     ),
