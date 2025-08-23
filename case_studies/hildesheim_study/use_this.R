@@ -1849,13 +1849,14 @@ custom_js <- '
 <script>
 var currentLang = "de";
 
-// COMPLETE TRANSLATION DICTIONARY
+// COMPLETE TRANSLATION DICTIONARY - EVERYTHING MUST BE TRANSLATED!
 var translations = {
   // Welcome page
   "Willkommen zur HilFo Studie": "Welcome to the HilFo Study",
   "Liebe Studierende,": "Dear Students,",
+  "Liebe Studierende": "Dear Students",
   
-  // Buttons
+  // Navigation Buttons - ALL OF THEM
   "Weiter": "Next",
   "Zurück": "Back",
   "Absenden": "Submit",
@@ -1863,10 +1864,12 @@ var translations = {
   "Speichern": "Save",
   "Abbrechen": "Cancel",
   "Bitte wählen...": "Please select...",
+  "Bitte wählen": "Please select",
   
-  // Progress
+  // Progress indicators
   "Seite": "Page",
   " von ": " of ",
+  "von": "of",
   
   // Page titles
   "Programmierangst - Teil 1": "Programming Anxiety - Part 1",
@@ -2022,7 +2025,13 @@ function updateEverything() {
 // Language toggle function
 function toggleLanguage() {
   currentLang = currentLang === "de" ? "en" : "de";
-  console.log("Switching language to:", currentLang);
+  console.log("GLOBAL LANGUAGE SWITCH TO:", currentLang);
+  
+  // Save language preference
+  try {
+    localStorage.setItem("hilfo_language", currentLang);
+    sessionStorage.setItem("hilfo_language", currentLang);
+  } catch(e) {}
   
   // IMMEDIATELY update everything
   updateEverything();
@@ -2256,15 +2265,28 @@ function translateAllItems() {
 
 // Add language toggle button on page load
 document.addEventListener("DOMContentLoaded", function() {
+  // Check if language was previously set to English
+  try {
+    var savedLang = localStorage.getItem("hilfo_language") || sessionStorage.getItem("hilfo_language");
+    if (savedLang === "en") {
+      currentLang = "en";
+    }
+  } catch(e) {}
+  
   // Create language toggle button
   var langBtn = document.createElement("button");
   langBtn.id = "lang_toggle";
-  langBtn.textContent = "English";
-  langBtn.style.cssText = "position: fixed; top: 10px; right: 10px; z-index: 9999; " +
-                          "background: white; border: 2px solid #e8041c; color: #e8041c; " +
-                          "padding: 8px 16px; border-radius: 4px; cursor: pointer;";
+  langBtn.textContent = currentLang === "de" ? "English" : "Deutsch";
+  langBtn.style.cssText = "position: fixed; top: 10px; right: 10px; z-index: 9999; background: white; border: 2px solid #e8041c; color: #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer;";
   langBtn.onclick = toggleLanguage;
   document.body.appendChild(langBtn);
+  
+  // If English was selected, apply translations immediately
+  if (currentLang === "en") {
+    setTimeout(function() {
+      updateEverything();
+    }, 100);
+  }
   
   // Watch for ANY page changes and always update if in English mode
   var observer = new MutationObserver(function(mutations) {
@@ -2306,7 +2328,8 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       } else {
         // Clear other radio buttons in the same group
-        document.querySelectorAll(`input[name="${e.target.name}"]`).forEach(function(radio) {
+        var selector = "input[name=" + e.target.name + "]";
+        document.querySelectorAll(selector).forEach(function(radio) {
           radio.dataset.wasChecked = "false";
         });
         e.target.dataset.wasChecked = "true";
