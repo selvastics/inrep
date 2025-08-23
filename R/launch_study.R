@@ -1381,6 +1381,20 @@ launch_study <- function(
     class = "full-width-app",
     if (requireNamespace("shinyjs", quietly = TRUE)) shinyjs::useShinyjs(),
     
+    # SIMPLE corner flash prevention
+    shiny::tags$head(
+      shiny::tags$style(shiny::HTML("
+        .page-wrapper, .assessment-card, #study_ui {
+          margin: 0 auto !important;
+          position: relative !important;
+          left: 0 !important;
+          right: 0 !important;
+          top: 0 !important;
+          transform: none !important;
+        }
+      "))
+    ),
+    
     # Add instant loading placeholder
     shiny::tags$div(
       id = "loading-placeholder",
