@@ -33,7 +33,10 @@ validate_page_progression <- function(current_page, input, config) {
           if (nchar(question) > 50) {
             question <- paste0(substr(question, 1, 47), "...")
           }
-          errors <- c(errors, paste0("Bitte beantworten Sie: ", question))
+          # Get language from rv or config
+          current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
+          error_prefix <- if (current_lang == "en") "Please answer: " else "Bitte beantworten Sie: "
+          errors <- c(errors, paste0(error_prefix, question))
           missing_fields <- c(missing_fields, input_id)
         }
       }
@@ -55,7 +58,14 @@ validate_page_progression <- function(current_page, input, config) {
             # Use the item's id field if available, otherwise use index
             item_id <- paste0("item_", item$id %||% i)
             if (is.null(input[[item_id]]) || input[[item_id]] == "") {
-              errors <- c(errors, paste0("Bitte beantworten Sie alle Fragen auf dieser Seite."))
+              # Get language
+              current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
+              error_msg <- if (current_lang == "en") {
+                "Please answer all questions on this page."
+              } else {
+                "Bitte beantworten Sie alle Fragen auf dieser Seite."
+              }
+              errors <- c(errors, error_msg)
               missing_fields <- c(missing_fields, item_id)
               # Don't break, collect all missing fields for highlighting
             }
@@ -128,9 +138,17 @@ create_filter_page <- function(input, config) {
 show_validation_errors <- function(errors) {
   if (length(errors) == 0) return(NULL)
   
+  # Get language
+  current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
+  header_text <- if (current_lang == "en") {
+    "Please complete the following:"
+  } else {
+    "Bitte vervollständigen Sie die folgenden Angaben:"
+  }
+  
   shiny::div(
     class = "validation-error",
-    shiny::h4("Please complete the following:"),
+    shiny::h4(header_text),
     shiny::tags$ul(
       style = "margin: 10px 0; padding-left: 20px;",
       lapply(errors, function(e) shiny::tags$li(e))

@@ -167,6 +167,9 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
 
 #' Render items page with pagination
 render_items_page <- function(page, config, rv, item_bank, ui_labels) {
+  # Get current language
+  current_lang <- rv$language %||% config$language %||% "de"
+  
   # Get items for this page
   if (!is.null(page$item_indices)) {
     page_items <- item_bank[page$item_indices, ]
@@ -185,6 +188,13 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
     item <- page_items[i, ]
     item_id <- paste0("item_", item$id %||% i)
     
+    # Get question text based on language
+    question_text <- if (current_lang == "en" && !is.null(item$Question_EN)) {
+      item$Question_EN
+    } else {
+      item$Question %||% item$content %||% paste("Item", i)
+    }
+    
     # Get response options
     if (!is.null(item$ResponseCategories)) {
       choices <- as.numeric(unlist(strsplit(as.character(item$ResponseCategories), ",")))
@@ -192,12 +202,12 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
       choices <- 1:5
     }
     
-    # Get response labels based on scale type
-    labels <- get_response_labels(page$scale_type %||% "likert", choices, config$language)
+    # Get response labels based on scale type and language
+    labels <- get_response_labels(page$scale_type %||% "likert", choices, current_lang)
     
     shiny::div(
       class = "item-container",
-      shiny::h4(item$Question %||% item$content %||% paste("Item", i)),
+      shiny::h4(question_text),
       shiny::radioButtons(
         inputId = item_id,
         label = NULL,
@@ -208,12 +218,25 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
     )
   })
   
+  # Get page title and instructions based on language
+  page_title <- if (current_lang == "en" && !is.null(page$title_en)) {
+    page$title_en
+  } else {
+    page$title %||% "Questionnaire"
+  }
+  
+  page_instructions <- if (current_lang == "en" && !is.null(page$instructions_en)) {
+    page$instructions_en
+  } else {
+    page$instructions
+  }
+  
   shiny::div(
     class = "assessment-card",
     style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
-    shiny::h3(page$title %||% "Questionnaire", class = "card-header"),
-    if (!is.null(page$instructions)) {
-      shiny::p(page$instructions, class = "instructions-text")
+    shiny::h3(page_title, class = "card-header"),
+    if (!is.null(page_instructions)) {
+      shiny::p(page_instructions, class = "instructions-text")
     },
     item_elements
   )
