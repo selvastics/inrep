@@ -240,8 +240,8 @@ get_demographic_configs_for_language <- function(lang = "de") {
   return(configs)
 }
 
-# Default to German
-all_items <- get_items_for_language("de")
+# Use German item bank
+all_items <- all_items_de
 
 # =============================================================================
 # COMPLETE DEMOGRAPHICS (ALL VARIABLES FROM SPSS) - BILINGUAL
@@ -1910,7 +1910,7 @@ custom_js <- paste0(
   '  "Wieviele Stunden pro Woche planen Sie für die Vor- und Nachbereitung der Statistikveranstaltungen zu investieren?": "How many hours per week do you plan to invest in preparing and reviewing statistics courses?",',
   '  "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (5-stufig)": "How satisfied are you with your study location Hildesheim? (5-point scale)",',
   '  "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (7-stufig)": "How satisfied are you with your study location Hildesheim? (7-point scale)",',
-  '  "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags):": "Please create a personal code (first 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday):",',
+  '  "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags):": "Please create a personal code (first 2 letters of your mother\\'s first name + first 2 letters of your birthplace + day of your birthday):",',
   '  ',
   '  // Response options',
   '  "Bachelor Psychologie": "Bachelor Psychology",',
@@ -1928,7 +1928,7 @@ custom_js <- paste0(
   '  "Vogel": "Bird",',
   '  "Nager": "Rodent",',
   '  "Reptil": "Reptile",',
-  '  "Ich möchte kein Haustier": "I don\'t want a pet",',
+  '  "Ich möchte kein Haustier": "I don\\'t want a pet",',
   '  "Sonstiges": "Other",',
   '  "Ja": "Yes",',
   '  "Nein": "No",',
@@ -2299,15 +2299,14 @@ monitor_adaptive <- function(session_data) {
   }
 }
 
-# Launch with cloud storage, adaptive testing, and custom JavaScript
-# Add a reactive hook to handle language switching for items
+# Launch with cloud storage, adaptive testing, and comprehensive bilingual support
 inrep::launch_study(
     config = study_config,
-    item_bank = all_items_de,  # Contains both Question and Question_EN
+    item_bank = all_items,  # German item bank
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
     save_format = "csv",
-    custom_css = custom_js,  # Add custom JavaScript for language toggle and deselection
+    custom_css = custom_js,  # Comprehensive bilingual JavaScript + radio deselection
     admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
     # COMPREHENSIVE SERVER-SIDE LANGUAGE HANDLING
     server_extensions = function(input, output, session) {
