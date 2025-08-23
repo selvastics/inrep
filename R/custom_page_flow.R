@@ -27,7 +27,7 @@ create_custom_page_flow <- function(pages) {
 
 #' Process custom page flow for UI rendering
 #' @export
-process_page_flow <- function(config, rv, input, output, session, item_bank, ui_labels, logger) {
+process_page_flow <- function(config, rv, input, output, session, item_bank, ui_labels, logger, current_language = NULL) {
   
   # Check if custom page flow is defined
   if (is.null(config$custom_page_flow)) {
@@ -43,18 +43,35 @@ process_page_flow <- function(config, rv, input, output, session, item_bank, ui_
     return(NULL)
   }
   
+  # Get current language from reactive value if available
+  current_lang <- if (!is.null(current_language) && is.function(current_language)) {
+    current_language()
+  } else {
+    config$language %||% "de"
+  }
+  
+  # Use language-specific title if available
+  if (current_lang == "en" && !is.null(current_page$title_en)) {
+    current_page$title <- current_page$title_en
+  }
+  
+  # Use language-specific instructions if available
+  if (current_lang == "en" && !is.null(current_page$instructions_en)) {
+    current_page$instructions <- current_page$instructions_en
+  }
+  
   # Render page based on type
   page_ui <- switch(current_page$type,
     
-    "instructions" = render_instructions_page(current_page, config, ui_labels),
+    "instructions" = render_instructions_page(current_page, config, ui_labels, current_lang),
     
-    "demographics" = render_demographics_page(current_page, config, rv, ui_labels),
+    "demographics" = render_demographics_page(current_page, config, rv, ui_labels, current_lang),
     
-    "items" = render_items_page(current_page, config, rv, item_bank, ui_labels),
+    "items" = render_items_page(current_page, config, rv, item_bank, ui_labels, current_lang),
     
-    "custom" = render_custom_page(current_page, config, rv, ui_labels, input),
+    "custom" = render_custom_page(current_page, config, rv, ui_labels, input, current_lang),
     
-    "results" = render_results_page(current_page, config, rv, item_bank, ui_labels),
+    "results" = render_results_page(current_page, config, rv, item_bank, ui_labels, current_lang),
     
     # Default fallback
     shiny::div(
@@ -66,7 +83,7 @@ process_page_flow <- function(config, rv, input, output, session, item_bank, ui_
   )
   
   # Add navigation
-  nav_ui <- render_page_navigation(rv, config, current_page_idx)
+  nav_ui <- render_page_navigation(rv, config, current_page_idx, current_lang)
   
   shiny::tagList(
     page_ui,
@@ -75,7 +92,7 @@ process_page_flow <- function(config, rv, input, output, session, item_bank, ui_
 }
 
 #' Render instructions page
-render_instructions_page <- function(page, config, ui_labels) {
+render_instructions_page <- function(page, config, ui_labels, current_lang = "de") {
   shiny::div(
     class = "assessment-card",
     style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
@@ -99,7 +116,7 @@ render_instructions_page <- function(page, config, ui_labels) {
 }
 
 #' Render demographics page
-render_demographics_page <- function(page, config, rv, ui_labels) {
+render_demographics_page <- function(page, config, rv, ui_labels, current_lang = "de") {
   # Get demographics for this page
   demo_vars <- page$demographics %||% config$demographics
   
@@ -123,12 +140,20 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
       input_id, 
       demo_config, 
       input_type,
-      rv$demo_data[[dem]]
+      rv$demo_data[[dem]],
+      current_lang
     )
+    
+    # Use language-specific question
+    question_text <- if (current_lang == "en" && !is.null(demo_config$question_en)) {
+      demo_config$question_en
+    } else {
+      demo_config$question %||% dem
+    }
     
     shiny::div(
       class = "form-group",
-      shiny::tags$label(demo_config$question %||% dem, class = "input-label"),
+      shiny::tags$label(question_text, class = "input-label"),
       input_element,
       if (!is.null(demo_config$help_text)) {
         shiny::tags$small(class = "form-text text-muted", demo_config$help_text)
@@ -148,7 +173,7 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
 }
 
 #' Render items page with pagination
-render_items_page <- function(page, config, rv, item_bank, ui_labels) {
+render_items_page <- function(page, config, rv, item_bank, ui_labels, current_lang = "de") {
   # Get items for this page
   if (!is.null(page$item_indices)) {
     page_items <- item_bank[page$item_indices, ]
@@ -175,11 +200,18 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
     }
     
     # Get response labels based on scale type
-    labels <- get_response_labels(page$scale_type %||% "likert", choices, config$language)
+    labels <- get_response_labels(page$scale_type %||% "likert", choices, current_lang)
+    
+    # Get question text in the correct language
+    question_text <- if (current_lang == "en" && !is.null(item$Question_EN)) {
+      item$Question_EN
+    } else {
+      item$Question %||% item$content %||% paste("Item", i)
+    }
     
     shiny::div(
       class = "item-container",
-      shiny::h4(item$Question %||% item$content %||% paste("Item", i)),
+      shiny::h4(question_text),
       shiny::radioButtons(
         inputId = item_id,
         label = NULL,
@@ -202,7 +234,7 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
 }
 
 #' Render custom page
-render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
+render_custom_page <- function(page, config, rv, ui_labels, input = NULL, current_lang = "de") {
   # Special handling for filter page
   if (page$id == "page3" || page$title == "Filter") {
     # Load validation module if needed for filter functionality
@@ -236,7 +268,7 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
 }
 
 #' Render results page
-render_results_page <- function(page, config, rv, item_bank, ui_labels) {
+render_results_page <- function(page, config, rv, item_bank, ui_labels, current_lang = "de") {
   # Use custom results processor if available
   if (!is.null(config$results_processor) && is.function(config$results_processor)) {
     # Check if function accepts demographics parameter
@@ -274,7 +306,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels) {
 }
 
 #' Render page navigation
-render_page_navigation <- function(rv, config, current_page_idx) {
+render_page_navigation <- function(rv, config, current_page_idx, current_lang = "de") {
   total_pages <- length(config$custom_page_flow)
   current_page <- config$custom_page_flow[[current_page_idx]]
   
@@ -298,7 +330,7 @@ render_page_navigation <- function(rv, config, current_page_idx) {
         if (current_page_idx > 1) {
           shiny::actionButton(
             "prev_page",
-            label = "Zurück",
+            label = if (current_lang == "en") "Back" else "Zurück",
             class = "btn-secondary",
             style = "width: 100px;"
           )
@@ -309,7 +341,11 @@ render_page_navigation <- function(rv, config, current_page_idx) {
       shiny::div(
         class = "page-indicator",
         style = "font-size: 14px; color: #666; white-space: nowrap;",
-        sprintf("Seite %d von %d", current_page_idx, total_pages)
+        if (current_lang == "en") {
+          sprintf("Page %d of %d", current_page_idx, total_pages)
+        } else {
+          sprintf("Seite %d von %d", current_page_idx, total_pages)
+        }
       ),
       
       # Next/Submit button or spacer
@@ -318,7 +354,7 @@ render_page_navigation <- function(rv, config, current_page_idx) {
         if (current_page_idx < total_pages) {
           shiny::actionButton(
             "next_page",
-            label = "Weiter",
+            label = if (current_lang == "en") "Next" else "Weiter",
             class = "btn-primary",
             style = "width: 100px;"
           )
@@ -329,7 +365,7 @@ render_page_navigation <- function(rv, config, current_page_idx) {
             # Show submit button before results page
             shiny::actionButton(
               "submit_study",
-              label = "Abschließen",
+              label = if (current_lang == "en") "Complete" else "Abschließen",
               class = "btn-success",
               style = "width: 120px;"
             )
@@ -337,7 +373,7 @@ render_page_navigation <- function(rv, config, current_page_idx) {
             # Still show next button
             shiny::actionButton(
               "next_page",
-              label = "Weiter",
+              label = if (current_lang == "en") "Next" else "Weiter",
               class = "btn-primary",
               style = "width: 100px;"
             )
@@ -352,7 +388,7 @@ render_page_navigation <- function(rv, config, current_page_idx) {
 }
 
 #' Create demographic input element
-create_demographic_input <- function(input_id, demo_config, input_type, current_value = NULL) {
+create_demographic_input <- function(input_id, demo_config, input_type, current_value = NULL, current_lang = "de") {
   # Debug logging for checkbox issues
   if (input_type == "checkbox" && getOption("inrep.debug", FALSE)) {
     cat("DEBUG: Creating checkbox for", input_id, "\n")
@@ -381,7 +417,11 @@ create_demographic_input <- function(input_id, demo_config, input_type, current_
     "select" = shiny::selectInput(
       inputId = input_id,
       label = NULL,
-      choices = c("Bitte wählen..." = "", demo_config$options),
+      choices = if (current_lang == "en" && !is.null(demo_config$options_en)) {
+        c("Please select..." = "", demo_config$options_en)
+      } else {
+        c("Bitte wählen..." = "", demo_config$options)
+      },
       selected = current_value %||% "",
       width = "100%"
     ),
@@ -389,7 +429,11 @@ create_demographic_input <- function(input_id, demo_config, input_type, current_
     "radio" = shiny::radioButtons(
       inputId = input_id,
       label = NULL,
-      choices = demo_config$options,
+      choices = if (current_lang == "en" && !is.null(demo_config$options_en)) {
+        demo_config$options_en
+      } else {
+        demo_config$options
+      },
       selected = current_value %||% character(0),
       width = "100%"
     ),

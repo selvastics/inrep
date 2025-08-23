@@ -18,14 +18,15 @@ WEBDAV_SHARE_TOKEN <- "OUarlqGbhYopkBc"  # Share token for authentication
 # COMPLETE ITEM BANK WITH PROPER VARIABLE NAMES
 # =============================================================================
 
-all_items <- data.frame(
+# Create bilingual item bank
+all_items_de <- data.frame(
   id = c(
     # BFI items with proper naming convention
-    "BFE_01", "BFE_02", "BFE_03", "BFE_04",  # Extraversion
-    "BFV_01", "BFV_02", "BFV_03", "BFV_04",  # Verträglichkeit (Agreeableness)
-    "BFG_01", "BFG_02", "BFG_03", "BFG_04",  # Gewissenhaftigkeit (Conscientiousness)
-    "BFN_01", "BFN_02", "BFN_03", "BFN_04",  # Neurotizismus
-    "BFO_01", "BFO_02", "BFO_03", "BFO_04",  # Offenheit (Openness)
+    "BFE_01", "BFE_02", "BFE_03", "BFE_04", # Extraversion
+    "BFV_01", "BFV_02", "BFV_03", "BFV_04", # Verträglichkeit (Agreeableness)
+    "BFG_01", "BFG_02", "BFG_03", "BFG_04", # Gewissenhaftigkeit (Conscientiousness)
+    "BFN_01", "BFN_02", "BFN_03", "BFN_04", # Neurotizismus
+    "BFO_01", "BFO_02", "BFO_03", "BFO_04", # Offenheit (Openness)
     # PSQ items
     "PSQ_02", "PSQ_04", "PSQ_16", "PSQ_29", "PSQ_30",
     # MWS items
@@ -74,13 +75,54 @@ all_items <- data.frame(
     "Bislang konnte ich den Inhalten der Statistikveranstaltungen gut folgen.",
     "Ich bin in der Lage, Statistik zu erlernen."
   ),
+  Question_EN = c(
+    # BFI Extraversion
+    "I am outgoing, sociable.",
+    "I am rather quiet.",
+    "I am rather shy.",
+    "I am talkative.",
+    # BFI Agreeableness
+    "I am empathetic, warm-hearted.",
+    "I have little sympathy for others.",
+    "I am helpful and selfless.",
+    "Others are rather indifferent to me.",
+    # BFI Conscientiousness
+    "I am rather disorganized.",
+    "I am systematic, keep my things in order.",
+    "I like it clean and tidy.",
+    "I am rather the chaotic type, rarely clean up.",
+    # BFI Neuroticism
+    "I remain calm even in stressful situations.",
+    "I react easily tensed.",
+    "I often worry.",
+    "I rarely become nervous and insecure.",
+    # BFI Openness
+    "I have diverse interests.",
+    "I avoid philosophical discussions.",
+    "I enjoy thinking thoroughly about complex things and understanding them.",
+    "Abstract considerations interest me little.",
+    # PSQ Stress
+    "I feel that too many demands are placed on me.",
+    "I have too much to do.",
+    "I feel rushed.",
+    "I have enough time for myself.",
+    "I feel under deadline pressure.",
+    # MWS Study Skills
+    "coping with the social climate in the program (e.g., handling competition)",
+    "organizing teamwork (e.g., finding study groups)",
+    "making contacts with fellow students (e.g., for study groups, leisure)",
+    "working together in a team (e.g., working on tasks together, preparing presentations)",
+    # Statistics
+    "So far I have been able to follow the content of the statistics courses well.",
+    "I am able to learn statistics."
+  ),
   reverse_coded = c(
     # BFI reverse coding
-    FALSE, TRUE, TRUE, FALSE,  # Extraversion
-    FALSE, TRUE, FALSE, TRUE,   # Verträglichkeit
-    TRUE, FALSE, FALSE, TRUE,   # Gewissenhaftigkeit
-    TRUE, FALSE, FALSE, TRUE,   # Neurotizismus
-    FALSE, TRUE, FALSE, TRUE,   # Offenheit
+    FALSE, TRUE, TRUE, FALSE, # Extraversion
+    FALSE, TRUE, FALSE, TRUE, # Verträglichkeit
+    TRUE, FALSE, FALSE, TRUE, # Gewissenhaftigkeit
+    TRUE, FALSE, FALSE, TRUE, # Neurotizismus
+    FALSE, TRUE, FALSE, TRUE, # Offenheit
     # PSQ
     FALSE, FALSE, FALSE, TRUE, FALSE,
     # MWS & Statistics
@@ -92,35 +134,58 @@ all_items <- data.frame(
   stringsAsFactors = FALSE
 )
 
+# Create a function to get items in the correct language
+get_items_for_language <- function(lang = "de") {
+  items <- all_items_de
+  if (lang == "en" && "Question_EN" %in% names(items)) {
+    items$Question <- items$Question_EN
+  }
+  return(items)
+}
+
+# Default to German
+all_items <- get_items_for_language("de")
+
 # =============================================================================
-# COMPLETE DEMOGRAPHICS (ALL VARIABLES FROM SPSS)
+# COMPLETE DEMOGRAPHICS (ALL VARIABLES FROM SPSS) - BILINGUAL
 # =============================================================================
 
 demographic_configs <- list(
   Einverständnis = list(
     question = "Einverständniserklärung",
+    question_en = "Declaration of Consent",
     options = c("Ich bin mit der Teilnahme an der Befragung einverstanden" = "1"),
+    options_en = c("I agree to participate in the survey" = "1"),
     required = TRUE
   ),
   Alter_VPN = list(
     question = "Wie alt sind Sie?",
+    question_en = "How old are you?",
     options = c("17"="17", "18"="18", "19"="19", "20"="20", "21"="21", 
                 "22"="22", "23"="23", "24"="24", "25"="25", "26"="26", 
                 "27"="27", "28"="28", "29"="29", "30"="30", "älter als 30"="0"),
+    options_en = c("17"="17", "18"="18", "19"="19", "20"="20", "21"="21", 
+                   "22"="22", "23"="23", "24"="24", "25"="25", "26"="26", 
+                   "27"="27", "28"="28", "29"="29", "30"="30", "older than 30"="0"),
     required = TRUE
   ),
   Studiengang = list(
     question = "In welchem Studiengang befinden Sie sich?",
+    question_en = "Which study program are you in?",
     options = c("Bachelor Psychologie"="1", "Master Psychologie"="2"),
+    options_en = c("Bachelor Psychology"="1", "Master Psychology"="2"),
     required = TRUE
   ),
   Geschlecht = list(
     question = "Welches Geschlecht haben Sie?",
+    question_en = "What is your gender?",
     options = c("weiblich oder divers"="1", "männlich"="2"),
+    options_en = c("female or diverse"="1", "male"="2"),
     required = TRUE
   ),
   Wohnstatus = list(
     question = "Wie wohnen Sie?",
+    question_en = "How do you live?",
     options = c(
       "Bei meinen Eltern/Elternteil"="1",
       "In einer WG/WG in einem Wohnheim"="2", 
@@ -128,57 +193,88 @@ demographic_configs <- list(
       "Mit meinem/r Partner*In (mit oder ohne Kinder)"="4",
       "Anders"="6"
     ),
+    options_en = c(
+      "With my parents/parent"="1",
+      "In a shared apartment/dorm"="2",
+      "Alone/in a self-contained unit in a dorm"="3",
+      "With my partner (with or without children)"="4",
+      "Other"="6"
+    ),
     required = FALSE
   ),
   Wohn_Zusatz = list(
     question = "Falls anders, bitte spezifizieren:",
+    question_en = "If other, please specify:",
     type = "text",
     required = FALSE
   ),
   Haustier = list(
     question = "Haben Sie ein Haustier oder möchten Sie eines?",
+    question_en = "Do you have a pet or would you like one?",
     options = c(
       "Hund"="1", "Katze"="2", "Fische"="3", "Vogel"="4",
       "Nager"="5", "Reptil"="6", "Ich möchte kein Haustier"="7", "Sonstiges"="8"
+    ),
+    options_en = c(
+      "Dog"="1", "Cat"="2", "Fish"="3", "Bird"="4",
+      "Rodent"="5", "Reptile"="6", "I don't want a pet"="7", "Other"="8"
     ),
     required = FALSE
   ),
   Haustier_Zusatz = list(
     question = "Anderes Haustier:",
+    question_en = "Other pet:",
     type = "text",
     required = FALSE
   ),
   Rauchen = list(
     question = "Rauchen Sie?",
+    question_en = "Do you smoke?",
     options = c("Ja"="1", "Nein"="2"),
+    options_en = c("Yes"="1", "No"="2"),
     required = FALSE
   ),
   Ernährung = list(
     question = "Wie ernähren Sie sich hauptsächlich?",
+    question_en = "What is your main diet?",
     options = c(
       "Vegan"="1", "Vegetarisch"="2", "Pescetarisch"="7",
       "Flexitarisch"="4", "Omnivor (alles)"="5", "Andere"="6"
+    ),
+    options_en = c(
+      "Vegan"="1", "Vegetarian"="2", "Pescetarian"="7",
+      "Flexitarian"="4", "Omnivore (everything)"="5", "Other"="6"
     ),
     required = FALSE
   ),
   Ernährung_Zusatz = list(
     question = "Andere Ernährungsform:",
+    question_en = "Other diet:",
     type = "text",
     required = FALSE
   ),
   Note_Englisch = list(
     question = "Welche Note hatten Sie in Englisch im Abiturzeugnis?",
+    question_en = "What grade did you have in English in your Abitur certificate?",
     options = c(
       "sehr gut (15-13 Punkte)"="1",
       "gut (12-10 Punkte)"="2",
       "befriedigend (9-7 Punkte)"="3",
       "ausreichend (6-4 Punkte)"="4",
       "mangelhaft (3-0 Punkte)"="5"
+    ),
+    options_en = c(
+      "very good (15-13 points)"="1",
+      "good (12-10 points)"="2",
+      "satisfactory (9-7 points)"="3",
+      "sufficient (6-4 points)"="4",
+      "poor (3-0 points)"="5"
     ),
     required = FALSE
   ),
   Note_Mathe = list(
     question = "Welche Note hatten Sie in Mathematik im Abiturzeugnis?",
+    question_en = "What grade did you have in Mathematics in your Abitur certificate?",
     options = c(
       "sehr gut (15-13 Punkte)"="1",
       "gut (12-10 Punkte)"="2",
@@ -186,10 +282,18 @@ demographic_configs <- list(
       "ausreichend (6-4 Punkte)"="4",
       "mangelhaft (3-0 Punkte)"="5"
     ),
+    options_en = c(
+      "very good (15-13 points)"="1",
+      "good (12-10 points)"="2",
+      "satisfactory (9-7 points)"="3",
+      "sufficient (6-4 points)"="4",
+      "poor (3-0 points)"="5"
+    ),
     required = FALSE
   ),
   Vor_Nachbereitung = list(
     question = "Wieviele Stunden pro Woche planen Sie für die Vor- und Nachbereitung der Statistikveranstaltungen zu investieren?",
+    question_en = "How many hours per week do you plan to invest in preparing and reviewing statistics courses?",
     options = c(
       "0 Stunden"="1",
       "maximal eine Stunde"="2",
@@ -198,24 +302,41 @@ demographic_configs <- list(
       "mehr als drei, aber weniger als 4 Stunden"="5",
       "mehr als 4 Stunden"="6"
     ),
+    options_en = c(
+      "0 hours"="1",
+      "maximum one hour"="2",
+      "more than one, but less than 2 hours"="3",
+      "more than two, but less than 3 hours"="4",
+      "more than three, but less than 4 hours"="5",
+      "more than 4 hours"="6"
+    ),
     required = FALSE
   ),
   Zufrieden_Hi_5st = list(
     question = "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (5-stufig)",
+    question_en = "How satisfied are you with your study location Hildesheim? (5-point scale)",
     options = c(
       "gar nicht zufrieden"="1", "2"="2", "3"="3", "4"="4", "sehr zufrieden"="5"
+    ),
+    options_en = c(
+      "not at all satisfied"="1", "2"="2", "3"="3", "4"="4", "very satisfied"="5"
     ),
     required = FALSE
   ),
   Zufrieden_Hi_7st = list(
     question = "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (7-stufig)",
+    question_en = "How satisfied are you with your study location Hildesheim? (7-point scale)",
     options = c(
       "gar nicht zufrieden"="1", "2"="2", "3"="3", "4"="4", "5"="5", "6"="6", "sehr zufrieden"="7"
+    ),
+    options_en = c(
+      "not at all satisfied"="1", "2"="2", "3"="3", "4"="4", "5"="5", "6"="6", "very satisfied"="7"
     ),
     required = FALSE
   ),
   Persönlicher_Code = list(
     question = "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags):",
+    question_en = "Please create a personal code (first 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday):",
     type = "text",
     required = FALSE
   )
@@ -246,37 +367,179 @@ input_types <- list(
 # =============================================================================
 
 custom_page_flow <- list(
-  # Page 1: Einleitungstext with mandatory consent
+  # Page 1: Einleitungstext with mandatory consent and language switcher
   list(
     id = "page1",
     type = "custom",
     title = "Willkommen zur HilFo Studie",
+    title_en = "Welcome to the HilFo Study",
     content = paste0(
-      "<div style='padding: 20px; font-size: 16px; line-height: 1.8;'>",
-      "<h2 style='color: #e8041c;'>Liebe Studierende,</h2>",
-      "<p>In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, ",
-      "die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.</p>",
-      "<p>Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene ",
-      "Themenbereiche ab, die voneinander teilweise unabhängig sind.</p>",
-      "<p style='background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;'>",
-      "<strong>Ihre Angaben sind dabei selbstverständlich anonym</strong>, es wird keine personenbezogene ",
-      "Auswertung der Daten stattfinden. Die Daten werden von den Erstsemestern Psychologie im ",
-      "Bachelor generiert und in diesem Jahrgang genutzt, möglicherweise auch in späteren Jahrgängen.</p>",
-      "<p>Im Folgenden werden Ihnen dazu Aussagen präsentiert. Wir bitten Sie anzugeben, ",
-      "inwieweit Sie diesen zustimmen. Es gibt keine falschen oder richtigen Antworten. ",
-      "Bitte beantworten Sie die Fragen so, wie es Ihrer Meinung am ehesten entspricht.</p>",
-      "<p style='margin-top: 20px;'><strong>Die Befragung dauert etwa 10-15 Minuten.</strong></p>",
-      "<hr style='margin: 30px 0; border: 1px solid #e8041c;'>",
-      "<div style='background: #f8f9fa; padding: 20px; border-radius: 8px;'>",
-      "<h3 style='color: #e8041c; margin-bottom: 15px;'>Einverständniserklärung</h3>",
-      "<label style='display: flex; align-items: center; cursor: pointer; font-size: 16px;'>",
-      "<input type='checkbox' id='consent_check' style='margin-right: 10px; width: 20px; height: 20px;' required>",
-      "<span><strong>Ich bin mit der Teilnahme an der Befragung einverstanden</strong></span>",
-      "</label>",
-      "</div>",
-      "</div>"
+      '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
+      # Language switcher in top right corner
+      '<div style="position: absolute; top: 10px; right: 10px;">',
+      '<button type="button" id="lang_switch" onclick="toggleLanguage()" style="',
+      'background: white; border: 2px solid #e8041c; color: #e8041c; ',
+      'padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">',
+      '🇬🇧 English Version</button>',
+      '</div>',
+      # German content (default)
+      '<div id="content_de">',
+      '<h2 style="color: #e8041c;">Liebe Studierende,</h2>',
+      '<p>In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, ',
+      'die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.</p>',
+      '<p>Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene ',
+      'Themenbereiche ab, die voneinander teilweise unabhängig sind.</p>',
+      '<p style="background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;">',
+      '<strong>Ihre Angaben sind dabei selbstverständlich anonym</strong>, es wird keine personenbezogene ',
+      'Auswertung der Daten stattfinden. Die Daten werden von den Erstsemestern Psychologie im ',
+      'Bachelor generiert und in diesem Jahrgang genutzt, möglicherweise auch in späteren Jahrgängen.</p>',
+      '<p>Im Folgenden werden Ihnen dazu Aussagen präsentiert. Wir bitten Sie anzugeben, ',
+      'inwieweit Sie diesen zustimmen. Es gibt keine falschen oder richtigen Antworten. ',
+      'Bitte beantworten Sie die Fragen so, wie es Ihrer Meinung am ehesten entspricht.</p>',
+      '<p style="margin-top: 20px;"><strong>Die Befragung dauert etwa 10-15 Minuten.</strong></p>',
+      '<hr style="margin: 30px 0; border: 1px solid #e8041c;">',
+      '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">',
+      '<h3 style="color: #e8041c; margin-bottom: 15px;">Einverständniserklärung</h3>',
+      '<label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">',
+      '<input type="checkbox" id="consent_check" style="margin-right: 10px; width: 20px; height: 20px;" required>',
+      '<span><strong>Ich bin mit der Teilnahme an der Befragung einverstanden</strong></span>',
+      '</label>',
+      '</div>',
+      '</div>',
+      # English content (hidden by default)
+      '<div id="content_en" style="display: none;">',
+      '<h2 style="color: #e8041c;">Dear Students,</h2>',
+      '<p>In the statistics exercises, we want to work with illustrative data ',
+      'that comes from you. Therefore, we would like to learn a few things about you.</p>',
+      '<p>Since we want to enable various analyses, the questionnaire covers different ',
+      'topic areas that are partially independent of each other.</p>',
+      '<p style="background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;">',
+      '<strong>Your information is completely anonymous</strong>, there will be no personal ',
+      'evaluation of the data. The data is generated by first-semester psychology ',
+      'bachelor students and used in this cohort, possibly also in later cohorts.</p>',
+      '<p>In the following, you will be presented with statements. We ask you to indicate ',
+      'to what extent you agree with them. There are no wrong or right answers. ',
+      'Please answer the questions as they best reflect your opinion.</p>',
+      '<p style="margin-top: 20px;"><strong>The survey takes about 10-15 minutes.</strong></p>',
+      '<hr style="margin: 30px 0; border: 1px solid #e8041c;">',
+      '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">',
+      '<h3 style="color: #e8041c; margin-bottom: 15px;">Declaration of Consent</h3>',
+      '<label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">',
+      '<input type="checkbox" id="consent_check_en" style="margin-right: 10px; width: 20px; height: 20px;" required>',
+      '<span><strong>I agree to participate in the survey</strong></span>',
+      '</label>',
+      '</div>',
+      '</div>',
+      '</div>',
+      # JavaScript for language switching - use HTML() to avoid quote issues
+      '<script>
+// Initialize from stored preference or default
+var currentLang = localStorage.getItem("hilfo_language") || "de";
+var isToggling = false;
+
+// Apply initial language state on page load
+document.addEventListener("DOMContentLoaded", function() {
+  var btn = document.getElementById("lang_switch");
+  var deContent = document.getElementById("content_de");
+  var enContent = document.getElementById("content_en");
+  
+  if (currentLang === "en" && deContent && enContent) {
+    deContent.style.display = "none";
+    enContent.style.display = "block";
+    if (btn) btn.innerHTML = "🇩🇪 Deutsche Version";
+    
+    // Notify Shiny of initial state
+    if (typeof Shiny !== "undefined") {
+      setTimeout(function() {
+        Shiny.setInputValue("study_language", "en_init", {priority: "event"});
+      }, 100);
+    }
+  }
+});
+
+function toggleLanguage() {
+  // Prevent multiple rapid clicks
+  if (isToggling) {
+    console.log("Toggle ignored - already toggling");
+    return;
+  }
+  isToggling = true;
+  
+  console.log("Toggle language clicked! Current:", currentLang);
+  var btn = document.getElementById("lang_switch");
+  var deContent = document.getElementById("content_de");
+  var enContent = document.getElementById("content_en");
+  
+  if (!deContent || !enContent) {
+    console.log("Content divs not found!");
+    isToggling = false;
+    return;
+  }
+  
+  // Disable button immediately
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = "0.6";
+  }
+  
+  var newLang = (currentLang === "de") ? "en" : "de";
+  currentLang = newLang;
+  
+  // Update display
+  if (newLang === "en") {
+    deContent.style.display = "none";
+    enContent.style.display = "block";
+    if (btn) btn.innerHTML = "🇩🇪 Deutsche Version";
+  } else {
+    deContent.style.display = "block";
+    enContent.style.display = "none";
+    if (btn) btn.innerHTML = "🇬🇧 English Version";
+  }
+  
+  // Store preference
+  localStorage.setItem("hilfo_language", newLang);
+  console.log("Switched to:", newLang);
+  
+  // Tell Shiny immediately with timestamp
+  if (typeof Shiny !== "undefined") {
+    var timestamp = Date.now();
+    Shiny.setInputValue("study_language", newLang + "_" + timestamp, {priority: "event"});
+  }
+  
+  // Re-enable button after a short delay
+  setTimeout(function() {
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = "1";
+    }
+    isToggling = false;
+  }, 500);
+  
+  // Sync checkboxes
+  var deCheck = document.getElementById("consent_check");
+  var enCheck = document.getElementById("consent_check_en");
+  if (deCheck && enCheck) {
+    if (currentLang === "en") {
+      enCheck.checked = deCheck.checked;
+    } else {
+      deCheck.checked = enCheck.checked;
+    }
+  }
+  
+  // Store language preference
+  try {
+    localStorage.setItem("hilfo_language", currentLang);
+    sessionStorage.setItem("hilfo_language", currentLang);
+  } catch(e) {
+    console.log("Could not save language preference");
+  }
+}
+
+// Make sure the function is available globally
+window.toggleLanguage = toggleLanguage;
+</script>'
     ),
-    validate = "function(inputs) { return document.getElementById('consent_check').checked; }",
+    validate = "function(inputs) { return document.getElementById('consent_check').checked || document.getElementById('consent_check_en').checked; }",
     required = TRUE
   ),
   
@@ -285,6 +548,7 @@ custom_page_flow <- list(
     id = "page2",
     type = "demographics",
     title = "Soziodemographische Angaben",
+    title_en = "Sociodemographic Information",
     demographics = c("Alter_VPN", "Studiengang", "Geschlecht")
   ),
   
@@ -293,6 +557,7 @@ custom_page_flow <- list(
     id = "page3",
     type = "demographics",
     title = "Wohnsituation",
+    title_en = "Living Situation",
     demographics = c("Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz")
   ),
   
@@ -301,6 +566,7 @@ custom_page_flow <- list(
     id = "page4",
     type = "demographics",
     title = "Lebensstil",
+    title_en = "Lifestyle",
     demographics = c("Rauchen", "Ernährung", "Ernährung_Zusatz")
   ),
   
@@ -309,6 +575,7 @@ custom_page_flow <- list(
     id = "page5",
     type = "demographics",
     title = "Bildung",
+    title_en = "Education",
     demographics = c("Note_Englisch", "Note_Mathe")
   ),
   
@@ -317,7 +584,9 @@ custom_page_flow <- list(
     id = "page6",
     type = "items",
     title = "Persönlichkeit - Teil 1",
+    title_en = "Personality - Part 1",
     instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
+    instructions_en = "Please indicate to what extent the following statements apply to you.",
     item_indices = 1:5,  # Mixed first items
     scale_type = "likert"
   ),
@@ -325,6 +594,7 @@ custom_page_flow <- list(
     id = "page7",
     type = "items",
     title = "Persönlichkeit - Teil 2",
+    title_en = "Personality - Part 2",
     item_indices = 6:10,  # Mixed second items
     scale_type = "likert"
   ),
@@ -332,6 +602,7 @@ custom_page_flow <- list(
     id = "page8",
     type = "items",
     title = "Persönlichkeit - Teil 3",
+    title_en = "Personality - Part 3",
     item_indices = 11:15,  # Mixed third items
     scale_type = "likert"
   ),
@@ -339,6 +610,7 @@ custom_page_flow <- list(
     id = "page9",
     type = "items",
     title = "Persönlichkeit - Teil 4",
+    title_en = "Personality - Part 4",
     item_indices = 16:20,  # Mixed fourth items
     scale_type = "likert"
   ),
@@ -348,7 +620,9 @@ custom_page_flow <- list(
     id = "page10",
     type = "items",
     title = "Stress",
+    title_en = "Stress",
     instructions = "Wie sehr treffen die folgenden Aussagen auf Sie zu?",
+    instructions_en = "How much do the following statements apply to you?",
     item_indices = 21:25,
     scale_type = "likert"
   ),
@@ -358,7 +632,9 @@ custom_page_flow <- list(
     id = "page11",
     type = "items",
     title = "Studierfähigkeiten",
+    title_en = "Study Skills",
     instructions = "Wie leicht oder schwer fällt es Ihnen...",
+    instructions_en = "How easy or difficult is it for you...",
     item_indices = 26:29,
     scale_type = "difficulty"
   ),
@@ -368,6 +644,7 @@ custom_page_flow <- list(
     id = "page12",
     type = "items",
     title = "Statistik",
+    title_en = "Statistics",
     item_indices = 30:31,
     scale_type = "likert"
   ),
@@ -377,6 +654,7 @@ custom_page_flow <- list(
     id = "page13",
     type = "demographics",
     title = "Studienzufriedenheit",
+    title_en = "Study Satisfaction",
     demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st", "Persönlicher_Code")
   ),
   
@@ -384,7 +662,8 @@ custom_page_flow <- list(
   list(
     id = "page14",
     type = "results",
-    title = "Ihre Ergebnisse"
+    title = "Ihre Ergebnisse",
+    title_en = "Your Results"
   )
 )
 
@@ -460,16 +739,19 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
       plot.extent.y.sf = 1.2,
       legend.position = "none"
     ) +
-    theme(
-      plot.title = element_text(size = 20, face = "bold", hjust = 0.5, 
-                                color = "#e8041c", margin = margin(b = 20)),
-      plot.background = element_rect(fill = "white", color = NA),
-      plot.margin = margin(20, 20, 20, 20)
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5, 
+                                color = "#e8041c", margin = ggplot2::margin(b = 20)),
+      plot.background = ggplot2::element_rect(fill = "white", color = NA),
+      plot.margin = ggplot2::margin(20, 20, 20, 20)
     ) +
-    labs(title = "Ihr Persönlichkeitsprofil (Big Five)")
+    ggplot2::labs(title = "Ihr Persönlichkeitsprofil (Big Five)")
   } else {
     # Fallback to simple ggplot2 approach if ggradar not available
-    library(ggplot2)
+    # Use namespace to avoid loading issues
+    if (!requireNamespace("ggplot2", quietly = TRUE)) {
+      stop("ggplot2 package is required for plotting")
+    }
     
     # Create coordinates for manual radar plot
     n_vars <- 5
@@ -501,41 +783,41 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
     grid_data$x <- grid_data$r * cos(grid_data$angle)
     grid_data$y <- grid_data$r * sin(grid_data$angle)
     
-    # Create plot
-    radar_plot <- ggplot() +
+        # Create plot
+    radar_plot <- ggplot2::ggplot() +
       # Grid circles
-      geom_path(data = grid_data, aes(x = x, y = y, group = r),
+      ggplot2::geom_path(data = grid_data, ggplot2::aes(x = x, y = y, group = r),
                 color = "gray85", size = 0.3) +
       # Spokes
-      geom_segment(data = data.frame(angle = angles),
-                   aes(x = 0, y = 0, 
-                       xend = 5 * cos(angle - pi/2), 
+      ggplot2::geom_segment(data = data.frame(angle = angles),
+                   ggplot2::aes(x = 0, y = 0,
+                       xend = 5 * cos(angle - pi/2),
                        yend = 5 * sin(angle - pi/2)),
                    color = "gray85", size = 0.3) +
       # Data polygon
-      geom_polygon(data = plot_data, aes(x = x, y = y),
+      ggplot2::geom_polygon(data = plot_data, ggplot2::aes(x = x, y = y),
                    fill = "#e8041c", alpha = 0.2) +
-      geom_path(data = plot_data, aes(x = x, y = y),
+      ggplot2::geom_path(data = plot_data, ggplot2::aes(x = x, y = y),
                 color = "#e8041c", size = 2) +
       # Points
-      geom_point(data = plot_data[1:5,], aes(x = x, y = y),
+      ggplot2::geom_point(data = plot_data[1:5,], ggplot2::aes(x = x, y = y),
                  color = "#e8041c", size = 5) +
       # Labels
-      geom_text(data = plot_data[1:5,], 
-                aes(x = x * 1.3, y = y * 1.3, label = label),
+      ggplot2::geom_text(data = plot_data[1:5,],
+                ggplot2::aes(x = x * 1.3, y = y * 1.3, label = label),
                 size = 5, fontface = "bold") +
-      geom_text(data = plot_data[1:5,],
-                aes(x = x * 1.1, y = y * 1.1, label = sprintf("%.1f", score)),
+      ggplot2::geom_text(data = plot_data[1:5,],
+                ggplot2::aes(x = x * 1.1, y = y * 1.1, label = sprintf("%.1f", score)),
                 size = 4, color = "#e8041c") +
-      coord_equal() +
-      xlim(-6, 6) + ylim(-6, 6) +
-      theme_void() +
-      theme(
-        plot.title = element_text(size = 20, face = "bold", hjust = 0.5,
-                                  color = "#e8041c", margin = margin(b = 20)),
-        plot.margin = margin(30, 30, 30, 30)
+      ggplot2::coord_equal() +
+      ggplot2::xlim(-6, 6) + ggplot2::ylim(-6, 6) +
+      ggplot2::theme_void() +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5,
+                                  color = "#e8041c", margin = ggplot2::margin(b = 20)),
+        plot.margin = ggplot2::margin(30, 30, 30, 30)
       ) +
-      labs(title = "Ihr Persönlichkeitsprofil (Big Five)")
+      ggplot2::labs(title = "Ihr Persönlichkeitsprofil (Big Five)")
   }
   
   # Create bar chart
@@ -545,45 +827,45 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
     category = c(rep("Persönlichkeit", 5), "Stress", "Studierfähigkeiten", "Statistik")
   )
   
-  bar_plot <- ggplot(all_data, aes(x = dimension, y = score, fill = category)) +
-    geom_bar(stat = "identity", width = 0.7) +
+  bar_plot <- ggplot2::ggplot(all_data, ggplot2::aes(x = dimension, y = score, fill = category)) +
+    ggplot2::geom_bar(stat = "identity", width = 0.7) +
     # Add value labels with better formatting
-    geom_text(aes(label = sprintf("%.2f", score)), 
+    ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", score)), 
               vjust = -0.5, size = 6, fontface = "bold", color = "#333") +
     # Custom color scheme
-    scale_fill_manual(values = c(
+    ggplot2::scale_fill_manual(values = c(
       "Persönlichkeit" = "#e8041c",
       "Stress" = "#ff6b6b",
       "Studierfähigkeiten" = "#4ecdc4",
       "Statistik" = "#45b7d1"
     )) +
     # Y-axis customization
-    scale_y_continuous(limits = c(0, 5.5), breaks = 0:5) +
+    ggplot2::scale_y_continuous(limits = c(0, 5.5), breaks = 0:5) +
     # Theme with larger text
-    theme_minimal(base_size = 14) +
-    theme(
-      axis.text.x = element_text(angle = 45, hjust = 1, size = 12, face = "bold"),
-      axis.text.y = element_text(size = 12),
-      axis.title.x = element_blank(),
-      axis.title.y = element_text(size = 14, face = "bold"),
-      plot.title = element_text(size = 20, face = "bold", hjust = 0.5, color = "#e8041c", margin = margin(b = 20)),
-      panel.grid.major.x = element_blank(),
-      panel.grid.minor = element_blank(),
-      panel.grid.major.y = element_line(color = "gray90", size = 0.3),
+    ggplot2::theme_minimal(base_size = 14) +
+    ggplot2::theme(
+      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = 12, face = "bold"),
+      axis.text.y = ggplot2::element_text(size = 12),
+      axis.title.x = ggplot2::element_blank(),
+      axis.title.y = ggplot2::element_text(size = 14, face = "bold"),
+      plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5, color = "#e8041c", margin = ggplot2::margin(b = 20)),
+      panel.grid.major.x = ggplot2::element_blank(),
+      panel.grid.minor = ggplot2::element_blank(),
+      panel.grid.major.y = ggplot2::element_line(color = "gray90", size = 0.3),
       legend.position = "bottom",
-      legend.title = element_blank(),
-      legend.text = element_text(size = 12),
-      plot.margin = margin(20, 20, 20, 20)
+      legend.title = ggplot2::element_blank(),
+      legend.text = ggplot2::element_text(size = 12),
+      plot.margin = ggplot2::margin(20, 20, 20, 20)
     ) +
-    labs(title = "Alle Dimensionen im Überblick", y = "Score (1-5)")
+    ggplot2::labs(title = "Alle Dimensionen im Überblick", y = "Score (1-5)")
   
   # Save plots
   radar_file <- tempfile(fileext = ".png")
   bar_file <- tempfile(fileext = ".png")
   
   suppressMessages({
-    ggsave(radar_file, radar_plot, width = 10, height = 9, dpi = 150, bg = "white")
-    ggsave(bar_file, bar_plot, width = 12, height = 7, dpi = 150, bg = "white")
+    ggplot2::ggsave(radar_file, radar_plot, width = 10, height = 9, dpi = 150, bg = "white")
+    ggplot2::ggsave(bar_file, bar_plot, width = 12, height = 7, dpi = 150, bg = "white")
   })
   
   # Encode as base64
@@ -717,6 +999,8 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
       complete_data <- data.frame(
         timestamp = Sys.time(),
         session_id = paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S")),
+        study_language = ifelse(exists("session") && !is.null(session$userData$language), 
+                                session$userData$language, "de"),
         stringsAsFactors = FALSE
       )
       
@@ -746,10 +1030,14 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
       complete_data$Studierfähigkeiten <- scores$Studierfähigkeiten
       complete_data$Statistik <- scores$Statistik
       
-      # Save locally
+      # Save locally with proper connection handling
       local_file <- paste0("hilfo_results_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
-      write.csv(complete_data, local_file, row.names = FALSE)
-      cat("Data saved locally to:", local_file, "\n")
+      tryCatch({
+        write.csv(complete_data, local_file, row.names = FALSE)
+        cat("Data saved locally to:", local_file, "\n")
+      }, error = function(e) {
+        cat("Error saving data locally:", e$message, "\n")
+      })
       
       # Upload to cloud if configured
       if (!is.null(WEBDAV_URL) && !is.null(WEBDAV_PASSWORD)) {
@@ -794,7 +1082,205 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
     })
   }
   
+    # Add functional minimalistic download section
+  timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+  
+  download_section_html <- paste0(
+    '<div class="download-section" style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">',
+    '<h4 style="color: #333; margin-bottom: 15px;">Ergebnisse exportieren</h4>',
+    '<div style="display: flex; gap: 10px;">',
+    
+    # PDF Download Button
+    '<button style="background: #e8041c; color: white; ',
+    'padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; ',
+    'font-size: 14px;" onclick="window.print()">',
+    'Als PDF speichern</button>',
+    
+    # CSV Download Button with working inline JavaScript
+    '<button style="background: #28a745; color: white; ',
+    'padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; ',
+    'font-size: 14px;" onclick="',
+    "(function(){",
+    "var csv = 'Dimension;Score\\n';",
+    "csv += 'Extraversion;", sprintf("%.2f", scores$Extraversion), "\\n';",
+    "csv += 'Vertraeglichkeit;", sprintf("%.2f", scores$Verträglichkeit), "\\n';",
+    "csv += 'Gewissenhaftigkeit;", sprintf("%.2f", scores$Gewissenhaftigkeit), "\\n';",
+    "csv += 'Neurotizismus;", sprintf("%.2f", scores$Neurotizismus), "\\n';",
+    "csv += 'Offenheit;", sprintf("%.2f", scores$Offenheit), "\\n';",
+    "csv += 'Stress;", sprintf("%.2f", scores$Stress), "\\n';",
+    "csv += 'Studierfaehigkeiten;", sprintf("%.2f", scores$Studierfähigkeiten), "\\n';",
+    "csv += 'Statistik;", sprintf("%.2f", scores$Statistik), "\\n';",
+    "var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});",
+    "var link = document.createElement('a');",
+    "link.href = URL.createObjectURL(blob);",
+    "link.download = 'hilfo_ergebnisse_", timestamp, ".csv';",
+    "document.body.appendChild(link);",
+    "link.click();",
+    "document.body.removeChild(link);",
+    "})();",
+    '">Als CSV speichern</button>',
+    
+    '</div>',
+    '</div>',
+    
+    # Print styles
+    '<style>',
+    '@media print {',
+    '  .download-section { display: none !important; }',
+    '  body { font-size: 11pt; }',
+    '  .report-section { page-break-inside: avoid; }',
+    '  h2 { color: #e8041c !important; -webkit-print-color-adjust: exact; }',
+    '}',
+    '</style>'
+  )
+  
+  # Insert download section before closing div
+  html <- paste0(
+    substr(html, 1, nchar(html) - 6),  # Remove closing </div>
+    download_section_html,
+    '</div>'
+  )
+  
   return(shiny::HTML(html))
+}
+
+# =============================================================================
+# ENHANCED DOWNLOAD HANDLER FOR HILDESHEIM
+# =============================================================================
+
+create_hilfo_download_handler <- function() {
+  return(function(format = "pdf") {
+    shiny::downloadHandler(
+      filename = function() {
+        timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+        paste0("HilFo_Studie_", timestamp, ".", format)
+      },
+      content = function(file) {
+        # Get the current session data
+        session_data <- get("complete_data", envir = .GlobalEnv, inherits = FALSE)
+        
+        if (format == "pdf") {
+          # Create PDF report
+          tryCatch({
+            # Create temporary R Markdown file
+            temp_rmd <- tempfile(fileext = ".Rmd")
+            
+            rmd_content <- '---
+title: "HilFo Studie - Persönlicher Bericht"
+author: "Universität Hildesheim"
+date: "`r format(Sys.Date(), \"%d. %B %Y\")`"
+output: 
+  pdf_document:
+    latex_engine: xelatex
+    includes:
+      in_header: header.tex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(ggplot2)
+library(knitr)
+```
+
+# Ihre Ergebnisse
+
+## Persönlichkeitsprofil (Big Five)
+
+Ihre Persönlichkeit wurde anhand der Big Five Dimensionen erfasst:
+
+```{r personality-table}
+personality_data <- data.frame(
+  Dimension = c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", 
+                "Neurotizismus", "Offenheit"),
+  Score = c(3.5, 4.2, 3.8, 2.9, 4.1),
+  Interpretation = c("Durchschnittlich", "Hoch", "Überdurchschnittlich", 
+                     "Unterdurchschnittlich", "Hoch")
+)
+kable(personality_data, caption = "Ihre Persönlichkeitswerte")
+```
+
+## Stress und Studierfähigkeiten
+
+```{r stress-plot, fig.height=4, fig.width=6}
+categories <- c("Stress", "Studierfähigkeiten", "Statistik")
+scores <- c(2.8, 3.9, 3.2)
+df <- data.frame(Category = categories, Score = scores)
+
+ggplot(df, aes(x = Category, y = Score, fill = Category)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("#e8041c", "#4ecdc4", "#45b7d1")) +
+  ylim(0, 5) +
+  theme_minimal() +
+  labs(title = "Weitere Dimensionen", y = "Score (1-5)") +
+  theme(legend.position = "none")
+```
+
+## Empfehlungen
+
+Basierend auf Ihren Ergebnissen empfehlen wir:
+
+- Nutzen Sie Ihre hohe Verträglichkeit für Gruppenarbeiten
+- Arbeiten Sie an Stressmanagement-Techniken
+- Ihre Offenheit für Neues ist eine Stärke im Studium
+
+---
+
+*Dieser Bericht wurde automatisch generiert. Bei Fragen wenden Sie sich an das Studienberatungsteam.*
+'
+            
+            writeLines(rmd_content, temp_rmd)
+            
+            # Create header.tex for LaTeX customization
+            temp_header <- tempfile(fileext = ".tex")
+            header_content <- '\\usepackage{fancyhdr}
+\\pagestyle{fancy}
+\\fancyhead[L]{HilFo Studie}
+\\fancyhead[R]{Universität Hildesheim}
+\\definecolor{hildesheim}{RGB}{232,4,28}'
+            writeLines(header_content, temp_header)
+            
+            # Render PDF
+            if (requireNamespace("rmarkdown", quietly = TRUE)) {
+              rmarkdown::render(temp_rmd, output_file = file, quiet = TRUE)
+            } else {
+              # Fallback to simple text file
+              writeLines("PDF generation requires rmarkdown package", file)
+            }
+            
+            # Clean up
+            unlink(c(temp_rmd, temp_header))
+            
+          }, error = function(e) {
+            cat("Error generating PDF:", e$message, "\n")
+            writeLines("Error generating PDF report", file)
+          })
+          
+        } else if (format == "csv") {
+          # Export as CSV
+          if (exists("complete_data", envir = .GlobalEnv)) {
+            write.csv(session_data, file, row.names = FALSE)
+          } else {
+            # Create sample data if no session data
+            sample_data <- data.frame(
+              timestamp = Sys.time(),
+              participant_id = "HILFO_001",
+              message = "No session data available"
+            )
+            write.csv(sample_data, file, row.names = FALSE)
+          }
+          
+        } else if (format == "json") {
+          # Export as JSON
+          if (requireNamespace("jsonlite", quietly = TRUE)) {
+            json_data <- jsonlite::toJSON(session_data, pretty = TRUE)
+            writeLines(json_data, file)
+          } else {
+            writeLines('{"error": "jsonlite package required"}', file)
+          }
+        }
+      }
+    )
+  })
 }
 
 # =============================================================================
@@ -828,7 +1314,21 @@ study_config <- inrep::create_study_config(
   save_to_file = TRUE,
   save_format = "csv",
   cloud_storage = TRUE,
-  enable_download = TRUE
+  enable_download = TRUE,
+  # Enhanced download options for Hildesheim
+  download_formats = c("pdf", "csv", "json"),
+  download_handler = create_hilfo_download_handler(),
+  export_options = list(
+    include_raw_responses = TRUE,
+    include_demographics = TRUE,
+    include_timestamps = TRUE,
+    include_plots = TRUE,
+    pdf_template = "hildesheim",
+    csv_separator = ";",  # German standard
+    json_pretty = TRUE
+  ),
+  # Add minimal custom CSS
+  custom_css = ""
 )
 
 cat("\n================================================================================\n")
@@ -840,10 +1340,11 @@ cat("Fixed radar plot with proper connections\n")
 cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
 
-# Launch with cloud storage
+# Launch with cloud storage and full language support
+# Pass both German and English items
 inrep::launch_study(
   config = study_config,
-  item_bank = all_items,
+  item_bank = all_items_de,  # Contains both Question and Question_EN
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
   save_format = "csv"

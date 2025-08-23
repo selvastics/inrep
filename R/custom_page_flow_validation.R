@@ -4,7 +4,7 @@
 
 #' Validate page before allowing navigation
 #' @export
-validate_page_progression <- function(current_page, input, config) {
+validate_page_progression <- function(current_page, input, config, current_language = NULL) {
   page <- config$custom_page_flow[[current_page]]
   
   if (is.null(page)) return(list(valid = TRUE))
@@ -28,12 +28,32 @@ validate_page_progression <- function(current_page, input, config) {
         value <- input[[input_id]]
         
         if (is.null(value) || value == "" || (is.character(value) && nchar(trimws(value)) == 0)) {
-          question <- demo_config$question %||% dem
+          # Get current language
+          current_lang <- if (!is.null(current_language) && is.function(current_language)) {
+            current_language()
+          } else {
+            config$language %||% "de"
+          }
+          
+          # Get question in the correct language
+          question <- if (current_lang == "en" && !is.null(demo_config$question_en)) {
+            demo_config$question_en
+          } else {
+            demo_config$question %||% dem
+          }
+          
           # Truncate long questions for error message
           if (nchar(question) > 50) {
             question <- paste0(substr(question, 1, 47), "...")
           }
-          errors <- c(errors, paste0("Bitte beantworten Sie: ", question))
+          
+          # Use language-specific error message
+          error_prefix <- if (current_lang == "en") {
+            "Please answer: "
+          } else {
+            "Bitte beantworten Sie: "
+          }
+          errors <- c(errors, paste0(error_prefix, question))
           missing_fields <- c(missing_fields, input_id)
         }
       }
@@ -48,6 +68,7 @@ validate_page_progression <- function(current_page, input, config) {
       }
       
       if (!is.null(item_bank)) {
+        has_missing_items <- FALSE
         for (i in page$item_indices) {
           # Get the actual item from the item bank
           if (i <= nrow(item_bank)) {
@@ -55,11 +76,28 @@ validate_page_progression <- function(current_page, input, config) {
             # Use the item's id field if available, otherwise use index
             item_id <- paste0("item_", item$id %||% i)
             if (is.null(input[[item_id]]) || input[[item_id]] == "") {
-              errors <- c(errors, paste0("Bitte beantworten Sie alle Fragen auf dieser Seite."))
+              has_missing_items <- TRUE
               missing_fields <- c(missing_fields, item_id)
               # Don't break, collect all missing fields for highlighting
             }
           }
+        }
+        # Only add the error message once if there are missing items
+        if (has_missing_items) {
+          # Get current language
+          current_lang <- if (!is.null(current_language) && is.function(current_language)) {
+            current_language()
+          } else {
+            config$language %||% "de"
+          }
+          
+          # Use language-specific error message
+          error_msg <- if (current_lang == "en") {
+            "Please answer all questions on this page."
+          } else {
+            "Bitte beantworten Sie alle Fragen auf dieser Seite."
+          }
+          errors <- c(errors, error_msg)
         }
       }
     }
@@ -125,12 +163,19 @@ create_filter_page <- function(input, config) {
 
 #' Show validation errors in UI
 #' @export
-show_validation_errors <- function(errors) {
+show_validation_errors <- function(errors, current_lang = "de") {
   if (length(errors) == 0) return(NULL)
+  
+  # Use language-specific header
+  header_text <- if (current_lang == "en") {
+    "Please complete the following:"
+  } else {
+    "Bitte vervollständigen Sie Folgendes:"
+  }
   
   shiny::div(
     class = "validation-error",
-    shiny::h4("Please complete the following:"),
+    shiny::h4(header_text),
     shiny::tags$ul(
       style = "margin: 10px 0; padding-left: 20px;",
       lapply(errors, function(e) shiny::tags$li(e))

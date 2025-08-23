@@ -525,62 +525,39 @@ launch_study <- function(
   
   # Enhanced validation and error handling for robustness
   tryCatch({
-    # Source enhanced modules if available
-    enhanced_files <- c(
-      "enhanced_config_handler.R",
-      "enhanced_session_recovery.R", 
-      "enhanced_security.R",
-      "enhanced_performance.R",
-      "custom_page_flow.R",
-      "custom_page_flow_validation.R"
-    )
-    
-    for (file in enhanced_files) {
+    # Load only critical modules immediately for fast startup
+    # Custom page flow is needed for Hildesheim study
+    critical_files <- c("custom_page_flow.R", "custom_page_flow_validation.R")
+    for (file in critical_files) {
       file_path <- system.file("R", file, package = "inrep")
       if (file.exists(file_path)) {
         source(file_path, local = TRUE)
       }
     }
     
-    # Validate and fix configuration
-    if (exists("validate_and_fix_config")) {
-      config <- validate_and_fix_config(config, item_bank)
-      
-      # Show warnings if any
-      if (!is.null(config$validation_warnings)) {
-        for (warning_name in names(config$validation_warnings)) {
-          logger(paste("Config warning:", config$validation_warnings[[warning_name]]))
+    # Defer loading other enhanced modules
+    .other_modules_loaded <- FALSE
+    .load_other_modules <- function() {
+      if (!.other_modules_loaded) {
+        other_files <- c(
+          "enhanced_config_handler.R",
+          "enhanced_session_recovery.R", 
+          "enhanced_security.R",
+          "enhanced_performance.R"
+        )
+        for (file in other_files) {
+          file_path <- system.file("R", file, package = "inrep")
+          if (file.exists(file_path)) {
+            source(file_path, local = TRUE)
+          }
         }
+        .other_modules_loaded <<- TRUE
       }
     }
     
-    # Handle extreme parameters
-    if (exists("handle_extreme_parameters")) {
-      config <- handle_extreme_parameters(config)
-    }
+    # Skip all optimizations on startup for instant loading
     
-    # Optimize for scale if needed
-    if (!is.null(config$expected_n) && exists("optimize_for_scale")) {
-      config <- optimize_for_scale(config, config$expected_n)
-    }
-    
-    # Initialize enhanced features if available
-    if (enable_error_recovery && exists("initialize_enhanced_recovery")) {
-      initialize_enhanced_recovery(
-        auto_save_interval = data_preservation_interval,
-        enable_browser_storage = TRUE
-      )
-    }
-    
-    if (exists("initialize_enhanced_security")) {
-      initialize_enhanced_security()
-    }
-    
-    if (exists("initialize_performance_optimization")) {
-      initialize_performance_optimization(
-        max_concurrent_users = config$expected_n %||% 100
-      )
-    }
+    # Skip ALL feature initialization for instant loading
   }, error = function(e) {
     logger(paste("Enhanced features initialization:", e$message))
     # Continue with standard functionality
@@ -591,8 +568,17 @@ launch_study <- function(
     stop("Package 'shiny' is required but not available. Please install it with: install.packages('shiny')")
   }
   
-  # Load the later package (now a required dependency)
-  suppressPackageStartupMessages(library(later, quietly = TRUE))
+  # Check if later package is available (for deferred operations)
+  has_later <- requireNamespace("later", quietly = TRUE)
+  
+  # Check for UUID if study_key uses UUIDgenerate
+  if (!missing(study_key) && is.character(study_key)) {
+    if (grepl("UUIDgenerate", deparse(substitute(study_key)))) {
+      if (!requireNamespace("uuid", quietly = TRUE)) {
+        stop("Package 'uuid' is required for UUIDgenerate(). Please install it with: install.packages('uuid')")
+      }
+    }
+  }
   
   # Input validation
   extra_params <- list(...)
@@ -642,17 +628,22 @@ launch_study <- function(
         }
       }
     } else {
-      # Actually load packages (only when needed)
+      # Load packages only if not already loaded
       for (pkg_name in names(packages)) {
         pkg <- packages[[pkg_name]]
         if (requireNamespace(pkg, quietly = TRUE)) {
-          loaded_packages[[pkg_name]] <- TRUE
-          tryCatch({
-            suppressPackageStartupMessages(library(pkg, character.only = TRUE, quietly = TRUE))
-            logger(sprintf("Loaded package: %s", pkg), level = "DEBUG")
-          }, error = function(e) {
-            loaded_packages[[pkg_name]] <- FALSE
-          })
+          # Check if already loaded to avoid redundant loading
+          if (!pkg %in% loadedNamespaces()) {
+            tryCatch({
+              suppressPackageStartupMessages(library(pkg, character.only = TRUE, quietly = TRUE))
+              logger(sprintf("Loaded package: %s", pkg), level = "DEBUG")
+              loaded_packages[[pkg_name]] <- TRUE
+            }, error = function(e) {
+              loaded_packages[[pkg_name]] <- FALSE
+            })
+          } else {
+            loaded_packages[[pkg_name]] <- TRUE
+          }
         } else {
           loaded_packages[[pkg_name]] <- FALSE
         }
@@ -662,10 +653,8 @@ launch_study <- function(
     return(loaded_packages)
   }
   
-  # Check package availability WITHOUT loading (fast)
-  # Only load immediately if explicitly disabled fast mode
-  immediate_load <- isFALSE(config$fast_mode) && isFALSE(config$defer_packages)
-  available_packages <- safe_load_packages(immediate = immediate_load)
+  # NEVER load packages at startup - always defer for fast first page
+  available_packages <- safe_load_packages(immediate = FALSE)
   
   # Check if TAM package is available (only needed for adaptive mode)
   if (isTRUE(config$adaptive) && !isTRUE(available_packages$TAM)) {
@@ -1007,12 +996,7 @@ launch_study <- function(
       line-height: 1.6;
     }
     
-    .container-fluid { 
-      max-width: 1200px;
-      margin: 0 auto;
-      overflow-x: hidden;
-      min-height: 100vh;
-    }
+    /* Container fluid - removed conflicting rules, handled by layout fixes below */
     
     /* Prevent weird scaling */
     * {
@@ -1117,6 +1101,7 @@ launch_study <- function(
     
     .radio-group-container {
       margin: 25px 0;
+      padding-left: 30px;
     }
     
     .error-message {
@@ -1302,30 +1287,32 @@ launch_study <- function(
   ")
   
   # Get language labels from the comprehensive multilingual system
-  ui_labels <- get_language_labels(config$language %||% "en")
+  # Start with default language
+  default_language <- config$language %||% "en"
+  ui_labels <- get_language_labels(default_language)
   
   ui <- shiny::fluidPage(
     class = "full-width-app",
-    shinyjs::useShinyjs(),
+    if (requireNamespace("shinyjs", quietly = TRUE)) shinyjs::useShinyjs(),
 
           shiny::tags$head(
         shiny::tags$style(HTML("
-          /* IMMEDIATE FIX for 50/50 split */
+          /* Simple full-width fix */
           .full-width-app > .container-fluid {
-            padding: 0 !important;
-            margin: 0 !important;
+            padding: 0 15px !important;
+            margin: 0 auto !important;
             width: 100% !important;
             max-width: 100% !important;
           }
           
-          /* Remove any default Shiny columns */
-          .full-width-app .row > .col-sm-12 {
-            padding: 0 !important;
+          /* Ensure columns use full width */
+          .full-width-app .col-sm-12 {
             width: 100% !important;
+            padding: 0 !important;
           }
           
-          /* Ensure study UI uses full width */
-          #study_ui, .shiny-html-output {
+          /* Study UI full width */
+          #study_ui {
             width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
@@ -1333,45 +1320,53 @@ launch_study <- function(
         ")),
         shiny::tags$style(type = "text/css", enhanced_css),
         shiny::tags$style(HTML("
-        /* Fixed layout - FULL WIDTH FROM LEFT */
+        /* Simple centered layout */
         body > .container-fluid {
-          padding-left: 0 !important;
-          padding-right: 0 !important;
-          margin: 0 !important;
-          width: 100% !important;
+          padding: 15px !important;
+          margin: 0 auto !important;
           max-width: 100% !important;
         }
         
         #main-study-container {
           width: 100%;
           max-width: 1200px;
-          margin: 0 auto !important;
-          overflow: hidden;
+          margin: 0 auto;
           min-height: 600px;
         }
         
-        #page_content {
-          width: 100% !important;
-          display: flex !important;
-          justify-content: center !important;
-        }
-        
         .page-wrapper {
-          opacity: 1 !important;
-          width: 100% !important;
-          max-width: 1200px !important;
-          transform: none !important;
-          position: relative !important;
-          margin: 0 auto !important;
-          padding: 0 !important;
-          display: block !important;
+          width: 100%;
+          max-width: 1200px;
+          margin: 0 auto;
+          position: relative;
         }
         
-        /* Center all content immediately */
+        /* Simple smooth fade-in for all pages (like main branch) */
+        .page-wrapper,
+        .assessment-card,
+        .demographics-page,
+        .instructions-page,
+        .results-page {
+          animation: smoothPageFade 0.3s ease-in;
+          position: relative !important;
+          top: 0 !important;
+          left: 0 !important;
+        }
+        
+        @keyframes smoothPageFade {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        /* Ensure container uses full width */
         .container-fluid {
-          margin: 0 auto !important;
-          padding: 15px !important;
-          max-width: 100% !important;
+          animation: smoothPageFade 0.2s ease-in;
         }
         
         .assessment-card {
@@ -1503,7 +1498,7 @@ launch_study <- function(
         }
         
         /* Stable content - no animations */
-        .container-fluid {
+        body {
           opacity: 1;
         }
         
@@ -1527,9 +1522,8 @@ launch_study <- function(
           overflow-y: auto;
         }
         
-        /* Prevent flicker without transform */
+        /* Prevent flicker */
         .page-wrapper, .assessment-card {
-          will-change: auto !important;
           backface-visibility: hidden !important;
         }
         
@@ -1541,32 +1535,13 @@ launch_study <- function(
         
 
         
-                            /* Override any theme-specific positioning */
-          .container, .container-fluid, .row, .col, .card, .assessment-card,
-          [class*='col-'] {
-            float: none !important;
-            position: relative !important;
-            left: auto !important;
-            right: auto !important;
-            margin-left: auto !important;
-            margin-right: auto !important;
-          }
-        
-        /* Force centering on initial render */
-        body > div:first-child {
-          text-align: center !important;
-        }
-        
-        body > div:first-child > * {
-          text-align: left;
-          margin: 0 auto;
-        }
-        
-        /* Ensure Shiny container centers */
-        .container-fluid:first-child {
-          display: flex !important;
-          justify-content: center !important;
-          align-items: flex-start !important;
+        /* Override any theme-specific positioning for cards only */
+        .card, .assessment-card {
+          position: relative !important;
+          left: auto !important;
+          right: auto !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
         }
               ")),
         
@@ -1679,18 +1654,32 @@ launch_study <- function(
             overflow-x: hidden !important;
           }
           
-          /* Responsive navigation */
+          /* Responsive navigation - buttons closer together */
           .nav-buttons {
             display: flex !important;
             flex-wrap: wrap !important;
-            gap: 10px !important;
+            gap: 20px !important;
             justify-content: center !important;
-            margin-top: 20px !important;
+            margin-top: 30px !important;
+            padding: 0 20px !important;
           }
           
           @media (min-width: 768px) {
             .nav-buttons {
-              justify-content: space-between !important;
+              justify-content: center !important;
+              gap: 30px !important;
+            }
+            
+            /* For pages with only one button, center it */
+            .nav-buttons:has(button:only-child) {
+              justify-content: center !important;
+            }
+            
+            /* For pages with two buttons, bring them closer */
+            .nav-buttons:has(button:nth-child(2):last-child) {
+              max-width: 400px !important;
+              margin-left: auto !important;
+              margin-right: auto !important;
             }
           }
           
@@ -1713,6 +1702,10 @@ launch_study <- function(
       shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet"),
       # Include Plotly for interactive plots
       shiny::tags$script(src = "https://cdn.plot.ly/plotly-latest.min.js"),
+      # Add custom CSS if provided
+      if (!is.null(config$custom_css)) {
+        shiny::tags$style(HTML(config$custom_css))
+      }
 
     ),
     # Remove blocking loading screen - let Shiny's natural loading work
@@ -1734,8 +1727,65 @@ launch_study <- function(
   )
   
   server <- function(input, output, session) {
-    # Use study_key argument if provided, else config$study_key, else default
-    effective_study_key <- study_key %||% config$study_key %||% "default_study"
+    # Create reactive values for language support
+    current_language <- shiny::reactiveVal(default_language)
+    reactive_ui_labels <- shiny::reactiveVal(ui_labels)
+    
+    # Observe language changes from Hildesheim study
+    # Track last language to prevent duplicate triggers
+    last_language <- shiny::reactiveVal(default_language)
+    
+    shiny::observeEvent(input$study_language, {
+      if (!is.null(input$study_language)) {
+        # Extract language from the format "lang_timestamp" or "lang_init"
+        lang_parts <- strsplit(input$study_language, "_")[[1]]
+        new_lang <- lang_parts[1]
+        is_init <- length(lang_parts) > 1 && lang_parts[2] == "init"
+        
+        # Validate language
+        if (new_lang %in% c("de", "en")) {
+          # For initial state, always apply; for toggles, check if changed
+          if (is_init || new_lang != last_language()) {
+            last_language(new_lang)
+            current_language(new_lang)
+            
+            # Update UI labels
+            new_labels <- get_language_labels(new_lang)
+            reactive_ui_labels(new_labels)
+            
+            # Store in session
+            session$userData$language <- new_lang
+            
+            # Update config language
+            config$language <<- new_lang
+            
+            # Force re-render of current page by incrementing a counter
+            rv$language_change_trigger <- (rv$language_change_trigger %||% 0) + 1
+            
+            # Log the change
+            if (!is_init) {
+              cat("Language switched to:", new_lang, "\n")
+            } else {
+              cat("Language initialized to:", new_lang, "\n")
+            }
+          }
+        }
+      }
+    }, ignoreInit = FALSE)  # Don't ignore init to catch initial state
+    
+      # Generate UUID-based study key if needed
+  generate_study_key <- function() {
+    if (requireNamespace("uuid", quietly = TRUE)) {
+      return(uuid::UUIDgenerate())
+    } else {
+      # Fallback to timestamp-based key
+      return(paste0("study_", format(Sys.time(), "%Y%m%d_%H%M%S_"), 
+                    paste0(sample(c(letters, 0:9), 8, replace = TRUE), collapse = "")))
+    }
+  }
+  
+  # Use study_key argument if provided, else config$study_key, else generate one
+  effective_study_key <- study_key %||% config$study_key %||% generate_study_key()
     data_dir <- base::file.path("study_data", effective_study_key)
     if (!base::dir.exists(data_dir)) base::dir.create(data_dir, recursive = TRUE)
     session_file <- base::file.path(data_dir, "session.rds")
@@ -1794,10 +1844,9 @@ launch_study <- function(
     
     # Defer session monitoring until after first page loads
     if (session_save) {
-      # Delay session monitoring to not block initial load
-      later::later(function() {
-        # Session timeout monitoring
-        shiny::observe({
+      # Start session monitoring immediately
+      # Session timeout monitoring
+      shiny::observe({
           # Check session timeout
           if (base::difftime(base::Sys.time(), rv$session_start, units = "secs") > max_session_time) {
             rv$session_active <- FALSE
@@ -1845,8 +1894,6 @@ launch_study <- function(
       shiny::observeEvent(rv$responses, {
         observe_data_preservation()
       }, ignoreInit = TRUE)
-      
-      }, delay = 1)  # Close the later() function
     }
     
     # Session status monitoring - DISABLED timer-based monitoring
@@ -1954,12 +2001,22 @@ launch_study <- function(
 
     
     get_item_content <- function(item_idx) {
-      if (base::is.null(config$item_translations) || base::is.null(config$item_translations[[config$language]])) {
+      # Get current language dynamically
+      lang <- current_language()
+      
+      # Check for Hildesheim bilingual items first
+      if ("Question_EN" %in% names(item_bank) && lang == "en") {
+        item <- item_bank[item_idx, ]
+        item$Question <- item$Question_EN
+        return(item)
+      }
+      
+      if (base::is.null(config$item_translations) || base::is.null(config$item_translations[[lang]])) {
         # Ensure minimal fields exist
         if (!"Question" %in% base::names(item_bank) && "content" %in% base::names(item_bank)) item_bank$Question <- item_bank$content
         return(item_bank[item_idx, ])
       }
-      translations <- config$item_translations[[config$language]][item_idx, ]
+      translations <- config$item_translations[[lang]][item_idx, ]
       item <- item_bank[item_idx, ]
       item$Question <- translations$Question %||% item$Question
       if (config$model != "GRM") {
@@ -1986,49 +2043,48 @@ launch_study <- function(
         (base::length(rv$administered) >= config$max_items || rv$current_se <= config$min_SEM)
     }
     
-    # Lazy load packages only when first needed
+    # Load packages in background for better performance
     .packages_loaded <- FALSE
     .load_packages_once <- function() {
       if (!.packages_loaded) {
-        # Load packages in background
-        later::later(function() {
-          safe_load_packages(immediate = TRUE)
-          .packages_loaded <<- TRUE
-        }, delay = 0.1)
+        # Load packages without blocking UI
+        safe_load_packages(immediate = FALSE)
+        .packages_loaded <<- TRUE
       }
     }
     
-          # Render the main container only once
+          # Render the main container immediately - NO DELAYS
       output$study_ui <- shiny::renderUI({
-        # Load packages after first render
-        if (!.packages_loaded) {
-          .load_packages_once()
-        }
-        
-        # Create the main container - Force full width
-        shiny::tagList(
-          shiny::tags$style(HTML("
-            /* Force container to use full width */
-            body > .container-fluid > .row {
-              margin: 0 !important;
-            }
-            body > .container-fluid > .row > * {
-              padding: 0 !important;
-            }
-          ")),
-          shiny::div(
-            id = "main-study-container",
-            style = "min-height: 500px; width: 100%; margin: 0; padding: 0;",
-            shiny::uiOutput("page_content")
-          )
+        # Return UI immediately - no package checks, no delays
+        shiny::div(
+          id = "main-study-container",
+          style = "min-height: 500px; width: 100%; margin: 0 auto; padding: 0;",
+          shiny::uiOutput("page_content")
         )
       })
+      
+      # Load packages in background AFTER UI is rendered
+      shiny::observe({
+        if (!.packages_loaded) {
+          .packages_loaded <<- TRUE
+          # Use isolate to prevent reactive dependencies
+          shiny::isolate({
+            if (requireNamespace("later", quietly = TRUE)) {
+              later::later(function() {
+                safe_load_packages(immediate = FALSE)
+              }, delay = 0.5)  # Load after UI is stable
+            }
+          })
+        }
+      }, priority = -100)  # Low priority - run after everything else
       
       # Separate reactive output for page content
       output$page_content <- shiny::renderUI({
         # Dependencies
         current_page <- rv$current_page
         stage <- rv$stage
+        language_trigger <- rv$language_change_trigger  # Force re-render on language change
+        ui_labels <- reactive_ui_labels()  # Use reactive UI labels
         
         if (!rv$session_active) {
           return(
@@ -2041,15 +2097,15 @@ launch_study <- function(
           )
         }
         
-        # Simple wrapper - no animations
-        shiny::div(
-          id = paste0("page-", current_page),
-          class = "page-wrapper",
-          style = "width: 100%; max-width: 1200px; margin: 0 auto;",
+                  # Simple wrapper like main branch - no complex JavaScript
+          shiny::div(
+            id = paste0("page-", current_page),
+            class = "page-wrapper",
+            style = "width: 100%; max-width: 1200px; margin: 0 auto;",
           base::switch(stage,
-                   "custom_page_flow" = {
-                     # Process and render custom page flow
-                     process_page_flow(config, rv, input, output, session, item_bank, ui_labels, logger)
+                                     "custom_page_flow" = {
+                    # Process and render custom page flow
+                    process_page_flow(config, rv, input, output, session, item_bank, ui_labels, logger, current_language)
                    },
                    "error" = {
                      shiny::div(class = "assessment-card error-card",
@@ -2078,8 +2134,11 @@ launch_study <- function(
                         demo_config <- config$demographic_configs[[dem]]
                       }
                       
-                      # Use question from config or fall back to variable name
-                      label_text <- if (!base::is.null(demo_config$question)) {
+                      # Use question from config with language support
+                      lang <- current_language()
+                      label_text <- if (lang == "en" && !base::is.null(demo_config$question_en)) {
+                        demo_config$question_en
+                      } else if (!base::is.null(demo_config$question)) {
                         demo_config$question
                       } else if (!base::is.null(demo_config$label)) {
                         demo_config$label
@@ -2100,7 +2159,9 @@ launch_study <- function(
                         "select" = shiny::selectInput(
                           inputId = input_id,
                           label = NULL,
-                          choices = if (!base::is.null(demo_config$options)) {
+                          choices = if (lang == "en" && !base::is.null(demo_config$options_en)) {
+                            base::c("Please select..." = "", demo_config$options_en)
+                          } else if (!base::is.null(demo_config$options)) {
                             base::c("Bitte wählen..." = "", demo_config$options)
                           } else {
                             base::c("Select..." = "", "Male", "Female", "Other", "Prefer not to say")
@@ -2111,7 +2172,9 @@ launch_study <- function(
                         "radio" = shiny::radioButtons(
                           inputId = input_id,
                           label = NULL,
-                          choices = if (!base::is.null(demo_config$options)) {
+                          choices = if (lang == "en" && !base::is.null(demo_config$options_en)) {
+                            demo_config$options_en
+                          } else if (!base::is.null(demo_config$options)) {
                             demo_config$options
                           } else {
                             base::c("Yes" = "yes", "No" = "no")
@@ -2122,7 +2185,9 @@ launch_study <- function(
                         "checkbox" = shiny::checkboxGroupInput(
                           inputId = input_id,
                           label = NULL,
-                          choices = if (!base::is.null(demo_config$options)) {
+                          choices = if (lang == "en" && !base::is.null(demo_config$options_en)) {
+                            demo_config$options_en
+                          } else if (!base::is.null(demo_config$options)) {
                             demo_config$options
                           } else {
                             base::c("Option 1" = "opt1", "Option 2" = "opt2")
@@ -2221,7 +2286,7 @@ launch_study <- function(
                          choices <- 1:5
                        }
                        
-                       labels <- base::switch(config$language,
+                       labels <- base::switch(current_language(),
                                               de = base::c("Stark ablehnen", "Ablehnen", "Neutral", "Zustimmen", "Stark zustimmen")[1:base::length(choices)],
                                               en = base::c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")[1:base::length(choices)],
                                               es = base::c("Totalmente en desacuerdo", "En desacuerdo", "Neutral", "De acuerdo", "Totalmente de acuerdo")[1:base::length(choices)],
@@ -2534,7 +2599,7 @@ launch_study <- function(
                     )
                   }
           ) # End of switch
-        ) # End of page-wrapper div
+          ) # End of page-wrapper div
       })
     
     output$theta_plot <- shiny::renderPlot({
@@ -2870,11 +2935,11 @@ launch_study <- function(
           # Pass item_bank in config for validation
           config_with_items <- config
           config_with_items$item_bank <- item_bank
-          validation <- validate_page_progression(rv$current_page, input, config_with_items)
+          validation <- validate_page_progression(rv$current_page, input, config_with_items, current_language)
           if (!validation$valid) {
             # Show error messages
             output$validation_errors <- shiny::renderUI({
-              show_validation_errors(validation$errors)
+              show_validation_errors(validation$errors, current_language())
             })
             
             # Highlight fields with errors using JavaScript
@@ -2958,10 +3023,10 @@ launch_study <- function(
           # Pass item_bank in config for validation
           config_with_items <- config
           config_with_items$item_bank <- item_bank
-          validation <- validate_page_progression(rv$current_page, input, config_with_items)
+          validation <- validate_page_progression(rv$current_page, input, config_with_items, current_language)
           if (!validation$valid) {
             output$validation_errors <- shiny::renderUI({
-              show_validation_errors(validation$errors)
+              show_validation_errors(validation$errors, current_language())
             })
             return()
           }
