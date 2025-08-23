@@ -1384,10 +1384,10 @@ launch_study <- function(
     # AGGRESSIVE corner flash prevention - MUST BE FIRST!
     shiny::tags$head(
       shiny::tags$style(shiny::HTML("
-        /* TARGETED corner flash prevention - Only main containers */
+        /* TARGETED corner flash prevention - ALL containers including loading */
         .page-wrapper, .assessment-card, #study_ui, 
         .shiny-html-output, .shiny-bound-output, #stable-page-container,
-        .container-fluid {
+        .container-fluid, #main-study-container, #instant-loading {
           margin: 0 auto !important;
           position: relative !important;
           left: 0 !important;
@@ -1438,12 +1438,14 @@ launch_study <- function(
               if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach(function(node) {
                   if (node.nodeType === 1) { // Element node
-                    // Only apply to main containers, not progress elements
+                    // Apply to main containers including loading elements
                     var isMainContainer = node.classList && (
                       node.classList.contains('page-wrapper') ||
                       node.classList.contains('assessment-card') ||
                       node.id === 'study_ui' ||
                       node.id === 'stable-page-container' ||
+                      node.id === 'main-study-container' ||
+                      node.id === 'instant-loading' ||
                       node.classList.contains('shiny-html-output')
                     );
                     
@@ -1466,6 +1468,16 @@ launch_study <- function(
             childList: true,
             subtree: true
           });
+          
+          // Hide loading message when page content appears
+          var checkForContent = setInterval(function() {
+            var pageContent = document.querySelector('#page_content .page-wrapper, #page_content .assessment-card');
+            var loadingDiv = document.getElementById('instant-loading');
+            if (pageContent && loadingDiv) {
+              loadingDiv.style.display = 'none';
+              clearInterval(checkForContent);
+            }
+          }, 100);
         })();
       "))
     ),
@@ -2309,16 +2321,18 @@ launch_study <- function(
       shiny::div(
         id = "main-study-container",
         style = "min-height: 500px; width: 100%; max-width: 100%; margin: 0 auto; padding: 0; position: relative; overflow: hidden;",
-        # Show loading message immediately while content loads
+        # Show loading message immediately while content loads - FORCED POSITIONING
         shiny::div(
           id = "instant-loading",
-          style = "text-align: center; padding: 60px; color: #e8041c;",
+          style = "position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; 
+                  margin: 0 auto !important; transform: none !important; width: 100% !important; 
+                  max-width: 1200px !important; text-align: center; padding: 60px; color: #e8041c;",
           shiny::h2(if (default_language == "de") "Wird geladen..." else "Loading...", 
-                   style = "margin-bottom: 20px;"),
+                   style = "position: relative !important; margin: 0 auto 20px auto !important; text-align: center !important;"),
           shiny::div(
-            style = "width: 40px; height: 40px; border: 4px solid #f3f3f3; 
+            style = "position: relative !important; width: 40px; height: 40px; border: 4px solid #f3f3f3; 
                     border-top: 4px solid #e8041c; border-radius: 50%; 
-                    animation: spin 1s linear infinite; margin: 0 auto;"
+                    animation: spin 1s linear infinite; margin: 0 auto !important;"
           )
         ),
         shiny::uiOutput("page_content")  # This will replace loading message
