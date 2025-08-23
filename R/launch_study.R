@@ -2620,9 +2620,9 @@ launch_study <- function(
           )
         }
         
-                  # Clean page wrapper with smooth transitions
+                  # STABLE container - ID never changes to prevent DOM replacement
           shiny::div(
-            id = paste0("page-", current_page),
+            id = "stable-page-container", # ← NEVER CHANGES!
             class = "page-wrapper",
             style = "width: 100%; max-width: 1200px; margin: 0 auto; position: relative;",
           base::switch(stage,
