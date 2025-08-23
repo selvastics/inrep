@@ -1381,6 +1381,106 @@ launch_study <- function(
     class = "full-width-app",
     if (requireNamespace("shinyjs", quietly = TRUE)) shinyjs::useShinyjs(),
     
+    # CORNER FLASH FIX - Targeted positioning prevention
+    shiny::tags$head(
+      shiny::tags$style(shiny::HTML("
+        /* TARGETED corner flash prevention - Only main containers */
+        .page-wrapper, .assessment-card, #study_ui, 
+        .shiny-html-output, .shiny-bound-output, #stable-page-container,
+        .container-fluid {
+          margin: 0 auto !important;
+          position: relative !important;
+          left: 0 !important;
+          right: 0 !important;
+          top: 0 !important;
+          transform: none !important;
+          width: 100% !important;
+          max-width: 1200px !important;
+        }
+        
+        /* PREVENT corner positioning for new elements */
+        [style*='position: absolute'], [style*='position: fixed'] {
+          position: relative !important;
+          left: 0 !important;
+          right: 0 !important;
+          top: 0 !important;
+          margin: 0 auto !important;
+        }
+        
+        /* PERFECT centering for progress elements */
+        .progress-circle-gradient {
+          position: relative !important;
+          display: block !important;
+          margin: 0 auto !important;
+          text-align: center !important;
+        }
+        
+        .progress-circle-gradient svg {
+          display: block !important;
+          margin: 0 auto !important;
+        }
+        
+        .progress-circle-gradient span {
+          position: absolute !important;
+          top: 50% !important;
+          left: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          margin: 0 !important;
+          text-align: center !important;
+          font-weight: bold !important;
+        }
+        
+        .session-status-indicator {
+          position: relative !important;
+          display: block !important;
+          margin: 10px auto !important;
+          text-align: center !important;
+          max-width: 300px !important;
+        }
+      ")),
+      
+      # JAVASCRIPT: Targeted positioning enforcement
+      shiny::tags$script(shiny::HTML("
+        // IMMEDIATE EXECUTION - Before anything else loads
+        (function() {
+          // Override positioning attempts for main containers only
+          var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+              if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach(function(node) {
+                  if (node.nodeType === 1) { // Element node
+                    // Only apply to main containers, not progress elements
+                    var isMainContainer = node.classList && (
+                      node.classList.contains('page-wrapper') ||
+                      node.classList.contains('assessment-card') ||
+                      node.id === 'study_ui' ||
+                      node.id === 'stable-page-container' ||
+                      node.classList.contains('shiny-html-output')
+                    );
+                    
+                    if (isMainContainer && node.style) {
+                      node.style.position = 'relative';
+                      node.style.left = '0';
+                      node.style.right = '0';
+                      node.style.top = '0';
+                      node.style.margin = '0 auto';
+                      node.style.transform = 'none';
+                    }
+                  }
+                });
+              }
+            });
+          });
+          
+          // Start observing immediately
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true
+          });
+        })();
+      "))
+    ),
+    
     # Add instant loading placeholder
     shiny::tags$div(
       id = "loading-placeholder",
@@ -2188,7 +2288,7 @@ launch_study <- function(
     if (session_save) {
       shiny::uiOutput("session_status_ui")
     },
-    shiny::uiOutput("study_ui")
+    shiny::uiOutput("study_ui", style = "position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; margin: 0 auto !important; transform: none !important; width: 100% !important; max-width: 1200px !important;")
   )
   
   server <- function(input, output, session) {
@@ -2606,11 +2706,11 @@ launch_study <- function(
           )
         }
         
-                  # Clean page wrapper with smooth transitions
+                  # STABLE container with IMMEDIATE positioning
           shiny::div(
-            id = paste0("page-", current_page),
+            id = "stable-page-container", # ← NEVER CHANGES!
             class = "page-wrapper",
-            style = "width: 100%; max-width: 1200px; margin: 0 auto; position: relative;",
+            style = "width: 100% !important; max-width: 1200px !important; margin: 0 auto !important; position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; transform: none !important; display: block !important;",
           base::switch(stage,
                    "custom_page_flow" = {
                      # Process and render custom page flow
