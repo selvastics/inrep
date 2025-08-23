@@ -1806,8 +1806,8 @@ study_config <- inrep::create_study_config(
     min_items = 51,  # Must show all items
     response_ui_type = "radio",
     progress_style = "bar",
-    language = "de"  # German only for now
-  session_save = TRUE,
+    language = "de",  # German only for now
+    session_save = TRUE,
   session_timeout = 7200,
   results_processor = create_hilfo_report,
   estimation_method = "EAP",  # Use EAP for ability estimation
