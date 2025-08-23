@@ -1109,7 +1109,7 @@ launch_study <- function(
     
     @keyframes fadeInCard {
       from {
-        opacity: 0;
+        opacity: 1;
       }
       to {
         opacity: 1;
@@ -1188,7 +1188,6 @@ launch_study <- function(
     
     .radio-group-container {
       margin: 25px 0;
-      padding-left: 30px;
     }
     
     .error-message {
@@ -1404,9 +1403,66 @@ launch_study <- function(
     ),
 
           shiny::tags$head(
+      # CRITICAL: Prevent corner flash - must be FIRST CSS rule
+      shiny::tags$style(HTML("
+        /* IMMEDIATE CORNER FLASH PREVENTION - Applied before any other CSS */
+        * {
+          box-sizing: border-box;
+        }
+        
+        body, html {
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        
+        .page-wrapper,
+        #study_ui,
+        #study_ui > *,
+        #study_ui > div,
+        .shiny-html-output,
+        .shiny-html-output > *,
+        .assessment-card,
+        .container-fluid,
+        .shiny-bound-output {
+          position: relative !important;
+          left: 0 !important;
+          right: 0 !important;
+          top: 0 !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          transform: none !important;
+          width: 100% !important;
+          max-width: 1200px !important;
+        }
+        
+        /* Hide ALL content initially to prevent corner flash */
+        #study_ui {
+          visibility: hidden !important;
+        }
+        
+        #study_ui.positioned {
+          visibility: visible !important;
+        }
+        
+        /* Force immediate centering */
+        .container-fluid {
+          display: block !important;
+          width: 100% !important;
+          max-width: 1200px !important;
+          margin: 0 auto !important;
+          padding: 0 15px !important;
+        }
+      ")),
+      
       # Hide loading placeholder once app loads
       shiny::tags$script(HTML("
         document.addEventListener('DOMContentLoaded', function() {
+          // IMMEDIATELY show content in correct position
+          setTimeout(function() {
+            document.getElementById('study_ui').className += ' positioned';
+            document.getElementById('study_ui').style.visibility = 'visible';
+          }, 1);
+          
           setTimeout(function() {
             var loader = document.getElementById('loading-placeholder');
             if (loader) {
@@ -1431,6 +1487,200 @@ launch_study <- function(
           from { opacity: 0; transform: translateX(20px); }
           to { opacity: 1; transform: translateX(0); }
         }
+      ")),
+      
+      # JavaScript to ensure proper positioning
+      shiny::tags$script(HTML("
+        // Smooth page transition handler
+        (function() {
+          let isTransitioning = false;
+          
+          // Add stable styles immediately to prevent corner flash
+          var style = document.createElement('style');
+          style.innerHTML = `
+            .page-wrapper, .assessment-card {
+              position: relative !important;
+              left: 0 !important;
+              right: 0 !important;
+              top: 0 !important;
+              margin: 0 auto !important;
+              transform: none !important;
+              opacity: 1 !important;
+              width: 100% !important;
+              max-width: 1200px !important;
+              visibility: visible !important;
+            }
+            
+            /* Prevent any content from appearing in corners */
+            #study_ui > *, 
+            .shiny-html-output > *,
+            .page-wrapper > * {
+              position: relative !important;
+              left: 0 !important;
+              right: 0 !important;
+              top: 0 !important;
+              margin-left: auto !important;
+              margin-right: auto !important;
+              transform: none !important;
+            }
+            
+            /* Hide content until properly positioned */
+            .page-wrapper {
+              visibility: hidden !important;
+            }
+            
+            .page-wrapper.positioned {
+              visibility: visible !important;
+            }
+          `;
+          document.head.appendChild(style);
+          
+          // Immediately apply positioning classes
+          function positionContent() {
+            $('.page-wrapper, #study_ui > div').each(function() {
+              $(this).css({
+                'position': 'relative',
+                'left': '0',
+                'right': '0',
+                'top': '0',
+                'margin': '0 auto',
+                'transform': 'none',
+                'width': '100%',
+                'max-width': '1200px'
+              }).addClass('positioned');
+            });
+          }
+          
+          // Apply immediately and repeatedly to catch all cases
+          positionContent();
+          setTimeout(positionContent, 1);
+          setTimeout(positionContent, 10);
+          setTimeout(positionContent, 50);
+          
+          // Also position the main study UI immediately
+          setTimeout(function() {
+            document.getElementById('study_ui').className += ' positioned';
+            document.getElementById('study_ui').style.visibility = 'visible';
+          }, 1);
+          
+          // Simple transition function with debouncing
+          function smoothTransition() {
+            if (isTransitioning) return;
+            isTransitioning = true;
+            
+            // Ensure stable positioning without flicker
+            $('.page-wrapper, .assessment-card').css({
+              'position': 'relative',
+              'left': '0',
+              'right': '0',
+              'margin': '0 auto',
+              'transform': 'none',
+              'opacity': '1'
+            });
+            
+            setTimeout(() => {
+              isTransitioning = false;
+            }, 100);
+          }
+          
+          // Apply on page load
+          smoothTransition();
+        })();
+        
+        // Handle Shiny updates with minimal interference
+        $(document).ready(function() {
+          let updateTimeout;
+          
+                                // Immediate positioning on any content change
+            $(document).on('shiny:value', function(event) {
+              // Immediately position any new content
+              $('.page-wrapper, .assessment-card').css({
+                'position': 'relative',
+                'left': '0',
+                'right': '0',
+                'top': '0',
+                'margin': '0 auto',
+                'transform': 'none',
+                'opacity': '1',
+                'width': '100%',
+                'max-width': '1200px'
+              });
+              
+              // Add positioned class immediately
+              $('.page-wrapper').addClass('positioned');
+            });
+            
+            // Handle stage transitions with immediate positioning
+            $(document).on('shiny:value', function(event) {
+              if (event.name === 'study_ui') {
+                // Immediately position new content to prevent corner flash
+                $('.page-wrapper').css({
+                  'visibility': 'hidden'
+                });
+                
+                setTimeout(function() {
+                  $('.page-wrapper').css({
+                    'position': 'relative',
+                    'left': '0',
+                    'right': '0', 
+                    'top': '0',
+                    'margin': '0 auto',
+                    'transform': 'none',
+                    'width': '100%',
+                    'max-width': '1200px',
+                    'visibility': 'visible'
+                  }).addClass('positioned');
+                }, 1);
+              }
+            });
+          
+                      // Watch for any new content and position it immediately
+            var observer = new MutationObserver(function(mutations) {
+              mutations.forEach(function(mutation) {
+                if (mutation.type === 'childList') {
+                  mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1) { // Element node
+                      var $node = $(node);
+                      if ($node.hasClass('page-wrapper') || $node.find('.page-wrapper').length > 0) {
+                        // Immediately position new page content
+                        $node.find('.page-wrapper, .assessment-card').addBack('.page-wrapper, .assessment-card').css({
+                          'position': 'relative',
+                          'left': '0',
+                          'right': '0',
+                          'top': '0',
+                          'margin': '0 auto',
+                          'transform': 'none',
+                          'width': '100%',
+                          'max-width': '1200px',
+                          'visibility': 'visible'
+                        }).addClass('positioned');
+                      }
+                    }
+                  });
+                }
+              });
+            });
+          
+          // Start observing immediately
+          if (document.getElementById('main-study-container')) {
+            observer.observe(document.getElementById('main-study-container'), {
+              childList: true,
+              subtree: true
+            });
+          } else {
+            // Observe the body if main container not found
+            observer.observe(document.body, {
+              childList: true,
+              subtree: true
+            });
+          }
+          
+          // Additional immediate positioning on page load
+          window.addEventListener('load', function() {
+            document.getElementById('study_ui').className += ' positioned';
+            document.getElementById('study_ui').style.visibility = 'visible';
+          });
+        });
       ")),
         shiny::tags$style(HTML("
           /* Simple full-width fix */
@@ -1477,44 +1727,95 @@ launch_study <- function(
           position: relative;
         }
         
-        /* Simple smooth fade-in for all pages (like main branch) */
-        .page-wrapper,
-        .assessment-card,
-        /* SMOOTH PAGE TRANSITIONS - Fixed positioning issues */
+        /* PREVENT CORNER FLASH - Content positioned immediately */
         .page-wrapper {
-          opacity: 0;
-          animation: smoothFadeIn 0.25s ease-out forwards;
-          position: relative !important;
           width: 100% !important;
+          max-width: 1200px !important;
           margin: 0 auto !important;
+          position: relative !important;
           left: 0 !important;
           right: 0 !important;
           top: 0 !important;
+          opacity: 1 !important;
+          transform: none !important;
+          visibility: hidden; /* Hidden until properly positioned */
         }
         
-        @keyframes smoothFadeIn {
-          from {
-            opacity: 0;
-            transform: scale(0.98);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
+        .page-wrapper.positioned {
+          visibility: visible !important;
         }
         
-        /* Assessment card - centered and stable */
+        /* Ensure all child elements are also properly positioned */
+        .page-wrapper > *,
         .assessment-card {
-          min-height: 400px;
-          width: 100%;
-          max-width: 800px !important;
-          margin: 20px auto !important;
-          padding: 20px;
-          box-sizing: border-box;
           position: relative !important;
           left: 0 !important;
           right: 0 !important;
+          top: 0 !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
           transform: none !important;
+          opacity: 1 !important;
+        }
+        
+        /* Specifically target Shiny output containers */
+        #study_ui,
+        .shiny-html-output {
+          position: relative !important;
+          left: 0 !important;
+          right: 0 !important;
+          top: 0 !important;
+          margin: 0 auto !important;
+          transform: none !important;
+          width: 100% !important;
+        }
+        
+        /* Prevent any content flash in corners - apply to all possible containers */
+        .container-fluid,
+        .shiny-output-error,
+        .shiny-bound-output {
+          position: relative !important;
+          left: 0 !important;
+          right: 0 !important;
+          top: 0 !important;
+          margin: 0 auto !important;
+          transform: none !important;
+        }
+        
+        /* Hide all content initially until positioned */
+        #study_ui > div:not(.positioned) {
+          visibility: hidden !important;
+        }
+        
+        #study_ui > div.positioned {
+          visibility: visible !important;
+        }
+        
+        /* Simple fade transition for stage changes */
+        .stage-transition {
+          opacity: 0.95;
+          transition: opacity 0.1s ease-out;
+        }
+        
+        /* Remove problematic animations */
+        @keyframes smoothFadeIn {
+          from { opacity: 1; }
+          to { opacity: 1; }
+        }
+        
+        /* Assessment card - stable and immediate */
+        .assessment-card {
+          min-height: 400px;
+          width: 100%;
+          max-width: 800px;
+          margin: 0 auto 30px auto;
+          padding: 40px;
+          border-radius: var(--border-radius);
+          box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+          border: 1px solid var(--secondary-color);
+          background-color: var(--background-color);
+          color: var(--text-color);
+          /* Remove animation completely */
         }
         
         /* Demographics, instructions, results pages */
@@ -1539,6 +1840,24 @@ launch_study <- function(
           position: relative !important;
           margin: 0 auto !important;
           transform: none !important;
+          left: 0 !important;
+          right: 0 !important;
+        }
+        
+        /* Fix Shiny's default positioning */
+        .shiny-html-output > * {
+          position: relative !important;
+          margin: 0 auto !important;
+        }
+        
+        /* Prevent any absolute positioning */
+        #page_content {
+          position: relative !important;
+          width: 100% !important;
+          left: 0 !important;
+          right: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
         }
         
         /* Main study container */
@@ -1875,6 +2194,14 @@ launch_study <- function(
   server <- function(input, output, session) {
     # ULTRA-FAST STARTUP: Show UI immediately, initialize everything else later
     
+    # Smooth stage transition helper
+    smooth_stage_transition <- function(rv, new_stage) {
+      # Prevent rapid stage changes that cause UI flicker
+      rv$stage <- new_stage
+      # Force UI update with minimal delay
+      shiny::invalidateLater(10, session)
+    }
+    
     # Step 1: Create minimal reactive values (no computation!)
     current_language <- shiny::reactiveVal(default_language)
     reactive_ui_labels <- shiny::reactiveVal(ui_labels)
@@ -1892,7 +2219,7 @@ launch_study <- function(
       # Return container with page_content that will be filled immediately
       shiny::div(
         id = "main-study-container",
-        style = "min-height: 500px; width: 100%; margin: 0 auto; padding: 0;",
+        style = "min-height: 500px; width: 100%; max-width: 100%; margin: 0 auto; padding: 0; position: relative; overflow: hidden;",
         shiny::uiOutput("page_content")  # This will be filled by renderUI below
       )
     })
