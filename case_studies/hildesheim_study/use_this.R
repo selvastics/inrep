@@ -2005,22 +2005,304 @@ monitor_adaptive <- function(session_data) {
   }
 }
 
-# Enhanced JavaScript for language switching AND radio deselection
-custom_js_enhanced <- paste0(custom_js, '
+# Complete JavaScript solution for FULL APP translation and radio deselection
+custom_js_enhanced <- '
+<style>
+/* Fixed language button on all pages */
+#language-toggle-btn {
+  position: fixed !important;
+  top: 10px !important;
+  right: 10px !important;
+  z-index: 9999 !important;
+  background: white !important;
+  border: 2px solid #e8041c !important;
+  color: #e8041c !important;
+  padding: 8px 16px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  font-weight: bold !important;
+}
+#language-toggle-btn:hover {
+  background: #e8041c !important;
+  color: white !important;
+}
+</style>
 <script>
-// Add language switcher to UI
-Shiny.addCustomMessageHandler("update_language", function(lang) {
-  // Update all UI elements based on language
-  var elements = document.querySelectorAll("[data-lang-de], [data-lang-en]");
-  elements.forEach(function(el) {
-    if (lang === "en" && el.getAttribute("data-lang-en")) {
-      el.textContent = el.getAttribute("data-lang-en");
-    } else if (el.getAttribute("data-lang-de")) {
-      el.textContent = el.getAttribute("data-lang-de");
+// Comprehensive translation dictionary for ENTIRE APP
+var translations = {
+  // Page titles
+  "Wohnsituation": "Living Situation",
+  "Soziodemographische Angaben": "Sociodemographic Information",
+  "Lebensstil": "Lifestyle",
+  "Bildung": "Education",
+  "Persönlichkeit": "Personality",
+  "Studienzufriedenheit": "Study Satisfaction",
+  "Ihre Ergebnisse": "Your Results",
+  
+  // Questions
+  "Wie wohnen Sie?": "How do you live?",
+  "Wie alt sind Sie?": "How old are you?",
+  "In welchem Studiengang befinden Sie sich?": "Which study program are you in?",
+  "Welches Geschlecht haben Sie?": "What is your gender?",
+  "Haben Sie ein Haustier oder möchten Sie eines?": "Do you have a pet or would you like one?",
+  "Rauchen Sie?": "Do you smoke?",
+  "Wie ernähren Sie sich hauptsächlich?": "What is your main diet?",
+  
+  // Options
+  "Bei meinen Eltern/Elternteil": "With my parents/parent",
+  "In einer WG/WG in einem Wohnheim": "In a shared apartment/dorm",
+  "Alleine/in abgeschlossener Wohneinheit in einem Wohnheim": "Alone/in a self-contained unit in a dorm",
+  "Mit meinem/r Partner*In (mit oder ohne Kinder)": "With my partner (with or without children)",
+  "Anders": "Other",
+  "Bachelor Psychologie": "Bachelor Psychology",
+  "Master Psychologie": "Master Psychology",
+  "weiblich oder divers": "female or diverse",
+  "männlich": "male",
+  "Ja": "Yes",
+  "Nein": "No",
+  "Hund": "Dog",
+  "Katze": "Cat",
+  "Fische": "Fish",
+  "Vogel": "Bird",
+  "Nager": "Rodent",
+  "Reptil": "Reptile",
+  "Ich möchte kein Haustier": "I don\'t want a pet",
+  "Sonstiges": "Other",
+  "Vegan": "Vegan",
+  "Vegetarisch": "Vegetarian",
+  "Pescetarisch": "Pescetarian",
+  "Flexitarisch": "Flexitarian",
+  "Omnivor (alles)": "Omnivore (everything)",
+  "Andere": "Other",
+  "älter als 30": "older than 30",
+  
+  // Instructions
+  "Falls anders, bitte spezifizieren:": "If other, please specify:",
+  "Anderes Haustier:": "Other pet:",
+  "Andere Ernährungsform:": "Other diet:",
+  "Bitte wählen...": "Please select...",
+  "Bitte wählen Sie": "Please select",
+  
+  // Navigation
+  "Seite": "Page",
+  "von": "of",
+  "Weiter": "Next",
+  "Zurück": "Back",
+  
+  // Validation messages
+  "Bitte beantworten Sie:": "Please answer:",
+  "Dieses Feld ist erforderlich": "This field is required",
+  "Bitte vervollständigen Sie die folgenden Angaben:": "Please complete the following:",
+  
+  // Likert scales
+  "trifft nicht zu": "strongly disagree",
+  "trifft eher nicht zu": "disagree",
+  "teils/teils": "neutral",
+  "trifft eher zu": "agree",
+  "trifft zu": "strongly agree",
+  "sehr gut": "very good",
+  "gut": "good",
+  "befriedigend": "satisfactory",
+  "ausreichend": "sufficient",
+  "mangelhaft": "poor",
+  
+  // Grade options
+  "sehr gut (15-13 Punkte)": "very good (15-13 points)",
+  "gut (12-10 Punkte)": "good (12-10 points)",
+  "befriedigend (9-7 Punkte)": "satisfactory (9-7 points)",
+  "ausreichend (6-4 Punkte)": "sufficient (6-4 points)",
+  "mangelhaft (3-0 Punkte)": "poor (3-0 points)",
+  
+  // Study hours
+  "0 Stunden": "0 hours",
+  "maximal eine Stunde": "maximum one hour",
+  "mehr als eine, aber weniger als 2 Stunden": "more than one, but less than 2 hours",
+  "mehr als zwei, aber weniger als 3 Stunden": "more than two, but less than 3 hours",
+  "mehr als drei, aber weniger als 4 Stunden": "more than three, but less than 4 hours",
+  "mehr als 4 Stunden": "more than 4 hours",
+  
+  // Satisfaction scale
+  "gar nicht zufrieden": "not at all satisfied",
+  "sehr zufrieden": "very satisfied",
+  
+  // Additional questions
+  "Welche Note hatten Sie in Englisch im Abiturzeugnis?": "What grade did you have in English in your Abitur certificate?",
+  "Welche Note hatten Sie in Mathematik im Abiturzeugnis?": "What grade did you have in Mathematics in your Abitur certificate?",
+  "Wieviele Stunden pro Woche planen Sie für die Vor- und Nachbereitung der Statistikveranstaltungen zu investieren?": "How many hours per week do you plan to invest in preparing and reviewing statistics courses?",
+  "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (5-stufig)": "How satisfied are you with your study location Hildesheim? (5-point scale)",
+  "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (7-stufig)": "How satisfied are you with your study location Hildesheim? (7-point scale)",
+  "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags):": "Please create a personal code (first 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday):",
+  
+  // Programming Anxiety titles
+  "Programmierangst - Teil 1": "Programming Anxiety - Part 1",
+  "Programmierangst - Teil 2": "Programming Anxiety - Part 2",
+  "Programmierangst": "Programming Anxiety",
+  
+  // Instructions
+  "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.": "Please indicate to what extent the following statements apply to you.",
+  "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.": "The following questions are selected based on your previous answers.",
+  "Wie sehr treffen die folgenden Aussagen auf Sie zu?": "How much do the following statements apply to you?",
+  "Wie leicht oder schwer fällt es Ihnen...": "How easy or difficult is it for you..."
+};
+
+var currentLang = "de";
+
+// Function to translate entire page
+function translatePage() {
+  if (currentLang === "en") {
+    // Translate all text nodes
+    var walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+      null,
+      false
+    );
+    
+    var node;
+    while (node = walker.nextNode()) {
+      var text = node.nodeValue.trim();
+      if (text && translations[text]) {
+        node.nodeValue = node.nodeValue.replace(text, translations[text]);
+      }
+    }
+    
+    // Translate select options
+    document.querySelectorAll("select option").forEach(function(option) {
+      var text = option.textContent.trim();
+      if (translations[text]) {
+        option.textContent = translations[text];
+      }
+    });
+    
+    // Translate labels
+    document.querySelectorAll("label").forEach(function(label) {
+      var text = label.textContent.trim();
+      if (translations[text]) {
+        label.textContent = translations[text];
+      }
+    });
+    
+    // Translate buttons
+    document.querySelectorAll("button").forEach(function(button) {
+      var text = button.textContent.trim();
+      if (translations[text]) {
+        button.textContent = translations[text];
+      }
+    });
+    
+    // Translate headings
+    document.querySelectorAll("h1, h2, h3, h4, h5, h6").forEach(function(heading) {
+      var text = heading.textContent.trim();
+      if (translations[text]) {
+        heading.textContent = translations[text];
+      }
+    });
+    
+    // Translate placeholders
+    document.querySelectorAll("[placeholder]").forEach(function(elem) {
+      var text = elem.placeholder;
+      if (translations[text]) {
+        elem.placeholder = translations[text];
+      }
+    });
+  }
+}
+
+// Global language toggle function
+window.toggleLanguage = function() {
+  currentLang = currentLang === "de" ? "en" : "de";
+  
+  // Update button text
+  var btn = document.getElementById("language-toggle-btn");
+  if (btn) {
+    btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+  }
+  
+  // Send to Shiny
+  if (typeof Shiny !== "undefined") {
+    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+  }
+  
+  // Store preference
+  sessionStorage.setItem("hilfo_language", currentLang);
+  
+  // Reload page to apply translations
+  location.reload();
+};
+
+// Apply translations on page load
+document.addEventListener("DOMContentLoaded", function() {
+  // Create language toggle button if it doesn\'t exist
+  if (!document.getElementById("language-toggle-btn")) {
+    var btn = document.createElement("button");
+    btn.id = "language-toggle-btn";
+    btn.textContent = "English Version";
+    btn.onclick = toggleLanguage;
+    document.body.appendChild(btn);
+  }
+  
+  // Check stored language
+  var stored = sessionStorage.getItem("hilfo_language");
+  if (stored) {
+    currentLang = stored;
+    var btn = document.getElementById("language-toggle-btn");
+    if (btn) {
+      btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    }
+  }
+  
+  // Apply translations if English
+  if (currentLang === "en") {
+    setTimeout(translatePage, 100);
+  }
+  
+  // Watch for page changes
+  var observer = new MutationObserver(function(mutations) {
+    if (currentLang === "en") {
+      setTimeout(translatePage, 50);
+    }
+  });
+  
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+  
+  // Radio button deselection
+  document.addEventListener("click", function(e) {
+    if (e.target && e.target.type === "radio") {
+      var wasChecked = e.target.getAttribute("data-was-checked") === "true";
+      
+      var radios = document.querySelectorAll("input[name=\\"" + e.target.name + "\\"]");
+      for (var i = 0; i < radios.length; i++) {
+        radios[i].setAttribute("data-was-checked", "false");
+      }
+      
+      if (wasChecked) {
+        e.target.checked = false;
+        if (typeof Shiny !== "undefined") {
+          Shiny.setInputValue(e.target.name, null, {priority: "event"});
+        }
+      } else {
+        e.target.setAttribute("data-was-checked", "true");
+      }
     }
   });
 });
-</script>')
+
+// Handle Shiny messages
+if (typeof Shiny !== "undefined") {
+  Shiny.addCustomMessageHandler("update_language", function(lang) {
+    currentLang = lang;
+    if (lang === "en") {
+      translatePage();
+    } else {
+      location.reload(); // Reload for German
+    }
+  });
+}
+</script>'
 
 # Server extensions for language handling
 server_extensions <- function(input, output, session) {
