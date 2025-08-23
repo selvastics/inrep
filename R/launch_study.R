@@ -2057,15 +2057,10 @@ launch_study <- function(
     
           # Render the main container immediately
       output$study_ui <- shiny::renderUI({
-        # Defer package loading to avoid blocking UI
-        if (!.packages_loaded && has_later) {
-          later::later(function() {
-            .load_packages_once()
-          }, delay = 0.01)  # Minimal delay to allow UI to render first
-        } else if (!.packages_loaded) {
-          # Fallback if later not available
-          .load_packages_once()
-        }
+              # Load packages immediately if needed
+      if (!.packages_loaded) {
+        .load_packages_once()
+      }
         
         # Create the main container immediately
         shiny::div(
@@ -2098,9 +2093,9 @@ launch_study <- function(
             class = "page-wrapper",
             style = "width: 100%; max-width: 1200px; margin: 0 auto;",
           base::switch(stage,
-                   "custom_page_flow" = {
-                     # Process and render custom page flow
-                     process_page_flow(config, rv, input, output, session, item_bank, ui_labels, logger)
+                                     "custom_page_flow" = {
+                    # Process and render custom page flow
+                    process_page_flow(config, rv, input, output, session, item_bank, ui_labels, logger, current_language)
                    },
                    "error" = {
                      shiny::div(class = "assessment-card error-card",

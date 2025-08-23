@@ -27,7 +27,7 @@ create_custom_page_flow <- function(pages) {
 
 #' Process custom page flow for UI rendering
 #' @export
-process_page_flow <- function(config, rv, input, output, session, item_bank, ui_labels, logger) {
+process_page_flow <- function(config, rv, input, output, session, item_bank, ui_labels, logger, current_language = NULL) {
   
   # Check if custom page flow is defined
   if (is.null(config$custom_page_flow)) {
@@ -43,18 +43,35 @@ process_page_flow <- function(config, rv, input, output, session, item_bank, ui_
     return(NULL)
   }
   
+  # Get current language from reactive value if available
+  current_lang <- if (!is.null(current_language) && is.function(current_language)) {
+    current_language()
+  } else {
+    config$language %||% "de"
+  }
+  
+  # Use language-specific title if available
+  if (current_lang == "en" && !is.null(current_page$title_en)) {
+    current_page$title <- current_page$title_en
+  }
+  
+  # Use language-specific instructions if available
+  if (current_lang == "en" && !is.null(current_page$instructions_en)) {
+    current_page$instructions <- current_page$instructions_en
+  }
+  
   # Render page based on type
   page_ui <- switch(current_page$type,
     
-    "instructions" = render_instructions_page(current_page, config, ui_labels),
+    "instructions" = render_instructions_page(current_page, config, ui_labels, current_lang),
     
-    "demographics" = render_demographics_page(current_page, config, rv, ui_labels),
+    "demographics" = render_demographics_page(current_page, config, rv, ui_labels, current_lang),
     
-    "items" = render_items_page(current_page, config, rv, item_bank, ui_labels),
+    "items" = render_items_page(current_page, config, rv, item_bank, ui_labels, current_lang),
     
-    "custom" = render_custom_page(current_page, config, rv, ui_labels, input),
+    "custom" = render_custom_page(current_page, config, rv, ui_labels, input, current_lang),
     
-    "results" = render_results_page(current_page, config, rv, item_bank, ui_labels),
+    "results" = render_results_page(current_page, config, rv, item_bank, ui_labels, current_lang),
     
     # Default fallback
     shiny::div(
@@ -75,7 +92,7 @@ process_page_flow <- function(config, rv, input, output, session, item_bank, ui_
 }
 
 #' Render instructions page
-render_instructions_page <- function(page, config, ui_labels) {
+render_instructions_page <- function(page, config, ui_labels, current_lang = "de") {
   shiny::div(
     class = "assessment-card",
     style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
@@ -99,7 +116,7 @@ render_instructions_page <- function(page, config, ui_labels) {
 }
 
 #' Render demographics page
-render_demographics_page <- function(page, config, rv, ui_labels) {
+render_demographics_page <- function(page, config, rv, ui_labels, current_lang = "de") {
   # Get demographics for this page
   demo_vars <- page$demographics %||% config$demographics
   
@@ -148,7 +165,7 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
 }
 
 #' Render items page with pagination
-render_items_page <- function(page, config, rv, item_bank, ui_labels) {
+render_items_page <- function(page, config, rv, item_bank, ui_labels, current_lang = "de") {
   # Get items for this page
   if (!is.null(page$item_indices)) {
     page_items <- item_bank[page$item_indices, ]
@@ -202,7 +219,7 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
 }
 
 #' Render custom page
-render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
+render_custom_page <- function(page, config, rv, ui_labels, input = NULL, current_lang = "de") {
   # Special handling for filter page
   if (page$id == "page3" || page$title == "Filter") {
     # Load validation module if needed for filter functionality
@@ -236,7 +253,7 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
 }
 
 #' Render results page
-render_results_page <- function(page, config, rv, item_bank, ui_labels) {
+render_results_page <- function(page, config, rv, item_bank, ui_labels, current_lang = "de") {
   # Use custom results processor if available
   if (!is.null(config$results_processor) && is.function(config$results_processor)) {
     # Check if function accepts demographics parameter

@@ -371,7 +371,8 @@ custom_page_flow <- list(
   list(
     id = "page1",
     type = "custom",
-    title = "Willkommen zur HilFo Studie / Welcome to the HilFo Study",
+    title = "Willkommen zur HilFo Studie",
+    title_en = "Welcome to the HilFo Study",
     content = paste0(
       '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
       # Language switcher in top right corner
@@ -429,40 +430,39 @@ custom_page_flow <- list(
       '</label>',
       '</div>',
       '</div>',
-      # JavaScript for language switching - FIXED VERSION
-      '<script type="text/javascript">',
-      'var currentLang = \"de\";',
-      '',
-      'window.toggleLanguage = function() {',
-      '  console.log(\"Toggle language clicked!\");',
-      '  var btn = document.getElementById(\"lang_switch\");',
-      '  var deContent = document.getElementById(\"content_de\");',
-      '  var enContent = document.getElementById(\"content_en\");',
+      # JavaScript for language switching
+      '<script>',
+      'var currentLang = "de";',
+      'function toggleLanguage() {',
+      '  console.log("Toggle language clicked!");',
+      '  var btn = document.getElementById("lang_switch");',
+      '  var deContent = document.getElementById("content_de");',
+      '  var enContent = document.getElementById("content_en");',
       '  ',
       '  if (!deContent || !enContent) {',
-      '    console.log(\"Content divs not found!\");',
+      '    console.log("Content divs not found!");',
       '    return;',
       '  }',
       '  ',
-      '  if (currentLang === \"de\") {',
-      '    currentLang = \"en\";',
-      '    deContent.style.display = \"none\";',
-      '    enContent.style.display = \"block\";',
-      '    if (btn) btn.innerHTML = \"🇩🇪 Deutsche Version\";',
-      '    console.log(\"Switched to English\");',
+      '  if (currentLang === "de") {',
+      '    currentLang = "en";',
+      '    deContent.style.display = "none";',
+      '    enContent.style.display = "block";',
+      '    if (btn) btn.innerHTML = "🇩🇪 Deutsche Version";',
+      '    console.log("Switched to English");',
       '  } else {',
-      '    currentLang = \"de\";',
-      '    deContent.style.display = \"block\";',
-      '    enContent.style.display = \"none\";',
-      '    if (btn) btn.innerHTML = \"🇬🇧 English Version\";',
-      '    console.log(\"Switched to German\");',
+      '    currentLang = "de";',
+      '    deContent.style.display = "block";',
+      '    enContent.style.display = "none";',
+      '    if (btn) btn.innerHTML = "🇬🇧 English Version";',
+      '    console.log("Switched to German");',
       '  }',
       '  ',
       '  // Sync checkboxes',
-      '  var deCheck = document.getElementById(\"consent_check\");',
-      '  var enCheck = document.getElementById(\"consent_check_en\");',
+      '  var deCheck = document.getElementById("consent_check");',
+      '  var enCheck = document.getElementById("consent_check_en");',
       '  if (deCheck && enCheck) {',
-      '    if (currentLang === \"en\") {',
+      '    if (currentLang === "en") {',
       '      enCheck.checked = deCheck.checked;',
       '    } else {',
       '      deCheck.checked = enCheck.checked;',
@@ -471,18 +471,18 @@ custom_page_flow <- list(
       '  ',
       '  // Store language preference',
       '  try {',
-      '    localStorage.setItem(\"hilfo_language\", currentLang);',
-      '    sessionStorage.setItem(\"hilfo_language\", currentLang);',
+      '    localStorage.setItem("hilfo_language", currentLang);',
+      '    sessionStorage.setItem("hilfo_language", currentLang);',
       '  } catch(e) {',
-      '    console.log(\"Could not save language preference\");',
+      '    console.log("Could not save language preference");',
       '  }',
       '  ',
       '  // Tell Shiny to switch language for all pages',
-      '  if (typeof Shiny !== \"undefined\") {',
-      '    Shiny.setInputValue(\"study_language\", currentLang, {priority: \"event\"});',
-      '    console.log(\"Sent language to Shiny:\", currentLang);',
+      '  if (typeof Shiny !== "undefined") {',
+      '    Shiny.setInputValue("study_language", currentLang, {priority: "event"});',
+      '    console.log("Sent language to Shiny:", currentLang);',
       '  }',
-      '};',
+      '}',
       '</script>',
       '</div>'
     ),
@@ -494,7 +494,8 @@ custom_page_flow <- list(
   list(
     id = "page2",
     type = "demographics",
-    title = "Soziodemographische Angaben / Sociodemographic Information",
+    title = "Soziodemographische Angaben",
+    title_en = "Sociodemographic Information",
     demographics = c("Alter_VPN", "Studiengang", "Geschlecht")
   ),
   
@@ -502,7 +503,8 @@ custom_page_flow <- list(
   list(
     id = "page3",
     type = "demographics",
-    title = "Wohnsituation / Living Situation",
+    title = "Wohnsituation",
+    title_en = "Living Situation",
     demographics = c("Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz")
   ),
   
@@ -510,7 +512,8 @@ custom_page_flow <- list(
   list(
     id = "page4",
     type = "demographics",
-    title = "Lebensstil / Lifestyle",
+    title = "Lebensstil",
+    title_en = "Lifestyle",
     demographics = c("Rauchen", "Ernährung", "Ernährung_Zusatz")
   ),
   
@@ -518,7 +521,8 @@ custom_page_flow <- list(
   list(
     id = "page5",
     type = "demographics",
-    title = "Bildung / Education",
+    title = "Bildung",
+    title_en = "Education",
     demographics = c("Note_Englisch", "Note_Mathe")
   ),
   
@@ -526,29 +530,34 @@ custom_page_flow <- list(
   list(
     id = "page6",
     type = "items",
-    title = "Persönlichkeit - Teil 1 / Personality - Part 1",
-    instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen. / Please indicate to what extent the following statements apply to you.",
+    title = "Persönlichkeit - Teil 1",
+    title_en = "Personality - Part 1",
+    instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
+    instructions_en = "Please indicate to what extent the following statements apply to you.",
     item_indices = 1:5,  # Mixed first items
     scale_type = "likert"
   ),
   list(
     id = "page7",
     type = "items",
-    title = "Persönlichkeit - Teil 2 / Personality - Part 2",
+    title = "Persönlichkeit - Teil 2",
+    title_en = "Personality - Part 2",
     item_indices = 6:10,  # Mixed second items
     scale_type = "likert"
   ),
   list(
     id = "page8",
     type = "items",
-    title = "Persönlichkeit - Teil 3 / Personality - Part 3",
+    title = "Persönlichkeit - Teil 3",
+    title_en = "Personality - Part 3",
     item_indices = 11:15,  # Mixed third items
     scale_type = "likert"
   ),
   list(
     id = "page9",
     type = "items",
-    title = "Persönlichkeit - Teil 4 / Personality - Part 4",
+    title = "Persönlichkeit - Teil 4",
+    title_en = "Personality - Part 4",
     item_indices = 16:20,  # Mixed fourth items
     scale_type = "likert"
   ),
@@ -557,8 +566,10 @@ custom_page_flow <- list(
   list(
     id = "page10",
     type = "items",
-    title = "Stress / Stress",
-    instructions = "Wie sehr treffen die folgenden Aussagen auf Sie zu? / How much do the following statements apply to you?",
+    title = "Stress",
+    title_en = "Stress",
+    instructions = "Wie sehr treffen die folgenden Aussagen auf Sie zu?",
+    instructions_en = "How much do the following statements apply to you?",
     item_indices = 21:25,
     scale_type = "likert"
   ),
@@ -567,8 +578,10 @@ custom_page_flow <- list(
   list(
     id = "page11",
     type = "items",
-    title = "Studierfähigkeiten / Study Skills",
-    instructions = "Wie leicht oder schwer fällt es Ihnen... / How easy or difficult is it for you...",
+    title = "Studierfähigkeiten",
+    title_en = "Study Skills",
+    instructions = "Wie leicht oder schwer fällt es Ihnen...",
+    instructions_en = "How easy or difficult is it for you...",
     item_indices = 26:29,
     scale_type = "difficulty"
   ),
@@ -577,7 +590,8 @@ custom_page_flow <- list(
   list(
     id = "page12",
     type = "items",
-    title = "Statistik / Statistics",
+    title = "Statistik",
+    title_en = "Statistics",
     item_indices = 30:31,
     scale_type = "likert"
   ),
@@ -586,7 +600,8 @@ custom_page_flow <- list(
   list(
     id = "page13",
     type = "demographics",
-    title = "Studienzufriedenheit / Study Satisfaction",
+    title = "Studienzufriedenheit",
+    title_en = "Study Satisfaction",
     demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st", "Persönlicher_Code")
   ),
   
@@ -594,7 +609,8 @@ custom_page_flow <- list(
   list(
     id = "page14",
     type = "results",
-    title = "Ihre Ergebnisse / Your Results"
+    title = "Ihre Ergebnisse",
+    title_en = "Your Results"
   )
 )
 
