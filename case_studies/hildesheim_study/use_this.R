@@ -214,8 +214,11 @@ get_items_for_language <- function(lang = "de") {
   return(items)
 }
 
-# Default to German
-all_items <- get_items_for_language("de")
+# Create bilingual item bank with both languages
+all_items <- all_items_de
+# Ensure the item bank has the correct structure for bilingual support
+all_items$question_de <- all_items$Question
+all_items$question_en <- all_items$Question_EN
 
 # =============================================================================
 # COMPLETE DEMOGRAPHICS (ALL VARIABLES FROM SPSS) - BILINGUAL
@@ -1808,6 +1811,8 @@ study_config <- inrep::create_study_config(
     progress_style = "bar",
     language = "de",
     bilingual = TRUE,  # Enable bilingual support
+    language_selector = TRUE,  # Show language selector
+    translate_ui = TRUE,  # Enable UI translation
   session_save = TRUE,
   session_timeout = 7200,
   results_processor = create_hilfo_report,
@@ -2124,29 +2129,48 @@ monitor_adaptive <- function(session_data) {
 # Add a reactive hook to handle language switching for items
 inrep::launch_study(
     config = study_config,
-    item_bank = all_items_de,  # Contains both Question and Question_EN
+    item_bank = all_items,  # Bilingual item bank with question_de and question_en
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
     save_format = "csv",
     custom_css = custom_js,  # Add custom JavaScript for language toggle and deselection
     admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
+    language_options = list(
+        de = "Deutsch",
+        en = "English"
+    ),
     # Add server-side logic to handle language switching
     server_extensions = function(input, output, session) {
+        # Initialize language
+        session$userData$current_language <- "de"
+        
         # Observe language changes
         observeEvent(input$study_language, {
             lang <- input$study_language
             if (!is.null(lang)) {
                 cat("Language switched to:", lang, "\n")
+                session$userData$current_language <- lang
                 
-                # Update the item bank to use the correct language
-                if (lang == "en") {
-                    # Use English questions
-                    session$userData$current_language <- "en"
-                    # This will be used by the results processor
-                } else {
-                    session$userData$current_language <- "de"
-                }
+                # Force UI refresh to apply translations
+                # The JavaScript will handle the translation
+                session$sendCustomMessage("language_changed", lang)
             }
         })
+        
+        # Override the item rendering to use correct language
+        session$userData$get_item_text <- function(item_id) {
+            lang <- session$userData$current_language
+            if (is.null(lang)) lang <- "de"
+            
+            item_row <- all_items_de[all_items_de$id == item_id, ]
+            if (nrow(item_row) > 0) {
+                if (lang == "en" && "Question_EN" %in% names(item_row)) {
+                    return(item_row$Question_EN[1])
+                } else {
+                    return(item_row$Question[1])
+                }
+            }
+            return("")
+        }
     }
 )
