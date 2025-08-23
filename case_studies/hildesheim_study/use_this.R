@@ -9,12 +9,27 @@ suppressPackageStartupMessages({
   library(inrep)
 })
 
-# Helper function for lazy loading
+# Use later package for deferred loading of heavy packages
+if (!requireNamespace("later", quietly = TRUE)) {
+  install.packages("later", quiet = TRUE)
+}
+
+# Helper function for lazy loading - optimized version
 .load_if_needed <- function(pkg) {
   if (!requireNamespace(pkg, quietly = TRUE)) {
-    stop(paste("Package", pkg, "is required but not installed"))
+    message(paste("Installing required package:", pkg))
+    install.packages(pkg, quiet = TRUE)
   }
+  # Don't load yet, just ensure it's available
+  invisible(TRUE)
 }
+
+# Schedule heavy package checks for after startup
+later::later(function() {
+  .load_if_needed("ggplot2")
+  .load_if_needed("base64enc")
+  .load_if_needed("httr")
+}, delay = 0.1)  # Load after UI is ready
 
 # =============================================================================
 # CLOUD STORAGE CREDENTIALS - Hildesheim Study Folder
@@ -755,9 +770,13 @@ window.toggleLanguage = toggleLanguage;
 # =============================================================================
 
 create_hilfo_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
-  # Lazy load packages only when needed for faster startup
-  .load_if_needed("ggplot2")
-  .load_if_needed("base64enc")
+  # Lazy load packages only when actually needed
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop("ggplot2 package is required for report generation")
+  }
+  if (!requireNamespace("base64enc", quietly = TRUE)) {
+    stop("base64enc package is required for report generation")
+  }
   
   # Get current language from session if available
   current_lang <- "de"  # Default to German
@@ -1814,37 +1833,42 @@ study_config <- inrep::create_study_config(
     demographic_configs = demographic_configs,
     input_types = input_types,
     model = "2PL",  # Use 2PL model for IRT
-    adaptive = FALSE,  # Disable adaptive for now since we use custom_page_flow
+    adaptive = TRUE,  # Enable adaptive for PA items
     max_items = 51,  # Total items in bank
     min_items = 51,  # Must show all items
+    criteria = "MFI",  # Maximum Fisher Information
     response_ui_type = "radio",
     progress_style = "bar",
-    language = "de",  # German only for now
+    language = "de",  # Start with German
+    bilingual = TRUE,  # Enable bilingual support
     session_save = TRUE,
-  session_timeout = 7200,
-  results_processor = create_hilfo_report,
-  estimation_method = "EAP",  # Use EAP for ability estimation
-  page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
-  item_bank = all_items,  # Full item bank
-  save_to_file = TRUE,
-  save_format = "csv",
-  cloud_storage = TRUE,
-  enable_download = TRUE,
-  # Enhanced download options for Hildesheim
-  download_formats = c("pdf", "csv", "json"),
-  download_handler = create_hilfo_download_handler(),
-  export_options = list(
-    include_raw_responses = TRUE,
-    include_demographics = TRUE,
-    include_timestamps = TRUE,
-    include_plots = TRUE,
-    pdf_template = "hildesheim",
-    csv_separator = ";",  # German standard
-    json_pretty = TRUE
-  ),
-  # Don't override the built-in Hildesheim theme
-  custom_css = NULL,
-  allow_deselect = TRUE  # Allow response deselection
+    session_timeout = 7200,
+    results_processor = create_hilfo_report,
+    estimation_method = "EAP",  # Use EAP for ability estimation
+    page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
+    item_bank = all_items,  # Full item bank
+    save_to_file = TRUE,
+    save_format = "csv",
+    cloud_storage = TRUE,
+    enable_download = TRUE,
+    # Enhanced download options for Hildesheim
+    download_formats = c("pdf", "csv", "json"),
+    download_handler = create_hilfo_download_handler(),
+    export_options = list(
+      include_raw_responses = TRUE,
+      include_demographics = TRUE,
+      include_timestamps = TRUE,
+      include_plots = TRUE,
+      pdf_template = "hildesheim",
+      csv_separator = ";",  # German standard
+      json_pretty = TRUE
+    ),
+    # Adaptive settings for PA items
+    fixed_items = c(1:5, 21:51),  # First 5 PA are fixed, then all BFI+ are fixed
+    adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
+    # Don't override the built-in Hildesheim theme
+    custom_css = NULL,
+    allow_deselect = TRUE  # Allow response deselection
 )
 
 cat("\n================================================================================\n")
@@ -1884,7 +1908,7 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>'
 
 monitor_adaptive <- function(session_data) {
-  # Check if we're in adaptive PA phase (items 6-10)
+  # Enhanced adaptive monitoring with full output
   if (!is.null(session_data$current_item)) {
     item_num <- session_data$current_item
     
@@ -1894,45 +1918,145 @@ monitor_adaptive <- function(session_data) {
       cat(sprintf("ADAPTIVE ITEM SELECTION - Programming Anxiety Item %d\n", item_num))
       cat("================================================================================\n")
       
-      # Calculate current theta estimate
-      if (!is.null(session_data$theta)) {
-        cat(sprintf("Current ability estimate: theta=%.3f, SE=%.3f\n", 
-                   session_data$theta, session_data$se))
+      # Get responses so far
+      responses <- session_data$responses
+      if (!is.null(responses) && length(responses) >= 5) {
+        # Calculate current theta using Newton-Raphson
+        pa_responses <- responses[1:min(length(responses), 10)]
+        
+        # Quick theta estimation
+        theta_est <- 0
+        for (iter in 1:5) {
+          a_params <- all_items_de$a[1:length(pa_responses)]
+          b_params <- all_items_de$b[1:length(pa_responses)]
+          
+          # 2PL probability
+          probs <- 1 / (1 + exp(-a_params * (theta_est - b_params)))
+          
+          # Convert responses to 0-1
+          resp_binary <- (pa_responses - 1) / 4
+          
+          # Newton-Raphson update
+          first_deriv <- sum(a_params * (resp_binary - probs))
+          second_deriv <- -sum(a_params^2 * probs * (1 - probs))
+          
+          if (abs(second_deriv) > 0.01) {
+            theta_est <- theta_est - first_deriv / second_deriv
+          }
+        }
+        
+        # Calculate SE
+        info <- sum(a_params^2 * (1/(1+exp(-a_params*(theta_est-b_params)))) * 
+                   (1 - 1/(1+exp(-a_params*(theta_est-b_params)))))
+        se_est <- 1 / sqrt(info)
+        
+        cat(sprintf("Current ability estimate: theta = %.3f, SE = %.3f\n", theta_est, se_est))
+        cat(sprintf("Test information so far: %.3f\n", info))
       }
       
-      # Show item pool info
+      # Show item pool analysis
       available_items <- 6:20
-      already_shown <- if (!is.null(session_data$administered)) {
-        session_data$administered[session_data$administered <= 20]
-      } else {
-        1:5
-      }
+      already_shown <- 1:(item_num-1)
       remaining <- setdiff(available_items, already_shown)
       
-      if (length(remaining) > 5) {
-        cat(sprintf("Available items in adaptive pool: %d items remaining\n", length(remaining)))
-        cat("\nItem Information Analysis:\n")
+      cat(sprintf("\nAdaptive pool status:\n"))
+      cat(sprintf("  Items administered: %s\n", paste(already_shown, collapse=", ")))
+      cat(sprintf("  Items remaining: %d items (", length(remaining)))
+      cat(paste(head(remaining, 5), collapse=", "))
+      if (length(remaining) > 5) cat("...")
+      cat(")\n\n")
+      
+      # Calculate information for next items
+      if (exists("theta_est") && length(remaining) > 0) {
+        cat("Item Information Values for candidate items:\n")
         
-        # Show why this item was selected
-        cat(sprintf("   Selected: Item %d (PA_%02d)\n", item_num, item_num))
-        cat(sprintf("   Difficulty: b = %.2f\n", all_items_de$b[item_num]))
-        cat(sprintf("   Discrimination: a = %.2f\n", all_items_de$a[item_num]))
-        cat("   Selection criterion: Maximum Fisher Information\n")
+        # Calculate Fisher Information for top candidates
+        for (idx in head(remaining, 5)) {
+          a <- all_items_de$a[idx]
+          b <- all_items_de$b[idx]
+          p <- 1 / (1 + exp(-a * (theta_est - b)))
+          info <- a^2 * p * (1 - p)
+          
+          if (idx == item_num) {
+            cat(sprintf("  → Item %2d (PA_%02d): I = %.4f, b = %5.2f, a = %.2f *** SELECTED ***\n",
+                       idx, idx, info, b, a))
+          } else {
+            cat(sprintf("    Item %2d (PA_%02d): I = %.4f, b = %5.2f, a = %.2f\n",
+                       idx, idx, info, b, a))
+          }
+        }
+        
+        cat(sprintf("\nSelection criterion: Maximum Fisher Information at theta = %.3f\n", theta_est))
       }
       
       cat("================================================================================\n\n")
     }
   }
+  
+  # Also output general session info periodically
+  if (!is.null(session_data$progress)) {
+    if (session_data$progress %% 10 == 0) {  # Every 10% progress
+      cat(sprintf("[SESSION] Progress: %d%% | Items: %d/%d | Time: %s\n",
+                 session_data$progress,
+                 length(session_data$responses),
+                 session_data$total_items,
+                 format(Sys.time(), "%H:%M:%S")))
+    }
+  }
 }
 
-# Launch with cloud storage, adaptive testing, and custom JavaScript
-# Add a reactive hook to handle language switching for items
+# Enhanced JavaScript for language switching AND radio deselection
+custom_js_enhanced <- paste0(custom_js, '
+<script>
+// Add language switcher to UI
+Shiny.addCustomMessageHandler("update_language", function(lang) {
+  // Update all UI elements based on language
+  var elements = document.querySelectorAll("[data-lang-de], [data-lang-en]");
+  elements.forEach(function(el) {
+    if (lang === "en" && el.getAttribute("data-lang-en")) {
+      el.textContent = el.getAttribute("data-lang-en");
+    } else if (el.getAttribute("data-lang-de")) {
+      el.textContent = el.getAttribute("data-lang-de");
+    }
+  });
+});
+</script>')
+
+# Server extensions for language handling
+server_extensions <- function(input, output, session) {
+  # Track current language
+  session$userData$current_language <- reactiveVal("de")
+  
+  # Handle language switching
+  observeEvent(input$study_language, {
+    new_lang <- input$study_language
+    session$userData$current_language(new_lang)
+    
+    # Update item bank language
+    if (new_lang == "en") {
+      session$userData$item_bank <- all_items_de
+      session$userData$item_bank$Question <- all_items_de$Question_EN
+    } else {
+      session$userData$item_bank <- all_items_de
+    }
+    
+    # Send message to update UI
+    session$sendCustomMessage("update_language", new_lang)
+  })
+}
+
+# Launch with cloud storage, adaptive testing, and enhanced features
 inrep::launch_study(
     config = study_config,
-    item_bank = all_items,  # German item bank
+    item_bank = all_items_de,  # Bilingual item bank
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
     save_format = "csv",
-    custom_css = custom_js,  # Radio button deselection JavaScript
-    admin_dashboard_hook = monitor_adaptive  # Monitor adaptive selection
+    custom_css = custom_js_enhanced,  # Enhanced JavaScript
+    admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
+    server_extensions = server_extensions,  # Add server-side language handling
+    language_options = list(
+      de = "Deutsch",
+      en = "English"
+    )
 )
