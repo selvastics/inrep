@@ -1849,84 +1849,183 @@ custom_js <- '
 <script>
 var currentLang = "de";
 
+// COMPLETE TRANSLATION DICTIONARY
+var translations = {
+  // Welcome page
+  "Willkommen zur HilFo Studie": "Welcome to the HilFo Study",
+  "Liebe Studierende,": "Dear Students,",
+  
+  // Buttons
+  "Weiter": "Next",
+  "Zurück": "Back",
+  "Absenden": "Submit",
+  "Fertig": "Finish",
+  "Speichern": "Save",
+  "Abbrechen": "Cancel",
+  "Bitte wählen...": "Please select...",
+  
+  // Progress
+  "Seite": "Page",
+  " von ": " of ",
+  
+  // Page titles
+  "Programmierangst - Teil 1": "Programming Anxiety - Part 1",
+  "Programmierangst - Teil 2": "Programming Anxiety - Part 2",
+  "Programmierangst": "Programming Anxiety",
+  "Persönlichkeit - Teil 1": "Personality - Part 1",
+  "Persönlichkeit - Teil 2": "Personality - Part 2",
+  "Persönlichkeit - Teil 3": "Personality - Part 3",
+  "Persönlichkeit - Teil 4": "Personality - Part 4",
+  "Stress": "Stress",
+  "Studierfähigkeiten": "Study Skills",
+  "Statistik": "Statistics",
+  "Studienzufriedenheit": "Study Satisfaction",
+  "Ihre Ergebnisse": "Your Results",
+  "Soziodemographische Angaben": "Sociodemographic Information",
+  "Wohnsituation": "Living Situation",
+  "Lebensstil": "Lifestyle",
+  "Bildung": "Education",
+  
+  // Instructions
+  "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.": 
+    "Please indicate to what extent the following statements apply to you.",
+  "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.":
+    "The following questions are selected based on your previous answers.",
+  "Wie sehr treffen die folgenden Aussagen auf Sie zu?":
+    "How much do the following statements apply to you?",
+  "Wie leicht oder schwer fällt es Ihnen...":
+    "How easy or difficult is it for you..."
+};
+
+// COMPREHENSIVE UPDATE FUNCTION
+function updateEverything() {
+  console.log("GLOBAL UPDATE to:", currentLang);
+  
+  // Add Likert scale translations to main translations
+  var likertTranslations = {
+    "Stimme überhaupt nicht zu": "Strongly disagree",
+    "Stimme nicht zu": "Disagree",
+    "Neutral": "Neutral",
+    "Stimme zu": "Agree",
+    "Stimme voll zu": "Strongly agree",
+    "trifft überhaupt nicht zu": "does not apply at all",
+    "trifft eher nicht zu": "rather does not apply",
+    "teils/teils": "partly/partly",
+    "trifft eher zu": "rather applies",
+    "trifft voll zu": "fully applies",
+    "Sehr schwer": "Very difficult",
+    "Schwer": "Difficult",
+    "Mittel": "Medium",
+    "Leicht": "Easy",
+    "Sehr leicht": "Very easy"
+  };
+  
+  // Merge all translations
+  var allTranslations = Object.assign({}, translations, likertTranslations);
+  
+  // AGGRESSIVE TEXT REPLACEMENT - Go through EVERY element
+  document.querySelectorAll("*").forEach(function(el) {
+    // Handle direct text content
+    if (el.childNodes && el.childNodes.length > 0) {
+      el.childNodes.forEach(function(node) {
+        if (node.nodeType === 3) { // Text node
+          var originalText = node.textContent;
+          var newText = originalText;
+          
+          if (currentLang === "en") {
+            // Replace all German with English
+            for (var de in allTranslations) {
+              var regex = new RegExp(de.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g");
+              newText = newText.replace(regex, allTranslations[de]);
+            }
+          } else {
+            // Replace all English with German
+            for (var de in allTranslations) {
+              var regex = new RegExp(allTranslations[de].replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g");
+              newText = newText.replace(regex, de);
+            }
+          }
+          
+          if (newText !== originalText) {
+            node.textContent = newText;
+          }
+        }
+      });
+    }
+    
+    // Handle value attributes (for inputs)
+    if (el.value) {
+      var originalValue = el.value;
+      var newValue = originalValue;
+      
+      if (currentLang === "en") {
+        for (var de in allTranslations) {
+          if (newValue.includes(de)) {
+            newValue = newValue.replace(de, allTranslations[de]);
+          }
+        }
+      } else {
+        for (var de in allTranslations) {
+          if (newValue.includes(allTranslations[de])) {
+            newValue = newValue.replace(allTranslations[de], de);
+          }
+        }
+      }
+      
+      if (newValue !== originalValue) {
+        el.value = newValue;
+      }
+    }
+    
+    // Handle placeholder attributes
+    if (el.placeholder) {
+      var originalPlaceholder = el.placeholder;
+      var newPlaceholder = originalPlaceholder;
+      
+      if (currentLang === "en") {
+        for (var de in allTranslations) {
+          if (newPlaceholder.includes(de)) {
+            newPlaceholder = newPlaceholder.replace(de, allTranslations[de]);
+          }
+        }
+      } else {
+        for (var de in allTranslations) {
+          if (newPlaceholder.includes(allTranslations[de])) {
+            newPlaceholder = newPlaceholder.replace(allTranslations[de], de);
+          }
+        }
+      }
+      
+      if (newPlaceholder !== originalPlaceholder) {
+        el.placeholder = newPlaceholder;
+      }
+    }
+  });
+  
+  // Update data-lang attributes
+  document.querySelectorAll("[data-lang-de][data-lang-en]").forEach(function(el) {
+    el.textContent = currentLang === "de" ? el.getAttribute("data-lang-de") : el.getAttribute("data-lang-en");
+  });
+  
+  // Update all items
+  translateAllItems();
+  
+  // Update language button
+  var btn = document.getElementById("lang_toggle");
+  if (btn) {
+    btn.textContent = currentLang === "de" ? "English" : "Deutsch";
+  }
+  
+  console.log("GLOBAL UPDATE COMPLETE!");
+}
+
 // Language toggle function
 function toggleLanguage() {
   currentLang = currentLang === "de" ? "en" : "de";
   console.log("Switching language to:", currentLang);
   
-  // Update all text content based on language
-  // First update all elements with data-lang attributes (including spans)
-  document.querySelectorAll("[data-lang-de][data-lang-en]").forEach(function(el) {
-    el.textContent = currentLang === "de" ? el.getAttribute("data-lang-de") : el.getAttribute("data-lang-en");
-  });
-  
-  // Update item questions specifically
-  document.querySelectorAll(".item-question, .item-text, .assessment-item-text").forEach(function(el) {
-    // Check if element has translation data
-    if (el.dataset && el.dataset.questionEn && currentLang === "en") {
-      el.textContent = el.dataset.questionEn;
-    } else if (el.dataset && el.dataset.questionDe && currentLang === "de") {
-      el.textContent = el.dataset.questionDe;
-    }
-  });
-  
-  // Handle instructions, titles, and other text elements
-  document.querySelectorAll(".page-title, .page-instructions, h1, h2, h3, h4, p, label, td, th").forEach(function(el) {
-    var text = el.textContent || el.innerText;
-    
-    // Skip if already handled by data-lang attributes
-    if (el.hasAttribute("data-lang-de") && el.hasAttribute("data-lang-en")) {
-      return;
-    }
-    
-    // Look for pattern "German text / English text"
-    if (text.includes(" / ")) {
-      var parts = text.split(" / ");
-      if (parts.length === 2) {
-        el.textContent = currentLang === "de" ? parts[0].trim() : parts[1].trim();
-      }
-    }
-  });
-  
-  // Update radio button labels
-  document.querySelectorAll("input[type=radio] + label, .radio-label").forEach(function(label) {
-    var text = label.textContent || label.innerText;
-    // Handle Likert scale translations
-    var translations = {
-      "Stimme überhaupt nicht zu": "Strongly disagree",
-      "Stimme nicht zu": "Disagree", 
-      "Neutral": "Neutral",
-      "Stimme zu": "Agree",
-      "Stimme voll zu": "Strongly agree",
-      "Sehr schwer": "Very difficult",
-      "Schwer": "Difficult",
-      "Mittel": "Medium",
-      "Leicht": "Easy",
-      "Sehr leicht": "Very easy"
-    };
-    
-    if (currentLang === "en") {
-      for (var de in translations) {
-        if (text === de) {
-          label.textContent = translations[de];
-          break;
-        }
-      }
-    } else {
-      for (var de in translations) {
-        if (text === translations[de]) {
-          label.textContent = de;
-          break;
-        }
-      }
-    }
-  });
-  
-  // Update button text (no emojis)
-  var btn = document.getElementById("lang_toggle");
-  if (btn) {
-    btn.textContent = currentLang === "de" ? "English" : "Deutsch";
-  }
+  // IMMEDIATELY update everything
+  updateEverything();
   
   // Send language change to Shiny
   if (typeof Shiny !== "undefined") {
@@ -2167,26 +2266,15 @@ document.addEventListener("DOMContentLoaded", function() {
   langBtn.onclick = toggleLanguage;
   document.body.appendChild(langBtn);
   
-  // Watch for page changes to reapply translations
+  // Watch for ANY page changes and always update if in English mode
   var observer = new MutationObserver(function(mutations) {
-    // Check if page content has changed
-    var hasNewContent = false;
-    mutations.forEach(function(mutation) {
-      if (mutation.addedNodes.length > 0) {
-        mutation.addedNodes.forEach(function(node) {
-          if (node.nodeType === 1 && (node.classList?.contains("page-content") || 
-              node.querySelector?.(".item-question, .page-title"))) {
-            hasNewContent = true;
-          }
-        });
-      }
-    });
-    
-    if (hasNewContent) {
-      setTimeout(function() {
-        if (currentLang === "en") {
-          updateAllContent();
-        }
+    // Always update after any DOM change if we're in English mode
+    if (currentLang === "en") {
+      // Debounce to avoid too many updates
+      clearTimeout(window.updateTimeout);
+      window.updateTimeout = setTimeout(function() {
+        console.log("Page changed - updating to English");
+        updateEverything();
       }, 100);
     }
   });
