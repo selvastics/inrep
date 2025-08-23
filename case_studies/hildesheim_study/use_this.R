@@ -1036,10 +1036,23 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
       ggplot2::labs(title = "Ihr Persönlichkeitsprofil (Big Five)")
   }
   
-  # Create bar chart
+  # Create bar chart with logical ordering
+  # Reorder scores for better visualization
+  ordered_scores <- list(
+    ProgrammingAnxiety = scores$ProgrammingAnxiety,
+    Extraversion = scores$Extraversion,
+    Verträglichkeit = scores$Verträglichkeit,
+    Gewissenhaftigkeit = scores$Gewissenhaftigkeit,
+    Neurotizismus = scores$Neurotizismus,
+    Offenheit = scores$Offenheit,
+    Stress = scores$Stress,
+    Studierfähigkeiten = scores$Studierfähigkeiten,
+    Statistik = scores$Statistik
+  )
+  
   all_data <- data.frame(
-    dimension = factor(names(scores), levels = names(scores)),
-    score = unlist(scores),
+    dimension = factor(names(ordered_scores), levels = names(ordered_scores)),
+    score = unlist(ordered_scores),
     category = c("Programmierangst", 
                  rep("Persönlichkeit", 5), "Stress", "Studierfähigkeiten", "Statistik")
   )
@@ -1091,7 +1104,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
     ggplot2::geom_ribbon(ggplot2::aes(ymin = se_lower, ymax = se_upper), 
                          alpha = 0.3, fill = "#9b59b6") +
     # Theta line
-    ggplot2::geom_line(size = 2, color = "#9b59b6") +
+    ggplot2::geom_line(linewidth = 2, color = "#9b59b6") +
     ggplot2::geom_point(ggplot2::aes(color = item_type), size = 4) +
     # Add horizontal line at final theta
     ggplot2::geom_hline(yintercept = theta_est, linetype = "dashed", 
@@ -1166,6 +1179,12 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
   html <- paste0(
       '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
   
+  # Radar plot
+  '<div class="report-section">',
+  '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Persönlichkeitsprofil</h2>',
+  if (radar_base64 != "") paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">'),
+  '</div>',
+  
   # Trace plot for Programming Anxiety
   '<div class="report-section">',
   '<h2 style="color: #9b59b6; text-align: center; margin-bottom: 25px;">Programming Anxiety - Adaptive Testing Trace</h2>',
@@ -1174,12 +1193,6 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
   'This trace plot shows how the theta estimate evolved during the assessment.<br>',
   'The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.',
   '</p>',
-  '</div>',
-  
-  # Radar plot
-  '<div class="report-section">',
-  '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Persönlichkeitsprofil</h2>',
-  if (radar_base64 != "") paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">'),
   '</div>',
     
     # Bar chart
@@ -1582,12 +1595,17 @@ custom_item_selection <- function(rv, item_bank, config) {
     return(item_num)
   }
   
-  # Items 6-10: Adaptive PA items (select from pool 6-20)
+    # Items 6-10: Adaptive PA items (select from pool 6-20)
   if (item_num >= 6 && item_num <= 10) {
+    message("\n================================================================================")
+    message(sprintf("ADAPTIVE ITEM SELECTION - Item %d of 10", item_num))
+    message("================================================================================")
+    
     # Get responses so far
     responses_so_far <- rv$responses[1:length(rv$responses)]
+    message(sprintf("Responses collected so far: %d items", length(responses_so_far)))
     
-        # Estimate current ability using simplified IRT approach
+    # Estimate current ability using simplified IRT approach
     current_theta <- 0  # Default
     current_se <- 1.0  # Default SE
     
@@ -1620,6 +1638,8 @@ custom_item_selection <- function(rv, item_bank, config) {
       })
     }
     
+    message(sprintf("Current ability estimate: theta=%.3f, SE=%.3f", current_theta, current_se))
+    
     # Get available PA items (6-20) that haven't been shown
     pa_pool <- 6:20
     already_shown <- rv$administered[rv$administered <= 20]
@@ -1628,6 +1648,8 @@ custom_item_selection <- function(rv, item_bank, config) {
     if (length(available_items) == 0) {
       return(NULL)
     }
+    
+    message(sprintf("Available items in pool: %s", paste(available_items, collapse = ", ")))
     
     # Calculate Fisher Information for each available item
     item_info <- sapply(available_items, function(item_idx) {
@@ -1642,14 +1664,42 @@ custom_item_selection <- function(rv, item_bank, config) {
       return(info)
     })
     
+    # Show information for all candidate items
+    message("\nItem Information Values:")
+    info_df <- data.frame(
+      Item = available_items,
+      ID = paste0("PA_", sprintf("%02d", available_items)),
+      Information = round(item_info, 4),
+      Difficulty = item_bank$b[available_items],
+      Discrimination = item_bank$a[available_items]
+    )
+    
+    # Sort by information
+    info_df <- info_df[order(info_df$Information, decreasing = TRUE), ]
+    
+    # Print top 5 candidates
+    for (i in 1:min(5, nrow(info_df))) {
+      if (i == 1) {
+        message(sprintf("  %2d. Item %2d (%s): I=%.4f, b=%5.2f, a=%.2f *** BEST ***", 
+                       i, info_df$Item[i], info_df$ID[i], info_df$Information[i], 
+                       info_df$Difficulty[i], info_df$Discrimination[i]))
+      } else {
+        message(sprintf("  %2d. Item %2d (%s): I=%.4f, b=%5.2f, a=%.2f", 
+                       i, info_df$Item[i], info_df$ID[i], info_df$Information[i], 
+                       info_df$Difficulty[i], info_df$Discrimination[i]))
+      }
+    }
+    
     # Select item with maximum information
     best_idx <- which.max(item_info)
     selected_item <- available_items[best_idx]
     
-    # Output like inrep does
-    message(sprintf("Selected item %d (PA_%02d) using MFI criterion", selected_item, selected_item))
-    message(sprintf("EAP estimation: theta=%.2f, se=%.3f", current_theta, current_se))
-    message(sprintf("Estimated ability: theta=%.2f, se=%.3f", current_theta, current_se))
+    message(sprintf("\n✓ Selected item %d (%s) with Maximum Fisher Information = %.4f", 
+                   selected_item, paste0("PA_", sprintf("%02d", selected_item)), 
+                   item_info[best_idx]))
+    message(sprintf("Reason: This item provides the most information at current theta = %.3f", 
+                   current_theta))
+    message("================================================================================\n")
     
     return(selected_item)
   }
