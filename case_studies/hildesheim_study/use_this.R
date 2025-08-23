@@ -647,32 +647,32 @@ window.toggleLanguage = toggleLanguage;
   list(
     id = "page8_pa3",
     type = "items",
-    title = "Programmierangst",
-    title_en = "Programming Anxiety",
+    title = "Programmierangst - Teil 2",
+    title_en = "Programming Anxiety - Part 2",
     item_indices = 7:7,
     scale_type = "likert"
   ),
   list(
     id = "page9_pa4",
     type = "items",
-    title = "Programmierangst",
-    title_en = "Programming Anxiety",
+    title = "Programmierangst - Teil 2",
+    title_en = "Programming Anxiety - Part 2",
     item_indices = 8:8,
     scale_type = "likert"
   ),
   list(
     id = "page10_pa5",
     type = "items",
-    title = "Programmierangst",
-    title_en = "Programming Anxiety",
+    title = "Programmierangst - Teil 2",
+    title_en = "Programming Anxiety - Part 2",
     item_indices = 9:9,
     scale_type = "likert"
   ),
   list(
     id = "page11_pa6",
     type = "items",
-    title = "Programmierangst",
-    title_en = "Programming Anxiety",
+    title = "Programmierangst - Teil 2",
+    title_en = "Programming Anxiety - Part 2",
     item_indices = 10:10,
     scale_type = "likert"
   ),

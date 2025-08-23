@@ -1089,7 +1089,7 @@ launch_study <- function(
       border: 1px solid var(--secondary-color);
       background-color: var(--background-color);
       color: var(--text-color);
-      animation: fadeInCard 0.3s ease-in;
+      animation: fadeInCard 0.1s ease-in;
     }
     
     @keyframes fadeInCard {
@@ -3038,15 +3038,8 @@ launch_study <- function(
               show_validation_errors(validation$errors, language = current_lang)
             })
             
-            # Highlight fields with errors using JavaScript
-            if (!is.null(validation$missing_fields)) {
-              for (field in validation$missing_fields) {
-                shinyjs::runjs(sprintf("
-                  $('#%s').closest('.shiny-input-container').addClass('has-error');
-                  $('#%s').focus();
-                ", field, field))
-              }
-            }
+            # Field highlighting disabled for performance
+            # (shinyjs was causing lag in page transitions)
             
             return()  # Don't proceed if validation fails
           }
@@ -3055,8 +3048,7 @@ launch_study <- function(
         # Clear any previous validation errors
         output$validation_errors <- shiny::renderUI({ NULL })
         
-        # Clear error highlighting from all fields
-        shinyjs::runjs("$('.has-error').removeClass('has-error');")
+        # Clear error highlighting from all fields (removed shinyjs for performance)
         
         # Save current page data
         current_page <- config$custom_page_flow[[rv$current_page]]
@@ -3104,7 +3096,6 @@ launch_study <- function(
       if (rv$stage == "custom_page_flow" && rv$current_page > 1) {
         # Clear any validation errors when going back
         output$validation_errors <- shiny::renderUI({ NULL })
-        shinyjs::runjs("$('.has-error').removeClass('has-error');")
         
                   # Move to previous page immediately - CSS handles the transition
           rv$current_page <- rv$current_page - 1
