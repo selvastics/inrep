@@ -2479,14 +2479,14 @@ launch_study <- function(
               remaining_minutes <- round(session_status$remaining_time / 60, 1)
               shiny::div(
                 class = "session-status-indicator",
-                style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards;",
+                style = "position: relative; margin: 10px auto; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards; text-align: center; max-width: 300px;",
                 shiny::div("Session Active", style = "font-weight: bold;"),
                 shiny::div(sprintf("Time remaining: %s min", remaining_minutes))
               )
             } else {
               shiny::div(
                 class = "session-status-indicator",
-                style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(255,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards;",
+                style = "position: relative; margin: 10px auto; z-index: 1000; background: rgba(255,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards; text-align: center; max-width: 300px;",
                 shiny::div("Session Expired", style = "font-weight: bold;"),
                 shiny::div("Please refresh or restart")
               )
@@ -2495,7 +2495,7 @@ launch_study <- function(
             # Fallback to basic status
             shiny::div(
               class = "session-status-indicator",
-              style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards;",
+              style = "position: relative; margin: 10px auto; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards; text-align: center; max-width: 300px;",
               shiny::div("Session Active", style = "font-weight: bold;"),
               shiny::div("Session saving enabled")
             )
@@ -2504,7 +2504,7 @@ launch_study <- function(
           # Basic status when advanced functions not available
           shiny::div(
             class = "session-status-indicator",
-            style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards;",
+            style = "position: relative; margin: 10px auto; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards; text-align: center; max-width: 300px;",
             shiny::div("Session Active", style = "font-weight: bold;"),
             shiny::div("Session saving enabled")
           )
@@ -2917,10 +2917,11 @@ launch_study <- function(
                                background: transparent;
                              }
                              .progress-circle-gradient svg {
-                               position: absolute;
+                               position: relative;
                                left: 0;
                                top: 0;
                                display: block;
+                               margin: 0 auto;
                              }
                              .progress-circle-gradient .progress-bg {
                                stroke: #e0e0e0;
@@ -2940,11 +2941,11 @@ launch_study <- function(
                                opacity: 0.5;
                              }
                              .progress-circle-gradient span {
-                               position: absolute;
-                               top: 50%%;
-                               left: 50%%;
-                               margin-left: -30px;
-                               margin-top: -15px;
+                               position: relative;
+                               top: -80px;
+                               left: 0;
+                               margin: 0 auto;
+                               text-align: center;
                                font-family: 'Helvetica Neue', 'Arial', sans-serif;
                                font-size: 20px;
                                font-weight: 500;
