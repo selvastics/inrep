@@ -640,7 +640,9 @@ launch_study <- function(
     deferred_packages <- c("ggplot2", "DT", "dplyr", "shinyWidgets")  # Load later
     optional_packages <- if (isTRUE(config$adaptive)) "TAM" else character(0)
     
-    loaded_packages <- list()
+    # Initialize with all packages set to FALSE
+    all_packages <- c(critical_packages, deferred_packages, optional_packages)
+    loaded_packages <- as.list(setNames(rep(FALSE, length(all_packages)), all_packages))
     
     if (!immediate) {
       # FASTEST PATH: Don't load ANYTHING except critical packages
@@ -650,16 +652,22 @@ launch_study <- function(
         if (!requireNamespace(pkg, quietly = TRUE)) {
           stop(sprintf("Critical package '%s' is required", pkg))
         }
+        loaded_packages[[pkg]] <- TRUE
       }
       
-      # Step 2: Schedule ALL other packages for background loading
+      # Step 2: Check availability WITHOUT loading
+      for (pkg in c(deferred_packages, optional_packages)) {
+        loaded_packages[[pkg]] <- requireNamespace(pkg, quietly = TRUE)
+      }
+      
+      # Step 3: Schedule ALL other packages for background loading
       if (has_later) {
         # Load after 50ms (UI will be visible)
         later::later(function() {
           # Priority 1: Optional packages for functionality
           for (pkg in optional_packages) {
             tryCatch({
-              if (requireNamespace(pkg, quietly = TRUE)) {
+              if (loaded_packages[[pkg]]) {
                 # Don't actually load, just ensure available
                 logger(sprintf("Package %s available", pkg), level = "DEBUG")
               }
@@ -674,7 +682,7 @@ launch_study <- function(
           # Priority 2: Heavy visualization packages
           for (pkg in deferred_packages) {
             tryCatch({
-              if (requireNamespace(pkg, quietly = TRUE)) {
+              if (loaded_packages[[pkg]]) {
                 # Only load namespace, not attach
                 loadNamespace(pkg)
                 logger(sprintf("Background loaded: %s", pkg), level = "DEBUG")
@@ -684,11 +692,6 @@ launch_study <- function(
             })
           }
         }, delay = 0.5)  # 500ms delay for heavy packages
-      } else {
-        # Fallback if later is not available - still defer what we can
-        for (pkg in c(optional_packages, deferred_packages)) {
-          loaded_packages[[pkg]] <- requireNamespace(pkg, quietly = TRUE)
-        }
       }
     } else {
       # Immediate mode - only used when absolutely necessary
@@ -791,7 +794,7 @@ launch_study <- function(
   
   # Create safe plotting function
   safe_render_plot <- function(expr, ...) {
-    if (available_packages$ggplot2) {
+    if (!is.null(available_packages) && isTRUE(available_packages[["ggplot2"]])) {
       tryCatch({
         # Ensure ggplot2 is properly loaded and accessible
         if (!requireNamespace("ggplot2", quietly = TRUE)) {
@@ -814,7 +817,14 @@ launch_study <- function(
   
   # Create safe DT function
   safe_render_dt <- function(expr, ...) {
-    if (available_packages$DT) {
+    # Safely check if DT is available
+    dt_available <- if (!is.null(available_packages) && is.list(available_packages)) {
+      isTRUE(available_packages[["DT"]])
+    } else {
+      requireNamespace("DT", quietly = TRUE)
+    }
+    
+    if (dt_available) {
       tryCatch({
         DT::renderDT(expr, ...)
       }, error = function(e) {
@@ -2652,7 +2662,7 @@ launch_study <- function(
                         results_content <- base::c(results_content, base::list(
                           shiny::div(class = "results-section",
                                      shiny::h4(ui_labels$items_administered, class = "results-title"),
-                                     if (available_packages$DT) DT::DTOutput("item_table") else shiny::verbatimTextOutput("item_table")
+                                     if (!is.null(available_packages) && isTRUE(available_packages[["DT"]])) DT::DTOutput("item_table") else shiny::verbatimTextOutput("item_table")
                           )
                         ))
                       }
@@ -2743,7 +2753,7 @@ launch_study <- function(
       # Robust plotting with multiple fallbacks
       tryCatch({
         # Try ggplot2 first
-        if (available_packages$ggplot2 && requireNamespace("ggplot2", quietly = TRUE)) {
+        if (!is.null(available_packages) && isTRUE(available_packages[["ggplot2"]]) && requireNamespace("ggplot2", quietly = TRUE)) {
           p <- ggplot2::ggplot(data, ggplot2::aes(x = Item, y = Theta)) +
             ggplot2::geom_line(color = theme_colors$primary, linewidth = 1) +
             ggplot2::geom_ribbon(ggplot2::aes(ymin = Theta - SE, ymax = Theta + SE), alpha = 0.2, fill = theme_colors$primary) +
@@ -2779,7 +2789,7 @@ launch_study <- function(
     output$domain_plot <- shiny::renderPlot({
       pr <- config$participant_report %||% list()
       if (!isTRUE(pr$show_domain_breakdown) || !("domain" %in% base::names(item_bank))) return(NULL)
-      if (!available_packages$ggplot2 || !requireNamespace("ggplot2", quietly = TRUE)) return(NULL)
+      if (is.null(available_packages) || !isTRUE(available_packages[["ggplot2"]]) || !requireNamespace("ggplot2", quietly = TRUE)) return(NULL)
       
       if (base::length(rv$cat_result$administered) < 1) return(NULL)
       used <- rv$cat_result$administered
@@ -2796,7 +2806,7 @@ launch_study <- function(
     output$difficulty_trend <- shiny::renderPlot({
       pr <- config$participant_report %||% list()
       if (!isTRUE(pr$show_item_difficulty_trend) || !("b" %in% base::names(item_bank))) return(NULL)
-      if (!available_packages$ggplot2 || !requireNamespace("ggplot2", quietly = TRUE)) return(NULL)
+      if (is.null(available_packages) || !isTRUE(available_packages[["ggplot2"]]) || !requireNamespace("ggplot2", quietly = TRUE)) return(NULL)
       
       if (base::length(rv$cat_result$administered) < 2) return(NULL)
       used <- rv$cat_result$administered

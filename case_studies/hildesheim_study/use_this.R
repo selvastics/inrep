@@ -2419,10 +2419,5 @@ inrep::launch_study(
     password = WEBDAV_PASSWORD,
     save_format = "csv",
     custom_css = custom_js_enhanced,  # Enhanced JavaScript
-    admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
-    server_extensions = server_extensions,  # Add server-side language handling
-    language_options = list(
-      de = "Deutsch",
-      en = "English"
-    )
+    admin_dashboard_hook = monitor_adaptive  # Monitor adaptive selection
 )
