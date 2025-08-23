@@ -1943,61 +1943,214 @@ function toggleLanguage() {
 // Comprehensive content update function
 function updateAllContent() {
   // Update navigation buttons
-  document.querySelectorAll("button, .btn").forEach(function(btn) {
-    var text = btn.textContent;
+  document.querySelectorAll("button, .btn, input[type=button], input[type=submit]").forEach(function(btn) {
+    var text = btn.textContent || btn.value;
     var translations = {
       "Weiter": "Next",
-      "Zurück": "Back",
+      "Zurück": "Back", 
       "Absenden": "Submit",
       "Fertig": "Finish",
       "Speichern": "Save",
-      "Abbrechen": "Cancel"
+      "Abbrechen": "Cancel",
+      "Bitte wählen...": "Please select..."
     };
     
     if (currentLang === "en") {
       for (var de in translations) {
-        if (text === de) {
-          btn.textContent = translations[de];
+        if (text.includes(de)) {
+          if (btn.textContent) {
+            btn.textContent = text.replace(de, translations[de]);
+          } else {
+            btn.value = text.replace(de, translations[de]);
+          }
           break;
         }
       }
     } else {
       for (var de in translations) {
-        if (text === translations[de]) {
-          btn.textContent = de;
+        if (text.includes(translations[de])) {
+          if (btn.textContent) {
+            btn.textContent = text.replace(translations[de], de);
+          } else {
+            btn.value = text.replace(translations[de], de);
+          }
           break;
         }
       }
     }
   });
   
-  // Update progress text
-  document.querySelectorAll(".progress-text, .progress-label").forEach(function(el) {
+  // Update progress text (Seite X von Y -> Page X of Y)
+  document.querySelectorAll(".progress-text, .progress-label, .page-progress").forEach(function(el) {
     var text = el.textContent;
-    if (text.includes("von")) {
-      if (currentLang === "en") {
-        el.textContent = text.replace(" von ", " of ");
+    if (currentLang === "en") {
+      text = text.replace("Seite", "Page");
+      text = text.replace(" von ", " of ");
+    } else {
+      text = text.replace("Page", "Seite");
+      text = text.replace(" of ", " von ");
+    }
+    el.textContent = text;
+  });
+  
+  // Update page titles
+  var pageTitles = {
+    "Programmierangst - Teil 1": "Programming Anxiety - Part 1",
+    "Programmierangst - Teil 2": "Programming Anxiety - Part 2",
+    "Programmierangst": "Programming Anxiety",
+    "Persönlichkeit - Teil 1": "Personality - Part 1",
+    "Persönlichkeit - Teil 2": "Personality - Part 2",
+    "Persönlichkeit - Teil 3": "Personality - Part 3",
+    "Persönlichkeit - Teil 4": "Personality - Part 4",
+    "Stress": "Stress",
+    "Studierfähigkeiten": "Study Skills",
+    "Statistik": "Statistics",
+    "Studienzufriedenheit": "Study Satisfaction",
+    "Ihre Ergebnisse": "Your Results",
+    "Soziodemographische Angaben": "Sociodemographic Information",
+    "Wohnsituation": "Living Situation",
+    "Lebensstil": "Lifestyle",
+    "Bildung": "Education"
+  };
+  
+  document.querySelectorAll("h1, h2, h3, .page-title, .section-title").forEach(function(el) {
+    var text = el.textContent.trim();
+    if (currentLang === "en") {
+      if (pageTitles[text]) {
+        el.textContent = pageTitles[text];
       }
-    } else if (text.includes(" of ")) {
-      if (currentLang === "de") {
-        el.textContent = text.replace(" of ", " von ");
+    } else {
+      for (var de in pageTitles) {
+        if (text === pageTitles[de]) {
+          el.textContent = de;
+          break;
+        }
       }
     }
   });
+  
+  // Update instructions
+  var instructions = {
+    "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.": 
+      "Please indicate to what extent the following statements apply to you.",
+    "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.":
+      "The following questions are selected based on your previous answers.",
+    "Wie sehr treffen die folgenden Aussagen auf Sie zu?":
+      "How much do the following statements apply to you?",
+    "Wie leicht oder schwer fällt es Ihnen...":
+      "How easy or difficult is it for you..."
+  };
+  
+  document.querySelectorAll(".instructions, .page-instructions, p").forEach(function(el) {
+    var text = el.textContent.trim();
+    if (currentLang === "en") {
+      if (instructions[text]) {
+        el.textContent = instructions[text];
+      }
+    } else {
+      for (var de in instructions) {
+        if (text === instructions[de]) {
+          el.textContent = de;
+          break;
+        }
+      }
+    }
+  });
+  
+  // Update ALL item questions - comprehensive translation
+  translateAllItems();
 }
 
-// Store translations for dynamic content
-var itemTranslations = {};
+// Store all item translations
+var itemTranslations = {
+  // Programming Anxiety items
+  "Wie sicher fühlen Sie sich, einen Fehler in Ihrem Code ohne Hilfe zu beheben?": 
+    "How confident are you in your ability to fix an error in your code without help?",
+  "Fühlen Sie sich überfordert, wenn Sie mit einem neuen Programmierprojekt beginnen?":
+    "Do you feel overwhelmed when starting a new programming project?",
+  "Ich mache mir Sorgen, dass meine Programmierkenntnisse für komplexere Aufgaben nicht ausreichen.":
+    "I worry that my programming skills are not good enough for more complex tasks.",
+  "Beim Lesen von Dokumentation fühle ich mich oft verloren oder verwirrt.":
+    "When reading documentation, I often feel lost or confused.",
+  "Das Debuggen von Code macht mich nervös, besonders wenn ich den Fehler nicht sofort finde.":
+    "Debugging code makes me anxious, especially when I cannot immediately spot the issue.",
+  "Ich vermeide es, neue Programmiersprachen zu nutzen, weil ich Angst habe, Fehler zu machen.":
+    "I avoid using new programming languages because I am afraid of making mistakes.",
+  "In Gruppencodier-Sitzungen bin ich nervös, dass meine Beiträge nicht geschätzt werden.":
+    "During group coding sessions, I am nervous that my contributions will not be valued.",
+  "Ich habe Sorge, Programmieraufgaben nicht rechtzeitig aufgrund fehlender Fähigkeiten abschließen zu können.":
+    "I worry that I will be unable to finish a coding assignment on time due to lack of skills.",
+  "Wenn ich bei einem Programmierproblem nicht weiterkomme, ist es mir peinlich, um Hilfe zu bitten.":
+    "When I get stuck on a programming problem, I feel embarrassed to ask for help.",
+  "Ich fühle mich wohl dabei, meinen Code anderen zu erklären.":
+    "I feel comfortable explaining my code to others.",
+  
+  // BFI items
+  "Ich gehe aus mir heraus, bin gesellig.": "I am outgoing, sociable.",
+  "Ich bin eher ruhig.": "I am rather quiet.",
+  "Ich bin eher schüchtern.": "I am rather shy.",
+  "Ich bin gesprächig.": "I am talkative.",
+  "Ich bin einfühlsam, warmherzig.": "I am empathetic, warm-hearted.",
+  "Ich habe mit anderen wenig Mitgefühl.": "I have little sympathy for others.",
+  "Ich bin hilfsbereit und selbstlos.": "I am helpful and selfless.",
+  "Andere sind mir eher gleichgültig, egal.": "Others are rather indifferent to me.",
+  "Ich bin eher unordentlich.": "I am rather disorganized.",
+  "Ich bin systematisch, halte meine Sachen in Ordnung.": "I am systematic, keep my things in order.",
+  "Ich mag es sauber und aufgeräumt.": "I like it clean and tidy.",
+  "Ich bin eher der chaotische Typ, mache selten sauber.": "I am rather the chaotic type, rarely clean up.",
+  "Ich bleibe auch in stressigen Situationen gelassen.": "I remain calm even in stressful situations.",
+  "Ich reagiere leicht angespannt.": "I react easily tensed.",
+  "Ich mache mir oft Sorgen.": "I often worry.",
+  "Ich werde selten nervös und unsicher.": "I rarely become nervous and insecure.",
+  "Ich bin vielseitig interessiert.": "I have diverse interests.",
+  "Ich meide philosophische Diskussionen.": "I avoid philosophical discussions.",
+  "Es macht mir Spaß, gründlich über komplexe Dinge nachzudenken und sie zu verstehen.": 
+    "I enjoy thinking thoroughly about complex things and understanding them.",
+  "Mich interessieren abstrakte Überlegungen wenig.": "Abstract considerations interest me little.",
+  
+  // PSQ items
+  "Ich habe das Gefühl, dass zu viele Forderungen an mich gestellt werden.": 
+    "I feel that too many demands are placed on me.",
+  "Ich habe zuviel zu tun.": "I have too much to do.",
+  "Ich fühle mich gehetzt.": "I feel rushed.",
+  "Ich habe genug Zeit für mich.": "I have enough time for myself.",
+  "Ich fühle mich unter Termindruck.": "I feel under deadline pressure.",
+  
+  // MWS items
+  "mit dem sozialen Klima im Studiengang zurechtzukommen (z.B. Konkurrenz aushalten)":
+    "coping with the social climate in the program (e.g., handling competition)",
+  "Teamarbeit zu organisieren (z.B. Lerngruppen finden)":
+    "organizing teamwork (e.g., finding study groups)",
+  "Kontakte zu Mitstudierenden zu knüpfen (z.B. für Lerngruppen, Freizeit)":
+    "making contacts with fellow students (e.g., for study groups, leisure)",
+  "im Team zusammen zu arbeiten (z.B. gemeinsam Aufgaben bearbeiten, Referate vorbereiten)":
+    "working together in a team (e.g., working on tasks together, preparing presentations)",
+  
+  // Statistics items
+  "Bislang konnte ich den Inhalten der Statistikveranstaltungen gut folgen.":
+    "So far I have been able to follow the content of the statistics courses well.",
+  "Ich bin in der Lage, Statistik zu erlernen.":
+    "I am able to learn statistics."
+};
 
-// Function to apply translations to current page
-function applyTranslations() {
-  // Update all elements with stored translations
-  document.querySelectorAll(".item-question, .item-text").forEach(function(el) {
-    var itemId = el.closest(".item-container")?.dataset?.itemId || el.id;
-    if (itemTranslations[itemId]) {
-      el.textContent = currentLang === "de" ? 
-        itemTranslations[itemId].de : 
-        itemTranslations[itemId].en;
+// Function to translate all items on the page
+function translateAllItems() {
+  document.querySelectorAll(".item-question, .item-text, .question-text, li label").forEach(function(el) {
+    var text = el.textContent.trim();
+    
+    if (currentLang === "en") {
+      // Translate to English
+      if (itemTranslations[text]) {
+        el.textContent = itemTranslations[text];
+      }
+    } else {
+      // Translate back to German
+      for (var de in itemTranslations) {
+        if (text === itemTranslations[de]) {
+          el.textContent = de;
+          break;
+        }
+      }
     }
   });
 }
@@ -2016,20 +2169,43 @@ document.addEventListener("DOMContentLoaded", function() {
   
   // Watch for page changes to reapply translations
   var observer = new MutationObserver(function(mutations) {
-    setTimeout(function() {
-      if (currentLang === "en") {
-        applyTranslations();
-        toggleLanguage(); // Apply English
-        toggleLanguage(); // Toggle back to trigger update
-        currentLang = "en"; // Keep English
+    // Check if page content has changed
+    var hasNewContent = false;
+    mutations.forEach(function(mutation) {
+      if (mutation.addedNodes.length > 0) {
+        mutation.addedNodes.forEach(function(node) {
+          if (node.nodeType === 1 && (node.classList?.contains("page-content") || 
+              node.querySelector?.(".item-question, .page-title"))) {
+            hasNewContent = true;
+          }
+        });
       }
-    }, 100);
+    });
+    
+    if (hasNewContent) {
+      setTimeout(function() {
+        if (currentLang === "en") {
+          updateAllContent();
+        }
+      }, 100);
+    }
   });
   
   observer.observe(document.body, {
     childList: true,
     subtree: true
   });
+  
+  // Also update on any Shiny content changes
+  if (typeof Shiny !== "undefined") {
+    $(document).on("shiny:value", function(event) {
+      setTimeout(function() {
+        if (currentLang === "en") {
+          updateAllContent();
+        }
+      }, 100);
+    });
+  }
   
   // Enable radio button deselection
   document.addEventListener("click", function(e) {
