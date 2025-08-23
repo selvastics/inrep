@@ -1449,28 +1449,26 @@ Basierend auf Ihren Ergebnissen empfehlen wir:
 
 session_uuid <- paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 
-# Custom item selection function for PA adaptive testing
+# Create TWO study configs - one for PA adaptive, one for rest
+# First, run PA assessment with adaptive testing
 custom_item_selection <- function(rv, item_bank, config) {
   item_num <- length(rv$administered) + 1
   
   # First 5 items: Fixed PA items (1-5)
   if (item_num <= 5) {
-    cat(sprintf("\n[ITEM SELECTION] Fixed PA item %d\n", item_num))
+    message(sprintf("Selected fixed item %d (PA_%02d)", item_num, item_num))
     return(item_num)
   }
   
   # Items 6-10: Adaptive PA items (select from pool 6-20)
   if (item_num >= 6 && item_num <= 10) {
-    cat("\n================================================================================\n")
-    cat("ADAPTIVE ITEM SELECTION FOR PROGRAMMING ANXIETY\n")
-    cat("================================================================================\n")
-    
     # Get responses so far
     responses_so_far <- rv$responses[1:length(rv$responses)]
-    cat(sprintf("Responses collected so far: %d items\n", length(responses_so_far)))
     
-    # Estimate current ability using simplified IRT approach
+        # Estimate current ability using simplified IRT approach
     current_theta <- 0  # Default
+    current_se <- 1.0  # Default SE
+    
     if (length(responses_so_far) >= 3) {
       tryCatch({
         # Use simplified Newton-Raphson for speed
@@ -1481,6 +1479,7 @@ custom_item_selection <- function(rv, item_bank, config) {
         item_responses <- responses_so_far
         
         # Quick theta estimation (3 iterations max for speed)
+        second_deriv <- -1  # Initialize
         for (iter in 1:3) {
           probs <- 1 / (1 + exp(-a_params * (current_theta - b_params)))
           first_deriv <- sum(a_params * (item_responses/5 - probs))
@@ -1492,15 +1491,11 @@ custom_item_selection <- function(rv, item_bank, config) {
         }
         
         current_se <- 1 / sqrt(abs(second_deriv))
-        cat(sprintf("Current ability estimate: θ = %.3f (SE = %.3f)\n", current_theta, current_se))
         
-              }, error = function(e) {
-          cat(sprintf("IRT estimation failed: %s\n", e$message))
-          cat("Using mean response as fallback\n")
+      }, error = function(e) {
         current_theta <- mean(responses_so_far) - 3  # Center around 0
+        current_se <- 1.0
       })
-    } else {
-      cat("Not enough responses for IRT estimation, using prior\n")
     }
     
     # Get available PA items (6-20) that haven't been shown
@@ -1508,10 +1503,7 @@ custom_item_selection <- function(rv, item_bank, config) {
     already_shown <- rv$administered[rv$administered <= 20]
     available_items <- setdiff(pa_pool, already_shown)
     
-    cat(sprintf("Available items from PA pool: %s\n", paste(available_items, collapse = ", ")))
-    
     if (length(available_items) == 0) {
-      cat("ERROR: No available items in PA pool!\n")
       return(NULL)
     }
     
@@ -1532,19 +1524,10 @@ custom_item_selection <- function(rv, item_bank, config) {
     best_idx <- which.max(item_info)
     selected_item <- available_items[best_idx]
     
-    cat("\nItem Information Values:\n")
-    for (i in seq_along(available_items)) {
-      cat(sprintf("  Item %2d (PA_%02d): I = %.4f, b = %5.2f, a = %.2f %s\n", 
-                  available_items[i], available_items[i],
-                  item_info[i], 
-                  item_bank$b[available_items[i]], 
-                  item_bank$a[available_items[i]],
-                  ifelse(i == best_idx, "<-- SELECTED", "")))
-    }
-    
-    cat(sprintf("\n✓ Selected item %d (PA_%02d) with Maximum Information = %.4f\n", 
-                selected_item, selected_item, item_info[best_idx]))
-    cat("================================================================================\n")
+    # Output like inrep does
+    message(sprintf("Selected item %d (PA_%02d) using MFI criterion", selected_item, selected_item))
+    message(sprintf("EAP estimation: theta=%.2f, se=%.3f", current_theta, current_se))
+    message(sprintf("Estimated ability: theta=%.2f, se=%.3f", current_theta, current_se))
     
     return(selected_item)
   }
@@ -1553,7 +1536,7 @@ custom_item_selection <- function(rv, item_bank, config) {
   if (item_num > 10) {
     non_pa_item <- item_num + 10  # Map to items 21-51
     if (non_pa_item <= nrow(item_bank)) {
-      cat(sprintf("\n[ITEM SELECTION] Fixed non-PA item %d\n", non_pa_item))
+      message(sprintf("Selected fixed item %d (%s)", non_pa_item, item_bank$id[non_pa_item]))
       return(non_pa_item)
     }
   }
@@ -1569,19 +1552,24 @@ study_config <- inrep::create_study_config(
   demographics = names(demographic_configs),
   demographic_configs = demographic_configs,
   input_types = input_types,
-  model = "2PL",  # Use 2PL for adaptive IRT for PA items
-  adaptive = FALSE,  # Disable default adaptive (we'll use custom selection)
-  max_items = 41,  # Total: 10 PA + 20 BFI + 5 PSQ + 4 MWS + 2 Stats = 41
-  min_items = 41,  # Minimum items to show
+  model = "2PL",  # Use 2PL model
+  adaptive = TRUE,  # Enable adaptive testing
+  adaptive_start = 6,  # Start adaptive after item 5
+  max_items = 41,  # Total items to show
+  min_items = 41,  # Must show all items
+  min_SEM = 0.01,  # Very low to ensure all items shown
   response_ui_type = "radio",
   progress_style = "bar",
   language = "de",
   session_save = TRUE,
   session_timeout = 7200,
   results_processor = create_hilfo_report,
-  criteria = "MFI",  # Maximum Fisher Information for adaptive selection
-  item_selection_fun = custom_item_selection,  # Custom selection function
-  item_bank = all_items,
+  criteria = "MFI",  # Maximum Fisher Information
+  theta_prior = c(0, 1),  # Prior distribution
+  estimation_method = "EAP",  # Use EAP like in the examples
+  fixed_items = c(1:5, 11:41),  # Fixed: first 5 PA + items 11-41 (mapped from 21-51)
+  item_selection_fun = custom_item_selection,  # Use custom selection
+  item_bank = all_items,  # Full item bank
   save_to_file = TRUE,
   save_format = "csv",
   cloud_storage = TRUE,
