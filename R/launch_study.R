@@ -1430,7 +1430,7 @@ launch_study <- function(
           max-width: 1200px !important;
         }
         
-        .page-wrapper[data-ready="true"] {
+        .page-wrapper[data-ready='true'] {
           position: relative !important;
           transform: none !important;
           left: 0 !important;
