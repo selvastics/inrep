@@ -1109,7 +1109,7 @@ launch_study <- function(
     
     @keyframes fadeInCard {
       from {
-        opacity: 0;
+        opacity: 1;
       }
       to {
         opacity: 1;
@@ -1188,7 +1188,6 @@ launch_study <- function(
     
     .radio-group-container {
       margin: 25px 0;
-      padding-left: 30px;
     }
     
     .error-message {
@@ -1435,50 +1434,74 @@ launch_study <- function(
       
       # JavaScript to ensure proper positioning
       shiny::tags$script(HTML("
-        // Immediate positioning fix
+        // Smooth page transition handler
         (function() {
-          // Add style rules immediately
+          let isTransitioning = false;
+          
+          // Add stable styles immediately
           var style = document.createElement('style');
           style.innerHTML = `
             .page-wrapper, .assessment-card {
               position: relative !important;
               left: 0 !important;
               right: 0 !important;
-              margin-left: auto !important;
-              margin-right: auto !important;
-              transform: translateX(0) !important;
+              margin: 0 auto !important;
+              transform: none !important;
+              opacity: 1 !important;
             }
           `;
           document.head.appendChild(style);
-        })();
-        
-        // Fix positioning on page load
-        $(document).ready(function() {
-          // Ensure all content is centered
-          function fixPositioning() {
-            $('.page-wrapper').css({
+          
+          // Simple transition function with debouncing
+          function smoothTransition() {
+            if (isTransitioning) return;
+            isTransitioning = true;
+            
+            // Ensure stable positioning without flicker
+            $('.page-wrapper, .assessment-card').css({
               'position': 'relative',
               'left': '0',
               'right': '0',
               'margin': '0 auto',
-              'transform': 'none'
+              'transform': 'none',
+              'opacity': '1'
             });
             
-            $('.assessment-card').css({
-              'position': 'relative',
-              'left': '0',
-              'right': '0',
-              'margin': '20px auto'
-            });
+            setTimeout(() => {
+              isTransitioning = false;
+            }, 100);
           }
           
-          // Run immediately and after Shiny updates
-          fixPositioning();
+          // Apply on page load
+          smoothTransition();
+        })();
+        
+        // Handle Shiny updates with minimal interference
+        $(document).ready(function() {
+          let updateTimeout;
           
-          // Monitor for new content
-          $(document).on('shiny:value', function(event) {
-            setTimeout(fixPositioning, 10);
-          });
+                     // Debounced update handler
+           $(document).on('shiny:value', function(event) {
+             clearTimeout(updateTimeout);
+             updateTimeout = setTimeout(function() {
+               $('.page-wrapper, .assessment-card').css({
+                 'opacity': '1',
+                 'transform': 'none',
+                 'position': 'relative'
+               });
+             }, 50);
+           });
+           
+           // Handle stage transitions smoothly
+           $(document).on('shiny:value', function(event) {
+             if (event.name === 'study_ui') {
+               // Brief transition effect for stage changes
+               $('.page-wrapper').css('opacity', '0.98');
+               setTimeout(function() {
+                 $('.page-wrapper').css('opacity', '1');
+               }, 100);
+             }
+           });
           
           // Also fix on any DOM changes
           var observer = new MutationObserver(function(mutations) {
@@ -1536,50 +1559,53 @@ launch_study <- function(
           position: relative;
         }
         
-        /* Simple smooth fade-in for all pages (like main branch) */
-        .page-wrapper,
-        .assessment-card,
-        /* SMOOTH PAGE TRANSITIONS - Fixed positioning issues */
-        /* Initial state - prevent corner sticking */
+        /* SMOOTH PAGE TRANSITIONS - Simplified and stable */
         .page-wrapper {
-          opacity: 0;
+          width: 100%;
+          max-width: 1200px;
+          margin: 0 auto;
+          position: relative;
+          opacity: 1;
+          transition: opacity 0.15s ease-in-out;
+        }
+        
+        /* Ensure immediate visibility - no initial opacity 0 */
+        .page-wrapper,
+        .assessment-card {
+          opacity: 1 !important;
+          transform: none !important;
           position: relative !important;
-          width: 100% !important;
-          margin: 0 auto !important;
           left: 0 !important;
           right: 0 !important;
           top: 0 !important;
-          transform: translateX(0) !important;
-          animation: smoothFadeIn 0.3s ease-out forwards;
+          margin: 0 auto !important;
         }
         
-        /* Ensure content starts centered, not in corner */
-        .page-wrapper:not(.animated) {
-          opacity: 0;
-          transform: translateX(0) scale(1) !important;
+        /* Simple fade transition for stage changes */
+        .stage-transition {
+          opacity: 0.95;
+          transition: opacity 0.1s ease-out;
         }
         
+        /* Remove problematic animations */
         @keyframes smoothFadeIn {
-          0% {
-            opacity: 0;
-          }
-          100% {
-            opacity: 1;
-          }
+          from { opacity: 1; }
+          to { opacity: 1; }
         }
         
-        /* Assessment card - centered and stable */
+        /* Assessment card - stable and immediate */
         .assessment-card {
           min-height: 400px;
           width: 100%;
-          max-width: 800px !important;
-          margin: 20px auto !important;
-          padding: 20px;
-          box-sizing: border-box;
-          position: relative !important;
-          left: 0 !important;
-          right: 0 !important;
-          transform: none !important;
+          max-width: 800px;
+          margin: 0 auto 30px auto;
+          padding: 40px;
+          border-radius: var(--border-radius);
+          box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+          border: 1px solid var(--secondary-color);
+          background-color: var(--background-color);
+          color: var(--text-color);
+          /* Remove animation completely */
         }
         
         /* Demographics, instructions, results pages */
@@ -1957,6 +1983,14 @@ launch_study <- function(
   
   server <- function(input, output, session) {
     # ULTRA-FAST STARTUP: Show UI immediately, initialize everything else later
+    
+    # Smooth stage transition helper
+    smooth_stage_transition <- function(rv, new_stage) {
+      # Prevent rapid stage changes that cause UI flicker
+      rv$stage <- new_stage
+      # Force UI update with minimal delay
+      shiny::invalidateLater(10, session)
+    }
     
     # Step 1: Create minimal reactive values (no computation!)
     current_language <- shiny::reactiveVal(default_language)
