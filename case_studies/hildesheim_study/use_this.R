@@ -1145,6 +1145,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   # Encode as base64
   radar_base64 <- ""
   bar_base64 <- ""
+  trace_base64 <- ""  # Initialize trace_base64
   if (requireNamespace("base64enc", quietly = TRUE)) {
     radar_base64 <- base64enc::base64encode(radar_file)
     bar_base64 <- base64enc::base64encode(bar_file)
@@ -1410,6 +1411,18 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   # Create PDF content as data URL
   pdf_filename <- paste0("hilfo_results_", timestamp, ".pdf")
   
+  # Build JavaScript content strings with proper concatenation
+  date_label <- if (current_lang == "en") "Date: " else "Datum: "
+  profile_label <- if (current_lang == "en") "PERSONALITY PROFILE" else "PERSÖNLICHKEITSPROFIL"
+  pa_label <- if (current_lang == "en") "Programming Anxiety: " else "Programmierangst: "
+  agree_label <- if (current_lang == "en") "Agreeableness: " else "Verträglichkeit: "
+  consc_label <- if (current_lang == "en") "Conscientiousness: " else "Gewissenhaftigkeit: "
+  neuro_label <- if (current_lang == "en") "Neuroticism: " else "Neurotizismus: "
+  open_label <- if (current_lang == "en") "Openness: " else "Offenheit: "
+  stress_label <- if (current_lang == "en") "Stress: " else "Stress: "
+  study_label <- if (current_lang == "en") "Study Skills: " else "Studierfähigkeiten: "
+  stat_label <- if (current_lang == "en") "Statistics: " else "Statistik: "
+  
   download_section_html <- paste0(
     '<div class="download-section" style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">',
     '<h4 style="color: #333; margin-bottom: 15px;">',
@@ -1425,18 +1438,18 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     "(function(){",
     # Create a simplified text version for PDF
     "var content = 'HILFO STUDY RESULTS\\n\\n';",
-    "content += '", if (current_lang == "en") "Date: " else "Datum: ", format(Sys.Date(), "%d.%m.%Y"), "\\n\\n';",
-    "content += '", if (current_lang == "en") "PERSONALITY PROFILE\\n' else "PERSÖNLICHKEITSPROFIL\\n", "';",
+    "content += '", date_label, format(Sys.Date(), "%d.%m.%Y"), "\\n\\n';",
+    "content += '", profile_label, "\\n';",
     "content += '==================\\n';",
-    "content += '", if (current_lang == "en") "Programming Anxiety: " else "Programmierangst: ", sprintf("%.2f", scores$ProgrammingAnxiety), "\\n';",
+    "content += '", pa_label, sprintf("%.2f", scores$ProgrammingAnxiety), "\\n';",
     "content += 'Extraversion: ", sprintf("%.2f", scores$Extraversion), "\\n';",
-    "content += '", if (current_lang == "en") "Agreeableness: " else "Verträglichkeit: ", sprintf("%.2f", scores$Verträglichkeit), "\\n';",
-    "content += '", if (current_lang == "en") "Conscientiousness: " else "Gewissenhaftigkeit: ", sprintf("%.2f", scores$Gewissenhaftigkeit), "\\n';",
-    "content += '", if (current_lang == "en") "Neuroticism: " else "Neurotizismus: ", sprintf("%.2f", scores$Neurotizismus), "\\n';",
-    "content += '", if (current_lang == "en") "Openness: " else "Offenheit: ", sprintf("%.2f", scores$Offenheit), "\\n';",
-    "content += '\\n", if (current_lang == "en") "Stress: " else "Stress: ", sprintf("%.2f", scores$Stress), "\\n';",
-    "content += '", if (current_lang == "en") "Study Skills: " else "Studierfähigkeiten: ", sprintf("%.2f", scores$Studierfähigkeiten), "\\n';",
-    "content += '", if (current_lang == "en") "Statistics: " else "Statistik: ", sprintf("%.2f", scores$Statistik), "\\n';",
+    "content += '", agree_label, sprintf("%.2f", scores$Verträglichkeit), "\\n';",
+    "content += '", consc_label, sprintf("%.2f", scores$Gewissenhaftigkeit), "\\n';",
+    "content += '", neuro_label, sprintf("%.2f", scores$Neurotizismus), "\\n';",
+    "content += '", open_label, sprintf("%.2f", scores$Offenheit), "\\n';",
+    "content += '\\n", stress_label, sprintf("%.2f", scores$Stress), "\\n';",
+    "content += '", study_label, sprintf("%.2f", scores$Studierfähigkeiten), "\\n';",
+    "content += '", stat_label, sprintf("%.2f", scores$Statistik), "\\n';",
     # Create blob and download
     "var blob = new Blob([content], {type: 'text/plain;charset=utf-8'});",
     "var link = document.createElement('a');",
