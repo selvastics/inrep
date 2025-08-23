@@ -2129,8 +2129,11 @@ launch_study <- function(
                         demo_config <- config$demographic_configs[[dem]]
                       }
                       
-                      # Use question from config or fall back to variable name
-                      label_text <- if (!base::is.null(demo_config$question)) {
+                      # Use question from config with language support
+                      lang <- current_language()
+                      label_text <- if (lang == "en" && !base::is.null(demo_config$question_en)) {
+                        demo_config$question_en
+                      } else if (!base::is.null(demo_config$question)) {
                         demo_config$question
                       } else if (!base::is.null(demo_config$label)) {
                         demo_config$label
@@ -2151,7 +2154,9 @@ launch_study <- function(
                         "select" = shiny::selectInput(
                           inputId = input_id,
                           label = NULL,
-                          choices = if (!base::is.null(demo_config$options)) {
+                          choices = if (lang == "en" && !base::is.null(demo_config$options_en)) {
+                            base::c("Please select..." = "", demo_config$options_en)
+                          } else if (!base::is.null(demo_config$options)) {
                             base::c("Bitte wählen..." = "", demo_config$options)
                           } else {
                             base::c("Select..." = "", "Male", "Female", "Other", "Prefer not to say")
@@ -2162,7 +2167,9 @@ launch_study <- function(
                         "radio" = shiny::radioButtons(
                           inputId = input_id,
                           label = NULL,
-                          choices = if (!base::is.null(demo_config$options)) {
+                          choices = if (lang == "en" && !base::is.null(demo_config$options_en)) {
+                            demo_config$options_en
+                          } else if (!base::is.null(demo_config$options)) {
                             demo_config$options
                           } else {
                             base::c("Yes" = "yes", "No" = "no")
@@ -2173,7 +2180,9 @@ launch_study <- function(
                         "checkbox" = shiny::checkboxGroupInput(
                           inputId = input_id,
                           label = NULL,
-                          choices = if (!base::is.null(demo_config$options)) {
+                          choices = if (lang == "en" && !base::is.null(demo_config$options_en)) {
+                            demo_config$options_en
+                          } else if (!base::is.null(demo_config$options)) {
                             demo_config$options
                           } else {
                             base::c("Option 1" = "opt1", "Option 2" = "opt2")

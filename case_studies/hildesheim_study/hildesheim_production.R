@@ -164,6 +164,9 @@ demographic_configs <- list(
     options = c("17"="17", "18"="18", "19"="19", "20"="20", "21"="21", 
                 "22"="22", "23"="23", "24"="24", "25"="25", "26"="26", 
                 "27"="27", "28"="28", "29"="29", "30"="30", "älter als 30"="0"),
+    options_en = c("17"="17", "18"="18", "19"="19", "20"="20", "21"="21", 
+                   "22"="22", "23"="23", "24"="24", "25"="25", "26"="26", 
+                   "27"="27", "28"="28", "29"="29", "30"="30", "older than 30"="0"),
     required = TRUE
   ),
   Studiengang = list(
@@ -182,6 +185,7 @@ demographic_configs <- list(
   ),
   Wohnstatus = list(
     question = "Wie wohnen Sie?",
+    question_en = "How do you live?",
     options = c(
       "Bei meinen Eltern/Elternteil"="1",
       "In einer WG/WG in einem Wohnheim"="2", 
@@ -189,57 +193,88 @@ demographic_configs <- list(
       "Mit meinem/r Partner*In (mit oder ohne Kinder)"="4",
       "Anders"="6"
     ),
+    options_en = c(
+      "With my parents/parent"="1",
+      "In a shared apartment/dorm"="2",
+      "Alone/in a self-contained unit in a dorm"="3",
+      "With my partner (with or without children)"="4",
+      "Other"="6"
+    ),
     required = FALSE
   ),
   Wohn_Zusatz = list(
     question = "Falls anders, bitte spezifizieren:",
+    question_en = "If other, please specify:",
     type = "text",
     required = FALSE
   ),
   Haustier = list(
     question = "Haben Sie ein Haustier oder möchten Sie eines?",
+    question_en = "Do you have a pet or would you like one?",
     options = c(
       "Hund"="1", "Katze"="2", "Fische"="3", "Vogel"="4",
       "Nager"="5", "Reptil"="6", "Ich möchte kein Haustier"="7", "Sonstiges"="8"
+    ),
+    options_en = c(
+      "Dog"="1", "Cat"="2", "Fish"="3", "Bird"="4",
+      "Rodent"="5", "Reptile"="6", "I don't want a pet"="7", "Other"="8"
     ),
     required = FALSE
   ),
   Haustier_Zusatz = list(
     question = "Anderes Haustier:",
+    question_en = "Other pet:",
     type = "text",
     required = FALSE
   ),
   Rauchen = list(
     question = "Rauchen Sie?",
+    question_en = "Do you smoke?",
     options = c("Ja"="1", "Nein"="2"),
+    options_en = c("Yes"="1", "No"="2"),
     required = FALSE
   ),
   Ernährung = list(
     question = "Wie ernähren Sie sich hauptsächlich?",
+    question_en = "What is your main diet?",
     options = c(
       "Vegan"="1", "Vegetarisch"="2", "Pescetarisch"="7",
       "Flexitarisch"="4", "Omnivor (alles)"="5", "Andere"="6"
+    ),
+    options_en = c(
+      "Vegan"="1", "Vegetarian"="2", "Pescetarian"="7",
+      "Flexitarian"="4", "Omnivore (everything)"="5", "Other"="6"
     ),
     required = FALSE
   ),
   Ernährung_Zusatz = list(
     question = "Andere Ernährungsform:",
+    question_en = "Other diet:",
     type = "text",
     required = FALSE
   ),
   Note_Englisch = list(
     question = "Welche Note hatten Sie in Englisch im Abiturzeugnis?",
+    question_en = "What grade did you have in English in your Abitur certificate?",
     options = c(
       "sehr gut (15-13 Punkte)"="1",
       "gut (12-10 Punkte)"="2",
       "befriedigend (9-7 Punkte)"="3",
       "ausreichend (6-4 Punkte)"="4",
       "mangelhaft (3-0 Punkte)"="5"
+    ),
+    options_en = c(
+      "very good (15-13 points)"="1",
+      "good (12-10 points)"="2",
+      "satisfactory (9-7 points)"="3",
+      "sufficient (6-4 points)"="4",
+      "poor (3-0 points)"="5"
     ),
     required = FALSE
   ),
   Note_Mathe = list(
     question = "Welche Note hatten Sie in Mathematik im Abiturzeugnis?",
+    question_en = "What grade did you have in Mathematics in your Abitur certificate?",
     options = c(
       "sehr gut (15-13 Punkte)"="1",
       "gut (12-10 Punkte)"="2",
@@ -247,10 +282,18 @@ demographic_configs <- list(
       "ausreichend (6-4 Punkte)"="4",
       "mangelhaft (3-0 Punkte)"="5"
     ),
+    options_en = c(
+      "very good (15-13 points)"="1",
+      "good (12-10 points)"="2",
+      "satisfactory (9-7 points)"="3",
+      "sufficient (6-4 points)"="4",
+      "poor (3-0 points)"="5"
+    ),
     required = FALSE
   ),
   Vor_Nachbereitung = list(
     question = "Wieviele Stunden pro Woche planen Sie für die Vor- und Nachbereitung der Statistikveranstaltungen zu investieren?",
+    question_en = "How many hours per week do you plan to invest in preparing and reviewing statistics courses?",
     options = c(
       "0 Stunden"="1",
       "maximal eine Stunde"="2",
@@ -259,24 +302,41 @@ demographic_configs <- list(
       "mehr als drei, aber weniger als 4 Stunden"="5",
       "mehr als 4 Stunden"="6"
     ),
+    options_en = c(
+      "0 hours"="1",
+      "maximum one hour"="2",
+      "more than one, but less than 2 hours"="3",
+      "more than two, but less than 3 hours"="4",
+      "more than three, but less than 4 hours"="5",
+      "more than 4 hours"="6"
+    ),
     required = FALSE
   ),
   Zufrieden_Hi_5st = list(
     question = "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (5-stufig)",
+    question_en = "How satisfied are you with your study location Hildesheim? (5-point scale)",
     options = c(
       "gar nicht zufrieden"="1", "2"="2", "3"="3", "4"="4", "sehr zufrieden"="5"
+    ),
+    options_en = c(
+      "not at all satisfied"="1", "2"="2", "3"="3", "4"="4", "very satisfied"="5"
     ),
     required = FALSE
   ),
   Zufrieden_Hi_7st = list(
     question = "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (7-stufig)",
+    question_en = "How satisfied are you with your study location Hildesheim? (7-point scale)",
     options = c(
       "gar nicht zufrieden"="1", "2"="2", "3"="3", "4"="4", "5"="5", "6"="6", "sehr zufrieden"="7"
+    ),
+    options_en = c(
+      "not at all satisfied"="1", "2"="2", "3"="3", "4"="4", "5"="5", "6"="6", "very satisfied"="7"
     ),
     required = FALSE
   ),
   Persönlicher_Code = list(
     question = "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags):",
+    question_en = "Please create a personal code (first 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday):",
     type = "text",
     required = FALSE
   )
@@ -311,7 +371,7 @@ custom_page_flow <- list(
   list(
     id = "page1",
     type = "custom",
-    title = "Willkommen zur HilFo Studie",
+    title = "Willkommen zur HilFo Studie / Welcome to the HilFo Study",
     content = paste0(
       '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
       # Language switcher in top right corner
@@ -371,38 +431,38 @@ custom_page_flow <- list(
       '</div>',
       # JavaScript for language switching - FIXED VERSION
       '<script type="text/javascript">',
-      'var currentLang = "de";',
+      'var currentLang = \"de\";',
       '',
       'window.toggleLanguage = function() {',
-      '  console.log("Toggle language clicked!");',
-      '  var btn = document.getElementById("lang_switch");',
-      '  var deContent = document.getElementById("content_de");',
-      '  var enContent = document.getElementById("content_en");',
+      '  console.log(\"Toggle language clicked!\");',
+      '  var btn = document.getElementById(\"lang_switch\");',
+      '  var deContent = document.getElementById(\"content_de\");',
+      '  var enContent = document.getElementById(\"content_en\");',
       '  ',
       '  if (!deContent || !enContent) {',
-      '    console.log("Content divs not found!");',
+      '    console.log(\"Content divs not found!\");',
       '    return;',
       '  }',
       '  ',
-      '  if (currentLang === "de") {',
-      '    currentLang = "en";',
-      '    deContent.style.display = "none";',
-      '    enContent.style.display = "block";',
-      '    if (btn) btn.innerHTML = "🇩🇪 Deutsche Version";',
-      '    console.log("Switched to English");',
+      '  if (currentLang === \"de\") {',
+      '    currentLang = \"en\";',
+      '    deContent.style.display = \"none\";',
+      '    enContent.style.display = \"block\";',
+      '    if (btn) btn.innerHTML = \"🇩🇪 Deutsche Version\";',
+      '    console.log(\"Switched to English\");',
       '  } else {',
-      '    currentLang = "de";',
-      '    deContent.style.display = "block";',
-      '    enContent.style.display = "none";',
-      '    if (btn) btn.innerHTML = "🇬🇧 English Version";',
-      '    console.log("Switched to German");',
+      '    currentLang = \"de\";',
+      '    deContent.style.display = \"block\";',
+      '    enContent.style.display = \"none\";',
+      '    if (btn) btn.innerHTML = \"🇬🇧 English Version\";',
+      '    console.log(\"Switched to German\");',
       '  }',
       '  ',
       '  // Sync checkboxes',
-      '  var deCheck = document.getElementById("consent_check");',
-      '  var enCheck = document.getElementById("consent_check_en");',
+      '  var deCheck = document.getElementById(\"consent_check\");',
+      '  var enCheck = document.getElementById(\"consent_check_en\");',
       '  if (deCheck && enCheck) {',
-      '    if (currentLang === "en") {',
+      '    if (currentLang === \"en\") {',
       '      enCheck.checked = deCheck.checked;',
       '    } else {',
       '      deCheck.checked = enCheck.checked;',
@@ -411,16 +471,16 @@ custom_page_flow <- list(
       '  ',
       '  // Store language preference',
       '  try {',
-      '    localStorage.setItem("hilfo_language", currentLang);',
-      '    sessionStorage.setItem("hilfo_language", currentLang);',
+      '    localStorage.setItem(\"hilfo_language\", currentLang);',
+      '    sessionStorage.setItem(\"hilfo_language\", currentLang);',
       '  } catch(e) {',
-      '    console.log("Could not save language preference");',
+      '    console.log(\"Could not save language preference\");',
       '  }',
       '  ',
       '  // Tell Shiny to switch language for all pages',
-      '  if (typeof Shiny !== "undefined") {',
-      '    Shiny.setInputValue("study_language", currentLang, {priority: "event"});',
-      '    console.log("Sent language to Shiny:", currentLang);',
+      '  if (typeof Shiny !== \"undefined\") {',
+      '    Shiny.setInputValue(\"study_language\", currentLang, {priority: \"event\"});',
+      '    console.log(\"Sent language to Shiny:\", currentLang);',
       '  }',
       '};',
       '</script>',
@@ -434,7 +494,7 @@ custom_page_flow <- list(
   list(
     id = "page2",
     type = "demographics",
-    title = "Soziodemographische Angaben",
+    title = "Soziodemographische Angaben / Sociodemographic Information",
     demographics = c("Alter_VPN", "Studiengang", "Geschlecht")
   ),
   
@@ -442,7 +502,7 @@ custom_page_flow <- list(
   list(
     id = "page3",
     type = "demographics",
-    title = "Wohnsituation",
+    title = "Wohnsituation / Living Situation",
     demographics = c("Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz")
   ),
   
@@ -450,7 +510,7 @@ custom_page_flow <- list(
   list(
     id = "page4",
     type = "demographics",
-    title = "Lebensstil",
+    title = "Lebensstil / Lifestyle",
     demographics = c("Rauchen", "Ernährung", "Ernährung_Zusatz")
   ),
   
@@ -458,7 +518,7 @@ custom_page_flow <- list(
   list(
     id = "page5",
     type = "demographics",
-    title = "Bildung",
+    title = "Bildung / Education",
     demographics = c("Note_Englisch", "Note_Mathe")
   ),
   
@@ -466,29 +526,29 @@ custom_page_flow <- list(
   list(
     id = "page6",
     type = "items",
-    title = "Persönlichkeit - Teil 1",
-    instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
+    title = "Persönlichkeit - Teil 1 / Personality - Part 1",
+    instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen. / Please indicate to what extent the following statements apply to you.",
     item_indices = 1:5,  # Mixed first items
     scale_type = "likert"
   ),
   list(
     id = "page7",
     type = "items",
-    title = "Persönlichkeit - Teil 2",
+    title = "Persönlichkeit - Teil 2 / Personality - Part 2",
     item_indices = 6:10,  # Mixed second items
     scale_type = "likert"
   ),
   list(
     id = "page8",
     type = "items",
-    title = "Persönlichkeit - Teil 3",
+    title = "Persönlichkeit - Teil 3 / Personality - Part 3",
     item_indices = 11:15,  # Mixed third items
     scale_type = "likert"
   ),
   list(
     id = "page9",
     type = "items",
-    title = "Persönlichkeit - Teil 4",
+    title = "Persönlichkeit - Teil 4 / Personality - Part 4",
     item_indices = 16:20,  # Mixed fourth items
     scale_type = "likert"
   ),
@@ -497,8 +557,8 @@ custom_page_flow <- list(
   list(
     id = "page10",
     type = "items",
-    title = "Stress",
-    instructions = "Wie sehr treffen die folgenden Aussagen auf Sie zu?",
+    title = "Stress / Stress",
+    instructions = "Wie sehr treffen die folgenden Aussagen auf Sie zu? / How much do the following statements apply to you?",
     item_indices = 21:25,
     scale_type = "likert"
   ),
@@ -507,8 +567,8 @@ custom_page_flow <- list(
   list(
     id = "page11",
     type = "items",
-    title = "Studierfähigkeiten",
-    instructions = "Wie leicht oder schwer fällt es Ihnen...",
+    title = "Studierfähigkeiten / Study Skills",
+    instructions = "Wie leicht oder schwer fällt es Ihnen... / How easy or difficult is it for you...",
     item_indices = 26:29,
     scale_type = "difficulty"
   ),
@@ -517,7 +577,7 @@ custom_page_flow <- list(
   list(
     id = "page12",
     type = "items",
-    title = "Statistik",
+    title = "Statistik / Statistics",
     item_indices = 30:31,
     scale_type = "likert"
   ),
@@ -526,7 +586,7 @@ custom_page_flow <- list(
   list(
     id = "page13",
     type = "demographics",
-    title = "Studienzufriedenheit",
+    title = "Studienzufriedenheit / Study Satisfaction",
     demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st", "Persönlicher_Code")
   ),
   
@@ -534,7 +594,7 @@ custom_page_flow <- list(
   list(
     id = "page14",
     type = "results",
-    title = "Ihre Ergebnisse"
+    title = "Ihre Ergebnisse / Your Results"
   )
 )
 
