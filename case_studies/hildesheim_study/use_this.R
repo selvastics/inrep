@@ -1870,495 +1870,205 @@ cat("Fixed radar plot with proper connections\n")
 cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
 
-# COMPLETE BILINGUAL SUPPORT WITH REAL-TIME TRANSLATION
-# This creates a comprehensive translation system that handles ALL content dynamically
-custom_js <- paste0(
-  '<script>',
-  'var currentLang = "de";',
-  'var isTranslating = false;',
-  '',
-  '// COMPREHENSIVE TRANSLATION DICTIONARY - EVERY SINGLE ELEMENT',
-  'var translations = {',
-  '  // Page titles',
-  '  "Soziodemographische Angaben": "Sociodemographic Information",',
-  '  "Wohnsituation": "Living Situation",',
-  '  "Lebensstil": "Lifestyle", ',
-  '  "Bildung": "Education",',
-  '  "Programmierangst - Teil 1": "Programming Anxiety - Part 1",',
-  '  "Programmierangst - Teil 2": "Programming Anxiety - Part 2",',
-  '  "Programmierangst": "Programming Anxiety",',
-  '  "Persönlichkeit - Teil 1": "Personality - Part 1",',
-  '  "Persönlichkeit - Teil 2": "Personality - Part 2", ',
-  '  "Persönlichkeit - Teil 3": "Personality - Part 3",',
-  '  "Persönlichkeit - Teil 4": "Personality - Part 4",',
-  '  "Stress": "Stress",',
-  '  "Studierfähigkeiten": "Study Skills",',
-  '  "Statistik": "Statistics",',
-  '  "Studienzufriedenheit": "Study Satisfaction",',
-  '  "Ihre Ergebnisse": "Your Results",',
-  '  ',
-  '  // Questions',
-  '  "Wie alt sind Sie?": "How old are you?",',
-  '  "In welchem Studiengang befinden Sie sich?": "Which study program are you in?",',
-  '  "Welches Geschlecht haben Sie?": "What is your gender?",',
-  '  "Wie wohnen Sie?": "How do you live?",',
-  '  "Haben Sie ein Haustier oder möchten Sie eines?": "Do you have a pet or would you like one?",',
-  '  "Rauchen Sie?": "Do you smoke?",',
-  '  "Wie ernähren Sie sich hauptsächlich?": "What is your main diet?",',
-  '  "Welche Note hatten Sie in Englisch im Abiturzeugnis?": "What grade did you have in English in your Abitur certificate?",',
-  '  "Welche Note hatten Sie in Mathematik im Abiturzeugnis?": "What grade did you have in Mathematics in your Abitur certificate?",',
-  '  "Wieviele Stunden pro Woche planen Sie für die Vor- und Nachbereitung der Statistikveranstaltungen zu investieren?": "How many hours per week do you plan to invest in preparing and reviewing statistics courses?",',
-  '  "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (5-stufig)": "How satisfied are you with your study location Hildesheim? (5-point scale)",',
-  '  "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (7-stufig)": "How satisfied are you with your study location Hildesheim? (7-point scale)",',
-  '  "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags):": "Please create a personal code (first 2 letters of your mother\\'s first name + first 2 letters of your birthplace + day of your birthday):",',
-  '  ',
-  '  // Response options',
-  '  "Bachelor Psychologie": "Bachelor Psychology",',
-  '  "Master Psychologie": "Master Psychology",',
-  '  "weiblich oder divers": "female or diverse",',
-  '  "männlich": "male",',
-  '  "Bei meinen Eltern/Elternteil": "With my parents/parent",',
-  '  "In einer WG/WG in einem Wohnheim": "In a shared apartment/dorm",',
-  '  "Alleine/in abgeschlossener Wohneinheit in einem Wohnheim": "Alone/in a self-contained unit in a dorm",',
-  '  "Mit meinem/r Partner*In (mit oder ohne Kinder)": "With my partner (with or without children)",',
-  '  "Anders": "Other",',
-  '  "Hund": "Dog",',
-  '  "Katze": "Cat",',
-  '  "Fische": "Fish",',
-  '  "Vogel": "Bird",',
-  '  "Nager": "Rodent",',
-  '  "Reptil": "Reptile",',
-  '  "Ich möchte kein Haustier": "I don\\'t want a pet",',
-  '  "Sonstiges": "Other",',
-  '  "Ja": "Yes",',
-  '  "Nein": "No",',
-  '  "Vegan": "Vegan",',
-  '  "Vegetarisch": "Vegetarian",',
-  '  "Pescetarisch": "Pescetarian",',
-  '  "Flexitarisch": "Flexitarian",',
-  '  "Omnivor (alles)": "Omnivore (everything)",',
-  '  "Andere": "Other",',
-  '  "älter als 30": "older than 30",',
-  '  "sehr gut (15-13 Punkte)": "very good (15-13 points)",',
-  '  "gut (12-10 Punkte)": "good (12-10 points)",',
-  '  "befriedigend (9-7 Punkte)": "satisfactory (9-7 points)",',
-  '  "ausreichend (6-4 Punkte)": "sufficient (6-4 points)",',
-  '  "mangelhaft (3-0 Punkte)": "poor (3-0 points)",',
-  '  "0 Stunden": "0 hours",',
-  '  "maximal eine Stunde": "maximum one hour",',
-  '  "mehr als eine, aber weniger als 2 Stunden": "more than one, but less than 2 hours",',
-  '  "mehr als zwei, aber weniger als 3 Stunden": "more than two, but less than 3 hours",',
-  '  "mehr als drei, aber weniger als 4 Stunden": "more than three, but less than 4 hours",',
-  '  "mehr als 4 Stunden": "more than 4 hours",',
-  '  "gar nicht zufrieden": "not at all satisfied",',
-  '  "sehr zufrieden": "very satisfied",',
-  '  ',
-  '  // Navigation and UI',
-  '  "Weiter": "Next",',
-  '  "Zurück": "Back",',
-  '  "Seite": "Page",',
-  '  " von ": " of ",',
-  '  "Bitte beantworten Sie:": "Please answer:",',
-  '  "Bitte wählen...": "Please select...",',
-  '  "Bitte wählen": "Please select",',
-  '  ',
-  '  // Instructions',
-  '  "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.": "Please indicate to what extent the following statements apply to you.",',
-  '  "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.": "The following questions are selected based on your previous answers.",',
-  '  "Wie sehr treffen die folgenden Aussagen auf Sie zu?": "How much do the following statements apply to you?",',
-  '  "Wie leicht oder schwer fällt es Ihnen...": "How easy or difficult is it for you...",',
-  '  ',
-  '  // Likert scales',
-  '  "Stimme überhaupt nicht zu": "Strongly disagree",',
-  '  "Stimme nicht zu": "Disagree",',
-  '  "Neutral": "Neutral",',
-  '  "Stimme zu": "Agree",',
-  '  "Stimme voll zu": "Strongly agree",',
-  '  "trifft überhaupt nicht zu": "does not apply at all",',
-  '  "trifft eher nicht zu": "rather does not apply",',
-  '  "teils/teils": "partly/partly",',
-  '  "trifft eher zu": "rather applies",',
-  '  "trifft voll zu": "fully applies",',
-  '  "Sehr schwer": "Very difficult",',
-  '  "Schwer": "Difficult",',
-  '  "Mittel": "Medium",',
-  '  "Leicht": "Easy",',
-  '  "Sehr leicht": "Very easy",',
-  '  ',
-  '  // Programming Anxiety Items (ALL 20 ITEMS)',
-  '  "Wie sicher fühlen Sie sich, einen Fehler in Ihrem Code ohne Hilfe zu beheben?": "How confident are you in your ability to fix an error in your code without help?",',
-  '  "Fühlen Sie sich überfordert, wenn Sie mit einem neuen Programmierprojekt beginnen?": "Do you feel overwhelmed when starting a new programming project?",',
-  '  "Ich mache mir Sorgen, dass meine Programmierkenntnisse für komplexere Aufgaben nicht ausreichen.": "I worry that my programming skills are not good enough for more complex tasks.",',
-  '  "Beim Lesen von Dokumentation fühle ich mich oft verloren oder verwirrt.": "When reading documentation, I often feel lost or confused.",',
-  '  "Das Debuggen von Code macht mich nervös, besonders wenn ich den Fehler nicht sofort finde.": "Debugging code makes me anxious, especially when I cannot immediately spot the issue.",',
-  '  "Ich vermeide es, neue Programmiersprachen zu nutzen, weil ich Angst habe, Fehler zu machen.": "I avoid using new programming languages because I am afraid of making mistakes.",',
-  '  "In Gruppencodier-Sitzungen bin ich nervös, dass meine Beiträge nicht geschätzt werden.": "During group coding sessions, I am nervous that my contributions will not be valued.",',
-  '  "Ich habe Sorge, Programmieraufgaben nicht rechtzeitig aufgrund fehlender Fähigkeiten abschließen zu können.": "I worry that I will be unable to finish a coding assignment on time due to lack of skills.",',
-  '  "Wenn ich bei einem Programmierproblem nicht weiterkomme, ist es mir peinlich, um Hilfe zu bitten.": "When I get stuck on a programming problem, I feel embarrassed to ask for help.",',
-  '  "Ich fühle mich wohl dabei, meinen Code anderen zu erklären.": "I feel comfortable explaining my code to others.",',
-  '  "Fortgeschrittene Programmierkonzepte (z.B. Rekursion, Multithreading) finde ich einschüchternd.": "I find advanced coding concepts (e.g., recursion, multithreading) intimidating.",',
-  '  "Ich zweifle oft daran, Programmieren über die Grundlagen hinaus lernen zu können.": "I often doubt my ability to learn programming beyond the basics.",',
-  '  "Wenn mein Code nicht funktioniert, glaube ich, dass es an meinem mangelnden Talent liegt.": "When my code does not work, I worry it is because I lack programming talent.",',
-  '  "Es macht mich nervös, Code ohne Schritt-für-Schritt-Anleitung zu schreiben.": "I feel anxious when asked to write code without step-by-step instructions.",',
-  '  "Ich bin zuversichtlich, bestehenden Code zu verändern, um neue Funktionen hinzuzufügen.": "I am confident in modifying existing code to add new features.",',
-  '  "Ich fühle mich manchmal ängstlich, noch bevor ich mit dem Programmieren beginne.": "I sometimes feel anxious even before sitting down to start programming.",',
-  '  "Allein der Gedanke an das Debuggen macht mich angespannt, selbst bei kleineren Fehlern.": "The thought of debugging makes me tense, even if the bug is minor.",',
-  '  "Ich mache mir Sorgen, für die Qualität meines Codes beurteilt zu werden.": "I worry about being judged for the quality of my code.",',
-  '  "Wenn mir jemand beim Programmieren zuschaut, werde ich nervös und mache Fehler.": "When someone watches me code, I get nervous and make mistakes.",',
-  '  "Schon der Gedanke an bevorstehende Programmieraufgaben setzt mich unter Stress.": "I feel stressed just by thinking about upcoming programming tasks.",',
-  '  ',
-  '  // BFI Items (ALL 20 ITEMS)',
-  '  "Ich gehe aus mir heraus, bin gesellig.": "I am outgoing, sociable.",',
-  '  "Ich bin eher ruhig.": "I am rather quiet.",',
-  '  "Ich bin eher schüchtern.": "I am rather shy.",',
-  '  "Ich bin gesprächig.": "I am talkative.",',
-  '  "Ich bin einfühlsam, warmherzig.": "I am empathetic, warm-hearted.",',
-  '  "Ich habe mit anderen wenig Mitgefühl.": "I have little sympathy for others.",',
-  '  "Ich bin hilfsbereit und selbstlos.": "I am helpful and selfless.",',
-  '  "Andere sind mir eher gleichgültig, egal.": "Others are rather indifferent to me.",',
-  '  "Ich bin eher unordentlich.": "I am rather disorganized.",',
-  '  "Ich bin systematisch, halte meine Sachen in Ordnung.": "I am systematic, keep my things in order.",',
-  '  "Ich mag es sauber und aufgeräumt.": "I like it clean and tidy.",',
-  '  "Ich bin eher der chaotische Typ, mache selten sauber.": "I am rather the chaotic type, rarely clean up.",',
-  '  "Ich bleibe auch in stressigen Situationen gelassen.": "I remain calm even in stressful situations.",',
-  '  "Ich reagiere leicht angespannt.": "I react easily tensed.",',
-  '  "Ich mache mir oft Sorgen.": "I often worry.",',
-  '  "Ich werde selten nervös und unsicher.": "I rarely become nervous and insecure.",',
-  '  "Ich bin vielseitig interessiert.": "I have diverse interests.",',
-  '  "Ich meide philosophische Diskussionen.": "I avoid philosophical discussions.",',
-  '  "Es macht mir Spaß, gründlich über komplexe Dinge nachzudenken und sie zu verstehen.": "I enjoy thinking thoroughly about complex things and understanding them.",',
-  '  "Mich interessieren abstrakte Überlegungen wenig.": "Abstract considerations interest me little.",',
-  '  ',
-  '  // Stress Items',
-  '  "Ich habe das Gefühl, dass zu viele Forderungen an mich gestellt werden.": "I feel that too many demands are placed on me.",',
-  '  "Ich habe zuviel zu tun.": "I have too much to do.",',
-  '  "Ich fühle mich gehetzt.": "I feel rushed.",',
-  '  "Ich habe genug Zeit für mich.": "I have enough time for myself.",',
-  '  "Ich fühle mich unter Termindruck.": "I feel under deadline pressure.",',
-  '  ',
-  '  // Study Skills Items',
-  '  "mit dem sozialen Klima im Studiengang zurechtzukommen (z.B. Konkurrenz aushalten)": "coping with the social climate in the program (e.g., handling competition)",',
-  '  "Teamarbeit zu organisieren (z.B. Lerngruppen finden)": "organizing teamwork (e.g., finding study groups)",',
-  '  "Kontakte zu Mitstudierenden zu knüpfen (z.B. für Lerngruppen, Freizeit)": "making contacts with fellow students (e.g., for study groups, leisure)",',
-  '  "im Team zusammen zu arbeiten (z.B. gemeinsam Aufgaben bearbeiten, Referate vorbereiten)": "working together in a team (e.g., working on tasks together, preparing presentations)",',
-  '  ',
-  '  // Statistics Items',
-  '  "Bislang konnte ich den Inhalten der Statistikveranstaltungen gut folgen.": "So far I have been able to follow the content of the statistics courses well.",',
-  '  "Ich bin in der Lage, Statistik zu erlernen.": "I am able to learn statistics."',
-  '};',
-  '',
-  '// TRANSLATION FUNCTION WITHOUT CONSOLE SYMBOLS',
-  'function translateEverything() {',
-  '  if (isTranslating) return;',
-  '  isTranslating = true;',
-  '  ',
-  '  console.log("TRANSLATING EVERYTHING TO:", currentLang.toUpperCase());',
-  '  ',
-  '  try {',
-  '    if (currentLang === "en") {',
-  '      // TRANSLATE TO ENGLISH',
-  '      translateToEnglish();',
-  '    } else {',
-  '      // TRANSLATE TO GERMAN (reverse translation)',
-  '      translateToGerman();',
-  '    }',
-  '  } catch (e) {',
-  '    console.error("Translation error:", e);',
-  '  }',
-  '  ',
-  '  isTranslating = false;',
-  '}',
-  '',
-  'function translateToEnglish() {',
-  '  // Get all text nodes and elements',
-  '  var walker = document.createTreeWalker(',
-  '    document.body,',
-  '    NodeFilter.SHOW_TEXT,',
-  '    null,',
-  '    false',
-  '  );',
-  '  ',
-  '  var textNodes = [];',
-  '  var node;',
-  '  while (node = walker.nextNode()) {',
-  '    if (node.textContent.trim()) {',
-  '      textNodes.push(node);',
-  '    }',
-  '  }',
-  '  ',
-  '  // Translate all text nodes',
-  '  textNodes.forEach(function(node) {',
-  '    var text = node.textContent;',
-  '    var translated = false;',
-  '    ',
-  '    for (var german in translations) {',
-  '      if (text.includes(german)) {',
-  '        node.textContent = text.replace(new RegExp(escapeRegex(german), "g"), translations[german]);',
-  '        translated = true;',
-  '      }',
-  '    }',
-  '  });',
-  '  ',
-  '  // Translate all input values and placeholders',
-  '  document.querySelectorAll("input, select, option, label").forEach(function(el) {',
-  '    // Translate value',
-  '    if (el.value && translations[el.value]) {',
-  '      el.value = translations[el.value];',
-  '    }',
-  '    ',
-  '    // Translate placeholder',
-  '    if (el.placeholder && translations[el.placeholder]) {',
-  '      el.placeholder = translations[el.placeholder];',
-  '    }',
-  '    ',
-  '    // Translate option text',
-  '    if (el.tagName === "OPTION" && el.textContent && translations[el.textContent.trim()]) {',
-  '      el.textContent = translations[el.textContent.trim()];',
-  '    }',
-  '  });',
-  '  ',
-  '  // Special handling for page indicators',
-  '  document.querySelectorAll("*").forEach(function(el) {',
-  '    if (el.textContent && el.textContent.match(/Seite \\d+ von \\d+/)) {',
-  '      el.textContent = el.textContent.replace("Seite", "Page").replace(" von ", " of ");',
-  '    }',
-  '  });',
-  '  ',
-  '  console.log("Translation to English completed");',
-  '}',
-  '',
-  'function translateToGerman() {',
-  '  // Reverse translation - English back to German',
-  '  var reverseTranslations = {};',
-  '  for (var german in translations) {',
-  '    reverseTranslations[translations[german]] = german;',
-  '  }',
-  '  ',
-  '  var walker = document.createTreeWalker(',
-  '    document.body,',
-  '    NodeFilter.SHOW_TEXT,',
-  '    null,',
-  '    false',
-  '  );',
-  '  ',
-  '  var textNodes = [];',
-  '  var node;',
-  '  while (node = walker.nextNode()) {',
-  '    if (node.textContent.trim()) {',
-  '      textNodes.push(node);',
-  '    }',
-  '  }',
-  '  ',
-  '  textNodes.forEach(function(node) {',
-  '    var text = node.textContent;',
-  '    for (var english in reverseTranslations) {',
-  '      if (text.includes(english)) {',
-  '        node.textContent = text.replace(new RegExp(escapeRegex(english), "g"), reverseTranslations[english]);',
-  '      }',
-  '    }',
-  '  });',
-  '  ',
-  '  // Reverse translate inputs',
-  '  document.querySelectorAll("input, select, option, label").forEach(function(el) {',
-  '    if (el.value && reverseTranslations[el.value]) {',
-  '      el.value = reverseTranslations[el.value];',
-  '    }',
-  '    if (el.placeholder && reverseTranslations[el.placeholder]) {',
-  '      el.placeholder = reverseTranslations[el.placeholder];',
-  '    }',
-  '    if (el.tagName === "OPTION" && el.textContent && reverseTranslations[el.textContent.trim()]) {',
-  '      el.textContent = reverseTranslations[el.textContent.trim()];',
-  '    }',
-  '  });',
-  '  ',
-  '  console.log("Translation to German completed");',
-  '}',
-  '',
-  'function escapeRegex(string) {',
-  '  return string.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&");',
-  '}',
-  '',
-  '// TOGGLE LANGUAGE FUNCTION',
-  'function toggleLanguage() {',
-  '  currentLang = currentLang === "de" ? "en" : "de";',
-  '  console.log("LANGUAGE SWITCHED TO:", currentLang.toUpperCase());',
-  '  ',
-  '  // Update button text',
-  '  var btn = document.getElementById("lang_toggle");',
-  '  if (btn) {',
-  '    btn.textContent = currentLang === "de" ? "English" : "Deutsch";',
-  '  }',
-  '  ',
-  '  // Translate immediately and repeatedly to catch all content',
-  '  translateEverything();',
-  '  setTimeout(translateEverything, 50);',
-  '  setTimeout(translateEverything, 100);',
-  '  setTimeout(translateEverything, 200);',
-  '  setTimeout(translateEverything, 500);',
-  '  setTimeout(translateEverything, 1000);',
-  '  ',
-  '  // Notify Shiny about language change',
-  '  if (typeof Shiny !== "undefined") {',
-  '    Shiny.setInputValue("study_language", currentLang, {priority: "event"});',
-  '  }',
-  '}',
-  '',
-  '// INITIALIZE WHEN PAGE LOADS',
-  'document.addEventListener("DOMContentLoaded", function() {',
-  '  console.log("BILINGUAL SYSTEM INITIALIZED");',
-  '  ',
-  '  // Create language toggle button',
-  '  var btn = document.createElement("button");',
-  '  btn.id = "lang_toggle";',
-  '  btn.textContent = "English";',
-  '  btn.style.cssText = "position:fixed;top:10px;right:10px;z-index:9999;background:white;border:2px solid #e8041c;color:#e8041c;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:bold;";',
-  '  btn.onclick = toggleLanguage;',
-  '  document.body.appendChild(btn);',
-  '  ',
-  '  // Set up mutation observer to watch for page changes',
-  '  var observer = new MutationObserver(function(mutations) {',
-  '    if (currentLang === "en") {',
-  '      setTimeout(translateEverything, 100);',
-  '    }',
-  '  });',
-  '  ',
-  '  observer.observe(document.body, {',
-  '    childList: true,',
-  '    subtree: true,',
-  '    characterData: true,',
-  '    attributes: true',
-  '  });',
-  '  ',
-  '  console.log("MUTATION OBSERVER ACTIVE - watching for page changes");',
-  '});',
-  '',
-  '// ENABLE RADIO BUTTON DESELECTION',
-  'document.addEventListener("click", function(e) {',
-  '  if (e.target && e.target.type === "radio") {',
-  '    var wasChecked = e.target.getAttribute("data-was-checked") === "true";',
-  '    ',
-  '    // Clear all radios in group',
-  '    var radios = document.querySelectorAll("input[name=\\"" + e.target.name + "\\"]");',
-  '    for (var i = 0; i < radios.length; i++) {',
-  '      radios[i].setAttribute("data-was-checked", "false");',
-  '    }',
-  '    ',
-  '    if (wasChecked) {',
-  '      e.target.checked = false;',
-  '      if (typeof Shiny !== "undefined") {',
-  '        Shiny.setInputValue(e.target.name, null, {priority: "event"});',
-  '      }',
-  '    } else {',
-  '      e.target.setAttribute("data-was-checked", "true");',
-  '    }',
-  '  }',
-  '});',
-  '</script>'
-)
+# Simplified JavaScript for language toggle and radio button deselection
+# Server handles all translation, JavaScript just triggers language switch
+custom_js <- '<script>
+var currentLang = "de";
+
+// TOGGLE LANGUAGE FUNCTION - Server handles translation
+function toggleLanguage() {
+  currentLang = currentLang === "de" ? "en" : "de";
+  console.log("LANGUAGE SWITCHED TO:", currentLang.toUpperCase());
+  
+  // Update button text
+  var btn = document.getElementById("lang_toggle");
+  if (btn) {
+    btn.textContent = currentLang === "de" ? "English" : "Deutsch";
+  }
+  
+  // Notify Shiny about language change - SERVER WILL RELOAD ENTIRE ASSESSMENT IN NEW LANGUAGE
+  if (typeof Shiny !== "undefined") {
+    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+    console.log("SERVER: Language change sent to server - entire assessment will reload in", currentLang.toUpperCase());
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  console.log("BILINGUAL SYSTEM INITIALIZED - SERVER-SIDE TRANSLATION");
+  
+  // Create language toggle button
+  var btn = document.createElement("button");
+  btn.id = "lang_toggle";
+  btn.textContent = "English";
+  btn.style.cssText = "position:fixed;top:10px;right:10px;z-index:9999;background:white;border:2px solid #e8041c;color:#e8041c;padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:bold;";
+  btn.onclick = toggleLanguage;
+  document.body.appendChild(btn);
+  
+  // Enable radio button deselection
+  document.addEventListener("click", function(e) {
+    if (e.target && e.target.type === "radio") {
+      var wasChecked = e.target.getAttribute("data-was-checked") === "true";
+      
+      // Clear all radios in group
+      var radios = document.querySelectorAll("input[name=\\"" + e.target.name + "\\"]");
+      for (var i = 0; i < radios.length; i++) {
+        radios[i].setAttribute("data-was-checked", "false");
+      }
+      
+      if (wasChecked) {
+        e.target.checked = false;
+        if (typeof Shiny !== "undefined") {
+          Shiny.setInputValue(e.target.name, null, {priority: "event"});
+        }
+      } else {
+        e.target.setAttribute("data-was-checked", "true");
+      }
+    }
+  });
+  
+  console.log("RADIO DESELECTION ENABLED");
+});
+</script>'
+
+# Simple JavaScript for radio button deselection ONLY
+custom_js_old <- '<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // Enable radio button deselection
+  document.addEventListener("click", function(e) {
+    if (e.target && e.target.type === "radio") {
+      var wasChecked = e.target.getAttribute("data-was-checked") === "true";
+      
+      // Clear all radios in group
+      var radios = document.querySelectorAll("input[name=\\"" + e.target.name + "\\"]");
+      for (var i = 0; i < radios.length; i++) {
+        radios[i].setAttribute("data-was-checked", "false");
+      }
+      
+      if (wasChecked) {
+        e.target.checked = false;
+        if (typeof Shiny !== "undefined") {
+          Shiny.setInputValue(e.target.name, null, {priority: "event"});
+        }
+      } else {
+        e.target.setAttribute("data-was-checked", "true");
+      }
+    }
+  });
+});
+</script>'
 
 # Add adaptive monitoring function
 monitor_adaptive <- function(session_data) {
-  # Check if we're in adaptive PA phase (items 6-10)
-  if (!is.null(session_data$current_item)) {
-    item_num <- session_data$current_item
-    
-    # Output adaptive info for PA items 6-10
-    if (item_num >= 6 && item_num <= 10) {
-      cat("\n================================================================================\n")
-      cat(sprintf("ADAPTIVE ITEM SELECTION - Programming Anxiety Item %d\n", item_num))
-      cat("================================================================================\n")
-      
-      # Calculate current theta estimate
-      if (!is.null(session_data$theta)) {
-        cat(sprintf("Current ability estimate: theta=%.3f, SE=%.3f\n", 
-                   session_data$theta, session_data$se))
-      }
-      
-      # Show item pool info
-      available_items <- 6:20
-      already_shown <- if (!is.null(session_data$administered)) {
-        session_data$administered[session_data$administered <= 20]
-      } else {
-        1:5
-      }
-      remaining <- setdiff(available_items, already_shown)
-      
-      if (length(remaining) > 5) {
-        cat(sprintf("Available items in adaptive pool: %d items remaining\n", length(remaining)))
-        cat("\nItem Information Analysis:\n")
+    # Check if we're in adaptive PA phase (items 6-10)
+    if (!is.null(session_data$current_item)) {
+        item_num <- session_data$current_item
         
-        # Show why this item was selected
-        cat(sprintf("   Selected: Item %d (PA_%02d)\n", item_num, item_num))
-        cat(sprintf("   Difficulty: b = %.2f\n", all_items_de$b[item_num]))
-        cat(sprintf("   Discrimination: a = %.2f\n", all_items_de$a[item_num]))
-        cat("   Selection criterion: Maximum Fisher Information\n")
-      }
-      
-      cat("================================================================================\n\n")
+        # Output adaptive info for PA items 6-10
+        if (item_num >= 6 && item_num <= 10) {
+            cat("\n================================================================================\n")
+            cat(sprintf("ADAPTIVE ITEM SELECTION - Programming Anxiety Item %d\n", item_num))
+            cat("================================================================================\n")
+            
+            # Calculate current theta estimate
+            if (!is.null(session_data$theta)) {
+                cat(sprintf("Current ability estimate: theta=%.3f, SE=%.3f\n", 
+                           session_data$theta, session_data$se))
+            }
+            
+            # Show item pool info
+            available_items <- 6:20
+            already_shown <- if (!is.null(session_data$administered)) {
+                session_data$administered[session_data$administered <= 20]
+            } else {
+                1:5
+            }
+            remaining <- setdiff(available_items, already_shown)
+            
+            if (length(remaining) > 5) {
+                cat(sprintf("Available items in adaptive pool: %d items remaining\n", length(remaining)))
+                cat("\nItem Information Analysis:\n")
+                
+                # Show why this item was selected
+                cat(sprintf("   Selected: Item %d (PA_%02d)\n", item_num, item_num))
+                cat(sprintf("   Difficulty: b = %.2f\n", all_items_de$b[item_num]))
+                cat(sprintf("   Discrimination: a = %.2f\n", all_items_de$a[item_num]))
+                cat("   Selection criterion: Maximum Fisher Information\n")
+            }
+            
+            cat("================================================================================\n\n")
+        }
     }
-  }
+}
+
+# Enable bilingual support in study config
+study_config$bilingual <- TRUE
+study_config$server_extensions <- function(input, output, session) {
+    # Initialize language state
+    session$userData$current_language <- "de"
+    
+    # Observe language changes and update ALL content accordingly
+    observeEvent(input$study_language, {
+        lang <- input$study_language
+        if (!is.null(lang) && lang %in% c("de", "en")) {
+            cat("SERVER: Language switched to:", toupper(lang), "\n")
+            
+            # Update session language
+            session$userData$current_language <- lang
+            
+            # Update item bank for current language - CRITICAL FOR SERVER RENDERING
+            if (lang == "en") {
+                # Switch to English item bank
+                updated_items <- get_items_for_language("en")
+                session$userData$item_bank <- updated_items
+                # Update the global config item bank as well
+                assign("all_items", updated_items, envir = .GlobalEnv)
+                cat("SERVER: Item bank switched to English - all questions now use Question_EN\n")
+            } else {
+                # Switch to German item bank
+                updated_items <- get_items_for_language("de") 
+                session$userData$item_bank <- updated_items
+                # Update the global config item bank as well
+                assign("all_items", updated_items, envir = .GlobalEnv)
+                cat("SERVER: Item bank switched to German - all questions now use Question\n")
+            }
+            
+            # Update demographic configs for current language - CRITICAL FOR SERVER RENDERING
+            updated_demographics <- get_demographic_configs_for_language(lang)
+            session$userData$demographic_configs <- updated_demographics
+            
+            # Update the global demographic configs as well
+            assign("demographic_configs", updated_demographics, envir = .GlobalEnv)
+            
+            # Update page flow for current language
+            updated_page_flow <- custom_page_flow
+            for (i in seq_along(updated_page_flow)) {
+                page <- updated_page_flow[[i]]
+                if (lang == "en" && !is.null(page$title_en)) {
+                    page$title <- page$title_en
+                }
+                if (lang == "en" && !is.null(page$instructions_en)) {
+                    page$instructions <- page$instructions_en
+                }
+                updated_page_flow[[i]] <- page
+            }
+            session$userData$custom_page_flow <- updated_page_flow
+            assign("custom_page_flow", updated_page_flow, envir = .GlobalEnv)
+            
+            # Force complete UI refresh
+            session$reload()
+            
+            cat("SERVER: Complete language switch completed - entire assessment now in", toupper(lang), "\n")
+        }
+    }, ignoreInit = FALSE)
 }
 
 # Launch with cloud storage, adaptive testing, and comprehensive bilingual support
 inrep::launch_study(
     config = study_config,
-    item_bank = all_items,  # German item bank
+    item_bank = all_items,  # Will be updated dynamically based on language
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
     save_format = "csv",
-    custom_css = custom_js,  # Comprehensive bilingual JavaScript + radio deselection
-    admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
-    # COMPREHENSIVE SERVER-SIDE LANGUAGE HANDLING
-    server_extensions = function(input, output, session) {
-        # Initialize language state
-        session$userData$current_language <- "de"
-        
-        # Observe language changes and update ALL content accordingly
-        observeEvent(input$study_language, {
-            lang <- input$study_language
-            if (!is.null(lang) && lang %in% c("de", "en")) {
-                cat("SERVER: Language switched to:", toupper(lang), "\n")
-                
-                # Update session language
-                session$userData$current_language <- lang
-                
-                # Update item bank for current language
-                if (lang == "en") {
-                    # Switch to English item bank
-                    updated_items <- get_items_for_language("en")
-                    session$userData$item_bank <- updated_items
-                    cat("SERVER: Item bank switched to English\n")
-                } else {
-                    # Switch to German item bank
-                    updated_items <- get_items_for_language("de") 
-                    session$userData$item_bank <- updated_items
-                    cat("SERVER: Item bank switched to German\n")
-                }
-                
-                # Update demographic configs for current language
-                session$userData$demographic_configs <- get_demographic_configs_for_language(lang)
-                
-                # Force UI refresh by invalidating reactive values
-                if (exists("invalidateLater")) {
-                    invalidateLater(100, session)
-                }
-                
-                cat("SERVER: All language-dependent content updated\n")
-            }
-        }, ignoreInit = FALSE)
-        
-        # Create reactive item bank that responds to language changes
-        session$userData$reactive_item_bank <- reactive({
-            lang <- session$userData$current_language
-            if (is.null(lang)) lang <- "de"
-            return(get_items_for_language(lang))
-        })
-        
-        # Create reactive demographics that respond to language changes  
-        session$userData$reactive_demographics <- reactive({
-            lang <- session$userData$current_language
-            if (is.null(lang)) lang <- "de"
-            return(get_demographic_configs_for_language(lang))
-        })
-    }
+    custom_css = custom_js,  # Simplified bilingual JavaScript + radio deselection
+    admin_dashboard_hook = monitor_adaptive  # Monitor adaptive selection
 )
