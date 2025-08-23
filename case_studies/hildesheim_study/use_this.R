@@ -214,11 +214,8 @@ get_items_for_language <- function(lang = "de") {
   return(items)
 }
 
-# Create bilingual item bank with both languages
+# Use German item bank
 all_items <- all_items_de
-# Ensure the item bank has the correct structure for bilingual support
-all_items$question_de <- all_items$Question
-all_items$question_en <- all_items$Question_EN
 
 # =============================================================================
 # COMPLETE DEMOGRAPHICS (ALL VARIABLES FROM SPSS) - BILINGUAL
@@ -1798,7 +1795,7 @@ custom_item_selection <- function(rv, item_bank, config) {
 study_config <- inrep::create_study_config(
     name = "HilFo Studie",
     study_key = session_uuid,
-    theme = "hildesheim",
+    theme = "hildesheim",  # Use built-in Hildesheim theme
     custom_page_flow = custom_page_flow,
     demographics = names(demographic_configs),
     demographic_configs = demographic_configs,
@@ -1809,10 +1806,7 @@ study_config <- inrep::create_study_config(
     min_items = 51,  # Must show all items
     response_ui_type = "radio",
     progress_style = "bar",
-    language = "de",
-    bilingual = TRUE,  # Enable bilingual support
-    language_selector = TRUE,  # Show language selector
-    translate_ui = TRUE,  # Enable UI translation
+    language = "de"  # German only for now
   session_save = TRUE,
   session_timeout = 7200,
   results_processor = create_hilfo_report,
@@ -1835,91 +1829,8 @@ study_config <- inrep::create_study_config(
     csv_separator = ";",  # German standard
     json_pretty = TRUE
   ),
-  # Hildesheim theme CSS
-  custom_css = "
-    /* Hildesheim University Theme */
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    
-    /* Primary color */
-    .btn-primary, .progress-bar, h1, h2, h3 {
-      background-color: #e8041c !important;
-      color: white;
-    }
-    
-    h1, h2, h3, h4 {
-      color: #e8041c !important;
-    }
-    
-    /* Navigation buttons */
-    .btn-navigation {
-      background-color: #e8041c !important;
-      border-color: #e8041c !important;
-      color: white !important;
-    }
-    
-    .btn-navigation:hover {
-      background-color: #c70318 !important;
-      border-color: #c70318 !important;
-    }
-    
-    /* Progress bar */
-    .progress {
-      height: 25px;
-      background-color: #f0f0f0;
-    }
-    
-    .progress-bar {
-      background-color: #e8041c !important;
-    }
-    
-    /* Radio buttons and checkboxes */
-    input[type='radio']:checked,
-    input[type='checkbox']:checked {
-      accent-color: #e8041c;
-    }
-    
-    /* Links */
-    a {
-      color: #e8041c;
-    }
-    
-    a:hover {
-      color: #c70318;
-    }
-    
-    /* Page container */
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    
-    /* Question text */
-    .item-question {
-      font-size: 18px;
-      margin-bottom: 20px;
-      color: #333;
-    }
-    
-    /* Response options */
-    .radio-group label {
-      font-size: 16px;
-      margin: 10px 0;
-      display: block;
-      cursor: pointer;
-    }
-    
-    /* Hildesheim logo placeholder */
-    .header-logo {
-      text-align: center;
-      margin-bottom: 30px;
-      color: #e8041c;
-      font-size: 24px;
-      font-weight: bold;
-    }
-  ",
+  # Don't override the built-in Hildesheim theme
+  custom_css = NULL,
   allow_deselect = TRUE  # Allow response deselection
 )
 
@@ -1932,436 +1843,33 @@ cat("Fixed radar plot with proper connections\n")
 cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
 
-# Custom JavaScript for COMPLETE bilingual support with Hildesheim theme
-# This ensures EVERY single element is translated
-custom_js <- paste0(
-  "<style>",
-  "/* Hildesheim University Theme */",
-  ".btn-primary, .progress-bar { background-color: #e8041c !important; }",
-  "h1, h2, h3, h4, .card-header { color: #e8041c !important; }",
-  ".btn-navigation, .btn-nav, button[type='submit'] { ",
-  "  background-color: #e8041c !important; ",
-  "  border-color: #e8041c !important; ",
-  "  color: white !important; ",
-  "}",
-  ".btn-navigation:hover, .btn-nav:hover { ",
-  "  background-color: #c70318 !important; ",
-  "  border-color: #c70318 !important; ",
-  "}",
-  "input[type='radio']:checked, input[type='checkbox']:checked { accent-color: #e8041c; }",
-  "a { color: #e8041c; }",
-  "a:hover { color: #c70318; }",
-  ".progress-bar { background-color: #e8041c !important; }",
-  ".assessment-card { border-top: 3px solid #e8041c; }",
-  "</style>",
-  "<script>",
-  "var currentLang = 'de';",
-  "",
-  "// Optimized translation system with caching",
-  "var translationCache = {};",
-  "var reverseCache = {};",
-  "",
-  "function translatePage() {",
-  "  if (!window.translationInitialized) {",
-  "    initializeTranslations();",
-  "  }",
-  "  console.log('Translating page to:', currentLang);",
-  "  ",
-  "  performTranslation();",
-  "}",
-  "",
-  "function initializeTranslations() {",
-  "  // Translation dictionary - initialize once",
-  "  var dict = {",
-  "'Soziodemographische Angaben':'Sociodemographic Information',",
-  "'Wohnsituation':'Living Situation',",
-  "'Lebensstil':'Lifestyle',",
-  "'Bildung':'Education',",
-  "'Programmierangst - Teil 1':'Programming Anxiety - Part 1',",
-  "'Programmierangst - Teil 2':'Programming Anxiety - Part 2',",
-  "'Programmierangst':'Programming Anxiety',",
-  "'Persönlichkeit - Teil 1':'Personality - Part 1',",
-  "'Persönlichkeit - Teil 2':'Personality - Part 2',",
-  "'Persönlichkeit - Teil 3':'Personality - Part 3',",
-  "'Persönlichkeit - Teil 4':'Personality - Part 4',",
-  "'Stress':'Stress',",
-  "'Studierfähigkeiten':'Study Skills',",
-  "'Statistik':'Statistics',",
-  "'Studienzufriedenheit':'Study Satisfaction',",
-  "'Ihre Ergebnisse':'Your Results',",
-  "'Wie alt sind Sie?':'How old are you?',",
-  "'In welchem Studiengang befinden Sie sich?':'Which study program are you in?',",
-  "'Welches Geschlecht haben Sie?':'What is your gender?',",
-  "'Wie wohnen Sie?':'How do you live?',",
-  "'Haben Sie ein Haustier oder möchten Sie eines?':'Do you have a pet or would you like one?',",
-  "'Rauchen Sie?':'Do you smoke?',",
-  "'Wie ernähren Sie sich hauptsächlich?':'What is your main diet?',",
-  "'Bachelor Psychologie':'Bachelor Psychology',",
-  "'Master Psychologie':'Master Psychology',",
-  "'weiblich oder divers':'female or diverse',",
-  "'männlich':'male',",
-  "'Ja':'Yes',",
-  "'Nein':'No',",
-  "'Weiter':'Next',",
-  "'Zurück':'Back',",
-  "'Seite':'Page',",
-  "' von ':' of ',",
-  "'Bitte beantworten Sie:':'Please answer:',",
-  "'Please complete the following:':'Please complete the following:',",
-  "'Bitte wählen...':'Please select...',",
-  "'Bitte wählen':'Please select',",
-  "'Stimme überhaupt nicht zu':'Strongly disagree',",
-  "'Stimme nicht zu':'Disagree',",
-  "'Neutral':'Neutral',",
-  "'Stimme zu':'Agree',",
-  "'Stimme voll zu':'Strongly agree',",
-  "'älter als 30':'older than 30',",
-  "'Bei meinen Eltern/Elternteil':'With my parents/parent',",
-  "'In einer WG/WG in einem Wohnheim':'In a shared apartment/dorm',",
-  "'Alleine/in abgeschlossener Wohneinheit in einem Wohnheim':'Alone/in a self-contained unit in a dorm',",
-  "'Mit meinem/r Partner*In (mit oder ohne Kinder)':'With my partner (with or without children)',",
-  "'Anders':'Other',",
-  "'Hund':'Dog',",
-  "'Katze':'Cat',",
-  "'Fische':'Fish',",
-  "'Vogel':'Bird',",
-  "'Nager':'Rodent',",
-  "'Reptil':'Reptile',",
-  "'Ich möchte kein Haustier':'I do not want a pet',",
-  "'Sonstiges':'Other',",
-  "'Vegan':'Vegan',",
-  "'Vegetarisch':'Vegetarian',",
-  "'Pescetarisch':'Pescetarian',",
-  "'Flexitarisch':'Flexitarian',",
-  "'Omnivor (alles)':'Omnivore (everything)',",
-  "'Andere':'Other',",
-  "'Welche Note hatten Sie in Englisch im Abiturzeugnis?':'What grade did you have in English in your Abitur certificate?',",
-  "'Welche Note hatten Sie in Mathematik im Abiturzeugnis?':'What grade did you have in Mathematics in your Abitur certificate?',",
-  "'sehr gut (15-13 Punkte)':'very good (15-13 points)',",
-  "'gut (12-10 Punkte)':'good (12-10 points)',",
-  "'befriedigend (9-7 Punkte)':'satisfactory (9-7 points)',",
-  "'ausreichend (6-4 Punkte)':'sufficient (6-4 points)',",
-  "'mangelhaft (3-0 Punkte)':'poor (3-0 points)',",
-  "'Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.':'Please indicate to what extent the following statements apply to you.',",
-  "'Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.':'The following questions are selected based on your previous answers.',",
-  "'Wie sehr treffen die folgenden Aussagen auf Sie zu?':'How much do the following statements apply to you?',",
-  "'Wie leicht oder schwer fällt es Ihnen...':'How easy or difficult is it for you...',",
-  "'trifft überhaupt nicht zu':'does not apply at all',",
-  "'trifft eher nicht zu':'rather does not apply',",
-  "'teils/teils':'partly/partly',",
-  "'trifft eher zu':'rather applies',",
-  "'trifft voll zu':'fully applies',",
-  "'Sehr schwer':'Very difficult',",
-  "'Schwer':'Difficult',",
-  "'Mittel':'Medium',",
-  "'Leicht':'Easy',",
-  "'Sehr leicht':'Very easy',",
-  "'Wie sicher fühlen Sie sich, einen Fehler in Ihrem Code ohne Hilfe zu beheben?':'How confident are you in your ability to fix an error in your code without help?',",
-  "'Fühlen Sie sich überfordert, wenn Sie mit einem neuen Programmierprojekt beginnen?':'Do you feel overwhelmed when starting a new programming project?',",
-  "'Ich mache mir Sorgen, dass meine Programmierkenntnisse für komplexere Aufgaben nicht ausreichen.':'I worry that my programming skills are not good enough for more complex tasks.',",
-  "'Beim Lesen von Dokumentation fühle ich mich oft verloren oder verwirrt.':'When reading documentation, I often feel lost or confused.',",
-  "'Das Debuggen von Code macht mich nervös, besonders wenn ich den Fehler nicht sofort finde.':'Debugging code makes me anxious, especially when I cannot immediately spot the issue.',",
-  "'Ich gehe aus mir heraus, bin gesellig.':'I am outgoing, sociable.',",
-  "'Ich bin eher ruhig.':'I am rather quiet.',",
-  "'Ich bin eher schüchtern.':'I am rather shy.',",
-  "'Ich bin gesprächig.':'I am talkative.',",
-  "'Ich bin einfühlsam, warmherzig.':'I am empathetic, warm-hearted.',",
-  "'Ich habe mit anderen wenig Mitgefühl.':'I have little sympathy for others.',",
-  "'Ich bin hilfsbereit und selbstlos.':'I am helpful and selfless.',",
-  "'Andere sind mir eher gleichgültig, egal.':'Others are rather indifferent to me.',",
-  "'Ich bin eher unordentlich.':'I am rather disorganized.',",
-  "'Ich bin systematisch, halte meine Sachen in Ordnung.':'I am systematic, keep my things in order.',",
-  "'Ich mag es sauber und aufgeräumt.':'I like it clean and tidy.',",
-  "'Ich bin eher der chaotische Typ, mache selten sauber.':'I am rather the chaotic type, rarely clean up.',",
-  "'Ich bleibe auch in stressigen Situationen gelassen.':'I remain calm even in stressful situations.',",
-  "'Ich reagiere leicht angespannt.':'I react easily tensed.',",
-  "'Ich mache mir oft Sorgen.':'I often worry.',",
-  "'Ich werde selten nervös und unsicher.':'I rarely become nervous and insecure.',",
-  "'Ich bin vielseitig interessiert.':'I have diverse interests.',",
-  "'Ich meide philosophische Diskussionen.':'I avoid philosophical discussions.',",
-  "'Es macht mir Spaß, gründlich über komplexe Dinge nachzudenken und sie zu verstehen.':'I enjoy thinking thoroughly about complex things and understanding them.',",
-  "'Mich interessieren abstrakte Überlegungen wenig.':'Abstract considerations interest me little.',",
-  "'Ich habe das Gefühl, dass zu viele Forderungen an mich gestellt werden.':'I feel that too many demands are placed on me.',",
-  "'Ich habe zuviel zu tun.':'I have too much to do.',",
-  "'Ich fühle mich gehetzt.':'I feel rushed.',",
-  "'Ich habe genug Zeit für mich.':'I have enough time for myself.',",
-  "'Ich fühle mich unter Termindruck.':'I feel under deadline pressure.',",
-  "'Bislang konnte ich den Inhalten der Statistikveranstaltungen gut folgen.':'So far I have been able to follow the content of the statistics courses well.',",
-  "'Ich bin in der Lage, Statistik zu erlernen.':'I am able to learn statistics.',",
-  "    // Additional common UI elements",
-  "    'Bitte ausfüllen':'Please fill in',",
-  "    'Pflichtfeld':'Required field',",
-  "    'Ungültige Eingabe':'Invalid input',",
-  "    'Bitte wählen Sie eine Option':'Please select an option',",
-  "    'Fortschritt':'Progress',",
-  "    'von':'of',",
-  "    'Abbrechen':'Cancel',",
-  "    'Speichern':'Save',",
-  "    'Laden':'Loading',",
-  "    'Fehler':'Error',",
-  "    'Warnung':'Warning',",
-  "    'Information':'Information',",
-  "    'Bestätigen':'Confirm',",
-  "    'Schließen':'Close'",
-  "  };",
-  "  ",
-  "  // Build caches for faster lookup",
-  "  window.translationDict = dict;",
-  "  for (var key in dict) {",
-  "    translationCache[key] = dict[key];",
-  "    reverseCache[dict[key]] = key;",
-  "  }",
-  "  window.translationInitialized = true;",
-  "}",
-  "",
-  "function performTranslation() {",
-  "  var dict = window.translationDict || {};",
-  "  ",
-  "  // Optimized translation function",
-  "  function walkTextNodes(node) {",
-  "    if (node.nodeType === 3) { // Text node",
-  "      var text = node.nodeValue;",
-  "      if (text && text.trim()) {",
-  "        var trimmed = text.trim();",
-  "        var newText = text;",
-  "        ",
-  "        if (currentLang === 'en') {",
-  "          // Check exact match first (fastest)",
-  "          if (translationCache[trimmed]) {",
-  "            newText = text.replace(trimmed, translationCache[trimmed]);",
-  "          } else {",
-  "            // Check for partial matches",
-  "            for (var de in translationCache) {",
-  "              if (newText.indexOf(de) !== -1) {",
-  "                // Use split/join for safer replacement",
-  "                newText = newText.split(de).join(translationCache[de]);",
-  "              }",
-  "            }",
-  "          }",
-  "        } else if (currentLang === 'de') {",
-  "          // Reverse translation",
-  "          if (reverseCache[trimmed]) {",
-  "            newText = text.replace(trimmed, reverseCache[trimmed]);",
-  "          } else {",
-  "            for (var en in reverseCache) {",
-  "              if (newText.indexOf(en) !== -1) {",
-  "                newText = newText.split(en).join(reverseCache[en]);",
-  "              }",
-  "            }",
-  "          }",
-  "        }",
-  "        ",
-  "        if (newText !== text) {",
-  "          node.nodeValue = newText;",
-  "        }",
-  "      }",
-  "    } else if (node.nodeType === 1) { // Element node",
-  "      // Skip script and style tags",
-  "      if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE') {",
-  "        return;",
-  "      }",
-  "      ",
-  "      // Translate attributes efficiently",
-  "      if (node.placeholder) {",
-  "        var ph = node.placeholder;",
-  "        if (currentLang === 'en' && translationCache[ph]) {",
-  "          node.placeholder = translationCache[ph];",
-  "        } else if (currentLang === 'de' && reverseCache[ph]) {",
-  "          node.placeholder = reverseCache[ph];",
-  "        }",
-  "      }",
-  "      ",
-  "      if (node.title) {",
-  "        var tt = node.title;",
-  "        if (currentLang === 'en' && translationCache[tt]) {",
-  "          node.title = translationCache[tt];",
-  "        } else if (currentLang === 'de' && reverseCache[tt]) {",
-  "          node.title = reverseCache[tt];",
-  "        }",
-  "      }",
-  "      ",
-  "      // Handle buttons (both value and textContent)",
-  "      if (node.tagName === 'BUTTON' || node.tagName === 'INPUT') {",
-  "        if (node.value) {",
-  "          var val = node.value;",
-  "          if (currentLang === 'en' && translationCache[val]) {",
-  "            node.value = translationCache[val];",
-  "          } else if (currentLang === 'de' && reverseCache[val]) {",
-  "            node.value = reverseCache[val];",
-  "          }",
-  "        }",
-  "      }",
-  "      ",
-  "      // Walk through child nodes",
-  "      for (var i = 0; i < node.childNodes.length; i++) {",
-  "        walkTextNodes(node.childNodes[i]);",
-  "      }",
-  "    }",
-  "  }",
-  "  ",
-  "  // Clean up validation messages first",
-  "  var validationContainers = document.querySelectorAll('.shiny-input-container, .help-block, .invalid-feedback');",
-  "  for (var i = 0; i < validationContainers.length; i++) {",
-  "    var container = validationContainers[i];",
-  "    if (container.textContent) {",
-  "      // Remove duplicate language messages",
-  "      var text = container.textContent;",
-  "      if (currentLang === 'en') {",
-  "        text = text.replace(/Bitte beantworten Sie:/g, 'Please answer:');",
-  "        text = text.replace(/Please complete the following:\\s*/g, '');",
-  "      } else {",
-  "        text = text.replace(/Please answer:/g, 'Bitte beantworten Sie:');",
-  "      }",
-  "      if (text !== container.textContent) {",
-  "        container.textContent = text;",
-  "      }",
-  "    }",
-  "  }",
-  "  ",
-  "  // Walk through entire document",
-  "  walkTextNodes(document.body);",
-  "  ",
-  "  // Handle select options with caching",
-  "  var selects = document.getElementsByTagName('select');",
-  "  for (var s = 0; s < selects.length; s++) {",
-  "    var select = selects[s];",
-  "    for (var i = 0; i < select.options.length; i++) {",
-  "      var opt = select.options[i];",
-  "      var optText = opt.text;",
-  "      if (currentLang === 'en' && translationCache[optText]) {",
-  "        opt.text = translationCache[optText];",
-  "      } else if (currentLang === 'de' && reverseCache[optText]) {",
-  "        opt.text = reverseCache[optText];",
-  "      }",
-  "    }",
-  "  }",
-  "}",
+# Simple JavaScript for radio button deselection ONLY
+custom_js <- '<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // Enable radio button deselection
+  document.addEventListener("click", function(e) {
+    if (e.target && e.target.type === "radio") {
+      var wasChecked = e.target.getAttribute("data-was-checked") === "true";
+      
+      // Clear all radios in group
+      var radios = document.querySelectorAll("input[name=\\"" + e.target.name + "\\"]");
+      for (var i = 0; i < radios.length; i++) {
+        radios[i].setAttribute("data-was-checked", "false");
+      }
+      
+      if (wasChecked) {
+        e.target.checked = false;
+        if (typeof Shiny !== "undefined") {
+          Shiny.setInputValue(e.target.name, null, {priority: "event"});
+        }
+      } else {
+        e.target.setAttribute("data-was-checked", "true");
+      }
+    }
+  });
+});
+</script>'
 
-  "",
-  "// Toggle language with debouncing",
-  "var translationTimers = [];",
-  "function toggleLanguage() {",
-  "  currentLang = currentLang === 'de' ? 'en' : 'de';",
-  "  console.log('Language switched to:', currentLang);",
-  "  ",
-  "  // Clear any pending translations",
-  "  translationTimers.forEach(function(timer) {",
-  "    clearTimeout(timer);",
-  "  });",
-  "  translationTimers = [];",
-  "  ",
-  "  // Translate immediately and schedule follow-ups",
-  "  translatePage();",
-  "  translationTimers.push(setTimeout(translatePage, 100));",
-  "  translationTimers.push(setTimeout(translatePage, 300));",
-  "  translationTimers.push(setTimeout(translatePage, 600));",
-  "  ",
-  "  // Update button text",
-  "  var btn = document.getElementById('lang_toggle');",
-  "  if (btn) {",
-  "    btn.textContent = currentLang === 'de' ? 'English' : 'Deutsch';",
-  "  }",
-  "  ",
-  "  // Store preference",
-  "  try {",
-  "    sessionStorage.setItem('studyLanguage', currentLang);",
-  "  } catch(e) {}",
-  "  ",
-  "  // Notify Shiny server",
-  "  if (typeof Shiny !== 'undefined') {",
-  "    Shiny.setInputValue('study_language', currentLang, {priority: 'event'});",
-  "  }",
-  "}",
-  "",
-  "// Initialize on page load",
-  "document.addEventListener('DOMContentLoaded', function() {",
-  "  // Restore language preference",
-  "  try {",
-  "    var savedLang = sessionStorage.getItem('studyLanguage');",
-  "    if (savedLang === 'en' || savedLang === 'de') {",
-  "      currentLang = savedLang;",
-  "    }",
-  "  } catch(e) {}",
-  "  ",
-  "  // Create language toggle button",
-  "  var btn = document.createElement('button');",
-  "  btn.id = 'lang_toggle';",
-  "  btn.textContent = currentLang === 'de' ? 'English' : 'Deutsch';",
-  "  btn.style.cssText = 'position:fixed;top:10px;right:10px;z-index:9999;' +",
-  "    'background:white;border:2px solid #e8041c;color:#e8041c;' +",
-  "    'padding:8px 16px;border-radius:4px;cursor:pointer;font-weight:bold;' +",
-  "    'box-shadow:0 2px 4px rgba(0,0,0,0.1);transition:all 0.2s;';",
-  "  btn.onmouseover = function() { this.style.transform = 'scale(1.05)'; };",
-  "  btn.onmouseout = function() { this.style.transform = 'scale(1)'; };",
-  "  btn.onclick = toggleLanguage;",
-  "  document.body.appendChild(btn);",
-  "  ",
-  "  // If English was selected, translate immediately",
-  "  if (currentLang === 'en') {",
-  "    setTimeout(translatePage, 50);",
-  "  }",
-  "  ",
-  "  // Enable radio button deselection",
-  "  document.addEventListener('click', function(e) {",
-  "    if (e.target && e.target.type === 'radio') {",
-  "      var wasChecked = e.target.getAttribute('data-was-checked') === 'true';",
-  "      ",
-  "      // Clear all radios in group",
-  "      var radios = document.querySelectorAll('input[name=\"' + e.target.name + '\"]');",
-  "      for (var i = 0; i < radios.length; i++) {",
-  "        radios[i].setAttribute('data-was-checked', 'false');",
-  "      }",
-  "      ",
-  "      if (wasChecked) {",
-  "        e.target.checked = false;",
-  "        if (typeof Shiny !== 'undefined') {",
-  "          Shiny.setInputValue(e.target.name, null, {priority: 'event'});",
-  "        }",
-  "      } else {",
-  "        e.target.setAttribute('data-was-checked', 'true');",
-  "      }",
-  "    }",
-  "  });",
-  "  ",
-  "  // Optimized mutation observer with debouncing",
-  "  var mutationTimer = null;",
-  "  var observer = new MutationObserver(function(mutations) {",
-  "    // Only process if we're in English mode",
-  "    if (currentLang !== 'en') return;",
-  "    ",
-  "    // Check if significant changes occurred",
-  "    var needsTranslation = false;",
-  "    for (var i = 0; i < mutations.length; i++) {",
-  "      if (mutations[i].addedNodes.length > 0 || ",
-  "          mutations[i].type === 'characterData') {",
-  "        needsTranslation = true;",
-  "        break;",
-  "      }",
-  "    }",
-  "    ",
-  "    if (needsTranslation) {",
-  "      // Debounce translation calls",
-  "      clearTimeout(mutationTimer);",
-  "      mutationTimer = setTimeout(function() {",
-  "        translatePage();",
-  "      }, 100);",
-  "    }",
-  "  });",
-  "  ",
-  "  // Start observing with optimized settings",
-  "  observer.observe(document.body, {",
-  "    childList: true,",
-  "    subtree: true,",
-  "    characterData: false,  // Disabled to reduce overhead",
-  "    attributes: false,",
-  "    attributeOldValue: false,",
-  "    characterDataOldValue: false",
-  "  });",
-  "});",
-  "</script>"
-)
-
-# Add adaptive monitoring function
 monitor_adaptive <- function(session_data) {
   # Check if we're in adaptive PA phase (items 6-10)
   if (!is.null(session_data$current_item)) {
@@ -2408,52 +1916,10 @@ monitor_adaptive <- function(session_data) {
 # Add a reactive hook to handle language switching for items
 inrep::launch_study(
     config = study_config,
-    item_bank = all_items,  # Bilingual item bank with question_de and question_en
+    item_bank = all_items,  # German item bank
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
     save_format = "csv",
-    custom_css = paste0(study_config$custom_css, custom_js),  # Combine Hildesheim CSS with JavaScript
-    admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
-    language_options = list(
-        de = "Deutsch",
-        en = "English"
-    ),
-    # Add server-side logic to handle language switching
-    server_extensions = function(input, output, session) {
-        # Initialize language
-        session$userData$current_language <- "de"
-        
-        # Observe language changes
-        observeEvent(input$study_language, {
-            lang <- input$study_language
-            if (!is.null(lang)) {
-                cat("Language switched to:", lang, "\n")
-                session$userData$current_language <- lang
-                
-                # Update config language for inrep
-                config$language <<- lang
-                
-                # Force UI refresh
-                session$sendCustomMessage("language_changed", lang)
-            }
-        })
-        
-        # Override demographic rendering to support bilingual
-        session$userData$get_demographic_text <- function(dem_name, field = "question") {
-            lang <- session$userData$current_language %||% "de"
-            demo_config <- demographic_configs[[dem_name]]
-            
-            if (field == "question") {
-                if (lang == "en" && !is.null(demo_config$question_en)) {
-                    return(demo_config$question_en)
-                }
-                return(demo_config$question)
-            } else if (field == "options") {
-                if (lang == "en" && !is.null(demo_config$options_en)) {
-                    return(demo_config$options_en)
-                }
-                return(demo_config$options)
-            }
-        }
-    }
+    custom_css = custom_js,  # Radio button deselection JavaScript
+    admin_dashboard_hook = monitor_adaptive  # Monitor adaptive selection
 )
