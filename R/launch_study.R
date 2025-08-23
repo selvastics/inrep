@@ -1854,10 +1854,9 @@ launch_study <- function(
     
     # Defer session monitoring until after first page loads
     if (session_save) {
-      # Delay session monitoring to not block initial load
-      later::later(function() {
-        # Session timeout monitoring
-        shiny::observe({
+      # Start session monitoring immediately
+      # Session timeout monitoring
+      shiny::observe({
           # Check session timeout
           if (base::difftime(base::Sys.time(), rv$session_start, units = "secs") > max_session_time) {
             rv$session_active <- FALSE
@@ -1905,8 +1904,6 @@ launch_study <- function(
       shiny::observeEvent(rv$responses, {
         observe_data_preservation()
       }, ignoreInit = TRUE)
-      
-      }, delay = 1)  # Close the later() function
     }
     
     # Session status monitoring - DISABLED timer-based monitoring
@@ -2046,15 +2043,13 @@ launch_study <- function(
         (base::length(rv$administered) >= config$max_items || rv$current_se <= config$min_SEM)
     }
     
-    # Lazy load packages only when first needed
+    # Load packages immediately for better performance
     .packages_loaded <- FALSE
     .load_packages_once <- function() {
       if (!.packages_loaded) {
-        # Load packages in background
-        later::later(function() {
-          safe_load_packages(immediate = TRUE)
-          .packages_loaded <<- TRUE
-        }, delay = 0.1)
+        # Load packages immediately without delay
+        safe_load_packages(immediate = TRUE)
+        .packages_loaded <<- TRUE
       }
     }
     
@@ -2092,29 +2087,21 @@ launch_study <- function(
         
         # Wrapper with smooth positioning
         shiny::tagList(
-          # JavaScript to ensure proper initial positioning
+          # JavaScript for immediate positioning
           shiny::tags$script(HTML(sprintf("
-            // Ensure page renders at correct position
+            // Position page immediately
             (function() {
               var pageId = 'page-%d';
-              // Use requestAnimationFrame for smooth rendering
-              requestAnimationFrame(function() {
-                var elem = document.getElementById(pageId);
-                if (elem) {
-                  elem.style.opacity = '0';
-                  elem.style.position = 'relative';
-                  elem.style.top = '0';
-                  elem.style.left = '0';
-                  elem.style.transform = 'none';
-                  
-                  // Fade in after positioning
-                  requestAnimationFrame(function() {
-                    elem.style.transition = 'opacity 0.2s ease-in';
-                    elem.style.opacity = '1';
-                    elem.setAttribute('data-ready', 'true');
-                  });
-                }
-              });
+              var elem = document.getElementById(pageId);
+              if (elem) {
+                elem.style.position = 'relative';
+                elem.style.top = '0';
+                elem.style.left = '0';
+                elem.style.transform = 'none';
+                elem.style.transition = 'opacity 0.15s ease-in';
+                elem.style.opacity = '1';
+                elem.setAttribute('data-ready', 'true');
+              }
             })();
           ", current_page))),
           

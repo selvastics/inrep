@@ -746,10 +746,14 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
       complete_data$Studierfähigkeiten <- scores$Studierfähigkeiten
       complete_data$Statistik <- scores$Statistik
       
-      # Save locally
+      # Save locally with proper connection handling
       local_file <- paste0("hilfo_results_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
-      write.csv(complete_data, local_file, row.names = FALSE)
-      cat("Data saved locally to:", local_file, "\n")
+      tryCatch({
+        write.csv(complete_data, local_file, row.names = FALSE)
+        cat("Data saved locally to:", local_file, "\n")
+      }, error = function(e) {
+        cat("Error saving data locally:", e$message, "\n")
+      })
       
       # Upload to cloud if configured
       if (!is.null(WEBDAV_URL) && !is.null(WEBDAV_PASSWORD)) {
@@ -828,44 +832,7 @@ study_config <- inrep::create_study_config(
   save_to_file = TRUE,
   save_format = "csv",
   cloud_storage = TRUE,
-  enable_download = TRUE,
-  # Custom CSS for indenting response options in this study
-  custom_css = "
-    /* Indent all response options for Hildesheim study */
-    .shiny-input-radiogroup,
-    .shiny-input-checkboxgroup,
-    .shiny-options-group {
-      padding-left: 35px !important;
-    }
-    
-    /* Indent select dropdowns */
-    select.form-control,
-    .selectize-control {
-      margin-left: 35px !important;
-    }
-    
-    /* Indent text inputs in demographics */
-    .demographics-section input[type='text'],
-    .demographics-section input[type='number'] {
-      margin-left: 35px !important;
-    }
-    
-    /* Keep questions/labels unindented */
-    .shiny-input-container > label:first-child,
-    .control-label {
-      margin-left: 0 !important;
-      padding-left: 0 !important;
-    }
-    
-    /* Ensure smooth page transitions */
-    .page-wrapper {
-      opacity: 1 !important;
-      position: relative !important;
-      top: 0 !important;
-      left: 0 !important;
-      transform: none !important;
-    }
-  "
+  enable_download = TRUE
 )
 
 cat("\n================================================================================\n")
