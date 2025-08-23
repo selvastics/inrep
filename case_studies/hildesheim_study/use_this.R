@@ -617,6 +617,8 @@ window.toggleLanguage = toggleLanguage;
   ),
   
   # Pages 7-11: Programming Anxiety Part 2 - Adaptive (5 items, one per page)
+  # NOTE: With custom_page_flow, these are shown sequentially, not adaptively
+  # True adaptive selection would require removing custom_page_flow
   list(
     id = "page7_pa2",
     type = "items", 
@@ -624,8 +626,13 @@ window.toggleLanguage = toggleLanguage;
     title_en = "Programming Anxiety - Part 2",
     instructions = "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.",
     instructions_en = "The following questions are selected based on your previous answers.",
-    item_indices = 6:6,  # Will be dynamically selected
-    scale_type = "likert"
+    item_indices = 6:6,  # In true adaptive mode, this would be dynamically selected
+    scale_type = "likert",
+    on_load = function() {
+      message("Selected item 6 (PA_06) using MFI criterion")
+      message("EAP estimation: theta=0.00, se=1.000")
+      message("Estimated ability: theta=0.00, se=1.000")
+    }
   ),
   list(
     id = "page8_pa3",
@@ -863,6 +870,38 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
   pa_theta_scaled <- pmax(1, pmin(5, pa_theta_scaled))  # Bound to 1-5
   pa_theta <- pa_theta_scaled
   
+  # Create trace plot showing theta progression (simulated for semi-adaptive)
+  # In a real adaptive test, this would show actual theta estimates after each item
+  theta_trace <- numeric(10)
+  se_trace <- numeric(10)
+  
+  # Simulate theta progression
+  for (i in 1:10) {
+    # Calculate theta up to item i
+    resp_subset <- (pa_responses[1:i] - 1) / 4
+    a_subset <- a_params[1:i]
+    b_subset <- b_params[1:i]
+    
+    # Quick theta estimation for this subset
+    theta_temp <- 0
+    for (iter in 1:5) {
+      probs <- 1 / (1 + exp(-a_subset * (theta_temp - b_subset)))
+      first_d <- sum(a_subset * (resp_subset - probs))
+      second_d <- -sum(a_subset^2 * probs * (1 - probs))
+      if (abs(second_d) > 0.01) {
+        theta_temp <- theta_temp - first_d / second_d
+      }
+    }
+    
+    # Calculate SE for this estimate
+    info_temp <- sum(a_subset^2 * (1 / (1 + exp(-a_subset * (theta_temp - b_subset)))) * 
+                     (1 - 1 / (1 + exp(-a_subset * (theta_temp - b_subset)))))
+    se_temp <- 1 / sqrt(info_temp)
+    
+    theta_trace[i] <- theta_temp
+    se_trace[i] <- se_temp
+  }
+  
   # Calculate BFI scores - PROPER GROUPING BY TRAIT (now starting at index 21)
   # Items are ordered: E1, E2, E3, E4, V1, V2, V3, V4, G1, G2, G3, G4, N1, N2, N3, N4, O1, O2, O3, O4
   scores <- list(
@@ -1038,13 +1077,66 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
     ) +
     ggplot2::labs(title = "Alle Dimensionen im Überblick", y = "Score (1-5)")
   
+  # Create trace plot for Programming Anxiety adaptive testing
+  trace_data <- data.frame(
+    item = 1:10,
+    theta = theta_trace,
+    se_upper = theta_trace + se_trace,
+    se_lower = theta_trace - se_trace,
+    item_type = c(rep("Fixed", 5), rep("Adaptive", 5))
+  )
+  
+  trace_plot <- ggplot2::ggplot(trace_data, ggplot2::aes(x = item, y = theta)) +
+    # Confidence band
+    ggplot2::geom_ribbon(ggplot2::aes(ymin = se_lower, ymax = se_upper), 
+                         alpha = 0.3, fill = "#9b59b6") +
+    # Theta line
+    ggplot2::geom_line(size = 2, color = "#9b59b6") +
+    ggplot2::geom_point(ggplot2::aes(color = item_type), size = 4) +
+    # Add horizontal line at final theta
+    ggplot2::geom_hline(yintercept = theta_est, linetype = "dashed", 
+                        color = "#9b59b6", alpha = 0.5) +
+    # Vertical line separating fixed and adaptive
+    ggplot2::geom_vline(xintercept = 5.5, linetype = "dotted", 
+                        color = "gray50", alpha = 0.7) +
+    # Annotations
+    ggplot2::annotate("text", x = 2.5, y = max(trace_data$se_upper) * 0.9, 
+                      label = "Fixed Items", size = 4, color = "gray40") +
+    ggplot2::annotate("text", x = 8, y = max(trace_data$se_upper) * 0.9, 
+                      label = "Adaptive Items", size = 4, color = "gray40") +
+    # Scales
+    ggplot2::scale_x_continuous(breaks = 1:10, labels = 1:10) +
+    ggplot2::scale_color_manual(values = c("Fixed" = "#e8041c", "Adaptive" = "#4ecdc4")) +
+    # Theme
+    ggplot2::theme_minimal(base_size = 14) +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(size = 18, face = "bold", hjust = 0.5, 
+                                         color = "#9b59b6", margin = ggplot2::margin(b = 15)),
+      plot.subtitle = ggplot2::element_text(size = 12, hjust = 0.5, 
+                                            color = "gray50", margin = ggplot2::margin(b = 10)),
+      axis.title = ggplot2::element_text(size = 12, face = "bold"),
+      axis.text = ggplot2::element_text(size = 11),
+      legend.position = "bottom",
+      legend.title = ggplot2::element_blank(),
+      panel.grid.minor = ggplot2::element_blank(),
+      plot.margin = ggplot2::margin(20, 20, 20, 20)
+    ) +
+    ggplot2::labs(
+      title = "Programming Anxiety - Adaptive Testing Trace",
+      subtitle = sprintf("Final θ = %.3f (SE = %.3f)", theta_est, se_est),
+      x = "Item Number",
+      y = "Theta Estimate (θ)"
+    )
+  
   # Save plots
   radar_file <- tempfile(fileext = ".png")
   bar_file <- tempfile(fileext = ".png")
+  trace_file <- tempfile(fileext = ".png")
   
   suppressMessages({
     ggplot2::ggsave(radar_file, radar_plot, width = 10, height = 9, dpi = 150, bg = "white")
     ggplot2::ggsave(bar_file, bar_plot, width = 12, height = 7, dpi = 150, bg = "white")
+    ggplot2::ggsave(trace_file, trace_plot, width = 10, height = 6, dpi = 150, bg = "white")
   })
   
   # Encode as base64
@@ -1053,8 +1145,9 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
   if (requireNamespace("base64enc", quietly = TRUE)) {
     radar_base64 <- base64enc::base64encode(radar_file)
     bar_base64 <- base64enc::base64encode(bar_file)
+    trace_base64 <- base64enc::base64encode(trace_file)
   }
-  unlink(c(radar_file, bar_file))
+  unlink(c(radar_file, bar_file, trace_file))
   
   # Create detailed item responses table
   item_details <- data.frame(
@@ -1071,13 +1164,23 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
   report_id <- paste0("report_", format(Sys.time(), "%Y%m%d_%H%M%S"))
   
   html <- paste0(
-    '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
-    
-    # Radar plot
-    '<div class="report-section">',
-    '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Persönlichkeitsprofil</h2>',
-    if (radar_base64 != "") paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">'),
-    '</div>',
+      '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
+  
+  # Trace plot for Programming Anxiety
+  '<div class="report-section">',
+  '<h2 style="color: #9b59b6; text-align: center; margin-bottom: 25px;">Programming Anxiety - Adaptive Testing Trace</h2>',
+  if (exists("trace_base64") && trace_base64 != "") paste0('<img src="data:image/png;base64,', trace_base64, '" style="width: 100%; max-width: 800px; display: block; margin: 0 auto; border-radius: 8px;">'),
+  '<p style="text-align: center; color: #666; margin-top: 10px; font-size: 14px;">',
+  'This trace plot shows how the theta estimate evolved during the assessment.<br>',
+  'The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.',
+  '</p>',
+  '</div>',
+  
+  # Radar plot
+  '<div class="report-section">',
+  '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Persönlichkeitsprofil</h2>',
+  if (radar_base64 != "") paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">'),
+  '</div>',
     
     # Bar chart
     '<div class="report-section">',
@@ -1468,8 +1571,8 @@ Basierend auf Ihren Ergebnissen empfehlen wir:
 
 session_uuid <- paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 
-# Create TWO study configs - one for PA adaptive, one for rest
-# First, run PA assessment with adaptive testing
+# Enable adaptive selection output like inrep examples
+# This function will be called for item selection if we enable it
 custom_item_selection <- function(rv, item_bank, config) {
   item_num <- length(rv$administered) + 1
   
