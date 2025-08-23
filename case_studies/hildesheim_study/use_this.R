@@ -1845,7 +1845,13 @@ cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
 
 # Custom JavaScript for language toggle and radio button deselection
-custom_js <- '
+# Try to read from external file if it exists
+if (file.exists("custom_js.js")) {
+  custom_js_content <- readLines("custom_js.js", warn = FALSE)
+  custom_js <- paste0('<script>', paste(custom_js_content, collapse = '\n'), '</script>')
+} else {
+  # Fallback to inline version
+  custom_js <- '
 <script>
 var currentLang = "de";
 
@@ -2503,6 +2509,7 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 </script>
 '
+}
 
 # Add adaptive monitoring function
 monitor_adaptive <- function(session_data) {
