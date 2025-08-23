@@ -775,78 +775,98 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
   pa_responses[c(10)] <- 6 - pa_responses[c(10)]
   pa_score <- mean(pa_responses, na.rm = TRUE)
   
-  # Compute IRT-based ability estimate using TAM
+  # Compute IRT-based ability estimate for Programming Anxiety
+  # This is a semi-adaptive assessment: 5 fixed + 5 adaptively selected items
   pa_theta <- pa_score  # Default to classical score
-  if (requireNamespace("TAM", quietly = TRUE) && length(pa_responses) == 10) {
-    tryCatch({
-      cat("\n================================================================================\n")
-      cat("PROGRAMMING ANXIETY - IRT ANALYSIS (TAM Package)\n")
-      cat("================================================================================\n")
+  
+  # Fit 2PL IRT model for Programming Anxiety
+  cat("\n================================================================================\n")
+  cat("PROGRAMMING ANXIETY - IRT MODEL (2PL)\n")
+  cat("================================================================================\n")
+  cat("Assessment Type: Semi-Adaptive (5 fixed + 5 adaptive items)\n")
+  cat("Total items administered: 10\n")
+  cat("\n")
+  
+  # Get item parameters for the 10 PA items that were shown
+  # Note: In real adaptive testing, items 6-10 would be selected based on responses
+  shown_items <- all_items_de[1:10, ]
+  a_params <- shown_items$a
+  b_params <- shown_items$b
+  
+  # Use Maximum Likelihood Estimation for theta
+  theta_est <- 0  # Start with prior mean
+  converged <- FALSE
+  
+  for (iter in 1:20) {
+    # Calculate probabilities for current theta using 2PL model
+    probs <- 1 / (1 + exp(-a_params * (theta_est - b_params)))
+    
+    # Convert responses to 0-1 scale for IRT
+    resp_binary <- (pa_responses - 1) / 4  # Convert 1-5 to 0-1
+    
+    # First derivative (score function)
+    first_deriv <- sum(a_params * (resp_binary - probs))
+    
+    # Second derivative (information)
+    second_deriv <- -sum(a_params^2 * probs * (1 - probs))
+    
+    # Update theta using Newton-Raphson
+    if (abs(second_deriv) > 0.01) {
+      delta <- first_deriv / second_deriv
+      theta_est <- theta_est - delta
       
-      # For single-person estimation, use simplified approach
-      # Calculate theta based on item parameters and responses
-      shown_items <- all_items_de[1:10, ]
-      a_params <- shown_items$a
-      b_params <- shown_items$b
-      
-      # Simple theta estimation using Newton-Raphson
-      theta_est <- 0  # Start with prior mean
-      for (iter in 1:10) {
-        # Calculate probabilities for current theta
-        probs <- 1 / (1 + exp(-a_params * (theta_est - b_params)))
-        
-        # First derivative (score function)
-        first_deriv <- sum(a_params * (pa_responses/5 - probs))
-        
-        # Second derivative (information)
-        second_deriv <- -sum(a_params^2 * probs * (1 - probs))
-        
-        # Update theta
-        if (abs(second_deriv) > 0.01) {
-          theta_est <- theta_est - first_deriv / second_deriv
-        }
-        
-        # Check convergence
-        if (abs(first_deriv) < 0.001) break
+      # Check convergence
+      if (abs(delta) < 0.001) {
+        converged <- TRUE
+        break
       }
-      
-      # Calculate standard error
-      info <- sum(a_params^2 * (1 / (1 + exp(-a_params * (theta_est - b_params)))) * 
-                  (1 - 1 / (1 + exp(-a_params * (theta_est - b_params)))))
-      se_est <- 1 / sqrt(info)
-      
-      cat(sprintf("Classical Score (mean): %.2f (range 1-5)\n", pa_score))
-      cat(sprintf("IRT Ability Estimate (theta): %.3f\n", theta_est))
-      cat(sprintf("Standard Error (SE): %.3f\n", se_est))
-      cat(sprintf("Information: %.3f\n", info))
-      
-      # Interpretation
-      if (theta_est < -1) {
-        cat("Interpretation: Very low programming anxiety\n")
-      } else if (theta_est < 0) {
-        cat("Interpretation: Low programming anxiety\n")
-      } else if (theta_est < 1) {
-        cat("Interpretation: Moderate programming anxiety\n")
-      } else {
-        cat("Interpretation: High programming anxiety\n")
-      }
-      cat("================================================================================\n\n")
-      
-      # Store IRT estimate
-      pa_theta <- theta_est
-    }, error = function(e) {
-      cat(sprintf("Note: IRT estimation error: %s\n", e$message))
-      cat("Using classical scoring as fallback\n")
-    })
-  } else {
-    cat("Note: TAM package not available or insufficient responses, using classical scoring\n")
+    }
   }
+  
+  # Calculate standard error and test information
+  info <- sum(a_params^2 * (1 / (1 + exp(-a_params * (theta_est - b_params)))) * 
+              (1 - 1 / (1 + exp(-a_params * (theta_est - b_params)))))
+  se_est <- 1 / sqrt(info)
+  reliability <- 1 - (1/info)  # Approximate reliability
+  
+  # Output results
+  cat(sprintf("Classical Score (mean): %.2f (range 1-5)\n", pa_score))
+  cat(sprintf("IRT Theta Estimate: %.3f\n", theta_est))
+  cat(sprintf("Standard Error (SE): %.3f\n", se_est))
+  cat(sprintf("Test Information: %.3f\n", info))
+  cat(sprintf("Reliability: %.3f\n", reliability))
+  cat(sprintf("Convergence: %s (iterations: %d)\n", ifelse(converged, "Yes", "No"), iter))
+  cat("\n")
+  
+  # Interpretation on standardized scale
+  z_score <- theta_est  # Theta is already on z-score scale
+  percentile <- pnorm(z_score) * 100
+  
+  cat(sprintf("Percentile Rank: %.1f%%\n", percentile))
+  
+  if (theta_est < -1.5) {
+    cat("Interpretation: Very low programming anxiety (bottom 7%)\n")
+  } else if (theta_est < -0.5) {
+    cat("Interpretation: Low programming anxiety (below average)\n")
+  } else if (theta_est < 0.5) {
+    cat("Interpretation: Moderate programming anxiety (average)\n")
+  } else if (theta_est < 1.5) {
+    cat("Interpretation: High programming anxiety (above average)\n")
+  } else {
+    cat("Interpretation: Very high programming anxiety (top 7%)\n")
+  }
+  cat("================================================================================\n\n")
+  
+  # Store IRT estimate (scale to 1-5 for consistency with other scores)
+  # Convert theta to 1-5 scale: theta of -2 = 1, theta of 2 = 5
+  pa_theta_scaled <- 3 + theta_est  # Center at 3, each SD = 1 point
+  pa_theta_scaled <- pmax(1, pmin(5, pa_theta_scaled))  # Bound to 1-5
+  pa_theta <- pa_theta_scaled
   
   # Calculate BFI scores - PROPER GROUPING BY TRAIT (now starting at index 21)
   # Items are ordered: E1, E2, E3, E4, V1, V2, V3, V4, G1, G2, G3, G4, N1, N2, N3, N4, O1, O2, O3, O4
   scores <- list(
-    ProgrammingAnxiety = pa_score,
-    ProgrammingAnxiety_IRT = if (exists("pa_theta")) pa_theta else pa_score,
+    ProgrammingAnxiety = if (exists("pa_theta")) pa_theta else pa_score,
     Extraversion = mean(c(responses[21], 6-responses[22], 6-responses[23], responses[24]), na.rm=TRUE),
     Verträglichkeit = mean(c(responses[25], 6-responses[26], responses[27], 6-responses[28]), na.rm=TRUE),
     Gewissenhaftigkeit = mean(c(6-responses[29], responses[30], responses[31], 6-responses[32]), na.rm=TRUE),
@@ -981,7 +1001,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
   all_data <- data.frame(
     dimension = factor(names(scores), levels = names(scores)),
     score = unlist(scores),
-    category = c("Programmierangst", "Programmierangst (IRT)", 
+    category = c("Programmierangst", 
                  rep("Persönlichkeit", 5), "Stress", "Studierfähigkeiten", "Statistik")
   )
   
@@ -993,7 +1013,6 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
     # Custom color scheme
     ggplot2::scale_fill_manual(values = c(
       "Programmierangst" = "#9b59b6",
-      "Programmierangst (IRT)" = "#8e44ad",
       "Persönlichkeit" = "#e8041c",
       "Stress" = "#ff6b6b",
       "Studierfähigkeiten" = "#4ecdc4",
@@ -1552,23 +1571,17 @@ study_config <- inrep::create_study_config(
   demographics = names(demographic_configs),
   demographic_configs = demographic_configs,
   input_types = input_types,
-  model = "2PL",  # Use 2PL model
-  adaptive = TRUE,  # Enable adaptive testing
-  adaptive_start = 6,  # Start adaptive after item 5
-  max_items = 41,  # Total items to show
-  min_items = 41,  # Must show all items
-  min_SEM = 0.01,  # Very low to ensure all items shown
+  model = "2PL",  # Use 2PL model for IRT
+  adaptive = FALSE,  # Disable adaptive for now since we use custom_page_flow
+  max_items = 51,  # Total items in bank
+  min_items = 51,  # Must show all items
   response_ui_type = "radio",
   progress_style = "bar",
   language = "de",
   session_save = TRUE,
   session_timeout = 7200,
   results_processor = create_hilfo_report,
-  criteria = "MFI",  # Maximum Fisher Information
-  theta_prior = c(0, 1),  # Prior distribution
-  estimation_method = "EAP",  # Use EAP like in the examples
-  fixed_items = c(1:5, 11:41),  # Fixed: first 5 PA + items 11-41 (mapped from 21-51)
-  item_selection_fun = custom_item_selection,  # Use custom selection
+  estimation_method = "EAP",  # Use EAP for ability estimation
   item_bank = all_items,  # Full item bank
   save_to_file = TRUE,
   save_format = "csv",
