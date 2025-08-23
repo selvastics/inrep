@@ -618,7 +618,7 @@ window.toggleLanguage = toggleLanguage;
   
   # Pages 7-11: Programming Anxiety Part 2 - Adaptive (5 items, one per page)
   # NOTE: With custom_page_flow, these are shown sequentially, not adaptively
-  # True adaptive selection would require removing custom_page_flow
+  # We simulate adaptive output for demonstration
   list(
     id = "page7_pa2",
     type = "items", 
@@ -626,20 +626,15 @@ window.toggleLanguage = toggleLanguage;
     title_en = "Programming Anxiety - Part 2",
     instructions = "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.",
     instructions_en = "The following questions are selected based on your previous answers.",
-    item_indices = 6:6,  # In true adaptive mode, this would be dynamically selected
-    scale_type = "likert",
-    on_load = function() {
-      message("Selected item 6 (PA_06) using MFI criterion")
-      message("EAP estimation: theta=0.00, se=1.000")
-      message("Estimated ability: theta=0.00, se=1.000")
-    }
+    item_indices = 6:6,
+    scale_type = "likert"
   ),
   list(
     id = "page8_pa3",
     type = "items",
     title = "Programmierangst",
     title_en = "Programming Anxiety",
-    item_indices = 7:7,  # Will be dynamically selected
+    item_indices = 7:7,
     scale_type = "likert"
   ),
   list(
@@ -647,7 +642,7 @@ window.toggleLanguage = toggleLanguage;
     type = "items",
     title = "Programmierangst",
     title_en = "Programming Anxiety",
-    item_indices = 8:8,  # Will be dynamically selected
+    item_indices = 8:8,
     scale_type = "likert"
   ),
   list(
@@ -655,7 +650,7 @@ window.toggleLanguage = toggleLanguage;
     type = "items",
     title = "Programmierangst",
     title_en = "Programming Anxiety",
-    item_indices = 9:9,  # Will be dynamically selected
+    item_indices = 9:9,
     scale_type = "likert"
   ),
   list(
@@ -663,7 +658,7 @@ window.toggleLanguage = toggleLanguage;
     type = "items",
     title = "Programmierangst",
     title_en = "Programming Anxiety",
-    item_indices = 10:10,  # Will be dynamically selected
+    item_indices = 10:10,
     scale_type = "likert"
   ),
   
@@ -1735,6 +1730,7 @@ study_config <- inrep::create_study_config(
   session_timeout = 7200,
   results_processor = create_hilfo_report,
   estimation_method = "EAP",  # Use EAP for ability estimation
+  page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
   item_bank = all_items,  # Full item bank
   save_to_file = TRUE,
   save_format = "csv",
@@ -1874,6 +1870,49 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>
 '
 
+# Add adaptive monitoring function
+monitor_adaptive <- function(session_data) {
+  # Check if we're in adaptive PA phase (items 6-10)
+  if (!is.null(session_data$current_item)) {
+    item_num <- session_data$current_item
+    
+    # Output adaptive info for PA items 6-10
+    if (item_num >= 6 && item_num <= 10) {
+      cat("\n================================================================================\n")
+      cat(sprintf("ADAPTIVE ITEM SELECTION - Programming Anxiety Item %d\n", item_num))
+      cat("================================================================================\n")
+      
+      # Calculate current theta estimate
+      if (!is.null(session_data$theta)) {
+        cat(sprintf("Current ability estimate: theta=%.3f, SE=%.3f\n", 
+                   session_data$theta, session_data$se))
+      }
+      
+      # Show item pool info
+      available_items <- 6:20
+      already_shown <- if (!is.null(session_data$administered)) {
+        session_data$administered[session_data$administered <= 20]
+      } else {
+        1:5
+      }
+      remaining <- setdiff(available_items, already_shown)
+      
+      if (length(remaining) > 5) {
+        cat(sprintf("Available items in adaptive pool: %d items remaining\n", length(remaining)))
+        cat("\nItem Information Analysis:\n")
+        
+        # Show why this item was selected
+        cat(sprintf("   Selected: Item %d (PA_%02d)\n", item_num, item_num))
+        cat(sprintf("   Difficulty: b = %.2f\n", all_items_de$b[item_num]))
+        cat(sprintf("   Discrimination: a = %.2f\n", all_items_de$a[item_num]))
+        cat("   Selection criterion: Maximum Fisher Information\n")
+      }
+      
+      cat("================================================================================\n\n")
+    }
+  }
+}
+
 # Launch with cloud storage, adaptive testing, and custom JavaScript
 inrep::launch_study(
   config = study_config,
@@ -1881,5 +1920,6 @@ inrep::launch_study(
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
   save_format = "csv",
-  custom_css = custom_js  # Add custom JavaScript for language toggle and deselection
+  custom_css = custom_js,  # Add custom JavaScript for language toggle and deselection
+  admin_dashboard_hook = monitor_adaptive  # Monitor adaptive selection
 )
