@@ -537,22 +537,9 @@ launch_study <- function(
     
     # Defer loading other enhanced modules
     .other_modules_loaded <- FALSE
+    # SKIP MODULE LOADING - This was slowing startup!
     .load_other_modules <- function() {
-      if (!.other_modules_loaded) {
-        other_files <- c(
-          "enhanced_config_handler.R",
-          "enhanced_session_recovery.R", 
-          "enhanced_security.R",
-          "enhanced_performance.R"
-        )
-        for (file in other_files) {
-          file_path <- system.file("R", file, package = "inrep")
-          if (file.exists(file_path)) {
-            source(file_path, local = TRUE)
-          }
-        }
-        .other_modules_loaded <<- TRUE
-      }
+      # Do nothing - modules will be loaded on-demand if needed
     }
     
     # Skip all optimizations on startup for instant loading
@@ -570,6 +557,12 @@ launch_study <- function(
   
   # Check if later package is available (for deferred operations)
   has_later <- requireNamespace("later", quietly = TRUE)
+  
+  # OPTIMIZATION: Load TAM only if actually needed for adaptive testing
+  if (isTRUE(config$adaptive) && !requireNamespace("TAM", quietly = TRUE)) {
+    warning("TAM package not available. Adaptive testing disabled.")
+    config$adaptive <- FALSE
+  }
   
   # Check for UUID if study_key uses UUIDgenerate
   if (!missing(study_key) && is.character(study_key)) {
@@ -601,52 +594,39 @@ launch_study <- function(
     }
   }
   
-  # Safely check package availability WITHOUT loading them (for speed)
-  safe_load_packages <- function(immediate = FALSE) {
-    # Only check TAM if adaptive mode is enabled
-    packages <- list(
-      DT = "DT",
-      ggplot2 = "ggplot2", 
-      dplyr = "dplyr",
-      shinyWidgets = "shinyWidgets"
+  # SMART PACKAGE LOADING - Load heavy packages in background during instruction pages
+  safe_load_packages <- function(immediate = FALSE, background = FALSE) {
+    # Track what's available but DON'T load at startup
+    loaded_packages <- list(
+      DT = FALSE,
+      ggplot2 = FALSE, 
+      dplyr = FALSE,
+      shinyWidgets = FALSE,
+      TAM = FALSE
     )
     
-    # Add TAM only if adaptive is TRUE
-    if (isTRUE(config$adaptive)) {
-      packages <- c(list(TAM = "TAM"), packages)
+    if (background) {
+      # SMART: Load heavy packages in background while user reads instructions
+      # This happens AFTER UI is displayed, so no delay
+      if (requireNamespace("later", quietly = TRUE)) {
+        later::later(function() {
+          # Preload packages that might be needed later
+          if (requireNamespace("ggplot2", quietly = TRUE)) {
+            loaded_packages[["ggplot2"]] <- TRUE
+          }
+          if (requireNamespace("DT", quietly = TRUE)) {
+            loaded_packages[["DT"]] <- TRUE
+          }
+        }, delay = 0.5)  # Start loading after UI settles
+      }
     }
     
-    loaded_packages <- list()
-    
-    if (!immediate) {
-      # Just check availability, don't load (FAST)
-      for (pkg_name in names(packages)) {
-        pkg <- packages[[pkg_name]]
-        loaded_packages[[pkg_name]] <- requireNamespace(pkg, quietly = TRUE)
-        if (!loaded_packages[[pkg_name]]) {
-          logger(sprintf("Package %s not available. Some features may be limited.", pkg), level = "INFO")
-        }
-      }
-    } else {
-      # Load packages only if not already loaded
-      for (pkg_name in names(packages)) {
-        pkg <- packages[[pkg_name]]
-        if (requireNamespace(pkg, quietly = TRUE)) {
-          # Check if already loaded to avoid redundant loading
-          if (!pkg %in% loadedNamespaces()) {
-            tryCatch({
-              suppressPackageStartupMessages(library(pkg, character.only = TRUE, quietly = TRUE))
-              logger(sprintf("Loaded package: %s", pkg), level = "DEBUG")
-              loaded_packages[[pkg_name]] <- TRUE
-            }, error = function(e) {
-              loaded_packages[[pkg_name]] <- FALSE
-            })
-          } else {
-            loaded_packages[[pkg_name]] <- TRUE
-          }
-        } else {
-          loaded_packages[[pkg_name]] <- FALSE
-        }
+    # Only check TAM if adaptive mode is actually enabled
+    if (isTRUE(config$adaptive)) {
+      loaded_packages[["TAM"]] <- requireNamespace("TAM", quietly = TRUE)
+      if (!loaded_packages[["TAM"]]) {
+        warning("TAM package not available. Adaptive testing disabled.")
+        config$adaptive <- FALSE
       }
     }
     
@@ -1014,6 +994,9 @@ launch_study <- function(
       padding: 30px;
       margin: 20px 0;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
       border: 1px solid var(--secondary-color);
       background-color: var(--background-color);
       color: var(--text-color);
@@ -1297,12 +1280,14 @@ launch_study <- function(
 
           shiny::tags$head(
         shiny::tags$style(HTML("
-          /* Simple full-width fix */
+          /* CRITICAL FIX for corner display bug */
           .full-width-app > .container-fluid {
-            padding: 0 15px !important;
-            margin: 0 auto !important;
+            padding: 15px !important;
+            margin: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
+            position: relative !important;
+            display: block !important;
           }
           
           /* Ensure columns use full width */
@@ -1311,11 +1296,14 @@ launch_study <- function(
             padding: 0 !important;
           }
           
-          /* Study UI full width */
+          /* Study UI full width - PREVENT CORNER BUG */
           #study_ui {
             width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
+            display: block !important;
+            position: relative !important;
+            min-height: 500px !important;
           }
         ")),
         shiny::tags$style(type = "text/css", enhanced_css),
@@ -1351,6 +1339,9 @@ launch_study <- function(
           position: relative !important;
           top: 0 !important;
           left: 0 !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          box-sizing: border-box !important;
         }
         
         @keyframes smoothPageFade {
@@ -1383,12 +1374,12 @@ launch_study <- function(
           transform: none !important;
         }
         
-        /* Fixed card size - always centered */
+        /* Fixed card size - FULL WIDTH to prevent corner */
         .assessment-card {
           min-height: 400px;
-          width: 100%;
-          max-width: 800px !important;
-          margin: 0 auto !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          margin: 0 !important;
           box-sizing: border-box;
           animation: none !important;
           transition: none !important;
@@ -1832,6 +1823,24 @@ launch_study <- function(
 
     )
     
+    # SMART LOADING: If starting with instructions/custom page, load packages in background
+    if (rv$stage %in% c("instructions", "custom_page_flow")) {
+      if (requireNamespace("later", quietly = TRUE)) {
+        later::later(function() {
+          # Preload heavy packages while user reads instructions
+          if (requireNamespace("ggplot2", quietly = TRUE)) {
+            logger("Background loaded: ggplot2 during instructions", level = "DEBUG")
+          }
+          if (requireNamespace("DT", quietly = TRUE)) {
+            logger("Background loaded: DT during instructions", level = "DEBUG")
+          }
+          if (config$adaptive && requireNamespace("TAM", quietly = TRUE)) {
+            logger("Background loaded: TAM during instructions", level = "DEBUG")
+          }
+        }, delay = 0.3)  # Start loading shortly after UI renders
+      }
+    }
+    
     if (config$session_save && base::file.exists(session_file)) {
       base::tryCatch({
         saved_state <- base::readRDS(session_file)
@@ -1843,10 +1852,10 @@ launch_study <- function(
     }
     
     # Defer session monitoring until after first page loads
-    if (session_save) {
-      # Start session monitoring immediately
-      # Session timeout monitoring
-      shiny::observe({
+    if (session_save && has_later) {
+      # Use later package for deferred monitoring (non-blocking)
+      later::later(function() {
+        shiny::observe({
           # Check session timeout
           if (base::difftime(base::Sys.time(), rv$session_start, units = "secs") > max_session_time) {
             rv$session_active <- FALSE
@@ -1862,16 +1871,8 @@ launch_study <- function(
               })
             }
           }
-        
-        # Update activity tracking
-        if (exists("update_activity") && is.function(update_activity)) {
-          tryCatch({
-            update_activity()
-          }, error = function(e) {
-            logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
-          })
-        }
-      })  # Close observe
+        })  # Close observe
+      }, delay = 2)  # Delay 2 seconds to let UI load first
       
       # Automatic data preservation - converted to event-based instead of timer-based
       # This prevents page jumping while still preserving data on important events
@@ -2097,11 +2098,11 @@ launch_study <- function(
           )
         }
         
-                  # Simple wrapper like main branch - no complex JavaScript
+                  # Simple wrapper with FIXED layout to prevent corner bug
           shiny::div(
             id = paste0("page-", current_page),
             class = "page-wrapper",
-            style = "width: 100%; max-width: 1200px; margin: 0 auto;",
+            style = "width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 15px !important;",
           base::switch(stage,
                                      "custom_page_flow" = {
                     # Process and render custom page flow
@@ -2425,18 +2426,19 @@ launch_study <- function(
                                fill: none;
                                opacity: 0.5;
                              }
-                             .progress-circle-gradient span {
-                               position: absolute;
-                               top: 50%%;
-                               left: 50%%;
-                               margin-left: -30px;
-                               margin-top: -15px;
-                               font-family: 'Helvetica Neue', 'Arial', sans-serif;
-                               font-size: 20px;
-                               font-weight: 500;
-                               color: #333;
-                               text-shadow: 0 0 2px rgba(255,255,255,0.8);
-                             }
+                                                         .progress-circle-gradient span {
+                              position: absolute;
+                              top: 50%%;
+                              left: 50%%;
+                              transform: translate(-50%%, -50%%);
+                              font-family: 'Helvetica Neue', 'Arial', sans-serif;
+                              font-size: 20px;
+                              font-weight: 500;
+                              color: #333;
+                              text-shadow: 0 0 2px rgba(255,255,255,0.8);
+                              width: 60px;
+                              text-align: center;
+                            }
                            ", theme_primary)),
                            shiny::tags$svg(
                              width = "120", height = "120",
@@ -3161,6 +3163,22 @@ launch_study <- function(
         # Standard flow: proceed to instructions
         rv$stage <- "instructions"
         logger("Standard flow: proceeding to instructions stage")
+        
+        # SMART: Start loading heavy packages in background while user reads instructions
+        if (requireNamespace("later", quietly = TRUE)) {
+          later::later(function() {
+            # Preload packages that will be needed for reports/results
+            if (requireNamespace("ggplot2", quietly = TRUE)) {
+              logger("Background loaded: ggplot2", level = "DEBUG")
+            }
+            if (requireNamespace("DT", quietly = TRUE)) {
+              logger("Background loaded: DT", level = "DEBUG")
+            }
+            if (config$adaptive && requireNamespace("TAM", quietly = TRUE)) {
+              logger("Background loaded: TAM", level = "DEBUG")
+            }
+          }, delay = 0.5)  # Start after UI renders
+        }
       }
     })
     
