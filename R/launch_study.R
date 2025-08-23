@@ -2925,7 +2925,7 @@ launch_study <- function(
           # Pass item_bank in config for validation
           config_with_items <- config
           config_with_items$item_bank <- item_bank
-          validation <- validate_page_progression(rv$current_page, input, config_with_items)
+          validation <- validate_page_progression(rv$current_page, input, config_with_items, current_language)
           if (!validation$valid) {
             # Show error messages
             output$validation_errors <- shiny::renderUI({
@@ -3013,7 +3013,7 @@ launch_study <- function(
           # Pass item_bank in config for validation
           config_with_items <- config
           config_with_items$item_bank <- item_bank
-          validation <- validate_page_progression(rv$current_page, input, config_with_items)
+          validation <- validate_page_progression(rv$current_page, input, config_with_items, current_language)
           if (!validation$valid) {
             output$validation_errors <- shiny::renderUI({
               show_validation_errors(validation$errors)

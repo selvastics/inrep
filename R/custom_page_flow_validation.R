@@ -4,7 +4,7 @@
 
 #' Validate page before allowing navigation
 #' @export
-validate_page_progression <- function(current_page, input, config) {
+validate_page_progression <- function(current_page, input, config, current_language = NULL) {
   page <- config$custom_page_flow[[current_page]]
   
   if (is.null(page)) return(list(valid = TRUE))
@@ -48,6 +48,7 @@ validate_page_progression <- function(current_page, input, config) {
       }
       
       if (!is.null(item_bank)) {
+        has_missing_items <- FALSE
         for (i in page$item_indices) {
           # Get the actual item from the item bank
           if (i <= nrow(item_bank)) {
@@ -55,11 +56,28 @@ validate_page_progression <- function(current_page, input, config) {
             # Use the item's id field if available, otherwise use index
             item_id <- paste0("item_", item$id %||% i)
             if (is.null(input[[item_id]]) || input[[item_id]] == "") {
-              errors <- c(errors, paste0("Bitte beantworten Sie alle Fragen auf dieser Seite."))
+              has_missing_items <- TRUE
               missing_fields <- c(missing_fields, item_id)
               # Don't break, collect all missing fields for highlighting
             }
           }
+        }
+        # Only add the error message once if there are missing items
+        if (has_missing_items) {
+          # Get current language
+          current_lang <- if (!is.null(current_language) && is.function(current_language)) {
+            current_language()
+          } else {
+            config$language %||% "de"
+          }
+          
+          # Use language-specific error message
+          error_msg <- if (current_lang == "en") {
+            "Please answer all questions on this page."
+          } else {
+            "Bitte beantworten Sie alle Fragen auf dieser Seite."
+          }
+          errors <- c(errors, error_msg)
         }
       }
     }

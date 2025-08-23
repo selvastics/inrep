@@ -430,61 +430,68 @@ custom_page_flow <- list(
       '</label>',
       '</div>',
       '</div>',
-      # JavaScript for language switching
-      '<script>',
-      'var currentLang = "de";',
-      'function toggleLanguage() {',
-      '  console.log("Toggle language clicked!");',
-      '  var btn = document.getElementById("lang_switch");',
-      '  var deContent = document.getElementById("content_de");',
-      '  var enContent = document.getElementById("content_en");',
-      '  ',
-      '  if (!deContent || !enContent) {',
-      '    console.log("Content divs not found!");',
-      '    return;',
-      '  }',
-      '  ',
-      '  if (currentLang === "de") {',
-      '    currentLang = "en";',
-      '    deContent.style.display = "none";',
-      '    enContent.style.display = "block";',
-      '    if (btn) btn.innerHTML = "🇩🇪 Deutsche Version";',
-      '    console.log("Switched to English");',
-      '  } else {',
-      '    currentLang = "de";',
-      '    deContent.style.display = "block";',
-      '    enContent.style.display = "none";',
-      '    if (btn) btn.innerHTML = "🇬🇧 English Version";',
-      '    console.log("Switched to German");',
-      '  }',
-      '  ',
-      '  // Sync checkboxes',
-      '  var deCheck = document.getElementById("consent_check");',
-      '  var enCheck = document.getElementById("consent_check_en");',
-      '  if (deCheck && enCheck) {',
-      '    if (currentLang === "en") {',
-      '      enCheck.checked = deCheck.checked;',
-      '    } else {',
-      '      deCheck.checked = enCheck.checked;',
-      '    }',
-      '  }',
-      '  ',
-      '  // Store language preference',
-      '  try {',
-      '    localStorage.setItem("hilfo_language", currentLang);',
-      '    sessionStorage.setItem("hilfo_language", currentLang);',
-      '  } catch(e) {',
-      '    console.log("Could not save language preference");',
-      '  }',
-      '  ',
-      '  // Tell Shiny to switch language for all pages',
-      '  if (typeof Shiny !== "undefined") {',
-      '    Shiny.setInputValue("study_language", currentLang, {priority: "event"});',
-      '    console.log("Sent language to Shiny:", currentLang);',
-      '  }',
-      '}',
-      '</script>',
-      '</div>'
+      '</div>',
+      # JavaScript for language switching - use HTML() to avoid quote issues
+      '<script>
+var currentLang = "de";
+function toggleLanguage() {
+  console.log("Toggle language clicked!");
+  var btn = document.getElementById("lang_switch");
+  var deContent = document.getElementById("content_de");
+  var enContent = document.getElementById("content_en");
+  
+  if (!deContent || !enContent) {
+    console.log("Content divs not found!");
+    return;
+  }
+  
+  if (currentLang === "de") {
+    currentLang = "en";
+    deContent.style.display = "none";
+    enContent.style.display = "block";
+    if (btn) btn.innerHTML = "🇩🇪 Deutsche Version";
+    console.log("Switched to English");
+    
+    // Tell Shiny immediately
+    if (typeof Shiny !== "undefined") {
+      Shiny.setInputValue("study_language", "en", {priority: "event"});
+    }
+  } else {
+    currentLang = "de";
+    deContent.style.display = "block";
+    enContent.style.display = "none";
+    if (btn) btn.innerHTML = "🇬🇧 English Version";
+    console.log("Switched to German");
+    
+    // Tell Shiny immediately
+    if (typeof Shiny !== "undefined") {
+      Shiny.setInputValue("study_language", "de", {priority: "event"});
+    }
+  }
+  
+  // Sync checkboxes
+  var deCheck = document.getElementById("consent_check");
+  var enCheck = document.getElementById("consent_check_en");
+  if (deCheck && enCheck) {
+    if (currentLang === "en") {
+      enCheck.checked = deCheck.checked;
+    } else {
+      deCheck.checked = enCheck.checked;
+    }
+  }
+  
+  // Store language preference
+  try {
+    localStorage.setItem("hilfo_language", currentLang);
+    sessionStorage.setItem("hilfo_language", currentLang);
+  } catch(e) {
+    console.log("Could not save language preference");
+  }
+}
+
+// Make sure the function is available globally
+window.toggleLanguage = toggleLanguage;
+</script>'
     ),
     validate = "function(inputs) { return document.getElementById('consent_check').checked || document.getElementById('consent_check_en').checked; }",
     required = TRUE
