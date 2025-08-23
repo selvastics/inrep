@@ -924,8 +924,12 @@ launch_study <- function(
     logger("Admin dashboard hook registered", level = "INFO")
   }
   
-      # Initialize session management if enabled
-    if (session_save) {
+  # DEFER session initialization to server - don't block startup
+  .needs_session_init <- session_save
+  session_config <- NULL
+  error_config <- NULL
+  
+  if (FALSE) {  # Skip for now - will be done in server
       logger("Initializing robust session management", level = "INFO")
       
       # Initialize robust session management
@@ -1870,28 +1874,31 @@ launch_study <- function(
         }, delay = 0.5)  # 500ms delay ensures UI is fully rendered first
       }
       
-      # Return pre-cached first page INSTANTLY
-      if (exists("static_content_cache") && !is.null(static_content_cache$first_page)) {
-        # Wrap in main container
-        return(shiny::div(
-          id = "main-study-container",
-          style = "min-height: 500px; width: 100%; margin: 0 auto; padding: 0;",
-          static_content_cache$first_page,
-          shiny::uiOutput("page_content", inline = TRUE)  # For subsequent pages
-        ))
-      }
-      
-      # Fallback: simple container with page_content
+      # Return container with page_content that will be filled immediately
       shiny::div(
         id = "main-study-container",
         style = "min-height: 500px; width: 100%; margin: 0 auto; padding: 0;",
-        shiny::uiOutput("page_content")
+        shiny::uiOutput("page_content")  # This will be filled by renderUI below
       )
     })
     
     # Step 3: Schedule ALL initialization for next tick (0ms delay)
     if (has_later) {
       later::later(function() {
+        # Initialize session management if needed (was deferred from startup)
+        if (exists(".needs_session_init") && .needs_session_init) {
+          logger("Initializing robust session management", level = "INFO")
+          session_config <<- list(
+            session_id = paste0("SESS_", format(Sys.time(), "%Y%m%d_%H%M%S_"),
+                               paste0(sample(letters, 8), collapse = "")),
+            start_time = Sys.time(),
+            max_time = max_session_time %||% 7200,
+            log_file = NULL
+          )
+          logger(sprintf("Session initialized: %s (max time: %d seconds)", 
+                        session_config$session_id, session_config$max_time), level = "INFO")
+        }
+        
         # Do model conversion if needed (was deferred from startup)
         if (exists(".needs_conversion") && .needs_conversion) {
           logger("Converting GRM item bank for dichotomous model", level = "INFO")
@@ -2245,6 +2252,7 @@ launch_study <- function(
         current_page <- rv$current_page
         stage <- rv$stage
         
+
         if (!rv$session_active) {
           return(
             shiny::div(class = "assessment-card",
