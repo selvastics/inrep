@@ -594,42 +594,39 @@ launch_study <- function(
     }
   }
   
-  # Safely check package availability WITHOUT loading them (for speed)
-  safe_load_packages <- function(immediate = FALSE) {
-    # OPTIMIZATION: Don't load ANY packages at startup - only check availability
-    packages <- list()
-    
-    # Only add packages that are ABSOLUTELY needed
-    if (isTRUE(config$adaptive)) {
-      packages[["TAM"]] <- "TAM"
-    }
-    
+  # SMART PACKAGE LOADING - Load heavy packages in background during instruction pages
+  safe_load_packages <- function(immediate = FALSE, background = FALSE) {
+    # Track what's available but DON'T load at startup
     loaded_packages <- list(
       DT = FALSE,
-      ggplot2 = FALSE,
+      ggplot2 = FALSE, 
       dplyr = FALSE,
       shinyWidgets = FALSE,
       TAM = FALSE
     )
     
-    if (!immediate) {
-      # Just check availability, don't load (ULTRA FAST)
-      for (pkg_name in names(packages)) {
-        pkg <- packages[[pkg_name]]
-        loaded_packages[[pkg_name]] <- requireNamespace(pkg, quietly = TRUE)
-      }
-    } else {
-      # Lazy load only when actually needed
-      for (pkg_name in names(packages)) {
-        pkg <- packages[[pkg_name]]
-        if (requireNamespace(pkg, quietly = TRUE)) {
-          if (!pkg %in% loadedNamespaces()) {
-            # Don't actually load - just mark as available
-            loaded_packages[[pkg_name]] <- TRUE
-          } else {
-            loaded_packages[[pkg_name]] <- TRUE
+    if (background) {
+      # SMART: Load heavy packages in background while user reads instructions
+      # This happens AFTER UI is displayed, so no delay
+      if (requireNamespace("later", quietly = TRUE)) {
+        later::later(function() {
+          # Preload packages that might be needed later
+          if (requireNamespace("ggplot2", quietly = TRUE)) {
+            loaded_packages[["ggplot2"]] <- TRUE
           }
-        }
+          if (requireNamespace("DT", quietly = TRUE)) {
+            loaded_packages[["DT"]] <- TRUE
+          }
+        }, delay = 0.5)  # Start loading after UI settles
+      }
+    }
+    
+    # Only check TAM if adaptive mode is actually enabled
+    if (isTRUE(config$adaptive)) {
+      loaded_packages[["TAM"]] <- requireNamespace("TAM", quietly = TRUE)
+      if (!loaded_packages[["TAM"]]) {
+        warning("TAM package not available. Adaptive testing disabled.")
+        config$adaptive <- FALSE
       }
     }
     
@@ -1825,6 +1822,24 @@ launch_study <- function(
       last_submission_time = NULL,
 
     )
+    
+    # SMART LOADING: If starting with instructions/custom page, load packages in background
+    if (rv$stage %in% c("instructions", "custom_page_flow")) {
+      if (requireNamespace("later", quietly = TRUE)) {
+        later::later(function() {
+          # Preload heavy packages while user reads instructions
+          if (requireNamespace("ggplot2", quietly = TRUE)) {
+            logger("Background loaded: ggplot2 during instructions", level = "DEBUG")
+          }
+          if (requireNamespace("DT", quietly = TRUE)) {
+            logger("Background loaded: DT during instructions", level = "DEBUG")
+          }
+          if (config$adaptive && requireNamespace("TAM", quietly = TRUE)) {
+            logger("Background loaded: TAM during instructions", level = "DEBUG")
+          }
+        }, delay = 0.3)  # Start loading shortly after UI renders
+      }
+    }
     
     if (config$session_save && base::file.exists(session_file)) {
       base::tryCatch({
@@ -3148,6 +3163,22 @@ launch_study <- function(
         # Standard flow: proceed to instructions
         rv$stage <- "instructions"
         logger("Standard flow: proceeding to instructions stage")
+        
+        # SMART: Start loading heavy packages in background while user reads instructions
+        if (requireNamespace("later", quietly = TRUE)) {
+          later::later(function() {
+            # Preload packages that will be needed for reports/results
+            if (requireNamespace("ggplot2", quietly = TRUE)) {
+              logger("Background loaded: ggplot2", level = "DEBUG")
+            }
+            if (requireNamespace("DT", quietly = TRUE)) {
+              logger("Background loaded: DT", level = "DEBUG")
+            }
+            if (config$adaptive && requireNamespace("TAM", quietly = TRUE)) {
+              logger("Background loaded: TAM", level = "DEBUG")
+            }
+          }, delay = 0.5)  # Start after UI renders
+        }
       }
     })
     
