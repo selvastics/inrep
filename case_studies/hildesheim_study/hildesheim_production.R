@@ -138,17 +138,20 @@ all_items_de <- data.frame(
 all_items <- all_items_de
 
 # =============================================================================
-# COMPLETE DEMOGRAPHICS (ALL VARIABLES FROM SPSS)
+# COMPLETE DEMOGRAPHICS (ALL VARIABLES FROM SPSS) - BILINGUAL
 # =============================================================================
 
 demographic_configs <- list(
   Einverständnis = list(
     question = "Einverständniserklärung",
+    question_en = "Declaration of Consent",
     options = c("Ich bin mit der Teilnahme an der Befragung einverstanden" = "1"),
+    options_en = c("I agree to participate in the survey" = "1"),
     required = TRUE
   ),
   Alter_VPN = list(
     question = "Wie alt sind Sie?",
+    question_en = "How old are you?",
     options = c("17"="17", "18"="18", "19"="19", "20"="20", "21"="21", 
                 "22"="22", "23"="23", "24"="24", "25"="25", "26"="26", 
                 "27"="27", "28"="28", "29"="29", "30"="30", "älter als 30"="0"),
@@ -295,7 +298,7 @@ custom_page_flow <- list(
   list(
     id = "page1",
     type = "custom",
-    title = "Willkommen zur HilFo Studie / Welcome to the HilFo Study",
+    title = "Willkommen zur HilFo Studie",
     content = paste0(
       '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
       # Language switcher in top right corner
@@ -354,7 +357,7 @@ custom_page_flow <- list(
       '</div>',
       '</div>',
       '</div>',
-      # JavaScript for language switching - FIXED
+      # JavaScript for language switching with full questionnaire support
       '<script>',
       'var currentLang = "de";',
       'window.toggleLanguage = function() {',
@@ -366,6 +369,11 @@ custom_page_flow <- list(
       '    deContent.style.display = "none";',
       '    enContent.style.display = "block";',
       '    btn.innerHTML = "🇩🇪 Deutsche Version";',
+      '    // Update page title',
+      '    var title = document.querySelector(".card-header, h2, h3");',
+      '    if (title && title.textContent.includes("Willkommen")) {',
+      '      title.textContent = "Welcome to the HilFo Study";',
+      '    }',
       '    var deCheck = document.getElementById("consent_check");',
       '    var enCheck = document.getElementById("consent_check_en");',
       '    if (deCheck && enCheck) enCheck.checked = deCheck.checked;',
@@ -374,12 +382,20 @@ custom_page_flow <- list(
       '    deContent.style.display = "block";',
       '    enContent.style.display = "none";',
       '    btn.innerHTML = "🇬🇧 English Version";',
+      '    // Update page title',
+      '    var title = document.querySelector(".card-header, h2, h3");',
+      '    if (title && title.textContent.includes("Welcome")) {',
+      '      title.textContent = "Willkommen zur HilFo Studie";',
+      '    }',
       '    var deCheck = document.getElementById("consent_check");',
       '    var enCheck = document.getElementById("consent_check_en");',
       '    if (enCheck && deCheck) deCheck.checked = enCheck.checked;',
       '  }',
+      '  // Store language preference globally and in Shiny',
+      '  window.studyLanguage = currentLang;',
+      '  localStorage.setItem("hilfo_language", currentLang);',
       '  if (window.Shiny) {',
-      '    Shiny.setInputValue("study_language", currentLang);',
+      '    Shiny.setInputValue("study_language", currentLang, {priority: "event"});',
       '  }',
       '};',
       'setTimeout(function() {',
@@ -1174,19 +1190,21 @@ study_config <- inrep::create_study_config(
     csv_separator = ";",  # German standard
     json_pretty = TRUE
   ),
-  # Add custom CSS for Hildesheim-specific indentation and language switcher
+  # Add minimal custom CSS and language persistence script for Hildesheim
   custom_css = paste0(
-    ".shiny-input-radiogroup { padding-left: 35px !important; }",
-    ".shiny-input-checkboxgroup { padding-left: 35px !important; }",
-    ".shiny-options-group { padding-left: 35px !important; }",
-    "select.form-control { padding-left: 35px !important; }",
-    ".selectize-control { padding-left: 35px !important; }",
-    ".demographics-section input[type='text'] { padding-left: 10px !important; }",
-    ".demographics-section input[type='number'] { padding-left: 10px !important; }",
-    "/* Keep questions/labels unindented */",
-    ".shiny-input-container > label { padding-left: 0 !important; }",
-    ".form-group > label { padding-left: 0 !important; }",
-    ".control-label { padding-left: 0 !important; }"
+    "<script>",
+    "// Check for saved language preference on every page",
+    "document.addEventListener('DOMContentLoaded', function() {",
+    "  var savedLang = localStorage.getItem('hilfo_language');",
+    "  if (savedLang === 'en') {",
+    "    // Apply English to all text elements",
+    "    window.studyLanguage = 'en';",
+    "    if (window.Shiny) {",
+    "      Shiny.setInputValue('study_language', 'en');",
+    "    }",
+    "  }",
+    "});",
+    "</script>"
   )
 )
 
@@ -1199,21 +1217,33 @@ cat("Fixed radar plot with proper connections\n")
 cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
 
-# Launch with cloud storage and language support
+# Launch with cloud storage and full language support
 inrep::launch_study(
   config = study_config,
-  item_bank = all_items,
+  item_bank = all_items_de,  # Use the bilingual item bank
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
   save_format = "csv",
   # Custom handler for language preference
   session_handler = function(session, input, output) {
+    # Create reactive value for language
+    language <- reactiveVal("de")
+    
     # Store language preference when changed
     observeEvent(input$study_language, {
       if (!is.null(input$study_language)) {
-        # Store in session data
+        language(input$study_language)
         session$userData$language <- input$study_language
         cat("Language switched to:", input$study_language, "\n")
+        
+        # Update item bank to use English questions if needed
+        if (input$study_language == "en") {
+          # Switch to English questions
+          all_items$Question <<- all_items_de$Question_EN
+        } else {
+          # Switch back to German questions
+          all_items$Question <<- all_items_de$Question
+        }
       }
     })
   }
