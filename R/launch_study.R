@@ -1410,6 +1410,30 @@ launch_study <- function(
           margin: 0 auto !important;
           padding: 0 !important;
           display: block !important;
+          top: 0 !important;
+          left: 0 !important;
+        }
+        
+        /* Prevent page jumping on load */
+        #main-study-container {
+          position: relative !important;
+          min-height: 600px !important;
+        }
+        
+        /* Ensure new pages render at top */
+        .page-wrapper:not([data-ready]) {
+          position: absolute !important;
+          top: 0 !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          width: 100% !important;
+          max-width: 1200px !important;
+        }
+        
+        .page-wrapper[data-ready="true"] {
+          position: relative !important;
+          transform: none !important;
+          left: 0 !important;
         }
         
         .assessment-card {
@@ -1745,6 +1769,10 @@ launch_study <- function(
       shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet"),
       # Include Plotly for interactive plots
       shiny::tags$script(src = "https://cdn.plot.ly/plotly-latest.min.js"),
+      # Add custom CSS if provided
+      if (!is.null(config$custom_css)) {
+        shiny::tags$style(HTML(config$custom_css))
+      }
 
     ),
     # Remove blocking loading screen - let Shiny's natural loading work
@@ -2062,11 +2090,38 @@ launch_study <- function(
           )
         }
         
-        # Simple wrapper - no animations
-        shiny::div(
-          id = paste0("page-", current_page),
-          class = "page-wrapper",
-          style = "width: 100%; max-width: 1200px; margin: 0 auto;",
+        # Wrapper with smooth positioning
+        shiny::tagList(
+          # JavaScript to ensure proper initial positioning
+          shiny::tags$script(HTML(sprintf("
+            // Ensure page renders at correct position
+            (function() {
+              var pageId = 'page-%d';
+              // Use requestAnimationFrame for smooth rendering
+              requestAnimationFrame(function() {
+                var elem = document.getElementById(pageId);
+                if (elem) {
+                  elem.style.opacity = '0';
+                  elem.style.position = 'relative';
+                  elem.style.top = '0';
+                  elem.style.left = '0';
+                  elem.style.transform = 'none';
+                  
+                  // Fade in after positioning
+                  requestAnimationFrame(function() {
+                    elem.style.transition = 'opacity 0.2s ease-in';
+                    elem.style.opacity = '1';
+                    elem.setAttribute('data-ready', 'true');
+                  });
+                }
+              });
+            })();
+          ", current_page))),
+          
+          shiny::div(
+            id = paste0("page-", current_page),
+            class = "page-wrapper",
+            style = "width: 100%; max-width: 1200px; margin: 0 auto; opacity: 0;",
           base::switch(stage,
                    "custom_page_flow" = {
                      # Process and render custom page flow
@@ -2555,7 +2610,8 @@ launch_study <- function(
                     )
                   }
           ) # End of switch
-        ) # End of page-wrapper div
+          ) # End of page-wrapper div
+        ) # End of tagList
       })
     
     output$theta_plot <- shiny::renderPlot({

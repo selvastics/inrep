@@ -828,7 +828,44 @@ study_config <- inrep::create_study_config(
   save_to_file = TRUE,
   save_format = "csv",
   cloud_storage = TRUE,
-  enable_download = TRUE
+  enable_download = TRUE,
+  # Custom CSS for indenting response options in this study
+  custom_css = "
+    /* Indent all response options for Hildesheim study */
+    .shiny-input-radiogroup,
+    .shiny-input-checkboxgroup,
+    .shiny-options-group {
+      padding-left: 35px !important;
+    }
+    
+    /* Indent select dropdowns */
+    select.form-control,
+    .selectize-control {
+      margin-left: 35px !important;
+    }
+    
+    /* Indent text inputs in demographics */
+    .demographics-section input[type='text'],
+    .demographics-section input[type='number'] {
+      margin-left: 35px !important;
+    }
+    
+    /* Keep questions/labels unindented */
+    .shiny-input-container > label:first-child,
+    .control-label {
+      margin-left: 0 !important;
+      padding-left: 0 !important;
+    }
+    
+    /* Ensure smooth page transitions */
+    .page-wrapper {
+      opacity: 1 !important;
+      position: relative !important;
+      top: 0 !important;
+      left: 0 !important;
+      transform: none !important;
+    }
+  "
 )
 
 cat("\n================================================================================\n")
