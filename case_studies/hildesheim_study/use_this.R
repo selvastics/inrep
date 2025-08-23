@@ -1871,7 +1871,11 @@ var translations = {
   " von ": " of ",
   "von": "of",
   
-  // Page titles
+  // Page titles - ALL OF THEM
+  "Soziodemographische Angaben": "Sociodemographic Information",
+  "Wohnsituation": "Living Situation",
+  "Lebensstil": "Lifestyle",
+  "Bildung": "Education",
   "Programmierangst - Teil 1": "Programming Anxiety - Part 1",
   "Programmierangst - Teil 2": "Programming Anxiety - Part 2",
   "Programmierangst": "Programming Anxiety",
@@ -1884,6 +1888,78 @@ var translations = {
   "Statistik": "Statistics",
   "Studienzufriedenheit": "Study Satisfaction",
   "Ihre Ergebnisse": "Your Results",
+  
+  // Demographics questions - ALL OF THEM
+  "Wie alt sind Sie?": "How old are you?",
+  "In welchem Studiengang befinden Sie sich?": "Which study program are you in?",
+  "Welches Geschlecht haben Sie?": "What is your gender?",
+  "Wie wohnen Sie?": "How do you live?",
+  "Falls anders, bitte spezifizieren:": "If other, please specify:",
+  "Haben Sie ein Haustier oder möchten Sie eines?": "Do you have a pet or would you like one?",
+  "Anderes Haustier:": "Other pet:",
+  "Rauchen Sie?": "Do you smoke?",
+  "Wie ernähren Sie sich hauptsächlich?": "What is your main diet?",
+  "Andere Ernährungsform:": "Other diet:",
+  "Welche Note hatten Sie in Englisch im Abiturzeugnis?": "What grade did you have in English in your Abitur certificate?",
+  "Welche Note hatten Sie in Mathematik im Abiturzeugnis?": "What grade did you have in Mathematics in your Abitur certificate?",
+  "Wieviele Stunden pro Woche planen Sie für die Vor- und Nachbereitung der Statistikveranstaltungen zu investieren?": "How many hours per week do you plan to invest in preparing and reviewing statistics courses?",
+  "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (5-stufig)": "How satisfied are you with your study location Hildesheim? (5-point scale)",
+  "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (7-stufig)": "How satisfied are you with your study location Hildesheim? (7-point scale)",
+  "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags):": "Please create a personal code (first 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday):",
+  
+  // Demographics options
+  "Bachelor Psychologie": "Bachelor Psychology",
+  "Master Psychologie": "Master Psychology",
+  "weiblich oder divers": "female or diverse",
+  "männlich": "male",
+  "Bei meinen Eltern/Elternteil": "With my parents/parent",
+  "In einer WG/WG in einem Wohnheim": "In a shared apartment/dorm",
+  "Alleine/in abgeschlossener Wohneinheit in einem Wohnheim": "Alone/in a self-contained unit in a dorm",
+  "Mit meinem/r Partner*In (mit oder ohne Kinder)": "With my partner (with or without children)",
+  "Anders": "Other",
+  "Hund": "Dog",
+  "Katze": "Cat",
+  "Fische": "Fish",
+  "Vogel": "Bird",
+  "Nager": "Rodent",
+  "Reptil": "Reptile",
+  "Ich möchte kein Haustier": "I don't want a pet",
+  "Sonstiges": "Other",
+  "Ja": "Yes",
+  "Nein": "No",
+  "Vegan": "Vegan",
+  "Vegetarisch": "Vegetarian",
+  "Pescetarisch": "Pescetarian",
+  "Flexitarisch": "Flexitarian",
+  "Omnivor (alles)": "Omnivore (everything)",
+  "Andere": "Other",
+  "älter als 30": "older than 30",
+  
+  // Grades
+  "sehr gut (15-13 Punkte)": "very good (15-13 points)",
+  "gut (12-10 Punkte)": "good (12-10 points)",
+  "befriedigend (9-7 Punkte)": "satisfactory (9-7 points)",
+  "ausreichend (6-4 Punkte)": "sufficient (6-4 points)",
+  "mangelhaft (3-0 Punkte)": "poor (3-0 points)",
+  
+  // Time options
+  "0 Stunden": "0 hours",
+  "maximal eine Stunde": "maximum one hour",
+  "mehr als eine, aber weniger als 2 Stunden": "more than one, but less than 2 hours",
+  "mehr als zwei, aber weniger als 3 Stunden": "more than two, but less than 3 hours",
+  "mehr als drei, aber weniger als 4 Stunden": "more than three, but less than 4 hours",
+  "mehr als 4 Stunden": "more than 4 hours",
+  
+  // Satisfaction scale
+  "gar nicht zufrieden": "not at all satisfied",
+  "sehr zufrieden": "very satisfied",
+  
+  // Validation messages - CRITICAL!
+  "Please complete the following:": "Bitte vervollständigen Sie:",
+  "Bitte beantworten Sie:": "Please answer:",
+  "Bitte beantworten Sie: Wie alt sind Sie?": "Please answer: How old are you?",
+  "Bitte beantworten Sie: In welchem Studiengang befinden Sie sich?": "Please answer: Which study program are you in?",
+  "Bitte beantworten Sie: Welches Geschlecht haben Sie?": "Please answer: What is your gender?",
   "Soziodemographische Angaben": "Sociodemographic Information",
   "Wohnsituation": "Living Situation",
   "Lebensstil": "Lifestyle",
@@ -2013,13 +2089,96 @@ function updateEverything() {
   // Update all items
   translateAllItems();
   
+  // EXTRA AGGRESSIVE: Force translate ALL labels (radio/checkbox labels)
+  setTimeout(function() {
+    document.querySelectorAll("label").forEach(function(label) {
+      var text = label.textContent || label.innerText;
+      if (text && text.trim()) {
+        var trimmedText = text.trim();
+        if (currentLang === "en") {
+          for (var de in allTranslations) {
+            if (trimmedText === de) {
+              label.textContent = allTranslations[de];
+              break;
+            }
+          }
+        } else {
+          for (var de in allTranslations) {
+            if (trimmedText === allTranslations[de]) {
+              label.textContent = de;
+              break;
+            }
+          }
+        }
+      }
+    });
+    
+    // Force translate ALL h1-h6 headers
+    document.querySelectorAll("h1, h2, h3, h4, h5, h6, .panel-title, .question-title").forEach(function(header) {
+      var text = header.textContent || header.innerText;
+      if (text && text.trim()) {
+        var newText = text;
+        if (currentLang === "en") {
+          for (var de in allTranslations) {
+            if (text.indexOf(de) !== -1) {
+              newText = newText.replace(de, allTranslations[de]);
+            }
+          }
+        } else {
+          for (var de in allTranslations) {
+            if (text.indexOf(allTranslations[de]) !== -1) {
+              newText = newText.replace(allTranslations[de], de);
+            }
+          }
+        }
+        if (newText !== text) {
+          header.textContent = newText;
+        }
+      }
+    });
+    
+    // Force translate validation messages
+    document.querySelectorAll(".help-block, .error-message, .validation-message").forEach(function(msg) {
+      var text = msg.textContent || msg.innerText;
+      if (text && text.trim()) {
+        var newText = text;
+        if (currentLang === "en") {
+          // Special handling for validation messages
+          if (text.indexOf("Bitte beantworten Sie:") !== -1) {
+            newText = text.replace("Bitte beantworten Sie:", "Please answer:");
+          }
+          if (text.indexOf("Please complete the following:") !== -1) {
+            newText = "";  // Remove the English prefix if switching to English
+          }
+          for (var de in allTranslations) {
+            if (newText.indexOf(de) !== -1) {
+              newText = newText.replace(de, allTranslations[de]);
+            }
+          }
+        } else {
+          if (text.indexOf("Please answer:") !== -1) {
+            newText = text.replace("Please answer:", "Bitte beantworten Sie:");
+          }
+          for (var de in allTranslations) {
+            if (newText.indexOf(allTranslations[de]) !== -1) {
+              newText = newText.replace(allTranslations[de], de);
+            }
+          }
+        }
+        if (newText !== text) {
+          msg.textContent = newText;
+        }
+      }
+    });
+  }, 50);
+  
   // Update language button
   var btn = document.getElementById("lang_toggle");
   if (btn) {
     btn.textContent = currentLang === "de" ? "English" : "Deutsch";
   }
   
-  console.log("GLOBAL UPDATE COMPLETE!");
+  console.log("SUPER AGGRESSIVE GLOBAL UPDATE COMPLETE!");
 }
 
 // Language toggle function
@@ -2295,8 +2454,13 @@ document.addEventListener("DOMContentLoaded", function() {
       // Debounce to avoid too many updates
       clearTimeout(window.updateTimeout);
       window.updateTimeout = setTimeout(function() {
-        console.log("Page changed - updating to English");
+        console.log("Page changed - FORCING ENGLISH TRANSLATION");
         updateEverything();
+        
+        // Extra aggressive: Also run after a short delay to catch late-loading content
+        setTimeout(function() {
+          updateEverything();
+        }, 500);
       }, 100);
     }
   });
