@@ -1760,28 +1760,33 @@ launch_study <- function(
     
     shiny::observeEvent(input$study_language, {
       if (!is.null(input$study_language)) {
-        new_lang <- input$study_language
+        # Extract language from the format "lang_timestamp"
+        lang_parts <- strsplit(input$study_language, "_")[[1]]
+        new_lang <- lang_parts[1]
         
-        # Only process if language actually changed
-        if (new_lang != last_language()) {
-          last_language(new_lang)
-          current_language(new_lang)
-          
-          # Update UI labels
-          new_labels <- get_language_labels(new_lang)
-          reactive_ui_labels(new_labels)
-          
-          # Store in session
-          session$userData$language <- new_lang
-          
-          # Update config language
-          config$language <<- new_lang
-          
-          # Force re-render of current page by incrementing a counter
-          rv$language_change_trigger <- (rv$language_change_trigger %||% 0) + 1
-          
-          # Log the change
-          cat("Language switched to:", new_lang, "\n")
+        # Validate language
+        if (new_lang %in% c("de", "en")) {
+          # Only process if language actually changed
+          if (new_lang != last_language()) {
+            last_language(new_lang)
+            current_language(new_lang)
+            
+            # Update UI labels
+            new_labels <- get_language_labels(new_lang)
+            reactive_ui_labels(new_labels)
+            
+            # Store in session
+            session$userData$language <- new_lang
+            
+            # Update config language
+            config$language <<- new_lang
+            
+            # Force re-render of current page by incrementing a counter
+            rv$language_change_trigger <- (rv$language_change_trigger %||% 0) + 1
+            
+            # Log the change
+            cat("Language switched to:", new_lang, "\n")
+          }
         }
       }
     }, ignoreInit = TRUE)
@@ -2942,7 +2947,7 @@ launch_study <- function(
           if (!validation$valid) {
             # Show error messages
             output$validation_errors <- shiny::renderUI({
-              show_validation_errors(validation$errors)
+              show_validation_errors(validation$errors, current_language())
             })
             
             # Highlight fields with errors using JavaScript
@@ -3029,7 +3034,7 @@ launch_study <- function(
           validation <- validate_page_progression(rv$current_page, input, config_with_items, current_language)
           if (!validation$valid) {
             output$validation_errors <- shiny::renderUI({
-              show_validation_errors(validation$errors)
+              show_validation_errors(validation$errors, current_language())
             })
             return()
           }

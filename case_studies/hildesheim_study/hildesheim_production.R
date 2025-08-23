@@ -435,11 +435,17 @@ custom_page_flow <- list(
       '<script>
 var currentLang = "de";
 var isToggling = false;
+var lastToggleTime = 0;
 
 function toggleLanguage() {
-  // Prevent multiple rapid clicks
-  if (isToggling) return;
+  // Prevent multiple rapid clicks with timestamp check
+  var now = Date.now();
+  if (isToggling || (now - lastToggleTime) < 1000) {
+    console.log("Toggle ignored - too fast");
+    return;
+  }
   isToggling = true;
+  lastToggleTime = now;
   
   console.log("Toggle language clicked!");
   var btn = document.getElementById("lang_switch");
@@ -452,19 +458,24 @@ function toggleLanguage() {
     return;
   }
   
+  // Disable button immediately
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = "0.6";
+  }
+  
   if (currentLang === "de") {
     currentLang = "en";
     deContent.style.display = "none";
     enContent.style.display = "block";
     if (btn) {
       btn.innerHTML = "🇩🇪 Deutsche Version";
-      btn.disabled = true; // Disable button temporarily
     }
     console.log("Switched to English");
     
-    // Tell Shiny once
+    // Tell Shiny once with a unique timestamp to prevent duplicates
     if (typeof Shiny !== "undefined") {
-      Shiny.setInputValue("study_language", "en", {priority: "event"});
+      Shiny.setInputValue("study_language", "en_" + now, {priority: "event"});
     }
   } else {
     currentLang = "de";
@@ -472,21 +483,23 @@ function toggleLanguage() {
     enContent.style.display = "none";
     if (btn) {
       btn.innerHTML = "🇬🇧 English Version";
-      btn.disabled = true; // Disable button temporarily
     }
     console.log("Switched to German");
     
-    // Tell Shiny once
+    // Tell Shiny once with a unique timestamp to prevent duplicates
     if (typeof Shiny !== "undefined") {
-      Shiny.setInputValue("study_language", "de", {priority: "event"});
+      Shiny.setInputValue("study_language", "de_" + now, {priority: "event"});
     }
   }
   
-  // Re-enable button after a short delay
+  // Re-enable button after a delay
   setTimeout(function() {
-    if (btn) btn.disabled = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = "1";
+    }
     isToggling = false;
-  }, 500);
+  }, 1000);
   
   // Sync checkboxes
   var deCheck = document.getElementById("consent_check");

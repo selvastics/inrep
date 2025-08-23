@@ -28,12 +28,32 @@ validate_page_progression <- function(current_page, input, config, current_langu
         value <- input[[input_id]]
         
         if (is.null(value) || value == "" || (is.character(value) && nchar(trimws(value)) == 0)) {
-          question <- demo_config$question %||% dem
+          # Get current language
+          current_lang <- if (!is.null(current_language) && is.function(current_language)) {
+            current_language()
+          } else {
+            config$language %||% "de"
+          }
+          
+          # Get question in the correct language
+          question <- if (current_lang == "en" && !is.null(demo_config$question_en)) {
+            demo_config$question_en
+          } else {
+            demo_config$question %||% dem
+          }
+          
           # Truncate long questions for error message
           if (nchar(question) > 50) {
             question <- paste0(substr(question, 1, 47), "...")
           }
-          errors <- c(errors, paste0("Bitte beantworten Sie: ", question))
+          
+          # Use language-specific error message
+          error_prefix <- if (current_lang == "en") {
+            "Please answer: "
+          } else {
+            "Bitte beantworten Sie: "
+          }
+          errors <- c(errors, paste0(error_prefix, question))
           missing_fields <- c(missing_fields, input_id)
         }
       }
@@ -143,12 +163,19 @@ create_filter_page <- function(input, config) {
 
 #' Show validation errors in UI
 #' @export
-show_validation_errors <- function(errors) {
+show_validation_errors <- function(errors, current_lang = "de") {
   if (length(errors) == 0) return(NULL)
+  
+  # Use language-specific header
+  header_text <- if (current_lang == "en") {
+    "Please complete the following:"
+  } else {
+    "Bitte vervollständigen Sie Folgendes:"
+  }
   
   shiny::div(
     class = "validation-error",
-    shiny::h4("Please complete the following:"),
+    shiny::h4(header_text),
     shiny::tags$ul(
       style = "margin: 10px 0; padding-left: 20px;",
       lapply(errors, function(e) shiny::tags$li(e))
