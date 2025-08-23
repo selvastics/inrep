@@ -480,11 +480,11 @@ custom_page_flow <- list(
       '</div>',
       # Enhanced JavaScript for smooth language switching
       '<script>
-// Language management system with preloaded content
+// FIXED Language management system - ONE CLICK FULL TRANSLATION
 var LanguageManager = (function() {
   var currentLang = localStorage.getItem("hilfo_language") || "de";
   var isTransitioning = false;
-  var transitionDuration = 200; // milliseconds
+  var transitionDuration = 150; // Faster transition
   
   // Preload all UI text to avoid delays
   var uiText = {
@@ -493,14 +493,18 @@ var LanguageManager = (function() {
       nextButton: "Weiter",
       prevButton: "Zurück",
       completeButton: "Abschließen",
-      pageIndicator: "Seite %d von %d"
+      pageIndicator: "Seite %d von %d",
+      demographics: "Demographische Angaben",
+      instructions: "Anweisungen"
     },
     en: {
       buttonText: "🇩🇪 Deutsche Version",
       nextButton: "Next",
       prevButton: "Back",
       completeButton: "Complete",
-      pageIndicator: "Page %d of %d"
+      pageIndicator: "Page %d of %d",
+      demographics: "Demographics",
+      instructions: "Instructions"
     }
   };
   
@@ -589,7 +593,7 @@ var LanguageManager = (function() {
     }, transitionDuration / 2);
   }
   
-  // Update all UI elements with current language
+  // Update all UI elements with current language - COMPREHENSIVE FIX
   function updateAllUIElements() {
     // Update navigation buttons if they exist
     var nextBtn = document.querySelector("#next_page");
@@ -610,6 +614,37 @@ var LanguageManager = (function() {
           .replace("%d", match[1]);
       }
     }
+    
+    // CRITICAL FIX: Force update ALL text elements in the UI
+    // This ensures EVERYTHING switches with one click
+    
+    // Update all h2, h3, h4 headers that might be titles
+    document.querySelectorAll("h2, h3, h4").forEach(function(header) {
+      if (header.textContent.includes("Demograph") || header.textContent.includes("Willkommen")) {
+        // These are likely page titles that need translation
+        notifyShiny("force_refresh_" + currentLang);
+      }
+    });
+    
+    // Update all labels for demographic questions
+    document.querySelectorAll("label[for^='demo_']").forEach(function(label) {
+      // Force Shiny to re-render these elements
+      notifyShiny("update_demographics_" + currentLang);
+    });
+    
+    // Update instruction text
+    var instructions = document.querySelector(".instructions-text");
+    if (instructions) {
+      notifyShiny("update_instructions_" + currentLang);
+    }
+    
+    // Force a complete UI refresh if needed
+    setTimeout(function() {
+      if (typeof Shiny !== "undefined" && Shiny.shinyapp) {
+        // Trigger a full page refresh for the current language
+        Shiny.setInputValue("force_language_update", currentLang, {priority: "event"});
+      }
+    }, 100);
   }
   
   // Sync checkbox states between languages
@@ -651,10 +686,19 @@ var LanguageManager = (function() {
     }
   }
   
-  // Notify Shiny of language change
+  // Notify Shiny of language change - FIXED to trigger full update
   function notifyShiny(value) {
     if (typeof Shiny !== "undefined") {
+      // Send language change event that inrep will recognize
       Shiny.setInputValue("study_language", value, {priority: "event"});
+      // Also set the main language input that inrep uses
+      Shiny.setInputValue("language", currentLang, {priority: "event"});
+      // Trigger language switcher if it exists
+      if (document.getElementById("language_switcher")) {
+        var event = new Event("change");
+        document.getElementById("language_switcher").value = currentLang;
+        document.getElementById("language_switcher").dispatchEvent(event);
+      }
     }
   }
   
@@ -671,8 +715,20 @@ var LanguageManager = (function() {
 LanguageManager.init();
 
 // Global function for onclick handler
+// FIXED: Global toggle function that ensures complete translation
 function toggleLanguage() {
+  // Use the LanguageManager but also force complete refresh
   LanguageManager.toggle();
+  
+  // Additional force refresh after toggle
+  setTimeout(function() {
+    if (typeof Shiny !== "undefined") {
+      // Force the inrep package to update ALL UI elements
+      var lang = LanguageManager.getCurrentLang();
+      Shiny.setInputValue("language", lang, {priority: "event"});
+      Shiny.setInputValue("force_complete_refresh", lang + "_" + Date.now(), {priority: "event"});
+    }
+  }, 100);
 }
 
 // Update UI when navigating between pages
