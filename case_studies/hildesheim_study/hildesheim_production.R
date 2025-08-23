@@ -369,8 +369,7 @@ custom_page_flow <- list(
       '</label>',
       '</div>',
       '</div>',
-      '</div>',
-      # JavaScript for language switching - WORKING VERSION
+      # JavaScript for language switching - FIXED VERSION
       '<script type="text/javascript">',
       'var currentLang = "de";',
       '',
@@ -424,7 +423,8 @@ custom_page_flow <- list(
       '    console.log("Sent language to Shiny:", currentLang);',
       '  }',
       '};',
-      '</script>'
+      '</script>',
+      '</div>'
     ),
     validate = "function(inputs) { return document.getElementById('consent_check').checked || document.getElementById('consent_check_en').checked; }",
     required = TRUE
