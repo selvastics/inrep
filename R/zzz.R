@@ -44,10 +44,16 @@
 #' @param pkgname Package name
 #' @keywords internal
 .onAttach <- function(libname, pkgname) {
-  # Only show message if not in quiet mode
-  if (!isTRUE(getOption("inrep.quiet"))) {
+  # Only show message if not in quiet mode and not during installation
+  if (!isTRUE(getOption("inrep.quiet")) && 
+      !isTRUE(getOption("inrep.installing"))) {
+    
+    # Check if running in RStudio or terminal
+    is_rstudio <- Sys.getenv("RSTUDIO") == "1"
+    
+    # Simple, clean startup message
     packageStartupMessage(
-      "inrep ", utils::packageVersion("inrep"), " loaded.\n",
+      "increp ", utils::packageVersion("inrep"), " ready.\n",
       "For help, use: ?inrep or vignette('inrep')"
     )
   }
