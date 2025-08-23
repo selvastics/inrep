@@ -1835,8 +1835,91 @@ study_config <- inrep::create_study_config(
     csv_separator = ";",  # German standard
     json_pretty = TRUE
   ),
-  # Add minimal custom CSS
-  custom_css = "",
+  # Hildesheim theme CSS
+  custom_css = "
+    /* Hildesheim University Theme */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    /* Primary color */
+    .btn-primary, .progress-bar, h1, h2, h3 {
+      background-color: #e8041c !important;
+      color: white;
+    }
+    
+    h1, h2, h3, h4 {
+      color: #e8041c !important;
+    }
+    
+    /* Navigation buttons */
+    .btn-navigation {
+      background-color: #e8041c !important;
+      border-color: #e8041c !important;
+      color: white !important;
+    }
+    
+    .btn-navigation:hover {
+      background-color: #c70318 !important;
+      border-color: #c70318 !important;
+    }
+    
+    /* Progress bar */
+    .progress {
+      height: 25px;
+      background-color: #f0f0f0;
+    }
+    
+    .progress-bar {
+      background-color: #e8041c !important;
+    }
+    
+    /* Radio buttons and checkboxes */
+    input[type='radio']:checked,
+    input[type='checkbox']:checked {
+      accent-color: #e8041c;
+    }
+    
+    /* Links */
+    a {
+      color: #e8041c;
+    }
+    
+    a:hover {
+      color: #c70318;
+    }
+    
+    /* Page container */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    /* Question text */
+    .item-question {
+      font-size: 18px;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    
+    /* Response options */
+    .radio-group label {
+      font-size: 16px;
+      margin: 10px 0;
+      display: block;
+      cursor: pointer;
+    }
+    
+    /* Hildesheim logo placeholder */
+    .header-logo {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #e8041c;
+      font-size: 24px;
+      font-weight: bold;
+    }
+  ",
   allow_deselect = TRUE  # Allow response deselection
 )
 
@@ -2133,7 +2216,7 @@ inrep::launch_study(
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
     save_format = "csv",
-    custom_css = custom_js,  # Add custom JavaScript for language toggle and deselection
+    custom_css = paste0(study_config$custom_css, custom_js),  # Combine Hildesheim CSS with JavaScript
     admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
     language_options = list(
         de = "Deutsch",
