@@ -1334,10 +1334,11 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   
   html <- paste0(html,
     '</table>',
-    '</div>',
-
-    
-    # Add beautiful styles for the report
+    '</div>'  # Close table section
+  )
+  
+  # Add beautiful styles for the report
+  html <- paste0(html,
     '<style>',
     'body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }',
     '#report-content { background: #f8f9fa; }',
@@ -1530,11 +1531,11 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     '</style>'
   )
   
-  # Insert download section before closing div
+  # Add download section and close the main container
   html <- paste0(
-    substr(html, 1, nchar(html) - 6),  # Remove closing </div>
+    html,
     download_section_html,
-    '</div>'
+    '</div>'  # Close main report-content div
   )
   
   return(shiny::HTML(html))
