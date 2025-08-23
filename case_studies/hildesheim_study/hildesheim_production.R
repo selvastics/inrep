@@ -634,8 +634,6 @@ cat("✓ Response deselection enabled\n")
 cat("✓ Total: 51 items (20 PA + 31 original)\n")
 cat("================================================================================\n\n")
 
-
-
 # Add JavaScript for language toggle and deselection
 custom_js <- '
 <script>
@@ -694,9 +692,9 @@ document.addEventListener("click", function(e) {
 
 inrep::launch_study(
   config = study_config,
-  item_bank = all_items_de,  # Use the complete item bank with PA items
+  item_bank = all_items,
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
-  save_format = "csv"
-)
+  save_format = "csv",
+  custom_js = custom_js
 )
