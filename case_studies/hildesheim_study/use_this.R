@@ -766,10 +766,60 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL) {
   pa_responses[c(10)] <- 6 - pa_responses[c(10)]
   pa_score <- mean(pa_responses, na.rm = TRUE)
   
+  # Compute IRT-based ability estimate using TAM
+  pa_theta <- pa_score  # Default to classical score
+  if (requireNamespace("TAM", quietly = TRUE)) {
+    tryCatch({
+      # Prepare data for TAM (0-based for dichotomous)
+      pa_data <- matrix(pa_responses - 1, nrow = 1)
+      
+      # Fit 2PL model with item parameters from our item bank
+      cat("\n================================================================================\n")
+      cat("PROGRAMMING ANXIETY - IRT ANALYSIS (TAM Package)\n")
+      cat("================================================================================\n")
+      
+      # Get item parameters for the 10 PA items that were shown
+      shown_items <- all_items_de[1:10, ]
+      
+      tam_model <- suppressMessages(TAM::tam.mml.2pl(
+        resp = pa_data,
+        irtmodel = "2PL",
+        control = list(progress = FALSE, verbose = FALSE)
+      ))
+      
+      # Estimate ability
+      tam_ability <- suppressMessages(TAM::tam.wle(tam_model))
+      
+      cat(sprintf("Classical Score (mean): %.2f (range 1-5)\n", pa_score))
+      cat(sprintf("IRT Ability Estimate (theta): %.3f\n", tam_ability$theta[1]))
+      cat(sprintf("Standard Error (SE): %.3f\n", tam_ability$error[1]))
+      cat(sprintf("Reliability (WLE): %.3f\n", tam_ability$WLE.rel[1]))
+      
+      # Interpretation
+      theta_val <- tam_ability$theta[1]
+      if (theta_val < -1) {
+        cat("Interpretation: Very low programming anxiety\n")
+      } else if (theta_val < 0) {
+        cat("Interpretation: Low programming anxiety\n")
+      } else if (theta_val < 1) {
+        cat("Interpretation: Moderate programming anxiety\n")
+      } else {
+        cat("Interpretation: High programming anxiety\n")
+      }
+      cat("================================================================================\n\n")
+      
+      # Store IRT estimate
+      pa_theta <- tam_ability$theta[1]
+    }, error = function(e) {
+      cat("Note: TAM estimation failed, using classical scoring\n")
+    })
+  }
+  
   # Calculate BFI scores - PROPER GROUPING BY TRAIT (now starting at index 21)
   # Items are ordered: E1, E2, E3, E4, V1, V2, V3, V4, G1, G2, G3, G4, N1, N2, N3, N4, O1, O2, O3, O4
   scores <- list(
     ProgrammingAnxiety = pa_score,
+    ProgrammingAnxiety_IRT = if (exists("pa_theta")) pa_theta else pa_score,
     Extraversion = mean(c(responses[21], 6-responses[22], 6-responses[23], responses[24]), na.rm=TRUE),
     Verträglichkeit = mean(c(responses[25], 6-responses[26], responses[27], 6-responses[28]), na.rm=TRUE),
     Gewissenhaftigkeit = mean(c(6-responses[29], responses[30], responses[31], 6-responses[32]), na.rm=TRUE),
@@ -1482,6 +1532,66 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>
 '
 
+# Custom adaptive selection function for Programming Anxiety items
+# This will be called after each response to select the next item
+adaptive_selection_hook <- function(rv, item_bank, config) {
+  if (length(rv$responses) >= 5 && length(rv$responses) < 10) {
+    # We're in the adaptive phase for PA items
+    cat("\n--- ADAPTIVE ITEM SELECTION ---\n")
+    
+    # Get responses so far (items 1-5 are fixed, now selecting from 6-20)
+    current_responses <- rv$responses[1:length(rv$responses)]
+    
+    # Estimate current ability using TAM
+    if (requireNamespace("TAM", quietly = TRUE)) {
+      tryCatch({
+        resp_matrix <- matrix(current_responses - 1, nrow = 1)
+        tam_fit <- suppressMessages(TAM::tam.mml.2pl(
+          resp = resp_matrix,
+          control = list(progress = FALSE, verbose = FALSE)
+        ))
+        ability_est <- suppressMessages(TAM::tam.wle(tam_fit))
+        current_theta <- ability_est$theta[1]
+        
+        cat(sprintf("Current ability estimate: theta = %.3f (SE = %.3f)\n", 
+                    current_theta, ability_est$error[1]))
+        
+        # Calculate information for remaining items (6-20)
+        available_items <- 6:20
+        already_shown <- rv$administered[rv$administered <= 20]
+        available_items <- setdiff(available_items, already_shown)
+        
+        if (length(available_items) > 0) {
+          # Calculate Fisher Information for each available item
+          item_info <- sapply(available_items, function(item_idx) {
+            a <- item_bank$a[item_idx]  # discrimination
+            b <- item_bank$b[item_idx]  # difficulty
+            # Fisher Information for 2PL: I(theta) = a^2 * P(theta) * Q(theta)
+            p <- 1 / (1 + exp(-a * (current_theta - b)))
+            info <- a^2 * p * (1 - p)
+            return(info)
+          })
+          
+          # Select item with maximum information
+          best_item_idx <- which.max(item_info)
+          selected_item <- available_items[best_item_idx]
+          
+          cat(sprintf("Selected item %d (PA_%02d) with Information = %.3f\n", 
+                      selected_item, selected_item, item_info[best_item_idx]))
+          cat(sprintf("Item difficulty: b = %.2f, discrimination: a = %.2f\n",
+                      item_bank$b[selected_item], item_bank$a[selected_item]))
+          cat("-------------------------------\n")
+          
+          return(selected_item)
+        }
+      }, error = function(e) {
+        cat(sprintf("Adaptive selection error: %s\n", e$message))
+      })
+    }
+  }
+  return(NULL)  # Let default selection continue
+}
+
 # Launch with cloud storage, adaptive testing, and custom JavaScript
 inrep::launch_study(
   config = study_config,
@@ -1489,5 +1599,6 @@ inrep::launch_study(
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
   save_format = "csv",
-  custom_css = custom_js  # Add custom JavaScript for language toggle and deselection
+  custom_css = custom_js,  # Add custom JavaScript for language toggle and deselection
+  admin_dashboard_hook = adaptive_selection_hook  # Hook for adaptive selection logging
 )
