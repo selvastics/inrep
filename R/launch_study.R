@@ -1426,6 +1426,11 @@ launch_study <- function(
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
+        
+        @keyframes fadeInIndicator {
+          from { opacity: 0; transform: translateX(20px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
       ")),
         shiny::tags$style(HTML("
           /* Simple full-width fix */
@@ -1475,77 +1480,89 @@ launch_study <- function(
         /* Simple smooth fade-in for all pages (like main branch) */
         .page-wrapper,
         .assessment-card,
-        .demographics-page,
-        .instructions-page,
-        .results-page {
-          animation: smoothPageFade 0.3s ease-in;
+        /* SMOOTH PAGE TRANSITIONS - Fixed positioning issues */
+        .page-wrapper {
+          opacity: 0;
+          animation: smoothFadeIn 0.25s ease-out forwards;
           position: relative !important;
-          top: 0 !important;
+          width: 100% !important;
+          margin: 0 auto !important;
           left: 0 !important;
+          right: 0 !important;
+          top: 0 !important;
         }
         
-        @keyframes smoothPageFade {
+        @keyframes smoothFadeIn {
           from {
             opacity: 0;
-            transform: translateY(10px);
+            transform: scale(0.98);
           }
           to {
             opacity: 1;
-            transform: translateY(0);
+            transform: scale(1);
           }
         }
         
-        /* Ensure container uses full width */
-        .container-fluid {
-          animation: smoothPageFade 0.2s ease-in;
-        }
-        
-        .assessment-card {
-          margin: 0 auto !important;
-          position: relative !important;
-          left: auto !important;
-          right: auto !important;
-        }
-        
-        /* Remove ALL animations and transitions */
-        .smooth-transition {
-          animation: none !important;
-          transition: none !important;
-          transform: none !important;
-        }
-        
-        /* Fixed card size - always centered */
+        /* Assessment card - centered and stable */
         .assessment-card {
           min-height: 400px;
           width: 100%;
           max-width: 800px !important;
-          margin: 0 auto !important;
+          margin: 20px auto !important;
+          padding: 20px;
           box-sizing: border-box;
-          animation: none !important;
-          transition: none !important;
-          transform: none !important;
           position: relative !important;
-          left: auto !important;
-          right: auto !important;
+          left: 0 !important;
+          right: 0 !important;
+          transform: none !important;
         }
         
-        /* Force centered rendering */
+        /* Demographics, instructions, results pages */
+        .demographics-page,
+        .instructions-page,
+        .results-page {
+          position: relative !important;
+          width: 100% !important;
+          margin: 0 auto !important;
+        }
+        
+        /* Container fluid - stable */
+        .container-fluid {
+          position: relative !important;
+          width: 100% !important;
+          padding: 0 15px;
+        }
+        
+        /* Force all content to be centered */
         .shiny-html-output {
           width: 100% !important;
-          transform: none !important;
           position: relative !important;
           margin: 0 auto !important;
-        }
-        
-        /* Ensure all divs are centered */
-        #study_ui > div {
-          margin: 0 auto !important;
-        }
-        
-        /* Stable buttons - no animations */
-        .btn-klee, .nav-buttons button {
-          transition: none !important;
           transform: none !important;
+        }
+        
+        /* Main study container */
+        #main-study-container {
+          position: relative !important;
+          width: 100% !important;
+          overflow-x: hidden !important;
+        }
+        
+        #study_ui {
+          position: relative !important;
+          width: 100% !important;
+        }
+        
+        #page_content {
+          position: relative !important;
+          width: 100% !important;
+        }
+        
+        /* Buttons - smooth hover only */
+        .btn-klee, .nav-buttons button {
+          transition: background-color 0.2s ease, box-shadow 0.2s ease !important;
+          transform: none !important;
+          position: relative !important;
         }
         
         .btn-klee:active, .nav-buttons button:active {
@@ -1638,13 +1655,11 @@ launch_study <- function(
           transition: none !important;
         }
         
-        /* Aggressive reset - no animations, transitions, or transforms */
-        * {
+        /* Controlled reset - allow specific animations */
+        .no-animation {
           animation: none !important;
           transition: none !important;
           transform: none !important;
-          animation-duration: 0s !important;
-          transition-duration: 0s !important;
         }
         
         /* Ensure stable rendering */
@@ -2123,14 +2138,14 @@ launch_study <- function(
               remaining_minutes <- round(session_status$remaining_time / 60, 1)
               shiny::div(
                 class = "session-status-indicator",
-                style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px;",
+                style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards;",
                 shiny::div("Session Active", style = "font-weight: bold;"),
                 shiny::div(sprintf("Time remaining: %s min", remaining_minutes))
               )
             } else {
               shiny::div(
                 class = "session-status-indicator",
-                style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(255,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px;",
+                style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(255,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards;",
                 shiny::div("Session Expired", style = "font-weight: bold;"),
                 shiny::div("Please refresh or restart")
               )
@@ -2139,7 +2154,7 @@ launch_study <- function(
             # Fallback to basic status
             shiny::div(
               class = "session-status-indicator",
-              style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px;",
+              style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards;",
               shiny::div("Session Active", style = "font-weight: bold;"),
               shiny::div("Session saving enabled")
             )
@@ -2148,7 +2163,7 @@ launch_study <- function(
           # Basic status when advanced functions not available
           shiny::div(
             class = "session-status-indicator",
-            style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px;",
+            style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards;",
             shiny::div("Session Active", style = "font-weight: bold;"),
             shiny::div("Session saving enabled")
           )
@@ -2264,11 +2279,11 @@ launch_study <- function(
           )
         }
         
-                  # Simple wrapper like main branch - no complex JavaScript
+                  # Clean page wrapper with smooth transitions
           shiny::div(
             id = paste0("page-", current_page),
             class = "page-wrapper",
-            style = "width: 100%; max-width: 1200px; margin: 0 auto;",
+            style = "width: 100%; max-width: 1200px; margin: 0 auto; position: relative;",
           base::switch(stage,
                    "custom_page_flow" = {
                      # Process and render custom page flow
