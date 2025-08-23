@@ -1960,13 +1960,13 @@ function updateEverything() {
       
       if (currentLang === "en") {
         for (var de in allTranslations) {
-          if (newValue.includes(de)) {
+          if (newValue.indexOf(de) !== -1) {
             newValue = newValue.replace(de, allTranslations[de]);
           }
         }
       } else {
         for (var de in allTranslations) {
-          if (newValue.includes(allTranslations[de])) {
+          if (newValue.indexOf(allTranslations[de]) !== -1) {
             newValue = newValue.replace(allTranslations[de], de);
           }
         }
@@ -1984,13 +1984,13 @@ function updateEverything() {
       
       if (currentLang === "en") {
         for (var de in allTranslations) {
-          if (newPlaceholder.includes(de)) {
+          if (newPlaceholder.indexOf(de) !== -1) {
             newPlaceholder = newPlaceholder.replace(de, allTranslations[de]);
           }
         }
       } else {
         for (var de in allTranslations) {
-          if (newPlaceholder.includes(allTranslations[de])) {
+          if (newPlaceholder.indexOf(allTranslations[de]) !== -1) {
             newPlaceholder = newPlaceholder.replace(allTranslations[de], de);
           }
         }
@@ -2056,7 +2056,7 @@ function updateAllContent() {
     
     if (currentLang === "en") {
       for (var de in translations) {
-        if (text.includes(de)) {
+        if (text.indexOf(de) !== -1) {
           if (btn.textContent) {
             btn.textContent = text.replace(de, translations[de]);
           } else {
@@ -2067,7 +2067,7 @@ function updateAllContent() {
       }
     } else {
       for (var de in translations) {
-        if (text.includes(translations[de])) {
+        if (text.indexOf(translations[de]) !== -1) {
           if (btn.textContent) {
             btn.textContent = text.replace(translations[de], de);
           } else {
