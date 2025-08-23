@@ -607,24 +607,53 @@ window.toggleLanguage = toggleLanguage;
     scale_type = "likert"
   ),
   
-  # Page 7: Programming Anxiety - Adaptive Section
-  # This will handle the adaptive selection of 5 items from pool 6-20
+  # Pages 7-11: Programming Anxiety Part 2 - Adaptive (5 items, one per page)
   list(
-    id = "page7_pa_adaptive",
-    type = "items",
-    title = "Programmierangst - Adaptive",
-    title_en = "Programming Anxiety - Adaptive",
+    id = "page7_pa2",
+    type = "items", 
+    title = "Programmierangst - Teil 2",
+    title_en = "Programming Anxiety - Part 2",
     instructions = "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.",
     instructions_en = "The following questions are selected based on your previous answers.",
-    item_indices = 6:20,  # Pool of items for adaptive selection
-    items_per_page = 1,  # Show one item per page for adaptive testing
-    max_items = 5,  # Only show 5 items from this pool
+    item_indices = 6:6,  # Will be dynamically selected
+    scale_type = "likert"
+  ),
+  list(
+    id = "page8_pa3",
+    type = "items",
+    title = "Programmierangst",
+    title_en = "Programming Anxiety",
+    item_indices = 7:7,  # Will be dynamically selected
+    scale_type = "likert"
+  ),
+  list(
+    id = "page9_pa4",
+    type = "items",
+    title = "Programmierangst",
+    title_en = "Programming Anxiety",
+    item_indices = 8:8,  # Will be dynamically selected
+    scale_type = "likert"
+  ),
+  list(
+    id = "page10_pa5",
+    type = "items",
+    title = "Programmierangst",
+    title_en = "Programming Anxiety",
+    item_indices = 9:9,  # Will be dynamically selected
+    scale_type = "likert"
+  ),
+  list(
+    id = "page11_pa6",
+    type = "items",
+    title = "Programmierangst",
+    title_en = "Programming Anxiety",
+    item_indices = 10:10,  # Will be dynamically selected
     scale_type = "likert"
   ),
   
-  # Pages 8-11: BFI items (grouped by trait) - RENUMBERED
+  # Pages 12-15: BFI items (grouped by trait)
   list(
-    id = "page8",
+    id = "page12",
     type = "items",
     title = "Persönlichkeit - Teil 1",
     title_en = "Personality - Part 1",
@@ -634,7 +663,7 @@ window.toggleLanguage = toggleLanguage;
     scale_type = "likert"
   ),
   list(
-    id = "page9",
+    id = "page13",
     type = "items",
     title = "Persönlichkeit - Teil 2",
     title_en = "Personality - Part 2",
@@ -642,7 +671,7 @@ window.toggleLanguage = toggleLanguage;
     scale_type = "likert"
   ),
   list(
-    id = "page10",
+    id = "page14",
     type = "items",
     title = "Persönlichkeit - Teil 3",
     title_en = "Personality - Part 3",
@@ -650,7 +679,7 @@ window.toggleLanguage = toggleLanguage;
     scale_type = "likert"
   ),
   list(
-    id = "page11",
+    id = "page15",
     type = "items",
     title = "Persönlichkeit - Teil 4",
     title_en = "Personality - Part 4",
@@ -658,9 +687,9 @@ window.toggleLanguage = toggleLanguage;
     scale_type = "likert"
   ),
   
-  # Page 12: PSQ Stress
+  # Page 16: PSQ Stress
   list(
-    id = "page12",
+    id = "page16",
     type = "items",
     title = "Stress",
     title_en = "Stress",
@@ -670,9 +699,9 @@ window.toggleLanguage = toggleLanguage;
     scale_type = "likert"
   ),
   
-  # Page 13: MWS Study Skills
+  # Page 17: MWS Study Skills
   list(
-    id = "page13",
+    id = "page17",
     type = "items",
     title = "Studierfähigkeiten",
     title_en = "Study Skills",
@@ -682,9 +711,9 @@ window.toggleLanguage = toggleLanguage;
     scale_type = "difficulty"
   ),
   
-  # Page 14: Statistics
+  # Page 18: Statistics
   list(
-    id = "page14",
+    id = "page18",
     type = "items",
     title = "Statistik",
     title_en = "Statistics",
@@ -692,18 +721,18 @@ window.toggleLanguage = toggleLanguage;
     scale_type = "likert"
   ),
   
-  # Page 15: Study satisfaction
+  # Page 19: Study satisfaction
   list(
-    id = "page15",
+    id = "page19",
     type = "demographics",
     title = "Studienzufriedenheit",
     title_en = "Study Satisfaction",
     demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st", "Persönlicher_Code")
   ),
   
-  # Page 16: Results (now with PA results included)
+  # Page 20: Results (now with PA results included)
   list(
-    id = "page16",
+    id = "page20",
     type = "results",
     title = "Ihre Ergebnisse",
     title_en = "Your Results"
@@ -1348,8 +1377,10 @@ study_config <- inrep::create_study_config(
   demographics = names(demographic_configs),
   demographic_configs = demographic_configs,
   input_types = input_types,
-  model = "2PL",  # Use 2PL for adaptive IRT
-  adaptive = TRUE,  # Enable adaptive testing for PA items
+  model = "2PL",  # Use 2PL for adaptive IRT for PA items
+  adaptive = TRUE,  # Enable adaptive testing
+  max_items = 36,  # Total: 10 PA (5 fixed + 5 adaptive) + 20 BFI + 5 PSQ + 4 MWS + 2 Stats = 41
+  min_items = 36,  # Minimum items to show
   response_ui_type = "radio",
   progress_style = "bar",
   language = "de",
@@ -1357,16 +1388,8 @@ study_config <- inrep::create_study_config(
   session_timeout = 7200,
   results_processor = create_hilfo_report,
   criteria = "MFI",  # Maximum Fisher Information for adaptive selection
-  # Adaptive settings for PA section
-  adaptive_sections = list(
-    pa = list(
-      item_pool = 1:20,  # All PA items
-      fixed_items = 1:5,  # First 5 are fixed
-      adaptive_items = 6:20,  # Items 6-20 are the adaptive pool
-      max_adaptive = 5,  # Select 5 items from the adaptive pool
-      adaptive_start = 6  # Start adaptive after item 5
-    )
-  ),
+  adaptive_start = 6,  # Start adaptive after first 5 PA items
+  fixed_items = c(1:5, 21:51),  # Fixed: first 5 PA + all non-PA items (21-51)
   item_bank = all_items,
   save_to_file = TRUE,
   save_format = "csv",
@@ -1397,12 +1420,74 @@ cat("Fixed radar plot with proper connections\n")
 cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
 
-# Launch with cloud storage and full language support
-# Pass both German and English items
+# Custom JavaScript for language toggle and radio button deselection
+custom_js <- '
+<script>
+var currentLang = "de";
+
+// Language toggle function
+function toggleLanguage() {
+  currentLang = currentLang === "de" ? "en" : "de";
+  
+  // Update all bilingual content
+  document.querySelectorAll("[data-lang-de], [data-lang-en]").forEach(function(el) {
+    if (el.hasAttribute("data-lang-de") && el.hasAttribute("data-lang-en")) {
+      el.textContent = currentLang === "de" ? el.getAttribute("data-lang-de") : el.getAttribute("data-lang-en");
+    }
+  });
+  
+  // Update button text
+  var btn = document.getElementById("lang_toggle");
+  if (btn) {
+    btn.textContent = currentLang === "de" ? "🇬🇧 English" : "🇩🇪 Deutsch";
+  }
+  
+  // Send language change to Shiny
+  if (typeof Shiny !== "undefined") {
+    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+  }
+}
+
+// Add language toggle button on page load
+document.addEventListener("DOMContentLoaded", function() {
+  // Create language toggle button
+  var langBtn = document.createElement("button");
+  langBtn.id = "lang_toggle";
+  langBtn.textContent = "🇬🇧 English";
+  langBtn.style.cssText = "position: fixed; top: 10px; right: 10px; z-index: 9999; " +
+                          "background: white; border: 2px solid #e8041c; color: #e8041c; " +
+                          "padding: 8px 16px; border-radius: 4px; cursor: pointer;";
+  langBtn.onclick = toggleLanguage;
+  document.body.appendChild(langBtn);
+  
+  // Enable radio button deselection
+  document.addEventListener("click", function(e) {
+    if (e.target.type === "radio") {
+      if (e.target.dataset.wasChecked === "true") {
+        e.target.checked = false;
+        e.target.dataset.wasChecked = "false";
+        if (typeof Shiny !== "undefined") {
+          Shiny.setInputValue(e.target.name, null, {priority: "event"});
+        }
+      } else {
+        // Clear other radio buttons in the same group
+        document.querySelectorAll(`input[name="${e.target.name}"]`).forEach(function(radio) {
+          radio.dataset.wasChecked = "false";
+        });
+        e.target.dataset.wasChecked = "true";
+      }
+    }
+  });
+});
+</script>
+'
+
+# Launch with cloud storage, adaptive testing, and custom JavaScript
 inrep::launch_study(
   config = study_config,
   item_bank = all_items_de,  # Contains both Question and Question_EN
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
-  save_format = "csv"
+  save_format = "csv",
+  custom_css = custom_js  # Add custom JavaScript for language toggle and deselection
 )
