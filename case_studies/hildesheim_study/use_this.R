@@ -1834,12 +1834,12 @@ study_config <- inrep::create_study_config(
     session_timeout = 7200,
     results_processor = create_hilfo_report,
     estimation_method = "EAP",  # Use EAP for ability estimation
-    # RESTORE LATER PACKAGE OPTIMIZATIONS FOR SPEED
-    use_later_package = TRUE,  # Enable later package optimizations
-    package_loading_delay = 0.001,  # Near-instant package loading
-    session_init_delay = 0.01,  # Minimal session initialization delay
-    ui_render_delay = 0,  # Immediate UI rendering
-    page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
+    # LATER PACKAGE OPTIMIZATIONS DISABLED FOR DEBUGGING
+    # use_later_package = TRUE,  # Enable later package optimizations - DISABLED
+    # package_loading_delay = 0.001,  # Near-instant package loading - DISABLED
+    # session_init_delay = 0.01,  # Minimal session initialization delay - DISABLED
+    # ui_render_delay = 0,  # Immediate UI rendering - DISABLED
+    # page_load_hook = adaptive_output_hook,  # Add hook for adaptive output - DISABLED
     # item_bank = all_items,  # Passed separately to launch_study
     save_to_file = TRUE,
     save_format = "csv",
@@ -2038,25 +2038,8 @@ custom_css_only <- '
 # LAUNCH STUDY WITH CLEAN INREP-NATIVE LANGUAGE SYSTEM
 # =============================================================================
 
-# FIXED launch_study call with all optimizations restored
+# ABSOLUTE MINIMAL launch_study - REMOVE ALL OPTIONAL PARAMETERS
 inrep::launch_study(
     config = study_config,
-    item_bank = all_items_de,  # Bilingual item bank
-    webdav_url = WEBDAV_URL,
-    password = WEBDAV_PASSWORD,
-    save_format = "csv",
-    custom_css = custom_css_only,  # Clean CSS only - no JavaScript needed
-    admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
-    # BASIC OPTIMIZATIONS ONLY
-    max_session_time = 7200,
-    session_save = TRUE,
-    # data_preservation_interval = 1,  # Fast data preservation - DISABLED
-    # keep_alive_interval = 5,  # Fast keep-alive - DISABLED
-    # enable_error_recovery = TRUE,  # DISABLED
-    # LATER PACKAGE DISABLED - BYPASS ERROR FOR NOW
-    # ui_render_delay = 0,  # Show UI immediately
-    # package_loading_delay = 0.001,  # Near-instant package loading
-    # session_init_delay = 0.01,  # Minimal session delay
-    # show_loading_screen = FALSE,  # No loading screen
-    immediate_ui = FALSE  # DISABLED: Bypass LATER package error
+    item_bank = all_items_de
 )
