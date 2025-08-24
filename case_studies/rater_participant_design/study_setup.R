@@ -265,7 +265,7 @@ create_rater_instructions_override <- function() {
       '</div>',
       
       '<div class="rating-guidelines" style="margin-top: 30px; padding: 20px; background: #f8f9fa; border: 2px solid #6c757d; border-radius: 8px;">',
-      '<h3 style="color: #495057; margin-top: 0; font-size: 18px; text-align: center;">📊 Rating Scale Guidelines</h3>',
+      '<h3 style="color: #495057; margin-top: 0; font-size: 18px; text-align: center;">Rating Scale Guidelines</h3>',
       '<div style="display: flex; justify-content: space-between; margin: 15px 0; font-size: 14px;">',
       '<div style="text-align: center; flex: 1;"><strong>1</strong><br>Poor</div>',
       '<div style="text-align: center; flex: 1;"><strong>2</strong><br>Fair</div>',
@@ -437,7 +437,7 @@ create_rater_reliability_report <- function(session_data, item_bank, config) {
     
     # Executive Summary
     '<div class="section primary">',
-    '<h2 style="margin-top: 0; color: #4a148c;">📊 Executive Summary</h2>',
+    '<h2 style="margin-top: 0; color: #4a148c;">Executive Summary</h2>',
     '<div style="text-align: center; margin: 20px 0;">',
     '<div class="performance-indicator" style="background-color: ', performance_color, ';">',
     'Performance Level: ', performance_level,
@@ -465,7 +465,7 @@ create_rater_reliability_report <- function(session_data, item_bank, config) {
     
     # Participant Information
     '<div class="section info">',
-    '<h2 style="color: #1565c0;">👤 Participant Information</h2>',
+    '<h2 style="color: #1565c0;">Participant Information</h2>',
     '<table>',
     '<tr><th>Category</th><th>Response</th></tr>',
     '<tr><td>Participant Role</td><td>', role, '</td></tr>',
@@ -478,7 +478,7 @@ create_rater_reliability_report <- function(session_data, item_bank, config) {
     
     # Visualization
     '<div class="section">',
-    '<h2 style="color: #424242;">📈 Multi-Rater Performance Analysis</h2>',
+    '<h2 style="color: #424242;">Multi-Rater Performance Analysis</h2>',
     plot_html,
     '<p style="font-style: italic; color: #666; text-align: center; margin-top: 10px;">',
     'This chart compares your performance ratings across all raters and performance domains. ',
@@ -488,7 +488,7 @@ create_rater_reliability_report <- function(session_data, item_bank, config) {
     
     # Individual Rater Analysis
     '<div class="section">',
-    '<h2 style="color: #424242;">🔍 Individual Rater Analysis</h2>',
+    '<h2 style="color: #424242;">Individual Rater Analysis</h2>',
     paste0(
       '<div class="rater-analysis">',
       '<h3 style="margin-top: 0; color: #2196f3;">Rater 1 Assessment</h3>',
@@ -517,7 +517,7 @@ create_rater_reliability_report <- function(session_data, item_bank, config) {
     
     # Reliability Analysis
     '<div class="section success">',
-    '<h2 style="margin-top: 0; color: #2e7d32;">📊 Reliability Analysis</h2>',
+    '<h2 style="margin-top: 0; color: #2e7d32;">Reliability Analysis</h2>',
     '<div style="background: #ffffff; padding: 20px; border-radius: 8px; margin: 15px 0;">',
     '<h3 style="margin-top: 0; color: #4a148c;">Inter-Rater Reliability Metrics</h3>',
     '<table>',
@@ -536,7 +536,7 @@ create_rater_reliability_report <- function(session_data, item_bank, config) {
     
     # Personalized Recommendations
     '<div class="section warning">',
-    '<h2 style="margin-top: 0; color: #e65100;">💡 Consensus Recommendations</h2>',
+    '<h2 style="margin-top: 0; color: #e65100;">Consensus Recommendations</h2>',
     '<h3>Areas of Strength (High Rater Agreement)</h3>',
     '<ul>',
     '<li><strong>Professional Communication:</strong> All raters noted strong verbal and written communication skills</li>',
@@ -562,7 +562,7 @@ create_rater_reliability_report <- function(session_data, item_bank, config) {
     
     # Assessment Details
     '<div class="section">',
-    '<h2 style="color: #424242;">📋 Assessment Details</h2>',
+    '<h2 style="color: #424242;">Assessment Details</h2>',
     '<table>',
     '<tr><th>Assessment Information</th><th>Details</th></tr>',
     '<tr><td>Session ID</td><td>', session_id, '</td></tr>',

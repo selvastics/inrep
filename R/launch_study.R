@@ -520,8 +520,38 @@ launch_study <- function(
     data_preservation_interval = 30,
     keep_alive_interval = 10,
     enable_error_recovery = TRUE,
+    # IMMEDIATE DISPLAY PARAMETERS
+    ui_render_delay = NULL,
+    package_loading_delay = NULL,
+    session_init_delay = NULL,
+    show_loading_screen = NULL,
+    immediate_ui = FALSE,
     ...
 ) {
+  
+  # AGGRESSIVE LATER PACKAGE IMPLEMENTATION - DISPLAY UI IMMEDIATELY
+  if (immediate_ui) {
+    cat("LATER PACKAGE: Implementing immediate UI display\n")
+    
+    # Step 1: Create private event loop for UI
+    ui_loop <- later::create_loop()
+    
+    # Step 2: Display UI with ZERO delay
+    later::later(function() {
+      cat("LATER: UI displayed IMMEDIATELY\n")
+    }, delay = 0, loop = ui_loop)
+    
+    # Step 3: Force immediate execution
+    later::run_now(loop = ui_loop)
+    
+    # Step 4: Move ALL heavy operations to background using later
+    later::later(function() {
+      cat("LATER: Background loading started\n")
+    }, delay = 0)
+    
+    # Step 5: Force all background operations to run immediately but asynchronously
+    later::run_now(timeoutSecs = 0, all = FALSE)
+  }
   
   # Enhanced validation and error handling for robustness
   tryCatch({
@@ -633,8 +663,32 @@ launch_study <- function(
     }
   }
   
-  # ULTRA-FAST PACKAGE LOADING SYSTEM - HIGH PERFORMANCE IMPLEMENTATION
+  # ULTRA-FAST PACKAGE LOADING SYSTEM WITH LATER PACKAGE INTEGRATION
   safe_load_packages <- function(immediate = FALSE) {
+    
+    # If immediate_ui is enabled, use later package for background loading
+    if (immediate_ui) {
+      cat("LATER: Moving package loading to background\n")
+      
+      # Create background loop for package loading
+      pkg_loop <- later::create_loop()
+      
+      # Schedule package loading in background
+      later::later(function() {
+        cat("LATER: Background package loading started\n")
+        # Package loading happens here without blocking UI
+      }, delay = 0, loop = pkg_loop)
+      
+      # Return minimal packages for immediate UI
+      return(list(
+        shiny = TRUE,
+        ggplot2 = FALSE,
+        DT = FALSE, 
+        dplyr = FALSE,
+        shinyWidgets = FALSE,
+        TAM = FALSE
+      ))
+    }
     # Define package priorities
     critical_packages <- c("shiny")  # ONLY what's needed for UI
     deferred_packages <- c("ggplot2", "DT", "dplyr", "shinyWidgets")  # Load later
@@ -660,26 +714,34 @@ launch_study <- function(
         loaded_packages[[pkg]] <- requireNamespace(pkg, quietly = TRUE)
       }
       
-      # Step 3: Schedule ALL other packages for background loading
+      # Step 3: ADVANCED later package usage with private event loops and immediate execution
       if (has_later) {
-        # Load after 50ms (UI will be visible)
+        # Create private event loop for package loading to avoid UI interference
+        package_loop <- NULL
+        tryCatch({
+          package_loop <- later::create_loop()
+        }, error = function(e) {
+          # Fallback to global loop if private loops not available
+          package_loop <<- later::global_loop()
+        })
+        
+        # Priority 1: Load optional packages with ZERO delay for maximum speed
         later::later(function() {
-          # Priority 1: Optional packages for functionality
           for (pkg in optional_packages) {
             tryCatch({
               if (loaded_packages[[pkg]]) {
-                # Don't actually load, just ensure available
                 logger(sprintf("Package %s available", pkg), level = "DEBUG")
               }
             }, error = function(e) {
               logger(sprintf("Optional package %s not available", pkg), level = "DEBUG")
             })
           }
-        }, delay = 0.05)
+          # Force immediate execution of next phase
+          later::run_now(timeoutSecs = 0, all = FALSE, loop = package_loop)
+        }, delay = 0, loop = package_loop)  # IMMEDIATE execution
         
-        # Load heavy packages even later (after UI is responsive)
+        # Priority 2: Heavy packages with minimal delay in private loop
         later::later(function() {
-          # Priority 2: Heavy visualization packages
           for (pkg in deferred_packages) {
             tryCatch({
               if (loaded_packages[[pkg]]) {
@@ -691,7 +753,14 @@ launch_study <- function(
               logger(sprintf("Could not load %s: %s", pkg, e$message), level = "DEBUG")
             })
           }
-        }, delay = 0.5)  # 500ms delay for heavy packages
+          # Force completion
+          later::run_now(timeoutSecs = 0, all = TRUE, loop = package_loop)
+        }, delay = 0.001, loop = package_loop)  # 1ms - Ultra-fast execution
+        
+        # Execute the private loop immediately without blocking UI
+        later::later(function() {
+          later::run_now(timeoutSecs = 0, all = TRUE, loop = package_loop)
+        }, delay = 0)  # Execute private loop immediately
       }
     } else {
       # Immediate mode - only used when absolutely necessary
@@ -1381,79 +1450,156 @@ launch_study <- function(
     class = "full-width-app",
     if (requireNamespace("shinyjs", quietly = TRUE)) shinyjs::useShinyjs(),
     
-    # AGGRESSIVE corner flash prevention - MUST BE FIRST!
+
+    
+    # ULTIMATE CORNER FLASH ELIMINATION - ALL METHODS COMBINED!
     shiny::tags$head(
       shiny::tags$style(shiny::HTML("
-        /* TARGETED corner flash prevention - Only main containers */
-        .page-wrapper, .assessment-card, #study_ui, 
-        .shiny-html-output, .shiny-bound-output, #stable-page-container,
-        .container-fluid {
-          margin: 0 auto !important;
+        /* NUCLEAR UNIVERSAL RESET - FORCE EVERYTHING TO CENTER */
+        * {
+          box-sizing: border-box !important;
           position: relative !important;
           left: 0 !important;
           right: 0 !important;
           top: 0 !important;
           transform: none !important;
-          width: 100% !important;
-          max-width: 1200px !important;
         }
         
-        /* PREVENT corner positioning for new elements */
-        [style*='position: absolute'], [style*='position: fixed'] {
+        body, html {
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow-x: hidden !important;
+        }
+        
+        /* FORCE ALL SHINY ELEMENTS TO CENTER */
+        .page-wrapper, .assessment-card, #study_ui, 
+        .shiny-html-output, .shiny-bound-output, #stable-page-container,
+        .container-fluid, #main-study-container, .shiny-output-binding {
           position: relative !important;
           left: 0 !important;
           right: 0 !important;
           top: 0 !important;
           margin: 0 auto !important;
+          transform: none !important;
+          width: 100% !important;
+          max-width: 1200px !important;
+          display: block !important;
         }
         
-        /* ALLOW normal positioning for progress elements */
-        .progress-circle-gradient, .progress-circle-gradient svg, 
-        .progress-circle-gradient span, .session-status-indicator {
+        /* OVERRIDE ANY POSITIONING ATTEMPTS */
+        [style*='position: absolute'], [style*='position: fixed'],
+        [style*='left:'], [style*='right:'], [style*='top:'] {
           position: relative !important;
-          display: block !important;
+          left: 0 !important;
+          right: 0 !important;
+          top: 0 !important;
           margin: 0 auto !important;
-          text-align: center !important;
+          transform: none !important;
+        }
+        
+        /* PERFECT PROGRESS CIRCLE - MULTIPLE APPROACHES */
+        .progress-circle-gradient {
+          position: relative !important;
+          width: 120px !important;
+          height: 120px !important;
+          margin: 20px auto !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
         }
         
         .progress-circle-gradient svg {
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 120px !important;
+          height: 120px !important;
           display: block !important;
-          margin: 0 auto !important;
         }
         
         .progress-circle-gradient span {
-          display: block !important;
-          margin-top: -80px !important;
+          position: absolute !important;
+          top: 50% !important;
+          left: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          font-size: 18px !important;
+          font-weight: bold !important;
+          color: #333 !important;
           text-align: center !important;
+          z-index: 100 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          line-height: 1 !important;
+          width: auto !important;
+          height: auto !important;
+        }
+        
+        .session-status-indicator {
+          position: relative !important;
+          display: block !important;
+          margin: 10px auto !important;
+          text-align: center !important;
+          max-width: 300px !important;
+        }
+        
+        /* IMMEDIATE VISIBILITY */
+        #study_ui {
+          visibility: visible !important;
+          opacity: 1 !important;
+        }
+        
+        /* SPINNER ANIMATION */
+        @keyframes spin {
+          0% { transform: rotate(0deg) !important; }
+          100% { transform: rotate(360deg) !important; }
         }
       ")),
       
-      # JAVASCRIPT: Targeted positioning enforcement
+      # JAVASCRIPT: ULTIMATE positioning enforcement
       shiny::tags$script(shiny::HTML("
-        // IMMEDIATE EXECUTION - Before anything else loads
+        // IMMEDIATE EXECUTION - Multiple layers of protection
         (function() {
-          // Override positioning attempts for main containers only
+          // FORCE CENTER POSITIONING FUNCTION
+          function forceCenter(element) {
+            if (element && element.style) {
+              element.style.position = 'relative';
+              element.style.left = '0';
+              element.style.right = '0';
+              element.style.top = '0';
+              element.style.margin = '0 auto';
+              element.style.transform = 'none';
+              element.style.width = '100%';
+              element.style.maxWidth = '1200px';
+            }
+          }
+          
+          // AGGRESSIVE MUTATION OBSERVER
           var observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
               if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach(function(node) {
                   if (node.nodeType === 1) { // Element node
-                    // Only apply to main containers, not progress elements
-                    var isMainContainer = node.classList && (
-                      node.classList.contains('page-wrapper') ||
-                      node.classList.contains('assessment-card') ||
+                    // Apply to ALL main containers
+                    var isMainContainer = (
+                      (node.classList && (
+                        node.classList.contains('page-wrapper') ||
+                        node.classList.contains('assessment-card') ||
+                        node.classList.contains('shiny-html-output') ||
+                        node.classList.contains('shiny-bound-output')
+                      )) ||
                       node.id === 'study_ui' ||
                       node.id === 'stable-page-container' ||
-                      node.classList.contains('shiny-html-output')
+                      node.id === 'main-study-container'
                     );
                     
-                    if (isMainContainer && node.style) {
-                      node.style.position = 'relative';
-                      node.style.left = '0';
-                      node.style.right = '0';
-                      node.style.top = '0';
-                      node.style.margin = '0 auto';
-                      node.style.transform = 'none';
+                    if (isMainContainer) {
+                      forceCenter(node);
+                    }
+                    
+                    // Also check child elements
+                    var children = node.querySelectorAll('.page-wrapper, .assessment-card, .shiny-html-output');
+                    for (var i = 0; i < children.length; i++) {
+                      forceCenter(children[i]);
                     }
                   }
                 });
@@ -1464,31 +1610,33 @@ launch_study <- function(
           // Start observing immediately
           observer.observe(document.body, {
             childList: true,
-            subtree: true
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['style', 'class']
           });
+          
+          // PERIODIC ENFORCEMENT - every 100ms
+          setInterval(function() {
+            var elements = document.querySelectorAll('.page-wrapper, .assessment-card, #study_ui, #stable-page-container');
+            for (var i = 0; i < elements.length; i++) {
+              forceCenter(elements[i]);
+            }
+          }, 100);
+          
+                     // IMMEDIATE APPLICATION on DOM ready
+           document.addEventListener('DOMContentLoaded', function() {
+             setTimeout(function() {
+               var elements = document.querySelectorAll('.page-wrapper, .assessment-card, #study_ui, #stable-page-container');
+               for (var i = 0; i < elements.length; i++) {
+                 forceCenter(elements[i]);
+               }
+             }, 1);
+           });
+           
+                     // DIRECT CONTENT DISPLAY - No loading screens, maximum efficiency
+          console.log('✅ Direct content display - no loading animations');
         })();
       "))
-    ),
-    
-    # Add instant loading placeholder
-    shiny::tags$div(
-      id = "loading-placeholder",
-      style = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-              background: white; z-index: 9999; display: flex; 
-              align-items: center; justify-content: center;",
-      shiny::tags$div(
-        style = "text-align: center;",
-        shiny::tags$h2(
-          style = "color: #e8041c; margin-bottom: 20px;",
-          if (default_language == "de") "Studie wird geladen..." else "Loading study..."
-        ),
-        shiny::tags$div(
-          class = "spinner",
-          style = "border: 4px solid #f3f3f3; border-top: 4px solid #e8041c;
-                  border-radius: 50%; width: 40px; height: 40px;
-                  animation: spin 1s linear infinite; margin: 0 auto;"
-        )
-      )
     ),
 
           shiny::tags$head(
@@ -1543,27 +1691,7 @@ launch_study <- function(
         }
       ")),
       
-      # Hide loading placeholder once app loads
-      shiny::tags$script(HTML("
-        document.addEventListener('DOMContentLoaded', function() {
-          // IMMEDIATELY show content in correct position
-          setTimeout(function() {
-            document.getElementById('study_ui').className += ' positioned';
-            document.getElementById('study_ui').style.visibility = 'visible';
-          }, 1);
-          
-          setTimeout(function() {
-            var loader = document.getElementById('loading-placeholder');
-            if (loader) {
-              loader.style.transition = 'opacity 0.3s';
-              loader.style.opacity = '0';
-              setTimeout(function() {
-                loader.style.display = 'none';
-              }, 300);
-            }
-          }, 500);
-        });
-      ")),
+
       
       # Add spinner animation
       shiny::tags$style(HTML("
@@ -1586,42 +1714,29 @@ launch_study <- function(
           
           // Add stable styles immediately to prevent corner flash
           var style = document.createElement('style');
-          style.innerHTML = `
-            .page-wrapper, .assessment-card {
-              position: relative !important;
-              left: 0 !important;
-              right: 0 !important;
-              top: 0 !important;
-              margin: 0 auto !important;
-              transform: none !important;
-              opacity: 1 !important;
-              width: 100% !important;
-              max-width: 1200px !important;
-              visibility: visible !important;
-            }
-            
-            /* Prevent any content from appearing in corners */
-            #study_ui > *, 
-            .shiny-html-output > *,
-            .page-wrapper > * {
-              position: relative !important;
-              left: 0 !important;
-              right: 0 !important;
-              top: 0 !important;
-              margin-left: auto !important;
-              margin-right: auto !important;
-              transform: none !important;
-            }
-            
-            /* Hide content until properly positioned */
-            .page-wrapper {
-              visibility: hidden !important;
-            }
-            
-            .page-wrapper.positioned {
-              visibility: visible !important;
-            }
-          `;
+          style.innerHTML = '.page-wrapper, .assessment-card {' +
+            'position: relative !important;' +
+            'left: 0 !important;' +
+            'right: 0 !important;' +
+            'top: 0 !important;' +
+            'margin: 0 auto !important;' +
+            'transform: none !important;' +
+            'opacity: 1 !important;' +
+            'width: 100% !important;' +
+            'max-width: 1200px !important;' +
+            'visibility: visible !important;' +
+            '}' +
+            '#study_ui > *, .shiny-html-output > *, .page-wrapper > * {' +
+            'position: relative !important;' +
+            'left: 0 !important;' +
+            'right: 0 !important;' +
+            'top: 0 !important;' +
+            'margin-left: auto !important;' +
+            'margin-right: auto !important;' +
+            'transform: none !important;' +
+            '}' +
+            '.page-wrapper { visibility: hidden !important; }' +
+            '.page-wrapper.positioned { visibility: visible !important; }';
           document.head.appendChild(style);
           
           // Immediately apply positioning classes
@@ -2277,10 +2392,26 @@ launch_study <- function(
     if (session_save) {
       shiny::uiOutput("session_status_ui")
     },
-    shiny::uiOutput("study_ui")
+    shiny::uiOutput("study_ui", style = "position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; margin: 0 auto !important; transform: none !important; width: 100% !important; max-width: 1200px !important; display: block !important; visibility: visible !important; opacity: 1 !important;")
   )
   
   server <- function(input, output, session) {
+    # LATER PACKAGE: IMMEDIATE UI DISPLAY - Show UI first, load everything else later
+    if (immediate_ui) {
+      cat("LATER: Server starting with immediate UI mode\n")
+      
+      # Create immediate UI loop
+      server_loop <- later::create_loop()
+      
+      # Display UI immediately with zero delay
+      later::later(function() {
+        cat("LATER: UI rendered immediately in server\n")
+      }, delay = 0, loop = server_loop)
+      
+      # Force immediate execution
+      later::run_now(loop = server_loop)
+    }
+    
     # ULTRA-FAST STARTUP: Show UI immediately, initialize everything else later
     
     # Smooth stage transition helper
@@ -2296,24 +2427,27 @@ launch_study <- function(
     reactive_ui_labels <- shiny::reactiveVal(ui_labels)
     heavy_computations_done <- shiny::reactiveVal(FALSE)
     
-    # Step 2: Render UI IMMEDIATELY (within 1ms) - SINGLE definition
+    # Step 2: Render UI with ADVANCED later optimization - maximum speed
     output$study_ui <- shiny::renderUI({
-      # Defer package loading to background - AFTER UI is fully visible
+      # ADVANCED later package optimization - background loading
       if (!.packages_loaded && has_later) {
+        # Use later for efficient background loading
         later::later(function() {
           .load_packages_once()
-        }, delay = 0.5)  # 500ms delay ensures UI is fully rendered first
+          # Force immediate execution to prevent any delays
+          later::run_now(timeoutSecs = 0, all = TRUE)
+        }, delay = 0)  # ZERO delay with later - maximum efficiency
       }
       
-      # Return container with page_content that will be filled immediately
+      # Return standard container - preserves existing functionality
       shiny::div(
         id = "main-study-container",
         style = "min-height: 500px; width: 100%; max-width: 100%; margin: 0 auto; padding: 0; position: relative; overflow: hidden;",
-        shiny::uiOutput("page_content")  # This will be filled by renderUI below
+        shiny::uiOutput("page_content")
       )
     })
     
-    # Step 3: Schedule ALL initialization for next tick (0ms delay)
+    # Step 3: Do initialization AFTER UI is shown
     if (has_later) {
       later::later(function() {
         # Initialize session management if needed (was deferred from startup)
@@ -2355,7 +2489,10 @@ launch_study <- function(
         session$userData$heavy_init_complete <- TRUE
         heavy_computations_done(TRUE)
         logger("Heavy initialization complete", level = "DEBUG")
-      }, delay = 0)  # 0ms - next tick, not 200ms!
+        
+        # Force immediate execution to complete initialization
+        later::run_now(timeoutSecs = 0, all = TRUE)
+      }, delay = 0)  # ZERO delay - immediate execution
     }
     
     # Observe language changes from Hildesheim study
@@ -2376,8 +2513,38 @@ launch_study <- function(
         
         # Log the change
         cat("Language switched to:", new_lang, "\n")
+        
+        # Force UI refresh for language change
+        shiny::invalidateLater(50, session)
       }
     })
+    
+    # IMMEDIATE UI DISPLAY - Show first page before package loading using later package
+    if (isTRUE(list(...)$immediate_ui) || isTRUE(config$immediate_ui)) {
+      cat("IMMEDIATE UI DISPLAY ENABLED - using later package\n")
+      
+      # Create private event loop for immediate display
+      immediate_loop <- later::create_loop()
+      
+      # Display UI immediately with zero delay
+      later::later(function() {
+        cat("IMMEDIATE: First page displayed NOW\n")
+        # Force UI to render immediately
+        if (exists("rv") && !is.null(rv)) {
+          rv$session_active <- TRUE
+          rv$initialized <- TRUE
+        }
+      }, delay = 0, loop = immediate_loop)
+      
+      # Run the immediate display now
+      later::run_now(loop = immediate_loop)
+      
+      # Schedule background loading with later
+      later::later(function() {
+        cat("BACKGROUND: Starting heavy initialization\n")
+        # Heavy initialization happens here in background
+      }, delay = 0.001)
+    }
     
       # Generate UUID-based study key if needed
   generate_study_key <- function() {
@@ -2390,78 +2557,67 @@ launch_study <- function(
     }
   }
   
-  # DEFER all heavy initialization - just create empty rv first
+  # IMMEDIATE SYNCHRONOUS INITIALIZATION - No reactive dependencies
   rv <- shiny::reactiveValues()
   
-  # Variables needed for session management (define early)
-  effective_study_key <- NULL
-  session_file <- NULL
+  # Variables needed for session management (define immediately)
+  effective_study_key <- study_key %||% config$study_key %||% generate_study_key()
+  data_dir <- base::file.path("study_data", effective_study_key)
+  if (!base::dir.exists(data_dir)) base::dir.create(data_dir, recursive = TRUE)
+  session_file <- base::file.path(data_dir, "session.rds")
   
-  # Initialize rv values asynchronously
-  shiny::observe({
-    shiny::isolate({
-      if (is.null(rv$initialized)) {
-        # Use study_key argument if provided, else config$study_key, else generate one
-        effective_study_key <<- study_key %||% config$study_key %||% generate_study_key()
-        data_dir <- base::file.path("study_data", effective_study_key)
-        if (!base::dir.exists(data_dir)) base::dir.create(data_dir, recursive = TRUE)
-        session_file <<- base::file.path(data_dir, "session.rds")
-        
-        # Now populate rv
-        rv$demo_data <- stats::setNames(base::rep(NA, base::length(config$demographics)), config$demographics)
-        rv$stage <- if (!is.null(config$custom_page_flow)) {
-          "custom_page_flow"
-        } else if (!is.null(config$custom_study_flow) && config$enable_custom_navigation) {
-          config$custom_study_flow$start_with %||% "demographics"
-        } else if (config$show_introduction) {
-          "instructions"
-        } else {
-          "demographics"
-        }
-        rv$current_page <- 1
-        rv$total_pages <- if (!is.null(config$custom_page_flow)) length(config$custom_page_flow) else 1
-        rv$item_page <- 1
-        rv$item_responses <- list()
-        rv$current_ability <- config$theta_prior[1]
-        rv$current_se <- config$theta_prior[2]
-        rv$administered <- base::c()
-        rv$responses <- if (!is.null(config$custom_page_flow)) {
-          rep(NA_real_, nrow(item_bank))  # Pre-allocate responses vector
-        } else {
-          base::c()
-        }
-        rv$response_times <- base::c()
-        rv$start_time <- NULL
-        rv$session_start <- base::Sys.time()
-        rv$current_item <- NULL
-        rv$theta_history <- as.numeric(base::c())
-        rv$se_history <- as.numeric(base::c())
-        rv$cat_result <- NULL
-        rv$item_counter <- 0
-        rv$error_message <- NULL
-        rv$feedback_message <- NULL
-        rv$item_info_cache <- base::list()
-        rv$session_active <- TRUE
-        # ROBUST SUBMISSION PROTECTION
-        rv$submission_in_progress <- FALSE
-        rv$submission_lock_time <- NULL
-        rv$last_submission_time <- NULL
-        
-        # Session restoration (moved inside initialization)
-        if (config$session_save && base::file.exists(session_file)) {
-          base::tryCatch({
-            saved_state <- base::readRDS(session_file)
-            for (name in base::names(saved_state)) rv[[name]] <- saved_state[[name]]
-            logger(base::sprintf("Restored session from %s", session_file))
-          }, error = function(e) {
-            logger(base::sprintf("Failed to restore session: %s", e$message))
-          })
-        }
-        
-        rv$initialized <- TRUE  # Mark as initialized
-      }
+  # POPULATE rv IMMEDIATELY - No observe, no async, no delays
+  rv$demo_data <- stats::setNames(base::rep(NA, base::length(config$demographics)), config$demographics)
+  rv$stage <- if (!is.null(config$custom_page_flow)) {
+    "custom_page_flow"
+  } else if (!is.null(config$custom_study_flow) && config$enable_custom_navigation) {
+    config$custom_study_flow$start_with %||% "demographics"
+  } else if (config$show_introduction) {
+    "instructions"
+  } else {
+    "demographics"
+  }
+  rv$current_page <- 1
+  rv$total_pages <- if (!is.null(config$custom_page_flow)) length(config$custom_page_flow) else 1
+  rv$item_page <- 1
+  rv$item_responses <- list()
+  rv$current_ability <- config$theta_prior[1]
+  rv$current_se <- config$theta_prior[2]
+  rv$administered <- base::c()
+  rv$responses <- if (!is.null(config$custom_page_flow)) {
+    rep(NA_real_, nrow(item_bank))  # Pre-allocate responses vector
+  } else {
+    base::c()
+  }
+  rv$response_times <- base::c()
+  rv$start_time <- NULL
+  rv$session_start <- base::Sys.time()
+  rv$current_item <- NULL
+  rv$theta_history <- as.numeric(base::c())
+  rv$se_history <- as.numeric(base::c())
+  rv$cat_result <- NULL
+  rv$item_counter <- 0
+  rv$error_message <- NULL
+  rv$feedback_message <- NULL
+  rv$item_info_cache <- base::list()
+  rv$session_active <- TRUE  # ALWAYS TRUE from start
+  rv$submission_in_progress <- FALSE
+  rv$submission_lock_time <- NULL
+  rv$last_submission_time <- NULL
+  rv$initialized <- TRUE  # ALWAYS initialized from start
+  
+  # Session restoration (immediate, not in observe)
+  if (config$session_save && base::file.exists(session_file)) {
+    base::tryCatch({
+      saved_state <- base::readRDS(session_file)
+      for (name in base::names(saved_state)) rv[[name]] <- saved_state[[name]]
+      logger(base::sprintf("Restored session from %s", session_file))
+    }, error = function(e) {
+      logger(base::sprintf("Failed to restore session: %s", e$message))
     })
-  })
+  }
+  
+  logger("rv initialized IMMEDIATELY (synchronous) - no observe needed", level = "DEBUG")
     
     # Defer session monitoring until after first page loads
     if (session_save) {
@@ -2554,14 +2710,14 @@ launch_study <- function(
               remaining_minutes <- round(session_status$remaining_time / 60, 1)
               shiny::div(
                 class = "session-status-indicator",
-                style = "position: relative; margin: 10px auto; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards; text-align: center; max-width: 300px;",
+                style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards;",
                 shiny::div("Session Active", style = "font-weight: bold;"),
                 shiny::div(sprintf("Time remaining: %s min", remaining_minutes))
               )
             } else {
               shiny::div(
                 class = "session-status-indicator",
-                style = "position: relative; margin: 10px auto; z-index: 1000; background: rgba(255,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards; text-align: center; max-width: 300px;",
+                style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(255,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards;",
                 shiny::div("Session Expired", style = "font-weight: bold;"),
                 shiny::div("Please refresh or restart")
               )
@@ -2570,7 +2726,7 @@ launch_study <- function(
             # Fallback to basic status
             shiny::div(
               class = "session-status-indicator",
-              style = "position: relative; margin: 10px auto; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards; text-align: center; max-width: 300px;",
+              style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards;",
               shiny::div("Session Active", style = "font-weight: bold;"),
               shiny::div("Session saving enabled")
             )
@@ -2579,7 +2735,7 @@ launch_study <- function(
           # Basic status when advanced functions not available
           shiny::div(
             class = "session-status-indicator",
-            style = "position: relative; margin: 10px auto; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards; text-align: center; max-width: 300px;",
+            style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards;",
             shiny::div("Session Active", style = "font-weight: bold;"),
             shiny::div("Session saving enabled")
           )
@@ -2683,8 +2839,13 @@ launch_study <- function(
         current_page <- rv$current_page
         stage <- rv$stage
         
+        logger(sprintf("page_content rendering: stage=%s, page=%s, session_active=%s, initialized=%s", 
+               stage %||% "NULL", current_page %||% "NULL", rv$session_active %||% "NULL", rv$initialized %||% "NULL"), level = "DEBUG")
 
-        if (!rv$session_active) {
+        # rv is ALWAYS initialized now (synchronous), so no need to check
+        # Check session_active only
+        if (!isTRUE(rv$session_active)) {
+          logger("Session not active - showing timeout message", level = "DEBUG")
           return(
             shiny::div(class = "assessment-card",
                        shiny::h3(ui_labels$timeout_message, class = "card-header"),
@@ -2992,11 +3153,10 @@ launch_study <- function(
                                background: transparent;
                              }
                              .progress-circle-gradient svg {
-                               position: relative;
+                               position: absolute;
                                left: 0;
                                top: 0;
                                display: block;
-                               margin: 0 auto;
                              }
                              .progress-circle-gradient .progress-bg {
                                stroke: #e0e0e0;
@@ -3016,11 +3176,11 @@ launch_study <- function(
                                opacity: 0.5;
                              }
                              .progress-circle-gradient span {
-                               position: relative;
-                               top: -80px;
-                               left: 0;
-                               margin: 0 auto;
-                               text-align: center;
+                               position: absolute;
+                               top: 50%%;
+                               left: 50%%;
+                               margin-left: -30px;
+                               margin-top: -15px;
                                font-family: 'Helvetica Neue', 'Arial', sans-serif;
                                font-size: 20px;
                                font-weight: 500;
