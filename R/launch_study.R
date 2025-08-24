@@ -520,6 +520,12 @@ launch_study <- function(
     data_preservation_interval = 30,
     keep_alive_interval = 10,
     enable_error_recovery = TRUE,
+    # IMMEDIATE DISPLAY PARAMETERS
+    ui_render_delay = NULL,
+    package_loading_delay = NULL,
+    session_init_delay = NULL,
+    show_loading_screen = NULL,
+    immediate_ui = FALSE,
     ...
 ) {
   
