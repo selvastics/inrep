@@ -1330,25 +1330,40 @@ process_page_flow <- function(config, rv, input, output, session, item_bank, ui_
 
 #' Render instructions page
 render_instructions_page <- function(page, config, ui_labels) {
-  shiny::div(
-    class = "assessment-card",
-    style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
-    shiny::h3(page$title, class = "card-header"),
-    if (!is.null(page$content)) {
-      shiny::HTML(page$content)
-    } else if (!is.null(page$text)) {
-      shiny::p(page$text, class = "welcome-text")
-    },
-    if (!is.null(page$consent) && page$consent) {
-      shiny::div(
-        class = "consent-section",
-        shiny::checkboxInput(
-          "consent_checkbox",
-          label = page$consent_text %||% "Ich bin mit der Teilnahme an der Befragung einverstanden",
-          value = FALSE
+  shiny::tagList(
+    shiny::div(
+      class = "assessment-card",
+      style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
+      shiny::h3(page$title, class = "card-header"),
+      if (!is.null(page$content)) {
+        shiny::HTML(page$content)
+      } else if (!is.null(page$text)) {
+        shiny::p(page$text, class = "welcome-text")
+      },
+      if (!is.null(page$consent) && page$consent) {
+        shiny::div(
+          class = "consent-section",
+          shiny::checkboxInput(
+            "consent_checkbox",
+            label = page$consent_text %||% "Ich bin mit der Teilnahme an der Befragung einverstanden",
+            value = FALSE
+          )
         )
-      )
-    }
+      }
+    ),
+    # Add JavaScript to scroll to top when instructions page loads
+    shiny::tags$script(shiny::HTML("
+      $(document).ready(function() {
+        // Scroll to top when instructions page loads
+        setTimeout(function() {
+          window.scrollTo({
+            top: 0,
+            left: 0,
+            behavior: 'smooth'
+          });
+        }, 50); // Optimized delay for better performance
+      });
+    "))
   )
 }
 
@@ -1408,14 +1423,29 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
     page$title %||% ui_labels$demo_title
   }
   
-  shiny::div(
-    class = "assessment-card",
-    style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
-    shiny::h3(page_title, class = "card-header"),
-    if (!is.null(page$description)) {
-      shiny::p(page$description, class = "welcome-text")
-    },
-    demo_inputs
+  shiny::tagList(
+    shiny::div(
+      class = "assessment-card",
+      style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
+      shiny::h3(page_title, class = "card-header"),
+      if (!is.null(page$description)) {
+        shiny::p(page$description, class = "welcome-text")
+      },
+      demo_inputs
+    ),
+    # Add JavaScript to scroll to top when demographics page loads
+    shiny::tags$script(shiny::HTML("
+      $(document).ready(function() {
+        // Scroll to top when demographics page loads
+        setTimeout(function() {
+          window.scrollTo({
+            top: 0,
+            left: 0,
+            behavior: 'smooth'
+          });
+        }, 50); // Optimized delay for better performance
+      });
+    "))
   )
 }
 
@@ -1485,14 +1515,29 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
     page$instructions
   }
   
-  shiny::div(
-    class = "assessment-card",
-    style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
-    shiny::h3(page_title, class = "card-header"),
-    if (!is.null(page_instructions)) {
-      shiny::p(page_instructions, class = "instructions-text")
-    },
-    item_elements
+  shiny::tagList(
+    shiny::div(
+      class = "assessment-card",
+      style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
+      shiny::h3(page_title, class = "card-header"),
+      if (!is.null(page_instructions)) {
+        shiny::p(page_instructions, class = "instructions-text")
+      },
+      item_elements
+    ),
+    # Add JavaScript to scroll to top when items page loads
+    shiny::tags$script(shiny::HTML("
+      $(document).ready(function() {
+        // Scroll to top when items page loads
+        setTimeout(function() {
+          window.scrollTo({
+            top: 0,
+            left: 0,
+            behavior: 'smooth'
+          });
+        }, 50); // Optimized delay for better performance
+      });
+    "))
   )
 }
 
@@ -1514,7 +1559,7 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
   }
   
   # Default rendering
-  if (!is.null(page$render_function) && is.function(page$render_function)) {
+  content_ui <- if (!is.null(page$render_function) && is.function(page$render_function)) {
     page$render_function(page, config, rv, ui_labels)
   } else {
     shiny::div(
@@ -1528,6 +1573,24 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
       }
     )
   }
+  
+  # Wrap content with scroll-to-top functionality
+  shiny::tagList(
+    content_ui,
+    # Add JavaScript to scroll to top when custom page loads
+    shiny::tags$script(shiny::HTML("
+      $(document).ready(function() {
+        // Scroll to top when custom page loads
+        setTimeout(function() {
+          window.scrollTo({
+            top: 0,
+            left: 0,
+            behavior: 'smooth'
+          });
+        }, 50); // Optimized delay for better performance
+      });
+    "))
+  )
 }
 
 #' Render results page
@@ -1661,11 +1724,13 @@ render_page_navigation <- function(rv, config, current_page_idx) {
 
 #' Create demographic input element
 create_demographic_input <- function(input_id, demo_config, input_type, current_value = NULL, language = "de") {
-  # Debug logging for checkbox issues
+  # Debug logging for checkbox issues (optimized)
   if (input_type == "checkbox" && getOption("inrep.debug", FALSE)) {
-    cat("DEBUG: Creating checkbox for", input_id, "\n")
-    cat("  Options:", str(demo_config$options), "\n")
-    cat("  Current value:", current_value, "\n")
+    # Debug logging available but disabled for performance
+    # Uncomment next lines only when debugging checkbox issues:
+    # cat("DEBUG: Creating checkbox for", input_id, "\n")
+    # cat("  Options:", str(demo_config$options), "\n") 
+    # cat("  Current value:", current_value, "\n")
   }
   
   # Get language-specific options

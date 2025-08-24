@@ -531,14 +531,14 @@ launch_study <- function(
   
   # AGGRESSIVE LATER PACKAGE IMPLEMENTATION - DISPLAY UI IMMEDIATELY
   if (immediate_ui) {
-    cat("LATER PACKAGE: Implementing immediate UI display\n")
+    # Logging removed for performance - immediate UI display enabled
     
     # Step 1: Create private event loop for UI
     ui_loop <- later::create_loop()
     
     # Step 2: Display UI with ZERO delay
     later::later(function() {
-      cat("LATER: UI displayed IMMEDIATELY\n")
+      # UI displayed immediately
     }, delay = 0, loop = ui_loop)
     
     # Step 3: Force immediate execution
@@ -546,7 +546,7 @@ launch_study <- function(
     
     # Step 4: Move ALL heavy operations to background using later
     later::later(function() {
-      cat("LATER: Background loading started\n")
+      # Background loading started
     }, delay = 0)
     
     # Step 5: Force all background operations to run immediately but asynchronously
@@ -1615,13 +1615,13 @@ launch_study <- function(
             attributeFilter: ['style', 'class']
           });
           
-          // PERIODIC ENFORCEMENT - every 100ms
+          // PERIODIC ENFORCEMENT - every 500ms (reduced frequency for better performance)
           setInterval(function() {
             var elements = document.querySelectorAll('.page-wrapper, .assessment-card, #study_ui, #stable-page-container');
             for (var i = 0; i < elements.length; i++) {
               forceCenter(elements[i]);
             }
-          }, 100);
+          }, 500);
           
                      // IMMEDIATE APPLICATION on DOM ready
            document.addEventListener('DOMContentLoaded', function() {
@@ -1634,7 +1634,7 @@ launch_study <- function(
            });
            
                      // DIRECT CONTENT DISPLAY - No loading screens, maximum efficiency
-          console.log('✅ Direct content display - no loading animations');
+          // Debug logging removed for performance
         })();
       "))
     ),
@@ -1794,6 +1794,21 @@ launch_study <- function(
         // Handle Shiny updates with minimal interference
         $(document).ready(function() {
           let updateTimeout;
+          
+          // Add scroll-to-top functionality for page changes
+          Shiny.addCustomMessageHandler("scrollToTop", function(message) {
+            if (message.smooth) {
+              // Smooth scroll to top
+              window.scrollTo({
+                top: 0,
+                left: 0,
+                behavior: 'smooth'
+              });
+            } else {
+              // Instant scroll to top
+              window.scrollTo(0, 0);
+            }
+          });
           
                                 // Immediate positioning on any content change
             $(document).on('shiny:value', function(event) {
@@ -2511,8 +2526,7 @@ launch_study <- function(
         # Update config language
         config$language <<- new_lang
         
-        # Log the change
-        cat("Language switched to:", new_lang, "\n")
+        # Language switched (logging disabled for performance)
         
         # Force UI refresh for language change
         shiny::invalidateLater(50, session)
@@ -3744,6 +3758,9 @@ launch_study <- function(
                   # Move to next page immediately - CSS handles the transition
           rv$current_page <- rv$current_page + 1
           logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
+          
+          # Add scroll to top functionality when page changes
+          session$sendCustomMessage("scrollToTop", list(smooth = TRUE))
       }
     })
     
@@ -3755,6 +3772,9 @@ launch_study <- function(
                   # Move to previous page immediately - CSS handles the transition
           rv$current_page <- rv$current_page - 1
           logger(sprintf("Moving back to page %d of %d", rv$current_page, rv$total_pages))
+          
+          # Add scroll to top functionality when page changes
+          session$sendCustomMessage("scrollToTop", list(smooth = TRUE))
       }
     })
     
