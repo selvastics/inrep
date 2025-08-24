@@ -1889,31 +1889,84 @@ cat("Fixed radar plot with proper connections\n")
 cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
 
-# Simple JavaScript for radio button deselection ONLY
+# Enhanced JavaScript for BOTH radio deselection AND translation debugging
 custom_js <- '<script>
+console.log("Enhanced JavaScript loaded - radio deselection + translation debugging");
+
 document.addEventListener("DOMContentLoaded", function() {
-  // Enable radio button deselection
+  console.log("DOM loaded - setting up radio deselection");
+  
+  // Enhanced radio button deselection with better tracking
   document.addEventListener("click", function(e) {
     if (e.target && e.target.type === "radio") {
+      console.log("Radio clicked:", e.target.name, "value:", e.target.value);
+      
       var wasChecked = e.target.getAttribute("data-was-checked") === "true";
+      console.log("Was previously checked:", wasChecked);
       
       // Clear all radios in group
       var selector = "input[name=\\"" + e.target.name + "\\"]";
       var radios = document.querySelectorAll(selector);
+      console.log("Found", radios.length, "radios in group");
+      
       for (var i = 0; i < radios.length; i++) {
         radios[i].setAttribute("data-was-checked", "false");
       }
       
       if (wasChecked) {
+        // Unselect the radio
         e.target.checked = false;
+        console.log("Radio UNSELECTED:", e.target.name);
+        
         if (typeof Shiny !== "undefined") {
           Shiny.setInputValue(e.target.name, null, {priority: "event"});
+          console.log("Shiny input set to null");
         }
       } else {
+        // Select the radio
         e.target.setAttribute("data-was-checked", "true");
+        console.log("Radio SELECTED:", e.target.name, "=", e.target.value);
+        
+        if (typeof Shiny !== "undefined") {
+          Shiny.setInputValue(e.target.name, e.target.value, {priority: "event"});
+          console.log("Shiny input set to:", e.target.value);
+        }
       }
     }
   });
+  
+  // Enhanced translation debugging
+  if (typeof window.toggleLanguage === "function") {
+    console.log("Translation function available");
+    
+    // Override toggleLanguage with debugging
+    var originalToggle = window.toggleLanguage;
+    window.toggleLanguage = function() {
+      console.log("Language toggle called, current lang:", window.currentLang || "undefined");
+      
+      // Call original function
+      originalToggle();
+      
+      // Add extra debugging
+      setTimeout(function() {
+        console.log("After toggle, current lang:", window.currentLang || "undefined");
+        console.log("Checking for German text to translate...");
+        
+        // Force translation check
+        var germanElements = document.querySelectorAll("*");
+        var foundGerman = 0;
+        germanElements.forEach(function(el) {
+          if (el.textContent && el.textContent.includes("Geschlecht")) {
+            foundGerman++;
+            console.log("Found German text:", el.textContent.substring(0, 50));
+          }
+        });
+        console.log("Found", foundGerman, "elements with German text");
+      }, 100);
+    };
+  } else {
+    console.log("Translation function NOT available");
+  }
 });
 </script>'
 
@@ -2158,9 +2211,43 @@ var translations = {
 
 var currentLang = "de";
 
-// Function to translate entire page - AGGRESSIVE VERSION
+// Function to translate entire page - ULTRA AGGRESSIVE VERSION
 function translatePage() {
+  console.log("translatePage called, current language:", currentLang);
+  
   if (currentLang === "en") {
+    console.log("Applying English translations...");
+    
+    // ULTRA AGGRESSIVE: Translate ALL text content
+    document.querySelectorAll("*").forEach(function(el) {
+      // Skip script and style tags
+      if (el.tagName === "SCRIPT" || el.tagName === "STYLE") return;
+      
+      // Check all text content
+      if (el.textContent) {
+        var originalText = el.textContent;
+        var hasGerman = false;
+        
+        for (var de in translations) {
+          if (originalText.includes(de)) {
+            hasGerman = true;
+            break;
+          }
+        }
+        
+        if (hasGerman) {
+          console.log("Translating element:", el.tagName, originalText.substring(0, 50));
+          
+          // Apply all translations
+          var newHTML = el.innerHTML;
+          for (var de in translations) {
+            newHTML = newHTML.replace(new RegExp(de, "g"), translations[de]);
+          }
+          el.innerHTML = newHTML;
+        }
+      }
+    });
+    
     // First, translate all headings and titles
     document.querySelectorAll("h1, h2, h3, h4, h5, h6, .shiny-title, .panel-title").forEach(function(el) {
       for (var de in translations) {
@@ -2310,8 +2397,19 @@ window.toggleLanguage = function() {
   // Store preference
   sessionStorage.setItem("hilfo_language", currentLang);
   
-  // Apply translations to current page without reload
+  // Apply translations to current page without reload - ENHANCED
   translatePage();
+  
+  // Force additional translation attempts
+  setTimeout(function() {
+    console.log("Force translation attempt 1");
+    translatePage();
+  }, 200);
+  
+  setTimeout(function() {
+    console.log("Force translation attempt 2");
+    translatePage();
+  }, 500);
 };
 
 // Apply translations on page load
