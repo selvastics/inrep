@@ -1940,38 +1940,8 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   });
   
-  // Enhanced translation debugging
-  if (typeof window.toggleLanguage === "function") {
-    console.log("Translation function available");
-    
-    // Override toggleLanguage with debugging
-    var originalToggle = window.toggleLanguage;
-    window.toggleLanguage = function() {
-      console.log("Language toggle called, current lang:", window.currentLang || "undefined");
-      
-      // Call original function
-      originalToggle();
-      
-      // Add extra debugging
-      setTimeout(function() {
-        console.log("After toggle, current lang:", window.currentLang || "undefined");
-        console.log("Checking for German text to translate...");
-        
-        // Force translation check
-        var germanElements = document.querySelectorAll("*");
-        var foundGerman = 0;
-        germanElements.forEach(function(el) {
-          if (el.textContent && el.textContent.includes("Geschlecht")) {
-            foundGerman++;
-            console.log("Found German text:", el.textContent.substring(0, 50));
-          }
-        });
-        console.log("Found", foundGerman, "elements with German text");
-      }, 100);
-    };
-  } else {
-    console.log("Translation function NOT available");
-  }
+  // Translation function will be defined later in the script
+  console.log("Radio deselection setup complete");
 });
 </script>'
 
@@ -2362,13 +2332,22 @@ function translatePage() {
 // ENHANCED language toggle with INREP INTEGRATION
 var toggleInProgress = false;
 window.toggleLanguage = function() {
+  console.log("🔄 toggleLanguage CALLED! Current state:", {
+    currentLang: currentLang,
+    toggleInProgress: toggleInProgress,
+    shinyAvailable: typeof Shiny !== "undefined"
+  });
+  
   // Prevent multiple rapid clicks
-  if (toggleInProgress) return;
+  if (toggleInProgress) {
+    console.log("❌ Toggle in progress, skipping");
+    return;
+  }
   toggleInProgress = true;
   setTimeout(function() { toggleInProgress = false; }, 500); // 500ms debounce
   
   var newLang = currentLang === "de" ? "en" : "de";
-  console.log("Language toggle: " + currentLang + " -> " + newLang);
+  console.log("🌍 Language toggle: " + currentLang + " -> " + newLang);
   
   currentLang = newLang;
   
@@ -2380,8 +2359,14 @@ window.toggleLanguage = function() {
   
   // Also update the welcome page button if it exists
   var welcomeBtn = document.getElementById("lang_switch");
-  if (welcomeBtn) {
+  var welcomeBtnText = document.getElementById("lang_switch_text");
+  if (welcomeBtn && welcomeBtnText) {
+    welcomeBtnText.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    console.log("Updated welcome button text to:", welcomeBtnText.textContent);
+  } else if (welcomeBtn) {
+    // Fallback if no span
     welcomeBtn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    console.log("Updated welcome button (direct) to:", welcomeBtn.textContent);
   }
   
   // Toggle welcome page content if on page 1
@@ -2426,6 +2411,9 @@ window.toggleLanguage = function() {
     translatePage();
   }, 1000);
 };
+
+// Confirm function is defined
+console.log("✅ window.toggleLanguage defined:", typeof window.toggleLanguage);
 
 // Apply translations on page load
 document.addEventListener("DOMContentLoaded", function() {
