@@ -499,6 +499,7 @@ custom_page_flow <- list(
       '"Master Psychologie": "Master Psychology",',
       '"Welches Geschlecht haben Sie?": "What is your gender?",',
       '"Weiter": "Continue",',
+      '"Continue": "Weiter",',
       '"Zurück": "Back",',
       '"Absenden": "Submit"',
       '};',
@@ -625,6 +626,7 @@ custom_page_flow <- list(
       'setTimeout(function() { console.log("Translation attempt 3"); translatePage(); }, 1000);',
       'setTimeout(function() { console.log("Translation attempt 4"); translatePage(); }, 2000);',
       'setTimeout(function() { console.log("Translation attempt 5"); translatePage(); }, 3000);',
+      'document.dispatchEvent(new Event("languageChanged"));',
       '}, 100);',
       '} else {',
       'console.log("Shiny not available or setInputValue missing");',
@@ -687,6 +689,14 @@ custom_page_flow <- list(
       '</div>',
       '</div>',
       '</div>',
+      # Navigation button (Shiny actionButton)
+      '<div style="margin-top: 30px; text-align: right;">',
+      '<button id="next_page" class="btn btn-primary action-button shiny-bound-input" style="',
+      'background: #e8041c; color: white; border: none; padding: 12px 30px; ',
+      'border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">',
+      '<span id="next_btn_text">Weiter</span>',
+      '</button>',
+      '</div>',
       # JavaScript for checkbox syncing only (language toggle uses global function)
       '<script>
 // Sync consent checkboxes when they change
@@ -705,6 +715,24 @@ document.addEventListener("DOMContentLoaded", function() {
       if (deCheck) deCheck.checked = enCheck.checked;
     });
   }
+  
+  // Handle navigation button translation
+  function updateNavigationButton() {
+    var nextBtn = document.getElementById("next_btn_text");
+    if (nextBtn) {
+      var currentLang = sessionStorage.getItem("hilfo_language") || "de";
+      nextBtn.textContent = currentLang === "en" ? "Continue" : "Weiter";
+      console.log("Navigation button updated to:", nextBtn.textContent);
+    }
+  }
+  
+  // Update button on page load
+  updateNavigationButton();
+  
+  // Listen for language changes
+  document.addEventListener("languageChanged", function() {
+    updateNavigationButton();
+  });
 });
 </script>'
     ),
