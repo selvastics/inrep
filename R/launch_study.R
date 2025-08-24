@@ -691,7 +691,7 @@ launch_study <- function(
               logger(sprintf("Could not load %s: %s", pkg, e$message), level = "DEBUG")
             })
           }
-        }, delay = 0.01)  # 10ms - INSTANT heavy package loading
+        }, delay = 0.05)  # 50ms - Fast heavy package loading
       }
     } else {
       # Immediate mode - only used when absolutely necessary
@@ -2379,60 +2379,7 @@ launch_study <- function(
     if (session_save) {
       shiny::uiOutput("session_status_ui")
     },
-    # IMMEDIATE FIRST PAGE - In static UI, not renderUI
-    shiny::div(
-      id = "instant-welcome-page",
-      style = "position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; margin: 0 auto !important; transform: none !important; width: 100% !important; max-width: 1200px !important; display: block !important; visibility: visible !important; opacity: 1 !important;",
-      
-      # STATIC WELCOME CONTENT - Shows immediately
-      shiny::div(
-        id = "main-study-container",
-        style = "min-height: 500px; width: 100%; max-width: 100%; margin: 0 auto; padding: 0; position: relative; overflow: hidden;",
-        
-        shiny::div(
-          id = "stable-page-container",
-          class = "page-wrapper",
-          style = "width: 100% !important; max-width: 1200px !important; margin: 0 auto !important; position: relative !important;",
-          
-          shiny::div(
-            class = "assessment-card",
-            style = "position: relative !important; margin: 0 auto !important; padding: 40px; text-align: center;",
-            
-            shiny::tags$h1(
-              "Welcome to the Assessment",
-              class = "card-header",
-              style = "color: #e8041c; margin-bottom: 30px;"
-            ),
-            
-            shiny::div(
-              class = "card-content",
-              style = "margin: 30px 0;",
-              shiny::tags$p(
-                "Please click the button below to begin the assessment.",
-                style = "font-size: 1.2em; margin-bottom: 30px;"
-              ),
-              
-              shiny::div(
-                class = "nav-buttons",
-                shiny::actionButton(
-                  "start_dynamic_content",
-                  "Begin Assessment",
-                  class = "btn-klee",
-                  style = "font-size: 1.2em; padding: 15px 30px; position: relative !important; margin: 0 auto !important;"
-                )
-              )
-            )
-          )
-        )
-      )
-    ),
-    
-    # HIDDEN dynamic content - only shows when button is clicked
-    shiny::div(
-      id = "dynamic-content-container",
-      style = "display: none;",
-      shiny::uiOutput("study_ui")
-    )
+    shiny::uiOutput("study_ui", style = "position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; margin: 0 auto !important; transform: none !important; width: 100% !important; max-width: 1200px !important; display: block !important; visibility: visible !important; opacity: 1 !important;")
   )
   
   server <- function(input, output, session) {
@@ -2451,28 +2398,21 @@ launch_study <- function(
     reactive_ui_labels <- shiny::reactiveVal(ui_labels)
     heavy_computations_done <- shiny::reactiveVal(FALSE)
     
-    # Step 2: Start background loading - UI is already shown in static UI
-    if (!.packages_loaded && has_later) {
-      later::later(function() {
-        .load_packages_once()
-      }, delay = 1)  # Start loading after UI is definitely shown
-    }
-    
-    # Observer for Begin Assessment button - switch to dynamic content
-    shiny::observeEvent(input$start_dynamic_content, {
-      # Hide static welcome page
-      shinyjs::hide("instant-welcome-page")
-      # Show dynamic content
-      shinyjs::show("dynamic-content-container")
+    # Step 2: Render UI with MINIMAL loading - keep existing structure
+    output$study_ui <- shiny::renderUI({
+      # Start background loading with minimal delay
+      if (!.packages_loaded && has_later) {
+        later::later(function() {
+          .load_packages_once()
+        }, delay = 0.1)  # Minimal delay
+      }
       
-      # Setup the dynamic renderUI
-      output$study_ui <- shiny::renderUI({
-        shiny::div(
-          id = "main-study-container",
-          style = "min-height: 500px; width: 100%; max-width: 100%; margin: 0 auto; padding: 0; position: relative; overflow: hidden;",
-          shiny::uiOutput("page_content")
-        )
-      })
+      # Return standard container - preserves existing functionality
+      shiny::div(
+        id = "main-study-container",
+        style = "min-height: 500px; width: 100%; max-width: 100%; margin: 0 auto; padding: 0; position: relative; overflow: hidden;",
+        shiny::uiOutput("page_content")
+      )
     })
     
     # Step 3: Do initialization AFTER UI is shown
@@ -2517,7 +2457,7 @@ launch_study <- function(
         session$userData$heavy_init_complete <- TRUE
         heavy_computations_done(TRUE)
         logger("Heavy initialization complete", level = "DEBUG")
-      }, delay = 0.2)  # 200ms delay to let UI show first
+      }, delay = 0.1)  # 100ms delay to let UI show first
     }
     
     # Observe language changes from Hildesheim study
