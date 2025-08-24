@@ -458,7 +458,7 @@ custom_page_flow <- list(
     title = "Willkommen zur HilFo Studie",
     title_en = "Welcome to the HilFo Study", 
         content = function(session, input, output, current_language, ui_labels) {
-      current_lang <- current_language()
+      current_lang <- current_language() %||% "de"  # Default to German if NULL
       lang_button_text <- if (current_lang == "de") "English Version" else "Deutsche Version"
       
       shiny::div(
@@ -2009,6 +2009,13 @@ custom_css_only <- '
 '
 
 # =============================================================================
+# UTILITY FUNCTIONS
+# =============================================================================
+
+# Define %||% operator if not available
+`%||%` <- function(x, y) if (is.null(x)) y else x
+
+# =============================================================================
 # LAUNCH STUDY WITH CLEAN INREP-NATIVE LANGUAGE SYSTEM
 # =============================================================================
 
@@ -2020,8 +2027,11 @@ inrep::launch_study(
     password = WEBDAV_PASSWORD,
     save_format = "csv",
     custom_css = custom_css_only,
-    admin_dashboard_hook = monitor_adaptive,
+    # admin_dashboard_hook = monitor_adaptive,  # DISABLED for speed
     max_session_time = 7200,
     session_save = TRUE,
-    immediate_ui = TRUE
+    immediate_ui = FALSE,  # DISABLED for speed - causing slow loading
+    ui_render_delay = 0,  # Show UI immediately
+    package_loading_delay = 0.001,  # Near-instant package loading
+    show_loading_screen = FALSE  # No loading screen
 )
