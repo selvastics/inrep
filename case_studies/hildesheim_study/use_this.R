@@ -1818,7 +1818,7 @@ study_config <- inrep::create_study_config(
     study_key = session_uuid,
     theme = "hildesheim",  # Use built-in Hildesheim theme
     custom_page_flow = custom_page_flow,
-    demographics = names(demographic_configs),
+    demographics = c("Einverständnis", "Alter_VPN", "Studiengang", "Geschlecht", "Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz", "Rauchen", "Ernährung", "Ernährung_Zusatz", "Note_Englisch", "Note_Mathe", "Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st", "Persönlicher_Code"),
     demographic_configs = demographic_configs,
     input_types = input_types,
     model = "2PL",  # Use 2PL model for IRT
