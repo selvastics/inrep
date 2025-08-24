@@ -467,8 +467,38 @@ custom_page_flow <- list(
       'background: white; border: 2px solid #e8041c; color: #e8041c; ',
       'padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">',
       '<span id="lang_switch_text">English Version</span></button>',
-
       '</div>',
+      
+      # ESSENTIAL JavaScript for language switching - EMBEDDED IN PAGE
+      '<script>',
+      'var translations = {',
+      '"Geschlecht": "Gender",',
+      '"weiblich oder divers": "female or diverse",',
+      '"männlich": "male",',
+      '"Bachelor Psychologie": "Bachelor Psychology",',
+      '"Master Psychologie": "Master Psychology",',
+      '"Welches Geschlecht haben Sie?": "What is your gender?"',
+      '};',
+      'var currentLang = "de";',
+      'function translatePage() {',
+      'if (currentLang === "en") {',
+      'for (var de in translations) {',
+      'document.querySelectorAll("*").forEach(function(el) {',
+      'if (el.textContent && el.textContent.includes(de)) {',
+      'el.innerHTML = el.innerHTML.replace(new RegExp(de, "g"), translations[de]);',
+      '}});}}',
+      'window.toggleLanguage = function() {',
+      'currentLang = currentLang === "de" ? "en" : "de";',
+      'var welcomeBtnText = document.getElementById("lang_switch_text");',
+      'if (welcomeBtnText) {',
+      'welcomeBtnText.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";',
+      '}',
+      'if (typeof Shiny !== "undefined") {',
+      'Shiny.setInputValue("study_language", currentLang, {priority: "event"});',
+      '}',
+      'translatePage();',
+      '};',
+      '</script>',
       # German content (default)
       '<div id="content_de">',
       '<h2 style="color: #e8041c;">Liebe Studierende,</h2>',
@@ -2567,7 +2597,7 @@ inrep::launch_study(
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
     save_format = "csv",
-    custom_css = custom_js_enhanced,  # Enhanced JavaScript with language support
+    custom_css = custom_css_only,  # Use CSS only, add JS to page content
     admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
     # RESTORE SPEED OPTIMIZATIONS
     max_session_time = 7200,
