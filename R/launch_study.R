@@ -2405,12 +2405,58 @@ launch_study <- function(
     
     # Step 2: Render UI INSTANTLY - No loading delays
     output$study_ui <- shiny::renderUI({
-      # Return container immediately - packages already loading
+      # IMMEDIATE FIRST PAGE - Show actual content instantly while packages load
       shiny::div(
         id = "main-study-container",
         style = "min-height: 500px; width: 100%; max-width: 100%; margin: 0 auto; padding: 0; position: relative; overflow: hidden;",
-        shiny::uiOutput("page_content")  # This will be filled by renderUI below
+        
+        # INSTANT FIRST PAGE - Show introduction/briefing immediately
+        if (config$stages$briefing) {
+          # Show briefing page immediately
+          shiny::div(
+            id = "stable-page-container",
+            class = "page-wrapper",
+            style = "width: 100% !important; max-width: 1200px !important; margin: 0 auto !important; position: relative !important;",
+            shiny::div(
+              class = "assessment-card",
+              style = "position: relative !important; margin: 0 auto !important;",
+              shiny::tags$h1(config$name %||% "Assessment", class = "card-header"),
+              shiny::div(
+                class = "card-content",
+                shiny::HTML(config$content$briefing %||% 
+                           if (default_language == "de") 
+                             "Willkommen zu dieser Studie. Bitte lesen Sie die folgenden Informationen aufmerksam durch." 
+                           else 
+                             "Welcome to this study. Please read the following information carefully."
+                ),
+                shiny::div(
+                  class = "nav-buttons",
+                  style = "margin-top: 30px; text-align: center;",
+                  shiny::actionButton("start_study", 
+                                     if (default_language == "de") "Studie starten" else "Start Study",
+                                     class = "btn-klee",
+                                     style = "position: relative !important; margin: 0 auto !important;")
+                )
+              )
+            )
+          )
+        } else {
+          # If no briefing, show uiOutput for dynamic content
+          shiny::uiOutput("page_content")
+        }
       )
+    })
+    
+    # Observer for start button - transition to dynamic content
+    shiny::observeEvent(input$start_study, {
+      # Replace static content with dynamic uiOutput
+      output$study_ui <- shiny::renderUI({
+        shiny::div(
+          id = "main-study-container",
+          style = "min-height: 500px; width: 100%; max-width: 100%; margin: 0 auto; padding: 0; position: relative; overflow: hidden;",
+          shiny::uiOutput("page_content")
+        )
+      })
     })
     
     # Step 3: Do ALL initialization IMMEDIATELY - no scheduling
