@@ -2354,7 +2354,7 @@ function translatePage() {
   }
 }
 
-// Global language toggle function with debouncing
+// ENHANCED language toggle with INREP INTEGRATION
 var toggleInProgress = false;
 window.toggleLanguage = function() {
   // Prevent multiple rapid clicks
@@ -2362,7 +2362,10 @@ window.toggleLanguage = function() {
   toggleInProgress = true;
   setTimeout(function() { toggleInProgress = false; }, 500); // 500ms debounce
   
-  currentLang = currentLang === "de" ? "en" : "de";
+  var newLang = currentLang === "de" ? "en" : "de";
+  console.log("Language toggle: " + currentLang + " -> " + newLang);
+  
+  currentLang = newLang;
   
   // Update button text
   var btn = document.getElementById("language-toggle-btn");
@@ -2389,18 +2392,19 @@ window.toggleLanguage = function() {
     }
   }
   
-  // Send to Shiny
+  // CRUCIAL: Trigger main inrep language system
   if (typeof Shiny !== "undefined") {
+    console.log("Setting inrep language to:", currentLang);
     Shiny.setInputValue("study_language", currentLang, {priority: "event"});
   }
   
   // Store preference
   sessionStorage.setItem("hilfo_language", currentLang);
   
-  // Apply translations to current page without reload - ENHANCED
+  // Apply Hildesheim-specific translations - ENHANCED
   translatePage();
   
-  // Force additional translation attempts
+  // Force additional translation attempts for dynamic content
   setTimeout(function() {
     console.log("Force translation attempt 1");
     translatePage();
@@ -2410,6 +2414,12 @@ window.toggleLanguage = function() {
     console.log("Force translation attempt 2");
     translatePage();
   }, 500);
+  
+  // Force translation after inrep system processes the language change
+  setTimeout(function() {
+    console.log("Force translation attempt 3 (post-inrep)");
+    translatePage();
+  }, 1000);
 };
 
 // Apply translations on page load
@@ -2479,79 +2489,66 @@ document.addEventListener("DOMContentLoaded", function() {
   // Radio button deselection functionality is already implemented above
 });
 
-// Handle Shiny messages
+// Enhanced Shiny integration - listen for main inrep language changes
 if (typeof Shiny !== "undefined") {
-  Shiny.addCustomMessageHandler("update_language", function(lang) {
-    console.log("Language change requested:", lang);
-    currentLang = lang;
-    sessionStorage.setItem("hilfo_language", lang);
-    
-    if (lang === "en") {
-      console.log("Applying English translations");
-      translatePage();
+  // Monitor for language changes from main inrep system
+  $(document).on('shiny:connected', function() {
+    console.log("Shiny connected - setting up language monitoring");
+  });
+  
+  // Listen for input changes from main inrep system
+  $(document).on('shiny:inputchanged', function(event) {
+    if (event.name === 'study_language') {
+      console.log("Main inrep language changed to:", event.value);
+      currentLang = event.value;
+      sessionStorage.setItem("hilfo_language", currentLang);
       
       // Update button text
       var btn = document.getElementById("language-toggle-btn");
       if (btn) {
-        btn.textContent = "Deutsche Version";
+        btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
       }
-    } else {
-      console.log("Reverting to German");
-      // Revert all translations by reloading
-      location.reload();
-    }
-  });
-  
-  // Also handle direct language button clicks
-  Shiny.addCustomMessageHandler("force_translate", function(message) {
-    console.log("Force translate:", message);
-    if (currentLang === "en") {
-      setTimeout(function() {
+      
+      var welcomeBtn = document.getElementById("lang_switch");
+      if (welcomeBtn) {
+        welcomeBtn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+      }
+      
+      // Apply translations
+      if (currentLang === "en") {
+        console.log("Applying Hildesheim translations for English");
         translatePage();
-      }, 100);
+        
+        // Force additional attempts for dynamic content
+        setTimeout(function() {
+          translatePage();
+        }, 200);
+        
+        setTimeout(function() {
+          translatePage();
+        }, 500);
+      } else {
+        console.log("Reverting to German - reloading page");
+        location.reload();
+      }
     }
   });
 }
 </script>'
 
-# Server extensions for language handling
-server_extensions <- function(input, output, session) {
-  # Track current language
-  session$userData$current_language <- reactiveVal("de")
-  
-  # Handle language switching
-  observeEvent(input$study_language, {
-    new_lang <- input$study_language
-    session$userData$current_language(new_lang)
-    
-    # Update item bank language properly
-    if (new_lang == "en") {
-      # Create English version of item bank
-      english_items <- all_items_de
-      english_items$Question <- all_items_de$Question_EN
-      session$userData$item_bank <- english_items
-    } else {
-      # Use German version (original)
-      session$userData$item_bank <- all_items_de
-    }
-    
-    # Send message to update UI
-    session$sendCustomMessage("update_language", new_lang)
-    
-    # Also send a force translate message after a brief delay
-    later::later(function() {
-      session$sendCustomMessage("force_translate", list(lang = new_lang))
-    }, delay = 0.2)
-  })
-}
+# NOTE: Server extensions removed - using built-in inrep language system instead
+# The main inrep system already handles input$study_language changes
+# Our JavaScript will trigger this by calling Shiny.setInputValue("study_language", lang)
 
-# Launch with cloud storage, adaptive testing, and enhanced features
+# Enhanced launch with FULL LANGUAGE INTEGRATION
+# NOTE: The main inrep system already handles language switching via input$study_language
+# Our JavaScript will trigger this by calling Shiny.setInputValue("study_language", lang)
 inrep::launch_study(
     config = study_config,
     item_bank = all_items_de,  # Bilingual item bank
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
     save_format = "csv",
-    custom_css = custom_js_enhanced,  # Enhanced JavaScript
+    custom_css = custom_js_enhanced,  # Enhanced JavaScript with language support
     admin_dashboard_hook = monitor_adaptive  # Monitor adaptive selection
 )
