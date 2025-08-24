@@ -1605,25 +1605,47 @@ launch_study <- function(
              }, 1);
            });
            
-           // HIDE STATIC PAGE when Shiny connects - welcome page is now in static UI
-           $(document).on('shiny:connected', function() {
-             setTimeout(function() {
-               var staticPage = document.getElementById('nuclear-static-page');
-               if (staticPage) {
-                 staticPage.style.display = 'none';
-               }
-             }, 500); // Hide quickly since welcome page is now static
-           });
-           
-           // BACKUP: Hide static page when page content appears - FAST CHECK
-           var hideStaticPage = setInterval(function() {
-             var pageContent = document.querySelector('#page_content .page-wrapper, #page_content .assessment-card');
-             var staticPage = document.getElementById('nuclear-static-page');
-             if (pageContent && staticPage) {
-               staticPage.style.display = 'none';
-               clearInterval(hideStaticPage);
-             }
-           }, 50);  // Check every 50ms for faster response
+                     // IMMEDIATE STATIC PAGE HIDING - Multiple aggressive strategies
+          
+          // Strategy 1: Hide IMMEDIATELY on Shiny connected (no delay)
+          $(document).on('shiny:connected', function() {
+            var staticPage = document.getElementById('nuclear-static-page');
+            if (staticPage) {
+              staticPage.style.display = 'none';
+              console.log('Static page hidden on shiny:connected');
+            }
+          });
+          
+          // Strategy 2: Hide when ANY Shiny output renders (immediate)
+          $(document).on('shiny:value', function(event) {
+            var staticPage = document.getElementById('nuclear-static-page');
+            if (staticPage) {
+              staticPage.style.display = 'none';
+              console.log('Static page hidden on shiny:value - ' + (event.target ? event.target.id : 'unknown'));
+            }
+          });
+          
+          // Strategy 3: Ultra-fast polling for any content
+          var hideStaticPage = setInterval(function() {
+            var studyUI = document.getElementById('study_ui');
+            var pageContent = document.querySelector('#page_content, #main-study-container');
+            var staticPage = document.getElementById('nuclear-static-page');
+            
+            if ((studyUI || pageContent) && staticPage) {
+              staticPage.style.display = 'none';
+              clearInterval(hideStaticPage);
+              console.log('Static page hidden by polling');
+            }
+          }, 10);  // Check every 10ms for ultra-fast response
+          
+          // Strategy 4: Timeout failsafe (backup)
+          setTimeout(function() {
+            var staticPage = document.getElementById('nuclear-static-page');
+            if (staticPage) {
+              staticPage.style.display = 'none';
+              console.log('Static page hidden by timeout failsafe');
+            }
+          }, 1000);  // 1 second maximum
         })();
       "))
     ),
