@@ -1660,42 +1660,29 @@ launch_study <- function(
           
           // Add stable styles immediately to prevent corner flash
           var style = document.createElement('style');
-          style.innerHTML = `
-            .page-wrapper, .assessment-card {
-              position: relative !important;
-              left: 0 !important;
-              right: 0 !important;
-              top: 0 !important;
-              margin: 0 auto !important;
-              transform: none !important;
-              opacity: 1 !important;
-              width: 100% !important;
-              max-width: 1200px !important;
-              visibility: visible !important;
-            }
-            
-            /* Prevent any content from appearing in corners */
-            #study_ui > *, 
-            .shiny-html-output > *,
-            .page-wrapper > * {
-              position: relative !important;
-              left: 0 !important;
-              right: 0 !important;
-              top: 0 !important;
-              margin-left: auto !important;
-              margin-right: auto !important;
-              transform: none !important;
-            }
-            
-            /* Hide content until properly positioned */
-            .page-wrapper {
-              visibility: hidden !important;
-            }
-            
-            .page-wrapper.positioned {
-              visibility: visible !important;
-            }
-          `;
+          style.innerHTML = '.page-wrapper, .assessment-card {' +
+            'position: relative !important;' +
+            'left: 0 !important;' +
+            'right: 0 !important;' +
+            'top: 0 !important;' +
+            'margin: 0 auto !important;' +
+            'transform: none !important;' +
+            'opacity: 1 !important;' +
+            'width: 100% !important;' +
+            'max-width: 1200px !important;' +
+            'visibility: visible !important;' +
+            '}' +
+            '#study_ui > *, .shiny-html-output > *, .page-wrapper > * {' +
+            'position: relative !important;' +
+            'left: 0 !important;' +
+            'right: 0 !important;' +
+            'top: 0 !important;' +
+            'margin-left: auto !important;' +
+            'margin-right: auto !important;' +
+            'transform: none !important;' +
+            '}' +
+            '.page-wrapper { visibility: hidden !important; }' +
+            '.page-wrapper.positioned { visibility: visible !important; }';
           document.head.appendChild(style);
           
           // Immediately apply positioning classes
