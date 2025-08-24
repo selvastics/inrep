@@ -10,6 +10,7 @@ validate_page_progression <- function(current_page, input, config) {
   if (is.null(page)) return(list(valid = TRUE))
   
   errors <- character()
+  missing_fields <- character()
   
   # Check based on page type
   if (page$type == "instructions" && isTRUE(page$consent)) {
@@ -32,7 +33,11 @@ validate_page_progression <- function(current_page, input, config) {
           if (nchar(question) > 50) {
             question <- paste0(substr(question, 1, 47), "...")
           }
-          errors <- c(errors, paste0("Bitte beantworten Sie: ", question))
+          # Get language from rv or config
+          current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
+          error_prefix <- if (current_lang == "en") "Please answer: " else "Bitte beantworten Sie: "
+          errors <- c(errors, paste0(error_prefix, question))
+          missing_fields <- c(missing_fields, input_id)
         }
       }
     }
@@ -53,8 +58,16 @@ validate_page_progression <- function(current_page, input, config) {
             # Use the item's id field if available, otherwise use index
             item_id <- paste0("item_", item$id %||% i)
             if (is.null(input[[item_id]]) || input[[item_id]] == "") {
-              errors <- c(errors, paste0("Bitte beantworten Sie alle Fragen auf dieser Seite."))
-              break  # Only show one error for items
+              # Get language
+              current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
+              error_msg <- if (current_lang == "en") {
+                "Please answer all questions on this page."
+              } else {
+                "Bitte beantworten Sie alle Fragen auf dieser Seite."
+              }
+              errors <- c(errors, error_msg)
+              missing_fields <- c(missing_fields, item_id)
+              # Don't break, collect all missing fields for highlighting
             }
           }
         }
@@ -64,7 +77,8 @@ validate_page_progression <- function(current_page, input, config) {
   
   return(list(
     valid = length(errors) == 0,
-    errors = errors
+    errors = errors,
+    missing_fields = missing_fields
   ))
 }
 
@@ -93,7 +107,7 @@ create_filter_page <- function(input, config) {
       shiny::div(
         class = "alert alert-info",
         style = "margin-top: 20px;",
-        shiny::icon("info-circle"),
+
         " Die folgenden Fragen beziehen sich auf Ihre schulischen Leistungen."
       )
     )
@@ -106,7 +120,7 @@ create_filter_page <- function(input, config) {
       shiny::div(
         class = "alert alert-info",
         style = "margin-top: 20px;",
-        shiny::icon("graduation-cap"),
+
         " Die folgenden Fragen beziehen sich auf Ihre akademischen Leistungen."
       )
     )
@@ -121,14 +135,21 @@ create_filter_page <- function(input, config) {
 
 #' Show validation errors in UI
 #' @export
-show_validation_errors <- function(errors) {
+show_validation_errors <- function(errors, language = "de") {
   if (length(errors) == 0) return(NULL)
   
+  # Use passed language or default to German
+  header_text <- if (language == "en") {
+    "Please complete the following:"
+  } else {
+    "Bitte vervollständigen Sie die folgenden Angaben:"
+  }
+  
   shiny::div(
-    class = "alert alert-danger",
-    style = "margin: 20px; padding: 15px; border-radius: 5px;",
-    shiny::h4(shiny::icon("exclamation-triangle"), " Bitte vervollständigen Sie Ihre Angaben:"),
+    class = "validation-error",
+    shiny::h4(header_text),
     shiny::tags$ul(
+      style = "margin: 10px 0; padding-left: 20px;",
       lapply(errors, function(e) shiny::tags$li(e))
     )
   )

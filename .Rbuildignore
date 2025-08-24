@@ -22,4 +22,9 @@
 ^RELEASE_NOTES\.md$
 ^.*\.tar\.gz$
 ^dev/.*$
+^dev$
 ^\.Rlib/.*$
+^clean_install\.R$
+^test_all_examples\.R$
+^.*_test\.R$
+^.*_backup\.R$
