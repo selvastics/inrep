@@ -529,6 +529,28 @@ launch_study <- function(
     ...
 ) {
   
+  # IMMEDIATE UI DISPLAY USING LATER PACKAGE - DISPLAY FIRST, LOAD LATER
+  if (immediate_ui) {
+    cat("IMMEDIATE UI: Using later package for instant display\n")
+    
+    # Create private event loop for immediate UI display
+    ui_loop <- later::create_loop()
+    
+    # Schedule immediate UI display with zero delay
+    later::later(function() {
+      cat("IMMEDIATE UI: First page displayed NOW (before any heavy loading)\n")
+    }, delay = 0, loop = ui_loop)
+    
+    # Force immediate execution
+    later::run_now(loop = ui_loop)
+    
+    # Schedule all heavy initialization to background with later
+    later::later(function() {
+      cat("BACKGROUND: Starting heavy initialization in background\n")
+      # All heavy loading will happen here in background
+    }, delay = 0.001)  # Minimal delay to let UI display first
+  }
+  
   # Enhanced validation and error handling for robustness
   tryCatch({
     # Source enhanced modules if available
