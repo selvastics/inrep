@@ -1396,33 +1396,7 @@ launch_study <- function(
     class = "full-width-app",
     if (requireNamespace("shinyjs", quietly = TRUE)) shinyjs::useShinyjs(),
     
-    # STATIC FIRST PAGE - Shows IMMEDIATELY, prevents any corner flash
-    shiny::tags$div(
-      id = "nuclear-static-page",
-      style = "position: fixed !important; top: 0 !important; left: 0 !important; 
-              width: 100% !important; height: 100% !important; background: white !important; 
-              z-index: 999999 !important; display: flex !important; 
-              align-items: center !important; justify-content: center !important;",
-      shiny::tags$div(
-        style = "text-align: center; max-width: 600px; padding: 40px;",
-        shiny::tags$h1(
-          style = "color: #e8041c; margin-bottom: 30px; font-size: 2.5em;",
-          "Loading..."
-        ),
-        shiny::tags$div(
-          style = "margin: 30px 0;",
-          shiny::tags$div(
-            style = "width: 60px; height: 60px; border: 6px solid #f3f3f3; 
-                    border-top: 6px solid #e8041c; border-radius: 50%; 
-                    animation: spin 1s linear infinite; margin: 0 auto;"
-          )
-        ),
-        shiny::tags$p(
-          style = "color: #666; font-size: 1.2em; margin-top: 20px;",
-          "Please wait..."
-        )
-      )
-    ),
+
     
     # ULTIMATE CORNER FLASH ELIMINATION - ALL METHODS COMBINED!
     shiny::tags$head(
@@ -1605,77 +1579,8 @@ launch_study <- function(
              }, 1);
            });
            
-                     // ULTIMATE LOADING SCREEN DESTRUCTION - GUARANTEED REMOVAL
-          
-          function obliterateLoadingScreen(reason) {
-            var staticPage = document.getElementById('nuclear-static-page');
-            if (staticPage) {
-              // Multiple destruction methods
-              staticPage.style.display = 'none !important';
-              staticPage.style.visibility = 'hidden !important';
-              staticPage.style.opacity = '0 !important';
-              staticPage.style.zIndex = '-9999 !important';
-              staticPage.style.position = 'absolute !important';
-              staticPage.style.left = '-9999px !important';
-              staticPage.style.top = '-9999px !important';
-              staticPage.parentNode && staticPage.parentNode.removeChild(staticPage);
-              console.log('🚀 LOADING SCREEN OBLITERATED: ' + reason);
-              return true;
-            }
-            return false;
-          }
-          
-          // Strategy 1: IMMEDIATE execution - no waiting
-          console.log('🔍 Starting loading screen destruction sequence...');
-          console.log('🔍 Loading screen element exists:', document.getElementById('nuclear-static-page') ? 'YES' : 'NO');
-          obliterateLoadingScreen('immediate-execution');
-          
-          // Strategy 2: DOM ready - backup
-          $(document).ready(function() {
-            obliterateLoadingScreen('document-ready');
-          });
-          
-          // Strategy 2.5: Window loaded - backup
-          $(window).on('load', function() {
-            obliterateLoadingScreen('window-loaded');
-          });
-          
-          // Strategy 3: Shiny connected - backup
-          $(document).on('shiny:connected', function() {
-            obliterateLoadingScreen('shiny-connected');
-          });
-          
-          // Strategy 4: ANY Shiny output - backup
-          $(document).on('shiny:value', function(event) {
-            obliterateLoadingScreen('shiny-value-' + (event.target ? event.target.id : 'unknown'));
-          });
-          
-          // Strategy 5: HYPER-aggressive polling - every 1ms
-          var destroyInterval = setInterval(function() {
-            if (obliterateLoadingScreen('hyper-polling')) {
-              clearInterval(destroyInterval);
-            }
-          }, 1);  // Check every 1ms - hyper aggressive
-          
-          // Strategy 6: Multiple rapid timeouts
-          setTimeout(function() { obliterateLoadingScreen('50ms-timeout'); }, 50);
-          setTimeout(function() { obliterateLoadingScreen('100ms-timeout'); }, 100);
-          setTimeout(function() { obliterateLoadingScreen('200ms-timeout'); }, 200);
-          setTimeout(function() { obliterateLoadingScreen('300ms-timeout'); }, 300);
-          
-          // Strategy 7: NUCLEAR ANNIHILATION - absolute failsafe
-          setTimeout(function() {
-            var staticPage = document.getElementById('nuclear-static-page');
-            if (staticPage) {
-              staticPage.outerHTML = '';
-              console.log('💥 NUCLEAR ANNIHILATION - 400ms');
-            }
-            // Also remove any remaining elements with similar classes
-            var loadingElements = document.querySelectorAll('[id*="static"], [class*="loading"], [id*="nuclear"]');
-            loadingElements.forEach(function(el) {
-              el.remove();
-            });
-          }, 400);
+                     // DIRECT CONTENT DISPLAY - No loading screens, maximum efficiency
+          console.log('✅ Direct content display - no loading animations');
         })();
       "))
     ),
@@ -2467,14 +2372,9 @@ launch_study <- function(
     
     # Step 2: Render UI with ADVANCED later optimization - maximum speed
     output$study_ui <- shiny::renderUI({
-      # Start background loading with ZERO delay using advanced later features
-      if (!.packages_loaded && has_later) {
-        # Use immediate execution with run_now for fastest possible loading
-        later::later(function() {
-          .load_packages_once()
-          # Force immediate execution to prevent any delays
-          later::run_now(timeoutSecs = 0, all = TRUE)
-        }, delay = 0)  # ZERO delay - immediate execution
+      # IMMEDIATE package loading - no delays
+      if (!.packages_loaded) {
+        .load_packages_once()  # Load immediately, no later() calls
       }
       
       # Return standard container - preserves existing functionality
