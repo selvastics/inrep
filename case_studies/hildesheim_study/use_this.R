@@ -2609,10 +2609,16 @@ inrep::launch_study(
     save_format = "csv",
     custom_css = paste0(custom_css_only, custom_js_part1, custom_js_part2, custom_js_part3),  # Combined CSS and JS
     admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
-    # RESTORE SPEED OPTIMIZATIONS
+    # RESTORE SPEED OPTIMIZATIONS - IMMEDIATE DISPLAY
     max_session_time = 7200,
     session_save = TRUE,
     data_preservation_interval = 1,  # Fast data preservation
     keep_alive_interval = 5,  # Fast keep-alive
-    enable_error_recovery = TRUE
+    enable_error_recovery = TRUE,
+    # CRITICAL: Immediate UI display parameters
+    ui_render_delay = 0,  # Show UI immediately
+    package_loading_delay = 0.001,  # Near-instant package loading
+    session_init_delay = 0.01,  # Minimal session delay
+    show_loading_screen = FALSE,  # No loading screen
+    immediate_ui = TRUE  # Display first page immediately
 )
