@@ -2098,11 +2098,8 @@ custom_css_only <- '
 }
 '
 
-# REMOVED: custom_js_enhanced was too long (>10,000 chars)
-# JavaScript is now embedded directly in page content instead
-
-# Simple radio deselection script only
-simple_radio_js <- '<script>
+# WORKAROUND: Split long JavaScript into multiple parts to avoid 10,000 char limit
+custom_js_part1 <- '<script>
 // Comprehensive translation dictionary for ENTIRE APP
 var translations = {
   // Page titles
@@ -2368,7 +2365,7 @@ function translatePage() {
 // ENHANCED language toggle with INREP INTEGRATION
 var toggleInProgress = false;
 window.toggleLanguage = function() {
-  console.log("🔄 toggleLanguage CALLED! Current state:", {
+  console.log("toggleLanguage CALLED! Current state:", {
     currentLang: currentLang,
     toggleInProgress: toggleInProgress,
     shinyAvailable: typeof Shiny !== "undefined"
@@ -2376,14 +2373,14 @@ window.toggleLanguage = function() {
   
   // Prevent multiple rapid clicks
   if (toggleInProgress) {
-    console.log("❌ Toggle in progress, skipping");
+    console.log("Toggle in progress, skipping");
     return;
   }
   toggleInProgress = true;
   setTimeout(function() { toggleInProgress = false; }, 500); // 500ms debounce
   
   var newLang = currentLang === "de" ? "en" : "de";
-  console.log("🌍 Language toggle: " + currentLang + " -> " + newLang);
+  console.log("Language toggle: " + currentLang + " -> " + newLang);
   
   currentLang = newLang;
   
@@ -2447,32 +2444,35 @@ window.toggleLanguage = function() {
     translatePage();
   }, 1000);
 };
+</script>';
 
+# Part 2 of JavaScript to avoid string length limit  
+custom_js_part2 <- '<script>
 // Confirm function is defined
-console.log("✅ window.toggleLanguage defined:", typeof window.toggleLanguage);
+console.log("window.toggleLanguage defined:", typeof window.toggleLanguage);
 
 // Apply translations on page load
 document.addEventListener("DOMContentLoaded", function() {
-  console.log("🚀 DOM loaded - checking function availability");
+  console.log("DOM loaded - checking function availability");
   console.log("window.toggleLanguage exists:", typeof window.toggleLanguage);
   console.log("Button exists:", !!document.getElementById("lang_switch"));
   
   // Test the button programmatically
   setTimeout(function() {
-    console.log("⏰ 2 seconds later - testing button");
+    console.log("2 seconds later - testing button");
     console.log("window.toggleLanguage exists:", typeof window.toggleLanguage);
     console.log("Button exists:", !!document.getElementById("lang_switch"));
     
     var btn = document.getElementById("lang_switch");
     if (btn) {
-      console.log("✅ Button found, adding click listener as backup");
+      console.log("Button found, adding click listener as backup");
       btn.addEventListener("click", function(e) {
-        console.log("🎯 BACKUP CLICK LISTENER TRIGGERED!");
+        console.log("BACKUP CLICK LISTENER TRIGGERED!");
         e.preventDefault();
         if (typeof window.toggleLanguage === "function") {
           window.toggleLanguage();
         } else {
-          console.log("❌ toggleLanguage function not available");
+          console.log("toggleLanguage function not available");
         }
       });
     }
@@ -2601,7 +2601,7 @@ inrep::launch_study(
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
     save_format = "csv",
-    custom_css = custom_css_only,  # Use CSS only, add JS to page content
+    custom_css = paste0(custom_css_only, custom_js_part1, custom_js_part2),  # Combined CSS and JS
     admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
     # RESTORE SPEED OPTIMIZATIONS
     max_session_time = 7200,
