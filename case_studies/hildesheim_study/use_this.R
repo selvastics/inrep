@@ -2034,25 +2034,9 @@ custom_css_only <- '
 # LAUNCH STUDY WITH CLEAN INREP-NATIVE LANGUAGE SYSTEM
 # =============================================================================
 
-# Enhanced launch with CLEAN INREP-NATIVE LANGUAGE SYSTEM + LATER OPTIMIZATIONS
+# ABSOLUTE MINIMAL launch_study call for debugging
 inrep::launch_study(
     config = study_config,
-    item_bank = all_items_de,  # Bilingual item bank
-    # webdav_url = WEBDAV_URL,
-    # password = WEBDAV_PASSWORD,
-    save_format = "csv",
-    # custom_css = custom_css_only,  # Clean CSS only - no JavaScript needed
-    # admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
-    # RESTORE SPEED OPTIMIZATIONS - IMMEDIATE DISPLAY
-    max_session_time = 7200,
-    session_save = TRUE,
-    data_preservation_interval = 1,  # Fast data preservation
-    keep_alive_interval = 5,  # Fast keep-alive
-    enable_error_recovery = TRUE,
-    # CRITICAL: Immediate UI display parameters - TEMPORARILY DISABLED FOR DEBUGGING
-    ui_render_delay = 0,  # Show UI immediately
-    package_loading_delay = 0.001,  # Near-instant package loading
-    session_init_delay = 0.01,  # Minimal session delay
-    show_loading_screen = FALSE,  # No loading screen
-    immediate_ui = FALSE  # DISABLED: Test if this causes the character vector error
+    item_bank = all_items_de
+    # All other parameters removed for debugging
 )
