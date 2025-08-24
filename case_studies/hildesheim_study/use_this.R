@@ -457,66 +457,66 @@ custom_page_flow <- list(
     type = "custom",
     title = "Willkommen zur HilFo Studie",
     title_en = "Welcome to the HilFo Study", 
-    content = function(session, input, output, current_language, ui_labels) {
+        content = function(session, input, output, current_language, ui_labels) {
       # Get current language
       current_lang <- current_language()
       
-      # Create language switch button using inrep's get_label system
-      lang_button_text <- if (current_lang == "de") {
-        get_label("hildesheim_language_switch", "en")  # "Deutsche Version"
-      } else {
-        get_label("hildesheim_language_switch", "de")  # "English Version" 
-      }
+      # Simple language switch button without get_label calls
+      lang_button_text <- if (current_lang == "de") "English Version" else "Deutsche Version"
       
-      # Build content using inrep's proper language labels
+      # Build content with simple text (avoiding get_label calls that might cause errors)
       shiny::div(
         style = "position: relative; padding: 20px; font-size: 16px; line-height: 1.8;",
         
-                 # Language switcher in top right corner
-         shiny::div(
-           style = "position: absolute; top: 10px; right: 10px;",
-           shiny::tags$button(
-             type = "button",
-             onclick = sprintf("Shiny.setInputValue('study_language', '%s', {priority: 'event'});", 
-                             if (current_lang == "de") "en" else "de"),
-             style = "background: white; border: 2px solid #e8041c; color: #e8041c; 
-                      padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;",
-             lang_button_text
-           )
-         ),
+        # Language switcher in top right corner
+        shiny::div(
+          style = "position: absolute; top: 10px; right: 10px;",
+          shiny::tags$button(
+            type = "button",
+            onclick = sprintf("Shiny.setInputValue('study_language', '%s', {priority: 'event'});", 
+                            if (current_lang == "de") "en" else "de"),
+            style = "background: white; border: 2px solid #e8041c; color: #e8041c; 
+                     padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;",
+            lang_button_text
+          )
+        ),
         
-        # Main content using inrep's language system
+        # Main content with direct text (no get_label calls)
         shiny::h2(
-          get_label("hildesheim_dear_students", current_lang),
+          if (current_lang == "de") "Liebe Studierende," else "Dear Students,",
           style = "color: #e8041c;"
         ),
         
-        shiny::p(get_label("hildesheim_intro_text", current_lang)),
+        shiny::p(
+          if (current_lang == "de") {
+            "In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren."
+          } else {
+            "In the statistical methods exercises, we want to work with illustrative data that comes from you. Therefore, we want to learn a few things about you."
+          }
+        ),
         
-        shiny::p(get_label("hildesheim_survey_coverage", current_lang)),
+        shiny::p(
+          if (current_lang == "de") {
+            "Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene Themenbereiche ab, die voneinander teilweise unabhängig sind."
+          } else {
+            "Since we want to enable various analyses, the questionnaire covers different topic areas that are partially independent of each other."
+          }
+        ),
         
         shiny::div(
           style = "background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;",
-          shiny::strong(get_label("hildesheim_anonymity", current_lang))
-        ),
-        
-        shiny::p(get_label("hildesheim_data_usage", current_lang)),
-        
-        shiny::p(get_label("hildesheim_statements", current_lang)),
-        
-        shiny::p(
-          style = "font-style: italic;",
-          get_label("hildesheim_no_right_wrong", current_lang)
-        ),
-        
-        shiny::p(
-          style = "font-weight: bold;",
-          get_label("hildesheim_duration", current_lang)
+          shiny::strong(
+            if (current_lang == "de") {
+              "Ihre Angaben sind dabei selbstverständlich anonym, es wird keine personenbezogene Auswertung der Daten stattfinden."
+            } else {
+              "Your information is of course anonymous; no personal evaluation of the data will take place."
+            }
+          )
         ),
         
         # Consent section
         shiny::h3(
-          get_label("hildesheim_consent_title", current_lang),
+          if (current_lang == "de") "Einverständniserklärung" else "Consent Declaration",
           style = "color: #e8041c; margin-top: 30px;"
         ),
         
@@ -529,12 +529,16 @@ custom_page_flow <- list(
             width = "auto"
           ),
           shiny::span(
-            get_label("hildesheim_consent_text", current_lang),
+            if (current_lang == "de") {
+              "Ich bin mit der Teilnahme an der Befragung einverstanden"
+            } else {
+              "I agree to participate in the survey"
+            },
             style = "line-height: 1.3; margin-top: 2px;"
           )
         )
-             )
-     }
+      )
+    }
    ),
    
    # Page 2: Basic demographics
