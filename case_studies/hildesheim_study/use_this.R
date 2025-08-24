@@ -2049,10 +2049,10 @@ inrep::launch_study(
     data_preservation_interval = 1,  # Fast data preservation
     keep_alive_interval = 5,  # Fast keep-alive
     enable_error_recovery = TRUE,
-    # CRITICAL: Immediate UI display parameters
+    # CRITICAL: Immediate UI display parameters - TEMPORARILY DISABLED FOR DEBUGGING
     ui_render_delay = 0,  # Show UI immediately
     package_loading_delay = 0.001,  # Near-instant package loading
     session_init_delay = 0.01,  # Minimal session delay
     show_loading_screen = FALSE,  # No loading screen
-    immediate_ui = TRUE  # Display first page immediately
+    immediate_ui = FALSE  # DISABLED: Test if this causes the character vector error
 )
