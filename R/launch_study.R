@@ -526,6 +526,7 @@ launch_study <- function(
     session_init_delay = NULL,
     show_loading_screen = NULL,
     immediate_ui = FALSE,
+    server_extensions = NULL,  # Add support for server extensions
     ...
 ) {
   
@@ -1402,6 +1403,22 @@ launch_study <- function(
       background-color: rgba(var(--primary-color), 0.1);
     }
     
+    /* Enhanced styling for selected radio buttons */
+    .shiny-input-radiogroup label.selected {
+      background-color: rgba(var(--primary-color), 0.15) !important;
+      border-color: var(--primary-color) !important;
+      border-width: 2px !important;
+    }
+    
+    /* Visual feedback for deselectable radio buttons */
+    .shiny-input-radiogroup input[type='radio']:checked + span::after {
+      content: ' (Click again to deselect)';
+      font-size: 11px;
+      color: var(--primary-color);
+      font-style: italic;
+      opacity: 0.7;
+    }
+    
     .shiny-input-radiogroup input[type='radio'] {
       position: relative;
       margin-right: 8px;
@@ -1898,6 +1915,48 @@ launch_study <- function(
           window.addEventListener('load', function() {
             document.getElementById('study_ui').className += ' positioned';
             document.getElementById('study_ui').style.visibility = 'visible';
+          });
+          
+          // Enhanced Radio button deselection with visual feedback
+          document.addEventListener("click", function(e) {
+            if (e.target && e.target.type === "radio") {
+              var wasChecked = e.target.getAttribute("data-was-checked") === "true";
+              
+              // Clear all radios in the same group
+              var radios = document.querySelectorAll("input[name='" + e.target.name + "']");
+              for (var i = 0; i < radios.length; i++) {
+                radios[i].setAttribute("data-was-checked", "false");
+                // Remove visual selection styling
+                var label = radios[i].closest('label');
+                if (label) {
+                  label.style.backgroundColor = '';
+                  label.style.borderColor = '';
+                }
+              }
+              
+              if (wasChecked) {
+                // Deselect the radio button
+                e.target.checked = false;
+                if (typeof Shiny !== "undefined") {
+                  Shiny.setInputValue(e.target.name, null, {priority: "event"});
+                }
+                // Remove visual selection from the label
+                var currentLabel = e.target.closest('label');
+                if (currentLabel) {
+                  currentLabel.style.backgroundColor = '';
+                  currentLabel.style.borderColor = '';
+                }
+              } else {
+                // Select the radio button
+                e.target.setAttribute("data-was-checked", "true");
+                // Add visual selection to the label
+                var currentLabel = e.target.closest('label');
+                if (currentLabel) {
+                  currentLabel.style.backgroundColor = 'rgba(232, 4, 28, 0.1)';
+                  currentLabel.style.borderColor = '#e8041c';
+                }
+              }
+            }
           });
         });
       ")),
@@ -2413,18 +2472,27 @@ launch_study <- function(
   server <- function(input, output, session) {
     # LATER PACKAGE: IMMEDIATE UI DISPLAY - Show UI first, load everything else later
     if (immediate_ui) {
-      cat("LATER: Server starting with immediate UI mode\n")
+      # Logging removed for performance - immediate UI display enabled
       
       # Create immediate UI loop
       server_loop <- later::create_loop()
       
       # Display UI immediately with zero delay
       later::later(function() {
-        cat("LATER: UI rendered immediately in server\n")
+        # UI rendered immediately in server
       }, delay = 0, loop = server_loop)
       
       # Force immediate execution
       later::run_now(loop = server_loop)
+    }
+    
+    # Apply server extensions if provided
+    if (!is.null(server_extensions) && is.function(server_extensions)) {
+      tryCatch({
+        server_extensions(input, output, session)
+      }, error = function(e) {
+        logger(sprintf("Server extensions failed: %s", e$message), level = "WARNING")
+      })
     }
     
     # ULTRA-FAST STARTUP: Show UI immediately, initialize everything else later
@@ -2659,7 +2727,7 @@ launch_study <- function(
           tryCatch({
             update_activity()
           }, error = function(e) {
-            logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
+            # Silently ignore activity update failures to reduce log spam
           })
         }
       })  # Close observe
@@ -2669,9 +2737,14 @@ launch_study <- function(
       observe_data_preservation <- function() {
         if (rv$session_active && exists("preserve_session_data") && is.function(preserve_session_data)) {
           tryCatch({
-            preserve_session_data()
+            # Check if the function expects parameters
+            if (length(formals(preserve_session_data)) > 0) {
+              preserve_session_data(rv = rv, session = session)
+            } else {
+              preserve_session_data()
+            }
           }, error = function(e) {
-            logger(sprintf("Data preservation failed: %s", e$message), level = "ERROR")
+            # Silently ignore data preservation failures to reduce log spam
           })
         }
       }
@@ -2767,9 +2840,14 @@ launch_study <- function(
       if (session_save && exists("cleanup_session") && is.function(cleanup_session)) {
         tryCatch({
           logger("Session ending - cleaning up and preserving final data", level = "INFO")
-          cleanup_session(save_final_data = TRUE)
+          # Check if function expects parameters
+          if (length(formals(cleanup_session)) > 0) {
+            cleanup_session(save_final_data = TRUE, session = session, rv = rv)
+          } else {
+            cleanup_session(save_final_data = TRUE)
+          }
         }, error = function(e) {
-          logger(sprintf("Session cleanup failed: %s", e$message), level = "WARNING")
+          # Silently ignore cleanup failures to reduce log spam
         })
       } else if (session_save) {
         logger("Session ending - basic cleanup", level = "INFO")
@@ -2780,9 +2858,14 @@ launch_study <- function(
     session$onFlush(function() {
       if (session_save && exists("update_activity") && is.function(update_activity)) {
         tryCatch({
-          update_activity()
+          # Check if the function expects parameters
+          if (length(formals(update_activity)) > 0) {
+            update_activity(session = session)
+          } else {
+            update_activity()
+          }
         }, error = function(e) {
-          logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
+          # Silently ignore activity update failures to reduce log spam
         })
       }
     })
@@ -3931,17 +4014,22 @@ launch_study <- function(
       # Log test start
       if (session_save && exists("log_session_event") && is.function(log_session_event)) {
         tryCatch({
-          log_session_event(
-            event_type = "test_started",
-            message = "Assessment test started",
-            details = list(
-              start_time = Sys.time(),
-              demographics = rv$demo_data,
-              timestamp = Sys.time()
+          # Check if function expects parameters and call accordingly
+          if (length(formals(log_session_event)) > 2) {
+            log_session_event(
+              event_type = "test_started",
+              message = "Assessment test started",
+              details = list(
+                start_time = Sys.time(),
+                demographics = rv$demo_data,
+                timestamp = Sys.time()
+              )
             )
-          )
+          } else {
+            log_session_event("test_started", "Assessment test started")
+          }
         }, error = function(e) {
-          logger(sprintf("Failed to log test start: %s", e$message), level = "WARNING")
+          # Silently ignore logging failures to reduce log spam
         })
       }
       
@@ -4236,11 +4324,14 @@ launch_study <- function(
       # ROBUST DATA PRESERVATION WITH ERROR RECOVERY
       if (session_save && exists("preserve_session_data") && is.function(preserve_session_data)) {
         tryCatch({
-          preserve_session_data()
-          logger("Response data automatically preserved", level = "INFO")
+          # Check if the function expects parameters
+          if (length(formals(preserve_session_data)) > 0) {
+            preserve_session_data(rv = rv, session = session, force = FALSE)
+          } else {
+            preserve_session_data()
+          }
         }, error = function(e) {
-          logger(sprintf("Automatic data preservation failed (non-critical): %s", e$message), level = "WARNING")
-          # Don't break the assessment for data preservation failures
+          # Silently ignore data preservation failures to reduce log spam
         })
       }
       
@@ -4285,7 +4376,7 @@ launch_study <- function(
               )
             )
           }, error = function(e) {
-            logger(sprintf("Failed to log test completion: %s", e$message), level = "WARNING")
+            # Silently ignore logging failures to reduce log spam
           })
         }
         
@@ -4354,7 +4445,7 @@ launch_study <- function(
                 )
               )
             }, error = function(e) {
-              logger(sprintf("Failed to log test completion: %s", e$message), level = "WARNING")
+              # Silently ignore logging failures to reduce log spam
             })
           }
           
