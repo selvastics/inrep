@@ -2038,11 +2038,11 @@ custom_css_only <- '
 inrep::launch_study(
     config = study_config,
     item_bank = all_items_de,  # Bilingual item bank
-    webdav_url = WEBDAV_URL,
-    password = WEBDAV_PASSWORD,
+    # webdav_url = WEBDAV_URL,
+    # password = WEBDAV_PASSWORD,
     save_format = "csv",
-    custom_css = custom_css_only,  # Clean CSS only - no JavaScript needed
-    admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
+    # custom_css = custom_css_only,  # Clean CSS only - no JavaScript needed
+    # admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
     # RESTORE SPEED OPTIMIZATIONS - IMMEDIATE DISPLAY
     max_session_time = 7200,
     session_save = TRUE,
