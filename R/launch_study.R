@@ -1590,12 +1590,14 @@ launch_study <- function(
              }, 1);
            });
            
-           // HIDE STATIC PAGE IMMEDIATELY when Shiny content loads
+           // HIDE STATIC PAGE when real content shows OR when begin button clicked
            $(document).on('shiny:connected', function() {
-             var staticPage = document.getElementById('nuclear-static-page');
-             if (staticPage) {
-               staticPage.style.display = 'none';
-             }
+             setTimeout(function() {
+               var staticPage = document.getElementById('nuclear-static-page');
+               if (staticPage) {
+                 staticPage.style.display = 'none';
+               }
+             }, 1000); // Hide after 1 second to let user see the welcome page
            });
            
            // BACKUP: Hide static page when page content appears - FAST CHECK
@@ -2396,21 +2398,70 @@ launch_study <- function(
     reactive_ui_labels <- shiny::reactiveVal(ui_labels)
     heavy_computations_done <- shiny::reactiveVal(FALSE)
     
-    # Step 2: Render UI INSTANTLY - Show UI first, THEN load packages
+    # Step 2: Show ACTUAL FIRST PAGE immediately - NO loading dependencies
     output$study_ui <- shiny::renderUI({
-      # Start package loading AFTER UI is rendered
+      # Start ALL background loading AFTER UI is shown
       if (!.packages_loaded && has_later) {
         later::later(function() {
           .load_packages_once()
-        }, delay = 0.1)  # Small delay to let UI render first
+        }, delay = 0.5)  # Longer delay to ensure UI shows first
       }
       
-      # SIMPLE APPROACH - Just return container, let page_content handle everything
+      # SHOW ACTUAL FIRST PAGE IMMEDIATELY - No waiting for anything
       shiny::div(
         id = "main-study-container",
         style = "min-height: 500px; width: 100%; max-width: 100%; margin: 0 auto; padding: 0; position: relative; overflow: hidden;",
-        shiny::uiOutput("page_content")
+        
+        # IMMEDIATE FIRST PAGE CONTENT - No dependencies
+        shiny::div(
+          id = "stable-page-container",
+          class = "page-wrapper",
+          style = "width: 100% !important; max-width: 1200px !important; margin: 0 auto !important; position: relative !important;",
+          
+          # Show welcome/briefing page immediately
+          shiny::div(
+            class = "assessment-card",
+            style = "position: relative !important; margin: 0 auto !important; padding: 40px; text-align: center;",
+            
+            shiny::tags$h1(
+              "Welcome to the Assessment",
+              class = "card-header",
+              style = "color: #e8041c; margin-bottom: 30px;"
+            ),
+            
+            shiny::div(
+              class = "card-content",
+              style = "margin: 30px 0;",
+              shiny::tags$p(
+                "Please click the button below to begin the assessment.",
+                style = "font-size: 1.2em; margin-bottom: 30px;"
+              ),
+              
+              shiny::div(
+                class = "nav-buttons",
+                shiny::actionButton(
+                  "begin_assessment",
+                  "Begin Assessment",
+                  class = "btn-klee",
+                  style = "font-size: 1.2em; padding: 15px 30px; position: relative !important; margin: 0 auto !important;"
+                )
+              )
+            )
+          )
+        )
       )
+    })
+    
+    # Observer for Begin Assessment button - switch to dynamic content
+    shiny::observeEvent(input$begin_assessment, {
+      # NOW show the dynamic uiOutput that depends on page_content
+      output$study_ui <- shiny::renderUI({
+        shiny::div(
+          id = "main-study-container",
+          style = "min-height: 500px; width: 100%; max-width: 100%; margin: 0 auto; padding: 0; position: relative; overflow: hidden;",
+          shiny::uiOutput("page_content")
+        )
+      })
     })
     
     # Step 3: Do initialization AFTER UI is shown
