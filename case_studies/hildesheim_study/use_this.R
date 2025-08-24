@@ -2377,23 +2377,40 @@ document.addEventListener("DOMContentLoaded", function() {
     subtree: true
   });
   
-  // Radio button deselection
+  // Enhanced radio button deselection - click to unselect
   document.addEventListener("click", function(e) {
     if (e.target && e.target.type === "radio") {
+      var radioName = e.target.name;
       var wasChecked = e.target.getAttribute("data-was-checked") === "true";
       
-      var radios = document.querySelectorAll("input[name=\\"" + e.target.name + "\\"]");
+      // Get all radios with same name
+      var radios = document.querySelectorAll('input[name="' + radioName + '"]');
+      
+      // Reset all radios in this group
       for (var i = 0; i < radios.length; i++) {
         radios[i].setAttribute("data-was-checked", "false");
       }
       
       if (wasChecked) {
+        // Unselect if it was already selected
         e.target.checked = false;
-        if (typeof Shiny !== "undefined") {
-          Shiny.setInputValue(e.target.name, null, {priority: "event"});
+        
+        // Update Shiny input to null
+        if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
+          Shiny.setInputValue(radioName, null, {priority: "event"});
         }
+        
+        console.log("Radio unselected:", radioName);
       } else {
+        // Select and mark as checked
         e.target.setAttribute("data-was-checked", "true");
+        
+        // Update Shiny input with selected value
+        if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
+          Shiny.setInputValue(radioName, e.target.value, {priority: "event"});
+        }
+        
+        console.log("Radio selected:", radioName, "=", e.target.value);
       }
     }
   });
@@ -2402,11 +2419,33 @@ document.addEventListener("DOMContentLoaded", function() {
 // Handle Shiny messages
 if (typeof Shiny !== "undefined") {
   Shiny.addCustomMessageHandler("update_language", function(lang) {
+    console.log("Language change requested:", lang);
     currentLang = lang;
+    sessionStorage.setItem("hilfo_language", lang);
+    
     if (lang === "en") {
+      console.log("Applying English translations");
       translatePage();
+      
+      // Update button text
+      var btn = document.getElementById("language-toggle-btn");
+      if (btn) {
+        btn.textContent = "Deutsche Version";
+      }
     } else {
-      location.reload(); // Reload for German
+      console.log("Reverting to German");
+      // Revert all translations by reloading
+      location.reload();
+    }
+  });
+  
+  // Also handle direct language button clicks
+  Shiny.addCustomMessageHandler("force_translate", function(message) {
+    console.log("Force translate:", message);
+    if (currentLang === "en") {
+      setTimeout(function() {
+        translatePage();
+      }, 100);
     }
   });
 }
@@ -2422,16 +2461,24 @@ server_extensions <- function(input, output, session) {
     new_lang <- input$study_language
     session$userData$current_language(new_lang)
     
-    # Update item bank language
+    # Update item bank language properly
     if (new_lang == "en") {
-      session$userData$item_bank <- all_items_de
-      session$userData$item_bank$Question <- all_items_de$Question_EN
+      # Create English version of item bank
+      english_items <- all_items_de
+      english_items$Question <- all_items_de$Question_EN
+      session$userData$item_bank <- english_items
     } else {
+      # Use German version (original)
       session$userData$item_bank <- all_items_de
     }
     
     # Send message to update UI
     session$sendCustomMessage("update_language", new_lang)
+    
+    # Also send a force translate message after a brief delay
+    later::later(function() {
+      session$sendCustomMessage("force_translate", list(lang = new_lang))
+    }, delay = 0.2)
   })
 }
 
