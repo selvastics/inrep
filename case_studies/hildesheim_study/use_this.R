@@ -1836,7 +1836,7 @@ study_config <- inrep::create_study_config(
     session_init_delay = 0.01,  # Minimal session initialization delay
     ui_render_delay = 0,  # Immediate UI rendering
     page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
-    item_bank = all_items,  # Full item bank
+    # item_bank = all_items,  # Passed separately to launch_study
     save_to_file = TRUE,
     save_format = "csv",
     cloud_storage = TRUE,
