@@ -1590,14 +1590,14 @@ launch_study <- function(
              }, 1);
            });
            
-           // HIDE STATIC PAGE when real content shows OR when begin button clicked
+           // HIDE STATIC PAGE when Shiny connects - welcome page is now in static UI
            $(document).on('shiny:connected', function() {
              setTimeout(function() {
                var staticPage = document.getElementById('nuclear-static-page');
                if (staticPage) {
                  staticPage.style.display = 'none';
                }
-             }, 1000); // Hide after 1 second to let user see the welcome page
+             }, 500); // Hide quickly since welcome page is now static
            });
            
            // BACKUP: Hide static page when page content appears - FAST CHECK
@@ -2379,46 +2379,21 @@ launch_study <- function(
     if (session_save) {
       shiny::uiOutput("session_status_ui")
     },
-    shiny::uiOutput("study_ui", style = "position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; margin: 0 auto !important; transform: none !important; width: 100% !important; max-width: 1200px !important; display: block !important; visibility: visible !important; opacity: 1 !important;")
-  )
-  
-  server <- function(input, output, session) {
-    # ULTRA-FAST STARTUP: Show UI immediately, initialize everything else later
-    
-    # Smooth stage transition helper
-    smooth_stage_transition <- function(rv, new_stage) {
-      # Prevent rapid stage changes that cause UI flicker
-      rv$stage <- new_stage
-      # Force UI update with minimal delay
-      shiny::invalidateLater(10, session)
-    }
-    
-    # Step 1: Create minimal reactive values (no computation!)
-    current_language <- shiny::reactiveVal(default_language)
-    reactive_ui_labels <- shiny::reactiveVal(ui_labels)
-    heavy_computations_done <- shiny::reactiveVal(FALSE)
-    
-    # Step 2: Show ACTUAL FIRST PAGE immediately - NO loading dependencies
-    output$study_ui <- shiny::renderUI({
-      # Start ALL background loading AFTER UI is shown
-      if (!.packages_loaded && has_later) {
-        later::later(function() {
-          .load_packages_once()
-        }, delay = 0.5)  # Longer delay to ensure UI shows first
-      }
+    # IMMEDIATE FIRST PAGE - In static UI, not renderUI
+    shiny::div(
+      id = "instant-welcome-page",
+      style = "position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; margin: 0 auto !important; transform: none !important; width: 100% !important; max-width: 1200px !important; display: block !important; visibility: visible !important; opacity: 1 !important;",
       
-      # SHOW ACTUAL FIRST PAGE IMMEDIATELY - No waiting for anything
+      # STATIC WELCOME CONTENT - Shows immediately
       shiny::div(
         id = "main-study-container",
         style = "min-height: 500px; width: 100%; max-width: 100%; margin: 0 auto; padding: 0; position: relative; overflow: hidden;",
         
-        # IMMEDIATE FIRST PAGE CONTENT - No dependencies
         shiny::div(
           id = "stable-page-container",
           class = "page-wrapper",
           style = "width: 100% !important; max-width: 1200px !important; margin: 0 auto !important; position: relative !important;",
           
-          # Show welcome/briefing page immediately
           shiny::div(
             class = "assessment-card",
             style = "position: relative !important; margin: 0 auto !important; padding: 40px; text-align: center;",
@@ -2440,7 +2415,7 @@ launch_study <- function(
               shiny::div(
                 class = "nav-buttons",
                 shiny::actionButton(
-                  "begin_assessment",
+                  "start_dynamic_content",
                   "Begin Assessment",
                   class = "btn-klee",
                   style = "font-size: 1.2em; padding: 15px 30px; position: relative !important; margin: 0 auto !important;"
@@ -2450,11 +2425,47 @@ launch_study <- function(
           )
         )
       )
-    })
+    ),
+    
+    # HIDDEN dynamic content - only shows when button is clicked
+    shiny::div(
+      id = "dynamic-content-container",
+      style = "display: none;",
+      shiny::uiOutput("study_ui")
+    )
+  )
+  
+  server <- function(input, output, session) {
+    # ULTRA-FAST STARTUP: Show UI immediately, initialize everything else later
+    
+    # Smooth stage transition helper
+    smooth_stage_transition <- function(rv, new_stage) {
+      # Prevent rapid stage changes that cause UI flicker
+      rv$stage <- new_stage
+      # Force UI update with minimal delay
+      shiny::invalidateLater(10, session)
+    }
+    
+    # Step 1: Create minimal reactive values (no computation!)
+    current_language <- shiny::reactiveVal(default_language)
+    reactive_ui_labels <- shiny::reactiveVal(ui_labels)
+    heavy_computations_done <- shiny::reactiveVal(FALSE)
+    
+    # Step 2: Start background loading - UI is already shown in static UI
+    if (!.packages_loaded && has_later) {
+      later::later(function() {
+        .load_packages_once()
+      }, delay = 1)  # Start loading after UI is definitely shown
+    }
     
     # Observer for Begin Assessment button - switch to dynamic content
-    shiny::observeEvent(input$begin_assessment, {
-      # NOW show the dynamic uiOutput that depends on page_content
+    shiny::observeEvent(input$start_dynamic_content, {
+      # Hide static welcome page
+      shinyjs::hide("instant-welcome-page")
+      # Show dynamic content
+      shinyjs::show("dynamic-content-container")
+      
+      # Setup the dynamic renderUI
       output$study_ui <- shiny::renderUI({
         shiny::div(
           id = "main-study-container",
