@@ -237,7 +237,7 @@ all_items <- all_items_de
 # =============================================================================
 
 demographic_configs <- list(
-  Einverständnis = list(
+  Einverstaendnis = list(
     question = "Einverständniserklärung",
     question_en = "Declaration of Consent",
     options = c("Ich bin mit der Teilnahme an der Befragung einverstanden" = "1"),
@@ -320,7 +320,7 @@ demographic_configs <- list(
     options_en = c("Yes"="1", "No"="2"),
     required = FALSE
   ),
-  Ernährung = list(
+  Ernaehrung = list(
     question = "Wie ernähren Sie sich hauptsächlich?",
     question_en = "What is your main diet?",
     options = c(
@@ -333,7 +333,7 @@ demographic_configs <- list(
     ),
     required = FALSE
   ),
-  Ernährung_Zusatz = list(
+  Ernaehrung_Zusatz = list(
     question = "Andere Ernährungsform:",
     question_en = "Other diet:",
     type = "text",
@@ -420,7 +420,7 @@ demographic_configs <- list(
     ),
     required = FALSE
   ),
-  Persönlicher_Code = list(
+  Persoenlicher_Code = list(
     question = "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags):",
     question_en = "Please create a personal code (first 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday):",
     type = "text",
@@ -429,7 +429,7 @@ demographic_configs <- list(
 )
 
 input_types <- list(
-  Einverständnis = "checkbox",
+  Einverstaendnis = "checkbox",
   Alter_VPN = "select",
   Studiengang = "radio",
   Geschlecht = "radio",
@@ -438,14 +438,14 @@ input_types <- list(
   Haustier = "select",
   Haustier_Zusatz = "text",
   Rauchen = "radio",
-  Ernährung = "radio",
-  Ernährung_Zusatz = "text",
+  Ernaehrung = "radio",
+  Ernaehrung_Zusatz = "text",
   Note_Englisch = "select",
   Note_Mathe = "select",
   Vor_Nachbereitung = "radio",
   Zufrieden_Hi_5st = "radio",
   Zufrieden_Hi_7st = "radio",
-  Persönlicher_Code = "text"
+  Persoenlicher_Code = "text"
 )
 
 # =============================================================================
@@ -457,7 +457,62 @@ custom_page_flow <- list(
     type = "custom",
     title = "Willkommen zur HilFo Studie",
     title_en = "Welcome to the HilFo Study", 
-        content = '<div style="padding: 20px;"><h2>Willkommen zur HilFo Studie</h2><p>Test content to debug the error.</p></div>'
+        content = function(session, input, output, current_language, ui_labels) {
+      current_lang <- current_language()
+      lang_button_text <- if (current_lang == "de") "English Version" else "Deutsche Version"
+      
+      shiny::div(
+        style = "position: relative; padding: 20px; font-size: 16px; line-height: 1.8;",
+        
+        shiny::div(
+          style = "position: absolute; top: 10px; right: 10px;",
+          shiny::tags$button(
+            type = "button",
+            onclick = sprintf("Shiny.setInputValue('study_language', '%s', {priority: 'event'});", 
+                            if (current_lang == "de") "en" else "de"),
+            style = "background: white; border: 2px solid #e8041c; color: #e8041c; 
+                     padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;",
+            lang_button_text
+          )
+        ),
+        
+        shiny::h2(
+          if (current_lang == "de") "Liebe Studierende," else "Dear Students,",
+          style = "color: #e8041c;"
+        ),
+        
+        shiny::p(
+          if (current_lang == "de") {
+            "In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren."
+          } else {
+            "In the statistical methods exercises, we want to work with illustrative data that comes from you. Therefore, we want to learn a few things about you."
+          }
+        ),
+        
+        shiny::h3(
+          if (current_lang == "de") "Einverständniserklärung" else "Consent Declaration",
+          style = "color: #e8041c; margin-top: 30px;"
+        ),
+        
+        shiny::div(
+          style = "display: flex; align-items: flex-start; gap: 10px; margin: 20px 0;",
+          shiny::checkboxInput(
+            "consent_hildesheim",
+            "",
+            value = FALSE,
+            width = "auto"
+          ),
+          shiny::span(
+            if (current_lang == "de") {
+              "Ich bin mit der Teilnahme an der Befragung einverstanden"
+            } else {
+              "I agree to participate in the survey"
+            },
+            style = "line-height: 1.3; margin-top: 2px;"
+          )
+        )
+      )
+    }
    ),
    
    # Page 2: Basic demographics
@@ -1737,7 +1792,7 @@ study_config <- inrep::create_study_config(
     study_key = session_uuid,
     theme = "hildesheim",  # Use built-in Hildesheim theme
     custom_page_flow = custom_page_flow,
-    demographics = as.character(c("Einverständnis", "Alter_VPN", "Studiengang", "Geschlecht", "Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz", "Rauchen", "Ernährung", "Ernährung_Zusatz", "Note_Englisch", "Note_Mathe", "Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st", "Persönlicher_Code")),
+    demographics = c("Einverstaendnis", "Alter_VPN", "Studiengang", "Geschlecht", "Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz", "Rauchen", "Ernaehrung", "Ernaehrung_Zusatz", "Note_Englisch", "Note_Mathe", "Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st", "Persoenlicher_Code"),
     demographic_configs = demographic_configs,
     input_types = input_types,
     model = "2PL",  # Use 2PL model for IRT
@@ -1957,11 +2012,16 @@ custom_css_only <- '
 # LAUNCH STUDY WITH CLEAN INREP-NATIVE LANGUAGE SYSTEM
 # =============================================================================
 
-# DEBUG VERSION - simplified content function
+# FIXED VERSION - ASCII character names to avoid encoding issues
 inrep::launch_study(
     config = study_config,
     item_bank = all_items_de,
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
-    save_format = "csv"
+    save_format = "csv",
+    custom_css = custom_css_only,
+    admin_dashboard_hook = monitor_adaptive,
+    max_session_time = 7200,
+    session_save = TRUE,
+    immediate_ui = TRUE
 )
