@@ -660,26 +660,34 @@ launch_study <- function(
         loaded_packages[[pkg]] <- requireNamespace(pkg, quietly = TRUE)
       }
       
-      # Step 3: Schedule ALL other packages for background loading
+      # Step 3: ADVANCED later package usage with private event loops and immediate execution
       if (has_later) {
-        # Load after 50ms (UI will be visible)
+        # Create private event loop for package loading to avoid UI interference
+        package_loop <- NULL
+        tryCatch({
+          package_loop <- later::create_loop()
+        }, error = function(e) {
+          # Fallback to global loop if private loops not available
+          package_loop <<- later::global_loop()
+        })
+        
+        # Priority 1: Load optional packages with ZERO delay for maximum speed
         later::later(function() {
-          # Priority 1: Optional packages for functionality
           for (pkg in optional_packages) {
             tryCatch({
               if (loaded_packages[[pkg]]) {
-                # Don't actually load, just ensure available
                 logger(sprintf("Package %s available", pkg), level = "DEBUG")
               }
             }, error = function(e) {
               logger(sprintf("Optional package %s not available", pkg), level = "DEBUG")
             })
           }
-        }, delay = 0.05)
+          # Force immediate execution of next phase
+          later::run_now(timeoutSecs = 0, all = FALSE, loop = package_loop)
+        }, delay = 0, loop = package_loop)  # IMMEDIATE execution
         
-        # Load heavy packages even later (after UI is responsive)
+        # Priority 2: Heavy packages with minimal delay in private loop
         later::later(function() {
-          # Priority 2: Heavy visualization packages
           for (pkg in deferred_packages) {
             tryCatch({
               if (loaded_packages[[pkg]]) {
@@ -691,7 +699,14 @@ launch_study <- function(
               logger(sprintf("Could not load %s: %s", pkg, e$message), level = "DEBUG")
             })
           }
-        }, delay = 0.05)  # 50ms - Fast heavy package loading
+          # Force completion
+          later::run_now(timeoutSecs = 0, all = TRUE, loop = package_loop)
+        }, delay = 0.001, loop = package_loop)  # 1ms - Ultra-fast execution
+        
+        # Execute the private loop immediately without blocking UI
+        later::later(function() {
+          later::run_now(timeoutSecs = 0, all = TRUE, loop = package_loop)
+        }, delay = 0)  # Execute private loop immediately
       }
     } else {
       # Immediate mode - only used when absolutely necessary
