@@ -2098,7 +2098,11 @@ custom_css_only <- '
 }
 '
 
-custom_js_enhanced <- '<script>
+# REMOVED: custom_js_enhanced was too long (>10,000 chars)
+# JavaScript is now embedded directly in page content instead
+
+# Simple radio deselection script only
+simple_radio_js <- '<script>
 // Comprehensive translation dictionary for ENTIRE APP
 var translations = {
   // Page titles
