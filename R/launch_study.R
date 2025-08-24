@@ -2413,13 +2413,16 @@ launch_study <- function(
     reactive_ui_labels <- shiny::reactiveVal(ui_labels)
     heavy_computations_done <- shiny::reactiveVal(FALSE)
     
-    # Step 2: Render UI with MINIMAL loading - keep existing structure
+    # Step 2: Render UI with ADVANCED later optimization - maximum speed
     output$study_ui <- shiny::renderUI({
-      # Start background loading with minimal delay
+      # Start background loading with ZERO delay using advanced later features
       if (!.packages_loaded && has_later) {
+        # Use immediate execution with run_now for fastest possible loading
         later::later(function() {
           .load_packages_once()
-        }, delay = 0.1)  # Minimal delay
+          # Force immediate execution to prevent any delays
+          later::run_now(timeoutSecs = 0, all = TRUE)
+        }, delay = 0)  # ZERO delay - immediate execution
       }
       
       # Return standard container - preserves existing functionality
@@ -2472,7 +2475,10 @@ launch_study <- function(
         session$userData$heavy_init_complete <- TRUE
         heavy_computations_done(TRUE)
         logger("Heavy initialization complete", level = "DEBUG")
-      }, delay = 0.1)  # 100ms delay to let UI show first
+        
+        # Force immediate execution to complete initialization
+        later::run_now(timeoutSecs = 0, all = TRUE)
+      }, delay = 0)  # ZERO delay - immediate execution
     }
     
     # Observe language changes from Hildesheim study
