@@ -2047,16 +2047,16 @@ inrep::launch_study(
     save_format = "csv",
     custom_css = custom_css_only,  # Clean CSS only - no JavaScript needed
     admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
-    # RESTORE SPEED OPTIMIZATIONS - IMMEDIATE DISPLAY
+    # BASIC OPTIMIZATIONS ONLY
     max_session_time = 7200,
     session_save = TRUE,
-    data_preservation_interval = 1,  # Fast data preservation
-    keep_alive_interval = 5,  # Fast keep-alive
-    enable_error_recovery = TRUE,
-    # CRITICAL: Immediate UI display parameters
-    ui_render_delay = 0,  # Show UI immediately
-    package_loading_delay = 0.001,  # Near-instant package loading
-    session_init_delay = 0.01,  # Minimal session delay
-    show_loading_screen = FALSE,  # No loading screen
-    immediate_ui = TRUE  # Display first page immediately - RESTORED
+    # data_preservation_interval = 1,  # Fast data preservation - DISABLED
+    # keep_alive_interval = 5,  # Fast keep-alive - DISABLED
+    # enable_error_recovery = TRUE,  # DISABLED
+    # LATER PACKAGE DISABLED - BYPASS ERROR FOR NOW
+    # ui_render_delay = 0,  # Show UI immediately
+    # package_loading_delay = 0.001,  # Near-instant package loading
+    # session_init_delay = 0.01,  # Minimal session delay
+    # show_loading_screen = FALSE,  # No loading screen
+    immediate_ui = FALSE  # DISABLED: Bypass LATER package error
 )
