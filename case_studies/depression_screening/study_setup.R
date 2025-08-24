@@ -254,7 +254,7 @@ create_depression_instructions_override <- function() {
       '</div>',
       
       '<div class="privacy-section" style="margin-top: 30px; padding: 20px; background: #e8f5e8; border: 2px solid #4caf50; border-radius: 8px;">',
-      '<h3 style="color: #2e7d32; margin-top: 0; font-size: 18px; text-align: center;">🔒 Privacy and Confidentiality</h3>',
+      '<h3 style="color: #2e7d32; margin-top: 0; font-size: 18px; text-align: center;">Privacy and Confidentiality</h3>',
       '<p style="font-size: 16px; line-height: 1.6; text-align: center; margin: 10px 0;">All responses are completely confidential and encrypted. Data is used solely for research purposes and clinical assessment. Your privacy is our highest priority.</p>',
       '</div>',
       
@@ -410,7 +410,7 @@ create_depression_report <- function(session_data, item_bank, config) {
     
     # Executive Summary
     '<div class="section primary">',
-    '<h2 style="margin-top: 0; color: #1976d2;">📊 Executive Summary</h2>',
+    '<h2 style="margin-top: 0; color: #1976d2;">Executive Summary</h2>',
     '<div style="text-align: center; margin: 20px 0;">',
     '<div class="severity-indicator" style="background-color: ', severity_color, ';">',
     'Depression Severity: ', severity_level,
@@ -438,7 +438,7 @@ create_depression_report <- function(session_data, item_bank, config) {
     
     # Demographic Information
     '<div class="section">',
-    '<h2 style="color: #424242;">👤 Participant Information</h2>',
+    '<h2 style="color: #424242;">Participant Information</h2>',
     '<table>',
     '<tr><th>Category</th><th>Response</th></tr>',
     '<tr><td>Age Group</td><td>', age_group, '</td></tr>',
@@ -451,7 +451,7 @@ create_depression_report <- function(session_data, item_bank, config) {
     
     # Visualization
     '<div class="section">',
-    '<h2 style="color: #424242;">📈 Depression Symptom Profile</h2>',
+    '<h2 style="color: #424242;">Depression Symptom Profile</h2>',
     plot_html,
     '<p style="font-style: italic; color: #666; text-align: center; margin-top: 10px;">',
     'This chart shows your symptom levels across different domains of depression. ',
@@ -461,7 +461,7 @@ create_depression_report <- function(session_data, item_bank, config) {
     
     # Clinical Interpretation
     '<div class="section">',
-    '<h2 style="color: #424242;">🔬 Clinical Interpretation</h2>',
+    '<h2 style="color: #424242;">Clinical Interpretation</h2>',
     '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 15px 0;">',
     '<h3 style="margin-top: 0; color: #2c3e50;">Severity Assessment</h3>',
     '<p>Based on your responses, your depression screening indicates <strong>', severity_level, '</strong> symptom severity. ',
@@ -482,7 +482,7 @@ create_depression_report <- function(session_data, item_bank, config) {
     
     # Personalized Recommendations  
     '<div class="recommendations">',
-    '<h2 style="margin-top: 0; color: #0066cc;">💡 Personalized Recommendations</h2>',
+    '<h2 style="margin-top: 0; color: #0066cc;">Personalized Recommendations</h2>',
     ifelse(severity_level %in% c("Minimal", "Mild"),
            paste0('<h3>Self-Care and Prevention</h3>',
                   '<ul>',
@@ -510,7 +510,7 @@ create_depression_report <- function(session_data, item_bank, config) {
     
     # Assessment Details
     '<div class="section">',
-    '<h2 style="color: #424242;">📋 Assessment Details</h2>',
+    '<h2 style="color: #424242;">Assessment Details</h2>',
     '<table>',
     '<tr><th>Assessment Information</th><th>Details</th></tr>',
     '<tr><td>Session ID</td><td>', session_id, '</td></tr>',
@@ -524,7 +524,7 @@ create_depression_report <- function(session_data, item_bank, config) {
     
     # Important Notice
     '<div class="section danger">',
-    '<h2 style="margin-top: 0; color: #d32f2f;">⚠️ Important Notice</h2>',
+    '<h2 style="margin-top: 0; color: #d32f2f;">Important Notice</h2>',
     '<p><strong>This is a screening tool, not a diagnostic instrument.</strong> Results should be interpreted by qualified mental health professionals. This assessment provides valuable information about depressive symptoms but cannot replace professional clinical evaluation.</p>',
     '<p><strong>If you are experiencing thoughts of self-harm or suicide, please seek immediate help:</strong></p>',
     '<ul>',
@@ -898,7 +898,7 @@ launch_depression_study <- function(
         
         # Check for crisis indicators
         if (session_data$theta > 0.8) {
-          cat("⚠️  HIGH RISK: Participant showing elevated symptoms\n")
+          cat("HIGH RISK: Participant showing elevated symptoms\n")
         }
         cat("---\n")
       }
