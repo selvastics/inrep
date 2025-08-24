@@ -2542,10 +2542,10 @@ launch_study <- function(
   effective_study_key <- NULL
   session_file <- NULL
   
-  # Initialize rv values asynchronously
+  # Initialize rv values IMMEDIATELY - not asynchronously  
   shiny::observe({
-    shiny::isolate({
-      if (is.null(rv$initialized)) {
+    # Remove isolate to ensure immediate execution
+    if (is.null(rv$initialized)) {
         # Use study_key argument if provided, else config$study_key, else generate one
         effective_study_key <<- study_key %||% config$study_key %||% generate_study_key()
         data_dir <- base::file.path("study_data", effective_study_key)
@@ -2605,7 +2605,6 @@ launch_study <- function(
         
         rv$initialized <- TRUE  # Mark as initialized
       }
-    })
   })
     
     # Defer session monitoring until after first page loads
@@ -2828,8 +2827,25 @@ launch_study <- function(
         current_page <- rv$current_page
         stage <- rv$stage
         
+        # ENSURE rv is initialized before checking session_active
+        if (is.null(rv$initialized)) {
+          return(shiny::div(
+            class = "assessment-card",
+            style = "text-align: center; padding: 40px;",
+            shiny::h3("Initializing...", class = "card-header"),
+            shiny::div(
+              style = "margin: 20px 0;",
+              shiny::div(
+                style = "width: 40px; height: 40px; border: 4px solid #f3f3f3; 
+                        border-top: 4px solid #e8041c; border-radius: 50%; 
+                        animation: spin 1s linear infinite; margin: 0 auto;"
+              )
+            )
+          ))
+        }
 
-        if (!rv$session_active) {
+        # Check session_active only after initialization
+        if (!isTRUE(rv$session_active)) {
           return(
             shiny::div(class = "assessment-card",
                        shiny::h3(ui_labels$timeout_message, class = "card-header"),
