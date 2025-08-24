@@ -1407,7 +1407,7 @@ launch_study <- function(
         style = "text-align: center; max-width: 600px; padding: 40px;",
         shiny::tags$h1(
           style = "color: #e8041c; margin-bottom: 30px; font-size: 2.5em;",
-          "Assessment Loading..."
+          "Loading..."
         ),
         shiny::tags$div(
           style = "margin: 30px 0;",
@@ -1419,7 +1419,7 @@ launch_study <- function(
         ),
         shiny::tags$p(
           style = "color: #666; font-size: 1.2em; margin-top: 20px;",
-          "Loading..."
+          "Please wait..."
         )
       )
     ),
@@ -1605,63 +1605,77 @@ launch_study <- function(
              }, 1);
            });
            
-                     // NUCLEAR LOADING SCREEN REMOVAL - Multiple foolproof strategies
+                     // ULTIMATE LOADING SCREEN DESTRUCTION - GUARANTEED REMOVAL
           
-          function hideLoadingScreen(reason) {
+          function obliterateLoadingScreen(reason) {
             var staticPage = document.getElementById('nuclear-static-page');
             if (staticPage) {
+              // Multiple destruction methods
               staticPage.style.display = 'none !important';
               staticPage.style.visibility = 'hidden !important';
               staticPage.style.opacity = '0 !important';
-              staticPage.remove(); // Completely remove from DOM
-              console.log('Loading screen REMOVED: ' + reason);
+              staticPage.style.zIndex = '-9999 !important';
+              staticPage.style.position = 'absolute !important';
+              staticPage.style.left = '-9999px !important';
+              staticPage.style.top = '-9999px !important';
+              staticPage.parentNode && staticPage.parentNode.removeChild(staticPage);
+              console.log('🚀 LOADING SCREEN OBLITERATED: ' + reason);
               return true;
             }
             return false;
           }
           
-          // Strategy 1: Hide IMMEDIATELY on Shiny connected
-          $(document).on('shiny:connected', function() {
-            hideLoadingScreen('shiny:connected');
-          });
+          // Strategy 1: IMMEDIATE execution - no waiting
+          console.log('🔍 Starting loading screen destruction sequence...');
+          console.log('🔍 Loading screen element exists:', document.getElementById('nuclear-static-page') ? 'YES' : 'NO');
+          obliterateLoadingScreen('immediate-execution');
           
-          // Strategy 2: Hide when ANY Shiny output renders
-          $(document).on('shiny:value', function(event) {
-            hideLoadingScreen('shiny:value - ' + (event.target ? event.target.id : 'unknown'));
-          });
-          
-          // Strategy 3: Hide when DOM is ready
+          // Strategy 2: DOM ready - backup
           $(document).ready(function() {
-            setTimeout(function() {
-              hideLoadingScreen('document.ready + 100ms');
-            }, 100);
+            obliterateLoadingScreen('document-ready');
           });
           
-          // Strategy 4: Ultra-aggressive polling - check every 5ms
-          var hideStaticPage = setInterval(function() {
-            var studyUI = document.getElementById('study_ui');
-            var pageContent = document.querySelector('#page_content, #main-study-container, .assessment-card');
-            var staticPage = document.getElementById('nuclear-static-page');
-            
-            if ((studyUI || pageContent) && staticPage) {
-              hideLoadingScreen('ultra-fast polling');
-              clearInterval(hideStaticPage);
+          // Strategy 2.5: Window loaded - backup
+          $(window).on('load', function() {
+            obliterateLoadingScreen('window-loaded');
+          });
+          
+          // Strategy 3: Shiny connected - backup
+          $(document).on('shiny:connected', function() {
+            obliterateLoadingScreen('shiny-connected');
+          });
+          
+          // Strategy 4: ANY Shiny output - backup
+          $(document).on('shiny:value', function(event) {
+            obliterateLoadingScreen('shiny-value-' + (event.target ? event.target.id : 'unknown'));
+          });
+          
+          // Strategy 5: HYPER-aggressive polling - every 1ms
+          var destroyInterval = setInterval(function() {
+            if (obliterateLoadingScreen('hyper-polling')) {
+              clearInterval(destroyInterval);
             }
-          }, 5);  // Check every 5ms - ultra aggressive
+          }, 1);  // Check every 1ms - hyper aggressive
           
-          // Strategy 5: IMMEDIATE timeout - 200ms maximum
-          setTimeout(function() {
-            hideLoadingScreen('200ms timeout failsafe');
-          }, 200);
+          // Strategy 6: Multiple rapid timeouts
+          setTimeout(function() { obliterateLoadingScreen('50ms-timeout'); }, 50);
+          setTimeout(function() { obliterateLoadingScreen('100ms-timeout'); }, 100);
+          setTimeout(function() { obliterateLoadingScreen('200ms-timeout'); }, 200);
+          setTimeout(function() { obliterateLoadingScreen('300ms-timeout'); }, 300);
           
-          // Strategy 6: NUCLEAR option - 500ms absolute maximum
+          // Strategy 7: NUCLEAR ANNIHILATION - absolute failsafe
           setTimeout(function() {
             var staticPage = document.getElementById('nuclear-static-page');
             if (staticPage) {
-              staticPage.outerHTML = ''; // Nuclear removal
-              console.log('Loading screen NUKED after 500ms');
+              staticPage.outerHTML = '';
+              console.log('💥 NUCLEAR ANNIHILATION - 400ms');
             }
-          }, 500);
+            // Also remove any remaining elements with similar classes
+            var loadingElements = document.querySelectorAll('[id*="static"], [class*="loading"], [id*="nuclear"]');
+            loadingElements.forEach(function(el) {
+              el.remove();
+            });
+          }, 400);
         })();
       "))
     ),
