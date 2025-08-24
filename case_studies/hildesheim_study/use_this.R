@@ -956,70 +956,30 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     '</tr>'
   )
   
-  # Calculate standard deviations for each dimension
-  sds <- list()
-  
-  # Programming Anxiety - 10 items (items 1-10)
-  # Apply reverse scoring for items 1, 10, and 15 (but we only have 10 items, so items 1 and 10)
-  pa_items_scored <- responses[1:10]
-  pa_items_scored[1] <- 6 - pa_items_scored[1]  # Reverse item 1
-  pa_items_scored[10] <- 6 - pa_items_scored[10]  # Reverse item 10
-  sd_val <- sd(pa_items_scored, na.rm = TRUE)
-  sds[["ProgrammingAnxiety"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
-  
-  # Big Five dimensions - each has 4 items (with reverse scoring applied)
-  # Items are now 21-40 (after PA items)
-  bfi_dims <- list(
-    Extraversion = c(responses[21], 6-responses[22], 6-responses[23], responses[24]),
-    Verträglichkeit = c(responses[25], 6-responses[26], responses[27], 6-responses[28]),
-    Gewissenhaftigkeit = c(6-responses[29], responses[30], responses[31], 6-responses[32]),
-    Neurotizismus = c(6-responses[33], responses[34], responses[35], 6-responses[36]),
-    Offenheit = c(responses[37], 6-responses[38], responses[39], 6-responses[40])
-  )
-  
-  for (dim_name in names(bfi_dims)) {
-    sd_val <- sd(bfi_dims[[dim_name]], na.rm = TRUE)
-    sds[[dim_name]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
-  }
-  
-  # PSQ Stress - 5 items (with reverse scoring for item 4)
-  # Items are now 41-45 (after PA and BFI)
-  psq_items <- c(responses[41:43], 6-responses[44], responses[45])
-  sd_val <- sd(psq_items, na.rm = TRUE)
-  sds[["Stress"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
-  
-  # MWS Studierfähigkeiten - 4 items (items 46-49)
-  mws_items <- responses[46:49]
-  sd_val <- sd(mws_items, na.rm = TRUE)
-  sds[["Studierfähigkeiten"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
-  
-  # Statistik - 2 items (items 50-51)
-  stat_items <- responses[50:51]
-  sd_val <- sd(stat_items, na.rm = TRUE)
-  sds[["Statistik"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
-  
+  # Add table rows for each dimension - SIMPLIFIED
   for (name in names(scores)) {
     value <- round(scores[[name]], 2)
-    sd_value <- ifelse(name %in% names(sds), sds[[name]], NA)
-        level <- ifelse(value >= 3.7, 
-                    '<span data-lang-de="Hoch" data-lang-en="High">Hoch</span>', 
-                    ifelse(value >= 2.3, 
-                           '<span data-lang-de="Mittel" data-lang-en="Medium">Mittel</span>', 
-                           '<span data-lang-de="Niedrig" data-lang-en="Low">Niedrig</span>'))
+    level <- if (value >= 3.7) {
+      if (current_lang == "en") "High" else "Hoch"
+    } else if (value >= 2.3) {
+      if (current_lang == "en") "Medium" else "Mittel" 
+    } else {
+      if (current_lang == "en") "Low" else "Niedrig"
+    }
     color <- ifelse(value >= 3.7, "#28a745", ifelse(value >= 2.3, "#ffc107", "#dc3545"))
     
-        # Translate dimension names
+    # Translate dimension names
     name_display <- switch(name,
-                           "ProgrammingAnxiety" = '<span data-lang-de="Programmierangst" data-lang-en="Programming Anxiety">Programmierangst</span>',
-                           "Extraversion" = '<span data-lang-de="Extraversion" data-lang-en="Extraversion">Extraversion</span>',
-                           "Verträglichkeit" = '<span data-lang-de="Verträglichkeit" data-lang-en="Agreeableness">Verträglichkeit</span>',
-                           "Gewissenhaftigkeit" = '<span data-lang-de="Gewissenhaftigkeit" data-lang-en="Conscientiousness">Gewissenhaftigkeit</span>',
-                           "Neurotizismus" = '<span data-lang-de="Neurotizismus" data-lang-en="Neuroticism">Neurotizismus</span>',
-                           "Offenheit" = '<span data-lang-de="Offenheit" data-lang-en="Openness">Offenheit</span>',
-                           "Stress" = '<span data-lang-de="Stress" data-lang-en="Stress">Stress</span>',
-                           "Studierfähigkeiten" = '<span data-lang-de="Studierfähigkeiten" data-lang-en="Study Skills">Studierfähigkeiten</span>',
-                           "Statistik" = '<span data-lang-de="Statistik" data-lang-en="Statistics">Statistik</span>',
-                           name  # Default fallback
+      "ProgrammingAnxiety" = if (current_lang == "en") "Programming Anxiety" else "Programmierangst",
+      "Extraversion" = "Extraversion",
+      "Verträglichkeit" = if (current_lang == "en") "Agreeableness" else "Verträglichkeit",
+      "Gewissenhaftigkeit" = if (current_lang == "en") "Conscientiousness" else "Gewissenhaftigkeit",
+      "Neurotizismus" = if (current_lang == "en") "Neuroticism" else "Neurotizismus",
+      "Offenheit" = if (current_lang == "en") "Openness" else "Offenheit",
+      "Stress" = "Stress",
+      "Studierfähigkeiten" = if (current_lang == "en") "Study Skills" else "Studierfähigkeiten",
+      "Statistik" = if (current_lang == "en") "Statistics" else "Statistik",
+      name
     )
     
     html <- paste0(html,
@@ -1027,8 +987,6 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
       '<td style="padding: 12px; border-bottom: 1px solid #e0e0e0;">', name_display, '</td>',
       '<td style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
       '<strong style="color: ', color, ';">', value, '</strong></td>',
-      '<td style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
-      ifelse(is.na(sd_value), "-", as.character(sd_value)), '</td>',
       '<td style="padding: 12px; border-bottom: 1px solid #e0e0e0; color: #666;">',
       level, '</td>',
       '</tr>'
@@ -1037,25 +995,52 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   
   html <- paste0(html,
     '</table>',
-    '</div>'  # Close table section
-  )
-  
-  # Add beautiful styles for the report
-  html <- paste0(html,
+    '</div>',  # Close table section
+    
+    # Simple download section
+    '<div class="report-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">',
+    '<h3 style="color: #e8041c; margin-bottom: 15px;">',
+    if (current_lang == "en") "Export Results" else "Ergebnisse exportieren",
+    '</h3>',
+    '<div style="display: flex; gap: 10px;">',
+    '<button onclick="window.print()" style="background: #e8041c; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">',
+    if (current_lang == "en") "Print Report" else "Bericht drucken",
+    '</button>',
+    '<button onclick="downloadCSV()" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">',
+    if (current_lang == "en") "Download CSV" else "CSV herunterladen",
+    '</button>',
+    '</div>',
+    '</div>',
+    
+    '</div>',  # Close main report div
+    
+    # Simple CSS and JavaScript
     '<style>',
-    'body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }',
-    '#report-content { background: #f8f9fa; }',
+    'body { font-family: Arial, sans-serif; }',
     'table { border-collapse: collapse; width: 100%; }',
     'table tr:hover { background: #f5f5f5; }',
-    'h1, h2 { font-family: "Segoe UI", sans-serif; }',
-    '.report-section { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 25px; }',
-    '@media print {',
-    '  body { font-size: 11pt; }',
-    '  h1, h2 { color: #e8041c !important; -webkit-print-color-adjust: exact; }',
-    '}',
+    '@media print { .report-section:last-child { display: none !important; } }',
     '</style>',
     
-    '</div>'
+    '<script>',
+    'function downloadCSV() {',
+    '  var csv = "Dimension,Score\\n";',
+    paste0('  csv += "ProgrammingAnxiety,', sprintf("%.2f", scores$ProgrammingAnxiety), '\\n";'),
+    paste0('  csv += "Extraversion,', sprintf("%.2f", scores$Extraversion), '\\n";'),
+    paste0('  csv += "Vertraeglichkeit,', sprintf("%.2f", scores$Verträglichkeit), '\\n";'),
+    paste0('  csv += "Gewissenhaftigkeit,', sprintf("%.2f", scores$Gewissenhaftigkeit), '\\n";'),
+    paste0('  csv += "Neurotizismus,', sprintf("%.2f", scores$Neurotizismus), '\\n";'),
+    paste0('  csv += "Offenheit,', sprintf("%.2f", scores$Offenheit), '\\n";'),
+    paste0('  csv += "Stress,', sprintf("%.2f", scores$Stress), '\\n";'),
+    paste0('  csv += "Studierfaehigkeiten,', sprintf("%.2f", scores$Studierfähigkeiten), '\\n";'),
+    paste0('  csv += "Statistik,', sprintf("%.2f", scores$Statistik), '\\n";'),
+    '  var blob = new Blob([csv], {type: "text/csv"});',
+    '  var link = document.createElement("a");',
+    '  link.href = URL.createObjectURL(blob);',
+    '  link.download = "hilfo_results.csv";',
+    '  link.click();',
+    '}',
+    '</script>'
   )
   
   # Save data to CSV file and upload to cloud
@@ -1757,281 +1742,25 @@ monitor_adaptive <- function(session_data) {
   }
 }
 
-# Complete JavaScript solution for FULL APP translation and radio deselection
+# SIMPLIFIED AND WORKING JavaScript solution
 custom_js_enhanced <- '
-<style>
-/* Fixed language button on all pages */
-#language-toggle-btn {
-  position: fixed !important;
-  top: 10px !important;
-  right: 10px !important;
-  z-index: 9999 !important;
-  background: white !important;
-  border: 2px solid #e8041c !important;
-  color: #e8041c !important;
-  padding: 8px 16px !important;
-  border-radius: 4px !important;
-  cursor: pointer !important;
-  font-size: 14px !important;
-  font-weight: bold !important;
-}
-#language-toggle-btn:hover {
-  background: #e8041c !important;
-  color: white !important;
-}
-</style>
 <script>
-// Comprehensive translation dictionary for ENTIRE APP
-var translations = {
-  // Page titles
-  "Wohnsituation": "Living Situation",
-  "Soziodemographische Angaben": "Sociodemographic Information",
-  "Lebensstil": "Lifestyle",
-  "Bildung": "Education",
-  "Persönlichkeit": "Personality",
-  "Studienzufriedenheit": "Study Satisfaction",
-  "Ihre Ergebnisse": "Your Results",
-  
-  // Questions
-  "Wie wohnen Sie?": "How do you live?",
-  "Wie alt sind Sie?": "How old are you?",
-  "In welchem Studiengang befinden Sie sich?": "Which study program are you in?",
-  "Welches Geschlecht haben Sie?": "What is your gender?",
-  "Haben Sie ein Haustier oder möchten Sie eines?": "Do you have a pet or would you like one?",
-  "Rauchen Sie?": "Do you smoke?",
-  "Wie ernähren Sie sich hauptsächlich?": "What is your main diet?",
-  
-  // Options
-  "Bei meinen Eltern/Elternteil": "With my parents/parent",
-  "In einer WG/WG in einem Wohnheim": "In a shared apartment/dorm",
-  "Alleine/in abgeschlossener Wohneinheit in einem Wohnheim": "Alone/in a self-contained unit in a dorm",
-  "Mit meinem/r Partner*In (mit oder ohne Kinder)": "With my partner (with or without children)",
-  "Anders": "Other",
-  "Bachelor Psychologie": "Bachelor Psychology",
-  "Master Psychologie": "Master Psychology",
-  "weiblich oder divers": "female or diverse",
-  "männlich": "male",
-  "Ja": "Yes",
-  "Nein": "No",
-  "Hund": "Dog",
-  "Katze": "Cat",
-  "Fische": "Fish",
-  "Vogel": "Bird",
-  "Nager": "Rodent",
-  "Reptil": "Reptile",
-  "Ich möchte kein Haustier": "I don\'t want a pet",
-  "Sonstiges": "Other",
-  "Vegan": "Vegan",
-  "Vegetarisch": "Vegetarian",
-  "Pescetarisch": "Pescetarian",
-  "Flexitarisch": "Flexitarian",
-  "Omnivor (alles)": "Omnivore (everything)",
-  "Andere": "Other",
-  "älter als 30": "older than 30",
-  
-  // Instructions
-  "Falls anders, bitte spezifizieren:": "If other, please specify:",
-  "Anderes Haustier:": "Other pet:",
-  "Andere Ernährungsform:": "Other diet:",
-  "Bitte wählen...": "Please select...",
-  "Bitte wählen Sie": "Please select",
-  
-  // Navigation
-  "Seite": "Page",
-  "von": "of",
-  "Weiter": "Next",
-  "Zurück": "Back",
-  
-  // Validation messages
-  "Bitte beantworten Sie:": "Please answer:",
-  "Dieses Feld ist erforderlich": "This field is required",
-  "Bitte vervollständigen Sie die folgenden Angaben:": "Please complete the following:",
-  
-  // Likert scales
-  "trifft nicht zu": "strongly disagree",
-  "trifft eher nicht zu": "disagree",
-  "teils/teils": "neutral",
-  "trifft eher zu": "agree",
-  "trifft zu": "strongly agree",
-  "sehr gut": "very good",
-  "gut": "good",
-  "befriedigend": "satisfactory",
-  "ausreichend": "sufficient",
-  "mangelhaft": "poor",
-  
-  // Grade options
-  "sehr gut (15-13 Punkte)": "very good (15-13 points)",
-  "gut (12-10 Punkte)": "good (12-10 points)",
-  "befriedigend (9-7 Punkte)": "satisfactory (9-7 points)",
-  "ausreichend (6-4 Punkte)": "sufficient (6-4 points)",
-  "mangelhaft (3-0 Punkte)": "poor (3-0 points)",
-  
-  // Study hours
-  "0 Stunden": "0 hours",
-  "maximal eine Stunde": "maximum one hour",
-  "mehr als eine, aber weniger als 2 Stunden": "more than one, but less than 2 hours",
-  "mehr als zwei, aber weniger als 3 Stunden": "more than two, but less than 3 hours",
-  "mehr als drei, aber weniger als 4 Stunden": "more than three, but less than 4 hours",
-  "mehr als 4 Stunden": "more than 4 hours",
-  
-  // Satisfaction scale
-  "gar nicht zufrieden": "not at all satisfied",
-  "sehr zufrieden": "very satisfied",
-  
-  // Additional questions
-  "Welche Note hatten Sie in Englisch im Abiturzeugnis?": "What grade did you have in English in your Abitur certificate?",
-  "Welche Note hatten Sie in Mathematik im Abiturzeugnis?": "What grade did you have in Mathematics in your Abitur certificate?",
-  "Wieviele Stunden pro Woche planen Sie für die Vor- und Nachbereitung der Statistikveranstaltungen zu investieren?": "How many hours per week do you plan to invest in preparing and reviewing statistics courses?",
-  "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (5-stufig)": "How satisfied are you with your study location Hildesheim? (5-point scale)",
-  "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (7-stufig)": "How satisfied are you with your study location Hildesheim? (7-point scale)",
-  "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags):": "Please create a personal code (first 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday):",
-  
-  // Programming Anxiety titles
-  "Programmierangst - Teil 1": "Programming Anxiety - Part 1",
-  "Programmierangst - Teil 2": "Programming Anxiety - Part 2",
-  "Programmierangst": "Programming Anxiety",
-  
-  // Instructions
-  "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.": "Please indicate to what extent the following statements apply to you.",
-  "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.": "The following questions are selected based on your previous answers.",
-  "Wie sehr treffen die folgenden Aussagen auf Sie zu?": "How much do the following statements apply to you?",
-  "Wie leicht oder schwer fällt es Ihnen...": "How easy or difficult is it for you..."
-};
-
+// Simple language toggle function
 var currentLang = "de";
 
-// Function to translate entire page - AGGRESSIVE VERSION
-function translatePage() {
-  if (currentLang === "en") {
-    // First, translate all headings and titles
-    document.querySelectorAll("h1, h2, h3, h4, h5, h6, .shiny-title, .panel-title").forEach(function(el) {
-      for (var de in translations) {
-        if (el.innerHTML.indexOf(de) !== -1) {
-          el.innerHTML = el.innerHTML.replace(new RegExp(de, "g"), translations[de]);
-        }
-      }
-    });
-    
-    // Translate all labels including nested text
-    document.querySelectorAll("label, .control-label, .shiny-label").forEach(function(label) {
-      for (var de in translations) {
-        if (label.innerHTML.indexOf(de) !== -1) {
-          label.innerHTML = label.innerHTML.replace(new RegExp(de, "g"), translations[de]);
-        }
-      }
-    });
-    
-    // Translate select options more aggressively
-    document.querySelectorAll("select").forEach(function(select) {
-      // Update the placeholder option
-      if (select.options[0] && select.options[0].text === "Bitte wählen...") {
-        select.options[0].text = "Please select...";
-      }
-      
-      // Translate all options
-      for (var i = 0; i < select.options.length; i++) {
-        var option = select.options[i];
-        for (var de in translations) {
-          if (option.text === de) {
-            option.text = translations[de];
-            break;
-          }
-        }
-      }
-    });
-    
-    // Translate radio button labels
-    document.querySelectorAll(".radio label, .checkbox label").forEach(function(label) {
-      var spans = label.querySelectorAll("span");
-      spans.forEach(function(span) {
-        for (var de in translations) {
-          if (span.textContent.trim() === de) {
-            span.textContent = translations[de];
-            break;
-          }
-        }
-      });
-      
-      // Also check direct text nodes
-      for (var i = 0; i < label.childNodes.length; i++) {
-        var node = label.childNodes[i];
-        if (node.nodeType === 3) { // Text node
-          var text = node.nodeValue.trim();
-          if (translations[text]) {
-            node.nodeValue = " " + translations[text] + " ";
-          }
-        }
-      }
-    });
-    
-    // Translate buttons
-    document.querySelectorAll("button, .btn").forEach(function(button) {
-      for (var de in translations) {
-        if (button.textContent.trim() === de) {
-          button.textContent = translations[de];
-          break;
-        }
-      }
-    });
-    
-    // Translate any divs or spans with text
-    document.querySelectorAll("div, span, p").forEach(function(el) {
-      if (el.children.length === 0) { // Only leaf nodes
-        var text = el.textContent.trim();
-        if (translations[text]) {
-          el.textContent = translations[text];
-        }
-      }
-    });
-    
-    // Translate placeholders
-    document.querySelectorAll("[placeholder]").forEach(function(elem) {
-      if (translations[elem.placeholder]) {
-        elem.placeholder = translations[elem.placeholder];
-      }
-    });
-    
-    // Special handling for page navigation
-    document.querySelectorAll(".progress-text, .page-number").forEach(function(el) {
-      el.innerHTML = el.innerHTML.replace(/Seite/g, "Page").replace(/von/g, "of");
-    });
-    
-    // Force update any remaining German text
-    var allElements = document.querySelectorAll("*");
-    allElements.forEach(function(el) {
-      if (el.children.length === 0 && el.textContent) {
-        var text = el.textContent.trim();
-        if (text && translations[text]) {
-          el.textContent = translations[text];
-        }
-      }
-    });
-  }
-}
-
-// Global language toggle function with debouncing
-var toggleInProgress = false;
-window.toggleLanguage = function() {
-  // Prevent multiple rapid clicks
-  if (toggleInProgress) return;
-  toggleInProgress = true;
-  setTimeout(function() { toggleInProgress = false; }, 500); // 500ms debounce
-  
+function toggleLanguage() {
   currentLang = currentLang === "de" ? "en" : "de";
   
   // Update button text
-  var btn = document.getElementById("language-toggle-btn");
+  var btn = document.getElementById("lang_switch");
   if (btn) {
-    btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    var textSpan = btn.querySelector("#lang_switch_text");
+    if (textSpan) {
+      textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    }
   }
   
-  // Also update the welcome page button if it exists
-  var welcomeBtn = document.getElementById("lang_switch");
-  if (welcomeBtn) {
-    welcomeBtn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
-  }
-  
-  // Toggle welcome page content if on page 1
+  // Toggle welcome page content
   var deContent = document.getElementById("content_de");
   var enContent = document.getElementById("content_en");
   if (deContent && enContent) {
@@ -2044,81 +1773,40 @@ window.toggleLanguage = function() {
     }
   }
   
-  // Send to Shiny
+  // Sync consent checkboxes
+  var deCheck = document.getElementById("consent_check");
+  var enCheck = document.getElementById("consent_check_en");
+  if (deCheck && enCheck) {
+    if (currentLang === "en") {
+      enCheck.checked = deCheck.checked;
+    } else {
+      deCheck.checked = enCheck.checked;
+    }
+  }
+  
+  // Send to Shiny if available
   if (typeof Shiny !== "undefined") {
     Shiny.setInputValue("study_language", currentLang, {priority: "event"});
   }
-  
-  // Store preference
-  sessionStorage.setItem("hilfo_language", currentLang);
-  
-  // Apply translations to current page without reload
-  translatePage();
-};
+}
 
-// Apply translations on page load
+// Radio button deselection functionality
 document.addEventListener("DOMContentLoaded", function() {
-  // Check stored language preference
-  var storedLang = sessionStorage.getItem("hilfo_language");
-  if (storedLang) {
-    currentLang = storedLang;
+  // Sync consent checkboxes when they change
+  var deCheck = document.getElementById("consent_check");
+  var enCheck = document.getElementById("consent_check_en");
+  
+  if (deCheck) {
+    deCheck.addEventListener("change", function() {
+      if (enCheck) enCheck.checked = deCheck.checked;
+    });
   }
   
-  // Create language toggle button if it doesn\'t exist
-  if (!document.getElementById("language-toggle-btn")) {
-    var btn = document.createElement("button");
-    btn.id = "language-toggle-btn";
-    btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
-    btn.onclick = toggleLanguage;
-    document.body.appendChild(btn);
+  if (enCheck) {
+    enCheck.addEventListener("change", function() {
+      if (deCheck) deCheck.checked = enCheck.checked;
+    });
   }
-  
-  // Apply initial translation if English
-  if (currentLang === "en") {
-    // Toggle welcome page if present
-    var deContent = document.getElementById("content_de");
-    var enContent = document.getElementById("content_en");
-    if (deContent && enContent) {
-      deContent.style.display = "none";
-      enContent.style.display = "block";
-    }
-    
-    // Update welcome button if present
-    var welcomeBtn = document.getElementById("lang_switch");
-    if (welcomeBtn) {
-      welcomeBtn.textContent = "Deutsche Version";
-    }
-    
-    // Apply translations
-    translatePage();
-  }
-  
-  // Check stored language
-  var stored = sessionStorage.getItem("hilfo_language");
-  if (stored) {
-    currentLang = stored;
-    var btn = document.getElementById("language-toggle-btn");
-    if (btn) {
-      btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
-    }
-  }
-  
-  // Apply translations if English
-  if (currentLang === "en") {
-    setTimeout(translatePage, 100);
-  }
-  
-  // Watch for page changes
-  var observer = new MutationObserver(function(mutations) {
-    if (currentLang === "en") {
-      setTimeout(translatePage, 50);
-    }
-  });
-  
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
   
   // Radio button deselection
   document.addEventListener("click", function(e) {
@@ -2141,18 +1829,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   });
 });
-
-// Handle Shiny messages
-if (typeof Shiny !== "undefined") {
-  Shiny.addCustomMessageHandler("update_language", function(lang) {
-    currentLang = lang;
-    if (lang === "en") {
-      translatePage();
-    } else {
-      location.reload(); // Reload for German
-    }
-  });
-}
 </script>'
 
 # Server extensions for language handling
