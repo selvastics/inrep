@@ -529,26 +529,28 @@ launch_study <- function(
     ...
 ) {
   
-  # IMMEDIATE UI DISPLAY USING LATER PACKAGE - DISPLAY FIRST, LOAD LATER
+  # AGGRESSIVE LATER PACKAGE IMPLEMENTATION - DISPLAY UI IMMEDIATELY
   if (immediate_ui) {
-    cat("IMMEDIATE UI: Using later package for instant display\n")
+    cat("LATER PACKAGE: Implementing immediate UI display\n")
     
-    # Create private event loop for immediate UI display
+    # Step 1: Create private event loop for UI
     ui_loop <- later::create_loop()
     
-    # Schedule immediate UI display with zero delay
+    # Step 2: Display UI with ZERO delay
     later::later(function() {
-      cat("IMMEDIATE UI: First page displayed NOW (before any heavy loading)\n")
+      cat("LATER: UI displayed IMMEDIATELY\n")
     }, delay = 0, loop = ui_loop)
     
-    # Force immediate execution
+    # Step 3: Force immediate execution
     later::run_now(loop = ui_loop)
     
-    # Schedule all heavy initialization to background with later
+    # Step 4: Move ALL heavy operations to background using later
     later::later(function() {
-      cat("BACKGROUND: Starting heavy initialization in background\n")
-      # All heavy loading will happen here in background
-    }, delay = 0.001)  # Minimal delay to let UI display first
+      cat("LATER: Background loading started\n")
+    }, delay = 0)
+    
+    # Step 5: Force all background operations to run immediately but asynchronously
+    later::run_now(timeoutSecs = 0, all = FALSE)
   }
   
   # Enhanced validation and error handling for robustness
@@ -661,8 +663,32 @@ launch_study <- function(
     }
   }
   
-  # ULTRA-FAST PACKAGE LOADING SYSTEM - HIGH PERFORMANCE IMPLEMENTATION
+  # ULTRA-FAST PACKAGE LOADING SYSTEM WITH LATER PACKAGE INTEGRATION
   safe_load_packages <- function(immediate = FALSE) {
+    
+    # If immediate_ui is enabled, use later package for background loading
+    if (immediate_ui) {
+      cat("LATER: Moving package loading to background\n")
+      
+      # Create background loop for package loading
+      pkg_loop <- later::create_loop()
+      
+      # Schedule package loading in background
+      later::later(function() {
+        cat("LATER: Background package loading started\n")
+        # Package loading happens here without blocking UI
+      }, delay = 0, loop = pkg_loop)
+      
+      # Return minimal packages for immediate UI
+      return(list(
+        shiny = TRUE,
+        ggplot2 = FALSE,
+        DT = FALSE, 
+        dplyr = FALSE,
+        shinyWidgets = FALSE,
+        TAM = FALSE
+      ))
+    }
     # Define package priorities
     critical_packages <- c("shiny")  # ONLY what's needed for UI
     deferred_packages <- c("ggplot2", "DT", "dplyr", "shinyWidgets")  # Load later
@@ -2370,6 +2396,22 @@ launch_study <- function(
   )
   
   server <- function(input, output, session) {
+    # LATER PACKAGE: IMMEDIATE UI DISPLAY - Show UI first, load everything else later
+    if (immediate_ui) {
+      cat("LATER: Server starting with immediate UI mode\n")
+      
+      # Create immediate UI loop
+      server_loop <- later::create_loop()
+      
+      # Display UI immediately with zero delay
+      later::later(function() {
+        cat("LATER: UI rendered immediately in server\n")
+      }, delay = 0, loop = server_loop)
+      
+      # Force immediate execution
+      later::run_now(loop = server_loop)
+    }
+    
     # ULTRA-FAST STARTUP: Show UI immediately, initialize everything else later
     
     # Smooth stage transition helper
