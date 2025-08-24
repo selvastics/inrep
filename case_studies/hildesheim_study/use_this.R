@@ -463,10 +463,11 @@ custom_page_flow <- list(
       '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
             # Language switcher in top right corner (uses global toggle function)
       '<div style="position: absolute; top: 10px; right: 10px;">',
-      '<button type="button" id="lang_switch" onclick="window.toggleLanguage()" style="',
+      '<button type="button" id="lang_switch" onclick="console.log(\'BUTTON CLICKED!\'); window.toggleLanguage(); return false;" style="',
       'background: white; border: 2px solid #e8041c; color: #e8041c; ',
       'padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">',
       '<span id="lang_switch_text">English Version</span></button>',
+      '<br><button type="button" onclick="console.log(\'TEST BUTTON CLICKED\'); if(typeof window.toggleLanguage === \'function\') { window.toggleLanguage(); } else { console.log(\'Function not found!\'); }" style="background: red; color: white; padding: 4px 8px; margin-top: 5px; border: none; cursor: pointer;">TEST</button>',
       '</div>',
       # German content (default)
       '<div id="content_de">',
@@ -2417,6 +2418,31 @@ console.log("✅ window.toggleLanguage defined:", typeof window.toggleLanguage);
 
 // Apply translations on page load
 document.addEventListener("DOMContentLoaded", function() {
+  console.log("🚀 DOM loaded - checking function availability");
+  console.log("window.toggleLanguage exists:", typeof window.toggleLanguage);
+  console.log("Button exists:", !!document.getElementById("lang_switch"));
+  
+  // Test the button programmatically
+  setTimeout(function() {
+    console.log("⏰ 2 seconds later - testing button");
+    console.log("window.toggleLanguage exists:", typeof window.toggleLanguage);
+    console.log("Button exists:", !!document.getElementById("lang_switch"));
+    
+    var btn = document.getElementById("lang_switch");
+    if (btn) {
+      console.log("✅ Button found, adding click listener as backup");
+      btn.addEventListener("click", function(e) {
+        console.log("🎯 BACKUP CLICK LISTENER TRIGGERED!");
+        e.preventDefault();
+        if (typeof window.toggleLanguage === "function") {
+          window.toggleLanguage();
+        } else {
+          console.log("❌ toggleLanguage function not available");
+        }
+      });
+    }
+  }, 2000);
+  
   // Check stored language preference
   var storedLang = sessionStorage.getItem("hilfo_language");
   if (storedLang) {
