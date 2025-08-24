@@ -2377,43 +2377,7 @@ document.addEventListener("DOMContentLoaded", function() {
     subtree: true
   });
   
-  // Enhanced radio button deselection - click to unselect
-  document.addEventListener("click", function(e) {
-    if (e.target && e.target.type === "radio") {
-      var radioName = e.target.name;
-      var wasChecked = e.target.getAttribute("data-was-checked") === "true";
-      
-      // Get all radios with same name
-      var radios = document.querySelectorAll('input[name="' + radioName + '"]');
-      
-      // Reset all radios in this group
-      for (var i = 0; i < radios.length; i++) {
-        radios[i].setAttribute("data-was-checked", "false");
-      }
-      
-      if (wasChecked) {
-        // Unselect if it was already selected
-        e.target.checked = false;
-        
-        // Update Shiny input to null
-        if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
-          Shiny.setInputValue(radioName, null, {priority: "event"});
-        }
-        
-        console.log("Radio unselected:", radioName);
-      } else {
-        // Select and mark as checked
-        e.target.setAttribute("data-was-checked", "true");
-        
-        // Update Shiny input with selected value
-        if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
-          Shiny.setInputValue(radioName, e.target.value, {priority: "event"});
-        }
-        
-        console.log("Radio selected:", radioName, "=", e.target.value);
-      }
-    }
-  });
+  // Radio button deselection functionality is already implemented above
 });
 
 // Handle Shiny messages
