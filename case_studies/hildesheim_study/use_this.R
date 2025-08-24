@@ -1854,6 +1854,11 @@ study_config <- inrep::create_study_config(
     session_timeout = 7200,
     results_processor = create_hilfo_report,
     estimation_method = "EAP",  # Use EAP for ability estimation
+    # RESTORE LATER PACKAGE OPTIMIZATIONS FOR SPEED
+    use_later_package = TRUE,  # Enable later package optimizations
+    package_loading_delay = 0.001,  # Near-instant package loading
+    session_init_delay = 0.01,  # Minimal session initialization delay
+    ui_render_delay = 0,  # Immediate UI rendering
     page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
     item_bank = all_items,  # Full item bank
     save_to_file = TRUE,
@@ -2489,48 +2494,46 @@ document.addEventListener("DOMContentLoaded", function() {
   // Radio button deselection functionality is already implemented above
 });
 
-// Enhanced Shiny integration - listen for main inrep language changes
+// Enhanced Shiny integration - FIXED SYNTAX
 if (typeof Shiny !== "undefined") {
   // Monitor for language changes from main inrep system
-  $(document).on('shiny:connected', function() {
-    console.log("Shiny connected - setting up language monitoring");
-  });
-  
-  // Listen for input changes from main inrep system
-  $(document).on('shiny:inputchanged', function(event) {
-    if (event.name === 'study_language') {
-      console.log("Main inrep language changed to:", event.value);
-      currentLang = event.value;
-      sessionStorage.setItem("hilfo_language", currentLang);
-      
-      // Update button text
-      var btn = document.getElementById("language-toggle-btn");
-      if (btn) {
-        btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
-      }
-      
-      var welcomeBtn = document.getElementById("lang_switch");
-      if (welcomeBtn) {
-        welcomeBtn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
-      }
-      
-      // Apply translations
-      if (currentLang === "en") {
-        console.log("Applying Hildesheim translations for English");
-        translatePage();
+  document.addEventListener("DOMContentLoaded", function() {
+    console.log("Setting up Shiny language monitoring");
+    
+    // Listen for Shiny events using vanilla JavaScript (no jQuery)
+    if (typeof Shiny !== "undefined" && Shiny.addCustomMessageHandler) {
+      // Add a custom handler for language updates from main inrep
+      Shiny.addCustomMessageHandler("inrep_language_changed", function(lang) {
+        console.log("Main inrep language changed to:", lang);
+        currentLang = lang;
+        sessionStorage.setItem("hilfo_language", currentLang);
         
-        // Force additional attempts for dynamic content
-        setTimeout(function() {
-          translatePage();
-        }, 200);
+        // Update button text
+        var btn = document.getElementById("language-toggle-btn");
+        if (btn) {
+          btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+        }
         
-        setTimeout(function() {
+        var welcomeBtn = document.getElementById("lang_switch");
+        if (welcomeBtn) {
+          welcomeBtn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+        }
+        
+        // Apply translations
+        if (currentLang === "en") {
+          console.log("Applying Hildesheim translations for English");
           translatePage();
-        }, 500);
-      } else {
-        console.log("Reverting to German - reloading page");
-        location.reload();
-      }
+          
+          // Force additional attempts for dynamic content
+          setTimeout(function() {
+            translatePage();
+          }, 200);
+          
+          setTimeout(function() {
+            translatePage();
+          }, 500);
+        }
+      });
     }
   });
 }
@@ -2540,7 +2543,7 @@ if (typeof Shiny !== "undefined") {
 # The main inrep system already handles input$study_language changes
 # Our JavaScript will trigger this by calling Shiny.setInputValue("study_language", lang)
 
-# Enhanced launch with FULL LANGUAGE INTEGRATION
+# Enhanced launch with FULL LANGUAGE INTEGRATION + LATER OPTIMIZATIONS
 # NOTE: The main inrep system already handles language switching via input$study_language
 # Our JavaScript will trigger this by calling Shiny.setInputValue("study_language", lang)
 inrep::launch_study(
@@ -2550,5 +2553,11 @@ inrep::launch_study(
     password = WEBDAV_PASSWORD,
     save_format = "csv",
     custom_css = custom_js_enhanced,  # Enhanced JavaScript with language support
-    admin_dashboard_hook = monitor_adaptive  # Monitor adaptive selection
+    admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
+    # RESTORE SPEED OPTIMIZATIONS
+    max_session_time = 7200,
+    session_save = TRUE,
+    data_preservation_interval = 1,  # Fast data preservation
+    keep_alive_interval = 5,  # Fast keep-alive
+    enable_error_recovery = TRUE
 )
