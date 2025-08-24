@@ -457,88 +457,7 @@ custom_page_flow <- list(
     type = "custom",
     title = "Willkommen zur HilFo Studie",
     title_en = "Welcome to the HilFo Study", 
-        content = function(session, input, output, current_language, ui_labels) {
-      # Get current language
-      current_lang <- current_language()
-      
-      # Simple language switch button without get_label calls
-      lang_button_text <- if (current_lang == "de") "English Version" else "Deutsche Version"
-      
-      # Build content with simple text (avoiding get_label calls that might cause errors)
-      shiny::div(
-        style = "position: relative; padding: 20px; font-size: 16px; line-height: 1.8;",
-        
-        # Language switcher in top right corner
-        shiny::div(
-          style = "position: absolute; top: 10px; right: 10px;",
-          shiny::tags$button(
-            type = "button",
-            onclick = sprintf("Shiny.setInputValue('study_language', '%s', {priority: 'event'});", 
-                            if (current_lang == "de") "en" else "de"),
-            style = "background: white; border: 2px solid #e8041c; color: #e8041c; 
-                     padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;",
-            lang_button_text
-          )
-        ),
-        
-        # Main content with direct text (no get_label calls)
-        shiny::h2(
-          if (current_lang == "de") "Liebe Studierende," else "Dear Students,",
-          style = "color: #e8041c;"
-        ),
-        
-        shiny::p(
-          if (current_lang == "de") {
-            "In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren."
-          } else {
-            "In the statistical methods exercises, we want to work with illustrative data that comes from you. Therefore, we want to learn a few things about you."
-          }
-        ),
-        
-        shiny::p(
-          if (current_lang == "de") {
-            "Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene Themenbereiche ab, die voneinander teilweise unabhängig sind."
-          } else {
-            "Since we want to enable various analyses, the questionnaire covers different topic areas that are partially independent of each other."
-          }
-        ),
-        
-        shiny::div(
-          style = "background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;",
-          shiny::strong(
-            if (current_lang == "de") {
-              "Ihre Angaben sind dabei selbstverständlich anonym, es wird keine personenbezogene Auswertung der Daten stattfinden."
-            } else {
-              "Your information is of course anonymous; no personal evaluation of the data will take place."
-            }
-          )
-        ),
-        
-        # Consent section
-        shiny::h3(
-          if (current_lang == "de") "Einverständniserklärung" else "Consent Declaration",
-          style = "color: #e8041c; margin-top: 30px;"
-        ),
-        
-        shiny::div(
-          style = "display: flex; align-items: flex-start; gap: 10px; margin: 20px 0;",
-          shiny::checkboxInput(
-            "consent_hildesheim",
-            "",
-            value = FALSE,
-            width = "auto"
-          ),
-          shiny::span(
-            if (current_lang == "de") {
-              "Ich bin mit der Teilnahme an der Befragung einverstanden"
-            } else {
-              "I agree to participate in the survey"
-            },
-            style = "line-height: 1.3; margin-top: 2px;"
-          )
-        )
-      )
-    }
+        content = '<div style="padding: 20px;"><h2>Willkommen zur HilFo Studie</h2><p>Test content to debug the error.</p></div>'
    ),
    
    # Page 2: Basic demographics
@@ -1818,7 +1737,7 @@ study_config <- inrep::create_study_config(
     study_key = session_uuid,
     theme = "hildesheim",  # Use built-in Hildesheim theme
     custom_page_flow = custom_page_flow,
-    demographics = c("Einverständnis", "Alter_VPN", "Studiengang", "Geschlecht", "Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz", "Rauchen", "Ernährung", "Ernährung_Zusatz", "Note_Englisch", "Note_Mathe", "Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st", "Persönlicher_Code"),
+    demographics = as.character(c("Einverständnis", "Alter_VPN", "Studiengang", "Geschlecht", "Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz", "Rauchen", "Ernährung", "Ernährung_Zusatz", "Note_Englisch", "Note_Mathe", "Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st", "Persönlicher_Code")),
     demographic_configs = demographic_configs,
     input_types = input_types,
     model = "2PL",  # Use 2PL model for IRT
@@ -2038,8 +1957,11 @@ custom_css_only <- '
 # LAUNCH STUDY WITH CLEAN INREP-NATIVE LANGUAGE SYSTEM
 # =============================================================================
 
-# ABSOLUTE MINIMAL launch_study - REMOVE ALL OPTIONAL PARAMETERS
+# DEBUG VERSION - simplified content function
 inrep::launch_study(
     config = study_config,
-    item_bank = all_items_de
+    item_bank = all_items_de,
+    webdav_url = WEBDAV_URL,
+    password = WEBDAV_PASSWORD,
+    save_format = "csv"
 )
