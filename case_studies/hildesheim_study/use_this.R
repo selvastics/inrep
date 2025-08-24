@@ -2484,6 +2484,12 @@ document.addEventListener("DOMContentLoaded", function() {
     currentLang = storedLang;
   }
   
+});
+</script>';
+
+# Part 3 of JavaScript - button creation and final setup
+custom_js_part3 <- '<script>
+document.addEventListener("DOMContentLoaded", function() {
   // Create language toggle button if it doesn\'t exist
   if (!document.getElementById("language-toggle-btn")) {
     var btn = document.createElement("button");
@@ -2601,7 +2607,7 @@ inrep::launch_study(
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
     save_format = "csv",
-    custom_css = paste0(custom_css_only, custom_js_part1, custom_js_part2),  # Combined CSS and JS
+    custom_css = paste0(custom_css_only, custom_js_part1, custom_js_part2, custom_js_part3),  # Combined CSS and JS
     admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
     # RESTORE SPEED OPTIMIZATIONS
     max_session_time = 7200,
