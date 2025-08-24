@@ -2372,9 +2372,14 @@ launch_study <- function(
     
     # Step 2: Render UI with ADVANCED later optimization - maximum speed
     output$study_ui <- shiny::renderUI({
-      # IMMEDIATE package loading - no delays
-      if (!.packages_loaded) {
-        .load_packages_once()  # Load immediately, no later() calls
+      # ADVANCED later package optimization - background loading
+      if (!.packages_loaded && has_later) {
+        # Use later for efficient background loading
+        later::later(function() {
+          .load_packages_once()
+          # Force immediate execution to prevent any delays
+          later::run_now(timeoutSecs = 0, all = TRUE)
+        }, delay = 0)  # ZERO delay with later - maximum efficiency
       }
       
       # Return standard container - preserves existing functionality
