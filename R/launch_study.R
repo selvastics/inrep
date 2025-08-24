@@ -1610,27 +1610,6 @@ launch_study <- function(
         })();
       "))
     ),
-    
-    # Add instant loading placeholder
-    shiny::tags$div(
-      id = "loading-placeholder",
-      style = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-              background: white; z-index: 9999; display: flex; 
-              align-items: center; justify-content: center;",
-      shiny::tags$div(
-        style = "text-align: center;",
-        shiny::tags$h2(
-          style = "color: #e8041c; margin-bottom: 20px;",
-          if (default_language == "de") "Studie wird geladen..." else "Loading study..."
-        ),
-        shiny::tags$div(
-          class = "spinner",
-          style = "border: 4px solid #f3f3f3; border-top: 4px solid #e8041c;
-                  border-radius: 50%; width: 40px; height: 40px;
-                  animation: spin 1s linear infinite; margin: 0 auto;"
-        )
-      )
-    ),
 
           shiny::tags$head(
       # CRITICAL: Prevent corner flash - must be FIRST CSS rule
@@ -1684,27 +1663,7 @@ launch_study <- function(
         }
       ")),
       
-      # Hide loading placeholder once app loads
-      shiny::tags$script(HTML("
-        document.addEventListener('DOMContentLoaded', function() {
-          // IMMEDIATELY show content in correct position
-          setTimeout(function() {
-            document.getElementById('study_ui').className += ' positioned';
-            document.getElementById('study_ui').style.visibility = 'visible';
-          }, 1);
-          
-          setTimeout(function() {
-            var loader = document.getElementById('loading-placeholder');
-            if (loader) {
-              loader.style.transition = 'opacity 0.3s';
-              loader.style.opacity = '0';
-              setTimeout(function() {
-                loader.style.display = 'none';
-              }, 300);
-            }
-          }, 500);
-        });
-      ")),
+
       
       # Add spinner animation
       shiny::tags$style(HTML("
