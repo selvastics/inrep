@@ -2449,13 +2449,31 @@ launch_study <- function(
       }
     })
     
-    # IMMEDIATE UI DISPLAY - Show first page before package loading
+    # IMMEDIATE UI DISPLAY - Show first page before package loading using later package
     if (isTRUE(list(...)$immediate_ui) || isTRUE(config$immediate_ui)) {
-      cat("IMMEDIATE UI DISPLAY ENABLED - showing first page now\n")
-      # Force immediate rendering of first page
+      cat("IMMEDIATE UI DISPLAY ENABLED - using later package\n")
+      
+      # Create private event loop for immediate display
+      immediate_loop <- later::create_loop()
+      
+      # Display UI immediately with zero delay
       later::later(function() {
-        cat("IMMEDIATE: First page displayed before heavy loading\n")
-      }, delay = 0)
+        cat("IMMEDIATE: First page displayed NOW\n")
+        # Force UI to render immediately
+        if (exists("rv") && !is.null(rv)) {
+          rv$session_active <- TRUE
+          rv$initialized <- TRUE
+        }
+      }, delay = 0, loop = immediate_loop)
+      
+      # Run the immediate display now
+      later::run_now(loop = immediate_loop)
+      
+      # Schedule background loading with later
+      later::later(function() {
+        cat("BACKGROUND: Starting heavy initialization\n")
+        # Heavy initialization happens here in background
+      }, delay = 0.001)
     }
     
       # Generate UUID-based study key if needed
