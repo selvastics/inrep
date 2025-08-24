@@ -658,9 +658,9 @@ custom_page_flow <- list(
       '<hr style="margin: 30px 0; border: 1px solid #e8041c;">',
       '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">',
       '<h3 style="color: #e8041c; margin-bottom: 15px;">Einverständniserklärung</h3>',
-      '<label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">',
-      '<input type="checkbox" id="consent_check" style="margin-right: 10px; width: 20px; height: 20px;" required>',
-      '<span><strong>Ich bin mit der Teilnahme an der Befragung einverstanden</strong></span>',
+      '<label style="display: flex; align-items: flex-start; cursor: pointer; font-size: 16px; gap: 10px;">',
+      '<input type="checkbox" id="consent_check" style="width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0;" required>',
+      '<span style="line-height: 1.3;"><strong>Ich bin mit der Teilnahme an der Befragung einverstanden</strong></span>',
       '</label>',
       '</div>',
       '</div>',
@@ -682,18 +682,20 @@ custom_page_flow <- list(
       '<hr style="margin: 30px 0; border: 1px solid #e8041c;">',
       '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">',
       '<h3 style="color: #e8041c; margin-bottom: 15px;">Declaration of Consent</h3>',
-      '<label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">',
-      '<input type="checkbox" id="consent_check_en" style="margin-right: 10px; width: 20px; height: 20px;" required>',
-      '<span><strong>I agree to participate in the survey</strong></span>',
+      '<label style="display: flex; align-items: flex-start; cursor: pointer; font-size: 16px; gap: 10px;">',
+      '<input type="checkbox" id="consent_check_en" style="width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0;" required>',
+      '<span style="line-height: 1.3;"><strong>I agree to participate in the survey</strong></span>',
       '</label>',
       '</div>',
       '</div>',
       '</div>',
-      # Navigation button (Shiny actionButton)
+      # Navigation button (Shiny actionButton with validation)
       '<div style="margin-top: 30px; text-align: right;">',
-      '<button id="next_page" class="btn btn-primary action-button shiny-bound-input" style="',
+      '<button id="next_page" class="btn btn-primary action-button shiny-bound-input" ',
+      'data-val="" type="button" style="',
       'background: #e8041c; color: white; border: none; padding: 12px 30px; ',
-      'border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">',
+      'border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;" ',
+      'onclick="handleNextPageClick()">',
       '<span id="next_btn_text">Weiter</span>',
       '</button>',
       '</div>',
@@ -734,6 +736,40 @@ document.addEventListener("DOMContentLoaded", function() {
     updateNavigationButton();
   });
 });
+
+// Handle next page button click with validation
+function handleNextPageClick() {
+  console.log("NEXT PAGE BUTTON CLICKED!");
+  
+  // Check validation
+  var deCheck = document.getElementById("consent_check");
+  var enCheck = document.getElementById("consent_check_en");
+  var isValid = (deCheck && deCheck.checked) || (enCheck && enCheck.checked);
+  
+  console.log("Validation check:", isValid);
+  console.log("DE checkbox:", deCheck ? deCheck.checked : "not found");
+  console.log("EN checkbox:", enCheck ? enCheck.checked : "not found");
+  
+  if (!isValid) {
+    alert("Bitte stimmen Sie der Teilnahme zu. / Please agree to participate.");
+    return false;
+  }
+  
+  // Trigger Shiny input
+  if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
+    console.log("Triggering Shiny input: next_page");
+    Shiny.setInputValue("next_page", Math.random(), {priority: "event"});
+    
+    // Also try onInputChange as backup
+    if (Shiny.onInputChange) {
+      Shiny.onInputChange("next_page", Math.random());
+    }
+  } else {
+    console.log("Shiny not available!");
+  }
+  
+  return true;
+}
 </script>'
     ),
     validate = "function(inputs) { return document.getElementById('consent_check').checked || document.getElementById('consent_check_en').checked; }",
