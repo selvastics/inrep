@@ -558,11 +558,26 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
       next
     }
     
+    # Get question text based on current language
+    current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
+    question_text <- if (current_lang == "en" && !is.null(config$question_en)) {
+      config$question_en
+    } else {
+      config$question_text
+    }
+    
+    # Get options based on current language
+    options_to_use <- if (current_lang == "en" && !is.null(config$options_en)) {
+      config$options_en
+    } else {
+      config$options
+    }
+    
     # Create UI element based on input type
     if (config$input_type == "text") {
       ui_elements[[demo_name]] <- shiny::div(
         class = "demographic-field",
-        shiny::label(config$question_text, `for` = demo_name),
+        shiny::label(question_text, `for` = demo_name),
         shiny::textInput(
           inputId = demo_name,
           label = NULL,
@@ -581,7 +596,7 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
     } else if (config$input_type == "numeric") {
       ui_elements[[demo_name]] <- shiny::div(
         class = "demographic-field",
-        shiny::label(config$question_text, `for` = demo_name),
+        shiny::label(question_text, `for` = demo_name),
         shiny::numericInput(
           inputId = demo_name,
           label = NULL,
@@ -600,18 +615,21 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
       )
       
     } else if (config$input_type == "select") {
-      choices <- config$options
+      choices <- options_to_use %||% config$options
       if (config$allow_skip) {
         choices <- c(choices, "Prefer not to answer" = "skip")
       }
       
+      # Translate "Please select..." based on language
+      placeholder_text <- if (current_lang == "en") "Please select..." else "Bitte wählen..."
+      
       ui_elements[[demo_name]] <- shiny::div(
         class = "demographic-field",
-        shiny::label(config$question_text, `for` = demo_name),
+        shiny::label(question_text, `for` = demo_name),
         shiny::selectInput(
           inputId = demo_name,
           label = NULL,
-          choices = c("Please select..." = "", choices),
+          choices = c(setNames("", placeholder_text), choices),
           selected = ""
         ),
         if (config$allow_other_text) shiny::conditionalPanel(
@@ -625,14 +643,14 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
       )
       
     } else if (config$input_type == "radio") {
-      choices <- config$options
+      choices <- options_to_use %||% config$options
       if (config$allow_skip) {
         choices <- c(choices, "Prefer not to answer" = "skip")
       }
       
       ui_elements[[demo_name]] <- shiny::div(
         class = "demographic-field",
-        shiny::label(config$question_text),
+        shiny::label(question_text),
         shiny::radioButtons(
           inputId = demo_name,
           label = NULL,
