@@ -1898,7 +1898,8 @@ document.addEventListener("DOMContentLoaded", function() {
       var wasChecked = e.target.getAttribute("data-was-checked") === "true";
       
       // Clear all radios in group
-      var radios = document.querySelectorAll("input[name=\\"" + e.target.name + "\\"]");
+      var selector = "input[name='" + e.target.name + "']";
+      var radios = document.querySelectorAll(selector);
       for (var i = 0; i < radios.length; i++) {
         radios[i].setAttribute("data-was-checked", "false");
       }
