@@ -1392,7 +1392,7 @@ launch_study <- function(
         style = "text-align: center; max-width: 600px; padding: 40px;",
         shiny::tags$h1(
           style = "color: #e8041c; margin-bottom: 30px; font-size: 2.5em;",
-          config$name %||% "Assessment Loading..."
+          "Assessment Loading..."
         ),
         shiny::tags$div(
           style = "margin: 30px 0;",
@@ -1404,7 +1404,7 @@ launch_study <- function(
         ),
         shiny::tags$p(
           style = "color: #666; font-size: 1.2em; margin-top: 20px;",
-          if (default_language == "de") "Wird geladen..." else "Loading..."
+          "Loading..."
         )
       )
     ),
@@ -2396,15 +2396,15 @@ launch_study <- function(
     reactive_ui_labels <- shiny::reactiveVal(ui_labels)
     heavy_computations_done <- shiny::reactiveVal(FALSE)
     
-    # PRELOAD: Start everything IMMEDIATELY - don't wait for renderUI
-    if (!.packages_loaded && has_later) {
-      later::later(function() {
-        .load_packages_once()
-      }, delay = 0.001)  # Start immediately on server start
-    }
-    
-    # Step 2: Render UI INSTANTLY - No loading delays
+    # Step 2: Render UI INSTANTLY - Show UI first, THEN load packages
     output$study_ui <- shiny::renderUI({
+      # Start package loading AFTER UI is rendered
+      if (!.packages_loaded && has_later) {
+        later::later(function() {
+          .load_packages_once()
+        }, delay = 0.1)  # Small delay to let UI render first
+      }
+      
       # SIMPLE APPROACH - Just return container, let page_content handle everything
       shiny::div(
         id = "main-study-container",
@@ -2413,8 +2413,9 @@ launch_study <- function(
       )
     })
     
-    # Step 3: Do ALL initialization IMMEDIATELY - no scheduling
-    {
+    # Step 3: Do initialization AFTER UI is shown
+    if (has_later) {
+      later::later(function() {
         # Initialize session management if needed (was deferred from startup)
         if (exists(".needs_session_init") && .needs_session_init) {
           logger("Initializing robust session management", level = "INFO")
@@ -2454,6 +2455,7 @@ launch_study <- function(
         session$userData$heavy_init_complete <- TRUE
         heavy_computations_done(TRUE)
         logger("Heavy initialization complete", level = "DEBUG")
+      }, delay = 0.2)  # 200ms delay to let UI show first
     }
     
     # Observe language changes from Hildesheim study
