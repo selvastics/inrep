@@ -499,7 +499,6 @@ custom_page_flow <- list(
       '"Master Psychologie": "Master Psychology",',
       '"Welches Geschlecht haben Sie?": "What is your gender?",',
       '"Weiter": "Continue",',
-      '"Continue": "Weiter",',
       '"Zurück": "Back",',
       '"Absenden": "Submit"',
       '};',
@@ -526,7 +525,7 @@ custom_page_flow <- list(
       'if (el.tagName !== "SCRIPT" && el.tagName !== "STYLE" && el.id !== "lang_switch") {',
       'if (el.textContent && el.textContent.includes(germanText)) {',
       'console.log("TRANSLATING:", germanText.substring(0, 40), "->", englishText.substring(0, 40));',
-      'if (el.tagName === "BUTTON") {',
+      'if (el.tagName === "BUTTON" && el.id !== "next_page") {',
       'if (el.textContent && el.textContent.trim() === germanText.trim()) {',
       'console.log("TRANSLATING BUTTON TEXT ONLY:", germanText, "->", englishText);',
       'el.textContent = englishText;',
@@ -562,7 +561,7 @@ custom_page_flow <- list(
       'if (el.tagName !== "SCRIPT" && el.tagName !== "STYLE" && el.id !== "lang_switch") {',
       'if (el.textContent && el.textContent.includes(englishText)) {',
       'console.log("REVERTING:", englishText.substring(0, 40), "->", germanText.substring(0, 40));',
-      'if (el.tagName === "BUTTON") {',
+      'if (el.tagName === "BUTTON" && el.id !== "next_page") {',
       'if (el.textContent && el.textContent.trim() === englishText.trim()) {',
       'console.log("REVERTING BUTTON TEXT ONLY:", englishText, "->", germanText);',
       'el.textContent = germanText;',
@@ -626,7 +625,6 @@ custom_page_flow <- list(
       'setTimeout(function() { console.log("Translation attempt 3"); translatePage(); }, 1000);',
       'setTimeout(function() { console.log("Translation attempt 4"); translatePage(); }, 2000);',
       'setTimeout(function() { console.log("Translation attempt 5"); translatePage(); }, 3000);',
-      'document.dispatchEvent(new Event("languageChanged"));',
       '}, 100);',
       '} else {',
       'console.log("Shiny not available or setInputValue missing");',
@@ -689,16 +687,6 @@ custom_page_flow <- list(
       '</div>',
       '</div>',
       '</div>',
-      # Navigation button (Shiny actionButton with validation)
-      '<div style="margin-top: 30px; text-align: right;">',
-      '<button id="next_page" class="btn btn-primary action-button shiny-bound-input" ',
-      'data-val="" type="button" style="',
-      'background: #e8041c; color: white; border: none; padding: 12px 30px; ',
-      'border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;" ',
-      'onclick="handleNextPageClick()">',
-      '<span id="next_btn_text">Weiter</span>',
-      '</button>',
-      '</div>',
       # JavaScript for checkbox syncing only (language toggle uses global function)
       '<script>
 // Sync consent checkboxes when they change
@@ -718,58 +706,7 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
   
-  // Handle navigation button translation
-  function updateNavigationButton() {
-    var nextBtn = document.getElementById("next_btn_text");
-    if (nextBtn) {
-      var currentLang = sessionStorage.getItem("hilfo_language") || "de";
-      nextBtn.textContent = currentLang === "en" ? "Continue" : "Weiter";
-      console.log("Navigation button updated to:", nextBtn.textContent);
-    }
-  }
-  
-  // Update button on page load
-  updateNavigationButton();
-  
-  // Listen for language changes
-  document.addEventListener("languageChanged", function() {
-    updateNavigationButton();
-  });
 });
-
-// Handle next page button click with validation
-function handleNextPageClick() {
-  console.log("NEXT PAGE BUTTON CLICKED!");
-  
-  // Check validation
-  var deCheck = document.getElementById("consent_check");
-  var enCheck = document.getElementById("consent_check_en");
-  var isValid = (deCheck && deCheck.checked) || (enCheck && enCheck.checked);
-  
-  console.log("Validation check:", isValid);
-  console.log("DE checkbox:", deCheck ? deCheck.checked : "not found");
-  console.log("EN checkbox:", enCheck ? enCheck.checked : "not found");
-  
-  if (!isValid) {
-    alert("Bitte stimmen Sie der Teilnahme zu. / Please agree to participate.");
-    return false;
-  }
-  
-  // Trigger Shiny input
-  if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
-    console.log("Triggering Shiny input: next_page");
-    Shiny.setInputValue("next_page", Math.random(), {priority: "event"});
-    
-    // Also try onInputChange as backup
-    if (Shiny.onInputChange) {
-      Shiny.onInputChange("next_page", Math.random());
-    }
-  } else {
-    console.log("Shiny not available!");
-  }
-  
-  return true;
-}
 </script>'
     ),
     validate = "function(inputs) { return document.getElementById('consent_check').checked || document.getElementById('consent_check_en').checked; }",
