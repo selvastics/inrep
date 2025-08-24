@@ -2443,8 +2443,20 @@ launch_study <- function(
         
         # Log the change
         cat("Language switched to:", new_lang, "\n")
+        
+        # Force UI refresh for language change
+        shiny::invalidateLater(50, session)
       }
     })
+    
+    # IMMEDIATE UI DISPLAY - Show first page before package loading
+    if (isTRUE(list(...)$immediate_ui) || isTRUE(config$immediate_ui)) {
+      cat("IMMEDIATE UI DISPLAY ENABLED - showing first page now\n")
+      # Force immediate rendering of first page
+      later::later(function() {
+        cat("IMMEDIATE: First page displayed before heavy loading\n")
+      }, delay = 0)
+    }
     
       # Generate UUID-based study key if needed
   generate_study_key <- function() {
