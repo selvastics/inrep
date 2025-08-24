@@ -2045,8 +2045,8 @@ monitor_adaptive <- function(session_data) {
 }
 
 # Complete JavaScript solution for FULL APP translation and radio deselection
-custom_js_enhanced <- '
-<style>
+# Separate CSS and JavaScript for proper loading
+custom_css_only <- '
 /* Fixed language button on all pages */
 #language-toggle-btn {
   position: fixed !important;
@@ -2066,8 +2066,9 @@ custom_js_enhanced <- '
   background: #e8041c !important;
   color: white !important;
 }
-</style>
-<script>
+'
+
+custom_js_enhanced <- '<script>
 // Comprehensive translation dictionary for ENTIRE APP
 var translations = {
   // Page titles
