@@ -1,3 +1,5 @@
+
+
 # =============================================================================
 # HILFO STUDIE - PRODUCTION VERSION WITH COMPLETE DATA RECORDING
 # =============================================================================
@@ -237,7 +239,7 @@ all_items <- all_items_de
 # =============================================================================
 
 demographic_configs <- list(
-  Einverstaendnis = list(
+  Einverständnis = list(
     question = "Einverständniserklärung",
     question_en = "Declaration of Consent",
     options = c("Ich bin mit der Teilnahme an der Befragung einverstanden" = "1"),
@@ -320,7 +322,7 @@ demographic_configs <- list(
     options_en = c("Yes"="1", "No"="2"),
     required = FALSE
   ),
-  Ernaehrung = list(
+  Ernährung = list(
     question = "Wie ernähren Sie sich hauptsächlich?",
     question_en = "What is your main diet?",
     options = c(
@@ -333,7 +335,7 @@ demographic_configs <- list(
     ),
     required = FALSE
   ),
-  Ernaehrung_Zusatz = list(
+  Ernährung_Zusatz = list(
     question = "Andere Ernährungsform:",
     question_en = "Other diet:",
     type = "text",
@@ -420,7 +422,7 @@ demographic_configs <- list(
     ),
     required = FALSE
   ),
-  Persoenlicher_Code = list(
+  Persönlicher_Code = list(
     question = "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags):",
     question_en = "Please create a personal code (first 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday):",
     type = "text",
@@ -429,7 +431,7 @@ demographic_configs <- list(
 )
 
 input_types <- list(
-  Einverstaendnis = "checkbox",
+  Einverständnis = "checkbox",
   Alter_VPN = "select",
   Studiengang = "radio",
   Geschlecht = "radio",
@@ -438,14 +440,14 @@ input_types <- list(
   Haustier = "select",
   Haustier_Zusatz = "text",
   Rauchen = "radio",
-  Ernaehrung = "radio",
-  Ernaehrung_Zusatz = "text",
+  Ernährung = "radio",
+  Ernährung_Zusatz = "text",
   Note_Englisch = "select",
   Note_Mathe = "select",
   Vor_Nachbereitung = "radio",
   Zufrieden_Hi_5st = "radio",
   Zufrieden_Hi_7st = "radio",
-  Persoenlicher_Code = "text"
+  Persönlicher_Code = "text"
 )
 
 # =============================================================================
@@ -453,230 +455,276 @@ input_types <- list(
 # =============================================================================
 
 custom_page_flow <- list(
+  # Page 1: Einleitungstext with mandatory consent and language switcher
   list(
+    id = "page1",
     type = "custom",
     title = "Willkommen zur HilFo Studie",
-    title_en = "Welcome to the HilFo Study", 
-        content = function(session, input, output, current_language, ui_labels) {
-      current_lang <- current_language() %||% "de"  # Default to German if NULL
-      lang_button_text <- if (current_lang == "de") "English Version" else "Deutsche Version"
-      
-      shiny::div(
-        style = "position: relative; padding: 20px; font-size: 16px; line-height: 1.8;",
-        
-        shiny::div(
-          style = "position: absolute; top: 10px; right: 10px;",
-          shiny::tags$button(
-            type = "button",
-            onclick = sprintf("Shiny.setInputValue('study_language', '%s', {priority: 'event'});", 
-                            if (current_lang == "de") "en" else "de"),
-            style = "background: white; border: 2px solid #e8041c; color: #e8041c; 
-                     padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;",
-            lang_button_text
-          )
-        ),
-        
-        shiny::h2(
-          if (current_lang == "de") "Liebe Studierende," else "Dear Students,",
-          style = "color: #e8041c;"
-        ),
-        
-        shiny::p(
-          if (current_lang == "de") {
-            "In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren."
-          } else {
-            "In the statistical methods exercises, we want to work with illustrative data that comes from you. Therefore, we want to learn a few things about you."
-          }
-        ),
-        
-        shiny::h3(
-          if (current_lang == "de") "Einverständniserklärung" else "Consent Declaration",
-          style = "color: #e8041c; margin-top: 30px;"
-        ),
-        
-        shiny::div(
-          style = "display: flex; align-items: flex-start; gap: 10px; margin: 20px 0;",
-          shiny::checkboxInput(
-            "consent_hildesheim",
-            "",
-            value = FALSE,
-            width = "auto"
-          ),
-          shiny::span(
-            if (current_lang == "de") {
-              "Ich bin mit der Teilnahme an der Befragung einverstanden"
-            } else {
-              "I agree to participate in the survey"
-            },
-            style = "line-height: 1.3; margin-top: 2px;"
-          )
-        )
-      )
-    }
-   ),
-   
-   # Page 2: Basic demographics
-   list(
-     type = "demographics",
-     title = "Soziodemographische Angaben",
-     title_en = "Sociodemographic Information",
-     demographics = c("Alter_VPN", "Studiengang", "Geschlecht")
-   ),
-   
-   # Page 3: Living situation
-   list(
-     type = "demographics", 
-     title = "Wohnsituation",
-     title_en = "Living Situation",
-     demographics = c("Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz")
-   ),
-   
-   # Page 4: Lifestyle
-   list(
-     type = "demographics",
-     title = "Lebensstil", 
-     title_en = "Lifestyle",
-     demographics = c("Rauchen", "Ernährung", "Ernährung_Zusatz")
-   ),
-   
-   # Page 5: Education
-   list(
-     type = "demographics",
-     title = "Bildung",
-     title_en = "Education", 
-     demographics = c("Note_Englisch", "Note_Mathe")
-   ),
-   
-   # Page 6: Programming Anxiety Part 1
-   list(
-     type = "items",
-     title = "Programmierangst - Teil 1",
-     title_en = "Programming Anxiety - Part 1",
-     instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
-     instructions_en = "Please indicate to what extent the following statements apply to you.",
-     item_indices = 1:5,
-     scale_type = "likert"
-   ),
-   
-   # Pages 7-11: Programming Anxiety Part 2 (one item per page)
-   list(
-     type = "items",
-     title = "Programmierangst - Teil 2", 
-     title_en = "Programming Anxiety - Part 2",
-     instructions = "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.",
-     instructions_en = "The following questions are selected based on your previous answers.",
-     item_indices = 6:6,
-     scale_type = "likert"
-   ),
-   list(
-     type = "items",
-     title = "Programmierangst - Teil 2",
-     title_en = "Programming Anxiety - Part 2", 
-     item_indices = 7:7,
-     scale_type = "likert"
-   ),
-   list(
-     type = "items",
-     title = "Programmierangst - Teil 2",
-     title_en = "Programming Anxiety - Part 2",
-     item_indices = 8:8,
-     scale_type = "likert"
-   ),
-   list(
-     type = "items", 
-     title = "Programmierangst - Teil 2",
-     title_en = "Programming Anxiety - Part 2",
-     item_indices = 9:9,
-     scale_type = "likert"
-   ),
-   list(
-     type = "items",
-     title = "Programmierangst - Teil 2",
-     title_en = "Programming Anxiety - Part 2",
-     item_indices = 10:10,
-     scale_type = "likert"
-   ),
-   
-   # Pages 12-15: BFI items (grouped by trait)
-   list(
-     type = "items",
-     title = "Persönlichkeit - Teil 1",
-     title_en = "Personality - Part 1",
-     instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
-     instructions_en = "Please indicate to what extent the following statements apply to you.",
-     item_indices = 21:25,
-     scale_type = "likert"
-   ),
-   list(
-     type = "items",
-     title = "Persönlichkeit - Teil 2", 
-     title_en = "Personality - Part 2",
-     item_indices = 26:30,
-     scale_type = "likert"
-   ),
-   list(
-     type = "items",
-     title = "Persönlichkeit - Teil 3",
-     title_en = "Personality - Part 3",
-     item_indices = 31:35,
-     scale_type = "likert"
-   ),
-   list(
-     type = "items",
-     title = "Persönlichkeit - Teil 4",
-     title_en = "Personality - Part 4", 
-     item_indices = 36:40,
-     scale_type = "likert"
-   ),
-   
-   # Page 16: PSQ Stress
-   list(
-     type = "items",
-     title = "Stress",
-     title_en = "Stress",
-     instructions = "Wie sehr treffen die folgenden Aussagen auf Sie zu?",
-     instructions_en = "How much do the following statements apply to you?",
-     item_indices = 41:45,
-     scale_type = "likert"
-   ),
-   
-   # Page 17: MWS Study Skills
-   list(
-     type = "items",
-     title = "Studierfähigkeiten", 
-     title_en = "Study Skills",
-     instructions = "Wie leicht oder schwer fällt es Ihnen...",
-     instructions_en = "How easy or difficult is it for you...",
-     item_indices = 46:49,
-     scale_type = "difficulty"
-   ),
-   
-   # Page 18: Statistics
-   list(
-     type = "items",
-     title = "Statistik",
-     title_en = "Statistics",
-     item_indices = 50:51,
-     scale_type = "likert"
-   ),
-   
-   # Page 19: Study satisfaction
-   list(
-     type = "demographics",
-     title = "Studienzufriedenheit",
-     title_en = "Study Satisfaction",
-     demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st", "Persönlicher_Code")
-   ),
-   
-   # Page 20: Results
-   list(
-     type = "results",
-     title = "Ihre Ergebnisse", 
-     title_en = "Your Results"
-   )
- )
-
-# No server extensions needed - inrep handles input$study_language automatically
+    title_en = "Welcome to the HilFo Study",
+    content = paste0(
+      '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
+      # Language switcher in top right corner (uses global toggle function)
+      '<div style="position: absolute; top: 10px; right: 10px;">',
+      '<button type="button" id="lang_switch" onclick="window.toggleLanguage()" style="',
+      'background: white; border: 2px solid #e8041c; color: #e8041c; ',
+      'padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">',
+      '<span id="lang_switch_text">English Version</span></button>',
+      '</div>',
+      # German content (default)
+      '<div id="content_de">',
+      '<h2 style="color: #e8041c;">Liebe Studierende,</h2>',
+      '<p>In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, ',
+      'die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.</p>',
+      '<p>Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene ',
+      'Themenbereiche ab, die voneinander teilweise unabhängig sind.</p>',
+      '<p style="background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;">',
+      '<strong>Ihre Angaben sind dabei selbstverständlich anonym</strong>, es wird keine personenbezogene ',
+      'Auswertung der Daten stattfinden. Die Daten werden von den Erstsemestern Psychologie im ',
+      'Bachelor generiert und in diesem Jahrgang genutzt, möglicherweise auch in späteren Jahrgängen.</p>',
+      '<p>Im Folgenden werden Ihnen dazu Aussagen präsentiert. Wir bitten Sie anzugeben, ',
+      'inwieweit Sie diesen zustimmen. Es gibt keine falschen oder richtigen Antworten. ',
+      'Bitte beantworten Sie die Fragen so, wie es Ihrer Meinung am ehesten entspricht.</p>',
+      '<p style="margin-top: 20px;"><strong>Die Befragung dauert etwa 10-15 Minuten.</strong></p>',
+      '<hr style="margin: 30px 0; border: 1px solid #e8041c;">',
+      '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">',
+      '<h3 style="color: #e8041c; margin-bottom: 15px;">Einverständniserklärung</h3>',
+      '<label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">',
+      '<input type="checkbox" id="consent_check" style="margin-right: 10px; width: 20px; height: 20px;" required>',
+      '<span><strong>Ich bin mit der Teilnahme an der Befragung einverstanden</strong></span>',
+      '</label>',
+      '</div>',
+      '</div>',
+      # English content (hidden by default)
+      '<div id="content_en" style="display: none;">',
+      '<h2 style="color: #e8041c;">Dear Students,</h2>',
+      '<p>In the statistics exercises, we want to work with illustrative data ',
+      'that comes from you. Therefore, we would like to learn a few things about you.</p>',
+      '<p>Since we want to enable various analyses, the questionnaire covers different ',
+      'topic areas that are partially independent of each other.</p>',
+      '<p style="background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;">',
+      '<strong>Your information is completely anonymous</strong>, there will be no personal ',
+      'evaluation of the data. The data is generated by first-semester psychology ',
+      'bachelor students and used in this cohort, possibly also in later cohorts.</p>',
+      '<p>In the following, you will be presented with statements. We ask you to indicate ',
+      'to what extent you agree with them. There are no wrong or right answers. ',
+      'Please answer the questions as they best reflect your opinion.</p>',
+      '<p style="margin-top: 20px;"><strong>The survey takes about 10-15 minutes.</strong></p>',
+      '<hr style="margin: 30px 0; border: 1px solid #e8041c;">',
+      '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">',
+      '<h3 style="color: #e8041c; margin-bottom: 15px;">Declaration of Consent</h3>',
+      '<label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">',
+      '<input type="checkbox" id="consent_check_en" style="margin-right: 10px; width: 20px; height: 20px;" required>',
+      '<span><strong>I agree to participate in the survey</strong></span>',
+      '</label>',
+      '</div>',
+      '</div>',
+      '</div>',
+      # JavaScript for checkbox syncing only (language toggle uses global function)
+      '<script>
+// Sync consent checkboxes when they change
+document.addEventListener("DOMContentLoaded", function() {
+  var deCheck = document.getElementById("consent_check");
+  var enCheck = document.getElementById("consent_check_en");
+  
+  if (deCheck) {
+    deCheck.addEventListener("change", function() {
+      if (enCheck) enCheck.checked = deCheck.checked;
+    });
+  }
+  
+  if (enCheck) {
+    enCheck.addEventListener("change", function() {
+      if (deCheck) deCheck.checked = enCheck.checked;
+    });
+  }
+});
+</script>'
+    ),
+    validate = "function(inputs) { return document.getElementById('consent_check').checked || document.getElementById('consent_check_en').checked; }",
+    required = TRUE
+  ),
+  
+  # Page 2: Basic demographics
+  list(
+    id = "page2",
+    type = "demographics",
+    title = "Soziodemographische Angaben",
+    title_en = "Sociodemographic Information",
+    demographics = c("Alter_VPN", "Studiengang", "Geschlecht")
+  ),
+  
+  # Page 3: Living situation
+  list(
+    id = "page3",
+    type = "demographics",
+    title = "Wohnsituation",
+    title_en = "Living Situation",
+    demographics = c("Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz")
+  ),
+  
+  # Page 4: Lifestyle
+  list(
+    id = "page4",
+    type = "demographics",
+    title = "Lebensstil",
+    title_en = "Lifestyle",
+    demographics = c("Rauchen", "Ernährung", "Ernährung_Zusatz")
+  ),
+  
+  # Page 5: Education
+  list(
+    id = "page5",
+    type = "demographics",
+    title = "Bildung",
+    title_en = "Education",
+    demographics = c("Note_Englisch", "Note_Mathe")
+  ),
+  
+  # Page 6: Programming Anxiety Part 1 - FIXED (first 5 items together)
+  list(
+    id = "page6_pa_fixed",
+    type = "items",
+    title = "Programmierangst - Teil 1",
+    title_en = "Programming Anxiety - Part 1",
+    instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
+    instructions_en = "Please indicate to what extent the following statements apply to you.",
+    item_indices = 1:5,  # First 5 PA items (fixed, all on one page)
+    scale_type = "likert"
+  ),
+  
+  # Pages 7-11: Programming Anxiety Part 2 - Adaptive (5 items, one per page)
+  # NOTE: With custom_page_flow, these are shown sequentially, not adaptively
+  # We simulate adaptive output for demonstration
+  list(
+    id = "page7_pa2",
+    type = "items", 
+    title = "Programmierangst - Teil 2",
+    title_en = "Programming Anxiety - Part 2",
+    instructions = "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.",
+    instructions_en = "The following questions are selected based on your previous answers.",
+    item_indices = 6:6,
+    scale_type = "likert"
+  ),
+  list(
+    id = "page8_pa3",
+    type = "items",
+    title = "Programmierangst - Teil 2",
+    title_en = "Programming Anxiety - Part 2",
+    item_indices = 7:7,
+    scale_type = "likert"
+  ),
+  list(
+    id = "page9_pa4",
+    type = "items",
+    title = "Programmierangst - Teil 2",
+    title_en = "Programming Anxiety - Part 2",
+    item_indices = 8:8,
+    scale_type = "likert"
+  ),
+  list(
+    id = "page10_pa5",
+    type = "items",
+    title = "Programmierangst - Teil 2",
+    title_en = "Programming Anxiety - Part 2",
+    item_indices = 9:9,
+    scale_type = "likert"
+  ),
+  list(
+    id = "page11_pa6",
+    type = "items",
+    title = "Programmierangst - Teil 2",
+    title_en = "Programming Anxiety - Part 2",
+    item_indices = 10:10,
+    scale_type = "likert"
+  ),
+  
+  # Pages 12-15: BFI items (grouped by trait)
+  list(
+    id = "page12",
+    type = "items",
+    title = "Persönlichkeit - Teil 1",
+    title_en = "Personality - Part 1",
+    instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
+    instructions_en = "Please indicate to what extent the following statements apply to you.",
+    item_indices = 21:25,  # BFI items (after 20 PA items)
+    scale_type = "likert"
+  ),
+  list(
+    id = "page13",
+    type = "items",
+    title = "Persönlichkeit - Teil 2",
+    title_en = "Personality - Part 2",
+    item_indices = 26:30,  # BFI items continued
+    scale_type = "likert"
+  ),
+  list(
+    id = "page14",
+    type = "items",
+    title = "Persönlichkeit - Teil 3",
+    title_en = "Personality - Part 3",
+    item_indices = 31:35,  # BFI items continued
+    scale_type = "likert"
+  ),
+  list(
+    id = "page15",
+    type = "items",
+    title = "Persönlichkeit - Teil 4",
+    title_en = "Personality - Part 4",
+    item_indices = 36:40,  # BFI items final
+    scale_type = "likert"
+  ),
+  
+  # Page 16: PSQ Stress
+  list(
+    id = "page16",
+    type = "items",
+    title = "Stress",
+    title_en = "Stress",
+    instructions = "Wie sehr treffen die folgenden Aussagen auf Sie zu?",
+    instructions_en = "How much do the following statements apply to you?",
+    item_indices = 41:45,  # PSQ items (after 20 PA + 20 BFI)
+    scale_type = "likert"
+  ),
+  
+  # Page 17: MWS Study Skills
+  list(
+    id = "page17",
+    type = "items",
+    title = "Studierfähigkeiten",
+    title_en = "Study Skills",
+    instructions = "Wie leicht oder schwer fällt es Ihnen...",
+    instructions_en = "How easy or difficult is it for you...",
+    item_indices = 46:49,  # MWS items
+    scale_type = "difficulty"
+  ),
+  
+  # Page 18: Statistics
+  list(
+    id = "page18",
+    type = "items",
+    title = "Statistik",
+    title_en = "Statistics",
+    item_indices = 50:51,  # Statistics items
+    scale_type = "likert"
+  ),
+  
+  # Page 19: Study satisfaction
+  list(
+    id = "page19",
+    type = "demographics",
+    title = "Studienzufriedenheit",
+    title_en = "Study Satisfaction",
+    demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st", "Persönlicher_Code")
+  ),
+  
+  # Page 20: Results (now with PA results included)
+  list(
+    id = "page20",
+    type = "results",
+    title = "Ihre Ergebnisse",
+    title_en = "Your Results"
+  )
+)
 
 # =============================================================================
 # RESULTS PROCESSOR WITH FIXED RADAR PLOT
@@ -773,7 +821,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   
   # Calculate standard error and test information
   info <- sum(a_params^2 * (1 / (1 + exp(-a_params * (theta_est - b_params)))) * 
-              (1 - 1 / (1 + exp(-a_params * (theta_est - b_params)))))
+                (1 - 1 / (1 + exp(-a_params * (theta_est - b_params)))))
   se_est <- 1 / sqrt(info)
   reliability <- 1 - (1/info)  # Approximate reliability
   
@@ -836,7 +884,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     
     # Calculate SE for this estimate
     info_temp <- sum(a_subset^2 * (1 / (1 + exp(-a_subset * (theta_temp - b_subset)))) * 
-                     (1 - 1 / (1 + exp(-a_subset * (theta_temp - b_subset)))))
+                       (1 - 1 / (1 + exp(-a_subset * (theta_temp - b_subset)))))
     se_temp <- 1 / sqrt(info_temp)
     
     theta_trace[i] <- theta_temp
@@ -896,13 +944,13 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
       plot.extent.y.sf = 1.2,
       legend.position = "none"
     ) +
-    ggplot2::theme(
-      plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5, 
-                                color = "#e8041c", margin = ggplot2::margin(b = 20)),
-      plot.background = ggplot2::element_rect(fill = "white", color = NA),
-      plot.margin = ggplot2::margin(20, 20, 20, 20)
-    ) +
-    ggplot2::labs(title = if (current_lang == "en") "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5, 
+                                           color = "#e8041c", margin = ggplot2::margin(b = 20)),
+        plot.background = ggplot2::element_rect(fill = "white", color = NA),
+        plot.margin = ggplot2::margin(20, 20, 20, 20)
+      ) +
+      ggplot2::labs(title = if (current_lang == "en") "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
   } else {
     # Fallback to simple ggplot2 approach if ggradar not available
     # Use namespace to avoid loading issues
@@ -940,38 +988,38 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     grid_data$x <- grid_data$r * cos(grid_data$angle)
     grid_data$y <- grid_data$r * sin(grid_data$angle)
     
-        # Create plot
+    # Create plot
     radar_plot <- ggplot2::ggplot() +
       # Grid circles
       ggplot2::geom_path(data = grid_data, ggplot2::aes(x = x, y = y, group = r),
-                color = "gray85", size = 0.3) +
+                         color = "gray85", size = 0.3) +
       # Spokes
       ggplot2::geom_segment(data = data.frame(angle = angles),
-                   ggplot2::aes(x = 0, y = 0,
-                       xend = 5 * cos(angle - pi/2),
-                       yend = 5 * sin(angle - pi/2)),
-                   color = "gray85", size = 0.3) +
+                            ggplot2::aes(x = 0, y = 0,
+                                         xend = 5 * cos(angle - pi/2),
+                                         yend = 5 * sin(angle - pi/2)),
+                            color = "gray85", size = 0.3) +
       # Data polygon
       ggplot2::geom_polygon(data = plot_data, ggplot2::aes(x = x, y = y),
-                   fill = "#e8041c", alpha = 0.2) +
+                            fill = "#e8041c", alpha = 0.2) +
       ggplot2::geom_path(data = plot_data, ggplot2::aes(x = x, y = y),
-                color = "#e8041c", size = 2) +
+                         color = "#e8041c", size = 2) +
       # Points
       ggplot2::geom_point(data = plot_data[1:5,], ggplot2::aes(x = x, y = y),
-                 color = "#e8041c", size = 5) +
+                          color = "#e8041c", size = 5) +
       # Labels
       ggplot2::geom_text(data = plot_data[1:5,],
-                ggplot2::aes(x = x * 1.3, y = y * 1.3, label = label),
-                size = 5, fontface = "bold") +
+                         ggplot2::aes(x = x * 1.3, y = y * 1.3, label = label),
+                         size = 5, fontface = "bold") +
       ggplot2::geom_text(data = plot_data[1:5,],
-                ggplot2::aes(x = x * 1.1, y = y * 1.1, label = sprintf("%.1f", score)),
-                size = 4, color = "#e8041c") +
+                         ggplot2::aes(x = x * 1.1, y = y * 1.1, label = sprintf("%.1f", score)),
+                         size = 4, color = "#e8041c") +
       ggplot2::coord_equal() +
       ggplot2::xlim(-6, 6) + ggplot2::ylim(-6, 6) +
       ggplot2::theme_void() +
       ggplot2::theme(
         plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5,
-                                  color = "#e8041c", margin = ggplot2::margin(b = 20)),
+                                           color = "#e8041c", margin = ggplot2::margin(b = 20)),
         plot.margin = ggplot2::margin(30, 30, 30, 30)
       ) +
       ggplot2::labs(title = if (current_lang == "en") "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
@@ -1002,7 +1050,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     ggplot2::geom_bar(stat = "identity", width = 0.7) +
     # Add value labels with better formatting
     ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", score)), 
-              vjust = -0.5, size = 6, fontface = "bold", color = "#333") +
+                       vjust = -0.5, size = 6, fontface = "bold", color = "#333") +
     # Custom color scheme
     ggplot2::scale_fill_manual(values = c(
       "Programmierangst" = "#9b59b6",
@@ -1122,16 +1170,16 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   report_id <- paste0("report_", format(Sys.time(), "%Y%m%d_%H%M%S"))
   
   html <- paste0(
-      '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
-  
-        # Radar plot
+    '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
+    
+    # Radar plot
     '<div class="report-section">',
     '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
     '<span data-lang-de="Persönlichkeitsprofil" data-lang-en="Personality Profile">Persönlichkeitsprofil</span></h2>',
-  if (radar_base64 != "") paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">'),
-  '</div>',
-  
-      # Trace plot for Programming Anxiety
+    if (radar_base64 != "") paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">'),
+    '</div>',
+    
+    # Trace plot for Programming Anxiety
     '<div class="report-section">',
     '<h2 style="color: #9b59b6; text-align: center; margin-bottom: 25px;">',
     '<span data-lang-de="Programmierangst - Adaptive Testung" data-lang-en="Programming Anxiety - Adaptive Testing Trace">Programmierangst - Adaptive Testung</span></h2>',
@@ -1142,7 +1190,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     'Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items.',
     '</span></p>',
     '</div>',
-  
+    
     # Bar chart
     '<div class="report-section">',
     '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
@@ -1150,7 +1198,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     if (bar_base64 != "") paste0('<img src="data:image/png;base64,', bar_base64, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 8px;">'),
     '</div>',
     
-          # Table
+    # Table
     '<div class="report-section">',
     '<h2 style="color: #e8041c;">',
     '<span data-lang-de="Detaillierte Auswertung" data-lang-en="Detailed Results">Detaillierte Auswertung</span></h2>',
@@ -1212,14 +1260,14 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   for (name in names(scores)) {
     value <- round(scores[[name]], 2)
     sd_value <- ifelse(name %in% names(sds), sds[[name]], NA)
-        level <- ifelse(value >= 3.7, 
+    level <- ifelse(value >= 3.7, 
                     '<span data-lang-de="Hoch" data-lang-en="High">Hoch</span>', 
                     ifelse(value >= 2.3, 
                            '<span data-lang-de="Mittel" data-lang-en="Medium">Mittel</span>', 
                            '<span data-lang-de="Niedrig" data-lang-en="Low">Niedrig</span>'))
     color <- ifelse(value >= 3.7, "#28a745", ifelse(value >= 2.3, "#ffc107", "#dc3545"))
     
-        # Translate dimension names
+    # Translate dimension names
     name_display <- switch(name,
                            "ProgrammingAnxiety" = '<span data-lang-de="Programmierangst" data-lang-en="Programming Anxiety">Programmierangst</span>',
                            "Extraversion" = '<span data-lang-de="Extraversion" data-lang-en="Extraversion">Extraversion</span>',
@@ -1234,39 +1282,39 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     )
     
     html <- paste0(html,
-      '<tr>',
-      '<td style="padding: 12px; border-bottom: 1px solid #e0e0e0;">', name_display, '</td>',
-      '<td style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
-      '<strong style="color: ', color, ';">', value, '</strong></td>',
-      '<td style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
-      ifelse(is.na(sd_value), "-", as.character(sd_value)), '</td>',
-      '<td style="padding: 12px; border-bottom: 1px solid #e0e0e0; color: #666;">',
-      level, '</td>',
-      '</tr>'
+                   '<tr>',
+                   '<td style="padding: 12px; border-bottom: 1px solid #e0e0e0;">', name_display, '</td>',
+                   '<td style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
+                   '<strong style="color: ', color, ';">', value, '</strong></td>',
+                   '<td style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
+                   ifelse(is.na(sd_value), "-", as.character(sd_value)), '</td>',
+                   '<td style="padding: 12px; border-bottom: 1px solid #e0e0e0; color: #666;">',
+                   level, '</td>',
+                   '</tr>'
     )
   }
   
   html <- paste0(html,
-    '</table>',
-    '</div>'  # Close table section
+                 '</table>',
+                 '</div>'  # Close table section
   )
   
   # Add beautiful styles for the report
   html <- paste0(html,
-    '<style>',
-    'body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }',
-    '#report-content { background: #f8f9fa; }',
-    'table { border-collapse: collapse; width: 100%; }',
-    'table tr:hover { background: #f5f5f5; }',
-    'h1, h2 { font-family: "Segoe UI", sans-serif; }',
-    '.report-section { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 25px; }',
-    '@media print {',
-    '  body { font-size: 11pt; }',
-    '  h1, h2 { color: #e8041c !important; -webkit-print-color-adjust: exact; }',
-    '}',
-    '</style>',
-    
-    '</div>'
+                 '<style>',
+                 'body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }',
+                 '#report-content { background: #f8f9fa; }',
+                 'table { border-collapse: collapse; width: 100%; }',
+                 'table tr:hover { background: #f5f5f5; }',
+                 'h1, h2 { font-family: "Segoe UI", sans-serif; }',
+                 '.report-section { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 25px; }',
+                 '@media print {',
+                 '  body { font-size: 11pt; }',
+                 '  h1, h2 { color: #e8041c !important; -webkit-print-color-adjust: exact; }',
+                 '}',
+                 '</style>',
+                 
+                 '</div>'
   )
   
   # Save data to CSV file and upload to cloud
@@ -1344,11 +1392,11 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             } else {
               cat("Cloud upload failed with status:", httr::status_code(response), "\n")
               if (httr::status_code(response) == 401) {
-                                            cat("Authentication failed. Trying with share token.\n")
-                            cat("Share token used:", webdav_user, "\n")
-                        }
-                    }
-                    }, error = function(e) {
+                cat("Authentication failed. Trying with share token.\n")
+                cat("Share token used:", webdav_user, "\n")
+              }
+            }
+          }, error = function(e) {
             cat("Error uploading to cloud:", e$message, "\n")
           })
         }, delay = 0.5)
@@ -1359,7 +1407,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     })
   }
   
-    # Add functional minimalistic download section
+  # Add functional minimalistic download section
   timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
   
   # Create PDF content as data URL
@@ -1550,34 +1598,34 @@ Basierend auf Ihren Ergebnissen empfehlen wir:
 
 *Dieser Bericht wurde automatisch generiert. Bei Fragen wenden Sie sich an das Studienberatungsteam.*
 '
-            
-            writeLines(rmd_content, temp_rmd)
-            
-            # Create header.tex for LaTeX customization
-            temp_header <- tempfile(fileext = ".tex")
-            header_content <- '\\usepackage{fancyhdr}
+          
+          writeLines(rmd_content, temp_rmd)
+          
+          # Create header.tex for LaTeX customization
+          temp_header <- tempfile(fileext = ".tex")
+          header_content <- '\\usepackage{fancyhdr}
 \\pagestyle{fancy}
 \\fancyhead[L]{HilFo Studie}
 \\fancyhead[R]{Universität Hildesheim}
 \\definecolor{hildesheim}{RGB}{232,4,28}'
-            writeLines(header_content, temp_header)
-            
-            # Render PDF
-            if (requireNamespace("rmarkdown", quietly = TRUE)) {
-              rmarkdown::render(temp_rmd, output_file = file, quiet = TRUE)
-            } else {
-              # Fallback to simple text file
-              writeLines("PDF generation requires rmarkdown package", file)
-            }
-            
-            # Clean up
-            unlink(c(temp_rmd, temp_header))
-            
+          writeLines(header_content, temp_header)
+          
+          # Render PDF
+          if (requireNamespace("rmarkdown", quietly = TRUE)) {
+            rmarkdown::render(temp_rmd, output_file = file, quiet = TRUE)
+          } else {
+            # Fallback to simple text file
+            writeLines("PDF generation requires rmarkdown package", file)
+          }
+          
+          # Clean up
+          unlink(c(temp_rmd, temp_header))
+          
           }, error = function(e) {
             cat("Error generating PDF:", e$message, "\n")
             writeLines("Error generating PDF report", file)
           })
-          
+    
         } else if (format == "csv") {
           # Export as CSV
           if (exists("complete_data", envir = .GlobalEnv)) {
@@ -1666,7 +1714,7 @@ custom_item_selection <- function(rv, item_bank, config) {
     return(item_num)
   }
   
-    # Items 6-10: Adaptive PA items (select from pool 6-20)
+  # Items 6-10: Adaptive PA items (select from pool 6-20)
   if (item_num >= 6 && item_num <= 10) {
     message("\n================================================================================")
     message(sprintf("ADAPTIVE ITEM SELECTION - Item %d of 10", item_num))
@@ -1752,12 +1800,12 @@ custom_item_selection <- function(rv, item_bank, config) {
     for (i in 1:min(5, nrow(info_df))) {
       if (i == 1) {
         message(sprintf("  %2d. Item %2d (%s): I=%.4f, b=%5.2f, a=%.2f *** BEST ***", 
-                       i, info_df$Item[i], info_df$ID[i], info_df$Information[i], 
-                       info_df$Difficulty[i], info_df$Discrimination[i]))
+                        i, info_df$Item[i], info_df$ID[i], info_df$Information[i], 
+                        info_df$Difficulty[i], info_df$Discrimination[i]))
       } else {
         message(sprintf("  %2d. Item %2d (%s): I=%.4f, b=%5.2f, a=%.2f", 
-                       i, info_df$Item[i], info_df$ID[i], info_df$Information[i], 
-                       info_df$Difficulty[i], info_df$Discrimination[i]))
+                        i, info_df$Item[i], info_df$ID[i], info_df$Information[i], 
+                        info_df$Difficulty[i], info_df$Discrimination[i]))
       }
     }
     
@@ -1766,10 +1814,10 @@ custom_item_selection <- function(rv, item_bank, config) {
     selected_item <- available_items[best_idx]
     
     message(sprintf("\n✓ Selected item %d (%s) with Maximum Fisher Information = %.4f", 
-                   selected_item, paste0("PA_", sprintf("%02d", selected_item)), 
-                   item_info[best_idx]))
+                    selected_item, paste0("PA_", sprintf("%02d", selected_item)), 
+                    item_info[best_idx]))
     message(sprintf("Reason: This item provides the most information at current theta = %.3f", 
-                   current_theta))
+                    current_theta))
     message("================================================================================\n")
     
     return(selected_item)
@@ -1788,55 +1836,50 @@ custom_item_selection <- function(rv, item_bank, config) {
 }
 
 study_config <- inrep::create_study_config(
-    name = "HilFo Studie",
-    study_key = session_uuid,
-    theme = "hildesheim",  # Use built-in Hildesheim theme
-    custom_page_flow = custom_page_flow,
-    demographics = c("Einverstaendnis", "Alter_VPN", "Studiengang", "Geschlecht", "Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz", "Rauchen", "Ernaehrung", "Ernaehrung_Zusatz", "Note_Englisch", "Note_Mathe", "Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st", "Persoenlicher_Code"),
-    demographic_configs = demographic_configs,
-    input_types = input_types,
-    model = "2PL",  # Use 2PL model for IRT
-    adaptive = TRUE,  # Enable adaptive for PA items
-    max_items = 51,  # Total items in bank
-    min_items = 51,  # Must show all items
-    criteria = "MFI",  # Maximum Fisher Information
-    response_ui_type = "radio",
-    progress_style = "bar",
-    language = "de",  # Start with German
-    bilingual = TRUE,  # Enable bilingual support
-    session_save = TRUE,
-    session_timeout = 7200,
-    results_processor = create_hilfo_report,
-    estimation_method = "EAP",  # Use EAP for ability estimation
-    # LATER PACKAGE OPTIMIZATIONS DISABLED FOR DEBUGGING
-    # use_later_package = TRUE,  # Enable later package optimizations - DISABLED
-    # package_loading_delay = 0.001,  # Near-instant package loading - DISABLED
-    # session_init_delay = 0.01,  # Minimal session initialization delay - DISABLED
-    # ui_render_delay = 0,  # Immediate UI rendering - DISABLED
-    # page_load_hook = adaptive_output_hook,  # Add hook for adaptive output - DISABLED
-    # item_bank = all_items,  # Passed separately to launch_study
-    save_to_file = TRUE,
-    save_format = "csv",
-    cloud_storage = TRUE,
-    enable_download = TRUE,
-    # Enhanced download options for Hildesheim
-    download_formats = c("pdf", "csv", "json"),
-    download_handler = create_hilfo_download_handler(),
-    export_options = list(
-      include_raw_responses = TRUE,
-      include_demographics = TRUE,
-      include_timestamps = TRUE,
-      include_plots = TRUE,
-      pdf_template = "hildesheim",
-      csv_separator = ";",  # German standard
-      json_pretty = TRUE
-    ),
-    # Adaptive settings for PA items
-    fixed_items = c(1:5, 21:51),  # First 5 PA are fixed, then all BFI+ are fixed
-    adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
-    # Don't override the built-in Hildesheim theme
-    custom_css = NULL,
-    allow_deselect = TRUE  # Allow response deselection
+  name = "HilFo Studie",
+  study_key = session_uuid,
+  theme = "hildesheim",  # Use built-in Hildesheim theme
+  custom_page_flow = custom_page_flow,
+  demographics = names(demographic_configs),
+  demographic_configs = demographic_configs,
+  input_types = input_types,
+  model = "2PL",  # Use 2PL model for IRT
+  adaptive = TRUE,  # Enable adaptive for PA items
+  max_items = 51,  # Total items in bank
+  min_items = 51,  # Must show all items
+  criteria = "MFI",  # Maximum Fisher Information
+  response_ui_type = "radio",
+  progress_style = "bar",
+  language = "de",  # Start with German
+  bilingual = TRUE,  # Enable bilingual support
+  session_save = TRUE,
+  session_timeout = 7200,
+  results_processor = create_hilfo_report,
+  estimation_method = "EAP",  # Use EAP for ability estimation
+  page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
+  item_bank = all_items,  # Full item bank
+  save_to_file = TRUE,
+  save_format = "csv",
+  cloud_storage = TRUE,
+  enable_download = TRUE,
+  # Enhanced download options for Hildesheim
+  download_formats = c("pdf", "csv", "json"),
+  download_handler = create_hilfo_download_handler(),
+  export_options = list(
+    include_raw_responses = TRUE,
+    include_demographics = TRUE,
+    include_timestamps = TRUE,
+    include_plots = TRUE,
+    pdf_template = "hildesheim",
+    csv_separator = ";",  # German standard
+    json_pretty = TRUE
+  ),
+  # Adaptive settings for PA items
+  fixed_items = c(1:5, 21:51),  # First 5 PA are fixed, then all BFI+ are fixed
+  adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
+  # Don't override the built-in Hildesheim theme
+  custom_css = NULL,
+  allow_deselect = TRUE  # Allow response deselection
 )
 
 cat("\n================================================================================\n")
@@ -1848,54 +1891,30 @@ cat("Fixed radar plot with proper connections\n")
 cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
 
-# Enhanced JavaScript for BOTH radio deselection AND translation debugging
+# Simple JavaScript for radio button deselection ONLY
 custom_js <- '<script>
-console.log("Enhanced JavaScript loaded - radio deselection + translation debugging");
-
 document.addEventListener("DOMContentLoaded", function() {
-  console.log("DOM loaded - setting up radio deselection");
-  
-  // Enhanced radio button deselection with better tracking
+  // Enable radio button deselection
   document.addEventListener("click", function(e) {
     if (e.target && e.target.type === "radio") {
-      console.log("Radio clicked:", e.target.name, "value:", e.target.value);
-      
       var wasChecked = e.target.getAttribute("data-was-checked") === "true";
-      console.log("Was previously checked:", wasChecked);
       
       // Clear all radios in group
-      var selector = "input[name=\\"" + e.target.name + "\\"]";
-      var radios = document.querySelectorAll(selector);
-      console.log("Found", radios.length, "radios in group");
-      
+      var radios = document.querySelectorAll("input[name=\\"" + e.target.name + "\\"]");
       for (var i = 0; i < radios.length; i++) {
         radios[i].setAttribute("data-was-checked", "false");
       }
       
       if (wasChecked) {
-        // Unselect the radio
         e.target.checked = false;
-        console.log("Radio UNSELECTED:", e.target.name);
-        
         if (typeof Shiny !== "undefined") {
           Shiny.setInputValue(e.target.name, null, {priority: "event"});
-          console.log("Shiny input set to null");
         }
       } else {
-        // Select the radio
         e.target.setAttribute("data-was-checked", "true");
-        console.log("Radio SELECTED:", e.target.name, "=", e.target.value);
-        
-        if (typeof Shiny !== "undefined") {
-          Shiny.setInputValue(e.target.name, e.target.value, {priority: "event"});
-          console.log("Shiny input set to:", e.target.value);
-        }
       }
     }
   });
-  
-  // Translation function will be defined later in the script
-  console.log("Radio deselection setup complete");
 });
 </script>'
 
@@ -1939,7 +1958,7 @@ monitor_adaptive <- function(session_data) {
         
         # Calculate SE
         info <- sum(a_params^2 * (1/(1+exp(-a_params*(theta_est-b_params)))) * 
-                   (1 - 1/(1+exp(-a_params*(theta_est-b_params)))))
+                      (1 - 1/(1+exp(-a_params*(theta_est-b_params)))))
         se_est <- 1 / sqrt(info)
         
         cat(sprintf("Current ability estimate: theta = %.3f, SE = %.3f\n", theta_est, se_est))
@@ -1971,10 +1990,10 @@ monitor_adaptive <- function(session_data) {
           
           if (idx == item_num) {
             cat(sprintf("  → Item %2d (PA_%02d): I = %.4f, b = %5.2f, a = %.2f *** SELECTED ***\n",
-                       idx, idx, info, b, a))
+                        idx, idx, info, b, a))
           } else {
             cat(sprintf("    Item %2d (PA_%02d): I = %.4f, b = %5.2f, a = %.2f\n",
-                       idx, idx, info, b, a))
+                        idx, idx, info, b, a))
           }
         }
         
@@ -1989,49 +2008,476 @@ monitor_adaptive <- function(session_data) {
   if (!is.null(session_data$progress)) {
     if (session_data$progress %% 10 == 0) {  # Every 10% progress
       cat(sprintf("[SESSION] Progress: %d%% | Items: %d/%d | Time: %s\n",
-                 session_data$progress,
-                 length(session_data$responses),
-                 session_data$total_items,
-                 format(Sys.time(), "%H:%M:%S")))
+                  session_data$progress,
+                  length(session_data$responses),
+                  session_data$total_items,
+                  format(Sys.time(), "%H:%M:%S")))
     }
   }
 }
 
-# Clean CSS for Hildesheim study - no JavaScript needed with inrep's native language system
-custom_css_only <- '
-/* General styling for improved appearance */
-.assessment-card {
-  max-width: 800px !important;
-  margin: 0 auto !important;
+# Complete JavaScript solution for FULL APP translation and radio deselection
+custom_js_enhanced <- '
+<style>
+/* Fixed language button on all pages */
+#language-toggle-btn {
+  position: fixed !important;
+  top: 10px !important;
+  right: 10px !important;
+  z-index: 9999 !important;
+  background: white !important;
+  border: 2px solid #e8041c !important;
+  color: #e8041c !important;
+  padding: 8px 16px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  font-weight: bold !important;
+}
+#language-toggle-btn:hover {
+  background: #e8041c !important;
+  color: white !important;
+}
+</style>
+<script>
+// Comprehensive translation dictionary for ENTIRE APP
+var translations = {
+  // Page titles
+  "Wohnsituation": "Living Situation",
+  "Soziodemographische Angaben": "Sociodemographic Information",
+  "Lebensstil": "Lifestyle",
+  "Bildung": "Education",
+  "Persönlichkeit": "Personality",
+  "Studienzufriedenheit": "Study Satisfaction",
+  "Ihre Ergebnisse": "Your Results",
+  
+  // Questions
+  "Wie wohnen Sie?": "How do you live?",
+  "Wie alt sind Sie?": "How old are you?",
+  "In welchem Studiengang befinden Sie sich?": "Which study program are you in?",
+  "Welches Geschlecht haben Sie?": "What is your gender?",
+  "Haben Sie ein Haustier oder möchten Sie eines?": "Do you have a pet or would you like one?",
+  "Rauchen Sie?": "Do you smoke?",
+  "Wie ernähren Sie sich hauptsächlich?": "What is your main diet?",
+  
+  // Options
+  "Bei meinen Eltern/Elternteil": "With my parents/parent",
+  "In einer WG/WG in einem Wohnheim": "In a shared apartment/dorm",
+  "Alleine/in abgeschlossener Wohneinheit in einem Wohnheim": "Alone/in a self-contained unit in a dorm",
+  "Mit meinem/r Partner*In (mit oder ohne Kinder)": "With my partner (with or without children)",
+  "Anders": "Other",
+  "Bachelor Psychologie": "Bachelor Psychology",
+  "Master Psychologie": "Master Psychology",
+  "weiblich oder divers": "female or diverse",
+  "männlich": "male",
+  "Ja": "Yes",
+  "Nein": "No",
+  "Hund": "Dog",
+  "Katze": "Cat",
+  "Fische": "Fish",
+  "Vogel": "Bird",
+  "Nager": "Rodent",
+  "Reptil": "Reptile",
+  "Ich möchte kein Haustier": "I don\'t want a pet",
+  "Sonstiges": "Other",
+  "Vegan": "Vegan",
+  "Vegetarisch": "Vegetarian",
+  "Pescetarisch": "Pescetarian",
+  "Flexitarisch": "Flexitarian",
+  "Omnivor (alles)": "Omnivore (everything)",
+  "Andere": "Other",
+  "älter als 30": "older than 30",
+  
+  // Instructions
+  "Falls anders, bitte spezifizieren:": "If other, please specify:",
+  "Anderes Haustier:": "Other pet:",
+  "Andere Ernährungsform:": "Other diet:",
+  "Bitte wählen...": "Please select...",
+  "Bitte wählen Sie": "Please select",
+  
+  // Navigation
+  "Seite": "Page",
+  "von": "of",
+  "Weiter": "Next",
+  "Zurück": "Back",
+  
+  // Validation messages
+  "Bitte beantworten Sie:": "Please answer:",
+  "Dieses Feld ist erforderlich": "This field is required",
+  "Bitte vervollständigen Sie die folgenden Angaben:": "Please complete the following:",
+  
+  // Likert scales
+  "trifft nicht zu": "strongly disagree",
+  "trifft eher nicht zu": "disagree",
+  "teils/teils": "neutral",
+  "trifft eher zu": "agree",
+  "trifft zu": "strongly agree",
+  "sehr gut": "very good",
+  "gut": "good",
+  "befriedigend": "satisfactory",
+  "ausreichend": "sufficient",
+  "mangelhaft": "poor",
+  
+  // Grade options
+  "sehr gut (15-13 Punkte)": "very good (15-13 points)",
+  "gut (12-10 Punkte)": "good (12-10 points)",
+  "befriedigend (9-7 Punkte)": "satisfactory (9-7 points)",
+  "ausreichend (6-4 Punkte)": "sufficient (6-4 points)",
+  "mangelhaft (3-0 Punkte)": "poor (3-0 points)",
+  
+  // Study hours
+  "0 Stunden": "0 hours",
+  "maximal eine Stunde": "maximum one hour",
+  "mehr als eine, aber weniger als 2 Stunden": "more than one, but less than 2 hours",
+  "mehr als zwei, aber weniger als 3 Stunden": "more than two, but less than 3 hours",
+  "mehr als drei, aber weniger als 4 Stunden": "more than three, but less than 4 hours",
+  "mehr als 4 Stunden": "more than 4 hours",
+  
+  // Satisfaction scale
+  "gar nicht zufrieden": "not at all satisfied",
+  "sehr zufrieden": "very satisfied",
+  
+  // Additional questions
+  "Welche Note hatten Sie in Englisch im Abiturzeugnis?": "What grade did you have in English in your Abitur certificate?",
+  "Welche Note hatten Sie in Mathematik im Abiturzeugnis?": "What grade did you have in Mathematics in your Abitur certificate?",
+  "Wieviele Stunden pro Woche planen Sie für die Vor- und Nachbereitung der Statistikveranstaltungen zu investieren?": "How many hours per week do you plan to invest in preparing and reviewing statistics courses?",
+  "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (5-stufig)": "How satisfied are you with your study location Hildesheim? (5-point scale)",
+  "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (7-stufig)": "How satisfied are you with your study location Hildesheim? (7-point scale)",
+  "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags):": "Please create a personal code (first 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday):",
+  
+  // Programming Anxiety titles
+  "Programmierangst - Teil 1": "Programming Anxiety - Part 1",
+  "Programmierangst - Teil 2": "Programming Anxiety - Part 2",
+  "Programmierangst": "Programming Anxiety",
+  
+  // Instructions
+  "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.": "Please indicate to what extent the following statements apply to you.",
+  "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.": "The following questions are selected based on your previous answers.",
+  "Wie sehr treffen die folgenden Aussagen auf Sie zu?": "How much do the following statements apply to you?",
+  "Wie leicht oder schwer fällt es Ihnen...": "How easy or difficult is it for you..."
+};
+
+var currentLang = "de";
+
+// Function to translate entire page - AGGRESSIVE VERSION
+function translatePage() {
+  if (currentLang === "en") {
+    // First, translate all headings and titles
+    document.querySelectorAll("h1, h2, h3, h4, h5, h6, .shiny-title, .panel-title").forEach(function(el) {
+      for (var de in translations) {
+        if (el.innerHTML.indexOf(de) !== -1) {
+          el.innerHTML = el.innerHTML.replace(new RegExp(de, "g"), translations[de]);
+        }
+      }
+    });
+    
+    // Translate all labels including nested text
+    document.querySelectorAll("label, .control-label, .shiny-label").forEach(function(label) {
+      for (var de in translations) {
+        if (label.innerHTML.indexOf(de) !== -1) {
+          label.innerHTML = label.innerHTML.replace(new RegExp(de, "g"), translations[de]);
+        }
+      }
+    });
+    
+    // Translate select options more aggressively
+    document.querySelectorAll("select").forEach(function(select) {
+      // Update the placeholder option
+      if (select.options[0] && select.options[0].text === "Bitte wählen...") {
+        select.options[0].text = "Please select...";
+      }
+      
+      // Translate all options
+      for (var i = 0; i < select.options.length; i++) {
+        var option = select.options[i];
+        for (var de in translations) {
+          if (option.text === de) {
+            option.text = translations[de];
+            break;
+          }
+        }
+      }
+    });
+    
+    // Translate radio button labels
+    document.querySelectorAll(".radio label, .checkbox label").forEach(function(label) {
+      var spans = label.querySelectorAll("span");
+      spans.forEach(function(span) {
+        for (var de in translations) {
+          if (span.textContent.trim() === de) {
+            span.textContent = translations[de];
+            break;
+          }
+        }
+      });
+      
+      // Also check direct text nodes
+      for (var i = 0; i < label.childNodes.length; i++) {
+        var node = label.childNodes[i];
+        if (node.nodeType === 3) { // Text node
+          var text = node.nodeValue.trim();
+          if (translations[text]) {
+            node.nodeValue = " " + translations[text] + " ";
+          }
+        }
+      }
+    });
+    
+    // Translate buttons
+    document.querySelectorAll("button, .btn").forEach(function(button) {
+      for (var de in translations) {
+        if (button.textContent.trim() === de) {
+          button.textContent = translations[de];
+          break;
+        }
+      }
+    });
+    
+    // Translate any divs or spans with text
+    document.querySelectorAll("div, span, p").forEach(function(el) {
+      if (el.children.length === 0) { // Only leaf nodes
+        var text = el.textContent.trim();
+        if (translations[text]) {
+          el.textContent = translations[text];
+        }
+      }
+    });
+    
+    // Translate placeholders
+    document.querySelectorAll("[placeholder]").forEach(function(elem) {
+      if (translations[elem.placeholder]) {
+        elem.placeholder = translations[elem.placeholder];
+      }
+    });
+    
+    // Special handling for page navigation
+    document.querySelectorAll(".progress-text, .page-number").forEach(function(el) {
+      el.innerHTML = el.innerHTML.replace(/Seite/g, "Page").replace(/von/g, "of");
+    });
+    
+    // Force update any remaining German text
+    var allElements = document.querySelectorAll("*");
+    allElements.forEach(function(el) {
+      if (el.children.length === 0 && el.textContent) {
+        var text = el.textContent.trim();
+        if (text && translations[text]) {
+          el.textContent = translations[text];
+        }
+      }
+    });
+  }
 }
 
-/* Language button styling is handled by inline styles in the content function */
-'
+// Global language toggle function with debouncing
+var toggleInProgress = false;
+window.toggleLanguage = function() {
+  // Prevent multiple rapid clicks
+  if (toggleInProgress) return;
+  toggleInProgress = true;
+  setTimeout(function() { toggleInProgress = false; }, 500); // 500ms debounce
+  
+  currentLang = currentLang === "de" ? "en" : "de";
+  
+  // Update button text
+  var btn = document.getElementById("language-toggle-btn");
+  if (btn) {
+    btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+  }
+  
+  // Also update the welcome page button if it exists
+  var welcomeBtn = document.getElementById("lang_switch");
+  if (welcomeBtn) {
+    welcomeBtn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+  }
+  
+  // Toggle welcome page content if on page 1
+  var deContent = document.getElementById("content_de");
+  var enContent = document.getElementById("content_en");
+  if (deContent && enContent) {
+    if (currentLang === "en") {
+      deContent.style.display = "none";
+      enContent.style.display = "block";
+    } else {
+      deContent.style.display = "block";
+      enContent.style.display = "none";
+    }
+  }
+  
+  // Send to Shiny
+  if (typeof Shiny !== "undefined") {
+    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+  }
+  
+  // Store preference
+  sessionStorage.setItem("hilfo_language", currentLang);
+  
+  // Apply translations to current page without reload
+  translatePage();
+};
 
-# =============================================================================
-# UTILITY FUNCTIONS
-# =============================================================================
+// Apply translations on page load
+document.addEventListener("DOMContentLoaded", function() {
+  // Check stored language preference
+  var storedLang = sessionStorage.getItem("hilfo_language");
+  if (storedLang) {
+    currentLang = storedLang;
+  }
+  
+  // Create language toggle button if it doesn\'t exist
+  if (!document.getElementById("language-toggle-btn")) {
+    var btn = document.createElement("button");
+    btn.id = "language-toggle-btn";
+    btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    btn.onclick = toggleLanguage;
+    document.body.appendChild(btn);
+  }
+  
+  // Apply initial translation if English
+  if (currentLang === "en") {
+    // Toggle welcome page if present
+    var deContent = document.getElementById("content_de");
+    var enContent = document.getElementById("content_en");
+    if (deContent && enContent) {
+      deContent.style.display = "none";
+      enContent.style.display = "block";
+    }
+    
+    // Update welcome button if present
+    var welcomeBtn = document.getElementById("lang_switch");
+    if (welcomeBtn) {
+      welcomeBtn.textContent = "Deutsche Version";
+    }
+    
+    // Apply translations
+    translatePage();
+  }
+  
+  // Check stored language
+  var stored = sessionStorage.getItem("hilfo_language");
+  if (stored) {
+    currentLang = stored;
+    var btn = document.getElementById("language-toggle-btn");
+    if (btn) {
+      btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    }
+  }
+  
+  // Apply translations if English
+  if (currentLang === "en") {
+    setTimeout(translatePage, 100);
+  }
+  
+  // Watch for page changes
+  var observer = new MutationObserver(function(mutations) {
+    if (currentLang === "en") {
+      setTimeout(translatePage, 50);
+    }
+  });
+  
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+  
+  // Radio button deselection
+  document.addEventListener("click", function(e) {
+    if (e.target && e.target.type === "radio") {
+      var wasChecked = e.target.getAttribute("data-was-checked") === "true";
+      
+      var radios = document.querySelectorAll("input[name=\\"" + e.target.name + "\\"]");
+      for (var i = 0; i < radios.length; i++) {
+        radios[i].setAttribute("data-was-checked", "false");
+      }
+      
+      if (wasChecked) {
+        e.target.checked = false;
+        if (typeof Shiny !== "undefined") {
+          Shiny.setInputValue(e.target.name, null, {priority: "event"});
+        }
+      } else {
+        e.target.setAttribute("data-was-checked", "true");
+      }
+    }
+  });
+});
 
-# Define %||% operator if not available
-`%||%` <- function(x, y) if (is.null(x)) y else x
+// Handle Shiny messages
+if (typeof Shiny !== "undefined") {
+  Shiny.addCustomMessageHandler("update_language", function(lang) {
+    currentLang = lang;
+    if (lang === "en") {
+      translatePage();
+    } else {
+      location.reload(); // Reload for German
+    }
+  });
+}
+</script>'
 
-# =============================================================================
-# LAUNCH STUDY WITH CLEAN INREP-NATIVE LANGUAGE SYSTEM
-# =============================================================================
+# Server extensions for language handling
+server_extensions <- function(input, output, session) {
+  # Track current language
+  session$userData$current_language <- reactiveVal("de")
+  
+  # Handle language switching
+  observeEvent(input$study_language, {
+    new_lang <- input$study_language
+    session$userData$current_language(new_lang)
+    
+    # Update item bank language
+    if (new_lang == "en") {
+      session$userData$item_bank <- all_items_de
+      session$userData$item_bank$Question <- all_items_de$Question_EN
+    } else {
+      session$userData$item_bank <- all_items_de
+    }
+    
+    # Send message to update UI
+    session$sendCustomMessage("update_language", new_lang)
+  })
+}
 
-# FIXED VERSION - ASCII character names to avoid encoding issues
+# Launch with cloud storage, adaptive testing, and enhanced features
 inrep::launch_study(
-    config = study_config,
-    item_bank = all_items_de,
-    webdav_url = WEBDAV_URL,
-    password = WEBDAV_PASSWORD,
-    save_format = "csv",
-    custom_css = custom_css_only,
-    # admin_dashboard_hook = monitor_adaptive,  # DISABLED for speed
-    max_session_time = 7200,
-    session_save = TRUE,
-    immediate_ui = FALSE,  # DISABLED for speed - causing slow loading
-    ui_render_delay = 0,  # Show UI immediately
-    package_loading_delay = 0.001,  # Near-instant package loading
-    show_loading_screen = FALSE  # No loading screen
+  config = study_config,
+  item_bank = all_items_de,  # Bilingual item bank
+  webdav_url = WEBDAV_URL,
+  password = WEBDAV_PASSWORD,
+  save_format = "csv",
+  custom_css = custom_js_enhanced,  # Enhanced JavaScript
+  admin_dashboard_hook = monitor_adaptive  # Monitor adaptive selection
 )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
