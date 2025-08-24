@@ -691,7 +691,7 @@ launch_study <- function(
               logger(sprintf("Could not load %s: %s", pkg, e$message), level = "DEBUG")
             })
           }
-        }, delay = 0.5)  # 500ms delay for heavy packages
+        }, delay = 0.01)  # 10ms - INSTANT heavy package loading
       }
     } else {
       # Immediate mode - only used when absolutely necessary
@@ -1590,17 +1590,15 @@ launch_study <- function(
              }, 1);
            });
            
-           // HIDE STATIC PAGE when Shiny content loads
+           // HIDE STATIC PAGE IMMEDIATELY when Shiny content loads
            $(document).on('shiny:connected', function() {
-             setTimeout(function() {
-               var staticPage = document.getElementById('nuclear-static-page');
-               if (staticPage) {
-                 staticPage.style.display = 'none';
-               }
-             }, 100);
+             var staticPage = document.getElementById('nuclear-static-page');
+             if (staticPage) {
+               staticPage.style.display = 'none';
+             }
            });
            
-           // BACKUP: Hide static page when page content appears
+           // BACKUP: Hide static page when page content appears - FAST CHECK
            var hideStaticPage = setInterval(function() {
              var pageContent = document.querySelector('#page_content .page-wrapper, #page_content .assessment-card');
              var staticPage = document.getElementById('nuclear-static-page');
@@ -1608,7 +1606,7 @@ launch_study <- function(
                staticPage.style.display = 'none';
                clearInterval(hideStaticPage);
              }
-           }, 200);
+           }, 50);  // Check every 50ms for faster response
         })();
       "))
     ),
@@ -2439,16 +2437,16 @@ launch_study <- function(
     reactive_ui_labels <- shiny::reactiveVal(ui_labels)
     heavy_computations_done <- shiny::reactiveVal(FALSE)
     
-    # Step 2: Render UI IMMEDIATELY (within 1ms) - SINGLE definition
+    # PRELOAD: Start everything IMMEDIATELY - don't wait for renderUI
+    if (!.packages_loaded && has_later) {
+      later::later(function() {
+        .load_packages_once()
+      }, delay = 0.001)  # Start immediately on server start
+    }
+    
+    # Step 2: Render UI INSTANTLY - No loading delays
     output$study_ui <- shiny::renderUI({
-      # Defer package loading to background - AFTER UI is fully visible
-      if (!.packages_loaded && has_later) {
-        later::later(function() {
-          .load_packages_once()
-        }, delay = 0.5)  # 500ms delay ensures UI is fully rendered first
-      }
-      
-      # Return container with page_content that will be filled immediately
+      # Return container immediately - packages already loading
       shiny::div(
         id = "main-study-container",
         style = "min-height: 500px; width: 100%; max-width: 100%; margin: 0 auto; padding: 0; position: relative; overflow: hidden;",
@@ -2456,9 +2454,8 @@ launch_study <- function(
       )
     })
     
-    # Step 3: Schedule ALL initialization for next tick (0ms delay)
-    if (has_later) {
-      later::later(function() {
+    # Step 3: Do ALL initialization IMMEDIATELY - no scheduling
+    {
         # Initialize session management if needed (was deferred from startup)
         if (exists(".needs_session_init") && .needs_session_init) {
           logger("Initializing robust session management", level = "INFO")
@@ -2498,7 +2495,6 @@ launch_study <- function(
         session$userData$heavy_init_complete <- TRUE
         heavy_computations_done(TRUE)
         logger("Heavy initialization complete", level = "DEBUG")
-      }, delay = 0)  # 0ms - next tick, not 200ms!
     }
     
     # Observe language changes from Hildesheim study
