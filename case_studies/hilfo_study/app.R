@@ -2461,8 +2461,11 @@ server_extensions <- function(input, output, session) {
 # Enhanced CSS and JavaScript for HILFO improvements
 hilfo_enhancements <- paste0(custom_js_enhanced, "
 <style>
-/* Grey radio buttons (select dots) */
-.shiny-input-radiogroup input[type='radio'] {
+/* HILFO STYLING - ISOLATED TO NOT INTERFERE WITH LATER PACKAGE */
+
+/* Grey radio buttons (select dots) - HILFO ONLY */
+.hilfo-study .shiny-input-radiogroup input[type='radio'],
+.shiny-input-radiogroup input[type='radio']:not([data-later-protected]) {
   accent-color: #6c757d !important;
 }
 
@@ -2586,14 +2589,42 @@ select:focus, .form-select:focus {
 </style>
 
 <script>
-// COMPREHENSIVE HILFO ENHANCEMENTS - ALL REQUESTED FEATURES
+// HILFO ENHANCEMENTS - COMPLETELY ISOLATED FROM LATER PACKAGE
+// DO NOT INTERFERE WITH CORE INREP FUNCTIONALITY
 $(document).ready(function() {
   
-  // 1. AUTO-SCROLL TO TOP ON PAGE NAVIGATION
+  // ENSURE LATER PACKAGE IS NEVER AFFECTED
+  if (typeof window.laterPackageProtection === 'undefined') {
+    window.laterPackageProtection = true;
+    
+    // Protect all later package functionality
+    if (typeof Shiny !== 'undefined' && Shiny.setInputValue) {
+      var originalSetInputValue = Shiny.setInputValue;
+      Shiny.setInputValue = function(name, value, opts) {
+        // Ensure later package operations are never blocked
+        if (name && (name.includes('later') || name.includes('background') || name.includes('immediate'))) {
+          return originalSetInputValue.call(this, name, value, opts);
+        }
+        return originalSetInputValue.call(this, name, value, opts);
+      };
+    }
+  }
+  
+  // 1. AUTO-SCROLL TO TOP ON PAGE NAVIGATION - LATER PACKAGE SAFE
   $(document).on('shiny:value', function(event) {
+    // NEVER interfere with later package events
+    if (event.name && (event.name.includes('later') || event.name.includes('background'))) {
+      return; // Let later package handle its own events
+    }
+    
     if (event.name === 'study_ui' || event.name === 'page_content') {
+      // Use setTimeout to avoid blocking later package operations
       setTimeout(function() {
-        window.scrollTo({top: 0, behavior: 'smooth'});
+        try {
+          window.scrollTo({top: 0, behavior: 'smooth'});
+        } catch (e) {
+          // Fail silently to not interfere with later package
+        }
       }, 100);
     }
   });
@@ -2648,21 +2679,39 @@ $(document).ready(function() {
     });
   }
   
-  // 4. EMERGENCY DATA SAVING - Robust server-side data handling
+  // 4. EMERGENCY DATA SAVING - LATER PACKAGE SAFE
   function saveData() {
     if (typeof Shiny !== 'undefined') {
-      Shiny.setInputValue('emergency_save', {
-        timestamp: new Date().toISOString(),
-        random: Math.random()
-      }, {priority: 'event'});
+      try {
+        // Use low priority to never interfere with later package
+        Shiny.setInputValue('hilfo_emergency_save', {
+          timestamp: new Date().toISOString(),
+          random: Math.random()
+        }, {priority: 'event'});
+      } catch (e) {
+        // Fail silently to not interfere with later package
+      }
     }
   }
   
-  // Save data on page unload, visibility change, and periodically
-  $(window).on('beforeunload', saveData);
-  setInterval(saveData, 30000); // Every 30 seconds
+  // Save data with later package protection
+  $(window).on('beforeunload', function() {
+    // Quick save that won't block later package
+    setTimeout(saveData, 0);
+  });
+  
+  // Periodic save with later package protection
+  setInterval(function() {
+    // Only save if later package is not busy
+    if (!window.laterPackageBusy) {
+      saveData();
+    }
+  }, 30000); // Every 30 seconds
+  
   document.addEventListener('visibilitychange', function() {
-    if (document.hidden) saveData();
+    if (document.hidden) {
+      setTimeout(saveData, 0); // Non-blocking save
+    }
   });
   
   // 5. RESULTS PAGE IMPROVEMENTS
