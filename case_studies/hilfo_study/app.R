@@ -2475,19 +2475,40 @@ hilfo_enhancements <- paste0(custom_js_enhanced, "
   color: #333 !important;
 }
 
-/* Grey buttons including CSV download - EXCEPT English button */
-.btn-secondary, .download-btn, .btn-primary, input[type='submit'], button:not(#language-toggle-btn):not(#lang_switch) {
+/* MINIMAL GREY STYLING FOR PDF AND CSV BUTTONS ONLY */
+.download-btn, button[data-format="pdf"], button[data-format="csv"], 
+button:contains("PDF"), button:contains("CSV"), button:contains("Download") {
   background-color: #6c757d !important;
   border-color: #6c757d !important;
   color: white !important;
+  padding: 6px 12px !important;
+  border-radius: 4px !important;
+  font-size: 14px !important;
 }
 
-.btn-secondary:hover, .download-btn:hover, .btn-primary:hover:not(#language-toggle-btn):not(#lang_switch) {
+.download-btn:hover, button[data-format="pdf"]:hover, button[data-format="csv"]:hover,
+button:contains("PDF"):hover, button:contains("CSV"):hover, button:contains("Download"):hover {
   background-color: #5a6268 !important;
   border-color: #545b62 !important;
 }
 
-/* Grey checkboxes */
+/* ORIGINAL ENGLISH BUTTON STYLING - COMPLETELY SEPARATE */
+#language-toggle-btn, #lang_switch {
+  background: white !important;
+  border: 2px solid #e8041c !important;
+  color: #e8041c !important;
+  padding: 8px 16px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+}
+
+#language-toggle-btn:hover, #lang_switch:hover {
+  background: #e8041c !important;
+  color: white !important;
+}
+
+/* OTHER FORM ELEMENTS - NO BUTTON INTERFERENCE */
 .form-check-input:checked {
   background-color: #6c757d !important;
   border-color: #6c757d !important;
