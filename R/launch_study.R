@@ -1808,13 +1808,16 @@ launch_study <- function(
           // Apply on page load
           smoothTransition();
         })();
-        
+      ")),
+      
+      # Additional JavaScript for Shiny handling
+      shiny::tags$script(HTML("
         // Handle Shiny updates with minimal interference
         $(document).ready(function() {
           let updateTimeout;
           
           // Add scroll-to-top functionality for page changes
-          Shiny.addCustomMessageHandler("scrollToTop", function(message) {
+          Shiny.addCustomMessageHandler('scrollToTop', function(message) {
             if (message.smooth) {
               // Smooth scroll to top
               window.scrollTo({
