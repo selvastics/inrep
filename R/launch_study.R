@@ -532,28 +532,10 @@ launch_study <- function(
     ...
 ) {
   
-  # AGGRESSIVE LATER PACKAGE IMPLEMENTATION - DISPLAY UI IMMEDIATELY
+  # ULTRA-FAST MODE - NO LATER PACKAGE OVERHEAD FOR MAXIMUM SPEED
   if (immediate_ui) {
-    cat("LATER PACKAGE: Implementing immediate UI display\n")
-    
-    # Step 1: Create private event loop for UI
-    ui_loop <- later::create_loop()
-    
-    # Step 2: Display UI with ZERO delay
-    later::later(function() {
-      cat("LATER: UI displayed IMMEDIATELY\n")
-    }, delay = 0, loop = ui_loop)
-    
-    # Step 3: Force immediate execution
-    later::run_now(loop = ui_loop)
-    
-    # Step 4: Move ALL heavy operations to background using later
-    later::later(function() {
-      cat("LATER: Background loading started\n")
-    }, delay = 0)
-    
-    # Step 5: Force all background operations to run immediately but asynchronously
-    later::run_now(timeoutSecs = 0, all = FALSE)
+    # Skip all complex later package operations that create delays
+  }
   }
   
   # Enhanced validation and error handling for robustness
