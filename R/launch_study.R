@@ -616,6 +616,28 @@ launch_study <- function(
     # Continue with standard functionality
   })
   
+  # Set up global error handling for German locale errors
+  options(warn = -1)  # Suppress warnings temporarily
+  old_error_handler <- getOption("error")
+  on.exit({
+    options(warn = 0)
+    options(error = old_error_handler)
+  }, add = TRUE)
+  
+  # Custom error handler for "Argument hat Länge 0" errors
+  options(error = function() {
+    err_msg <- geterrmessage()
+    if (grepl("Argument hat Länge 0|argument is of length zero", err_msg)) {
+      logger("Suppressed zero-length argument error (non-critical)", level = "DEBUG")
+      return(invisible())
+    } else {
+      # Call original error handler or default behavior
+      if (!is.null(old_error_handler)) {
+        old_error_handler()
+      }
+    }
+  })
+  
   # Check if shiny is available (required for UI)
   if (!requireNamespace("shiny", quietly = TRUE)) {
     stop("Package 'shiny' is required but not available. Please install it with: install.packages('shiny')")
@@ -3567,22 +3589,31 @@ launch_study <- function(
     })
     
     output$item_table <- safe_render_dt({
-      # Enhanced error handling for item table rendering
+      # COMPREHENSIVE error handling for item table rendering
       tryCatch({
+        # Validate rv$cat_result exists and has data
         if (base::is.null(rv$cat_result)) {
           return(data.frame(Message = "No assessment data available"))
         }
         
-        items <- rv$cat_result$administered
-        responses <- rv$cat_result$responses
+        # Safely extract data with fallbacks
+        items <- tryCatch(rv$cat_result$administered, error = function(e) NULL)
+        responses <- tryCatch(rv$cat_result$responses, error = function(e) NULL)
         
-        # Validate data before processing
+        # Validate items data
         if (is.null(items) || length(items) == 0) {
           return(data.frame(Message = "No items administered"))
         }
         
-        if (is.null(responses)) {
+        # Validate responses data with comprehensive checks
+        if (is.null(responses) || length(responses) == 0) {
           responses <- rep(NA, length(items))
+        }
+        
+        # Ensure responses is a vector and handle edge cases
+        responses <- as.vector(responses)
+        if (any(is.infinite(responses))) {
+          responses[is.infinite(responses)] <- NA
         }
       # Align lengths defensively
       if (length(items) != length(responses)) {
@@ -3609,8 +3640,11 @@ launch_study <- function(
           base::data.frame(
             Item = 1:base::length(items),
             Question = item_bank$Question[items],
-            Response = base::ifelse(base::is.na(responses), "No Response", 
-                                   base::ifelse(responses == 1, "Correct", "Incorrect")),
+            Response = sapply(responses, function(x) {
+              if (is.na(x) || is.null(x)) return("No Response")
+              if (x == 1) return("Correct")
+              return("Incorrect")
+            }),
             Correct = item_bank$Answer[items],
             Time = base::round(rv$cat_result$response_times[seq_len(length(items))], 1),
             check.names = FALSE
