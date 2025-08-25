@@ -621,6 +621,26 @@ launch_study <- function(
     stop("Package 'shiny' is required but not available. Please install it with: install.packages('shiny')")
   }
   
+  # Check and ensure all critical dependencies are available
+  critical_packages <- c("shiny", "DT", "ggplot2", "dplyr")
+  missing_packages <- c()
+  
+  for (pkg in critical_packages) {
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      missing_packages <- c(missing_packages, pkg)
+    }
+  }
+  
+  # Install missing critical packages
+  if (length(missing_packages) > 0) {
+    logger(paste("Installing missing critical packages:", paste(missing_packages, collapse = ", ")), level = "INFO")
+    tryCatch({
+      utils::install.packages(missing_packages, quiet = TRUE, repos = "https://cran.r-project.org")
+    }, error = function(e) {
+      logger(paste("Failed to install packages:", e$message), level = "WARNING")
+    })
+  }
+  
   # Check if later package is available (for deferred operations)
   has_later <- requireNamespace("later", quietly = TRUE)
   if (!has_later) {
@@ -912,28 +932,47 @@ launch_study <- function(
     }
   }
   
-  # Create safe DT function
+  # Create safe DT function with automatic loading
   safe_render_dt <- function(expr, ...) {
-    # Safely check if DT is available
-    dt_available <- if (!is.null(available_packages) && is.list(available_packages)) {
-      isTRUE(available_packages[["DT"]])
-    } else {
-      requireNamespace("DT", quietly = TRUE)
+    # Force load DT package if available
+    dt_available <- requireNamespace("DT", quietly = TRUE)
+    
+    if (!dt_available) {
+      # Try to install DT if not available
+      tryCatch({
+        utils::install.packages("DT", quiet = TRUE, repos = "https://cran.r-project.org")
+        dt_available <- requireNamespace("DT", quietly = TRUE)
+      }, error = function(e) {
+        logger(sprintf("Failed to install DT package: %s", e$message), level = "WARNING")
+      })
     }
     
     if (dt_available) {
       tryCatch({
+        # Ensure DT is loaded
+        if (!"DT" %in% loadedNamespaces()) {
+          loadNamespace("DT")
+        }
         DT::renderDT(expr, ...)
       }, error = function(e) {
         logger(sprintf("DT::renderDT error: %s", e$message), level = "ERROR")
-        # Fallback to text output
-        shiny::renderPrint({
-          "Table rendering failed - displaying data as text instead"
+        # Fallback to basic table
+        shiny::renderTable({
+          tryCatch({
+            eval(expr)
+          }, error = function(e2) {
+            data.frame(Error = "Table rendering failed")
+          })
         })
       })
     } else {
-      shiny::renderPrint({
-        "Table rendering not available - DT package not installed"
+      logger("DT package not available - using fallback table rendering", level = "WARNING")
+      shiny::renderTable({
+        tryCatch({
+          eval(expr)
+        }, error = function(e) {
+          data.frame(Error = "Table rendering not available - DT package not installed")
+        })
       })
     }
   }
