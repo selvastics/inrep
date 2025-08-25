@@ -533,24 +533,24 @@ launch_study <- function(
   if (immediate_ui) {
     cat("LATER PACKAGE: Implementing immediate UI display\n")
     
-    # Step 1: Create private event loop for UI
-    ui_loop <- later::create_loop()
+    # Step 1: Create managed private event loop for UI
+    ui_loop_manager <- create_managed_loop()
     
-    # Step 2: Display UI with ZERO delay
-    later::later(function() {
-      cat("LATER: UI displayed IMMEDIATELY\n")
-    }, delay = 0, loop = ui_loop)
+    # Step 2: Display UI with ZERO delay using inrep_later
+    inrep_later(function() {
+      cat("INREP_LATER: UI displayed IMMEDIATELY\n")
+    }, delay = 0, loop = ui_loop_manager$loop, log_prefix = "UI_DISPLAY")
     
     # Step 3: Force immediate execution
-    later::run_now(loop = ui_loop)
+    ui_loop_manager$run_now()
     
-    # Step 4: Move ALL heavy operations to background using later
-    later::later(function() {
-      cat("LATER: Background loading started\n")
-    }, delay = 0)
+    # Step 4: Move ALL heavy operations to background using async_execute
+    async_execute(function() {
+      cat("ASYNC_EXECUTE: Background loading started\n")
+    }, delay = 0, log_prefix = "BACKGROUND_LOAD")
     
     # Step 5: Force all background operations to run immediately but asynchronously
-    later::run_now(timeoutSecs = 0, all = FALSE)
+    run_now(timeoutSecs = 0, all = FALSE)
   }
   
   # Enhanced validation and error handling for robustness
