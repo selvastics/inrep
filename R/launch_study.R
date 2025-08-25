@@ -39,6 +39,9 @@
 #' @param keep_alive_interval Keep-alive ping interval in seconds (default: 10).
 #' @param enable_error_recovery Logical indicating whether to enable automatic error recovery
 #'   with up to 3 recovery attempts before graceful degradation.
+#' @param immediate_ui Logical indicating whether to enable immediate UI display using the later package
+#'   for blazing fast startup (default: \code{TRUE}). When enabled, the UI appears instantly while
+#'   heavy computations run in the background. Set to \code{FALSE} for synchronous loading.
 #' @param ... Additional parameters passed to Shiny application configuration.
 #'
 #' @return A Shiny application object that can be run with \code{shiny::runApp()}.
