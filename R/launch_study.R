@@ -3567,9 +3567,23 @@ launch_study <- function(
     })
     
     output$item_table <- safe_render_dt({
-      if (base::is.null(rv$cat_result)) return()
-      items <- rv$cat_result$administered
-      responses <- rv$cat_result$responses
+      # Enhanced error handling for item table rendering
+      tryCatch({
+        if (base::is.null(rv$cat_result)) {
+          return(data.frame(Message = "No assessment data available"))
+        }
+        
+        items <- rv$cat_result$administered
+        responses <- rv$cat_result$responses
+        
+        # Validate data before processing
+        if (is.null(items) || length(items) == 0) {
+          return(data.frame(Message = "No items administered"))
+        }
+        
+        if (is.null(responses)) {
+          responses <- rep(NA, length(items))
+        }
       # Align lengths defensively
       if (length(items) != length(responses)) {
         n <- min(length(items), length(responses))
@@ -3595,7 +3609,8 @@ launch_study <- function(
           base::data.frame(
             Item = 1:base::length(items),
             Question = item_bank$Question[items],
-            Response = base::ifelse(responses == 1, "Correct", "Incorrect"),
+            Response = base::ifelse(base::is.na(responses), "No Response", 
+                                   base::ifelse(responses == 1, "Correct", "Incorrect")),
             Correct = item_bank$Answer[items],
             Time = base::round(rv$cat_result$response_times[seq_len(length(items))], 1),
             check.names = FALSE
@@ -3627,6 +3642,15 @@ launch_study <- function(
       ) -> dt_table
       
       DT::formatStyle(dt_table, columns = base::names(dat), color = 'var(--text-color)', fontFamily = 'var(--font-family)')
+      
+      }, error = function(e) {
+        logger(sprintf("Item table rendering error: %s", e$message), level = "ERROR")
+        # Return fallback data frame
+        data.frame(
+          Error = paste("Table rendering failed:", e$message),
+          Solution = "Please check your data or contact support"
+        )
+      })
     })
     
     output$recommendations <- shiny::renderUI({
