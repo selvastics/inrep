@@ -1864,19 +1864,40 @@ study_config <- inrep::create_study_config(
   demographics = names(demographic_configs),
   demographic_configs = demographic_configs,
   input_types = input_types,
+  
+  # Enhanced adaptive configuration matching cognitive example
   model = "2PL",  # Use 2PL model for IRT
-  adaptive = TRUE,  # Enable adaptive for PA items
-  max_items = 51,  # Total items in bank
-  min_items = 51,  # Must show all items
-  criteria = "MFI",  # Maximum Fisher Information
+  estimation_method = "TAM",  # Use TAM for better estimation
+  adaptive = TRUE,  # Enable adaptive testing
+  criteria = "MI",  # Maximum Information (better than MFI)
+  min_items = 10,  # Minimum items before stopping
+  max_items = 20,  # Maximum items to prevent fatigue
+  min_SEM = 0.3,   # Stop when SEM is acceptable
+  theta_prior = c(0, 1),  # Standard normal prior
+  
   response_ui_type = "radio",
-  progress_style = "bar",
+  progress_style = "modern-circle",  # Better progress indicator
   language = "de",  # Start with German
   bilingual = TRUE,  # Enable bilingual support
   session_save = TRUE,
   session_timeout = 7200,
+  
+  # Enhanced features matching cognitive example
+  parallel_computation = TRUE,
+  cache_enabled = TRUE,
+  accessibility_enhanced = TRUE,
+  
+  # Enhanced participant report
+  participant_report = list(
+    show_theta_plot = TRUE,
+    show_response_table = TRUE,
+    show_recommendations = TRUE,
+    use_enhanced_report = TRUE,
+    show_item_difficulty_trend = TRUE,
+    show_domain_breakdown = TRUE
+  ),
+  
   results_processor = create_hilfo_report,
-  estimation_method = "EAP",  # Use EAP for ability estimation
   page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
   item_bank = all_items,  # Full item bank
   save_to_file = TRUE,
@@ -2633,6 +2654,28 @@ $(document).ready(function() {
 </script>
 ")
 
+# Enhanced admin dashboard hook matching cognitive example
+enhanced_admin_hook <- function(session_data) {
+  message("=== HILFO ADAPTIVE MONITORING ===")
+  message("Participant ID: ", session_data$participant_id %||% "unknown")
+  message("Progress: ", round(session_data$progress %||% 0, 1), "%")
+  message("Current theta: ", round(session_data$theta %||% 0, 3))
+  message("Standard error: ", round(session_data$se %||% 1, 3))
+  message("Items administered: ", length(session_data$administered %||% c()))
+  message("Current domain: ", session_data$current_domain %||% "unknown")
+  message("Adaptive phase: ", if(session_data$adaptive_active %||% FALSE) "ACTIVE" else "FIXED")
+  message("===============================")
+  
+  # Also call original monitor if it exists
+  if (exists("monitor_adaptive") && is.function(monitor_adaptive)) {
+    tryCatch({
+      monitor_adaptive(session_data)
+    }, error = function(e) {
+      message("Original monitor_adaptive failed: ", e$message)
+    })
+  }
+}
+
 # Launch with cloud storage, adaptive testing, and enhanced features
 inrep::launch_study(
   config = study_config,
@@ -2641,7 +2684,8 @@ inrep::launch_study(
   password = WEBDAV_PASSWORD,
   save_format = "csv",
   custom_css = hilfo_improvements,  # ALL HILFO IMPROVEMENTS APPLIED
-  admin_dashboard_hook = monitor_adaptive  # Monitor adaptive selection
+  accessibility = TRUE,  # Enable accessibility features
+  admin_dashboard_hook = enhanced_admin_hook  # Enhanced monitoring like cognitive example
 )
 
 
