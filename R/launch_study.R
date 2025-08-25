@@ -820,8 +820,10 @@ launch_study <- function(
   )
   
   # Check if TAM package is available (only needed for adaptive mode)
+  # Defer message to avoid slowing startup
+  .tam_warning <- NULL
   if (isTRUE(config$adaptive) && !isTRUE(available_packages$TAM)) {
-    message("Package 'TAM' not available. Falling back to basic non-TAM mode for limited checks.")
+    .tam_warning <- "Package 'TAM' not available. Falling back to basic non-TAM mode for limited checks."
   }
   
   # Create robust wrapper functions that check package availability
@@ -984,11 +986,15 @@ launch_study <- function(
       logger(paste("Cloud storage enabled:", webdav_url), level = "INFO")
     }
   } else {
-    logger("Using local storage only (no cloud backup)", level = "INFO")
-    logger("Cloud storage disabled - results will be saved locally only", level = "INFO")
+    # Defer logging to after UI loads for faster startup
+    .startup_messages <- c(
+      "Using local storage only (no cloud backup)",
+      "Cloud storage disabled - results will be saved locally only"
+    )
   }
   
-  logger(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"), level = "INFO")
+  # Defer study launch message for faster startup
+  .launch_message <- base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light")
   
   if (!is.null(config$admin_dashboard_hook) && is.function(config$admin_dashboard_hook)) {
     logger("Admin dashboard hook registered", level = "INFO")
@@ -2550,6 +2556,19 @@ launch_study <- function(
     # Step 3: Do initialization AFTER UI is shown
     if (has_later) {
       later::later(function() {
+        # Print deferred startup messages
+        if (exists(".startup_messages")) {
+          for (msg in .startup_messages) {
+            logger(msg, level = "INFO")
+          }
+        }
+        if (exists(".launch_message")) {
+          logger(.launch_message, level = "INFO")
+        }
+        if (exists(".tam_warning") && !is.null(.tam_warning)) {
+          message(.tam_warning)
+        }
+        
         # Initialize session management if needed (was deferred from startup)
         if (exists(".needs_session_init") && .needs_session_init) {
           logger("Initializing robust session management", level = "INFO")

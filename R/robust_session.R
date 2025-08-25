@@ -115,7 +115,9 @@ log_session_event <- function(event_type, message, details = NULL) {
       message,
       if (!is.null(safe_details)) paste0(" | ", jsonlite::toJSON(safe_details, auto_unbox = TRUE)) else ""
     )
-    cat(log_line, file = .session_state$log_file, append = TRUE)
+    if (!is.null(.session_state$log_file)) {
+      cat(log_line, file = .session_state$log_file, append = TRUE)
+    }
   }, error = function(e) {
     # Fallback to console if file writing fails
     message("Session logging failed: ", e$message)
@@ -131,11 +133,21 @@ log_session_event <- function(event_type, message, details = NULL) {
 #' Update Last Activity Time
 #' 
 update_activity <- function() {
-  .session_state$last_activity <- Sys.time()
-  # Only log activity to file, not console (reduces spam)
-  if (.session_state$enable_logging) {
-    log_session_event("ACTIVITY", "User activity detected")
+  # Check if session state is initialized
+  if (!exists(".session_state") || is.null(.session_state)) {
+    return(invisible(NULL))
   }
+  
+  tryCatch({
+    .session_state$last_activity <- Sys.time()
+    # Only log activity to file, not console (reduces spam)
+    if (!is.null(.session_state$enable_logging) && .session_state$enable_logging) {
+      log_session_event("ACTIVITY", "User activity detected")
+    }
+  }, error = function(e) {
+    # Silently ignore errors
+    invisible(NULL)
+  })
 }
 
 #' Check Session Validity
@@ -295,12 +307,18 @@ get_session_data <- function() {
   if (exists("rv", envir = .GlobalEnv)) {
     tryCatch({
       rv <- get("rv", envir = .GlobalEnv)
-      if (is.reactivevalues(rv)) {
-        session_data$reactive_values <- reactiveValuesToList(rv)
+      # Check if shiny is loaded and is.reactivevalues exists
+      if (exists("is.reactivevalues", where = "package:shiny") && 
+          is.function(get("is.reactivevalues", where = "package:shiny"))) {
+        if (shiny::is.reactivevalues(rv)) {
+          if (exists("reactiveValuesToList", where = "package:shiny")) {
+            session_data$reactive_values <- shiny::reactiveValuesToList(rv)
+          }
+        }
       }
     }, error = function(e) {
       # Log data collection errors to file only for background operations
-      if (.session_state$enable_logging) {
+      if (!is.null(.session_state$enable_logging) && .session_state$enable_logging) {
         log_session_event("DATA_COLLECTION_ERROR", "Failed to collect reactive values", 
                          list(error = e$message))
       }
