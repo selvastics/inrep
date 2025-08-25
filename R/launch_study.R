@@ -1653,11 +1653,12 @@ launch_study <- function(
                      // DIRECT CONTENT DISPLAY - No loading screens, maximum efficiency
           // Debug logging removed for performance
         })();
-      "))
+      ")),
+      
     ),
-
-          shiny::tags$head(
-      # CRITICAL: Prevent corner flash - must be FIRST CSS rule
+    
+    shiny::tags$head(
+      # CRITICAL: Prevent corner flash - must be FIRST CSS rule  
       shiny::tags$style(HTML("
         /* IMMEDIATE CORNER FLASH PREVENTION - Applied before any other CSS */
         * {
@@ -1960,7 +1961,7 @@ launch_study <- function(
           });
         });
       ")),
-        shiny::tags$style(HTML("
+      shiny::tags$style(HTML("
           /* Simple full-width fix */
           .full-width-app > .container-fluid {
             padding: 0 15px !important;
@@ -2470,6 +2471,19 @@ launch_study <- function(
   )
   
   server <- function(input, output, session) {
+    # Apply server extensions if provided
+    if (!is.null(server_extensions) && is.list(server_extensions)) {
+      for (extension in server_extensions) {
+        if (is.function(extension)) {
+          tryCatch({
+            extension(input, output, session)
+          }, error = function(e) {
+            logger(sprintf("Server extension failed: %s", e$message), level = "WARNING")
+          })
+        }
+      }
+    }
+    
     # LATER PACKAGE: IMMEDIATE UI DISPLAY - Show UI first, load everything else later
     if (immediate_ui) {
       # Logging removed for performance - immediate UI display enabled
