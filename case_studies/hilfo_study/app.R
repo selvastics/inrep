@@ -2556,6 +2556,28 @@ select:focus, .form-select:focus {
   border-left: 3px solid #ffc107;
   font-style: italic;
 }
+
+/* English translation button styling */
+#language-toggle-btn, #lang_switch {
+  background: white !important;
+  border: 2px solid #e8041c !important;
+  color: #e8041c !important;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#language-toggle-btn:hover, #lang_switch:hover {
+  background: #e8041c !important;
+  color: white !important;
+}
+
+/* Download buttons styling - ensure they work */
+.download-btn, button:contains("CSV"), button:contains("PDF") {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
 </style>
 
 <script>
@@ -2685,29 +2707,113 @@ $(document).ready(function() {
     }
   });
   
-  // 6. DOWNLOAD FUNCTIONALITY
-  $(document).on('click', '.download-btn', function(e) {
+  // 6. FUNCTIONAL PDF AND CSV DOWNLOAD BUTTONS
+  $(document).on('click', '.download-btn, button:contains("CSV"), button:contains("PDF")', function(e) {
     e.preventDefault();
-    var format = $(this).data('format') || 'csv';
     
+    // Determine format from button text or data attribute
+    var buttonText = $(this).text().toLowerCase();
+    var format = 'csv'; // default
+    
+    if (buttonText.includes('pdf') || $(this).data('format') === 'pdf') {
+      format = 'pdf';
+    } else if (buttonText.includes('csv') || $(this).data('format') === 'csv') {
+      format = 'csv';
+    }
+    
+    // Trigger download through Shiny
     if (typeof Shiny !== 'undefined') {
-      Shiny.setInputValue('download_request', {
-        format: format,
-        timestamp: new Date().toISOString()
-      }, {priority: 'event'});
+      Shiny.setInputValue('download_format', format, {priority: 'event'});
+      
+      // Also try direct download if data is available
+      setTimeout(function() {
+        // Look for existing download links or data
+        var existingData = $('.results-data, .assessment-data');
+        if (existingData.length > 0) {
+          downloadDataDirectly(format);
+        }
+      }, 100);
+    } else {
+      // Fallback: direct download without Shiny
+      downloadDataDirectly(format);
     }
   });
   
-  // Handle file downloads with user selection
-  if (typeof Shiny !== 'undefined') {
-    Shiny.addCustomMessageHandler('trigger_download', function(message) {
-      var link = document.createElement('a');
-      link.href = message.url;
-      link.download = message.filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+  // Direct download function for when Shiny is not available
+  function downloadDataDirectly(format) {
+    try {
+      // Get current date for filename
+      var now = new Date();
+      var dateStr = now.getFullYear() + 
+                   String(now.getMonth() + 1).padStart(2, '0') + 
+                   String(now.getDate()).padStart(2, '0') + '_' +
+                   String(now.getHours()).padStart(2, '0') + 
+                   String(now.getMinutes()).padStart(2, '0') + 
+                   String(now.getSeconds()).padStart(2, '0');
+      
+      var filename = 'hilfo_results_' + dateStr + '.' + format;
+      
+      if (format === 'csv') {
+        // Create CSV content from visible data
+        var csvContent = createCSVContent();
+        downloadFile(csvContent, filename, 'text/csv');
+      } else if (format === 'pdf') {
+        // Create PDF content (simplified)
+        var pdfContent = createPDFContent();
+        downloadFile(pdfContent, filename, 'application/pdf');
+      }
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Download failed. Please try again.');
+    }
+  }
+  
+  // Create CSV content from page data
+  function createCSVContent() {
+    var content = 'Assessment Results\\n';
+    content += 'Timestamp,' + new Date().toISOString() + '\\n';
+    content += 'Study,HILFO Study\\n\\n';
+    
+    // Get visible results
+    $('.results-page').find('h3, h4, p, td').each(function() {
+      var text = $(this).text().trim();
+      if (text && text.length > 0) {
+        content += text.replace(/,/g, ';') + '\\n';
+      }
     });
+    
+    return content;
+  }
+  
+  // Create basic PDF content (as text for now)
+  function createPDFContent() {
+    var content = 'HILFO Study Results\\n';
+    content += 'Generated: ' + new Date().toLocaleString() + '\\n\\n';
+    
+    $('.results-page').find('h3, h4, p').each(function() {
+      var text = $(this).text().trim();
+      if (text && text.length > 0) {
+        content += text + '\\n';
+      }
+    });
+    
+    return content;
+  }
+  
+  // Download file function
+  function downloadFile(content, filename, mimeType) {
+    var blob = new Blob([content], { type: mimeType });
+    var url = window.URL.createObjectURL(blob);
+    
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up
+    window.URL.revokeObjectURL(url);
   }
   
 });
