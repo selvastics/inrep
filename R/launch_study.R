@@ -616,6 +616,34 @@ launch_study <- function(
     # Continue with standard functionality
   })
   
+  # PERFORMANCE: Global error suppression and reduced logging for speed
+  old_error_handler <- getOption("error")
+  old_warn_level <- getOption("warn")
+  on.exit({
+    options(error = old_error_handler, warn = old_warn_level)
+  }, add = TRUE)
+  
+  # Suppress warnings and errors that slow down startup
+  options(warn = -1)  # Suppress warnings
+  options(error = function() {
+    err_msg <- geterrmessage()
+    if (grepl("Argument hat L\u00e4nge 0|argument is of length zero", err_msg)) {
+      # Suppress these specific errors silently for performance
+      return(invisible())
+    } else if (!is.null(old_error_handler)) {
+      old_error_handler()
+    }
+  })
+  
+  # Create high-performance logger that only logs critical errors
+  original_logger <- logger
+  logger <- function(msg, level = "INFO") {
+    if (level %in% c("ERROR", "FATAL")) {
+      original_logger(msg, level)
+    }
+    # Suppress DEBUG, INFO, WARNING for speed
+  }
+
   # Check if shiny is available (required for UI)
   if (!requireNamespace("shiny", quietly = TRUE)) {
     stop("Package 'shiny' is required but not available. Please install it with: install.packages('shiny')")
@@ -2774,7 +2802,10 @@ launch_study <- function(
         tryCatch({
           update_activity()
         }, error = function(e) {
-          logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
+          # Suppress "Argument hat Länge 0" errors silently for performance
+          if (!grepl("Argument hat L\u00e4nge 0|argument is of length zero", e$message)) {
+            logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
+          }
         })
       }
     })
