@@ -2465,7 +2465,7 @@ inrep::launch_study(
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
   save_format = "csv",
-  custom_css = custom_js_enhanced,  # Enhanced JavaScript
+  custom_css = custom_js,  # Simple radio deselection only
   admin_dashboard_hook = monitor_adaptive  # Monitor adaptive selection
 )
 
