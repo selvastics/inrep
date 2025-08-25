@@ -525,34 +525,10 @@ launch_study <- function(
     package_loading_delay = NULL,
     session_init_delay = NULL,
     show_loading_screen = NULL,
-    immediate_ui = FALSE,
+    immediate_ui = TRUE,  # DEFAULT TO TRUE for fast startup
     server_extensions = NULL,  # Add support for server extensions
     ...
 ) {
-  
-  # AGGRESSIVE LATER PACKAGE IMPLEMENTATION - DISPLAY UI IMMEDIATELY
-  if (immediate_ui) {
-    # Logging removed for performance - immediate UI display enabled
-    
-    # Step 1: Create private event loop for UI
-    ui_loop <- later::create_loop()
-    
-    # Step 2: Display UI with ZERO delay
-    later::later(function() {
-      # UI displayed immediately
-    }, delay = 0, loop = ui_loop)
-    
-    # Step 3: Force immediate execution
-    later::run_now(loop = ui_loop)
-    
-    # Step 4: Move ALL heavy operations to background using later
-    later::later(function() {
-      # Background loading started
-    }, delay = 0)
-    
-    # Step 5: Force all background operations to run immediately but asynchronously
-    later::run_now(timeoutSecs = 0, all = FALSE)
-  }
   
   # Enhanced validation and error handling for robustness
   tryCatch({
@@ -2773,12 +2749,8 @@ launch_study <- function(
       observe_data_preservation <- function() {
         if (rv$session_active && exists("preserve_session_data") && is.function(preserve_session_data)) {
           tryCatch({
-            # Check if the function expects parameters
-            if (length(formals(preserve_session_data)) > 0) {
-              preserve_session_data(rv = rv, session = session)
-            } else {
-              preserve_session_data()
-            }
+            # Call preserve_session_data with correct signature
+            preserve_session_data()
           }, error = function(e) {
             # Silently ignore data preservation failures to reduce log spam
           })
@@ -2894,12 +2866,8 @@ launch_study <- function(
     session$onFlush(function() {
       if (session_save && exists("update_activity") && is.function(update_activity)) {
         tryCatch({
-          # Check if the function expects parameters
-          if (length(formals(update_activity)) > 0) {
-            update_activity(session = session)
-          } else {
-            update_activity()
-          }
+          # Call update_activity
+          update_activity()
         }, error = function(e) {
           # Silently ignore activity update failures to reduce log spam
         })
@@ -4360,12 +4328,8 @@ launch_study <- function(
       # ROBUST DATA PRESERVATION WITH ERROR RECOVERY
       if (session_save && exists("preserve_session_data") && is.function(preserve_session_data)) {
         tryCatch({
-          # Check if the function expects parameters
-          if (length(formals(preserve_session_data)) > 0) {
-            preserve_session_data(rv = rv, session = session, force = FALSE)
-          } else {
-            preserve_session_data()
-          }
+          # Call preserve_session_data
+          preserve_session_data(force = FALSE)
         }, error = function(e) {
           # Silently ignore data preservation failures to reduce log spam
         })
