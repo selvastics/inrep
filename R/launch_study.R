@@ -616,79 +616,54 @@ launch_study <- function(
     # Continue with standard functionality
   })
   
-  # Set up global error handling for German locale errors
-  options(warn = -1)  # Suppress warnings temporarily
+  # OPTIMIZED: Minimal error handling for faster startup
   old_error_handler <- getOption("error")
   on.exit({
-    options(warn = 0)
     options(error = old_error_handler)
   }, add = TRUE)
-  
-  # Custom error handler for "Argument hat Länge 0" errors
-  options(error = function() {
-    err_msg <- geterrmessage()
-    if (grepl("Argument hat Länge 0|argument is of length zero", err_msg)) {
-      logger("Suppressed zero-length argument error (non-critical)", level = "DEBUG")
-      return(invisible())
-    } else {
-      # Call original error handler or default behavior
-      if (!is.null(old_error_handler)) {
-        old_error_handler()
-      }
-    }
-  })
   
   # Check if shiny is available (required for UI)
   if (!requireNamespace("shiny", quietly = TRUE)) {
     stop("Package 'shiny' is required but not available. Please install it with: install.packages('shiny')")
   }
   
-  # Check and ensure all critical dependencies are available
-  critical_packages <- c("shiny", "DT", "ggplot2", "dplyr", "TAM")
+  # OPTIMIZED: Streamlined critical package loading for faster startup
+  essential_packages <- c("shiny", "DT")  # Only truly essential packages
   missing_packages <- c()
   
-  for (pkg in critical_packages) {
+  for (pkg in essential_packages) {
     if (!requireNamespace(pkg, quietly = TRUE)) {
       missing_packages <- c(missing_packages, pkg)
     }
   }
   
-  # Install missing critical packages immediately
+  # Install only essential missing packages for faster startup
   if (length(missing_packages) > 0) {
-    logger(paste("Installing missing critical packages:", paste(missing_packages, collapse = ", ")), level = "INFO")
+    logger(paste("Installing essential packages:", paste(missing_packages, collapse = ", ")), level = "INFO")
     tryCatch({
-      utils::install.packages(missing_packages, quiet = TRUE, repos = "https://cran.r-project.org", dependencies = TRUE)
+      utils::install.packages(missing_packages, quiet = TRUE, repos = "https://cran.r-project.org")
       
-      # Force load the packages after installation
+      # Quick load without heavy dependencies
       for (pkg in missing_packages) {
         if (requireNamespace(pkg, quietly = TRUE)) {
-          loadNamespace(pkg)
-          logger(paste("Successfully loaded:", pkg), level = "INFO")
+          logger(paste("Loaded:", pkg), level = "DEBUG")
         }
       }
     }, error = function(e) {
-      logger(paste("Failed to install packages:", e$message), level = "WARNING")
+      logger(paste("Package install failed:", e$message), level = "WARNING")
     })
   }
   
-  # Ensure DT is loaded for table rendering
-  if (requireNamespace("DT", quietly = TRUE)) {
-    if (!"DT" %in% loadedNamespaces()) {
-      loadNamespace("DT")
-      logger("DT package loaded for table rendering", level = "DEBUG")
-    }
+  # Pre-load DT for immediate table rendering
+  if (requireNamespace("DT", quietly = TRUE) && !"DT" %in% loadedNamespaces()) {
+    loadNamespace("DT")
   }
   
-  # Check if later package is available (for deferred operations)
+  # OPTIMIZED: Streamlined later package check for faster startup
   has_later <- requireNamespace("later", quietly = TRUE)
   if (!has_later) {
-    # Try to install later package for better performance
-    tryCatch({
-      utils::install.packages("later", quiet = TRUE, repos = "https://cran.r-project.org")
-      has_later <- requireNamespace("later", quietly = TRUE)
-    }, error = function(e) {
-      logger("Could not install 'later' package. Performance may be reduced.", level = "INFO")
-    })
+    # Skip later installation for faster startup - use synchronous mode
+    logger("Later package not available - using synchronous mode for faster startup", level = "DEBUG")
   }
   
   # Check for UUID if study_key uses UUIDgenerate
@@ -970,135 +945,47 @@ launch_study <- function(
     }
   }
   
-  # ULTRA-SAFE DT function with comprehensive error handling for boolean errors
+  # OPTIMIZED: Fast DT function with streamlined error handling
   safe_render_dt <- function(expr, ...) {
-    # Check if DT is available and force load it
+    # Quick DT availability check
     dt_available <- requireNamespace("DT", quietly = TRUE)
-    
-    if (!dt_available) {
-      logger("DT package not found, attempting installation...", level = "INFO")
-      tryCatch({
-        utils::install.packages("DT", quiet = TRUE, repos = "https://cran.r-project.org", dependencies = TRUE)
-        dt_available <- requireNamespace("DT", quietly = TRUE)
-        if (dt_available) {
-          logger("DT package successfully installed", level = "INFO")
-        }
-      }, error = function(e) {
-        logger(sprintf("Failed to install DT package: %s", e$message), level = "WARNING")
-      })
-    }
     
     if (dt_available) {
       tryCatch({
-        # Force load DT namespace
-        if (!"DT" %in% loadedNamespaces()) {
-          loadNamespace("DT")
-          logger("DT namespace loaded", level = "DEBUG")
-        }
-        
-        # Create the DT table with ULTRA-SAFE data evaluation
+        # Quick DT table creation
         DT::renderDT({
           tryCatch({
-            # ULTRA-SAFE expression evaluation with specific error handling
-            data <- tryCatch({
-              eval(expr)
-            }, error = function(eval_error) {
-              # Handle specific boolean errors
-              if (grepl("Fehlender Wert.*TRUE.*FALSE|argument is of length zero", eval_error$message)) {
-                logger("Boolean error detected in table data - using fallback", level = "WARNING")
-                return(data.frame(
-                  Error = "Table data contains invalid boolean values",
-                  Message = "Using safe fallback data display"
-                ))
-              } else {
-                logger(sprintf("Data evaluation error: %s", eval_error$message), level = "ERROR")
-                return(data.frame(
-                  Error = "Data evaluation failed",
-                  Details = substr(eval_error$message, 1, 100)
-                ))
-              }
-            })
-            
-            # Validate data structure
-            if (is.null(data)) {
-              return(data.frame(Message = "No data available"))
+            data <- eval(expr)
+            if (is.null(data) || (is.data.frame(data) && nrow(data) == 0)) {
+              data.frame(Message = "No data available")
+            } else {
+              data
             }
-            
-            if (!is.data.frame(data)) {
-              data <- tryCatch(as.data.frame(data), error = function(e) {
-                data.frame(Error = "Could not convert data to data.frame")
-              })
-            }
-            
-            if (nrow(data) == 0) {
-              return(data.frame(Message = "No data available"))
-            }
-            
-            return(data)
-            
           }, error = function(e) {
-            logger(sprintf("Final data processing error: %s", e$message), level = "ERROR")
-            return(data.frame(
-              Error = "Complete table rendering failure",
-              Message = "Please check your data"
-            ))
+            data.frame(Error = "Table data error", Details = substr(e$message, 1, 50))
           })
         }, 
         options = list(
-          pageLength = 10,
-          scrollX = TRUE,
-          dom = 't',  # Simplified DOM to avoid button issues
+          dom = 't',
           paging = FALSE,
           searching = FALSE
         ),
         ...)
       }, error = function(e) {
-        logger(sprintf("DT::renderDT error: %s", e$message), level = "ERROR")
-        # ULTRA-SAFE fallback with basic table
+        # Simple fallback table
         shiny::renderTable({
-          tryCatch({
-            # Try to evaluate the expression safely
-            data <- tryCatch(eval(expr), error = function(ee) {
-              data.frame(Error = "Expression evaluation failed")
-            })
-            
-            if (is.null(data) || (!is.data.frame(data) && !is.matrix(data))) {
-              return(data.frame(Message = "No valid data available"))
-            }
-            
-            if (is.data.frame(data) && nrow(data) == 0) {
-              return(data.frame(Message = "No data available"))
-            }
-            
-            return(data)
-          }, error = function(e2) {
-            data.frame(
-              Error = "Complete fallback failure",
-              Details = substr(e2$message, 1, 50)
-            )
+          tryCatch(eval(expr), error = function(ee) {
+            data.frame(Error = "Table rendering failed")
           })
-        }, striped = TRUE, hover = TRUE, bordered = TRUE)
+        })
       })
     } else {
-      logger("DT package unavailable - using basic fallback table", level = "WARNING")
+      # Basic table when DT unavailable
       shiny::renderTable({
-        tryCatch({
-          data <- tryCatch(eval(expr), error = function(ee) {
-            data.frame(Error = "DT unavailable and expression failed")
-          })
-          
-          if (is.null(data) || nrow(data) == 0) {
-            data.frame(Message = "No data available (DT package missing)")
-          } else {
-            data
-          }
-        }, error = function(e) {
-          data.frame(
-            Error = "Complete rendering failure",
-            Message = "DT package not available and fallback failed"
-          )
+        tryCatch(eval(expr), error = function(e) {
+          data.frame(Error = "DT not available")
         })
-      }, striped = TRUE, hover = TRUE, bordered = TRUE)
+      })
     }
   }
   
