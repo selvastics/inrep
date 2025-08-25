@@ -2393,8 +2393,8 @@ launch_study <- function(
         cat("LATER: UI rendered immediately in server\n")
       }, delay = 0, loop = server_loop)
       
-      # Force immediate execution
-      later::run_now(loop = server_loop)
+      # Execute server initialization with minimal timeout
+      later::run_now(loop = server_loop, timeoutSecs = 0.001)
     }
     
     # ULTRA-FAST STARTUP: Show UI immediately, initialize everything else later
@@ -2419,8 +2419,7 @@ launch_study <- function(
         # Use later for efficient background loading
         later::later(function() {
           .load_packages_once()
-          # Force immediate execution to prevent any delays
-          later::run_now(timeoutSecs = 0, all = TRUE)
+          # Let packages load asynchronously for better performance
         }, delay = 0)  # ZERO delay with later - maximum efficiency
       }
       
@@ -2475,8 +2474,7 @@ launch_study <- function(
         heavy_computations_done(TRUE)
         # logger("Heavy initialization complete", level = "DEBUG") # Disabled for speed
         
-        # Force immediate execution to complete initialization
-        later::run_now(timeoutSecs = 0, all = TRUE)
+        # Let initialization complete asynchronously for better performance
       }, delay = 0)  # ZERO delay - immediate execution
     }
     
@@ -2521,8 +2519,8 @@ launch_study <- function(
         }
       }, delay = 0, loop = immediate_loop)
       
-      # Run the immediate display now
-      later::run_now(loop = immediate_loop)
+      # Let the immediate display run asynchronously
+      later::run_now(loop = immediate_loop, timeoutSecs = 0.001)
       
       # Schedule background loading with later
       later::later(function() {
