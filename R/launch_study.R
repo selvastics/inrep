@@ -529,28 +529,101 @@ launch_study <- function(
     ...
 ) {
   
-  # AGGRESSIVE LATER PACKAGE IMPLEMENTATION - DISPLAY UI IMMEDIATELY
+  # IMMEDIATE UI DISPLAY - RETURN CONTROL TO R PROMPT IMMEDIATELY
   if (immediate_ui) {
-    cat("LATER PACKAGE: Implementing immediate UI display\n")
+    cat("IMMEDIATE UI: Starting minimal UI immediately\n")
     
-    # Step 1: Create managed private event loop for UI
-    ui_loop_manager <- create_managed_loop()
+    # Create minimal Shiny app that displays instantly
+    minimal_ui <- shiny::fluidPage(
+      shiny::tags$head(
+        shiny::tags$style(HTML("
+          body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: #f8f9fa;
+          }
+          .loading-container {
+            text-align: center;
+            padding: 50px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          }
+          .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+          }
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        "))
+      ),
+      shiny::div(class = "loading-container",
+        shiny::h2("Starting Assessment..."),
+        shiny::div(class = "spinner"),
+        shiny::p("Please wait while we prepare your assessment."),
+        shiny::div(id = "loading-status", "Initializing...")
+      )
+    )
     
-    # Step 2: Display UI with ZERO delay using inrep_later
-    inrep_later(function() {
-      cat("INREP_LATER: UI displayed IMMEDIATELY\n")
-    }, delay = 0, loop = ui_loop_manager$loop, log_prefix = "UI_DISPLAY")
+    minimal_server <- function(input, output, session) {
+      # Schedule all heavy operations using later
+      later(function() {
+        session$sendCustomMessage("updateStatus", "Loading packages...")
+        
+        # Load packages in background
+        later(function() {
+          tryCatch({
+            # Load critical packages only
+            if (!requireNamespace("shinyWidgets", quietly = TRUE)) {
+              session$sendCustomMessage("updateStatus", "Installing required packages...")
+              utils::install.packages("shinyWidgets", quiet = TRUE)
+            }
+            session$sendCustomMessage("updateStatus", "Packages loaded successfully")
+            
+            # Now load the full application
+            later(function() {
+              session$sendCustomMessage("updateStatus", "Building assessment interface...")
+              
+              # This will replace the minimal UI with the full application
+              tryCatch({
+                # Call the original launch_study logic but with immediate_ui = FALSE
+                launch_study_full(config, item_bank, immediate_ui = FALSE, ...)
+              }, error = function(e) {
+                session$sendCustomMessage("updateStatus", paste("Error:", e$message))
+              })
+            }, delay = 0.1)
+            
+          }, error = function(e) {
+            session$sendCustomMessage("updateStatus", paste("Package loading error:", e$message))
+          })
+        }, delay = 0.1)
+        
+      }, delay = 0.1)
+    }
     
-    # Step 3: Force immediate execution
-    ui_loop_manager$run_now()
+    # Start minimal Shiny app immediately
+    app <- shiny::shinyApp(
+      ui = minimal_ui,
+      server = minimal_server,
+      options = list(port = getOption("shiny.port", 5050))
+    )
     
-    # Step 4: Move ALL heavy operations to background using async_execute
-    async_execute(function() {
-      cat("ASYNC_EXECUTE: Background loading started\n")
-    }, delay = 0, log_prefix = "BACKGROUND_LOAD")
+    cat("IMMEDIATE UI: Minimal app created, starting server...\n")
     
-    # Step 5: Force all background operations to run immediately but asynchronously
-    run_now(timeoutSecs = 0, all = FALSE)
+    # Start the app and return immediately
+    later(function() {
+      shiny::runApp(app, launch.browser = TRUE)
+    }, delay = 0)
+    
+    cat("IMMEDIATE UI: Control returned to R prompt\n")
+    return(invisible(NULL))
   }
   
   # Enhanced validation and error handling for robustness
