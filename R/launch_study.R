@@ -1922,14 +1922,14 @@ launch_study <- function(
           });
           
           // Enhanced Radio button deselection with visual feedback
-          document.addEventListener("click", function(e) {
-            if (e.target && e.target.type === "radio") {
-              var wasChecked = e.target.getAttribute("data-was-checked") === "true";
+          document.addEventListener('click', function(e) {
+            if (e.target && e.target.type === 'radio') {
+              var wasChecked = e.target.getAttribute('data-was-checked') === 'true';
               
               // Clear all radios in the same group
-              var radios = document.querySelectorAll("input[name='" + e.target.name + "']");
+              var radios = document.querySelectorAll('input[name="' + e.target.name + '"]');
               for (var i = 0; i < radios.length; i++) {
-                radios[i].setAttribute("data-was-checked", "false");
+                radios[i].setAttribute('data-was-checked', 'false');
                 // Remove visual selection styling
                 var label = radios[i].closest('label');
                 if (label) {
@@ -1941,8 +1941,8 @@ launch_study <- function(
               if (wasChecked) {
                 // Deselect the radio button
                 e.target.checked = false;
-                if (typeof Shiny !== "undefined") {
-                  Shiny.setInputValue(e.target.name, null, {priority: "event"});
+                if (typeof Shiny !== 'undefined') {
+                  Shiny.setInputValue(e.target.name, null, {priority: 'event'});
                 }
                 // Remove visual selection from the label
                 var currentLabel = e.target.closest('label');
@@ -1952,7 +1952,7 @@ launch_study <- function(
                 }
               } else {
                 // Select the radio button
-                e.target.setAttribute("data-was-checked", "true");
+                e.target.setAttribute('data-was-checked', 'true');
                 // Add visual selection to the label
                 var currentLabel = e.target.closest('label');
                 if (currentLabel) {
