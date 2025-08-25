@@ -308,13 +308,14 @@ get_session_data <- function() {
     tryCatch({
       rv <- get("rv", envir = .GlobalEnv)
       # Check if shiny is loaded and is.reactivevalues exists
-      if (exists("is.reactivevalues", where = "package:shiny") && 
-          is.function(get("is.reactivevalues", where = "package:shiny"))) {
-        if (shiny::is.reactivevalues(rv)) {
-          if (exists("reactiveValuesToList", where = "package:shiny")) {
+      if ("shiny" %in% loadedNamespaces()) {
+        tryCatch({
+          if (shiny::is.reactivevalues(rv)) {
             session_data$reactive_values <- shiny::reactiveValuesToList(rv)
           }
-        }
+        }, error = function(e) {
+          # Silently skip if functions not available
+        })
       }
     }, error = function(e) {
       # Log data collection errors to file only for background operations

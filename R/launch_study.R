@@ -724,7 +724,7 @@ launch_study <- function(
               if (loaded_packages[[pkg]]) {
                 # Only load namespace, not attach
                 loadNamespace(pkg)
-                logger(sprintf("Background loaded: %s", pkg), level = "DEBUG")
+                # Silent loading
               }
             }, error = function(e) {
               logger(sprintf("Could not load %s: %s", pkg, e$message), level = "DEBUG")
@@ -796,10 +796,9 @@ launch_study <- function(
   )
   
   # Check if TAM package is available (only needed for adaptive mode)
-  # Defer message to avoid slowing startup
-  .tam_warning <- NULL
-  if (isTRUE(config$adaptive) && !isTRUE(available_packages$TAM)) {
-    .tam_warning <- "Package 'TAM' not available. Falling back to basic non-TAM mode for limited checks."
+  # Silent check - no warnings in immediate mode
+  if (isTRUE(config$adaptive) && !isTRUE(available_packages$TAM) && !immediate_ui) {
+    message("Package 'TAM' not available. Falling back to basic non-TAM mode for limited checks.")
   }
   
   # Create robust wrapper functions that check package availability
@@ -962,15 +961,17 @@ launch_study <- function(
       logger(paste("Cloud storage enabled:", webdav_url), level = "INFO")
     }
   } else {
-    # Defer logging to after UI loads for faster startup
-    .startup_messages <- c(
-      "Using local storage only (no cloud backup)",
-      "Cloud storage disabled - results will be saved locally only"
-    )
+    # Silent mode when immediate_ui is TRUE
+    if (!immediate_ui) {
+      logger("Using local storage only (no cloud backup)", level = "INFO")
+      logger("Cloud storage disabled - results will be saved locally only", level = "INFO")
+    }
   }
   
-  # Defer study launch message for faster startup
-  .launch_message <- base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light")
+  # Only show launch message if not in immediate mode
+  if (!immediate_ui) {
+    logger(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"), level = "INFO")
+  }
   
   if (!is.null(config$admin_dashboard_hook) && is.function(config$admin_dashboard_hook)) {
     logger("Admin dashboard hook registered", level = "INFO")
@@ -2532,18 +2533,7 @@ launch_study <- function(
     # Step 3: Do initialization AFTER UI is shown
     if (has_later) {
       later::later(function() {
-        # Print deferred startup messages
-        if (exists(".startup_messages")) {
-          for (msg in .startup_messages) {
-            logger(msg, level = "INFO")
-          }
-        }
-        if (exists(".launch_message")) {
-          logger(.launch_message, level = "INFO")
-        }
-        if (exists(".tam_warning") && !is.null(.tam_warning)) {
-          message(.tam_warning)
-        }
+        # Skip all startup messages in immediate mode for clean loading
         
         # Initialize session management if needed (was deferred from startup)
         if (exists(".needs_session_init") && .needs_session_init) {
@@ -2583,7 +2573,7 @@ launch_study <- function(
         # Now do the heavy initialization in background
         session$userData$heavy_init_complete <- TRUE
         heavy_computations_done(TRUE)
-        logger("Heavy initialization complete", level = "DEBUG")
+        # Initialization complete silently
         
         # Force immediate execution to complete initialization
         later::run_now(timeoutSecs = 0, all = TRUE)
@@ -2711,7 +2701,7 @@ launch_study <- function(
     })
   }
   
-  logger("rv initialized IMMEDIATELY (synchronous) - no observe needed", level = "DEBUG")
+  # rv initialized silently
     
     # Defer session monitoring until after first page loads
     if (session_save) {
@@ -2848,12 +2838,12 @@ launch_study <- function(
       if (session_save && exists("cleanup_session") && is.function(cleanup_session)) {
         tryCatch({
           logger("Session ending - cleaning up and preserving final data", level = "INFO")
-          # Check if function expects parameters
-          if (length(formals(cleanup_session)) > 0) {
-            cleanup_session(save_final_data = TRUE, session = session, rv = rv)
-          } else {
-            cleanup_session(save_final_data = TRUE)
-          }
+          # Silently cleanup without parameters
+          tryCatch({
+            if (exists("cleanup_session", mode = "function")) {
+              cleanup_session()
+            }
+          }, error = function(e) {})
         }, error = function(e) {
           # Silently ignore cleanup failures to reduce log spam
         })
