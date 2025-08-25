@@ -2648,7 +2648,10 @@ launch_study <- function(
           tryCatch({
             update_activity()
           }, error = function(e) {
-            logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
+            # Suppress "Argument hat Länge 0" errors silently for performance
+            if (!grepl("Argument hat L\u00e4nge 0|argument is of length zero", e$message)) {
+              logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
+            }
           })
         }
       })  # Close observe
@@ -2774,7 +2777,10 @@ launch_study <- function(
         tryCatch({
           update_activity()
         }, error = function(e) {
-          logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
+          # Suppress "Argument hat Länge 0" errors silently for performance
+          if (!grepl("Argument hat L\u00e4nge 0|argument is of length zero", e$message)) {
+            logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
+          }
         })
       }
     })
