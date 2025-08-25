@@ -525,7 +525,7 @@ launch_study <- function(
     package_loading_delay = NULL,
     session_init_delay = NULL,
     show_loading_screen = NULL,
-    immediate_ui = FALSE,
+    immediate_ui = TRUE,
     ...
 ) {
   
