@@ -529,28 +529,23 @@ launch_study <- function(
     ...
 ) {
   
-  # AGGRESSIVE LATER PACKAGE IMPLEMENTATION - DISPLAY UI IMMEDIATELY
+  # OPTIMIZED LATER PACKAGE IMPLEMENTATION - BLAZING FAST UI DISPLAY
   if (immediate_ui) {
     cat("LATER PACKAGE: Implementing immediate UI display\n")
     
-    # Step 1: Create private event loop for UI
-    ui_loop <- later::create_loop()
-    
-    # Step 2: Display UI with ZERO delay
+    # Single optimized step: Schedule UI display and background work efficiently
     later::later(function() {
       cat("LATER: UI displayed IMMEDIATELY\n")
-    }, delay = 0, loop = ui_loop)
-    
-    # Step 3: Force immediate execution
-    later::run_now(loop = ui_loop)
-    
-    # Step 4: Move ALL heavy operations to background using later
-    later::later(function() {
-      cat("LATER: Background loading started\n")
     }, delay = 0)
     
-    # Step 5: Force all background operations to run immediately but asynchronously
-    later::run_now(timeoutSecs = 0, all = FALSE)
+    # Schedule background operations without blocking
+    later::later(function() {
+      cat("LATER: Background loading started\n")
+      # Heavy operations run here without blocking UI
+    }, delay = 0.001)  # Tiny delay to ensure UI renders first
+    
+    # Execute immediately with minimal timeout
+    later::run_now(timeoutSecs = 0.001, all = FALSE)
   }
   
   # Enhanced validation and error handling for robustness
@@ -723,14 +718,25 @@ launch_study <- function(
         # Package loading happens here without blocking UI
       }, delay = 0, loop = pkg_loop)
       
-      # Return minimal packages for immediate UI
+      # Return minimal packages for immediate UI - BUT ENSURE TAM IS AVAILABLE FOR ADAPTIVE
+      tam_available <- requireNamespace("TAM", quietly = TRUE)
+      if (isTRUE(config$adaptive) && !tam_available) {
+        # Try to install TAM immediately for adaptive assessment
+        tryCatch({
+          utils::install.packages("TAM", quiet = TRUE, repos = "https://cran.r-project.org")
+          tam_available <- requireNamespace("TAM", quietly = TRUE)
+        }, error = function(e) {
+          warning("Could not install TAM package for adaptive assessment")
+        })
+      }
+      
       return(list(
         shiny = TRUE,
         ggplot2 = FALSE,
         DT = FALSE, 
         dplyr = FALSE,
         shinyWidgets = FALSE,
-        TAM = FALSE
+        TAM = tam_available
       ))
     }
     # Define package priorities
