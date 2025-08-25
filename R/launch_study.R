@@ -533,19 +533,24 @@ launch_study <- function(
   if (immediate_ui) {
     cat("LATER PACKAGE: Implementing immediate UI display\n")
     
-    # Single optimized step: Schedule UI display and background work efficiently
+    # Step 1: Create private event loop for UI
+    ui_loop <- later::create_loop()
+    
+    # Step 2: Display UI with ZERO delay
     later::later(function() {
       cat("LATER: UI displayed IMMEDIATELY\n")
-    }, delay = 0)
+    }, delay = 0, loop = ui_loop)
     
-    # Schedule background operations without blocking
+    # Step 3: Force immediate execution
+    later::run_now(loop = ui_loop)
+    
+    # Step 4: Move ALL heavy operations to background using later
     later::later(function() {
       cat("LATER: Background loading started\n")
-      # Heavy operations run here without blocking UI
-    }, delay = 0.001)  # Tiny delay to ensure UI renders first
+    }, delay = 0)
     
-    # Execute immediately with minimal timeout
-    later::run_now(timeoutSecs = 0.001, all = FALSE)
+    # Step 5: Force all background operations to run immediately but asynchronously
+    later::run_now(timeoutSecs = 0, all = FALSE)
   }
   
   # Enhanced validation and error handling for robustness
@@ -2476,8 +2481,8 @@ launch_study <- function(
         cat("LATER: UI rendered immediately in server\n")
       }, delay = 0, loop = server_loop)
       
-      # Let server initialization run asynchronously
-      later::run_now(loop = server_loop, timeoutSecs = 0.001)
+      # Force immediate execution
+      later::run_now(loop = server_loop)
     }
     
     # ULTRA-FAST STARTUP: Show UI immediately, initialize everything else later
