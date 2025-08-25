@@ -525,7 +525,7 @@ launch_study <- function(
     package_loading_delay = NULL,
     session_init_delay = NULL,
     show_loading_screen = NULL,
-    immediate_ui = FALSE,
+    immediate_ui = TRUE,
     ...
 ) {
   
@@ -3018,9 +3018,9 @@ launch_study <- function(
                      # Debug: Log item display state
                      logger(sprintf("Rendering assessment UI - stage: %s, current_item: %s", rv$stage, rv$current_item))
                      
-                     if (base::is.null(rv$current_item)) {
-                       logger("ERROR: current_item is NULL in assessment stage - this is the problem!", level = "ERROR")
-                                                return(shiny::div(class = "assessment-card",
+                     if (base::is.null(rv$current_item) || length(rv$current_item) == 0 || is.na(rv$current_item)) {
+                       logger("ERROR: current_item is NULL/empty in assessment stage - this is the problem!", level = "ERROR")
+                       return(shiny::div(class = "assessment-card",
                                            shiny::h3(ui_labels$preparing, class = "card-header"),
                                          shiny::p(ui_labels$loading_question)))
                      }
