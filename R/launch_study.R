@@ -2653,14 +2653,14 @@ launch_study <- function(
   
   # POPULATE rv IMMEDIATELY - No observe, no async, no delays
   rv$demo_data <- stats::setNames(base::rep(NA, base::length(config$demographics)), config$demographics)
+  # ALWAYS start with instructions for immediate_ui to work properly
   rv$stage <- if (!is.null(config$custom_page_flow)) {
     "custom_page_flow"
   } else if (!is.null(config$custom_study_flow) && config$enable_custom_navigation) {
     config$custom_study_flow$start_with %||% "demographics"
-  } else if (config$show_introduction) {
-    "instructions"
   } else {
-    "demographics"
+    # Force instructions stage to ensure proper initialization
+    "instructions"
   }
   rv$current_page <- 1
   rv$total_pages <- if (!is.null(config$custom_page_flow)) length(config$custom_page_flow) else 1
