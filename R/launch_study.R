@@ -1933,7 +1933,7 @@ launch_study <- function(
               var wasChecked = e.target.getAttribute('data-was-checked') === 'true';
               
               // Clear all radios in the same group
-              var radios = document.querySelectorAll('input[name="' + e.target.name + '"]');
+              var radios = document.getElementsByName(e.target.name);
               for (var i = 0; i < radios.length; i++) {
                 radios[i].setAttribute('data-was-checked', 'false');
                 // Remove visual selection styling
