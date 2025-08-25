@@ -2758,7 +2758,10 @@ launch_study <- function(
           logger("Session ending - cleaning up and preserving final data", level = "INFO")
           cleanup_session(save_final_data = TRUE)
         }, error = function(e) {
-          logger(sprintf("Session cleanup failed: %s", e$message), level = "WARNING")
+          # Suppress "Argument hat Länge 0" errors silently for clean shutdown
+          if (!grepl("Argument hat L\u00e4nge 0|argument is of length zero", e$message)) {
+            logger(sprintf("Session cleanup failed: %s", e$message), level = "WARNING")
+          }
         })
       } else if (session_save) {
         logger("Session ending - basic cleanup", level = "INFO")
@@ -4555,7 +4558,10 @@ launch_study <- function(
         tryCatch({
           cleanup_session(save_final_data = TRUE)
         }, error = function(e) {
-          logger(sprintf("Session cleanup failed during restart: %s", e$message), level = "WARNING")
+          # Suppress "Argument hat Länge 0" errors silently for clean shutdown
+          if (!grepl("Argument hat L\u00e4nge 0|argument is of length zero", e$message)) {
+            logger(sprintf("Session cleanup failed during restart: %s", e$message), level = "WARNING")
+          }
         })
       }
       
@@ -4622,7 +4628,10 @@ launch_study <- function(
           cleanup_session(save_final_data = TRUE)
           logger("Final cleanup completed on exit", level = "INFO")
         }, error = function(e) {
-          logger(sprintf("Final cleanup failed: %s", e$message), level = "ERROR")
+          # Suppress "Argument hat Länge 0" errors silently for clean shutdown
+          if (!grepl("Argument hat L\u00e4nge 0|argument is of length zero", e$message)) {
+            logger(sprintf("Final cleanup failed: %s", e$message), level = "ERROR")
+          }
         })
       }
     }
