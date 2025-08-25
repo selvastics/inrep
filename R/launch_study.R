@@ -1002,7 +1002,7 @@ launch_study <- function(
   error_config <- NULL
   
   if (FALSE) {  # Skip for now - will be done in server
-      logger("Initializing robust session management", level = "INFO")
+      # logger("Initializing robust session management", level = "INFO") # Disabled for speed
       
       # Initialize robust session management
       session_config <- tryCatch({
@@ -2455,7 +2455,7 @@ launch_study <- function(
       later::later(function() {
         # Initialize session management if needed (was deferred from startup)
         if (exists(".needs_session_init") && .needs_session_init) {
-          logger("Initializing robust session management", level = "INFO")
+          # logger("Initializing robust session management", level = "INFO") # Disabled for speed
           session_config <<- list(
             session_id = paste0("SESS_", format(Sys.time(), "%Y%m%d_%H%M%S_"),
                                paste0(sample(letters, 8), collapse = "")),
@@ -2491,7 +2491,7 @@ launch_study <- function(
         # Now do the heavy initialization in background
         session$userData$heavy_init_complete <- TRUE
         heavy_computations_done(TRUE)
-        logger("Heavy initialization complete", level = "DEBUG")
+        # logger("Heavy initialization complete", level = "DEBUG") # Disabled for speed
         
         # Force immediate execution to complete initialization
         later::run_now(timeoutSecs = 0, all = TRUE)
