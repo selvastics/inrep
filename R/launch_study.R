@@ -970,7 +970,7 @@ launch_study <- function(
     }
   }
   
-  # Create safe DT function with automatic loading and better error handling
+  # ULTRA-SAFE DT function with comprehensive error handling for boolean errors
   safe_render_dt <- function(expr, ...) {
     # Check if DT is available and force load it
     dt_available <- requireNamespace("DT", quietly = TRUE)
@@ -996,51 +996,107 @@ launch_study <- function(
           logger("DT namespace loaded", level = "DEBUG")
         }
         
-        # Create the DT table with proper options
+        # Create the DT table with ULTRA-SAFE data evaluation
         DT::renderDT({
-          data <- eval(expr)
-          if (is.null(data) || nrow(data) == 0) {
-            data.frame(Message = "No data available")
-          } else {
-            data
-          }
+          tryCatch({
+            # ULTRA-SAFE expression evaluation with specific error handling
+            data <- tryCatch({
+              eval(expr)
+            }, error = function(eval_error) {
+              # Handle specific boolean errors
+              if (grepl("Fehlender Wert.*TRUE.*FALSE|argument is of length zero", eval_error$message)) {
+                logger("Boolean error detected in table data - using fallback", level = "WARNING")
+                return(data.frame(
+                  Error = "Table data contains invalid boolean values",
+                  Message = "Using safe fallback data display"
+                ))
+              } else {
+                logger(sprintf("Data evaluation error: %s", eval_error$message), level = "ERROR")
+                return(data.frame(
+                  Error = "Data evaluation failed",
+                  Details = substr(eval_error$message, 1, 100)
+                ))
+              }
+            })
+            
+            # Validate data structure
+            if (is.null(data)) {
+              return(data.frame(Message = "No data available"))
+            }
+            
+            if (!is.data.frame(data)) {
+              data <- tryCatch(as.data.frame(data), error = function(e) {
+                data.frame(Error = "Could not convert data to data.frame")
+              })
+            }
+            
+            if (nrow(data) == 0) {
+              return(data.frame(Message = "No data available"))
+            }
+            
+            return(data)
+            
+          }, error = function(e) {
+            logger(sprintf("Final data processing error: %s", e$message), level = "ERROR")
+            return(data.frame(
+              Error = "Complete table rendering failure",
+              Message = "Please check your data"
+            ))
+          })
         }, 
         options = list(
           pageLength = 10,
           scrollX = TRUE,
-          dom = 'Bfrtip',
-          buttons = c('copy', 'csv', 'excel')
+          dom = 't',  # Simplified DOM to avoid button issues
+          paging = FALSE,
+          searching = FALSE
         ),
-        extensions = 'Buttons',
         ...)
       }, error = function(e) {
         logger(sprintf("DT::renderDT error: %s", e$message), level = "ERROR")
-        # Enhanced fallback with better formatting
+        # ULTRA-SAFE fallback with basic table
         shiny::renderTable({
           tryCatch({
-            data <- eval(expr)
-            if (is.null(data) || nrow(data) == 0) {
-              data.frame(Message = "No data available")
-            } else {
-              data
+            # Try to evaluate the expression safely
+            data <- tryCatch(eval(expr), error = function(ee) {
+              data.frame(Error = "Expression evaluation failed")
+            })
+            
+            if (is.null(data) || (!is.data.frame(data) && !is.matrix(data))) {
+              return(data.frame(Message = "No valid data available"))
             }
+            
+            if (is.data.frame(data) && nrow(data) == 0) {
+              return(data.frame(Message = "No data available"))
+            }
+            
+            return(data)
           }, error = function(e2) {
-            data.frame(Error = paste("Table rendering failed:", e2$message))
+            data.frame(
+              Error = "Complete fallback failure",
+              Details = substr(e2$message, 1, 50)
+            )
           })
         }, striped = TRUE, hover = TRUE, bordered = TRUE)
       })
     } else {
-      logger("DT package unavailable - using enhanced fallback table", level = "WARNING")
+      logger("DT package unavailable - using basic fallback table", level = "WARNING")
       shiny::renderTable({
         tryCatch({
-          data <- eval(expr)
+          data <- tryCatch(eval(expr), error = function(ee) {
+            data.frame(Error = "DT unavailable and expression failed")
+          })
+          
           if (is.null(data) || nrow(data) == 0) {
-            data.frame(Message = "No data available")
+            data.frame(Message = "No data available (DT package missing)")
           } else {
             data
           }
         }, error = function(e) {
-          data.frame(Error = paste("Table rendering unavailable - DT package not installed:", e$message))
+          data.frame(
+            Error = "Complete rendering failure",
+            Message = "DT package not available and fallback failed"
+          )
         })
       }, striped = TRUE, hover = TRUE, bordered = TRUE)
     }
