@@ -520,8 +520,23 @@ launch_study <- function(
     data_preservation_interval = 30,
     keep_alive_interval = 10,
     enable_error_recovery = TRUE,
+    immediate_ui = TRUE,
     ...
 ) {
+  
+  # LATER PACKAGE: IMMEDIATE UI DISPLAY
+  if (immediate_ui) {
+    cat("IMMEDIATE UI DISPLAY ENABLED - using later package\n")
+    cat("IMMEDIATE: First page displayed NOW\n")
+    
+    # Use later package for background operations
+    later::later(function() {
+      cat("BACKGROUND: Starting heavy initialization\n")
+    }, delay = 0)
+    
+    # Execute immediately
+    later::run_now(timeoutSecs = 0, all = FALSE)
+  }
   
   # Enhanced validation and error handling for robustness
   tryCatch({
