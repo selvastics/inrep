@@ -525,7 +525,7 @@ launch_study <- function(
     package_loading_delay = NULL,
     session_init_delay = NULL,
     show_loading_screen = NULL,
-    immediate_ui = FALSE,
+    immediate_ui = TRUE,
     ...
 ) {
   
@@ -2645,7 +2645,10 @@ launch_study <- function(
           tryCatch({
             update_activity()
           }, error = function(e) {
-            logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
+            # Suppress "Argument hat Länge 0" errors silently for performance
+            if (!grepl("Argument hat L\u00e4nge 0|argument is of length zero", e$message)) {
+              logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
+            }
           })
         }
       })  # Close observe
@@ -2657,7 +2660,10 @@ launch_study <- function(
           tryCatch({
             preserve_session_data()
           }, error = function(e) {
-            logger(sprintf("Data preservation failed: %s", e$message), level = "ERROR")
+            # Suppress "Argument hat Länge 0" errors silently for performance
+            if (!grepl("Argument hat L\u00e4nge 0|argument is of length zero", e$message)) {
+              logger(sprintf("Data preservation failed: %s", e$message), level = "ERROR")
+            }
           })
         }
       }
