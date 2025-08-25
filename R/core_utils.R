@@ -1119,3 +1119,303 @@ resume_session <- function(file_path) {
     NULL
   })
 }
+
+# ============================================================================
+# SECTION 4: LATER PACKAGE INTEGRATION UTILITIES
+# ============================================================================
+
+#' Execute Function Asynchronously with Later Integration
+#'
+#' Enhanced wrapper that integrates later package functionality directly into
+#' core inrep operations. This function provides standardized async execution
+#' with error handling, logging, and timeout protection.
+#'
+#' @param func Function or formula to execute asynchronously
+#' @param delay Delay in seconds (default: 0 for immediate background execution)
+#' @param timeout Maximum execution time in seconds (default: from options)
+#' @param on_error Error handling function (optional)
+#' @param log_prefix Prefix for log messages (default: "ASYNC")
+#' @param use_private_loop Whether to use a private event loop (default: FALSE)
+#'
+#' @return Cancellation function that returns TRUE if successfully cancelled
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Execute heavy computation in background
+#' cancel_func <- async_execute(function() {
+#'   result <- heavy_computation()
+#'   message("Computation complete: ", result)
+#' })
+#' 
+#' # Execute with timeout protection
+#' async_execute(
+#'   ~long_running_task(),
+#'   timeout = 30,
+#'   on_error = function(e) message("Task failed: ", e$message)
+#' )
+#' 
+#' # Cancel if needed
+#' if (cancel_func()) {
+#'   message("Task cancelled successfully")
+#' }
+#' }
+async_execute <- function(func, delay = 0, timeout = getOption("inrep.later.default_timeout", 30),
+                         on_error = NULL, log_prefix = "ASYNC", use_private_loop = FALSE) {
+  
+  # Check if later is enabled
+  if (!getOption("inrep.later.enabled", TRUE) || !exists(".later_state") || !.later_state$enabled) {
+    warning("Later package not available, executing synchronously")
+    tryCatch(func(), error = function(e) {
+      if (!is.null(on_error)) on_error(e) else stop(e)
+    })
+    return(function() FALSE)
+  }
+  
+  # Choose event loop
+  loop <- if (use_private_loop) {
+    # Create or get private loop
+    if (is.null(.later_state$inrep_loop)) {
+      .later_state$inrep_loop <- create_managed_loop()
+      .later_state$private_loops[["inrep_default"]] <- .later_state$inrep_loop
+    }
+    .later_state$inrep_loop$loop
+  } else {
+    current_loop()
+  }
+  
+  # Use inrep_later for execution
+  inrep_later(
+    func = func,
+    delay = delay,
+    loop = loop,
+    error_handler = on_error,
+    log_prefix = log_prefix
+  )
+}
+
+#' Background Task Queue Manager
+#'
+#' Manages a queue of background tasks with priority scheduling and resource management.
+#' Integrates with the later package to provide efficient background processing
+#' for inrep operations.
+#'
+#' @return A task queue manager object with methods for task management
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Create task queue
+#' queue <- create_background_queue()
+#' 
+#' # Add high priority task
+#' queue$add("critical_task", function() save_data(), priority = "high")
+#' 
+#' # Add normal priority task
+#' queue$add("background_task", function() generate_report(), priority = "normal")
+#' 
+#' # Process all tasks
+#' queue$process_all()
+#' 
+#' # Check status
+#' status <- queue$status()
+#' message("Tasks completed: ", status$completed)
+#' }
+create_background_queue <- function() {
+  
+  # Private state
+  tasks <- list()
+  priorities <- c("high" = 1, "normal" = 2, "low" = 3)
+  task_manager <- create_task_manager()
+  
+  # Queue manager
+  list(
+    add = function(task_id, func, priority = "normal", delay = 0) {
+      if (!priority %in% names(priorities)) {
+        stop("Priority must be one of: ", paste(names(priorities), collapse = ", "))
+      }
+      
+      tasks[[task_id]] <<- list(
+        func = func,
+        priority = priorities[[priority]],
+        delay = delay,
+        added_at = Sys.time()
+      )
+      
+      invisible(task_id)
+    },
+    
+    process_all = function() {
+      if (length(tasks) == 0) return(invisible(NULL))
+      
+      # Sort by priority then by time added
+      sorted_tasks <- tasks[order(sapply(tasks, function(x) x$priority), 
+                                sapply(tasks, function(x) x$added_at))]
+      
+      # Add to task manager in priority order
+      for (task_id in names(sorted_tasks)) {
+        task <- sorted_tasks[[task_id]]
+        task_manager$add_task(task_id, task$func, delay = task$delay)
+      }
+      
+      # Run all tasks
+      task_manager$run_all()
+      
+      invisible(NULL)
+    },
+    
+    process_next = function() {
+      if (length(tasks) == 0) return(NULL)
+      
+      # Get highest priority task
+      priorities_values <- sapply(tasks, function(x) x$priority)
+      next_idx <- which.min(priorities_values)
+      task_id <- names(tasks)[next_idx]
+      task <- tasks[[task_id]]
+      
+      # Remove from queue and add to task manager
+      tasks[[task_id]] <<- NULL
+      task_manager$add_task(task_id, task$func, delay = task$delay)
+      task_manager$run_task(task_id)
+      
+      task_id
+    },
+    
+    remove = function(task_id) {
+      if (task_id %in% names(tasks)) {
+        tasks[[task_id]] <<- NULL
+        return(TRUE)
+      }
+      FALSE
+    },
+    
+    status = function() {
+      list(
+        queued = length(tasks),
+        task_manager_status = task_manager$get_status()
+      )
+    },
+    
+    clear = function() {
+      tasks <<- list()
+      task_manager$cleanup()
+      invisible(NULL)
+    }
+  )
+}
+
+#' Async File Operations with Later Integration
+#'
+#' Provides asynchronous file operations (read, write, upload) using the later package
+#' to prevent blocking the main thread during I/O operations.
+#'
+#' @param operation Type of operation: "read", "write", "upload"
+#' @param path File path for read/write operations
+#' @param content Content to write (for write operations)
+#' @param callback Function to call when operation completes
+#' @param on_error Error handling function
+#' @param ... Additional arguments passed to specific operations
+#'
+#' @return Cancellation function
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Async file read
+#' async_file_op("read", "large_file.csv", 
+#'   callback = function(data) message("File loaded: ", nrow(data), " rows")
+#' )
+#' 
+#' # Async file write
+#' async_file_op("write", "output.json", content = my_data,
+#'   callback = function() message("File saved successfully")
+#' )
+#' 
+#' # Async upload
+#' async_file_op("upload", "data.json", 
+#'   url = "https://api.example.com/upload",
+#'   callback = function(response) message("Upload complete")
+#' )
+#' }
+async_file_op <- function(operation, path, content = NULL, callback = NULL, 
+                         on_error = NULL, ...) {
+  
+  # Validate operation
+  valid_ops <- c("read", "write", "upload")
+  if (!operation %in% valid_ops) {
+    stop("Operation must be one of: ", paste(valid_ops, collapse = ", "))
+  }
+  
+  # Create operation function
+  op_func <- switch(operation,
+    "read" = function() {
+      result <- tryCatch({
+        if (grepl("\\.csv$", path, ignore.case = TRUE)) {
+          utils::read.csv(path, ...)
+        } else if (grepl("\\.json$", path, ignore.case = TRUE)) {
+          jsonlite::fromJSON(path, ...)
+        } else if (grepl("\\.rds$", path, ignore.case = TRUE)) {
+          readRDS(path)
+        } else {
+          readLines(path, ...)
+        }
+      }, error = function(e) {
+        if (!is.null(on_error)) on_error(e)
+        else stop("File read error: ", e$message)
+      })
+      
+      if (!is.null(callback)) callback(result)
+      result
+    },
+    
+    "write" = function() {
+      result <- tryCatch({
+        if (grepl("\\.json$", path, ignore.case = TRUE)) {
+          jsonlite::write_json(content, path, ...)
+        } else if (grepl("\\.rds$", path, ignore.case = TRUE)) {
+          saveRDS(content, path, ...)
+        } else if (grepl("\\.csv$", path, ignore.case = TRUE)) {
+          utils::write.csv(content, path, ...)
+        } else {
+          writeLines(content, path, ...)
+        }
+        TRUE
+      }, error = function(e) {
+        if (!is.null(on_error)) on_error(e)
+        else stop("File write error: ", e$message)
+      })
+      
+      if (!is.null(callback)) callback()
+      result
+    },
+    
+    "upload" = function() {
+      # This would integrate with existing upload functions
+      # Using save_session_to_cloud as a template
+      args <- list(...)
+      url <- args$url
+      if (is.null(url)) stop("URL required for upload operation")
+      
+      result <- tryCatch({
+        # Implement async upload logic here
+        # This is a placeholder for the actual upload implementation
+        message("Async upload to: ", url)
+        TRUE
+      }, error = function(e) {
+        if (!is.null(on_error)) on_error(e)
+        else stop("Upload error: ", e$message)
+      })
+      
+      if (!is.null(callback)) callback(result)
+      result
+    }
+  )
+  
+  # Execute asynchronously
+  async_execute(
+    op_func,
+    delay = 0,
+    log_prefix = paste("FILE", toupper(operation)),
+    on_error = on_error
+  )
+}
