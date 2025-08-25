@@ -2475,14 +2475,14 @@ hilfo_enhancements <- paste0(custom_js_enhanced, "
   color: #333 !important;
 }
 
-/* Grey buttons including CSV download */
-.btn-secondary, .download-btn, .btn-primary, input[type='submit'], button {
+/* Grey buttons including CSV download - EXCEPT English button */
+.btn-secondary, .download-btn, .btn-primary, input[type='submit'], button:not(#language-toggle-btn):not(#lang_switch) {
   background-color: #6c757d !important;
   border-color: #6c757d !important;
   color: white !important;
 }
 
-.btn-secondary:hover, .download-btn:hover, .btn-primary:hover {
+.btn-secondary:hover, .download-btn:hover, .btn-primary:hover:not(#language-toggle-btn):not(#lang_switch) {
   background-color: #5a6268 !important;
   border-color: #545b62 !important;
 }
@@ -2555,22 +2555,6 @@ select:focus, .form-select:focus {
   margin-top: 10px;
   border-left: 3px solid #ffc107;
   font-style: italic;
-}
-
-/* English translation button styling */
-#language-toggle-btn, #lang_switch {
-  background: white !important;
-  border: 2px solid #e8041c !important;
-  color: #e8041c !important;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-#language-toggle-btn:hover, #lang_switch:hover {
-  background: #e8041c !important;
-  color: white !important;
 }
 
 /* Download buttons styling - ensure they work */
