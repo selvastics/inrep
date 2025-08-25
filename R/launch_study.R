@@ -530,24 +530,26 @@ launch_study <- function(
     ...
 ) {
   
-  # Enhanced validation and error handling for robustness
-  tryCatch({
-    # Source enhanced modules if available
-    enhanced_files <- c(
-      "enhanced_config_handler.R",
-      "enhanced_session_recovery.R", 
-      "enhanced_security.R",
-      "enhanced_performance.R",
-      "custom_page_flow.R",
-      "custom_page_flow_validation.R"
-    )
-    
-    for (file in enhanced_files) {
-      file_path <- system.file("R", file, package = "inrep")
-      if (file.exists(file_path)) {
-        source(file_path, local = TRUE)
+  # Skip enhanced modules in immediate mode for faster startup
+  if (!immediate_ui) {
+    # Enhanced validation and error handling for robustness
+    tryCatch({
+      # Source enhanced modules if available
+      enhanced_files <- c(
+        "enhanced_config_handler.R",
+        "enhanced_session_recovery.R", 
+        "enhanced_security.R",
+        "enhanced_performance.R",
+        "custom_page_flow.R",
+        "custom_page_flow_validation.R"
+      )
+      
+      for (file in enhanced_files) {
+        file_path <- system.file("R", file, package = "inrep")
+        if (file.exists(file_path)) {
+          source(file_path, local = TRUE)
+        }
       }
-    }
     
     # Validate and fix configuration
     if (exists("validate_and_fix_config")) {
@@ -588,26 +590,21 @@ launch_study <- function(
         max_concurrent_users = config$expected_n %||% 100
       )
     }
-  }, error = function(e) {
-    logger(paste("Enhanced features initialization:", e$message))
-    # Continue with standard functionality
-  })
+    }, error = function(e) {
+      logger(paste("Enhanced features initialization:", e$message))
+      # Continue with standard functionality
+    })
+  } # End if (!immediate_ui)
   
   # Check if shiny is available (required for UI)
   if (!requireNamespace("shiny", quietly = TRUE)) {
     stop("Package 'shiny' is required but not available. Please install it with: install.packages('shiny')")
   }
   
-  # Check if later package is available (for deferred operations)
+  # Check if later package is available (required for immediate UI)
   has_later <- requireNamespace("later", quietly = TRUE)
-  if (!has_later) {
-    # Try to install later package for better performance
-    tryCatch({
-      utils::install.packages("later", quiet = TRUE, repos = "https://cran.r-project.org")
-      has_later <- requireNamespace("later", quietly = TRUE)
-    }, error = function(e) {
-      logger("Could not install 'later' package. Performance may be reduced.", level = "INFO")
-    })
+  if (!has_later && immediate_ui) {
+    stop("Package 'later' is required for immediate UI mode. Install with: install.packages('later')")
   }
   
   # Check for UUID if study_key uses UUIDgenerate
@@ -645,14 +642,14 @@ launch_study <- function(
     
     # If immediate_ui is enabled, use later package for background loading
     if (immediate_ui) {
-      cat("LATER: Moving package loading to background\n")
+      # Silent - no messages
       
       # Create background loop for package loading
       pkg_loop <- later::create_loop()
       
       # Schedule package loading in background
       later::later(function() {
-        cat("LATER: Background package loading started\n")
+        # Package loading starts silently
         # Package loading happens here without blocking UI
       }, delay = 0, loop = pkg_loop)
       
@@ -755,9 +752,14 @@ launch_study <- function(
     return(loaded_packages)
   }
   
-  # ULTRA-FAST STARTUP: Never load packages synchronously
+  # ULTRA-FAST STARTUP: Skip package loading in immediate mode
   # This ensures < 100ms to first page render
-  available_packages <- safe_load_packages(immediate = FALSE)
+  if (immediate_ui) {
+    # Minimal packages only for instant UI
+    available_packages <- list(shiny = TRUE, later = has_later)
+  } else {
+    available_packages <- safe_load_packages(immediate = FALSE)
+  }
   
   # Pre-calculate static content AND first page HTML for instant display
   static_content_cache <- list(
@@ -2537,7 +2539,7 @@ launch_study <- function(
         
         # Initialize session management if needed (was deferred from startup)
         if (exists(".needs_session_init") && .needs_session_init) {
-          logger("Initializing robust session management", level = "INFO")
+          # Silent session initialization
           session_config <<- list(
             session_id = paste0("SESS_", format(Sys.time(), "%Y%m%d_%H%M%S_"),
                                paste0(sample(letters, 8), collapse = "")),
@@ -2545,8 +2547,7 @@ launch_study <- function(
             max_time = max_session_time %||% 7200,
             log_file = NULL
           )
-          logger(sprintf("Session initialized: %s (max time: %d seconds)", 
-                        session_config$session_id, session_config$max_time), level = "INFO")
+          # No messages
         }
         
         # Do model conversion if needed (was deferred from startup)
@@ -2930,8 +2931,7 @@ launch_study <- function(
         current_page <- rv$current_page
         stage <- rv$stage
         
-        logger(sprintf("page_content rendering: stage=%s, page=%s, session_active=%s, initialized=%s", 
-               stage %||% "NULL", current_page %||% "NULL", rv$session_active %||% "NULL", rv$initialized %||% "NULL"), level = "DEBUG")
+        # Silent rendering
 
         # rv is ALWAYS initialized now (synchronous), so no need to check
         # Check session_active only
@@ -4717,10 +4717,12 @@ launch_study <- function(
     .GlobalEnv$.inrep_cleanup_on_exit <- function() {
       if (exists("cleanup_session") && is.function(cleanup_session)) {
         tryCatch({
-          cleanup_session(save_final_data = TRUE)
-          logger("Final cleanup completed on exit", level = "INFO")
+          cleanup_session()  # Call without parameters
+          if (!immediate_ui) {
+            logger("Final cleanup completed on exit", level = "INFO")
+          }
         }, error = function(e) {
-          logger(sprintf("Final cleanup failed: %s", e$message), level = "ERROR")
+          # Silent - no error messages
         })
       }
     }
