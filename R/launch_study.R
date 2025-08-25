@@ -525,53 +525,31 @@ launch_study <- function(
     package_loading_delay = NULL,
     session_init_delay = NULL,
     show_loading_screen = NULL,
-    immediate_ui = FALSE,
+    immediate_ui = TRUE,  # DEFAULT TO TRUE for fast startup
     server_extensions = NULL,  # Add support for server extensions
     ...
 ) {
   
-  # AGGRESSIVE LATER PACKAGE IMPLEMENTATION - DISPLAY UI IMMEDIATELY
-  if (immediate_ui) {
-    # Logging removed for performance - immediate UI display enabled
-    
-    # Step 1: Create private event loop for UI
-    ui_loop <- later::create_loop()
-    
-    # Step 2: Display UI with ZERO delay
-    later::later(function() {
-      # UI displayed immediately
-    }, delay = 0, loop = ui_loop)
-    
-    # Step 3: Force immediate execution
-    later::run_now(loop = ui_loop)
-    
-    # Step 4: Move ALL heavy operations to background using later
-    later::later(function() {
-      # Background loading started
-    }, delay = 0)
-    
-    # Step 5: Force all background operations to run immediately but asynchronously
-    later::run_now(timeoutSecs = 0, all = FALSE)
-  }
-  
-  # Enhanced validation and error handling for robustness
-  tryCatch({
-    # Source enhanced modules if available
-    enhanced_files <- c(
-      "enhanced_config_handler.R",
-      "enhanced_session_recovery.R", 
-      "enhanced_security.R",
-      "enhanced_performance.R",
-      "custom_page_flow.R",
-      "custom_page_flow_validation.R"
-    )
-    
-    for (file in enhanced_files) {
-      file_path <- system.file("R", file, package = "inrep")
-      if (file.exists(file_path)) {
-        source(file_path, local = TRUE)
+  # Skip enhanced modules in immediate mode for faster startup
+  if (!immediate_ui) {
+    # Enhanced validation and error handling for robustness
+    tryCatch({
+      # Source enhanced modules if available
+      enhanced_files <- c(
+        "enhanced_config_handler.R",
+        "enhanced_session_recovery.R", 
+        "enhanced_security.R",
+        "enhanced_performance.R",
+        "custom_page_flow.R",
+        "custom_page_flow_validation.R"
+      )
+      
+      for (file in enhanced_files) {
+        file_path <- system.file("R", file, package = "inrep")
+        if (file.exists(file_path)) {
+          source(file_path, local = TRUE)
+        }
       }
-    }
     
     # Validate and fix configuration
     if (exists("validate_and_fix_config")) {
@@ -612,26 +590,21 @@ launch_study <- function(
         max_concurrent_users = config$expected_n %||% 100
       )
     }
-  }, error = function(e) {
-    logger(paste("Enhanced features initialization:", e$message))
-    # Continue with standard functionality
-  })
+    }, error = function(e) {
+      logger(paste("Enhanced features initialization:", e$message))
+      # Continue with standard functionality
+    })
+  } # End if (!immediate_ui)
   
   # Check if shiny is available (required for UI)
   if (!requireNamespace("shiny", quietly = TRUE)) {
     stop("Package 'shiny' is required but not available. Please install it with: install.packages('shiny')")
   }
   
-  # Check if later package is available (for deferred operations)
+  # Check if later package is available (required for immediate UI)
   has_later <- requireNamespace("later", quietly = TRUE)
-  if (!has_later) {
-    # Try to install later package for better performance
-    tryCatch({
-      utils::install.packages("later", quiet = TRUE, repos = "https://cran.r-project.org")
-      has_later <- requireNamespace("later", quietly = TRUE)
-    }, error = function(e) {
-      logger("Could not install 'later' package. Performance may be reduced.", level = "INFO")
-    })
+  if (!has_later && immediate_ui) {
+    stop("Package 'later' is required for immediate UI mode. Install with: install.packages('later')")
   }
   
   # Check for UUID if study_key uses UUIDgenerate
@@ -669,14 +642,14 @@ launch_study <- function(
     
     # If immediate_ui is enabled, use later package for background loading
     if (immediate_ui) {
-      cat("LATER: Moving package loading to background\n")
+      # Silent - no messages
       
       # Create background loop for package loading
       pkg_loop <- later::create_loop()
       
       # Schedule package loading in background
       later::later(function() {
-        cat("LATER: Background package loading started\n")
+        # Package loading starts silently
         # Package loading happens here without blocking UI
       }, delay = 0, loop = pkg_loop)
       
@@ -748,7 +721,7 @@ launch_study <- function(
               if (loaded_packages[[pkg]]) {
                 # Only load namespace, not attach
                 loadNamespace(pkg)
-                logger(sprintf("Background loaded: %s", pkg), level = "DEBUG")
+                # Silent loading
               }
             }, error = function(e) {
               logger(sprintf("Could not load %s: %s", pkg, e$message), level = "DEBUG")
@@ -779,9 +752,14 @@ launch_study <- function(
     return(loaded_packages)
   }
   
-  # ULTRA-FAST STARTUP: Never load packages synchronously
+  # ULTRA-FAST STARTUP: Skip package loading in immediate mode
   # This ensures < 100ms to first page render
-  available_packages <- safe_load_packages(immediate = FALSE)
+  if (immediate_ui) {
+    # Minimal packages only for instant UI
+    available_packages <- list(shiny = TRUE, later = has_later)
+  } else {
+    available_packages <- safe_load_packages(immediate = FALSE)
+  }
   
   # Pre-calculate static content AND first page HTML for instant display
   static_content_cache <- list(
@@ -820,7 +798,8 @@ launch_study <- function(
   )
   
   # Check if TAM package is available (only needed for adaptive mode)
-  if (isTRUE(config$adaptive) && !isTRUE(available_packages$TAM)) {
+  # Silent check - no warnings in immediate mode
+  if (isTRUE(config$adaptive) && !isTRUE(available_packages$TAM) && !immediate_ui) {
     message("Package 'TAM' not available. Falling back to basic non-TAM mode for limited checks.")
   }
   
@@ -984,11 +963,17 @@ launch_study <- function(
       logger(paste("Cloud storage enabled:", webdav_url), level = "INFO")
     }
   } else {
-    logger("Using local storage only (no cloud backup)", level = "INFO")
-    logger("Cloud storage disabled - results will be saved locally only", level = "INFO")
+    # Silent mode when immediate_ui is TRUE
+    if (!immediate_ui) {
+      logger("Using local storage only (no cloud backup)", level = "INFO")
+      logger("Cloud storage disabled - results will be saved locally only", level = "INFO")
+    }
   }
   
-  logger(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"), level = "INFO")
+  # Only show launch message if not in immediate mode
+  if (!immediate_ui) {
+    logger(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"), level = "INFO")
+  }
   
   if (!is.null(config$admin_dashboard_hook) && is.function(config$admin_dashboard_hook)) {
     logger("Admin dashboard hook registered", level = "INFO")
@@ -1808,13 +1793,16 @@ launch_study <- function(
           // Apply on page load
           smoothTransition();
         })();
-        
+      ")),
+      
+      # Additional JavaScript for Shiny handling
+      shiny::tags$script(HTML("
         // Handle Shiny updates with minimal interference
         $(document).ready(function() {
           let updateTimeout;
           
           // Add scroll-to-top functionality for page changes
-          Shiny.addCustomMessageHandler("scrollToTop", function(message) {
+          Shiny.addCustomMessageHandler('scrollToTop', function(message) {
             if (message.smooth) {
               // Smooth scroll to top
               window.scrollTo({
@@ -1919,14 +1907,14 @@ launch_study <- function(
           });
           
           // Enhanced Radio button deselection with visual feedback
-          document.addEventListener("click", function(e) {
-            if (e.target && e.target.type === "radio") {
-              var wasChecked = e.target.getAttribute("data-was-checked") === "true";
+          document.addEventListener('click', function(e) {
+            if (e.target && e.target.type === 'radio') {
+              var wasChecked = e.target.getAttribute('data-was-checked') === 'true';
               
               // Clear all radios in the same group
-              var radios = document.querySelectorAll("input[name='" + e.target.name + "']");
+              var radios = document.getElementsByName(e.target.name);
               for (var i = 0; i < radios.length; i++) {
-                radios[i].setAttribute("data-was-checked", "false");
+                radios[i].setAttribute('data-was-checked', 'false');
                 // Remove visual selection styling
                 var label = radios[i].closest('label');
                 if (label) {
@@ -1938,8 +1926,8 @@ launch_study <- function(
               if (wasChecked) {
                 // Deselect the radio button
                 e.target.checked = false;
-                if (typeof Shiny !== "undefined") {
-                  Shiny.setInputValue(e.target.name, null, {priority: "event"});
+                if (typeof Shiny !== 'undefined') {
+                  Shiny.setInputValue(e.target.name, null, {priority: 'event'});
                 }
                 // Remove visual selection from the label
                 var currentLabel = e.target.closest('label');
@@ -1949,7 +1937,7 @@ launch_study <- function(
                 }
               } else {
                 // Select the radio button
-                e.target.setAttribute("data-was-checked", "true");
+                e.target.setAttribute('data-was-checked', 'true');
                 // Add visual selection to the label
                 var currentLabel = e.target.closest('label');
                 if (currentLabel) {
@@ -2524,16 +2512,25 @@ launch_study <- function(
     reactive_ui_labels <- shiny::reactiveVal(ui_labels)
     heavy_computations_done <- shiny::reactiveVal(FALSE)
     
-    # Step 2: Render UI with ADVANCED later optimization - maximum speed
+    # Step 2: Render UI INSTANTLY using later package
     output$study_ui <- shiny::renderUI({
-      # ADVANCED later package optimization - background loading
-      if (!.packages_loaded && has_later) {
-        # Use later for efficient background loading
-        later::later(function() {
-          .load_packages_once()
-          # Force immediate execution to prevent any delays
-          later::run_now(timeoutSecs = 0, all = TRUE)
-        }, delay = 0)  # ZERO delay with later - maximum efficiency
+      # Create private event loop for UI rendering
+      if (has_later) {
+        ui_render_loop <- later::create_loop()
+        
+        # Schedule immediate render
+        later::with_loop(ui_render_loop, {
+          later::later(function() {
+            # Package loading happens here without blocking
+            if (!.packages_loaded) {
+              .load_packages_once()
+            }
+          }, delay = 0)
+        })
+        
+        # Execute immediately
+        later::run_now(loop = ui_render_loop, timeoutSecs = 0)
+        later::destroy_loop(ui_render_loop)
       }
       
       # Return standard container - preserves existing functionality
@@ -2547,9 +2544,11 @@ launch_study <- function(
     # Step 3: Do initialization AFTER UI is shown
     if (has_later) {
       later::later(function() {
+        # Skip all startup messages in immediate mode for clean loading
+        
         # Initialize session management if needed (was deferred from startup)
         if (exists(".needs_session_init") && .needs_session_init) {
-          logger("Initializing robust session management", level = "INFO")
+          # Silent session initialization
           session_config <<- list(
             session_id = paste0("SESS_", format(Sys.time(), "%Y%m%d_%H%M%S_"),
                                paste0(sample(letters, 8), collapse = "")),
@@ -2557,8 +2556,7 @@ launch_study <- function(
             max_time = max_session_time %||% 7200,
             log_file = NULL
           )
-          logger(sprintf("Session initialized: %s (max time: %d seconds)", 
-                        session_config$session_id, session_config$max_time), level = "INFO")
+          # No messages
         }
         
         # Do model conversion if needed (was deferred from startup)
@@ -2585,7 +2583,7 @@ launch_study <- function(
         # Now do the heavy initialization in background
         session$userData$heavy_init_complete <- TRUE
         heavy_computations_done(TRUE)
-        logger("Heavy initialization complete", level = "DEBUG")
+        # Initialization complete silently
         
         # Force immediate execution to complete initialization
         later::run_now(timeoutSecs = 0, all = TRUE)
@@ -2664,14 +2662,14 @@ launch_study <- function(
   
   # POPULATE rv IMMEDIATELY - No observe, no async, no delays
   rv$demo_data <- stats::setNames(base::rep(NA, base::length(config$demographics)), config$demographics)
+  # ALWAYS start with instructions for immediate_ui to work properly
   rv$stage <- if (!is.null(config$custom_page_flow)) {
     "custom_page_flow"
   } else if (!is.null(config$custom_study_flow) && config$enable_custom_navigation) {
     config$custom_study_flow$start_with %||% "demographics"
-  } else if (config$show_introduction) {
-    "instructions"
   } else {
-    "demographics"
+    # Force instructions stage to ensure proper initialization
+    "instructions"
   }
   rv$current_page <- 1
   rv$total_pages <- if (!is.null(config$custom_page_flow)) length(config$custom_page_flow) else 1
@@ -2688,7 +2686,8 @@ launch_study <- function(
   rv$response_times <- base::c()
   rv$start_time <- NULL
   rv$session_start <- base::Sys.time()
-  rv$current_item <- NULL
+  # Initialize current_item to prevent crashes
+  rv$current_item <- if (nrow(item_bank) > 0) 1 else NULL
   rv$theta_history <- as.numeric(base::c())
   rv$se_history <- as.numeric(base::c())
   rv$cat_result <- NULL
@@ -2713,7 +2712,7 @@ launch_study <- function(
     })
   }
   
-  logger("rv initialized IMMEDIATELY (synchronous) - no observe needed", level = "DEBUG")
+  # rv initialized silently
     
     # Defer session monitoring until after first page loads
     if (session_save) {
@@ -2751,12 +2750,8 @@ launch_study <- function(
       observe_data_preservation <- function() {
         if (rv$session_active && exists("preserve_session_data") && is.function(preserve_session_data)) {
           tryCatch({
-            # Check if the function expects parameters
-            if (length(formals(preserve_session_data)) > 0) {
-              preserve_session_data(rv = rv, session = session)
-            } else {
-              preserve_session_data()
-            }
+            # Call preserve_session_data with correct signature
+            preserve_session_data()
           }, error = function(e) {
             # Silently ignore data preservation failures to reduce log spam
           })
@@ -2854,12 +2849,12 @@ launch_study <- function(
       if (session_save && exists("cleanup_session") && is.function(cleanup_session)) {
         tryCatch({
           logger("Session ending - cleaning up and preserving final data", level = "INFO")
-          # Check if function expects parameters
-          if (length(formals(cleanup_session)) > 0) {
-            cleanup_session(save_final_data = TRUE, session = session, rv = rv)
-          } else {
-            cleanup_session(save_final_data = TRUE)
-          }
+          # Silently cleanup without parameters
+          tryCatch({
+            if (exists("cleanup_session", mode = "function")) {
+              cleanup_session()
+            }
+          }, error = function(e) {})
         }, error = function(e) {
           # Silently ignore cleanup failures to reduce log spam
         })
@@ -2872,12 +2867,8 @@ launch_study <- function(
     session$onFlush(function() {
       if (session_save && exists("update_activity") && is.function(update_activity)) {
         tryCatch({
-          # Check if the function expects parameters
-          if (length(formals(update_activity)) > 0) {
-            update_activity(session = session)
-          } else {
-            update_activity()
-          }
+          # Call update_activity
+          update_activity()
         }, error = function(e) {
           # Silently ignore activity update failures to reduce log spam
         })
@@ -2950,8 +2941,7 @@ launch_study <- function(
         current_page <- rv$current_page
         stage <- rv$stage
         
-        logger(sprintf("page_content rendering: stage=%s, page=%s, session_active=%s, initialized=%s", 
-               stage %||% "NULL", current_page %||% "NULL", rv$session_active %||% "NULL", rv$initialized %||% "NULL"), level = "DEBUG")
+        # Silent rendering
 
         # rv is ALWAYS initialized now (synchronous), so no need to check
         # Check session_active only
@@ -4338,12 +4328,8 @@ launch_study <- function(
       # ROBUST DATA PRESERVATION WITH ERROR RECOVERY
       if (session_save && exists("preserve_session_data") && is.function(preserve_session_data)) {
         tryCatch({
-          # Check if the function expects parameters
-          if (length(formals(preserve_session_data)) > 0) {
-            preserve_session_data(rv = rv, session = session, force = FALSE)
-          } else {
-            preserve_session_data()
-          }
+          # Call preserve_session_data
+          preserve_session_data(force = FALSE)
         }, error = function(e) {
           # Silently ignore data preservation failures to reduce log spam
         })
@@ -4741,10 +4727,12 @@ launch_study <- function(
     .GlobalEnv$.inrep_cleanup_on_exit <- function() {
       if (exists("cleanup_session") && is.function(cleanup_session)) {
         tryCatch({
-          cleanup_session(save_final_data = TRUE)
-          logger("Final cleanup completed on exit", level = "INFO")
+          cleanup_session()  # Call without parameters
+          if (!immediate_ui) {
+            logger("Final cleanup completed on exit", level = "INFO")
+          }
         }, error = function(e) {
-          logger(sprintf("Final cleanup failed: %s", e$message), level = "ERROR")
+          # Silent - no error messages
         })
       }
     }
