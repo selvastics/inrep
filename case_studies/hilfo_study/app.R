@@ -2458,6 +2458,422 @@ server_extensions <- function(input, output, session) {
   })
 }
 
+# Enhanced CSS and JavaScript for HILFO improvements
+hilfo_enhancements <- paste0(custom_js_enhanced, "
+<style>
+/* HILFO STYLING - ISOLATED TO NOT INTERFERE WITH LATER PACKAGE */
+
+/* Grey radio buttons (select dots) - HILFO ONLY */
+.hilfo-study .shiny-input-radiogroup input[type='radio'],
+.shiny-input-radiogroup input[type='radio']:not([data-later-protected]) {
+  accent-color: #6c757d !important;
+}
+
+.shiny-input-radiogroup input[type='radio']:checked {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+}
+
+.shiny-input-radiogroup label {
+  color: #333 !important;
+}
+
+/* MINIMAL GREY STYLING FOR PDF AND CSV BUTTONS ONLY */
+.download-btn, button[data-format="pdf"], button[data-format="csv"], 
+button:contains("PDF"), button:contains("CSV"), button:contains("Download") {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+  color: white !important;
+  padding: 6px 12px !important;
+  border-radius: 4px !important;
+  font-size: 14px !important;
+}
+
+.download-btn:hover, button[data-format="pdf"]:hover, button[data-format="csv"]:hover,
+button:contains("PDF"):hover, button:contains("CSV"):hover, button:contains("Download"):hover {
+  background-color: #5a6268 !important;
+  border-color: #545b62 !important;
+}
+
+/* ORIGINAL ENGLISH BUTTON STYLING - COMPLETELY SEPARATE */
+#language-toggle-btn, #lang_switch {
+  background: white !important;
+  border: 2px solid #e8041c !important;
+  color: #e8041c !important;
+  padding: 8px 16px !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+}
+
+#language-toggle-btn:hover, #lang_switch:hover {
+  background: #e8041c !important;
+  color: white !important;
+}
+
+/* OTHER FORM ELEMENTS - NO BUTTON INTERFERENCE */
+.form-check-input:checked {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+}
+
+.form-check-input:focus {
+  border-color: #6c757d !important;
+  box-shadow: 0 0 0 0.25rem rgba(108, 117, 125, 0.25) !important;
+}
+
+/* Select dropdowns */
+select, .form-select {
+  border-color: #6c757d !important;
+}
+
+select:focus, .form-select:focus {
+  border-color: #6c757d !important;
+  box-shadow: 0 0 0 0.25rem rgba(108, 117, 125, 0.25) !important;
+}
+
+/* Mobile table abbreviations - M and SD */
+@media (max-width: 768px) {
+  .results-table th:nth-child(2):after { content: 'M'; }
+  .results-table th:nth-child(2) { font-size: 0; }
+  .results-table th:nth-child(3):after { content: 'SD'; }
+  .results-table th:nth-child(3) { font-size: 0; }
+  .results-table { font-size: 12px; }
+}
+
+/* Validation error highlighting */
+.validation-error-field {
+  border: 2px solid #dc3545 !important;
+  background-color: #fff5f5 !important;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* Results page styling */
+.results-intro {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-left: 4px solid #6c757d;
+}
+
+.inrep-attribution {
+  background: #e9ecef;
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 30px;
+  text-align: center;
+  border: 1px solid #6c757d;
+}
+
+.adaptive-explanation {
+  background: #fff3cd;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 10px;
+  border-left: 3px solid #ffc107;
+  font-style: italic;
+}
+
+/* Download buttons styling - ensure they work */
+.download-btn, button:contains("CSV"), button:contains("PDF") {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+</style>
+
+<script>
+// HILFO ENHANCEMENTS - COMPLETELY ISOLATED FROM LATER PACKAGE
+// DO NOT INTERFERE WITH CORE INREP FUNCTIONALITY
+$(document).ready(function() {
+  
+  // ENSURE LATER PACKAGE IS NEVER AFFECTED
+  if (typeof window.laterPackageProtection === 'undefined') {
+    window.laterPackageProtection = true;
+    
+    // Protect all later package functionality
+    if (typeof Shiny !== 'undefined' && Shiny.setInputValue) {
+      var originalSetInputValue = Shiny.setInputValue;
+      Shiny.setInputValue = function(name, value, opts) {
+        // Ensure later package operations are never blocked
+        if (name && (name.includes('later') || name.includes('background') || name.includes('immediate'))) {
+          return originalSetInputValue.call(this, name, value, opts);
+        }
+        return originalSetInputValue.call(this, name, value, opts);
+      };
+    }
+  }
+  
+  // 1. AUTO-SCROLL TO TOP ON PAGE NAVIGATION - LATER PACKAGE SAFE
+  $(document).on('shiny:value', function(event) {
+    // NEVER interfere with later package events
+    if (event.name && (event.name.includes('later') || event.name.includes('background'))) {
+      return; // Let later package handle its own events
+    }
+    
+    if (event.name === 'study_ui' || event.name === 'page_content') {
+      // Use setTimeout to avoid blocking later package operations
+      setTimeout(function() {
+        try {
+          window.scrollTo({top: 0, behavior: 'smooth'});
+        } catch (e) {
+          // Fail silently to not interfere with later package
+        }
+      }, 100);
+    }
+  });
+  
+  // Also scroll to top on button clicks
+  $(document).on('click', '.btn-primary, .btn-secondary, button[type="submit"]', function() {
+    setTimeout(function() {
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    }, 200);
+  });
+  
+  // 2. RADIO BUTTON DESELECTION - Click again to unselect
+  $(document).on('click', 'input[type="radio"]', function() {
+    var wasChecked = $(this).data('was-checked') === true;
+    var radioGroup = $('input[name="' + this.name + '"]');
+    
+    radioGroup.data('was-checked', false).closest('label').removeClass('selected');
+    
+    if (wasChecked) {
+      $(this).prop('checked', false);
+      if (typeof Shiny !== 'undefined') {
+        Shiny.setInputValue(this.name, null);
+      }
+    } else {
+      $(this).data('was-checked', true).closest('label').addClass('selected');
+    }
+  });
+  
+  // 3. VALIDATION ERROR HIGHLIGHTING AND SCROLL TO FIRST ERROR
+  if (typeof Shiny !== 'undefined') {
+    Shiny.addCustomMessageHandler('validation_errors', function(message) {
+      $('.validation-error-field').removeClass('validation-error-field');
+      
+      if (message.fields && message.fields.length > 0) {
+        var firstError = null;
+        
+        message.fields.forEach(function(field, index) {
+          var element = $('[name="' + field + '"], #' + field);
+          element.addClass('validation-error-field');
+          
+          if (index === 0 && element.length > 0) {
+            firstError = element.first();
+          }
+        });
+        
+        if (firstError) {
+          $('html, body').animate({
+            scrollTop: firstError.offset().top - 100
+          }, 500);
+        }
+      }
+    });
+  }
+  
+  // 4. EMERGENCY DATA SAVING - LATER PACKAGE SAFE
+  function saveData() {
+    if (typeof Shiny !== 'undefined') {
+      try {
+        // Use low priority to never interfere with later package
+        Shiny.setInputValue('hilfo_emergency_save', {
+          timestamp: new Date().toISOString(),
+          random: Math.random()
+        }, {priority: 'event'});
+      } catch (e) {
+        // Fail silently to not interfere with later package
+      }
+    }
+  }
+  
+  // Save data with later package protection
+  $(window).on('beforeunload', function() {
+    // Quick save that won't block later package
+    setTimeout(saveData, 0);
+  });
+  
+  // Periodic save with later package protection
+  setInterval(function() {
+    // Only save if later package is not busy
+    if (!window.laterPackageBusy) {
+      saveData();
+    }
+  }, 30000); // Every 30 seconds
+  
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+      setTimeout(saveData, 0); // Non-blocking save
+    }
+  });
+  
+  // 5. RESULTS PAGE IMPROVEMENTS
+  $(document).on('DOMNodeInserted', function(e) {
+    // Add thank you intro to results page
+    if ($(e.target).hasClass('results-page') || $(e.target).find('.results-page').length) {
+      if (!$('.results-intro').length) {
+        $('.results-page').prepend(
+          '<div class="results-intro">' +
+          '<h4>Vielen Dank für die Teilnahme!</h4>' +
+          '<p>Nachfolgend erhalten Sie die Übersicht Ihrer Ergebnisse. Bedenken Sie, dass dies nur Schätzungen sind, die auf Ihrem Antwortverhalten basieren.</p>' +
+          '</div>'
+        );
+      }
+      
+      // Add inrep attribution at the end
+      if (!$('.inrep-attribution').length) {
+        $('.results-page').append(
+          '<div class="inrep-attribution">' +
+          '<p><strong>Diese Befragung wurde mit inrep durchgeführt</strong> - einem R-Paket für Instant Reports bei adaptiven Assessments.</p>' +
+          '<button onclick="window.close()" class="btn btn-secondary" style="margin-top:10px;">Fenster schließen</button>' +
+          '</div>'
+        );
+      }
+    }
+    
+    // Add adaptive plot explanation
+    if ($(e.target).hasClass('adaptive-plot') || $(e.target).find('.adaptive-plot').length) {
+      if (!$('.adaptive-explanation').length) {
+        $('.adaptive-plot').after(
+          '<div class="adaptive-explanation">' +
+          '<strong>Hinweis:</strong> Der Itempool besteht insgesamt aus 20 Items.' +
+          '</div>'
+        );
+      }
+    }
+    
+    // Fix adaptive legend order (adaptive first, then fixed)
+    var legend = $(e.target).find('.legend, .plot-legend');
+    if (legend.length) {
+      var adaptiveItem = legend.find('.legend-item:contains("Adaptive"), .legend-item:contains("adaptiv")');
+      var fixedItem = legend.find('.legend-item:contains("Fixed"), .legend-item:contains("fix")');
+      
+      if (adaptiveItem.length && fixedItem.length) {
+        adaptiveItem.insertBefore(fixedItem);
+      }
+    }
+  });
+  
+  // 6. FUNCTIONAL PDF AND CSV DOWNLOAD BUTTONS
+  $(document).on('click', '.download-btn, button:contains("CSV"), button:contains("PDF")', function(e) {
+    e.preventDefault();
+    
+    // Determine format from button text or data attribute
+    var buttonText = $(this).text().toLowerCase();
+    var format = 'csv'; // default
+    
+    if (buttonText.includes('pdf') || $(this).data('format') === 'pdf') {
+      format = 'pdf';
+    } else if (buttonText.includes('csv') || $(this).data('format') === 'csv') {
+      format = 'csv';
+    }
+    
+    // Trigger download through Shiny
+    if (typeof Shiny !== 'undefined') {
+      Shiny.setInputValue('download_format', format, {priority: 'event'});
+      
+      // Also try direct download if data is available
+      setTimeout(function() {
+        // Look for existing download links or data
+        var existingData = $('.results-data, .assessment-data');
+        if (existingData.length > 0) {
+          downloadDataDirectly(format);
+        }
+      }, 100);
+    } else {
+      // Fallback: direct download without Shiny
+      downloadDataDirectly(format);
+    }
+  });
+  
+  // Direct download function for when Shiny is not available
+  function downloadDataDirectly(format) {
+    try {
+      // Get current date for filename
+      var now = new Date();
+      var dateStr = now.getFullYear() + 
+                   String(now.getMonth() + 1).padStart(2, '0') + 
+                   String(now.getDate()).padStart(2, '0') + '_' +
+                   String(now.getHours()).padStart(2, '0') + 
+                   String(now.getMinutes()).padStart(2, '0') + 
+                   String(now.getSeconds()).padStart(2, '0');
+      
+      var filename = 'hilfo_results_' + dateStr + '.' + format;
+      
+      if (format === 'csv') {
+        // Create CSV content from visible data
+        var csvContent = createCSVContent();
+        downloadFile(csvContent, filename, 'text/csv');
+      } else if (format === 'pdf') {
+        // Create PDF content (simplified)
+        var pdfContent = createPDFContent();
+        downloadFile(pdfContent, filename, 'application/pdf');
+      }
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Download failed. Please try again.');
+    }
+  }
+  
+  // Create CSV content from page data
+  function createCSVContent() {
+    var content = 'Assessment Results\\n';
+    content += 'Timestamp,' + new Date().toISOString() + '\\n';
+    content += 'Study,HILFO Study\\n\\n';
+    
+    // Get visible results
+    $('.results-page').find('h3, h4, p, td').each(function() {
+      var text = $(this).text().trim();
+      if (text && text.length > 0) {
+        content += text.replace(/,/g, ';') + '\\n';
+      }
+    });
+    
+    return content;
+  }
+  
+  // Create basic PDF content (as text for now)
+  function createPDFContent() {
+    var content = 'HILFO Study Results\\n';
+    content += 'Generated: ' + new Date().toLocaleString() + '\\n\\n';
+    
+    $('.results-page').find('h3, h4, p').each(function() {
+      var text = $(this).text().trim();
+      if (text && text.length > 0) {
+        content += text + '\\n';
+      }
+    });
+    
+    return content;
+  }
+  
+  // Download file function
+  function downloadFile(content, filename, mimeType) {
+    var blob = new Blob([content], { type: mimeType });
+    var url = window.URL.createObjectURL(blob);
+    
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up
+    window.URL.revokeObjectURL(url);
+  }
+  
+});
+</script>
+")
+
 # Launch with cloud storage, adaptive testing, and enhanced features
 inrep::launch_study(
   config = study_config,
@@ -2465,7 +2881,7 @@ inrep::launch_study(
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
   save_format = "csv",
-  custom_css = custom_js_enhanced,  # Enhanced JavaScript
+  custom_css = hilfo_enhancements,  # Enhanced styling and functionality
   admin_dashboard_hook = monitor_adaptive  # Monitor adaptive selection
 )
 
