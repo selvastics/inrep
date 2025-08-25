@@ -3104,12 +3104,15 @@ launch_study <- function(
                      # Debug: Log item display state
                      logger(sprintf("Rendering assessment UI - stage: %s, current_item: %s", rv$stage, rv$current_item))
                      
-                     if (base::is.null(rv$current_item) || length(rv$current_item) == 0 || is.na(rv$current_item)) {
-                       logger("ERROR: current_item is NULL/empty in assessment stage - this is the problem!", level = "ERROR")
-                       return(shiny::div(class = "assessment-card",
-                                           shiny::h3(ui_labels$preparing, class = "card-header"),
-                                         shiny::p(ui_labels$loading_question)))
-                     }
+                                 # Enhanced check for current_item with better error handling
+            if (base::is.null(rv$current_item) || 
+                length(rv$current_item) == 0 || 
+                (length(rv$current_item) > 0 && base::is.na(rv$current_item)[1])) {
+              logger("ERROR: current_item is NULL/empty in assessment stage - this is the problem!", level = "ERROR")
+              return(shiny::div(class = "assessment-card",
+                                  shiny::h3(ui_labels$preparing, class = "card-header"),
+                                shiny::p(ui_labels$loading_question)))
+            }
                      
                      logger(sprintf("Getting content for item %d", rv$current_item))
                      item <- get_item_content(rv$current_item)
