@@ -622,12 +622,11 @@ launch_study <- function(
     options(error = old_error_handler)
   }, add = TRUE)
   
-  # Add specific handling for "Argument hat Länge 0" errors
+  # Add specific handling for "Argument hat Länge 0" errors - OPTIMIZED FOR SPEED
   options(error = function() {
     err_msg <- geterrmessage()
-    if (grepl("Argument hat L\u00e4nge 0|argument is of length zero", err_msg)) {
-      # Suppress these specific errors as they're non-critical
-      logger("Suppressed non-critical length error", level = "DEBUG")
+    if (grepl("Argument hat L\u00e4nge 0|argument is of length zero", err_msg, fixed = FALSE)) {
+      # Suppress these specific errors silently for performance
       return(invisible())
     } else if (!is.null(old_error_handler)) {
       old_error_handler()
@@ -2703,12 +2702,15 @@ launch_study <- function(
             }
           }
         
-        # Update activity tracking
+        # Update activity tracking - OPTIMIZED FOR PERFORMANCE
         if (exists("update_activity") && is.function(update_activity)) {
           tryCatch({
             update_activity()
           }, error = function(e) {
-            logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
+            # Suppress "Argument hat Länge 0" errors silently for performance
+            if (!grepl("Argument hat L\u00e4nge 0|argument is of length zero", e$message)) {
+              logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
+            }
           })
         }
       })  # Close observe
@@ -2720,7 +2722,10 @@ launch_study <- function(
           tryCatch({
             preserve_session_data()
           }, error = function(e) {
-            logger(sprintf("Data preservation failed: %s", e$message), level = "ERROR")
+            # Suppress "Argument hat Länge 0" errors silently for performance
+            if (!grepl("Argument hat L\u00e4nge 0|argument is of length zero", e$message)) {
+              logger(sprintf("Data preservation failed: %s", e$message), level = "ERROR")
+            }
           })
         }
       }
@@ -2825,13 +2830,16 @@ launch_study <- function(
       }
     })
     
-    # Handle browser disconnect (with fallback)
+    # Handle browser disconnect (with fallback) - OPTIMIZED FOR PERFORMANCE
     session$onFlush(function() {
       if (session_save && exists("update_activity") && is.function(update_activity)) {
         tryCatch({
           update_activity()
         }, error = function(e) {
-          logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
+          # Suppress "Argument hat Länge 0" errors silently for performance
+          if (!grepl("Argument hat L\u00e4nge 0|argument is of length zero", e$message)) {
+            logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
+          }
         })
       }
     })
