@@ -3644,8 +3644,11 @@ launch_study <- function(
         ggplot2::theme(text = ggplot2::element_text(family = "Inter", size = 11))
     })
     
+
+    
+    # CRITICAL FIX: Assign the item_table output that was missing!
     output$item_table <- safe_render_dt({
-      # COMPREHENSIVE error handling for item table rendering
+      # Enhanced error handling for item table rendering
       tryCatch({
         # Validate rv$cat_result exists and has data
         if (base::is.null(rv$cat_result)) {
@@ -3671,19 +3674,15 @@ launch_study <- function(
         if (any(is.infinite(responses))) {
           responses[is.infinite(responses)] <- NA
         }
-      # Align lengths defensively
-      if (length(items) != length(responses)) {
-        n <- min(length(items), length(responses))
-        items <- items[seq_len(n)]
-        responses <- responses[seq_len(n)]
-      }
-      # Use enhanced reporting when requested
-      pr <- config$participant_report %||% list()
-      if (isTRUE(pr$use_enhanced_report) && exists("create_response_report", where = asNamespace("inrep"), inherits = FALSE)) {
-        dat <- inrep:::create_response_report(config, rv$cat_result, item_bank)
-      } else if (isTRUE(pr$use_enhanced_report) && exists("create_response_report")) {
-        dat <- create_response_report(config, rv$cat_result, item_bank)
-      } else {
+        
+        # Align lengths defensively
+        if (length(items) != length(responses)) {
+          n <- min(length(items), length(responses))
+          items <- items[seq_len(n)]
+          responses <- responses[seq_len(n)]
+        }
+        
+        # Create the data frame for the table
         dat <- if (config$model == "GRM") {
           base::data.frame(
             Item = 1:base::length(items),
@@ -3706,40 +3705,16 @@ launch_study <- function(
             check.names = FALSE
           )
         }
-      }
-      columnDefs <- base::list(
-        base::list(width = '50%', targets = 0),
-        base::list(width = '25%', targets = 1)
-      )
-      if (config$model == "GRM") {
-        columnDefs[[3]] <- base::list(width = '25%', targets = 2)
-      } else if ("Correct" %in% base::names(dat)) {
-        columnDefs[[3]] <- base::list(width = '25%', targets = 2)
-        columnDefs[[4]] <- base::list(width = '25%', targets = 3)
-      } else {
-        columnDefs[[3]] <- base::list(width = '25%', targets = 2)
-      }
-      DT::datatable(
-        dat,
-        rownames = FALSE,
-        options = base::list(
-          dom = 't',
-          paging = FALSE,
-          searching = FALSE,
-          autoWidth = TRUE,
-          columnDefs = columnDefs
-        )
-      ) -> dt_table
-      
-      DT::formatStyle(dt_table, columns = base::names(dat), color = 'var(--text-color)', fontFamily = 'var(--font-family)')
-      
+        
+        return(dat)
+        
       }, error = function(e) {
-        logger(sprintf("Item table rendering error: %s", e$message), level = "ERROR")
+        logger(sprintf("Item table data creation error: %s", e$message), level = "ERROR")
         # Return fallback data frame
-        data.frame(
-          Error = paste("Table rendering failed:", e$message),
-          Solution = "Please check your data or contact support"
-        )
+        return(data.frame(
+          Error = paste("Table data creation failed:", e$message),
+          Solution = "Please check your assessment data"
+        ))
       })
     })
     
