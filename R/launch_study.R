@@ -2476,8 +2476,8 @@ launch_study <- function(
         cat("LATER: UI rendered immediately in server\n")
       }, delay = 0, loop = server_loop)
       
-      # Force immediate execution
-      later::run_now(loop = server_loop)
+      # Let server initialization run asynchronously
+      later::run_now(loop = server_loop, timeoutSecs = 0.001)
     }
     
     # ULTRA-FAST STARTUP: Show UI immediately, initialize everything else later
@@ -2502,8 +2502,7 @@ launch_study <- function(
         # Use later for efficient background loading
         later::later(function() {
           .load_packages_once()
-          # Force immediate execution to prevent any delays
-          later::run_now(timeoutSecs = 0, all = TRUE)
+          # Let packages load in background without blocking
         }, delay = 0)  # ZERO delay with later - maximum efficiency
       }
       
