@@ -1860,44 +1860,23 @@ study_config <- inrep::create_study_config(
   name = "HilFo Studie",
   study_key = session_uuid,
   theme = "hildesheim",  # Use built-in Hildesheim theme
-  # custom_page_flow = custom_page_flow,  # DISABLED for true adaptive testing
+  custom_page_flow = custom_page_flow,
   demographics = names(demographic_configs),
   demographic_configs = demographic_configs,
   input_types = input_types,
-  
-  # Enhanced adaptive configuration matching cognitive example
   model = "2PL",  # Use 2PL model for IRT
-  estimation_method = "TAM",  # Use TAM for better estimation
-  adaptive = TRUE,  # Enable adaptive testing
-  criteria = "MI",  # Maximum Information (better than MFI)
-  min_items = 10,  # Minimum items before stopping
-  max_items = 20,  # Maximum items to prevent fatigue
-  min_SEM = 0.3,   # Stop when SEM is acceptable
-  theta_prior = c(0, 1),  # Standard normal prior
-  
+  adaptive = TRUE,  # Enable adaptive for PA items
+  max_items = 51,  # Total items in bank
+  min_items = 51,  # Must show all items
+  criteria = "MFI",  # Maximum Fisher Information
   response_ui_type = "radio",
-  progress_style = "modern-circle",  # Better progress indicator
+  progress_style = "bar",
   language = "de",  # Start with German
   bilingual = TRUE,  # Enable bilingual support
   session_save = TRUE,
   session_timeout = 7200,
-  
-  # Enhanced features matching cognitive example
-  parallel_computation = TRUE,
-  cache_enabled = TRUE,
-  accessibility_enhanced = TRUE,
-  
-  # Enhanced participant report
-  participant_report = list(
-    show_theta_plot = TRUE,
-    show_response_table = TRUE,
-    show_recommendations = TRUE,
-    use_enhanced_report = TRUE,
-    show_item_difficulty_trend = TRUE,
-    show_domain_breakdown = TRUE
-  ),
-  
   results_processor = create_hilfo_report,
+  estimation_method = "EAP",  # Use EAP for ability estimation
   page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
   item_bank = all_items,  # Full item bank
   save_to_file = TRUE,
@@ -2479,7 +2458,7 @@ server_extensions <- function(input, output, session) {
   })
 }
 
-# COMPREHENSIVE HILFO IMPROVEMENTS - ALL FEATURES INCLUDED
+# Enhanced CSS and JavaScript with ALL requested HILFO improvements
 hilfo_improvements <- paste0(custom_js_enhanced, "
 <style>
 /* Mobile table - abbreviate Mean and SD */
@@ -2491,51 +2470,24 @@ hilfo_improvements <- paste0(custom_js_enhanced, "
   .results-table { font-size: 12px; }
 }
 
-/* GREY BUTTONS - All select buttons and download buttons */
-.btn-secondary, .download-btn, select, .form-select, .btn-primary, input[type='submit'] { 
+/* Grey buttons for select and download */
+.btn-secondary, .download-btn, select, .form-select { 
   background-color: #6c757d !important; 
   border-color: #6c757d !important; 
   color: white !important;
 }
-.btn-secondary:hover, .download-btn:hover, .btn-primary:hover {
+.btn-secondary:hover, .download-btn:hover {
   background-color: #5a6268 !important;
 }
 
-/* GREY CHECKBOXES AND SELECT TOGGLES */
-.form-check-input:checked {
-  background-color: #6c757d !important;
+/* Radio button styling - grey selection */
+.shiny-input-radiogroup input[type='radio']:checked + span {
+  background-color: rgba(108, 117, 125, 0.15) !important;
   border-color: #6c757d !important;
-}
-.form-check-input:focus {
-  border-color: #6c757d !important;
-  box-shadow: 0 0 0 0.25rem rgba(108, 117, 125, 0.25) !important;
+  border-width: 2px !important;
 }
 
-/* GREY SELECT BAR TOGGLE */
-.form-select:focus, select:focus {
-  border-color: #6c757d !important;
-  box-shadow: 0 0 0 0.25rem rgba(108, 117, 125, 0.25) !important;
-}
-
-/* Move consent text closer to checkbox */
-.form-check {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  margin-bottom: 1rem !important;
-}
-.form-check-input {
-  margin-top: 0 !important;
-  margin-right: 8px !important;
-  flex-shrink: 0 !important;
-}
-.form-check-label {
-  margin-bottom: 0 !important;
-  line-height: 1.2 !important;
-  cursor: pointer !important;
-}
-
-/* VALIDATION ERROR HIGHLIGHTING */
+/* Validation error highlighting */
 .validation-error-field {
   border: 2px solid #dc3545 !important;
   background-color: #fff5f5 !important;
@@ -2549,45 +2501,34 @@ hilfo_improvements <- paste0(custom_js_enhanced, "
 
 /* Results page styling */
 .results-intro {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 8px;
   margin-bottom: 20px;
-  border-left: 4px solid #6c757d;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
 }
 
 .inrep-attribution {
-  background: #e9ecef;
-  padding: 15px;
-  border-radius: 8px;
   margin-top: 30px;
+  padding: 15px;
+  background-color: #e9ecef;
+  border-radius: 8px;
   text-align: center;
-  border: 1px solid #6c757d;
 }
 
 .adaptive-explanation {
-  background: #fff3cd;
+  margin-top: 15px;
   padding: 10px;
-  border-radius: 4px;
-  margin-top: 10px;
-  border-left: 3px solid #ffc107;
+  background-color: #e9ecef;
+  border-radius: 5px;
+  font-size: 14px;
   font-style: italic;
-}
-
-/* Radio button styling - grey selection */
-.shiny-input-radiogroup input[type='radio']:checked + span {
-  background-color: rgba(108, 117, 125, 0.15) !important;
-  border-color: #6c757d !important;
-  border-width: 2px !important;
 }
 </style>
 
 <script>
-// COMPREHENSIVE JAVASCRIPT FOR ALL HILFO IMPROVEMENTS
-
 $(document).ready(function() {
-  
-  // 1. AUTO-SCROLL TO TOP ON PAGE CHANGES
+  // 1. AUTO SCROLL TO TOP ON PAGE CHANGES
   $(document).on('shiny:value', function(event) {
     if (event.name === 'study_ui' || event.name === 'page_content') {
       setTimeout(function() {
@@ -2596,14 +2537,7 @@ $(document).ready(function() {
     }
   });
   
-  // Also scroll to top on any page navigation
-  $(document).on('click', '.btn-primary, .btn-secondary', function() {
-    setTimeout(function() {
-      window.scrollTo({top: 0, behavior: 'smooth'});
-    }, 200);
-  });
-  
-  // 2. RADIO BUTTON DESELECTION FUNCTIONALITY
+  // 2. RADIO BUTTON DESELECTION
   $(document).on('click', 'input[type=\"radio\"]', function() {
     var wasChecked = $(this).data('was-checked') === true;
     var radioGroup = $('input[name=\"' + this.name + '\"]');
@@ -2620,33 +2554,31 @@ $(document).ready(function() {
     }
   });
   
-  // 3. VALIDATION ERROR HIGHLIGHTING AND SCROLL TO FIRST ERROR
-  if (typeof Shiny !== 'undefined') {
-    Shiny.addCustomMessageHandler('validation_errors', function(message) {
-      $('.validation-error-field').removeClass('validation-error-field');
+  // 3. VALIDATION WITH HIGHLIGHTING AND SCROLL TO FIRST ERROR
+  Shiny.addCustomMessageHandler('validation_errors', function(message) {
+    $('.validation-error-field').removeClass('validation-error-field');
+    
+    if (message.fields && message.fields.length > 0) {
+      var firstError = null;
       
-      if (message.fields && message.fields.length > 0) {
-        var firstError = null;
+      message.fields.forEach(function(field, index) {
+        var element = $('[name=\"' + field + '\"], #' + field);
+        element.addClass('validation-error-field');
         
-        message.fields.forEach(function(field, index) {
-          var element = $('[name=\"' + field + '\"], #' + field);
-          element.addClass('validation-error-field');
-          
-          if (index === 0 && element.length > 0) {
-            firstError = element.first();
-          }
-        });
-        
-        if (firstError) {
-          $('html, body').animate({
-            scrollTop: firstError.offset().top - 100
-          }, 500);
+        if (index === 0 && element.length > 0) {
+          firstError = element.first();
         }
+      });
+      
+      if (firstError) {
+        $('html, body').animate({
+          scrollTop: firstError.offset().top - 100
+        }, 500);
       }
-    });
-  }
+    }
+  });
   
-  // 4. EMERGENCY DATA SAVING - ROBUST SERVER-SIDE DATA HANDLING
+  // 4. EMERGENCY DATA SAVING
   function saveData() {
     if (typeof Shiny !== 'undefined') {
       Shiny.setInputValue('emergency_save', {
@@ -2656,17 +2588,16 @@ $(document).ready(function() {
     }
   }
   
-  // Save data on page unload, visibility change, and periodically
   $(window).on('beforeunload', saveData);
-  setInterval(saveData, 30000); // Every 30 seconds
+  setInterval(saveData, 30000);
   document.addEventListener('visibilitychange', function() {
     if (document.hidden) saveData();
   });
   
   // 5. RESULTS PAGE IMPROVEMENTS
   $(document).on('DOMNodeInserted', function(e) {
-    // Add thank you intro to results page
     if ($(e.target).hasClass('results-page') || $(e.target).find('.results-page').length) {
+      // Add thank you intro
       if (!$('.results-intro').length) {
         $('.results-page').prepend(
           '<div class=\"results-intro\">' +
@@ -2676,11 +2607,11 @@ $(document).ready(function() {
         );
       }
       
-      // Add inrep attribution at the end
+      // Add inrep attribution
       if (!$('.inrep-attribution').length) {
         $('.results-page').append(
           '<div class=\"inrep-attribution\">' +
-          '<p><strong>Diese Befragung wurde mit inrep durchgeführt</strong> - einem R-Paket für Instant Reports bei adaptiven Assessments.</p>' +
+          '<p>Diese Befragung wurde mit inrep durchgeführt - einem R-Paket für Instant Reports bei adaptiven Assessments.</p>' +
           '<button onclick=\"window.close()\" class=\"btn btn-secondary\" style=\"margin-top:10px;\">Fenster schließen</button>' +
           '</div>'
         );
@@ -2692,58 +2623,15 @@ $(document).ready(function() {
       if (!$('.adaptive-explanation').length) {
         $('.adaptive-plot').after(
           '<div class=\"adaptive-explanation\">' +
-          '<strong>Hinweis:</strong> Der Itempool besteht insgesamt aus 20 Items.' +
+          'Hinweis: Der Itempool besteht insgesamt aus 20 Items.' +
           '</div>'
         );
       }
     }
-    
-    // Fix adaptive legend order (adaptive first, then fixed)
-    var legend = $(e.target).find('.legend, .plot-legend');
-    if (legend.length) {
-      var adaptiveItem = legend.find('.legend-item:contains(\"Adaptive\"), .legend-item:contains(\"adaptiv\")');
-      var fixedItem = legend.find('.legend-item:contains(\"Fixed\"), .legend-item:contains(\"fix\")');
-      
-      if (adaptiveItem.length && fixedItem.length) {
-        adaptiveItem.insertBefore(fixedItem);
-      }
-    }
   });
-  
-  // 6. HANDLE MISSING VALUES ERROR FIX
-  // Fix for missing value boolean error
-  $(document).on('shiny:error', function(event) {
-    if (event.message && event.message.includes('Fehlender Wert')) {
-      console.log('Fixed missing value error:', event.message);
-      // Prevent the error from showing to user
-      event.preventDefault();
-    }
-  });
-  
 });
-</script>")
-
-# Enhanced admin dashboard hook matching cognitive example
-enhanced_admin_hook <- function(session_data) {
-  message("=== HILFO ADAPTIVE MONITORING ===")
-  message("Participant ID: ", session_data$participant_id %||% "unknown")
-  message("Progress: ", round(session_data$progress %||% 0, 1), "%")
-  message("Current theta: ", round(session_data$theta %||% 0, 3))
-  message("Standard error: ", round(session_data$se %||% 1, 3))
-  message("Items administered: ", length(session_data$administered %||% c()))
-  message("Current domain: ", session_data$current_domain %||% "unknown")
-  message("Adaptive phase: ", if(session_data$adaptive_active %||% FALSE) "ACTIVE" else "FIXED")
-  message("===============================")
-  
-  # Also call original monitor if it exists
-  if (exists("monitor_adaptive") && is.function(monitor_adaptive)) {
-    tryCatch({
-      monitor_adaptive(session_data)
-    }, error = function(e) {
-      message("Original monitor_adaptive failed: ", e$message)
-    })
-  }
-}
+</script>
+")
 
 # Launch with cloud storage, adaptive testing, and enhanced features
 inrep::launch_study(
@@ -2753,8 +2641,7 @@ inrep::launch_study(
   password = WEBDAV_PASSWORD,
   save_format = "csv",
   custom_css = hilfo_improvements,  # ALL HILFO IMPROVEMENTS APPLIED
-  accessibility = TRUE,  # Enable accessibility features
-  admin_dashboard_hook = enhanced_admin_hook  # Enhanced monitoring like cognitive example
+  admin_dashboard_hook = monitor_adaptive  # Monitor adaptive selection
 )
 
 
