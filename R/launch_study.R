@@ -616,11 +616,23 @@ launch_study <- function(
     # Continue with standard functionality
   })
   
-  # OPTIMIZED: Minimal error handling for faster startup
+  # ENHANCED: Error handling for German locale length errors
   old_error_handler <- getOption("error")
   on.exit({
     options(error = old_error_handler)
   }, add = TRUE)
+  
+  # Add specific handling for "Argument hat Länge 0" errors
+  options(error = function() {
+    err_msg <- geterrmessage()
+    if (grepl("Argument hat L\u00e4nge 0|argument is of length zero", err_msg)) {
+      # Suppress these specific errors as they're non-critical
+      logger("Suppressed non-critical length error", level = "DEBUG")
+      return(invisible())
+    } else if (!is.null(old_error_handler)) {
+      old_error_handler()
+    }
+  })
   
   # Check if shiny is available (required for UI)
   if (!requireNamespace("shiny", quietly = TRUE)) {

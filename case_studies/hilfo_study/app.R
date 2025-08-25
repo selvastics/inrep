@@ -2458,6 +2458,91 @@ server_extensions <- function(input, output, session) {
   })
 }
 
+# Enhanced CSS and JavaScript for HILFO improvements
+hilfo_enhancements <- paste0(custom_js_enhanced, "
+<style>
+/* Grey radio buttons (select dots) */
+.shiny-input-radiogroup input[type='radio'] {
+  accent-color: #6c757d !important;
+}
+
+.shiny-input-radiogroup input[type='radio']:checked {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+}
+
+.shiny-input-radiogroup label {
+  color: #333 !important;
+}
+
+/* Grey buttons including CSV download */
+.btn-secondary, .download-btn, .btn-primary, input[type='submit'], button {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+  color: white !important;
+}
+
+.btn-secondary:hover, .download-btn:hover, .btn-primary:hover {
+  background-color: #5a6268 !important;
+  border-color: #545b62 !important;
+}
+
+/* Grey checkboxes */
+.form-check-input:checked {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+}
+
+.form-check-input:focus {
+  border-color: #6c757d !important;
+  box-shadow: 0 0 0 0.25rem rgba(108, 117, 125, 0.25) !important;
+}
+
+/* Select dropdowns */
+select, .form-select {
+  border-color: #6c757d !important;
+}
+
+select:focus, .form-select:focus {
+  border-color: #6c757d !important;
+  box-shadow: 0 0 0 0.25rem rgba(108, 117, 125, 0.25) !important;
+}
+</style>
+
+<script>
+// Enhanced download functionality for PDF and CSV
+$(document).ready(function() {
+  
+  // Add download functionality
+  $(document).on('click', '.download-btn', function(e) {
+    e.preventDefault();
+    var format = $(this).data('format') || 'csv';
+    
+    if (typeof Shiny !== 'undefined') {
+      Shiny.setInputValue('download_request', {
+        format: format,
+        timestamp: new Date().toISOString()
+      }, {priority: 'event'});
+    }
+  });
+  
+  // Handle file downloads with user selection
+  if (typeof Shiny !== 'undefined') {
+    Shiny.addCustomMessageHandler('trigger_download', function(message) {
+      // Create a temporary download link
+      var link = document.createElement('a');
+      link.href = message.url;
+      link.download = message.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  }
+  
+});
+</script>
+")
+
 # Launch with cloud storage, adaptive testing, and enhanced features
 inrep::launch_study(
   config = study_config,
@@ -2465,7 +2550,7 @@ inrep::launch_study(
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
   save_format = "csv",
-  custom_css = custom_js_enhanced,  # Enhanced JavaScript
+  custom_css = hilfo_enhancements,  # Enhanced styling and functionality
   admin_dashboard_hook = monitor_adaptive  # Monitor adaptive selection
 )
 
