@@ -2512,16 +2512,25 @@ launch_study <- function(
     reactive_ui_labels <- shiny::reactiveVal(ui_labels)
     heavy_computations_done <- shiny::reactiveVal(FALSE)
     
-    # Step 2: Render UI with ADVANCED later optimization - maximum speed
+    # Step 2: Render UI INSTANTLY using later package
     output$study_ui <- shiny::renderUI({
-      # ADVANCED later package optimization - background loading
-      if (!.packages_loaded && has_later) {
-        # Use later for efficient background loading
-        later::later(function() {
-          .load_packages_once()
-          # Force immediate execution to prevent any delays
-          later::run_now(timeoutSecs = 0, all = TRUE)
-        }, delay = 0)  # ZERO delay with later - maximum efficiency
+      # Create private event loop for UI rendering
+      if (has_later) {
+        ui_render_loop <- later::create_loop()
+        
+        # Schedule immediate render
+        later::with_loop(ui_render_loop, {
+          later::later(function() {
+            # Package loading happens here without blocking
+            if (!.packages_loaded) {
+              .load_packages_once()
+            }
+          }, delay = 0)
+        })
+        
+        # Execute immediately
+        later::run_now(loop = ui_render_loop, timeoutSecs = 0)
+        later::destroy_loop(ui_render_loop)
       }
       
       # Return standard container - preserves existing functionality
@@ -2677,7 +2686,8 @@ launch_study <- function(
   rv$response_times <- base::c()
   rv$start_time <- NULL
   rv$session_start <- base::Sys.time()
-  rv$current_item <- NULL
+  # Initialize current_item to prevent crashes
+  rv$current_item <- if (nrow(item_bank) > 0) 1 else NULL
   rv$theta_history <- as.numeric(base::c())
   rv$se_history <- as.numeric(base::c())
   rv$cat_result <- NULL

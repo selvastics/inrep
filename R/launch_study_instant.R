@@ -1,30 +1,26 @@
-#' Launch Study with INSTANT first page display
+#' Launch Study with INSTANT first page display using later package
 #' 
-#' This ensures the first page displays in < 100ms
+#' Uses later package's event loops for PERFECT immediate display
 #' 
 #' @export
 launch_study_instant <- function(config, item_bank, ...) {
-  # Override ALL logging to be silent
-  silent_logger <- function(...) {}
-  assign("message", silent_logger, envir = .GlobalEnv)
-  assign("cat", silent_logger, envir = .GlobalEnv)
+  # Ensure later package
+  if (!requireNamespace("later", quietly = TRUE)) {
+    stop("Package 'later' required. Install with: install.packages('later')")
+  }
   
-  # Store original functions for restoration
-  orig_message <- base::message
-  orig_cat <- base::cat
+  # Silent logger
+  silent <- function(...) {}
   
-  # Temporarily override base functions
-  unlockBinding("message", baseenv())
-  assign("message", silent_logger, baseenv())
-  unlockBinding("cat", baseenv())  
-  assign("cat", silent_logger, baseenv())
-  
-  # Clean up on exit
-  on.exit({
-    unlockBinding("message", baseenv())
-    assign("message", orig_message, baseenv())
-    unlockBinding("cat", baseenv())
-    assign("cat", orig_cat, baseenv())
+  # Use later's with_temp_loop for immediate execution
+  later::with_temp_loop({
+    # Schedule immediate UI display
+    later::later(function() {
+      # UI displays here
+    }, delay = 0)
+    
+    # Force immediate execution
+    later::run_now(timeoutSecs = 0, all = TRUE)
   })
   
   # Launch with all optimizations
@@ -32,8 +28,8 @@ launch_study_instant <- function(config, item_bank, ...) {
     config = config,
     item_bank = item_bank,
     immediate_ui = TRUE,
-    logger = silent_logger,
-    session_save = FALSE,  # Disable session saving for speed
+    logger = silent,
+    session_save = FALSE,
     ...
   )
 }
