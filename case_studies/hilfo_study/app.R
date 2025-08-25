@@ -2507,13 +2507,185 @@ select:focus, .form-select:focus {
   border-color: #6c757d !important;
   box-shadow: 0 0 0 0.25rem rgba(108, 117, 125, 0.25) !important;
 }
+
+/* Mobile table abbreviations - M and SD */
+@media (max-width: 768px) {
+  .results-table th:nth-child(2):after { content: 'M'; }
+  .results-table th:nth-child(2) { font-size: 0; }
+  .results-table th:nth-child(3):after { content: 'SD'; }
+  .results-table th:nth-child(3) { font-size: 0; }
+  .results-table { font-size: 12px; }
+}
+
+/* Validation error highlighting */
+.validation-error-field {
+  border: 2px solid #dc3545 !important;
+  background-color: #fff5f5 !important;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* Results page styling */
+.results-intro {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-left: 4px solid #6c757d;
+}
+
+.inrep-attribution {
+  background: #e9ecef;
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 30px;
+  text-align: center;
+  border: 1px solid #6c757d;
+}
+
+.adaptive-explanation {
+  background: #fff3cd;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 10px;
+  border-left: 3px solid #ffc107;
+  font-style: italic;
+}
 </style>
 
 <script>
-// Enhanced download functionality for PDF and CSV
+// COMPREHENSIVE HILFO ENHANCEMENTS - ALL REQUESTED FEATURES
 $(document).ready(function() {
   
-  // Add download functionality
+  // 1. AUTO-SCROLL TO TOP ON PAGE NAVIGATION
+  $(document).on('shiny:value', function(event) {
+    if (event.name === 'study_ui' || event.name === 'page_content') {
+      setTimeout(function() {
+        window.scrollTo({top: 0, behavior: 'smooth'});
+      }, 100);
+    }
+  });
+  
+  // Also scroll to top on button clicks
+  $(document).on('click', '.btn-primary, .btn-secondary, button[type="submit"]', function() {
+    setTimeout(function() {
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    }, 200);
+  });
+  
+  // 2. RADIO BUTTON DESELECTION - Click again to unselect
+  $(document).on('click', 'input[type="radio"]', function() {
+    var wasChecked = $(this).data('was-checked') === true;
+    var radioGroup = $('input[name="' + this.name + '"]');
+    
+    radioGroup.data('was-checked', false).closest('label').removeClass('selected');
+    
+    if (wasChecked) {
+      $(this).prop('checked', false);
+      if (typeof Shiny !== 'undefined') {
+        Shiny.setInputValue(this.name, null);
+      }
+    } else {
+      $(this).data('was-checked', true).closest('label').addClass('selected');
+    }
+  });
+  
+  // 3. VALIDATION ERROR HIGHLIGHTING AND SCROLL TO FIRST ERROR
+  if (typeof Shiny !== 'undefined') {
+    Shiny.addCustomMessageHandler('validation_errors', function(message) {
+      $('.validation-error-field').removeClass('validation-error-field');
+      
+      if (message.fields && message.fields.length > 0) {
+        var firstError = null;
+        
+        message.fields.forEach(function(field, index) {
+          var element = $('[name="' + field + '"], #' + field);
+          element.addClass('validation-error-field');
+          
+          if (index === 0 && element.length > 0) {
+            firstError = element.first();
+          }
+        });
+        
+        if (firstError) {
+          $('html, body').animate({
+            scrollTop: firstError.offset().top - 100
+          }, 500);
+        }
+      }
+    });
+  }
+  
+  // 4. EMERGENCY DATA SAVING - Robust server-side data handling
+  function saveData() {
+    if (typeof Shiny !== 'undefined') {
+      Shiny.setInputValue('emergency_save', {
+        timestamp: new Date().toISOString(),
+        random: Math.random()
+      }, {priority: 'event'});
+    }
+  }
+  
+  // Save data on page unload, visibility change, and periodically
+  $(window).on('beforeunload', saveData);
+  setInterval(saveData, 30000); // Every 30 seconds
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) saveData();
+  });
+  
+  // 5. RESULTS PAGE IMPROVEMENTS
+  $(document).on('DOMNodeInserted', function(e) {
+    // Add thank you intro to results page
+    if ($(e.target).hasClass('results-page') || $(e.target).find('.results-page').length) {
+      if (!$('.results-intro').length) {
+        $('.results-page').prepend(
+          '<div class="results-intro">' +
+          '<h4>Vielen Dank für die Teilnahme!</h4>' +
+          '<p>Nachfolgend erhalten Sie die Übersicht Ihrer Ergebnisse. Bedenken Sie, dass dies nur Schätzungen sind, die auf Ihrem Antwortverhalten basieren.</p>' +
+          '</div>'
+        );
+      }
+      
+      // Add inrep attribution at the end
+      if (!$('.inrep-attribution').length) {
+        $('.results-page').append(
+          '<div class="inrep-attribution">' +
+          '<p><strong>Diese Befragung wurde mit inrep durchgeführt</strong> - einem R-Paket für Instant Reports bei adaptiven Assessments.</p>' +
+          '<button onclick="window.close()" class="btn btn-secondary" style="margin-top:10px;">Fenster schließen</button>' +
+          '</div>'
+        );
+      }
+    }
+    
+    // Add adaptive plot explanation
+    if ($(e.target).hasClass('adaptive-plot') || $(e.target).find('.adaptive-plot').length) {
+      if (!$('.adaptive-explanation').length) {
+        $('.adaptive-plot').after(
+          '<div class="adaptive-explanation">' +
+          '<strong>Hinweis:</strong> Der Itempool besteht insgesamt aus 20 Items.' +
+          '</div>'
+        );
+      }
+    }
+    
+    // Fix adaptive legend order (adaptive first, then fixed)
+    var legend = $(e.target).find('.legend, .plot-legend');
+    if (legend.length) {
+      var adaptiveItem = legend.find('.legend-item:contains("Adaptive"), .legend-item:contains("adaptiv")');
+      var fixedItem = legend.find('.legend-item:contains("Fixed"), .legend-item:contains("fix")');
+      
+      if (adaptiveItem.length && fixedItem.length) {
+        adaptiveItem.insertBefore(fixedItem);
+      }
+    }
+  });
+  
+  // 6. DOWNLOAD FUNCTIONALITY
   $(document).on('click', '.download-btn', function(e) {
     e.preventDefault();
     var format = $(this).data('format') || 'csv';
@@ -2529,7 +2701,6 @@ $(document).ready(function() {
   // Handle file downloads with user selection
   if (typeof Shiny !== 'undefined') {
     Shiny.addCustomMessageHandler('trigger_download', function(message) {
-      // Create a temporary download link
       var link = document.createElement('a');
       link.href = message.url;
       link.download = message.filename;
