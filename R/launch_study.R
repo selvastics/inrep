@@ -547,10 +547,8 @@ launch_study <- function(
     # Step 4: Move ALL heavy operations to background using later
     later::later(function() {
       cat("LATER: Background loading started\n")
-    }, delay = 0)
-    
-    # Step 5: Force all background operations to run immediately but asynchronously
-    later::run_now(timeoutSecs = 0, all = FALSE)
+      # All heavy operations moved to background - UI shows immediately
+    }, delay = 100)  # Delay heavy operations to let UI render first
   }
   
   # Enhanced validation and error handling for robustness
@@ -2519,12 +2517,12 @@ launch_study <- function(
       )
     })
     
-    # Step 3: Do initialization AFTER UI is shown
+    # Step 3: Do initialization AFTER UI is shown - DELAYED FOR SPEED
     if (has_later) {
       later::later(function() {
-        # Initialize session management if needed (was deferred from startup)
+        # Initialize session management if needed (DELAYED to not block UI)
         if (exists(".needs_session_init") && .needs_session_init) {
-          logger("Initializing robust session management", level = "INFO")
+          # Silent session init - no logging to avoid delays
           session_config <<- list(
             session_id = paste0("SESS_", format(Sys.time(), "%Y%m%d_%H%M%S_"),
                                paste0(sample(letters, 8), collapse = "")),
@@ -2532,8 +2530,7 @@ launch_study <- function(
             max_time = max_session_time %||% 7200,
             log_file = NULL
           )
-          logger(sprintf("Session initialized: %s (max time: %d seconds)", 
-                        session_config$session_id, session_config$max_time), level = "INFO")
+          # Removed heavy logging for speed
         }
         
         # Do model conversion if needed (was deferred from startup)
@@ -2563,8 +2560,8 @@ launch_study <- function(
         logger("Heavy initialization complete", level = "DEBUG")
         
         # Force immediate execution to complete initialization
-        later::run_now(timeoutSecs = 0, all = TRUE)
-      }, delay = 0)  # ZERO delay - immediate execution
+        # Removed blocking run_now for speed
+      }, delay = 200)  # Delay heavy initialization to let UI show first
     }
     
     # Observe language changes from Hildesheim study
