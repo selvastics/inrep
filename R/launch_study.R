@@ -543,7 +543,7 @@ launch_study <- function(
       cat("IMMEDIATE UI: Complex study detected (custom flow/processor) - using optimized full version\n")
       # Don't return here - continue with the full implementation below
       # The full implementation will handle immediate UI properly
-      
+      # No action needed - just continue with the full implementation
     } else {
       # For simple studies, use the zero-delay or ultra-fast versions
       zero_delay_loaded <- FALSE
