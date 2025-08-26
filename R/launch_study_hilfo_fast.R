@@ -31,7 +31,7 @@ launch_study_complex_fast <- function(config, item_bank,
     
     if (first_page$type == "custom" && !is.null(first_page$content)) {
       # Use the custom HTML content directly
-      first_page_content <- shiny::shiny::HTML(first_page$content)
+      first_page_content <- shiny::HTML(first_page$content)
     }
   }
   
@@ -56,9 +56,9 @@ launch_study_complex_fast <- function(config, item_bank,
     shiny::tags$head(
       shiny::tags$title(study_name),
       # Include any custom CSS/JS immediately
-      if (!is.null(custom_css)) shiny::shiny::HTML(custom_css),
+      if (!is.null(custom_css)) shiny::HTML(custom_css),
       # Basic styles for immediate display
-      shiny::tags$style(shiny::shiny::HTML("
+      shiny::tags$style(shiny::HTML("
         body { 
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           margin: 0; padding: 0; background: #f5f7fa;
@@ -217,7 +217,7 @@ launch_study_complex_fast <- function(config, item_bank,
         # Render based on page type
         if (page_config$type == "custom") {
           output$page_content <- shiny::renderUI({
-            shiny::shiny::HTML(page_config$content)
+            shiny::HTML(page_config$content)
           })
         } else if (page_config$type == "demographics") {
           # Render demographics page
