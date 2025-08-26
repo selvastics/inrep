@@ -295,7 +295,7 @@ validate_study_config <- function(config, item_bank = NULL, context = "launch") 
   if (!is.null(config$results_processor)) {
     if (!is.function(config$results_processor)) {
       errors <- c(errors,
-        "results_processor must be a function.\nExample:\nconfig$results_processor <- function(responses, item_bank) {\n  # Your code here\n  return(shiny::HTML('<p>Results</p>'))\n}"
+        "results_processor must be a function.\nExample:\nconfig$results_processor <- function(responses, item_bank) {\n  # Your code here\n  return(shiny::shiny::HTML('<p>Results</p>'))\n}"
       )
     } else {
       # Check function signature

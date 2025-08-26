@@ -576,7 +576,7 @@ launch_study <- function(
     first_page_ui <- shiny::fluidPage(
       shiny::tags$head(
         shiny::tags$title(config$name %||% "Assessment"),
-        shiny::tags$style(shiny::HTML("
+        shiny::tags$style(shiny::shiny::HTML("
           body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
@@ -1018,7 +1018,7 @@ launch_study <- function(
           style = "padding: 30px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);",
           shiny::h2(first_page_config$title %||% "Welcome", style = "color: #333; margin-bottom: 20px;"),
           if (!is.null(first_page_config$content)) {
-            shiny::HTML(first_page_config$content)
+            shiny::shiny::HTML(first_page_config$content)
           } else if (!is.null(first_page_config$instructions)) {
             shiny::p(first_page_config$instructions, style = "color: #666; line-height: 1.6;")
           } else {
@@ -1673,7 +1673,7 @@ launch_study <- function(
     
     # ULTIMATE CORNER FLASH ELIMINATION - ALL METHODS COMBINED!
     shiny::tags$head(
-      shiny::tags$style(shiny::HTML("
+      shiny::tags$style(shiny::shiny::HTML("
         /* NUCLEAR UNIVERSAL RESET - FORCE EVERYTHING TO CENTER */
         * {
           box-sizing: border-box !important;
@@ -1775,7 +1775,7 @@ launch_study <- function(
       ")),
       
       # JAVASCRIPT: ULTIMATE positioning enforcement
-      shiny::tags$script(shiny::HTML("
+      shiny::tags$script(shiny::shiny::HTML("
         // IMMEDIATE EXECUTION - Multiple layers of protection
         (function() {
           // FORCE CENTER POSITIONING FUNCTION
@@ -1860,7 +1860,7 @@ launch_study <- function(
 
           shiny::tags$head(
       # CRITICAL: Prevent corner flash - must be FIRST CSS rule
-      shiny::tags$style(HTML("
+      shiny::tags$style(shiny::HTML("
         /* IMMEDIATE CORNER FLASH PREVENTION - Applied before any other CSS */
         * {
           box-sizing: border-box;
@@ -1913,7 +1913,7 @@ launch_study <- function(
 
       
       # Add spinner animation
-      shiny::tags$style(HTML("
+      shiny::tags$style(shiny::HTML("
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
@@ -1926,7 +1926,7 @@ launch_study <- function(
       ")),
       
       # JavaScript to ensure proper positioning
-      shiny::tags$script(HTML("
+      shiny::tags$script(shiny::HTML("
         // Smooth page transition handler
         (function() {
           let isTransitioning = false;
@@ -2105,7 +2105,7 @@ launch_study <- function(
           });
         });
       ")),
-        shiny::tags$style(HTML("
+        shiny::tags$style(shiny::HTML("
           /* Simple full-width fix */
           .full-width-app > .container-fluid {
             padding: 0 15px !important;
@@ -2128,7 +2128,7 @@ launch_study <- function(
           }
         ")),
         shiny::tags$style(type = "text/css", enhanced_css),
-        shiny::tags$style(HTML("
+        shiny::tags$style(shiny::HTML("
         /* Simple centered layout */
         body > .container-fluid {
           padding: 15px !important;
@@ -2434,7 +2434,7 @@ launch_study <- function(
               ")),
         
         # Responsive design CSS
-        shiny::tags$style(HTML("
+        shiny::tags$style(shiny::HTML("
           /* Responsive Layout System */
           @media (max-width: 575px) {
             /* Mobile phones */
@@ -2592,7 +2592,7 @@ launch_study <- function(
       shiny::tags$script(src = "https://cdn.plot.ly/plotly-latest.min.js"),
       # Add custom CSS if provided
       if (!is.null(config$custom_css)) {
-        shiny::tags$style(HTML(config$custom_css))
+        shiny::tags$style(shiny::HTML(config$custom_css))
       }
 
     ),
@@ -3207,7 +3207,7 @@ launch_study <- function(
                            shiny::h3(ui_labels$instructions_title, class = "card-header")
                          },
                          if (!base::is.null(config$instructions$purpose)) {
-                           shiny::HTML(paste0("<div class='welcome-text'>", config$instructions$purpose, "</div>"))
+                           shiny::shiny::HTML(paste0("<div class='welcome-text'>", config$instructions$purpose, "</div>"))
                          } else {
                            shiny::p(ui_labels$instructions_text, class = "welcome-text")
                          },
@@ -3215,7 +3215,7 @@ launch_study <- function(
                            shiny::p(config$instructions$duration, class = "welcome-text")
                          },
                          if (!base::is.null(config$instructions$structure)) {
-                           shiny::HTML(paste0("<div class='welcome-text'>", config$instructions$structure, "</div>"))
+                           shiny::shiny::HTML(paste0("<div class='welcome-text'>", config$instructions$structure, "</div>"))
                          }
                        )
                      } else {
