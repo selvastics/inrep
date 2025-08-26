@@ -468,8 +468,8 @@ deployment_path,
 study_config
 )
 
-#Createstudymetadata
-deployment_results$study_metadata<-create_study_metadata(
+# Create study metadata
+deployment_results$study_metadata <- create_study_metadata(
 study_config,
 item_bank,
 contact_info,
