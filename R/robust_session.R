@@ -113,12 +113,16 @@ log_session_event <- function(event_type, message, details = NULL) {
       "[", timestamp, "] ",
       event_type, ": ",
       message,
-      if (!is.null(safe_details)) paste0(" | ", jsonlite::toJSON(safe_details, auto_unbox = TRUE)) else ""
+      if (!is.null(safe_details)) paste0(" | ", jsonlite::toJSON(safe_details, auto_unbox = TRUE)) else "",
+      "\n"
     )
-    cat(log_line, file = .session_state$log_file, append = TRUE)
+    if (!is.null(.session_state$log_file) && nchar(.session_state$log_file) > 0) {
+      cat(log_line, file = .session_state$log_file, append = TRUE)
+    }
   }, error = function(e) {
     # Fallback to console if file writing fails
-    message("Session logging failed: ", e$message)
+    error_msg <- if (!is.null(e$message)) e$message else "Unknown error"
+    message("Session logging failed: ", error_msg)
   })
   
   # Only log to console for critical events, not background operations
