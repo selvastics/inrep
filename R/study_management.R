@@ -1335,7 +1335,7 @@ render_instructions_page <- function(page, config, ui_labels) {
     style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
     shiny::h3(page$title, class = "card-header"),
     if (!is.null(page$content)) {
-      shiny::shiny::HTML(page$content)
+      shiny::HTML(page$content)
     } else if (!is.null(page$text)) {
       shiny::p(page$text, class = "welcome-text")
     },
@@ -1522,7 +1522,7 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
       style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
       shiny::h3(page$title, class = "card-header"),
       if (!is.null(page$content)) {
-        shiny::shiny::HTML(page$content)
+        shiny::HTML(page$content)
       } else {
         shiny::p("Custom page content not defined")
       }
@@ -1554,11 +1554,11 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels) {
           results_content <- config$results_processor(clean_responses, item_bank)
         }
       } else {
-        results_content <- shiny::shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>")
+        results_content <- shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>")
       }
     }
   } else {
-    results_content <- shiny::shiny::HTML("<p>Assessment completed. Thank you!</p>")
+    results_content <- shiny::HTML("<p>Assessment completed. Thank you!</p>")
   }
   
   shiny::div(
