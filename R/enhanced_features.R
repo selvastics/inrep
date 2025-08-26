@@ -3174,7 +3174,7 @@ create_ranking_question <- function(input_id, options, config = list()) {
         )
       })
     ),
-    shiny::tags$script(shiny::HTML(sprintf('
+    shiny::tags$script(HTML(sprintf('
       $(function() {
         $("#%s .sortable").sortable({
           handle: ".drag-handle",
@@ -3233,13 +3233,13 @@ apply_responsive_theme <- function(theme_name = "modern", custom_css = NULL) {
     ),
     
     # Base responsive CSS
-    shiny::tags$style(shiny::HTML(get_responsive_css(theme_name))),
+    shiny::tags$style(HTML(get_responsive_css(theme_name))),
     
     # Theme-specific CSS
-    shiny::tags$style(shiny::HTML(get_theme_styles(theme_name))),
+    shiny::tags$style(HTML(get_theme_styles(theme_name))),
     
     # Custom CSS if provided
-    if (!is.null(custom_css)) shiny::tags$style(shiny::HTML(custom_css)),
+    if (!is.null(custom_css)) shiny::tags$style(HTML(custom_css)),
     
     # jQuery UI for sortable
     shiny::tags$script(src = "https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"),

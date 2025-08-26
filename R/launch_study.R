@@ -2864,8 +2864,7 @@ launch_study <- function(
           tryCatch({
             update_activity()
           }, error = function(e) {
-            error_msg <- if (!is.null(e$message) && nchar(e$message) > 0) e$message else "Unknown error"
-            logger(sprintf("Activity update failed: %s", error_msg), level = "WARNING")
+            logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
           })
         }
       })  # Close observe
@@ -2877,8 +2876,7 @@ launch_study <- function(
           tryCatch({
             preserve_session_data()
           }, error = function(e) {
-            error_msg <- if (!is.null(e$message) && nchar(e$message) > 0) e$message else "Unknown error"
-            logger(sprintf("Data preservation failed: %s", error_msg), level = "ERROR")
+            logger(sprintf("Data preservation failed: %s", e$message), level = "ERROR")
           })
         }
       }
@@ -2976,8 +2974,7 @@ launch_study <- function(
           logger("Session ending - cleaning up and preserving final data", level = "INFO")
           cleanup_session(save_final_data = TRUE)
         }, error = function(e) {
-          error_msg <- if (!is.null(e$message) && nchar(e$message) > 0) e$message else "Unknown error"
-          logger(sprintf("Session cleanup failed: %s", error_msg), level = "WARNING")
+          logger(sprintf("Session cleanup failed: %s", e$message), level = "WARNING")
         })
       } else if (session_save) {
         logger("Session ending - basic cleanup", level = "INFO")
@@ -2990,8 +2987,7 @@ launch_study <- function(
         tryCatch({
           update_activity()
         }, error = function(e) {
-          error_msg <- if (!is.null(e$message) && nchar(e$message) > 0) e$message else "Unknown error"
-          logger(sprintf("Activity update failed: %s", error_msg), level = "WARNING")
+          logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
         })
       }
     })
@@ -4775,8 +4771,7 @@ launch_study <- function(
         tryCatch({
           cleanup_session(save_final_data = TRUE)
         }, error = function(e) {
-          error_msg <- if (!is.null(e$message) && nchar(e$message) > 0) e$message else "Unknown error"
-          logger(sprintf("Session cleanup failed during restart: %s", error_msg), level = "WARNING")
+          logger(sprintf("Session cleanup failed during restart: %s", e$message), level = "WARNING")
         })
       }
       
@@ -4843,8 +4838,7 @@ launch_study <- function(
           cleanup_session(save_final_data = TRUE)
           logger("Final cleanup completed on exit", level = "INFO")
         }, error = function(e) {
-          error_msg <- if (!is.null(e$message) && nchar(e$message) > 0) e$message else "Unknown error"
-          logger(sprintf("Final cleanup failed: %s", error_msg), level = "ERROR")
+          logger(sprintf("Final cleanup failed: %s", e$message), level = "ERROR")
         })
       }
     }
