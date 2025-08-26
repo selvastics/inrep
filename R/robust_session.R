@@ -113,12 +113,16 @@ log_session_event <- function(event_type, message, details = NULL) {
       "[", timestamp, "] ",
       event_type, ": ",
       message,
-      if (!is.null(safe_details)) paste0(" | ", jsonlite::toJSON(safe_details, auto_unbox = TRUE)) else ""
+      if (!is.null(safe_details)) paste0(" | ", jsonlite::toJSON(safe_details, auto_unbox = TRUE)) else "",
+      "\n"
     )
-    cat(log_line, file = .session_state$log_file, append = TRUE)
+    if (!is.null(.session_state$log_file) && nchar(.session_state$log_file) > 0) {
+      cat(log_line, file = .session_state$log_file, append = TRUE)
+    }
   }, error = function(e) {
     # Fallback to console if file writing fails
-    message("Session logging failed: ", e$message)
+    error_msg <- if (!is.null(e$message)) e$message else "Unknown error"
+    message("Session logging failed: ", error_msg)
   })
   
   # Only log to console for critical events, not background operations
@@ -167,10 +171,10 @@ start_keep_alive_monitoring <- function() {
   .session_state$keep_alive_active <- TRUE
   
   # Create keep-alive observer
-  .session_state$keep_alive_observer <- observe({
+  .session_state$keep_alive_observer <- shiny::observe({
     if (!.session_state$keep_alive_active) return()
     
-    invalidateLater(.session_state$keep_alive_interval * 1000)
+    shiny::invalidateLater(.session_state$keep_alive_interval * 1000)
     
     # Check session validity
     if (!is_session_valid()) {
@@ -221,8 +225,8 @@ stop_keep_alive_monitoring <- function() {
 #' 
 start_data_preservation_monitoring <- function() {
   # Create data preservation observer
-  .session_state$data_preservation_observer <- observe({
-    invalidateLater(.session_state$data_preservation_interval * 1000)
+  .session_state$data_preservation_observer <- shiny::observe({
+    shiny::invalidateLater(.session_state$data_preservation_interval * 1000)
     
     # Check if session is still valid
     if (!is_session_valid()) return()
@@ -276,7 +280,7 @@ preserve_session_data <- function(force = FALSE) {
     # Log errors to file only for background operations
     if (.session_state$enable_logging) {
       log_session_event("DATA_PRESERVATION_ERROR", "Failed to preserve session data", 
-                       list(error = e$message))
+                       list(error = if (!is.null(e$message)) e$message else "Unknown error"))
     }
     return(FALSE)
   })
@@ -295,14 +299,14 @@ get_session_data <- function() {
   if (exists("rv", envir = .GlobalEnv)) {
     tryCatch({
       rv <- get("rv", envir = .GlobalEnv)
-      if (is.reactivevalues(rv)) {
-        session_data$reactive_values <- reactiveValuesToList(rv)
+      if (inherits(rv, "reactivevalues")) {
+        session_data$reactive_values <- shiny::reactiveValuesToList(rv)
       }
     }, error = function(e) {
       # Log data collection errors to file only for background operations
       if (.session_state$enable_logging) {
         log_session_event("DATA_COLLECTION_ERROR", "Failed to collect reactive values", 
-                         list(error = e$message))
+                         list(error = if (!is.null(e$message)) e$message else "Unknown error"))
       }
     })
   }
@@ -319,7 +323,7 @@ get_session_data <- function() {
         if (.session_state$enable_logging) {
           log_session_event("DATA_COLLECTION_ERROR", 
                            sprintf("Failed to collect %s", obj_name), 
-                           list(error = e$message))
+                           list(error = if (!is.null(e$message)) e$message else "Unknown error"))
         }
       })
     }
@@ -374,7 +378,7 @@ emergency_data_recovery <- function() {
     # Log recovery errors to file only for background operations
     if (.session_state$enable_logging) {
       log_session_event("RECOVERY_ERROR", "Emergency data recovery failed", 
-                       list(error = e$message))
+                       list(error = if (!is.null(e$message)) e$message else "Unknown error"))
     }
     return(NULL)
   })
