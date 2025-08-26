@@ -167,10 +167,10 @@ start_keep_alive_monitoring <- function() {
   .session_state$keep_alive_active <- TRUE
   
   # Create keep-alive observer
-  .session_state$keep_alive_observer <- observe({
+  .session_state$keep_alive_observer <- shiny::observe({
     if (!.session_state$keep_alive_active) return()
     
-    invalidateLater(.session_state$keep_alive_interval * 1000)
+    shiny::invalidateLater(.session_state$keep_alive_interval * 1000)
     
     # Check session validity
     if (!is_session_valid()) {
@@ -221,8 +221,8 @@ stop_keep_alive_monitoring <- function() {
 #' 
 start_data_preservation_monitoring <- function() {
   # Create data preservation observer
-  .session_state$data_preservation_observer <- observe({
-    invalidateLater(.session_state$data_preservation_interval * 1000)
+  .session_state$data_preservation_observer <- shiny::observe({
+    shiny::invalidateLater(.session_state$data_preservation_interval * 1000)
     
     # Check if session is still valid
     if (!is_session_valid()) return()
@@ -275,8 +275,9 @@ preserve_session_data <- function(force = FALSE) {
   }, error = function(e) {
     # Log errors to file only for background operations
     if (.session_state$enable_logging) {
+      error_msg <- if (!is.null(e$message)) e$message else "Unknown error"
       log_session_event("DATA_PRESERVATION_ERROR", "Failed to preserve session data", 
-                       list(error = e$message))
+                       list(error = error_msg))
     }
     return(FALSE)
   })
@@ -295,14 +296,22 @@ get_session_data <- function() {
   if (exists("rv", envir = .GlobalEnv)) {
     tryCatch({
       rv <- get("rv", envir = .GlobalEnv)
-      if (is.reactivevalues(rv)) {
-        session_data$reactive_values <- reactiveValuesToList(rv)
+      if (inherits(rv, "reactivevalues")) {
+        # Safely convert reactive values to list
+        tryCatch({
+          session_data$reactive_values <- shiny::reactiveValuesToList(rv)
+        }, error = function(conv_error) {
+          # If conversion fails, skip reactive values
+          # This can happen when called outside reactive context
+          NULL
+        })
       }
     }, error = function(e) {
       # Log data collection errors to file only for background operations
       if (.session_state$enable_logging) {
+        error_msg <- if (!is.null(e$message)) e$message else "Unknown error"
         log_session_event("DATA_COLLECTION_ERROR", "Failed to collect reactive values", 
-                         list(error = e$message))
+                         list(error = error_msg))
       }
     })
   }
@@ -317,9 +326,10 @@ get_session_data <- function() {
       }, error = function(e) {
         # Log data collection errors to file only for background operations
         if (.session_state$enable_logging) {
+          error_msg <- if (!is.null(e$message)) e$message else "Unknown error"
           log_session_event("DATA_COLLECTION_ERROR", 
                            sprintf("Failed to collect %s", obj_name), 
-                           list(error = e$message))
+                           list(error = error_msg))
         }
       })
     }

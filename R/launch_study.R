@@ -2876,7 +2876,8 @@ launch_study <- function(
           tryCatch({
             preserve_session_data()
           }, error = function(e) {
-            logger(sprintf("Data preservation failed: %s", e$message), level = "ERROR")
+            error_msg <- if (!is.null(e$message) && nchar(e$message) > 0) e$message else "Unknown error"
+            logger(sprintf("Data preservation failed: %s", error_msg), level = "ERROR")
           })
         }
       }
