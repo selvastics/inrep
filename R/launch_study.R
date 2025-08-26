@@ -529,8 +529,22 @@ launch_study <- function(
     ...
 ) {
   
-  # IMMEDIATE UI DISPLAY - RETURN CONTROL TO R PROMPT IMMEDIATELY
+  # IMMEDIATE UI DISPLAY - ULTRA FAST VERSION
   if (immediate_ui) {
+    # Use the ultra-fast implementation that doesn't relaunch
+    if (file.exists(system.file("R", "launch_study_ultra_fast.R", package = "inrep"))) {
+      source(system.file("R", "launch_study_ultra_fast.R", package = "inrep"))
+    } else if (file.exists("R/launch_study_ultra_fast.R")) {
+      source("R/launch_study_ultra_fast.R")
+    } else if (file.exists("/workspace/R/launch_study_ultra_fast.R")) {
+      source("/workspace/R/launch_study_ultra_fast.R")
+    }
+    
+    if (exists("launch_study_ultra_fast")) {
+      return(launch_study_ultra_fast(config, item_bank, ...))
+    }
+    
+    # Fallback to inline ultra-fast implementation
     cat("IMMEDIATE UI: Starting assessment with instant display\n")
     
     # Store config and item_bank in environment for later access
@@ -745,8 +759,13 @@ launch_study <- function(
     cat("IMMEDIATE UI: Launching assessment interface...\n")
     shiny::runApp(app)
     
-    return(invisible(NULL))
+    return(invisible(NULL))  # EXIT HERE - don't run the rest of the function!
   }
+  
+  # ============================================================================
+  # FULL LAUNCH (when immediate_ui = FALSE)
+  # Everything below only runs when NOT using immediate UI
+  # ============================================================================
   
   # Enhanced validation and error handling for robustness
   tryCatch({
