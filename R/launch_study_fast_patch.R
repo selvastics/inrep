@@ -137,7 +137,7 @@ launch_study_fast <- function(config, item_bank,
             doc.save('ergebnisse.pdf');
           }
         ", config$name, Sys.Date(), "session_id", 
-        generate_pdf_content_js(rv$responses))))
+        "// Results data here")))
       )
     }
     
