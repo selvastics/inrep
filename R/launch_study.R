@@ -529,44 +529,59 @@ launch_study <- function(
     ...
 ) {
   
-  # IMMEDIATE UI DISPLAY - ZERO DELAY VERSION
+  # IMMEDIATE UI DISPLAY - SMART ROUTING
   if (immediate_ui) {
-    # Try to load the zero-delay implementation
-    zero_delay_loaded <- FALSE
+    # Check if this is a complex study (like HilFo) that needs special handling
+    has_custom_flow <- !is.null(config$custom_page_flow)
+    has_custom_css_js <- !is.null(custom_css) && nchar(custom_css) > 500  # Complex JS/CSS
+    has_results_processor <- !is.null(config$results_processor)
+    is_complex_study <- has_custom_flow || has_custom_css_js || has_results_processor
     
-    # Suppress all messages during loading
-    suppressMessages({
-      suppressWarnings({
-        # Try different paths to find the zero-delay implementation
-        if (file.exists(system.file("R", "launch_study_zero_delay.R", package = "inrep"))) {
-          source(system.file("R", "launch_study_zero_delay.R", package = "inrep"))
-          zero_delay_loaded <- TRUE
-        } else if (file.exists("R/launch_study_zero_delay.R")) {
-          source("R/launch_study_zero_delay.R")
-          zero_delay_loaded <- TRUE
-        } else if (file.exists("/workspace/R/launch_study_zero_delay.R")) {
-          source("/workspace/R/launch_study_zero_delay.R")
-          zero_delay_loaded <- TRUE
-        }
+    # For complex studies like HilFo, DON'T use simplified versions
+    # Continue with the full launch_study implementation but with optimizations
+    if (is_complex_study) {
+      cat("IMMEDIATE UI: Complex study detected (custom flow/processor) - using optimized full version\n")
+      # Don't return here - continue with the full implementation below
+      # The full implementation will handle immediate UI properly
+      
+    } else {
+      # For simple studies, use the zero-delay or ultra-fast versions
+      zero_delay_loaded <- FALSE
+      
+      # Suppress all messages during loading
+      suppressMessages({
+        suppressWarnings({
+          # Try different paths to find the zero-delay implementation
+          if (file.exists(system.file("R", "launch_study_zero_delay.R", package = "inrep"))) {
+            source(system.file("R", "launch_study_zero_delay.R", package = "inrep"))
+            zero_delay_loaded <- TRUE
+          } else if (file.exists("R/launch_study_zero_delay.R")) {
+            source("R/launch_study_zero_delay.R")
+            zero_delay_loaded <- TRUE
+          } else if (file.exists("/workspace/R/launch_study_zero_delay.R")) {
+            source("/workspace/R/launch_study_zero_delay.R")
+            zero_delay_loaded <- TRUE
+          }
+        })
       })
-    })
-    
-    # Use zero-delay if available
-    if (zero_delay_loaded && exists("launch_study_zero_delay")) {
-      return(launch_study_zero_delay(config, item_bank, ...))
-    }
-    
-    # Fallback to ultra-fast if zero-delay not found
-    if (file.exists(system.file("R", "launch_study_ultra_fast.R", package = "inrep"))) {
-      source(system.file("R", "launch_study_ultra_fast.R", package = "inrep"))
-    } else if (file.exists("R/launch_study_ultra_fast.R")) {
-      source("R/launch_study_ultra_fast.R")
-    } else if (file.exists("/workspace/R/launch_study_ultra_fast.R")) {
-      source("/workspace/R/launch_study_ultra_fast.R")
-    }
-    
-    if (exists("launch_study_ultra_fast")) {
-      return(launch_study_ultra_fast(config, item_bank, ...))
+      
+      # Use zero-delay if available for simple studies
+      if (zero_delay_loaded && exists("launch_study_zero_delay")) {
+        return(launch_study_zero_delay(config, item_bank, ...))
+      }
+      
+      # Fallback to ultra-fast if zero-delay not found
+      if (file.exists(system.file("R", "launch_study_ultra_fast.R", package = "inrep"))) {
+        source(system.file("R", "launch_study_ultra_fast.R", package = "inrep"))
+      } else if (file.exists("R/launch_study_ultra_fast.R")) {
+        source("R/launch_study_ultra_fast.R")
+      } else if (file.exists("/workspace/R/launch_study_ultra_fast.R")) {
+        source("/workspace/R/launch_study_ultra_fast.R")
+      }
+      
+      if (exists("launch_study_ultra_fast")) {
+        return(launch_study_ultra_fast(config, item_bank, ...))
+      }
     }
     
     # Fallback to inline ultra-fast implementation
