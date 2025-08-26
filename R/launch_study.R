@@ -529,9 +529,34 @@ launch_study <- function(
     ...
 ) {
   
-  # IMMEDIATE UI DISPLAY - ULTRA FAST VERSION
+  # IMMEDIATE UI DISPLAY - ZERO DELAY VERSION
   if (immediate_ui) {
-    # Use the ultra-fast implementation that doesn't relaunch
+    # Try to load the zero-delay implementation
+    zero_delay_loaded <- FALSE
+    
+    # Suppress all messages during loading
+    suppressMessages({
+      suppressWarnings({
+        # Try different paths to find the zero-delay implementation
+        if (file.exists(system.file("R", "launch_study_zero_delay.R", package = "inrep"))) {
+          source(system.file("R", "launch_study_zero_delay.R", package = "inrep"))
+          zero_delay_loaded <- TRUE
+        } else if (file.exists("R/launch_study_zero_delay.R")) {
+          source("R/launch_study_zero_delay.R")
+          zero_delay_loaded <- TRUE
+        } else if (file.exists("/workspace/R/launch_study_zero_delay.R")) {
+          source("/workspace/R/launch_study_zero_delay.R")
+          zero_delay_loaded <- TRUE
+        }
+      })
+    })
+    
+    # Use zero-delay if available
+    if (zero_delay_loaded && exists("launch_study_zero_delay")) {
+      return(launch_study_zero_delay(config, item_bank, ...))
+    }
+    
+    # Fallback to ultra-fast if zero-delay not found
     if (file.exists(system.file("R", "launch_study_ultra_fast.R", package = "inrep"))) {
       source(system.file("R", "launch_study_ultra_fast.R", package = "inrep"))
     } else if (file.exists("R/launch_study_ultra_fast.R")) {
