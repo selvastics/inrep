@@ -525,104 +525,226 @@ launch_study <- function(
     package_loading_delay = NULL,
     session_init_delay = NULL,
     show_loading_screen = NULL,
-    immediate_ui = FALSE,
+    immediate_ui = TRUE,  # DEFAULT TO TRUE FOR FAST LOADING
     ...
 ) {
   
   # IMMEDIATE UI DISPLAY - RETURN CONTROL TO R PROMPT IMMEDIATELY
   if (immediate_ui) {
-    cat("IMMEDIATE UI: Starting minimal UI immediately\n")
+    cat("IMMEDIATE UI: Starting assessment with instant display\n")
     
-    # Create minimal Shiny app that displays instantly
-    minimal_ui <- shiny::fluidPage(
+    # Store config and item_bank in environment for later access
+    .GlobalEnv$.inrep_config <- config
+    .GlobalEnv$.inrep_item_bank <- item_bank
+    .GlobalEnv$.inrep_args <- list(
+      custom_css = custom_css,
+      theme_config = theme_config,
+      webdav_url = webdav_url,
+      password = password,
+      save_format = save_format,
+      logger = logger,
+      study_key = study_key,
+      accessibility = accessibility,
+      admin_dashboard_hook = admin_dashboard_hook,
+      max_session_time = max_session_time,
+      session_save = session_save,
+      data_preservation_interval = data_preservation_interval,
+      keep_alive_interval = keep_alive_interval,
+      enable_error_recovery = enable_error_recovery
+    )
+    
+    # Create the first page UI immediately (instruction page)
+    first_page_ui <- shiny::fluidPage(
       shiny::tags$head(
-        shiny::tags$style(HTML("
+        shiny::tags$title(config$name %||% "Assessment"),
+        shiny::tags$style(shiny::HTML("
           body { 
-            font-family: Arial, sans-serif; 
-            margin: 20px; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
             background: #f8f9fa;
           }
-          .loading-container {
-            text-align: center;
-            padding: 50px;
+          .container-fluid {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          .instruction-card {
             background: white;
+            padding: 30px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
           }
-          .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #007bff;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
+          h1, h2, h3 {
+            color: #333;
           }
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+          .btn-primary {
+            background-color: #007bff;
+            border: none;
+            padding: 10px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            margin-top: 20px;
+          }
+          .btn-primary:hover {
+            background-color: #0056b3;
+          }
+          .progress-container {
+            background: #e9ecef;
+            height: 4px;
+            border-radius: 2px;
+            margin-bottom: 20px;
+            display: none;
+          }
+          .progress-bar {
+            background: #007bff;
+            height: 100%;
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s;
           }
         "))
       ),
-      shiny::div(class = "loading-container",
-        shiny::h2("Starting Assessment..."),
-        shiny::div(class = "spinner"),
-        shiny::p("Please wait while we prepare your assessment."),
-        shiny::div(id = "loading-status", "Initializing...")
+      shiny::div(class = "container-fluid",
+        shiny::div(class = "progress-container", id = "progress-container",
+          shiny::div(class = "progress-bar", id = "progress-bar")
+        ),
+        shiny::uiOutput("page_content")
       )
     )
     
-    minimal_server <- function(input, output, session) {
-      # Schedule all heavy operations using later
-      later(function() {
-        session$sendCustomMessage("updateStatus", "Loading packages...")
+    # Create server with deferred package loading
+    first_page_server <- function(input, output, session) {
+      
+      # Reactive values for state management
+      rv <- shiny::reactiveValues(
+        current_page = "instructions",
+        packages_loaded = FALSE,
+        full_app_ready = FALSE
+      )
+      
+      # Render the instruction page immediately
+      output$page_content <- shiny::renderUI({
+        if (rv$current_page == "instructions") {
+          shiny::div(class = "instruction-card",
+            shiny::h1(config$name %||% "Assessment"),
+            shiny::hr(),
+            shiny::h3("Welcome"),
+            shiny::p(config$instructions$welcome %||% "Welcome to this assessment."),
+            shiny::h3("Instructions"),
+            shiny::p(config$instructions$instructions %||% "Please answer all questions to the best of your ability."),
+            shiny::h3("Duration"),
+            shiny::p(paste("This assessment will take approximately", 
+                          config$instructions$duration %||% "10-15 minutes")),
+            shiny::actionButton("start_btn", "Start Assessment", class = "btn-primary")
+          )
+        } else {
+          shiny::div(class = "instruction-card",
+            shiny::h2("Loading assessment..."),
+            shiny::p("Please wait while we prepare your assessment."),
+            shiny::div(style = "text-align: center; margin: 20px;",
+              shiny::tags$div(style = "border: 4px solid #f3f3f3; border-top: 4px solid #007bff; 
+                                      border-radius: 50%; width: 40px; height: 40px; 
+                                      animation: spin 1s linear infinite; margin: 0 auto;",
+                shiny::tags$style("@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }")
+              )
+            )
+          )
+        }
+      })
+      
+      # Handle start button click
+      shiny::observeEvent(input$start_btn, {
+        rv$current_page <- "loading"
         
-        # Load packages in background
-        later(function() {
-          tryCatch({
-            # Load critical packages only
-            if (!requireNamespace("shinyWidgets", quietly = TRUE)) {
-              session$sendCustomMessage("updateStatus", "Installing required packages...")
-              utils::install.packages("shinyWidgets", quiet = TRUE)
-            }
-            session$sendCustomMessage("updateStatus", "Packages loaded successfully")
-            
-            # Now load the full application
-            later(function() {
-              session$sendCustomMessage("updateStatus", "Building assessment interface...")
+        # Show progress bar
+        session$sendCustomMessage(type = "showProgress", message = list())
+        
+        # Schedule package loading and full app initialization
+        if (requireNamespace("later", quietly = TRUE)) {
+          later::later(function() {
+            # Load packages in background
+            tryCatch({
+              # Load essential packages
+              required_packages <- c("shinyWidgets", "DT", "TAM")
+              for (pkg in required_packages) {
+                if (!requireNamespace(pkg, quietly = TRUE)) {
+                  utils::install.packages(pkg, quiet = TRUE, repos = "https://cran.r-project.org")
+                }
+              }
               
-              # This will replace the minimal UI with the full application
-              tryCatch({
-                # Call the original launch_study logic but with immediate_ui = FALSE
-                launch_study_full(config, item_bank, immediate_ui = FALSE, ...)
-              }, error = function(e) {
-                session$sendCustomMessage("updateStatus", paste("Error:", e$message))
-              })
-            }, delay = 0.1)
-            
-          }, error = function(e) {
-            session$sendCustomMessage("updateStatus", paste("Package loading error:", e$message))
-          })
-        }, delay = 0.1)
-        
-      }, delay = 0.1)
+              # Signal that packages are loaded
+              rv$packages_loaded <- TRUE
+              
+              # Now transition to the full application
+              later::later(function() {
+                # Clean up global variables
+                config_stored <- .GlobalEnv$.inrep_config
+                item_bank_stored <- .GlobalEnv$.inrep_item_bank
+                args_stored <- .GlobalEnv$.inrep_args
+                
+                rm(.inrep_config, .inrep_item_bank, .inrep_args, envir = .GlobalEnv)
+                
+                # Close current session and launch full app
+                session$close()
+                
+                # Re-launch with immediate_ui = FALSE to run the full version
+                do.call(launch_study, c(
+                  list(
+                    config = config_stored,
+                    item_bank = item_bank_stored,
+                    immediate_ui = FALSE
+                  ),
+                  args_stored
+                ))
+              }, delay = 0.5)
+              
+            }, error = function(e) {
+              shiny::showNotification(paste("Error loading packages:", e$message), type = "error")
+            })
+          }, delay = 0.1)
+        } else {
+          # Fallback if later package not available - load synchronously
+          rv$current_page <- "loading"
+          session$reload()
+        }
+      })
+      
+      # Add JavaScript for progress bar
+      session$sendCustomMessage(type = "init", message = list(
+        js = "
+          Shiny.addCustomMessageHandler('showProgress', function(msg) {
+            document.getElementById('progress-container').style.display = 'block';
+            let progress = 0;
+            const interval = setInterval(function() {
+              progress += Math.random() * 15;
+              if (progress > 90) progress = 90;
+              document.getElementById('progress-bar').style.width = progress + '%';
+              if (progress >= 90) clearInterval(interval);
+            }, 200);
+          });
+        "
+      ))
     }
     
-    # Start minimal Shiny app immediately
+    # Create the app
     app <- shiny::shinyApp(
-      ui = minimal_ui,
-      server = minimal_server,
-      options = list(port = getOption("shiny.port", 5050))
+      ui = first_page_ui,
+      server = first_page_server,
+      options = list(
+        port = getOption("shiny.port", 5050),
+        host = getOption("shiny.host", "127.0.0.1"),
+        launch.browser = TRUE
+      )
     )
     
-    cat("IMMEDIATE UI: Minimal app created, starting server...\n")
+    # Run the app
+    cat("IMMEDIATE UI: Launching assessment interface...\n")
+    shiny::runApp(app)
     
-    # Start the app and return immediately
-    later(function() {
-      shiny::runApp(app, launch.browser = TRUE)
-    }, delay = 0)
-    
-    cat("IMMEDIATE UI: Control returned to R prompt\n")
     return(invisible(NULL))
   }
   
