@@ -545,43 +545,8 @@ launch_study <- function(
       # The full implementation will handle immediate UI properly
       # No action needed - just continue with the full implementation
     } else {
-      # For simple studies, use the zero-delay or ultra-fast versions
-      zero_delay_loaded <- FALSE
-      
-      # Suppress all messages during loading
-      suppressMessages({
-        suppressWarnings({
-          # Try different paths to find the zero-delay implementation
-          if (file.exists(system.file("R", "launch_study_zero_delay.R", package = "inrep"))) {
-            source(system.file("R", "launch_study_zero_delay.R", package = "inrep"))
-            zero_delay_loaded <- TRUE
-          } else if (file.exists("R/launch_study_zero_delay.R")) {
-            source("R/launch_study_zero_delay.R")
-            zero_delay_loaded <- TRUE
-          } else if (file.exists("/workspace/R/launch_study_zero_delay.R")) {
-            source("/workspace/R/launch_study_zero_delay.R")
-            zero_delay_loaded <- TRUE
-          }
-        })
-      })
-      
-      # Use zero-delay if available for simple studies
-      if (zero_delay_loaded && exists("launch_study_zero_delay")) {
-        return(launch_study_zero_delay(config, item_bank, ...))
-      }
-      
-      # Fallback to ultra-fast if zero-delay not found
-      if (file.exists(system.file("R", "launch_study_ultra_fast.R", package = "inrep"))) {
-        source(system.file("R", "launch_study_ultra_fast.R", package = "inrep"))
-      } else if (file.exists("R/launch_study_ultra_fast.R")) {
-        source("R/launch_study_ultra_fast.R")
-      } else if (file.exists("/workspace/R/launch_study_ultra_fast.R")) {
-        source("/workspace/R/launch_study_ultra_fast.R")
-      }
-      
-      if (exists("launch_study_ultra_fast")) {
-        return(launch_study_ultra_fast(config, item_bank, ...))
-      }
+      # For simple studies, use the inline fast implementation directly
+      # (The external files launch_study_zero_delay.R and launch_study_ultra_fast.R are deprecated)
     }
     
     # Fallback to inline ultra-fast implementation
