@@ -1,13 +1,13 @@
-#'LaunchStudytoinrepPlatform
+#' Launch Study to inrep Platform
 #'
-#'@description
-#'Createsacomprehensivedeploymentpackageforlaunchingadaptiveassessmentstudies
-#'ontheinrepplatform.Thisfunctiongeneratesallnecessaryfilesandconfigurations
-#'forprofessionalhostingofTAM-basedadaptiveassessments.Theresultingpackage
-#'canbedeployedontheofficialinrepplatformoranycompatibleShinyserver.
+#' @description
+#' Creates a comprehensive deployment package for launching adaptive assessment studies
+#' on the inrep platform. This function generates all necessary files and configurations
+#' for professional hosting of TAM-based adaptive assessments. The resulting package
+#' can be deployed on the official inrep platform or any compatible Shiny server.
 #'
-#'@details
-#'Thisfunctioncreatesacompletedeploymentpackagethatincludes:
+#' @details
+#' This function creates a complete deployment package that includes:
 #'\itemize{
 #'\item Study configuration and metadata
 #'\item Item bank validation and preparation
@@ -18,7 +18,7 @@
 #'\item Deployment documentation and instructions
 #'}
 #'
-#'Thegeneratedpackageisdesignedforprofessionaldeploymenton:
+#' The generated package is designed for professional deployment on:
 #'\itemize{
 #'\item Official inrep platform (contact: selva@uni-hildesheim.de)
 #'\item Posit Connect/RStudio Connect servers
@@ -27,8 +27,8 @@
 #'\item Docker containers for scalable deployment
 #'}
 #'
-#'Forofficialinrepplatformdeployment,usersshouldcontactthemaintainer
-#'atselva@uni-hildesheim.dewiththegenerateddeploymentpackageandprovide:
+#' For official inrep platform deployment, users should contact the maintainer
+#' at selva@uni-hildesheim.de with the generated deployment package and provide:
 #'\itemize{
 #'\item Brief study description and objectives
 #'\item Expected study duration and participant numbers
@@ -73,13 +73,13 @@
 #'
 #'@examples
 #'\dontrun{
-#'#Example1:Basicdeploymentforinrepplatform
+#' # Example 1: Basic deployment for inrep platform
 #'library(inrep)
 #'data(bfi_items)
 #'
-#'#Createstudyconfiguration
+#' # Create study configuration
 #'config<-create_study_config(
-#'name="BigFivePersonalityAssessment",
+#'   name = "Big Five Personality Assessment",
 #'model="GRM",
 #'max_items=20,
 #'min_SEM=0.3,
@@ -87,19 +87,19 @@
 #'theme="Professional"
 #')
 #'
-#'#Preparecontactinformation
+#' # Prepare contact information
 #'contact_info<-list(
 #'researcher_name="Dr.JaneSmith",
-#'institution="UniversityofResearch",
+#'   institution = "University of Research",
 #'email="jane.smith@university.edu",
-#'study_title="AdaptivePersonalityAssessmentStudy",
-#'study_description="Investigatingpersonalitytraitsusingadaptivetesting",
+#'   study_title = "Adaptive Personality Assessment Study",
+#'   study_description = "Investigating personality traits using adaptive testing",
 #'expected_duration="4weeks",
 #'expected_participants=500,
 #'institutional_approval="IRB-2025-001"
 #')
 #'
-#'#Launchtoinrepplatform
+#' # Launch to inrep platform
 #'deployment<-launch_to_inrep_platform(
 #'study_config=config,
 #'item_bank=bfi_items,
@@ -108,19 +108,19 @@
 #'contact_info=contact_info
 #')
 #'
-#'#Checkdeploymentresults
-#'cat("Deploymentpackagecreated:",deployment$deployment_package,"\n")
+#' # Check deployment results
+#'   cat("Deployment package created:", deployment$deployment_package, "\n")
 #'cat("Contacttemplate:",deployment$contact_template,"\n")
 #'}
 #'
 #'\dontrun{
-#'#Example2:Advanceddeploymentwithmultilingualsupport
+#' # Example 2: Advanced deployment with multilingual support
 #'library(inrep)
 #'data(bfi_items)
 #'
-#'#Createadvancedconfiguration
+#' # Create advanced configuration
 #'config<-create_study_config(
-#'name="InternationalPersonalityStudy",
+#'   name = "International Personality Study",
 #'model="GRM",
 #'max_items=25,
 #'min_SEM=0.25,
@@ -130,7 +130,7 @@
 #'languages=c("en","de","es","fr")
 #')
 #'
-#'#Advancedfeatures
+#' # Advanced features
 #'advanced_features<-list(
 #'"multilingual",
 #'"accessibility",
@@ -138,20 +138,20 @@
 #'"real_time_monitoring"
 #')
 #'
-#'#Contactinformationforinternationalstudy
+#' # Contact information for international study
 #'contact_info<-list(
-#'researcher_name="Prof.InternationalResearcher",
-#'institution="GlobalResearchInstitute",
+#'   researcher_name = "Prof. International Researcher",
+#'   institution = "Global Research Institute",
 #'email="researcher@global-institute.org",
-#'study_title="Cross-CulturalPersonalityAssessment",
-#'study_description="Large-scaleinternationalstudyonpersonalitytraits",
+#'   study_title = "Cross-Cultural Personality Assessment",
+#'   study_description = "Large-scale international study on personality traits",
 #'expected_duration="12weeks",
 #'expected_participants=2000,
 #'languages_needed=c("English","German","Spanish","French"),
-#'special_requirements="GDPRcompliance,accessibilitystandards"
+#'   special_requirements = "GDPR compliance, accessibility standards"
 #')
 #'
-#'#Launchwithadvancedfeatures
+#' # Launch with advanced features
 #'deployment<-launch_to_inrep_platform(
 #'study_config=config,
 #'item_bank=bfi_items,
@@ -161,18 +161,18 @@
 #'advanced_features=advanced_features
 #')
 #'
-#'#Reviewdeploymentvalidation
+#' # Review deployment validation
 #'print(deployment$validation_report)
 #'}
 #'
 #'\dontrun{
-#'#Example3:Clinicaldeploymentwithenhancedsecurity
+#' # Example 3: Clinical deployment with enhanced security
 #'library(inrep)
 #'data(bfi_items)
 #'
-#'#Createclinicalconfiguration
+#' # Create clinical configuration
 #'config<-create_study_config(
-#'name="ClinicalDepressionAssessment",
+#'   name = "Clinical Depression Assessment",
 #'model="GRM",
 #'max_items=15,
 #'min_SEM=0.2,
@@ -181,7 +181,7 @@
 #'clinical_mode=TRUE
 #')
 #'
-#'#Securitysettingsforclinicaldata
+#' # Security settings for clinical data
 #'security_settings<-list(
 #'encryption_level="AES-256",
 #'data_retention="7_years",
@@ -191,21 +191,21 @@
 #'gdpr_compliance=TRUE
 #')
 #'
-#'#Clinicalcontactinformation
+#' # Clinical contact information
 #'contact_info<-list(
-#'researcher_name="Dr.ClinicalResearcher",
-#'institution="MedicalCenterHospital",
+#'   researcher_name = "Dr. Clinical Researcher",
+#'   institution = "Medical Center Hospital",
 #'email="clinical.researcher@hospital.org",
-#'study_title="AdaptiveDepressionScreening",
-#'study_description="Clinicalvalidationofadaptivedepressionassessment",
+#'   study_title = "Adaptive Depression Screening",
+#'   study_description = "Clinical validation of adaptive depression assessment",
 #'expected_duration="6months",
 #'expected_participants=300,
 #'clinical_approval="IRB-CLINICAL-2025-005",
 #'data_sensitivity="high",
-#'compliance_requirements="HIPAA,GDPR"
+#'   compliance_requirements = "HIPAA, GDPR"
 #')
 #'
-#'#Launchclinicalstudy
+#' # Launch clinical study
 #'deployment<-launch_to_inrep_platform(
 #'study_config=config,
 #'item_bank=bfi_items,
@@ -216,18 +216,18 @@
 #'advanced_features=list("accessibility","real_time_monitoring")
 #')
 #'
-#'#Verifysecurityconfiguration
-#'cat("Securityvalidationpassed:",deployment$validation_report$security_check,"\n")
+#' # Verify security configuration
+#'   cat("Security validation passed:", deployment$validation_report$security_check, "\n")
 #'}
 #'
 #'\dontrun{
-#'#Example4:EducationaldeploymentforPositConnect
+#' # Example 4: Educational deployment for Posit Connect
 #'library(inrep)
 #'data(bfi_items)
 #'
-#'#Createeducationalconfiguration
+#' # Create educational configuration
 #'config<-create_study_config(
-#'name="StudentPersonalityAssessment",
+#'   name = "Student Personality Assessment",
 #'model="2PL",
 #'max_items=30,
 #'min_SEM=0.4,
@@ -236,19 +236,19 @@
 #'adaptive_feedback=TRUE
 #')
 #'
-#'#Educationalcontactinformation
+#' # Educational contact information
 #'contact_info<-list(
-#'researcher_name="Prof.EducationResearcher",
+#'   researcher_name = "Prof. Education Researcher",
 #'institution="StateUniversity",
 #'email="education.prof@state-university.edu",
-#'study_title="StudentPersonalityandAcademicPerformance",
-#'study_description="Longitudinalstudyofpersonalityandacademicoutcomes",
+#'   study_title = "Student Personality and Academic Performance",
+#'   study_description = "Longitudinal study of personality and academic outcomes",
 #'expected_duration="1academicyear",
 #'expected_participants=1000,
 #'educational_approval="University-IRB-2025-EDU-003"
 #')
 #'
-#'#LaunchforPositConnect
+#' # Launch for Posit Connect
 #'deployment<-launch_to_inrep_platform(
 #'study_config=config,
 #'item_bank=bfi_items,
@@ -258,18 +258,18 @@
 #'advanced_features=list("mobile_optimized","automated_reporting")
 #')
 #'
-#'#Generatedeploymentinstructions
-#'cat("PositConnectdeploymentguide:",deployment$deployment_instructions,"\n")
+#' # Generate deployment instructions
+#'   cat("Posit Connect deployment guide:", deployment$deployment_instructions, "\n")
 #'}
 #'
 #'\dontrun{
-#'#Example5:CorporatedeploymentwithDocker
+#' # Example 5: Corporate deployment with Docker
 #'library(inrep)
 #'data(bfi_items)
 #'
-#'#Createcorporateconfiguration
+#' # Create corporate configuration
 #'config<-create_study_config(
-#'name="EmployeeAssessmentPlatform",
+#'   name = "Employee Assessment Platform",
 #'model="GRM",
 #'max_items=20,
 #'min_SEM=0.3,
@@ -278,20 +278,20 @@
 #'corporate_mode=TRUE
 #')
 #'
-#'#Corporatecontactinformation
+#' # Corporate contact information
 #'contact_info<-list(
 #'researcher_name="HRAnalyticsTeam",
-#'institution="GlobalCorporationLtd",
+#'   institution = "Global Corporation Ltd",
 #'email="hr.analytics@globalcorp.com",
-#'study_title="EmployeePersonalityAssessment",
-#'study_description="Corporatepersonalityassessmentforteambuilding",
+#'   study_title = "Employee Personality Assessment",
+#'   study_description = "Corporate personality assessment for team building",
 #'expected_duration="Ongoing",
 #'expected_participants=5000,
 #'corporate_approval="HR-STUDY-2025-001",
 #'deployment_scale="enterprise"
 #')
 #'
-#'#LaunchwithDockerdeployment
+#' # Launch with Docker deployment
 #'deployment<-launch_to_inrep_platform(
 #'study_config=config,
 #'item_bank=bfi_items,
@@ -301,19 +301,19 @@
 #'advanced_features=list("real_time_monitoring","automated_reporting")
 #')
 #'
-#'#CheckDockerconfiguration
-#'cat("Dockerdeploymentready:",deployment$deployment_package,"\n")
-#'cat("Containerconfiguration:",deployment$docker_config,"\n")
+#' # Check Docker configuration
+#'   cat("Docker deployment ready:", deployment$deployment_package, "\n")
+#'   cat("Container configuration:", deployment$docker_config, "\n")
 #'}
 #'
 #'\dontrun{
-#'#Example6:Customserverdeploymentwithbackupsettings
+#' # Example 6: Custom server deployment with backup settings
 #'library(inrep)
 #'data(bfi_items)
 #'
-#'#Createcustomconfiguration
+#' # Create custom configuration
 #'config<-create_study_config(
-#'name="ResearchPlatformAssessment",
+#'   name = "Research Platform Assessment",
 #'model="GRM",
 #'max_items=25,
 #'min_SEM=0.25,
@@ -322,7 +322,7 @@
 #'custom_styling=TRUE
 #')
 #'
-#'#Backupsettingsforlong-termstudy
+#' # Backup settings for long-term study
 #'backup_settings<-list(
 #'backup_frequency="daily",
 #'backup_retention="1_year",
@@ -331,20 +331,20 @@
 #'disaster_recovery=TRUE
 #')
 #'
-#'#Researchcontactinformation
+#' # Research contact information
 #'contact_info<-list(
-#'researcher_name="ResearchConsortium",
-#'institution="Multi-UniversityResearchNetwork",
+#'   researcher_name = "Research Consortium",
+#'   institution = "Multi-University Research Network",
 #'email="consortium@research-network.org",
-#'study_title="Large-ScalePersonalityResearch",
-#'study_description="Multi-sitelongitudinalpersonalitystudy",
+#'   study_title = "Large-Scale Personality Research",
+#'   study_description = "Multi-site longitudinal personality study",
 #'expected_duration="3years",
 #'expected_participants=10000,
 #'multi_site=TRUE,
 #'sites=c("UniversityA","UniversityB","UniversityC")
 #')
 #'
-#'#Launchwithcustomserverconfiguration
+#' # Launch with custom server configuration
 #'deployment<-launch_to_inrep_platform(
 #'study_config=config,
 #'item_bank=bfi_items,
@@ -355,22 +355,22 @@
 #'advanced_features=list("multilingual","real_time_monitoring","automated_reporting")
 #')
 #'
-#'#Verifybackupconfiguration
-#'cat("Backupsettingsvalidated:",deployment$validation_report$backup_check,"\n")
+#' # Verify backup configuration
+#'   cat("Backup settings validated:", deployment$validation_report$backup_check, "\n")
 #'}
 #'
 #'@seealso
-#'\code{\link{create_study_config}}forcreatingstudyconfigurations,
-#'\code{\link{validate_item_bank}}foritembankvalidation,
-#'\code{\link{build_study_ui}}forUIcomponents,
-#'\code{\link{create_response_report}}forresultsprocessing
+#' \code{\link{create_study_config}} for creating study configurations,
+#' \code{\link{validate_item_bank}} for item bank validation,
+#' \code{\link{build_study_ui}} for UI components,
+#' \code{\link{create_response_report}} for results processing
 #'
-#'@references
-#'Forofficialinrepplatformdeployment,contact:selva@uni-hildesheim.de
+#' @references
+#' For official inrep platform deployment, contact: selva@uni-hildesheim.de
 #'
-#'Platformdocumentation:https://inrep-platform.org
+#' Platform documentation: https://inrep-platform.org
 #'
-#'Deploymentguides:https://inrep-platform.org/docs/deployment
+#' Deployment guides: https://inrep-platform.org/docs/deployment
 launch_to_inrep_platform <- function(study_config,
                                        item_bank,
                                        output_dir = "inrep_deployment",
@@ -433,13 +433,13 @@ launch_to_inrep_platform <- function(study_config,
     deployment_results$validation_report$item_bank_validation <- validation_results
   }
 
-#Savestudyconfiguration
+# Save study configuration
 saveRDS(study_config,file.path(deployment_path,"config","study_config.rds"))
 
-#Saveitembank
+# Save item bank
 saveRDS(item_bank,file.path(deployment_path,"data","item_bank.rds"))
 
-#Generatedeployment-specificfiles
+# Generate deployment-specific files
 deployment_results<-generate_deployment_files(
 deployment_results,
 deployment_path,
@@ -452,7 +452,7 @@ security_settings,
 backup_settings
 )
 
-#Generatecontacttemplate
+# Generate contact template
 if(!is.null(contact_info)){
 deployment_results$contact_template<-generate_contact_template(
 contact_info,
@@ -461,7 +461,7 @@ deployment_type
 )
 }
 
-#Generatedeploymentinstructions
+# Generate deployment instructions
 deployment_results$deployment_instructions<-generate_deployment_instructions(
 deployment_type,
 deployment_path,
@@ -476,13 +476,13 @@ contact_info,
 deployment_results
 )
 
-#Finalvalidation
+# Final validation
 if(validate_deployment){
 final_validation<-validate_deployment_package(deployment_path,deployment_type)
 deployment_results$validation_report$final_validation<-final_validation
 }
 
-#Generatesummaryreport
+# Generate summary report
 generate_deployment_summary(deployment_results,deployment_path)
 
 # Print success message
@@ -496,12 +496,12 @@ return(deployment_results)
 }
 
 
-#Helperfunctiontogeneratedeploymentfiles
+# Helper function to generate deployment files
 generate_deployment_files<-function(deployment_results,deployment_path,study_config,
 item_bank,deployment_type,contact_info,
 advanced_features,security_settings,backup_settings){
 
-#Generatemainappfile
+# Generate main app file
 app_content<-generate_app_file(study_config,item_bank,advanced_features)
 writeLines(app_content,file.path(deployment_path,"app","app.R"))
 
@@ -509,7 +509,7 @@ writeLines(app_content,file.path(deployment_path,"app","app.R"))
 ui_content<-generate_ui_file(study_config,advanced_features)
 writeLines(ui_content,file.path(deployment_path,"app","ui.R"))
 
-#Generateserverfile
+# Generate server file
 server_content<-generate_server_file(study_config,item_bank,advanced_features)
 writeLines(server_content,file.path(deployment_path,"app","server.R"))
 
@@ -525,11 +525,11 @@ deployment_config<-generate_docker_config(study_config,advanced_features)
 deployment_config<-generate_generic_config(study_config,advanced_features)
 }
 
-#Savedeploymentconfiguration
+# Save deployment configuration
 saveRDS(deployment_config,file.path(deployment_path,"config","deployment_config.rds"))
 deployment_results$deployment_config<-deployment_config
 
-#Generatemanifestfile
+# Generate manifest file
 manifest<-generate_manifest(study_config,item_bank,deployment_type,contact_info)
 writeLines(manifest,file.path(deployment_path,"deployment","manifest.json"))
 
@@ -537,7 +537,7 @@ return(deployment_results)
 }
 
 
-#Helperfunctiontogeneratecontacttemplate
+# Helper function to generate contact template
 generate_contact_template<-function(contact_info,deployment_results,deployment_type){
 
 template_path<-file.path(deployment_results$deployment_package,"docs","contact_template.md")
@@ -571,7 +571,7 @@ paste0("- **Data Sensitivity:** ", contact_info$data_sensitivity %||% "Standard"
 paste0("- **Compliance Requirements:** ", contact_info$compliance_requirements %||% "Standard"),
 "",
 "### Message Template",
-"\`\`\`",
+"\\`\\`\\`",
 "Subject: inrep Platform Deployment Request - [Study Title]",
 "",
 "Dear inrep Platform Team,",
@@ -595,17 +595,17 @@ paste0("Deployment Package ID: ", deployment_results$deployment_id),
 paste0("Best regards,"),
 paste0("[YourName]"),
 paste0("[YourEmail]"),
-"\`\`\`",
+"\\`\\`\\`",
 "",
-"###AlternativeDeploymentOptions",
-"Ifyouprefertohostthestudyyourself,thedeploymentpackageincludes",
-"configurationsfor:",
-"-PositConnect/RStudioConnect",
-"-ShinyApps.io",
-"-CustomShinyServer",
-"-Dockercontainers",
+"### Alternative Deployment Options",
+"If you prefer to host the study yourself, the deployment package includes",
+"configurations for:",
+"- Posit Connect/RStudio Connect",
+"- ShinyApps.io",
+"- Custom Shiny Server",
+"- Docker containers",
 "",
-"Seethedeploymentinstructionsinthedocsfolderfordetailedsetupguides."
+"See the deployment instructions in the docs folder for detailed setup guides."
 )
 
 writeLines(template_content,template_path)
@@ -613,7 +613,7 @@ return(template_path)
 }
 
 
-#Helperfunctiontogeneratedeploymentinstructions
+# Helper function to generate deployment instructions
 generate_deployment_instructions<-function(deployment_type,deployment_path,study_config){
 
 instructions_path<-file.path(deployment_path,"docs","deployment_instructions.md")
@@ -625,108 +625,108 @@ paste0("#DeploymentInstructions-",deployment_type),
 "Thisdocumentprovidesstep-by-stepinstructionsfordeployingyouradaptive",
 "assessmentstudyusingtheinrepplatforminfrastructure.",
 "",
-"##QuickStart"
+"## Quick Start"
 )
 
-#Adddeployment-specificinstructions
+# Add deployment-specific instructions
 if(deployment_type=="inrep_platform"){
 instructions_content<-c(instructions_content,
 "",
-"###OfficialinrepPlatformDeployment",
-"1.**ContactthePlatformTeam**",
+"### Official inrep Platform Deployment",
+"1. **Contact the Platform Team**",
 "-Email:selva@uni-hildesheim.de",
-"-Usethecontacttemplateprovidedinthispackage",
-"-IncludeyourdeploymentpackageIDandstudydetails",
+"- Use the contact template provided in this package",
+"- Include your deployment package ID and study details",
 "",
-"2.**PrepareStudyMaterials**",
-"-Completethecontacttemplatewithallrequiredinformation",
-"-EnsureIRB/ethicsapprovalisdocumented",
-"-Prepareanyadditionaldocumentationrequested",
+"2. **Prepare Study Materials**",
+"- Complete the contact template with all required information",
+"- Ensure IRB/ethics approval is documented",
+"- Prepare any additional documentation requested",
 "",
-"3.**UploadandConfiguration**",
-"-Theplatformteamwillguideyouthroughtheuploadprocess",
-"-Yourstudywillbeconfiguredandtestedbeforegoinglive",
-"-You'llreceiveauniquestudyURLforparticipantaccess",
+"3. **Upload and Configuration**",
+"- The platform team will guide you through the upload process",
+"- Your study will be configured and tested before going live",
+"- You'll receive a unique study URL for participant access",
 "",
-"4.**StudyLaunch**",
-"-Finaltestingandvalidation",
-"-Studygoeslivewithprofessionalhosting",
-"-Real-timemonitoringandsupportavailable",
+"4. **Study Launch**",
+"- Final testing and validation",
+"- Study goes live with professional hosting",
+"- Real-time monitoring and support available",
 "",
-"###BenefitsofOfficialPlatformHosting",
-"-Professionalserverinfrastructure",
-"-Automaticbackupsanddisasterrecovery",
-"-24/7monitoringandsupport",
-"-GDPRandHIPAAcomplianthosting",
-"-Scalablearchitectureforlargestudies",
-"-Experttechnicalsupport"
+"### Benefits of Official Platform Hosting",
+"- Professional server infrastructure",
+"- Automatic backups and disaster recovery",
+"- 24/7 monitoring and support",
+"- GDPR and HIPAA compliant hosting",
+"- Scalable architecture for large studies",
+"- Expert technical support"
 )
 }else if(deployment_type=="posit_connect"){
 instructions_content<-c(instructions_content,
 "",
-"###PositConnectDeployment",
-"1.**PrepareYourConnectServer**",
-"-EnsureyouhaveaccesstoaPositConnectserver",
-"-InstallrequiredRpackagesontheserver",
-"-Configureuserpermissionsandaccesscontrols",
+"### Posit Connect Deployment",
+"1. **Prepare Your Connect Server**",
+"- Ensure you have access to a Posit Connect server",
+"- Install required R packages on the server",
+"- Configure user permissions and access controls",
 "",
-"2.**DeploytheApplication**",
-"-CopytheappfoldertoyourConnectserver",
-"-Usethersconnectpackagetodeploy:",
-"\`\`\`r",
+"2. **Deploy the Application**",
+"- Copy the app folder to your Connect server",
+"- Use the rsconnect package to deploy:",
+"\\`\\`\\`r",
 "library(rsconnect)",
 "deployApp(appDir='app',account='your-account')",
-"\`\`\`",
+"\\`\\`\\`",
 "",
-"3.**ConfigureStudySettings**",
-"-Setenvironmentvariablesfordatabaseconnections",
-"-Configuredatastorageandbackupsettings",
-"-Setupmonitoringandlogging",
+"3. **Configure Study Settings**",
+"- Set environment variables for database connections",
+"- Configure data storage and backup settings",
+"- Setup monitoring and logging",
 "",
-"4.**TestandLaunch**",
-"-Performcomprehensivetesting",
-"-Configureuseraccessandpermissions",
-"-Launchstudywithparticipantrecruitment"
+"4. **Test and Launch**",
+"- Perform comprehensive testing",
+"- Configure user access and permissions",
+"- Launch study with participant recruitment"
 )
 }else if(deployment_type=="docker"){
 instructions_content<-c(instructions_content,
 "",
-"###DockerDeployment",
-"1.**BuildDockerImage**",
-"\`\`\`bash",
-"dockerbuild-tinrep-study.",
-"\`\`\`",
+"### Docker Deployment",
+"1. **Build Docker Image**",
+"\\`\\`\\`bash",
+"docker build -t inrep-study .",
+"\\`\\`\\`",
 "",
-"2.**RunContainer**",
-"\`\`\`bash",
-"dockerrun-p3838:3838inrep-study",
-"\`\`\`",
+"2. **Run Container**",
+"\\`\\`\\`bash",
+"docker run -p 3838:3838 inrep-study",
+"\\`\\`\\`",
 "",
-"3.**ConfigurePersistentStorage**",
-"-Mountvolumesfordatapersistence",
-"-Configuredatabaseconnections",
-"-Setupbackupstrategies",
+"3. **Configure Persistent Storage**",
+"- Mount volumes for data persistence",
+"- Configure database connections",
+"- Setup backup strategies",
 "",
-"4.**ScaleandMonitor**",
-"-UseDockerComposeformulti-containersetup",
-"-Configureloadbalancingifneeded",
-"-Setupmonitoringandlogging"
+"4. **Scale and Monitor**",
+"- Use Docker Compose for multi-container setup",
+"- Configure load balancing if needed",
+"- Setup monitoring and logging"
 )
 }
 
 instructions_content<-c(instructions_content,
 "",
-"##SecurityConsiderations",
-"-Ensurealldatatransmissionsareencrypted(HTTPS)",
-"-Implementproperauthenticationandauthorization",
-"-Followdataprotectionregulations(GDPR,HIPAA)",
-"-Regularsecurityupdatesandmonitoring",
+"## Security Considerations",
+"- Ensure all data transmissions are encrypted (HTTPS)",
+"- Implement proper authentication and authorization",
+"- Follow data protection regulations (GDPR, HIPAA)",
+"- Regular security updates and monitoring",
 "",
-"##SupportandMaintenance",
-"-Regularbackupverification",
-"-Monitorstudyperformanceandparticipantfeedback",
-"-Updatestudyconfigurationasneeded",
-"-Archivedataaccordingtoinstitutionalpolicies",
+"## Support and Maintenance",
+"- Regular backup verification",
+"- Monitor study performance and participant feedback",
+"- Update study configuration as needed",
+"- Archive data according to institutional policies",
 "",
 "##Troubleshooting",
 "Commonissuesandsolutionsaredocumentedinthevalidationreport.",
@@ -742,10 +742,10 @@ return(instructions_path)
 }
 
 
-#Helperfunctionsforgeneratingappcomponents
+# Helper functions for generating app components
 generate_app_file<-function(study_config,item_bank,advanced_features){
 c(
-"#inrepPlatformDeploymentApp",
+"# inrep Platform Deployment App",
 "#Generatedbylaunch_to_inrep_platform()",
 "",
 "library(shiny)",
@@ -803,7 +803,7 @@ c(
 )
 }
 
-#Additionalhelperfunctions
+# Additional helper functions
 generate_inrep_platform_config<-function(study_config,contact_info,advanced_features,security_settings){
 list(
 platform="inrep_official",
@@ -922,40 +922,40 @@ return(validation_results)
 
 generate_deployment_summary<-function(deployment_results,deployment_path){
 summary_content<-c(
-"#inrepPlatformDeploymentSummary",
+"# inrep Platform Deployment Summary",
 "",
 paste0("**DeploymentID:**",deployment_results$deployment_id),
 paste0("**Created:**",deployment_results$timestamp),
 paste0("**DeploymentType:**",deployment_results$deployment_type),
 "",
-"##StudyInformation",
-paste0("-**StudyName:**",deployment_results$study_metadata$study_name),
-paste0("-**Model:**",deployment_results$study_metadata$model),
-paste0("-**NumberofItems:**",deployment_results$study_metadata$num_items),
-paste0("-**MaximumItems:**",deployment_results$study_metadata$max_items),
-paste0("-**MinimumSEM:**",deployment_results$study_metadata$min_SEM),
+"## Study Information",
+paste0("- **Study Name:** ", deployment_results$study_metadata$study_name),
+paste0("- **Model:** ", deployment_results$study_metadata$model),
+paste0("- **Number of Items:** ", deployment_results$study_metadata$num_items),
+paste0("- **Maximum Items:** ", deployment_results$study_metadata$max_items),
+paste0("- **Minimum SEM:** ", deployment_results$study_metadata$min_SEM),
 "",
-"##DeploymentPackageContents",
+"## Deployment Package Contents",
 "- Application files (app.R, ui.R, server.R)",
 "- Study configuration and item bank",
 "- Deployment instructions and documentation",
 "- Contact template for platform team",
 "- Validation reports and quality checks",
 "",
-"##NextSteps",
-"1.Reviewthecontacttemplateindocs/contact_template.md",
-"2.Followdeploymentinstructionsindocs/deployment_instructions.md",
-"3.Contactselva@uni-hildesheim.deforofficialplatformhosting",
+"## Next Steps",
+"1. Review the contact template in docs/contact_template.md",
+"2. Follow deployment instructions in docs/deployment_instructions.md",
+"3. Contact selva@uni-hildesheim.de for official platform hosting",
 "",
-"##PackageStructure",
-"\`\`\`",
+"## Package Structure",
+"\\`\\`\\`",
 paste0(basename(deployment_path),"/"),
-"├──app/#Shinyapplicationfiles",
-"├──config/#Studyanddeploymentconfiguration",
-"├──data/#Itembankandstudydata",
-"├──docs/#Documentationandinstructions",
-"├──validation/#Validationreports",
-"└──deployment/#Deploymentmanifestandmetadata",
+"├── app/          # Shiny application files",
+"├── config/       # Study and deployment configuration",
+"├── data/         # Item bank and study data",
+"├── docs/         # Documentation and instructions",
+"├── validation/   # Validation reports",
+"└── deployment/   # Deployment manifest and metadata",
 "\\`\\`\\`"
 )
 
