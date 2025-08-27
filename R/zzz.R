@@ -8,6 +8,9 @@
 # Package namespace environment
 .inrep_env <- new.env(parent = emptyenv())
 
+# Later package state
+.later_state <- new.env(parent = emptyenv())
+
 #' On Load Hook
 #' 
 #' Called when package is loaded
@@ -20,6 +23,9 @@
   .inrep_env$loaded <- TRUE
   .inrep_env$load_time <- Sys.time()
   
+  # Initialize later package integration
+  initialize_later_integration()
+  
   # Register S3 methods if any
   register_s3_methods()
   
@@ -27,7 +33,10 @@
   options(
     inrep.auto_unload = TRUE,
     inrep.verbose = FALSE,
-    inrep.max_sessions = 100
+    inrep.max_sessions = 100,
+    inrep.later.enabled = TRUE,
+    inrep.later.default_timeout = 30,
+    inrep.later.auto_cleanup = TRUE
   )
   
   # Clean up any leftover temporary files
@@ -68,6 +77,9 @@
 #' @param libpath Library path
 #' @keywords internal
 .onUnload <- function(libpath) {
+  # Clean up later package state first
+  cleanup_later_state()
+  
   # Clean up all package state
   cleanup_package_state()
   
@@ -78,11 +90,83 @@
   options(
     inrep.auto_unload = NULL,
     inrep.verbose = NULL,
-    inrep.max_sessions = NULL
+    inrep.max_sessions = NULL,
+    inrep.later.enabled = NULL,
+    inrep.later.default_timeout = NULL,
+    inrep.later.auto_cleanup = NULL
   )
   
-  # Clear environment
+  # Clear environments
   rm(list = ls(.inrep_env), envir = .inrep_env)
+  rm(list = ls(.later_state), envir = .later_state)
+  
+  invisible(NULL)
+}
+
+#' Initialize Later Package Integration
+#' 
+#' Sets up later package for use throughout inrep
+#' 
+#' @keywords internal
+initialize_later_integration <- function() {
+  # Check if later is available
+  if (!requireNamespace("later", quietly = TRUE)) {
+    warning("later package not available. Some features may be limited.")
+    .later_state$enabled <- FALSE
+    return(invisible(NULL))
+  }
+  
+  # Initialize later state
+  .later_state$enabled <- TRUE
+  .later_state$global_loop <- later::global_loop()
+  .later_state$private_loops <- list()
+  .later_state$task_managers <- list()
+  .later_state$init_time <- Sys.time()
+  
+  # Create default managed loop for inrep operations
+  tryCatch({
+    .later_state$inrep_loop <- create_managed_loop()
+    .later_state$private_loops[["inrep_default"]] <- .later_state$inrep_loop
+  }, error = function(e) {
+    warning("Could not create default inrep event loop: ", e$message)
+    .later_state$inrep_loop <- NULL
+  })
+  
+  # Set up cleanup finalizer
+  reg.finalizer(.later_state, cleanup_later_state, onexit = TRUE)
+  
+  invisible(NULL)
+}
+
+#' Clean Up Later Package State
+#' 
+#' Cleans up all later-related resources
+#' 
+#' @keywords internal
+cleanup_later_state <- function() {
+  if (!exists(".later_state") || !.later_state$enabled) {
+    return(invisible(NULL))
+  }
+  
+  # Cancel all running tasks in task managers
+  for (tm_name in names(.later_state$task_managers)) {
+    tm <- .later_state$task_managers[[tm_name]]
+    if (!is.null(tm) && is.environment(tm)) {
+      tryCatch(tm$cleanup(), error = function(e) NULL)
+    }
+  }
+  
+  # Clean up private loops
+  for (loop_name in names(.later_state$private_loops)) {
+    loop_mgr <- .later_state$private_loops[[loop_name]]
+    if (!is.null(loop_mgr) && is.list(loop_mgr) && !is.null(loop_mgr$cleanup)) {
+      tryCatch(loop_mgr$cleanup(), error = function(e) NULL)
+    }
+  }
+  
+  # Clear the state
+  rm(list = ls(.later_state), envir = .later_state)
+  .later_state$enabled <- FALSE
   
   invisible(NULL)
 }

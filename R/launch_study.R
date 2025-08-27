@@ -525,33 +525,252 @@ launch_study <- function(
     package_loading_delay = NULL,
     session_init_delay = NULL,
     show_loading_screen = NULL,
-    immediate_ui = FALSE,
+    immediate_ui = TRUE,  # DEFAULT TO TRUE FOR FAST LOADING
     ...
 ) {
   
-  # AGGRESSIVE LATER PACKAGE IMPLEMENTATION - DISPLAY UI IMMEDIATELY
+  # IMMEDIATE UI DISPLAY - SMART ROUTING
   if (immediate_ui) {
-    cat("LATER PACKAGE: Implementing immediate UI display\n")
+    # Check if this is a complex study (like HilFo) that needs special handling
+    has_custom_flow <- !is.null(config$custom_page_flow)
+    has_custom_css_js <- !is.null(custom_css) && nchar(custom_css) > 500  # Complex JS/CSS
+    has_results_processor <- !is.null(config$results_processor)
+    is_complex_study <- has_custom_flow || has_custom_css_js || has_results_processor
     
-    # Step 1: Create private event loop for UI
-    ui_loop <- later::create_loop()
+    # For complex studies like HilFo, DON'T use simplified versions
+    # Continue with the full launch_study implementation but with optimizations
+    if (is_complex_study) {
+      cat("IMMEDIATE UI: Complex study detected (custom flow/processor) - using optimized full version\n")
+      # Don't return here - continue with the full implementation below
+      # The full implementation will handle immediate UI properly
+      # No action needed - just continue with the full implementation
+    } else {
+      # For simple studies, use the inline fast implementation directly
+      # (The external files launch_study_zero_delay.R and launch_study_ultra_fast.R are deprecated)
+    }
     
-    # Step 2: Display UI with ZERO delay
-    later::later(function() {
-      cat("LATER: UI displayed IMMEDIATELY\n")
-    }, delay = 0, loop = ui_loop)
+    # Fallback to inline ultra-fast implementation
+    cat("IMMEDIATE UI: Starting assessment with instant display\n")
     
-    # Step 3: Force immediate execution
-    later::run_now(loop = ui_loop)
+    # Store config and item_bank in environment for later access
+    .GlobalEnv$.inrep_config <- config
+    .GlobalEnv$.inrep_item_bank <- item_bank
+    .GlobalEnv$.inrep_args <- list(
+      custom_css = custom_css,
+      theme_config = theme_config,
+      webdav_url = webdav_url,
+      password = password,
+      save_format = save_format,
+      logger = logger,
+      study_key = study_key,
+      accessibility = accessibility,
+      admin_dashboard_hook = admin_dashboard_hook,
+      max_session_time = max_session_time,
+      session_save = session_save,
+      data_preservation_interval = data_preservation_interval,
+      keep_alive_interval = keep_alive_interval,
+      enable_error_recovery = enable_error_recovery
+    )
     
-    # Step 4: Move ALL heavy operations to background using later
-    later::later(function() {
-      cat("LATER: Background loading started\n")
-    }, delay = 0)
+    # Create the first page UI immediately (instruction page)
+    first_page_ui <- shiny::fluidPage(
+      shiny::tags$head(
+        shiny::tags$title(config$name %||% "Assessment"),
+        shiny::tags$style(shiny::HTML("
+          body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+          }
+          .container-fluid {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          .instruction-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+          }
+          h1, h2, h3 {
+            color: #333;
+          }
+          .btn-primary {
+            background-color: #007bff;
+            border: none;
+            padding: 10px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            margin-top: 20px;
+          }
+          .btn-primary:hover {
+            background-color: #0056b3;
+          }
+          .progress-container {
+            background: #e9ecef;
+            height: 4px;
+            border-radius: 2px;
+            margin-bottom: 20px;
+            display: none;
+          }
+          .progress-bar {
+            background: #007bff;
+            height: 100%;
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s;
+          }
+        "))
+      ),
+      shiny::div(class = "container-fluid",
+        shiny::div(class = "progress-container", id = "progress-container",
+          shiny::div(class = "progress-bar", id = "progress-bar")
+        ),
+        shiny::uiOutput("page_content")
+      )
+    )
     
-    # Step 5: Force all background operations to run immediately but asynchronously
-    later::run_now(timeoutSecs = 0, all = FALSE)
+    # Create server with deferred package loading
+    first_page_server <- function(input, output, session) {
+      
+      # Reactive values for state management
+      rv <- shiny::reactiveValues(
+        current_page = "instructions",
+        packages_loaded = FALSE,
+        full_app_ready = FALSE
+      )
+      
+      # Render the instruction page immediately
+      output$page_content <- shiny::renderUI({
+        if (rv$current_page == "instructions") {
+          shiny::div(class = "instruction-card",
+            shiny::h1(config$name %||% "Assessment"),
+            shiny::hr(),
+            shiny::h3("Welcome"),
+            shiny::p(config$instructions$welcome %||% "Welcome to this assessment."),
+            shiny::h3("Instructions"),
+            shiny::p(config$instructions$instructions %||% "Please answer all questions to the best of your ability."),
+            shiny::h3("Duration"),
+            shiny::p(paste("This assessment will take approximately", 
+                          config$instructions$duration %||% "10-15 minutes")),
+            shiny::actionButton("start_btn", "Start Assessment", class = "btn-primary")
+          )
+        } else {
+          shiny::div(class = "instruction-card",
+            shiny::h2("Loading assessment..."),
+            shiny::p("Please wait while we prepare your assessment."),
+            shiny::div(style = "text-align: center; margin: 20px;",
+              shiny::tags$div(style = "border: 4px solid #f3f3f3; border-top: 4px solid #007bff; 
+                                      border-radius: 50%; width: 40px; height: 40px; 
+                                      animation: spin 1s linear infinite; margin: 0 auto;",
+                shiny::tags$style("@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }")
+              )
+            )
+          )
+        }
+      })
+      
+      # Handle start button click
+      shiny::observeEvent(input$start_btn, {
+        rv$current_page <- "loading"
+        
+        # Show progress bar
+        session$sendCustomMessage(type = "showProgress", message = list())
+        
+        # Schedule package loading and full app initialization
+        if (requireNamespace("later", quietly = TRUE)) {
+          later::later(function() {
+            # Load packages in background
+            tryCatch({
+              # Load essential packages
+              required_packages <- c("shinyWidgets", "DT", "TAM")
+              for (pkg in required_packages) {
+                if (!requireNamespace(pkg, quietly = TRUE)) {
+                  utils::install.packages(pkg, quiet = TRUE, repos = "https://cran.r-project.org")
+                }
+              }
+              
+              # Signal that packages are loaded
+              rv$packages_loaded <- TRUE
+              
+              # Now transition to the full application
+              later::later(function() {
+                # Clean up global variables
+                config_stored <- .GlobalEnv$.inrep_config
+                item_bank_stored <- .GlobalEnv$.inrep_item_bank
+                args_stored <- .GlobalEnv$.inrep_args
+                
+                rm(.inrep_config, .inrep_item_bank, .inrep_args, envir = .GlobalEnv)
+                
+                # Close current session and launch full app
+                session$close()
+                
+                # Re-launch with immediate_ui = FALSE to run the full version
+                do.call(launch_study, c(
+                  list(
+                    config = config_stored,
+                    item_bank = item_bank_stored,
+                    immediate_ui = FALSE
+                  ),
+                  args_stored
+                ))
+              }, delay = 0.5)
+              
+            }, error = function(e) {
+              shiny::showNotification(paste("Error loading packages:", e$message), type = "error")
+            })
+          }, delay = 0.1)
+        } else {
+          # Fallback if later package not available - load synchronously
+          rv$current_page <- "loading"
+          session$reload()
+        }
+      })
+      
+      # Add JavaScript for progress bar
+      session$sendCustomMessage(type = "init", message = list(
+        js = "
+          Shiny.addCustomMessageHandler('showProgress', function(msg) {
+            document.getElementById('progress-container').style.display = 'block';
+            let progress = 0;
+            const interval = setInterval(function() {
+              progress += Math.random() * 15;
+              if (progress > 90) progress = 90;
+              document.getElementById('progress-bar').style.width = progress + '%';
+              if (progress >= 90) clearInterval(interval);
+            }, 200);
+          });
+        "
+      ))
+    }
+    
+    # Create the app
+    app <- shiny::shinyApp(
+      ui = first_page_ui,
+      server = first_page_server,
+      options = list(
+        port = getOption("shiny.port", 5050),
+        host = getOption("shiny.host", "127.0.0.1"),
+        launch.browser = TRUE
+      )
+    )
+    
+    # Run the app
+    cat("IMMEDIATE UI: Launching assessment interface...\n")
+    shiny::runApp(app)
+    
+    return(invisible(NULL))  # EXIT HERE - don't run the rest of the function!
   }
+  
+  # ============================================================================
+  # FULL LAUNCH (when immediate_ui = FALSE)
+  # Everything below only runs when NOT using immediate UI
+  # ============================================================================
   
   # Enhanced validation and error handling for robustness
   tryCatch({

@@ -13,28 +13,28 @@ launch_study_fast <- function(config, item_bank,
   # Create UI immediately (before loading packages)
   ui <- shiny::fluidPage(
     # Minimal CSS for immediate display
-    tags$head(
-      tags$style(HTML("
+    shiny::tags$head(
+      shiny::tags$style(shiny::HTML("
         .loading { display: none; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
       ")),
       # Include jsPDF for PDF download
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"),
-      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js")
+      shiny::tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"),
+      shiny::tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js")
     ),
     
     # Main UI container
-    uiOutput("study_ui"),
+    shiny::uiOutput("study_ui"),
     
     # Hidden loading indicator
-    div(class = "loading", id = "loading-packages", "Loading packages...")
+    shiny::div(class = "loading", id = "loading-packages", "Loading packages...")
   )
   
   # Server with deferred loading
   server <- function(input, output, session) {
     
     # Initialize reactive values
-    rv <- reactiveValues(
+    rv <- shiny::reactiveValues(
       current_page = 1,
       responses = list(),
       demographics = list(),
@@ -43,7 +43,7 @@ launch_study_fast <- function(config, item_bank,
     )
     
     # Render first page immediately
-    output$study_ui <- renderUI({
+    output$study_ui <- shiny::renderUI({
       if (rv$current_page == 1) {
         # First page - no packages needed
         return(render_first_page_fast(config))
@@ -59,16 +59,16 @@ launch_study_fast <- function(config, item_bank,
     
     # Fast first page renderer
     render_first_page_fast <- function(config) {
-      tagList(
-        div(style = "max-width: 800px; margin: 0 auto; padding: 20px;",
-          h1(config$name),
-          div(style = "background: #f8f9fa; padding: 20px; border-radius: 8px;",
-            p("Willkommen zur Studie!"),
-            p("Diese Befragung dauert etwa 10-15 Minuten."),
-            br(),
-            checkboxInput("consent", "Ich bin mit der Teilnahme einverstanden"),
-            br(),
-            actionButton("start", "Studie beginnen", 
+      shiny::tagList(
+        shiny::div(style = "max-width: 800px; margin: 0 auto; padding: 20px;",
+          shiny::h1(config$name),
+          shiny::div(style = "background: #f8f9fa; padding: 20px; border-radius: 8px;",
+            shiny::p("Willkommen zur Studie!"),
+            shiny::p("Diese Befragung dauert etwa 10-15 Minuten."),
+            shiny::br(),
+            shiny::checkboxInput("consent", "Ich bin mit der Teilnahme einverstanden"),
+            shiny::br(),
+            shiny::actionButton("start", "Studie beginnen", 
                         style = "background: #007bff; color: white; padding: 10px 20px; border: none;")
           )
         )
@@ -87,16 +87,16 @@ launch_study_fast <- function(config, item_bank,
     }
     
     # Handle start button
-    observeEvent(input$start, {
+    shiny::observeEvent(input$start, {
       if (!input$consent) {
-        showNotification("Bitte bestätigen Sie Ihre Einverständnis", type = "error")
+        shiny::showNotification("Bitte bestätigen Sie Ihre Einverständnis", type = "error")
         return()
       }
       rv$current_page <- 2
     })
     
     # Handle navigation
-    observeEvent(input$next_page, {
+    shiny::observeEvent(input$next_page, {
       save_current_page_data(rv, input)
       rv$current_page <- rv$current_page + 1
     })
@@ -106,20 +106,20 @@ launch_study_fast <- function(config, item_bank,
       # Generate CSV data
       csv_data <- prepare_csv_data(rv$responses, rv$demographics)
       
-      tagList(
-        h2("Ihre Ergebnisse"),
-        p("Vielen Dank für Ihre Teilnahme!"),
-        br(),
+      shiny::tagList(
+        shiny::h2("Ihre Ergebnisse"),
+        shiny::p("Vielen Dank für Ihre Teilnahme!"),
+        shiny::br(),
         
         # Download buttons
-        downloadButton("download_csv", "CSV herunterladen",
+        shiny::downloadButton("download_csv", "CSV herunterladen",
                       style = "background: #28a745; color: white; margin-right: 10px;"),
         
-        actionButton("download_pdf", "PDF herunterladen",
+        shiny::actionButton("download_pdf", "PDF herunterladen",
                     style = "background: #dc3545; color: white;"),
         
         # JavaScript for PDF generation
-        tags$script(HTML(sprintf("
+        shiny::tags$script(shiny::HTML(sprintf("
           document.getElementById('download_pdf').onclick = function() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -142,7 +142,7 @@ launch_study_fast <- function(config, item_bank,
     }
     
     # CSV download handler
-    output$download_csv <- downloadHandler(
+    output$download_csv <- shiny::downloadHandler(
       filename = function() {
         paste0("hilfo_results_", Sys.Date(), ".csv")
       },

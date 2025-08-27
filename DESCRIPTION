@@ -17,14 +17,15 @@ Imports:
     stats,
     utils,
     digest,
-    httr
+    httr,
+    Rcpp (>= 0.12.9),
+    rlang
 Suggests:
     TAM (>= 4.2-21),
     shinyWidgets (>= 0.7.0),
     DT (>= 0.20),
     dplyr (>= 1.0.0),
     magrittr (>= 2.0.0),
-    Rcpp (>= 1.0.14),
     future (>= 1.58.0),
     pbapply (>= 1.7-2),
     parallelly (>= 1.45.0),
