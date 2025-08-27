@@ -1,0 +1,31 @@
+/* General body styling for dark mode */
+body {
+  background-color: #121212;
+  color: #ffffff;
+}
+
+/* Ensure buttons are visible */
+button {
+  background-color: #333333;
+  color: #ffffff;
+  border: 1px solid #555555;
+}
+
+/* Ensure input fields are visible */
+input, select, textarea {
+  background-color: #222222;
+  color: #ffffff;
+  border: 1px solid #555555;
+}
+
+/* Ensure table headers and rows are visible */
+table th, table td {
+  background-color: #1e1e1e;
+  color: #ffffff;
+  border: 1px solid #555555;
+}
+
+/* Ensure links are visible */
+a {
+  color: #1e90ff;
+}

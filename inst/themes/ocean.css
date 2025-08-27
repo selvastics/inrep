@@ -1,0 +1,17 @@
+:root {
+  --primary-color: #0288d1;
+  --secondary-color: #039be5;
+  --background-color: #e3f2fd;
+  --text-color: #0d47a1;
+  --font-family: 'Inter', sans-serif;
+  --border-radius: 8px;
+  --progress-bg-color: #bbdefb;
+  --error-color: #d32f2f;
+  --success-color: #388e3c;
+  --warning-color: #ffa000;
+  --info-color: #0288d1;
+  --button-hover-color: #01579b;
+  --card-shadow: 0 2px 4px rgba(2, 136, 209, 0.2);
+  --border-color: #64b5f6;
+  --accent-color: #29b6f6;
+}

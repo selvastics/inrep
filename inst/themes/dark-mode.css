@@ -1,0 +1,83 @@
+:root {
+  --primary-color: #00D4AA;
+  --secondary-color: #00A8E8;
+  --background-color: #0D1117;
+  --text-color: #C9D1D9;
+  --font-family: 'Inter', 'Segoe UI', sans-serif;
+  --border-radius: 8px;
+  --progress-bg-color: #21262D;
+  --error-color: #F85149;
+  --success-color: #2EA043;
+  --warning-color: #D29922;
+  --info-color: #58A6FF;
+  --button-hover-color: #00B894;
+  --card-shadow: 0 4px 8px rgba(0, 212, 170, 0.2);
+  --border-color: #30363D;
+  --accent-color: #A371F7;
+}
+
+/* Dark mode accessibility features */
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+.assessment-card {
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--card-shadow);
+}
+
+.test-question {
+  color: var(--text-color);
+  font-size: 20px;
+  line-height: 1.6;
+}
+
+.btn-klee {
+  background-color: var(--primary-color);
+  color: var(--background-color);
+  font-weight: 600;
+}
+
+.btn-klee:hover {
+  background-color: var(--button-hover-color);
+  box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+.shiny-input-radiogroup label {
+  background-color: rgba(33, 38, 45, 0.5);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+}
+
+.shiny-input-radiogroup label:hover {
+  background-color: rgba(0, 212, 170, 0.1);
+  border-color: var(--primary-color);
+}
+
+/* Dark mode focus indicators */
+*:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.3);
+}
+
+/* Enhanced dark mode progress */
+.progress-bar-fill {
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  box-shadow: 0 0 10px rgba(0, 212, 170, 0.3);
+}
+
+/* Status indicators with dark mode colors */
+.error-message {
+  background-color: rgba(248, 81, 73, 0.1);
+  border: 1px solid var(--error-color);
+  color: var(--error-color);
+}
+
+.feedback-message {
+  background-color: rgba(46, 160, 67, 0.1);
+  border: 1px solid var(--success-color);
+  color: var(--success-color);
+}
