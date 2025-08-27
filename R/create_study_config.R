@@ -740,6 +740,7 @@ create_study_config <- function(
       max_session_duration = max_session_duration,
       max_response_time = max_response_time,
       cache_enabled = cache_enabled,
+      immediate_ui = TRUE,  # Enable fast loading by default
       parallel_computation = parallel_computation,
       feedback_enabled = feedback_enabled,
       theta_grid = theta_grid,
