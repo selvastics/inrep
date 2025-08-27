@@ -65,7 +65,7 @@
 #'
 #' @section Quick Start:
 #'
-#' ```r
+#' \preformatted{
 #' # Enable consultation assistance
 #' enable_llm_assistance(
 #'   enable = TRUE,
@@ -79,11 +79,11 @@
 #' # Launch a study with robust session management
 #' config <- create_study_config(name = "My Study", model = "GRM")
 #' launch_study(config, bfi_items, session_save = TRUE)
-#' ```
+#' }
 #'
 #' @section Advanced Usage:
 #'
-#' ```r
+#' \preformatted{
 #' # Enable consultation assistance with expert complexity
 #' enable_llm_assistance(
 #'   enable = TRUE,
@@ -100,11 +100,11 @@
 #'   session_save = TRUE,
 #'   theme = "Professional"
 #' )
-#' ```
+#' }
 #'
 #' @section Configuration:
 #'
-#' ```r
+#' \preformatted{
 #' # Configure consultation assistance
 #' enable_llm_assistance(
 #'   enable = TRUE,
@@ -118,13 +118,13 @@
 #'   model = "GRM",
 #'   session_save = TRUE
 #' )
-#' ```
+#' }
 #'
 #' @section Architecture:
 #'
 #' The package is built with a modular architecture that separates concerns and ensures maintainability:
 #'
-#' ```
+#' }
 #' inrep/
 #' ├── R/                          # Core R functions
 #' │   ├── enhanced_llm_assistance.R    # LLM assistance system
@@ -137,7 +137,7 @@
 #' │   ├── case_studies/           # Example implementations
 #' │   └── examples/               # Usage examples
 #' └── tests/                      # Comprehensive testing
-#' ```
+#' }
 #'
 #' @section Data:
 #'

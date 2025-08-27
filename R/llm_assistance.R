@@ -302,7 +302,7 @@ generate_study_config_prompt <- function(context, study_type, include_examples, 
       "3. **Efficient**: Shorter assessment, acceptable precision\n\n",
       
       "## CURRENT BASIC CONFIGURATION\n",
-      "```r\n",
+      "\\`\\`\\`r\n",
       "config <- create_study_config(\n",
       "  name = 'Basic Assessment',\n",
       "  model = 'GRM',\n",
@@ -310,7 +310,7 @@ generate_study_config_prompt <- function(context, study_type, include_examples, 
       "  max_items = 20,\n",
       "  min_SEM = 0.3\n",
       ")\n",
-      "```\n\n",
+      "\`\`\`\n\n",
       
       "## EXPECTED OUTPUT STRUCTURE\n",
       "Your response must be structured as:\n",
@@ -428,7 +428,7 @@ generate_item_bank_prompt <- function(context, study_type, include_examples, llm
       "- Improvement tracking over time\n\n",
       
       "## SAMPLE ITEM BANK STRUCTURE\n",
-      "```r\n",
+      "\`\`\`r\n",
       "item_bank <- data.frame(\n",
       "  item_id = paste0('item_', 1:20),\n",
       "  content = paste('Sample item', 1:20),\n",
@@ -439,7 +439,7 @@ generate_item_bank_prompt <- function(context, study_type, include_examples, llm
       "  b3 = rnorm(20, 0.5, 0.5),\n",
       "  b4 = rnorm(20, 1.5, 0.5)\n",
       ")\n",
-      "```\n\n",
+      "\`\`\`\n\n",
       
       "## EXPECTED OUTPUT STRUCTURE\n",
       "Your response must include:\n",
@@ -560,7 +560,7 @@ generate_demographics_prompt <- function(context, study_type, include_examples, 
       "- Long-term data management\n\n",
       
       "## SAMPLE DEMOGRAPHICS STRUCTURE\n",
-      "```r\n",
+      "\`\`\`r\n",
       "demographics_config <- list(\n",
       "  essential = c('age', 'gender', 'education', 'occupation'),\n",
       "  research_specific = c('clinical_history', 'medication_use'),\n",
@@ -570,7 +570,7 @@ generate_demographics_prompt <- function(context, study_type, include_examples, 
       "    gender = list(options = c('Male', 'Female', 'Non-binary', 'Prefer not to say'), required = TRUE)\n",
       "  )\n",
       ")\n",
-      "```\n\n",
+      "\`\`\`\n\n",
       
       "## EXPECTED OUTPUT STRUCTURE\n",
       "Your response must include:\n",
@@ -642,7 +642,7 @@ generate_validation_prompt <- function(context, study_type, include_examples, ll
       "5. Documentation and reporting plan\n\n",
       
       "## VALIDATION TOOLS AVAILABLE\n",
-      "```r\n",
+      "\`\`\`r\n",
       "# Item bank validation\n",
       "validation_result <- validate_item_bank(item_bank, model = 'GRM')\n",
       "\n",
@@ -651,7 +651,7 @@ generate_validation_prompt <- function(context, study_type, include_examples, ll
       "\n",
       "# Parameter initialization testing\n",
       "initialized <- initialize_unknown_parameters(item_bank, model = 'GRM')\n",
-      "```\n\n",
+      "\`\`\`\n\n",
       
       "Please provide a comprehensive validation strategy with specific R implementations."
     )
@@ -712,7 +712,7 @@ generate_ui_theme_prompt <- function(context, study_type, include_examples, llm_
       "5. Accessibility and usability enhancements\n\n",
       
       "## THEME TOOLS AVAILABLE\n",
-      "```r\n",
+      "\`\`\`r\n",
       "# Scrape website for theme inspiration\n",
       "scraped_themes <- scrape_website_ui('https://institution.edu/')\n",
       "\n",
@@ -724,7 +724,7 @@ generate_ui_theme_prompt <- function(context, study_type, include_examples, llm_
       "\n",
       "# Validate built-in themes\n",
       "available_themes <- get_builtin_themes()\n",
-      "```\n\n",
+      "\`\`\`\n\n",
       
       "Please provide comprehensive theme customization with detailed design rationale."
     )
@@ -785,7 +785,7 @@ generate_multilingual_prompt <- function(context, study_type, include_examples, 
       "5. Cultural adaptation guidelines\n\n",
       
       "## MULTILINGUAL SETUP\n",
-      "```r\n",
+      "\`\`\`r\n",
       "config <- create_study_config(\n",
       "  language = 'en',\n",
       "  item_translations = list(\n",
@@ -794,7 +794,7 @@ generate_multilingual_prompt <- function(context, study_type, include_examples, 
       "    'fr' = french_translations\n",
       "  )\n",
       ")\n",
-      "```\n\n",
+      "\`\`\`\n\n",
       
       "Please provide comprehensive multilingual optimization with cultural considerations."
     )
@@ -855,7 +855,7 @@ generate_analysis_prompt <- function(context, study_type, include_examples, llm_
       "5. Interpretation guidelines and benchmarks\n\n",
       
       "## ANALYSIS TOOLS\n",
-      "```r\n",
+      "\`\`\`r\n",
       "# Ability estimation\n",
       "abilities <- estimate_ability(responses, item_bank, model = 'GRM')\n",
       "\n",
@@ -864,7 +864,7 @@ generate_analysis_prompt <- function(context, study_type, include_examples, llm_
       "\n",
       "# Performance metrics\n",
       "metrics <- calculate_efficiency_metrics(session_data)\n",
-      "```\n\n",
+      "\`\`\`\n\n",
       
       "Please provide comprehensive analysis strategy with specific implementations."
     )
@@ -925,7 +925,7 @@ generate_deployment_prompt <- function(context, study_type, include_examples, ll
       "5. Monitoring and maintenance plan\n\n",
       
       "## DEPLOYMENT OPTIONS\n",
-      "```r\n",
+      "\`\`\`r\n",
       "# Professional platform deployment\n",
       "deployment <- launch_to_inrep_platform(\n",
       "  study_config = config,\n",
@@ -935,7 +935,7 @@ generate_deployment_prompt <- function(context, study_type, include_examples, ll
       "\n",
       "# Custom server deployment\n",
       "launch_study(config, item_bank, host = '0.0.0.0', port = 3838)\n",
-      "```\n\n",
+      "\`\`\`\n\n",
       
       "Please provide comprehensive deployment strategy with technical specifications."
     )
@@ -996,7 +996,7 @@ generate_documentation_prompt <- function(context, study_type, include_examples,
       "5. Publication-ready methodology section\n\n",
       
       "## DOCUMENTATION TOOLS\n",
-      "```r\n",
+      "\`\`\`r\n",
       "# Generate study documentation\n",
       "documentation <- generate_study_documentation(config, item_bank)\n",
       "\n",
@@ -1005,7 +1005,7 @@ generate_documentation_prompt <- function(context, study_type, include_examples,
       "\n",
       "# Session information\n",
       "sessionInfo()\n",
-      "```\n\n",
+      "\`\`\`\n\n",
       
       "Please provide comprehensive documentation strategy with templates and examples."
     )
