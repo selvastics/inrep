@@ -1,0 +1,100 @@
+:root {
+  --primary-color: #000000;
+  --secondary-color: #333333;
+  --background-color: #FFFFFF;
+  --text-color: #000000;
+  --font-family: 'Arial', 'Helvetica', sans-serif;
+  --border-radius: 0px;
+  --progress-bg-color: #CCCCCC;
+  --error-color: #CC0000;
+  --success-color: #006600;
+  --warning-color: #CC6600;
+  --info-color: #0000CC;
+  --button-hover-color: #666666;
+  --card-shadow: 0 0 0 2px #000000;
+  --border-color: #000000;
+  --accent-color: #000000;
+}
+
+/* High contrast accessibility features */
+body {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.assessment-card {
+  border: 3px solid var(--border-color);
+  padding: 40px;
+  margin: 30px 0;
+  background-color: var(--background-color);
+}
+
+.card-header {
+  font-size: 32px;
+  font-weight: 900;
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+}
+
+.test-question {
+  font-size: 24px;
+  font-weight: bold;
+  border-left: 5px solid var(--primary-color);
+  padding-left: 20px;
+  margin: 30px 0;
+}
+
+.btn-klee {
+  border: 3px solid var(--border-color);
+  font-size: 20px;
+  font-weight: bold;
+  padding: 20px 40px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn-klee:hover {
+  background-color: var(--text-color);
+  color: var(--background-color);
+  border-color: var(--text-color);
+}
+
+.shiny-input-radiogroup label {
+  border: 2px solid var(--border-color);
+  padding: 20px;
+  margin: 15px 0;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.shiny-input-radiogroup label:hover {
+  background-color: var(--primary-color);
+  color: var(--background-color);
+}
+
+/* Ultra-high contrast focus indicators */
+*:focus {
+  outline: 4px solid var(--primary-color);
+  outline-offset: 4px;
+  box-shadow: 0 0 0 4px var(--background-color), 0 0 0 8px var(--primary-color);
+}
+
+/* Enhanced progress indicators */
+.progress-bar-fill {
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--primary-color),
+    var(--primary-color) 10px,
+    var(--background-color) 10px,
+    var(--background-color) 20px
+  );
+}
+
+/* Large, clear status indicators */
+.error-message, .feedback-message {
+  border: 3px solid;
+  font-size: 20px;
+  font-weight: bold;
+  padding: 20px;
+  margin: 20px 0;
+}

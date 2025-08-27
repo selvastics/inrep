@@ -1,0 +1,157 @@
+---
+title: "Quick Start Guide: inrep Package"
+author: "inrep Development Team"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    theme: cerulean
+vignette: >
+  %\VignetteIndexEntry{Quick Start Guide: inrep Package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+```
+
+# Quick Start Guide
+
+This guide gets you up and running with the `inrep` package in minutes.
+
+## Installation
+
+```{r}
+# Install from local source
+devtools::install_local("path/to/inrep")
+
+# Load the package
+library(inrep)
+```
+
+## 5-Minute Setup
+
+### Step 1: Load Data
+
+```{r}
+# Load mathematics items
+data(math_items)
+
+# Or load personality items
+# bfi_items is automatically available via LazyData
+```
+
+### Step 2: Create Configuration
+
+```{r}
+# Simple math test
+config <- create_study_config(
+  study_name = "Quick Math Test",
+  item_bank = "math_items",
+  max_items = 10,
+  min_items = 5
+)
+```
+
+### Step 3: Launch Assessment
+
+```{r}
+# Start the assessment
+launch_study(config)
+```
+
+## Common Use Cases
+
+### Educational Testing
+
+```{r}
+# Create educational math assessment
+edu_config <- create_study_config(
+  study_name = "Grade 8 Math Assessment",
+  item_bank = "math_items",
+  max_items = 15,
+  adaptive_selection = TRUE,
+  demographics = list(
+    grade = list(type = "select", options = c("8")),
+    student_id = list(type = "text", required = TRUE)
+  )
+)
+
+launch_study(edu_config)
+```
+
+### Personality Research
+
+```{r}
+# Create personality study
+personality_config <- create_study_config(
+  study_name = "Personality Research",
+  item_bank = "bfi_items",
+  max_items = 44,
+  demographics = list(
+    age = list(type = "numeric", required = TRUE),
+    consent = list(type = "checkbox", required = TRUE)
+  )
+)
+
+launch_study(personality_config)
+```
+
+### Adaptive Testing
+
+```{r}
+# Create adaptive test
+adaptive_config <- create_study_config(
+  study_name = "Adaptive Math Test",
+  item_bank = "math_items",
+  adaptive_selection = TRUE,
+  selection_method = "maximum_info",
+  stopping_criterion = "se_threshold",
+  se_threshold = 0.4,
+  max_items = 20,
+  min_items = 8
+)
+
+launch_study(adaptive_config)
+```
+
+## Essential Functions
+
+### Configuration
+- `create_study_config()`: Main configuration function
+- `validate_config()`: Validate configuration settings
+
+### Assessment
+- `launch_study()`: Start assessment interface
+- `estimate_ability()`: Estimate participant ability
+
+### Analysis
+- `analyze_responses()`: Analyze response patterns
+- `generate_report()`: Create assessment reports
+
+## Next Steps
+
+1. **Read the comprehensive guide**: See `vignette("comprehensive_adaptive_testing")`
+2. **Compare domains**: See `vignette("mathematics_vs_personality")`
+3. **Customize your assessment**: Explore advanced configuration options
+4. **Analyze results**: Use built-in analysis functions
+
+## Getting Help
+
+- Documentation: `?inrep` or `help(package = "inrep")`
+- Examples: `example("create_study_config")`
+- Vignettes: `vignette(package = "inrep")`
+
+## Common Issues
+
+**Q: Assessment won't launch**
+A: Check that all required columns are present in your item bank
+
+**Q: TAM errors**
+A: Ensure the TAM package is installed and loaded
+
+**Q: Configuration errors**
+A: Use `validate_config()` to check your settings
+
+Ready to start? Try the examples above!

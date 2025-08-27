@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>inrep - Advanced Theme System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Design tokens - Foundation for theming */
+        :root {
+            /* Base variables */
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --space-sm: 0.75rem;
+            --space-md: 1.5rem;
+            --space-lg: 2rem;
+            --transition: all 0.3s ease;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+            
+            /* Theme-agnostic tokens */
+            --success: #28a745;
+            --error: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            
+            /* Light theme (default) */
+            --body-bg: #f8f9fa;
+            --text-primary: #212529;
+            --card-bg: #ffffff;
+            --card-border: #dee2e6;
+            --primary: #212529;
+            --primary-hover: #343a40;
+            --progress-track: #dee2e6;
+            --progress-fill: #212529;
+            --error-bg: #f8d7da;
+            --success-bg: #d4edda;
+            --radio-bg: #ffffff;
+            --radio-hover: #f1f3f5;
+            --radio-active: #e9ecef;
+            --dimension-track: #dee2e6;
+            --dimension-fill: #212529;
+            --theme-name: "Light";
+        }
+
+        /* Base Styles (Theme-agnostic) */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--body-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: var(--transition);
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 2rem 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .theme-display {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: var(--space-lg);
+            margin-bottom: var(--space-lg);
+            transition: var(--transition);
+        }
+
+        .theme-editor {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: var(--space-lg);
+            position: sticky;
+            top: 1rem;
+            height: fit-content;
+        }
+
+        .theme-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .theme-option {
+            height: 80px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.2s ease;
+            border: 2px solid transparent;
+            font-size: 0.8rem;
+            font-weight: 500;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .theme-option:hover {
+            transform: translateY(-3px);
+        }
+
+        .theme-option.active {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+        }
+
+        .theme-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .component-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        .component-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .btn-klee {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition), transform 0.1s ease;
+            width: 100%;
+            max-width: 200px;
+            margin: 0.5rem 0;
+        }
+
+        .btn-klee:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--radio-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--card-border);
+        }
+
+        .progress-circle {
+            width: 100px;
+            height: 100px;
+            position: relative;
+            margin: 1rem 0;
+        }
+
+        .progress-circle svg {
+            transform: rotate(-90deg);
+        }
+
+        .progress-circle circle {
+            fill: none;
+            stroke-width: 10;
+            stroke: var(--progress-track);
+        }
+
+        .progress-circle .progress {
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease;
+            stroke: var(--progress-fill);
+        }
+
+        .progress-circle span {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: var(--text-primary);
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        .btn-radio {
+            background: var(--radio-bg);
+            border: 1px solid var(--card-border);
+            padding: 0.75rem;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .btn-radio:hover {
+            background: var(--radio-hover);
+        }
+
+        .btn-radio.active {
+            background: var(--radio-active);
+            border-color: var(--primary);
+        }
+
+        .dimension-bar {
+            height: 10px;
+            width: 100%;
+            background: var(--dimension-track);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .dimension-fill {
+            height: 100%;
+            background: var(--dimension-fill);
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .message {
+            padding: 0.75rem;
+            border-radius: var(--radius-sm);
+            margin: 0.5rem 0;
+            width: 100%;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .error-message {
+            background: var(--error-bg);
+            border: 1px solid var(--error);
+        }
+
+        .success-message {
+            background: var(--success-bg);
+            border: 1px solid var(--success);
+        }
+
+        .slider-container {
+            width: 100%;
+            margin: 1rem 0;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            background: var(--progress-track);
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .theme-variable {
+            margin-bottom: 1rem;
+        }
+
+        .variable-name {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        .variable-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .color-picker {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .custom-theme-controls {
+            background: rgba(0,0,0,0.03);
+            padding: 1rem;
+            border-radius: var(--radius-sm);
+            margin-top: 1rem;
+        }
+
+        .theme-export {
+            margin-top: 1.5rem;
+            background: rgba(0,0,0,0.03);
+            padding: 1rem;
+            border-radius: var(--radius-sm);
+        }
+
+        .code-block {
+            background: rgba(0,0,0,0.05);
+            padding: 1rem;
+            border-radius: var(--radius-sm);
+            font-family: monospace;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow: auto;
+        }
+
+        /* Theme Definitions */
+        [data-theme="dark"] {
+            --body-bg: #1a1a1a;
+            --text-primary: #e0e0e0;
+            --card-bg: #2c2c2c;
+            --card-border: #444444;
+            --primary: #4d8eff;
+            --primary-hover: #3a7bff;
+            --progress-track: #444444;
+            --progress-fill: #4d8eff;
+            --error-bg: #4a1c1c;
+            --success-bg: #1d3c21;
+            --radio-bg: #3a3a3a;
+            --radio-hover: #4d4d4d;
+            --radio-active: #5a5a5a;
+            --dimension-track: #444444;
+            --dimension-fill: #4d8eff;
+            --theme-name: "Midnight";
+        }
+
+        [data-theme="vibrant"] {
+            --body-bg: #f0f7ff;
+            --text-primary: #1a237e;
+            --card-bg: #ffffff;
+            --card-border: #bbdefb;
+            --primary: #ff6f00;
+            --primary-hover: #ff8f00;
+            --progress-track: #e3f2fd;
+            --progress-fill: #ff6f00;
+            --error-bg: #ffebee;
+            --success-bg: #e8f5e9;
+            --radio-bg: #e3f2fd;
+            --radio-hover: #bbdefb;
+            --radio-active: #90caf9;
+            --dimension-track: #e3f2fd;
+            --dimension-fill: #ff6f00;
+            --theme-name: "Sunset";
+        }
+
+        [data-theme="forest"] {
+            --body-bg: #f0f5ea;
+            --text-primary: #2e4620;
+            --card-bg: #ffffff;
+            --card-border: #d8e6d1;
+            --primary: #4caf50;
+            --primary-hover: #3d8b40;
+            --progress-track: #e8f5e9;
+            --progress-fill: #4caf50;
+            --error-bg: #ffebee;
+            --success-bg: #e8f5e9;
+            --radio-bg: #f1f8e9;
+            --radio-hover: #dcedc8;
+            --radio-active: #c5e1a5;
+            --dimension-track: #e8f5e9;
+            --dimension-fill: #2e7d32;
+            --theme-name: "Forest";
+        }
+
+        [data-theme="ocean"] {
+            --body-bg: #e0f7fa;
+            --text-primary: #006064;
+            --card-bg: #ffffff;
+            --card-border: #b2ebf2;
+            --primary: #00bcd4;
+            --primary-hover: #0097a7;
+            --progress-track: #e0f7fa;
+            --progress-fill: #00bcd4;
+            --error-bg: #ffebee;
+            --success-bg: #e8f5e9;
+            --radio-bg: #e0f7fa;
+            --radio-hover: #b2ebf2;
+            --radio-active: #80deea;
+            --dimension-track: #e0f7fa;
+            --dimension-fill: #00838f;
+            --theme-name: "Ocean";
+        }
+
+        [data-theme="berry"] {
+            --body-bg: #fce4ec;
+            --text-primary: #880e4f;
+            --card-bg: #ffffff;
+            --card-border: #f8bbd0;
+            --primary: #e91e63;
+            --primary-hover: #c2185b;
+            --progress-track: #f8bbd0;
+            --progress-fill: #e91e63;
+            --error-bg: #ffebee;
+            --success-bg: #e8f5e9;
+            --radio-bg: #fce4ec;
+            --radio-hover: #f8bbd0;
+            --radio-active: #f48fb1;
+            --dimension-track: #f8bbd0;
+            --dimension-fill: #ad1457;
+            --theme-name: "Berry";
+        }
+
+        /* Responsive Design */
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .theme-editor {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <div class="container">
+        <div class="header">
+            <h1>inrep Theme System</h1>
+            <p>Advanced theming architecture for your assessment package</p>
+        </div>
+        
+        <div class="theme-display">
+            <div class="theme-name">Light Theme</div>
+            
+            <div class="theme-selector">
+                <div class="theme-option active" data-theme="light" style="background: #f8f9fa; color: #212529;">
+                    <i class="fas fa-sun"></i>
+                    <span>Light</span>
+                </div>
+                <div class="theme-option" data-theme="dark" style="background: #1a1a1a; color: #e0e0e0;">
+                    <i class="fas fa-moon"></i>
+                    <span>Midnight</span>
+                </div>
+                <div class="theme-option" data-theme="vibrant" style="background: #f0f7ff; color: #1a237e;">
+                    <i class="fas fa-fire"></i>
+                    <span>Sunset</span>
+                </div>
+                <div class="theme-option" data-theme="forest" style="background: #f0f5ea; color: #2e4620;">
+                    <i class="fas fa-tree"></i>
+                    <span>Forest</span>
+                </div>
+                <div class="theme-option" data-theme="ocean" style="background: #e0f7fa; color: #006064;">
+                    <i class="fas fa-water"></i>
+                    <span>Ocean</span>
+                </div>
+                <div class="theme-option" data-theme="berry" style="background: #fce4ec; color: #880e4f;">
+                    <i class="fas fa-berries"></i>
+                    <span>Berry</span>
+                </div>
+            </div>
+            
+            <div class="component-grid">
+                <div class="component-card">
+                    <div class="component-title">Buttons</div>
+                    <button class="btn-klee">Primary Button</button>
+                    <button class="btn-klee btn-secondary">Secondary Button</button>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-title">Progress Circle</div>
+                    <div class="progress-circle">
+                        <svg viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45"></circle>
+                            <circle class="progress" cx="50" cy="50" r="45" stroke-dasharray="283" stroke-dashoffset="70"></circle>
+                        </svg>
+                        <span>75%</span>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-title">Radio Options</div>
+                    <div class="radio-group">
+                        <div class="btn-radio">Option 1</div>
+                        <div class="btn-radio active">Option 2 (Selected)</div>
+                        <div class="btn-radio">Option 3</div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-title">Messages</div>
+                    <div class="message success-message">Success message: Operation completed</div>
+                    <div class="message error-message">Error: Please check your input</div>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-title">Slider</div>
+                    <div class="slider-container">
+                        <input type="range" min="0" max="100" value="60" class="slider">
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <div class="component-title">Dimension Bar</div>
+                    <div>Critical Thinking</div>
+                    <div class="dimension-bar">
+                        <div class="dimension-fill" style="width: 85%"></div>
+                    </div>
+                    <div>Creativity</div>
+                    <div class="dimension-bar">
+                        <div class="dimension-fill" style="width: 65%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="theme-editor">
+            <h2><i class="fas fa-palette"></i> Theme Customization</h2>
+            <p>Modify the current theme or create your own:</p>
+            
+            <div class="theme-variable">
+                <div class="variable-name">Primary Color</div>
+                <div class="variable-controls">
+                    <input type="color" class="color-picker" id="primary-color" value="#212529">
+                    <input type="text" class="form-control" id="primary-text" value="#212529" placeholder="Color value">
+                </div>
+            </div>
+            
+            <div class="theme-variable">
+                <div class="variable-name">Background Color</div>
+                <div class="variable-controls">
+                    <input type="color" class="color-picker" id="bg-color" value="#f8f9fa">
+                    <input type="text" class="form-control" id="bg-text" value="#f8f9fa" placeholder="Color value">
+                </div>
+            </div>
+            
+            <div class="theme-variable">
+                <div class="variable-name">Card Background</div>
+                <div class="variable-controls">
+                    <input type="color" class="color-picker" id="card-bg-color" value="#ffffff">
+                    <input type="text" class="form-control" id="card-bg-text" value="#ffffff" placeholder="Color value">
+                </div>
+            </div>
+            
+            <div class="theme-variable">
+                <div class="variable-name">Text Color</div>
+                <div class="variable-controls">
+                    <input type="color" class="color-picker" id="text-color" value="#212529">
+                    <input type="text" class="form-control" id="text-text" value="#212529" placeholder="Color value">
+                </div>
+            </div>
+            
+            <div class="custom-theme-controls">
+                <h3><i class="fas fa-plus-circle"></i> Create Custom Theme</h3>
+                <input type="text" id="custom-theme-name" class="form-control" placeholder="My Custom Theme">
+                <button class="btn-klee" id="save-theme" style="margin-top: 1rem;">
+                    <i class="fas fa-save"></i> Save Custom Theme
+                </button>
+            </div>
+            
+            <div class="theme-export">
+                <h3><i class="fas fa-code"></i> Theme Export</h3>
+                <p>Add this CSS to your package:</p>
+                <div class="code-block" id="theme-css">
+[data-theme="custom"] {
+    --body-bg: #f8f9fa;
+    --text-primary: #212529;
+    --card-bg: #ffffff;
+    --primary: #212529;
+    /* ... */
+}</div>
+                <button class="btn-klee btn-secondary" id="copy-code">
+                    <i class="fas fa-copy"></i> Copy CSS
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme switching
+        document.querySelectorAll('.theme-option').forEach(option => {
+            option.addEventListener('click', () => {
+                const theme = option.getAttribute('data-theme');
+                document.body.setAttribute('data-theme', theme);
+                
+                // Update active state
+                document.querySelectorAll('.theme-option').forEach(opt => {
+                    opt.classList.remove('active');
+                });
+                option.classList.add('active');
+                
+                // Update theme name display
+                document.querySelector('.theme-name').textContent = 
+                    document.querySelector(`.theme-option[data-theme="${theme}"] span`).textContent + " Theme";
+                
+                // Update theme editor values to current theme
+                updateEditorValues();
+            });
+        });
+        
+        // Update theme name display
+        function updateEditorValues() {
+            const computed = getComputedStyle(document.documentElement);
+            document.getElementById('primary-color').value = rgbToHex(computed.getPropertyValue('--primary'));
+            document.getElementById('primary-text').value = rgbToHex(computed.getPropertyValue('--primary'));
+            document.getElementById('bg-color').value = rgbToHex(computed.getPropertyValue('--body-bg'));
+            document.getElementById('bg-text').value = rgbToHex(computed.getPropertyValue('--body-bg'));
+            document.getElementById('card-bg-color').value = rgbToHex(computed.getPropertyValue('--card-bg'));
+            document.getElementById('card-bg-text').value = rgbToHex(computed.getPropertyValue('--card-bg'));
+            document.getElementById('text-color').value = rgbToHex(computed.getPropertyValue('--text-primary'));
+            document.getElementById('text-text').value = rgbToHex(computed.getPropertyValue('--text-primary'));
+        }
+        
+        // Helper to convert RGB to HEX
+        function rgbToHex(rgb) {
+            if (rgb.startsWith('#')) return rgb;
+            
+            // Extract RGB values
+            const match = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*\d+\.?\d*)?\)/);
+            if (!match) return '#000000';
+            
+            const r = parseInt(match[1]);
+            const g = parseInt(match[2]);
+            const b = parseInt(match[3]);
+            
+            return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        }
+        
+        // Initialize editor values
+        updateEditorValues();
+        
+        // Color picker updates
+        document.querySelectorAll('.color-picker').forEach(picker => {
+            picker.addEventListener('input', (e) => {
+                const id = e.target.id;
+                const textId = id.replace('color', 'text');
+                document.getElementById(textId).value = e.target.value;
+                
+                // Update CSS variable in real-time
+                const varName = id.replace('-color', '').replace('-', '-');
+                document.documentElement.style.setProperty(`--${varName}`, e.target.value);
+            });
+        });
+        
+        // Text input updates
+        document.querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const id = e.target.id;
+                if (id.includes('text') && /^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                    const pickerId = id.replace('text', 'color');
+                    document.getElementById(pickerId).value = e.target.value;
+                    
+                    // Update CSS variable
+                    const varName = id.replace('-text', '').replace('-', '-');
+                    document.documentElement.style.setProperty(`--${varName}`, e.target.value);
+                }
+            });
+        });
+        
+        // Save custom theme
+        document.getElementById('save-theme').addEventListener('click', () => {
+            const themeName = document.getElementById('custom-theme-name').value || 'custom';
+            const themeNameSlug = themeName.toLowerCase().replace(/\s+/g, '-');
+            
+            // Generate CSS for the theme
+            const css = `[data-theme="${themeNameSlug}"] {\n` +
+                `    --body-bg: ${document.getElementById('bg-text').value};\n` +
+                `    --text-primary: ${document.getElementById('text-text').value};\n` +
+                `    --card-bg: ${document.getElementById('card-bg-text').value};\n` +
+                `    --primary: ${document.getElementById('primary-text').value};\n` +
+                `    /* Add more properties as needed */\n` +
+                `}`;
+            
+            // Display generated CSS
+            document.getElementById('theme-css').textContent = css;
+            
+            // Add to theme selector
+            const newThemeOption = document.createElement('div');
+            newThemeOption.className = 'theme-option';
+            newThemeOption.dataset.theme = themeNameSlug;
+            newThemeOption.style.backgroundColor = document.getElementById('bg-text').value;
+            newThemeOption.style.color = document.getElementById('text-text').value;
+            newThemeOption.innerHTML = `<i class="fas fa-star"></i><span>${themeName}</span>`;
+            
+            // Add click handler to switch to new theme
+            newThemeOption.addEventListener('click', function() {
+                document.body.setAttribute('data-theme', themeNameSlug);
+                
+                document.querySelectorAll('.theme-option').forEach(opt => {
+                    opt.classList.remove('active');
+                });
+                this.classList.add('active');
+                
+                document.querySelector('.theme-name').textContent = themeName + " Theme";
+            });
+            
+            document.querySelector('.theme-selector').appendChild(newThemeOption);
+            
+            alert(`"${themeName}" theme created! Add it to your package using the CSS above.`);
+        });
+        
+        // Copy CSS to clipboard
+        document.getElementById('copy-code').addEventListener('click', () => {
+            const textarea = document.createElement('textarea');
+            textarea.value = document.getElementById('theme-css').textContent;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            
+            const originalText = document.getElementById('copy-code').innerHTML;
+            document.getElementById('copy-code').innerHTML = '<i class="fas fa-check"></i> Copied!';
+            setTimeout(() => {
+                document.getElementById('copy-code').innerHTML = originalText;
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
