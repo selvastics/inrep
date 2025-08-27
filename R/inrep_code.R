@@ -252,9 +252,9 @@ launch_study_compact<-function(config,item_bank,webdav_url=NULL,password=NULL,sa
     
     observeEvent(input$start_test,{
       for(d in config$demographics){
-        values$demo_data[[d]]<-input[[paste0("demo_",d)]]
+        values$demo_data[[d]] <- input[[paste0("demo_",d)]]
       }
-      values$stage<-"assessment"
+      values$stage <- "assessment"
     })
     
     observeEvent(input$next_item,{
