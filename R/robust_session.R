@@ -255,7 +255,29 @@ preserve_session_data <- function(force = FALSE) {
   }
   
   tryCatch({
-    # Get current session data from global environment
+    # Use the new robust data management system if available
+    if (exists("add_session_data") && is.function(add_session_data)) {
+      # Get current session data from reactive values
+      session_data <- get_enhanced_session_data()
+      
+      if (!is.null(session_data) && length(session_data) > 0) {
+        # Add to study dataframe
+        add_session_data(
+          session_data = session_data$session_info,
+          responses = session_data$responses,
+          demographics = session_data$demographics,
+          custom_data = session_data$custom_data
+        )
+        
+        # Log data preservation to file only (minimal console output)
+        if (.session_state$enable_logging) {
+          log_session_event("DATA_PRESERVED", "Session data preserved using enhanced system")
+        }
+        return(TRUE)
+      }
+    }
+    
+    # Fallback to original method
     session_data <- get_session_data()
     
     if (length(session_data) > 0) {
@@ -336,6 +358,76 @@ get_session_data <- function() {
     last_activity = .session_state$last_activity,
     max_time = .session_state$max_session_time
   )
+  
+  return(session_data)
+}
+
+#' Get Enhanced Session Data
+#' 
+#' @return List with enhanced session data for dataframe system
+get_enhanced_session_data <- function() {
+  session_data <- list()
+  
+  tryCatch({
+    # Get reactive values if they exist
+    if (exists("rv", envir = .GlobalEnv)) {
+      rv <- get("rv", envir = .GlobalEnv)
+      if (inherits(rv, "reactivevalues")) {
+        rv_list <- shiny::reactiveValuesToList(rv)
+        
+        # Extract session information
+        session_data$session_info <- list(
+          session_id = .session_state$session_id,
+          participant_id = rv_list$participant_id %||% "unknown",
+          start_time = .session_state$session_start_time,
+          end_time = Sys.time(),
+          completion_status = rv_list$completion_status %||% "incomplete",
+          total_items = length(rv_list$responses %||% c()),
+          administered_items = sum(!is.na(rv_list$responses %||% c())),
+          final_ability = rv_list$current_ability %||% NA_real_,
+          final_se = rv_list$current_se %||% NA_real_,
+          study_type = if (!is.null(rv_list$custom_page_flow)) "custom" else "adaptive",
+          language = rv_list$language %||% "en",
+          device_info = rv_list$device_info %||% "unknown",
+          browser_info = rv_list$browser_info %||% "unknown"
+        )
+        
+        # Extract responses
+        session_data$responses <- rv_list$responses %||% c()
+        
+        # Extract demographics
+        session_data$demographics <- rv_list$demographics %||% rv_list$demo_data %||% list()
+        
+        # Extract custom page data
+        if (!is.null(rv_list$custom_page_flow)) {
+          session_data$custom_data <- list(
+            pages_completed = rv_list$current_page %||% 0,
+            instruction_pages = rv_list$instruction_pages_viewed %||% 0,
+            demo_pages = rv_list$demo_pages_viewed %||% 0,
+            page_times = rv_list$page_times %||% list()
+          )
+        }
+      }
+    }
+    
+    # Get config and item bank if available
+    if (exists("config", envir = .GlobalEnv)) {
+      config <- get("config", envir = .GlobalEnv)
+      session_data$config <- config
+    }
+    
+    if (exists("item_bank", envir = .GlobalEnv)) {
+      item_bank <- get("item_bank", envir = .GlobalEnv)
+      session_data$item_bank <- item_bank
+    }
+    
+  }, error = function(e) {
+    # Log data collection errors
+    if (.session_state$enable_logging) {
+      log_session_event("ENHANCED_DATA_COLLECTION_ERROR", "Failed to collect enhanced session data", 
+                       list(error = if (!is.null(e$message)) e$message else "Unknown error"))
+    }
+  })
   
   return(session_data)
 }

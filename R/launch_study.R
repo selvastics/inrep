@@ -1217,7 +1217,7 @@ launch_study <- function(
   session_config <- NULL
   error_config <- NULL
   
-  if (FALSE) {  # Skip for now - will be done in server
+  if (TRUE) {  # Enable robust session management
       logger("Initializing robust session management", level = "INFO")
       
       # Initialize robust session management
@@ -1295,6 +1295,34 @@ launch_study <- function(
       } else if (session_save) {
         logger("Session saving enabled (basic mode)", level = "INFO")
       }
+      
+      # Initialize data management system
+      data_config <- tryCatch({
+        if (exists("initialize_data_management") && is.function(initialize_data_management)) {
+          initialize_data_management(
+            study_key = study_key %||% config$study_key,
+            config = config,
+            item_bank = item_bank,
+            output_dir = if (!is.null(webdav_url)) tempdir() else getwd(),
+            enable_backup = TRUE
+          )
+        } else {
+          # Fallback to basic data management
+          list(
+            study_key = study_key %||% config$study_key,
+            data_file_path = file.path(tempdir(), paste0("study_data_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")),
+            session_active = TRUE
+          )
+        }
+      }, error = function(e) {
+        logger(sprintf("Failed to initialize data management system: %s", e$message), level = "WARNING")
+        # Fallback to basic data management
+        list(
+          study_key = study_key %||% config$study_key,
+          data_file_path = file.path(tempdir(), paste0("study_data_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")),
+          session_active = TRUE
+        )
+      })
       
       # Log comprehensive session initialization (with fallback)
       if (session_save && exists("log_session_event") && is.function(log_session_event)) {
@@ -2972,12 +3000,37 @@ launch_study <- function(
       if (session_save && exists("cleanup_session") && is.function(cleanup_session)) {
         tryCatch({
           logger("Session ending - cleaning up and preserving final data", level = "INFO")
+          
+          # Finalize study data before cleanup
+          if (exists("finalize_study_data") && is.function(finalize_study_data)) {
+            tryCatch({
+              finalize_study_data(list(
+                completion_status = "session_ended",
+                end_time = Sys.time()
+              ))
+            }, error = function(e) {
+              logger(sprintf("Failed to finalize study data: %s", e$message), level = "WARNING")
+            })
+          }
+          
           cleanup_session(save_final_data = TRUE)
         }, error = function(e) {
           logger(sprintf("Session cleanup failed: %s", e$message), level = "WARNING")
         })
       } else if (session_save) {
         logger("Session ending - basic cleanup", level = "INFO")
+        
+        # Finalize study data even in basic cleanup
+        if (exists("finalize_study_data") && is.function(finalize_study_data)) {
+          tryCatch({
+            finalize_study_data(list(
+              completion_status = "session_ended",
+              end_time = Sys.time()
+            ))
+          }, error = function(e) {
+            logger(sprintf("Failed to finalize study data: %s", e$message), level = "WARNING")
+          })
+        }
       }
     })
     
@@ -3936,6 +3989,17 @@ launch_study <- function(
             if (!is.null(value) && value != "") {
               rv$demo_data[[dem]] <- value
               logger(sprintf("Saved demographic %s: %s", dem, substr(as.character(value), 1, 20)))
+              
+              # Update data management system with demographics
+              if (exists("update_session_data") && is.function(update_session_data)) {
+                tryCatch({
+                  update_session_data(list(
+                    demographics = rv$demo_data
+                  ))
+                }, error = function(e) {
+                  logger(sprintf("Failed to update demographics in session data: %s", e$message), level = "WARNING")
+                })
+              }
             }
           }
         }
@@ -3954,6 +4018,19 @@ launch_study <- function(
                   # Store in responses vector at the correct position
                   rv$responses[idx] <- as.numeric(value)
                   logger(sprintf("Saved item response %d (id: %s): %s", idx, item$id %||% idx, value))
+                  
+                  # Update data management system with current response
+                  if (exists("update_session_data") && is.function(update_session_data)) {
+                    tryCatch({
+                      update_session_data(list(
+                        administered_items = sum(!is.na(rv$responses)),
+                        current_ability = rv$current_ability %||% NA_real_,
+                        current_se = rv$current_se %||% NA_real_
+                      ))
+                    }, error = function(e) {
+                      logger(sprintf("Failed to update session data: %s", e$message), level = "WARNING")
+                    })
+                  }
                 }
               }
             }
@@ -4026,6 +4103,37 @@ launch_study <- function(
         final_responses <- rv$responses[!is.na(rv$responses)]
         
         logger(sprintf("Study completed with %d responses collected", length(final_responses)))
+        
+        # Add final session data to dataframe
+        if (exists("add_session_data") && is.function(add_session_data)) {
+          tryCatch({
+            add_session_data(
+              session_data = list(
+                session_id = .session_state$session_id %||% "unknown",
+                participant_id = rv$demo_data$participant_code %||% "unknown",
+                start_time = .session_state$session_start_time %||% Sys.time(),
+                end_time = Sys.time(),
+                completion_status = "completed",
+                total_items = nrow(item_bank),
+                administered_items = length(final_responses),
+                final_ability = rv$current_ability %||% NA_real_,
+                final_se = rv$current_se %||% NA_real_,
+                study_type = "custom",
+                language = rv$language %||% "en"
+              ),
+              responses = rv$responses,
+              demographics = rv$demo_data,
+              custom_data = list(
+                pages_completed = rv$current_page %||% 0,
+                instruction_pages = 0,  # Could be tracked separately
+                demo_pages = 0,  # Could be tracked separately
+                page_times = list()  # Could be tracked separately
+              )
+            )
+          }, error = function(e) {
+            logger(sprintf("Failed to add final session data: %s", e$message), level = "WARNING")
+          })
+        }
         
         # Generate results
         if (!is.null(config$results_processor)) {
@@ -4488,6 +4596,32 @@ launch_study <- function(
           })
         }
         
+        # Add final session data to dataframe before preservation
+        if (exists("add_session_data") && is.function(add_session_data)) {
+          tryCatch({
+            add_session_data(
+              session_data = list(
+                session_id = .session_state$session_id %||% "unknown",
+                participant_id = rv$demo_data$participant_code %||% "unknown",
+                start_time = .session_state$session_start_time %||% Sys.time(),
+                end_time = Sys.time(),
+                completion_status = "completed",
+                total_items = nrow(item_bank),
+                administered_items = sum(!is.na(rv$responses)),
+                final_ability = rv$current_ability %||% NA_real_,
+                final_se = rv$current_se %||% NA_real_,
+                study_type = "adaptive",
+                language = rv$language %||% "en"
+              ),
+              responses = rv$responses,
+              demographics = rv$demo_data,
+              custom_data = NULL
+            )
+          }, error = function(e) {
+            logger(sprintf("Failed to add final session data: %s", e$message), level = "WARNING")
+          })
+        }
+        
         # Final robust data preservation
         if (session_save && exists("preserve_session_data") && is.function(preserve_session_data)) {
           tryCatch({
@@ -4554,6 +4688,32 @@ launch_study <- function(
               )
             }, error = function(e) {
               logger(sprintf("Failed to log test completion: %s", e$message), level = "WARNING")
+            })
+          }
+          
+          # Add final session data to dataframe before preservation
+          if (exists("add_session_data") && is.function(add_session_data)) {
+            tryCatch({
+              add_session_data(
+                session_data = list(
+                  session_id = .session_state$session_id %||% "unknown",
+                  participant_id = rv$demo_data$participant_code %||% "unknown",
+                  start_time = .session_state$session_start_time %||% Sys.time(),
+                  end_time = Sys.time(),
+                  completion_status = "completed",
+                  total_items = nrow(item_bank),
+                  administered_items = sum(!is.na(rv$responses)),
+                  final_ability = rv$current_ability %||% NA_real_,
+                  final_se = rv$current_se %||% NA_real_,
+                  study_type = "adaptive",
+                  language = rv$language %||% "en"
+                ),
+                responses = rv$responses,
+                demographics = rv$demo_data,
+                custom_data = NULL
+              )
+            }, error = function(e) {
+              logger(sprintf("Failed to add final session data: %s", e$message), level = "WARNING")
             })
           }
           

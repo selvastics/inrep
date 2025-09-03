@@ -1540,7 +1540,12 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels) {
     # Use cat_result if available (contains cleaned responses), otherwise use raw responses
     if (!is.null(rv$cat_result) && !is.null(rv$cat_result$responses)) {
       if ("demographics" %in% processor_args) {
-        results_content <- config$results_processor(rv$cat_result$responses, item_bank, rv$demographics)
+        # Ensure demographics is properly formatted
+        demographics <- rv$demographics %||% rv$demo_data %||% list()
+        if (is.null(demographics) || length(demographics) == 0) {
+          demographics <- list(participant_code = "unknown")
+        }
+        results_content <- config$results_processor(rv$cat_result$responses, item_bank, demographics)
       } else {
         results_content <- config$results_processor(rv$cat_result$responses, item_bank)
       }
@@ -1549,7 +1554,12 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels) {
       clean_responses <- rv$responses[!is.na(rv$responses)]
       if (length(clean_responses) > 0) {
         if ("demographics" %in% processor_args) {
-          results_content <- config$results_processor(clean_responses, item_bank, rv$demographics)
+          # Ensure demographics is properly formatted
+          demographics <- rv$demographics %||% rv$demo_data %||% list()
+          if (is.null(demographics) || length(demographics) == 0) {
+            demographics <- list(participant_code = "unknown")
+          }
+          results_content <- config$results_processor(clean_responses, item_bank, demographics)
         } else {
           results_content <- config$results_processor(clean_responses, item_bank)
         }

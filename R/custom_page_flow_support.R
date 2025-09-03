@@ -382,11 +382,17 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels) {
   
   # Check if custom results processor is defined
   if (!is.null(config$results_processor) && is.function(config$results_processor)) {
+    # Ensure demographics is properly formatted
+    demographics <- rv$demo_data %||% rv$demographics %||% list()
+    if (is.null(demographics) || length(demographics) == 0) {
+      demographics <- list(participant_code = "unknown")
+    }
+    
     # Call the custom results processor (e.g., create_hilfo_report)
     results_content <- config$results_processor(
       responses = rv$responses,
       item_bank = item_bank,
-      demographics = rv$demo_data,
+      demographics = demographics,
       session = rv
     )
   } else {

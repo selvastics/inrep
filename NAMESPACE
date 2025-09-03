@@ -39,6 +39,16 @@ export(validate_study_config)
 export(validate_response_report)
 export(validate_session)
 
+# Data Management Functions
+export(initialize_data_management)
+export(add_session_data)
+export(update_session_data)
+export(get_study_data)
+export(finalize_study_data)
+export(save_study_data)
+export(get_data_statistics)
+export(emergency_data_recovery)
+
 
 # Session Recovery Functions
 export(initialize_recovery)
