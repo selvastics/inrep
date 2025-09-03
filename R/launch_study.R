@@ -4109,9 +4109,9 @@ launch_study <- function(
           tryCatch({
             add_session_data(
               session_data = list(
-                session_id = .session_state$session_id %||% "unknown",
+                session_id = if (exists(".session_state") && !is.null(.session_state$session_id)) .session_state$session_id else "unknown",
                 participant_id = rv$demo_data$participant_code %||% "unknown",
-                start_time = .session_state$session_start_time %||% Sys.time(),
+                start_time = if (exists(".session_state") && !is.null(.session_state$session_start_time)) .session_state$session_start_time else Sys.time(),
                 end_time = Sys.time(),
                 completion_status = "completed",
                 total_items = nrow(item_bank),
@@ -4601,9 +4601,9 @@ launch_study <- function(
           tryCatch({
             add_session_data(
               session_data = list(
-                session_id = .session_state$session_id %||% "unknown",
+                session_id = if (exists(".session_state") && !is.null(.session_state$session_id)) .session_state$session_id else "unknown",
                 participant_id = rv$demo_data$participant_code %||% "unknown",
-                start_time = .session_state$session_start_time %||% Sys.time(),
+                start_time = if (exists(".session_state") && !is.null(.session_state$session_start_time)) .session_state$session_start_time else Sys.time(),
                 end_time = Sys.time(),
                 completion_status = "completed",
                 total_items = nrow(item_bank),
@@ -4696,9 +4696,9 @@ launch_study <- function(
             tryCatch({
               add_session_data(
                 session_data = list(
-                  session_id = .session_state$session_id %||% "unknown",
+                  session_id = if (exists(".session_state") && !is.null(.session_state$session_id)) .session_state$session_id else "unknown",
                   participant_id = rv$demo_data$participant_code %||% "unknown",
-                  start_time = .session_state$session_start_time %||% Sys.time(),
+                  start_time = if (exists(".session_state") && !is.null(.session_state$session_start_time)) .session_state$session_start_time else Sys.time(),
                   end_time = Sys.time(),
                   completion_status = "completed",
                   total_items = nrow(item_bank),
