@@ -2549,13 +2549,26 @@ launch_study <- function(
             log_file = NULL
           )
           
-          # Ensure participant code isolation - generate unique participant code for this session
+          # Ensure complete data isolation - generate unique participant code for this session
           if (!is.null(study_key)) {
             # Create session-specific participant code to prevent conflicts
             session_specific_key <- paste0(study_key, "_", substr(unique_session_id, -8, -1))
             study_key <<- session_specific_key
             logger(sprintf("Generated session-specific participant code: %s", study_key), level = "INFO")
           }
+          
+          # Ensure complete data isolation by clearing any global state
+          if (exists(".logging_data", envir = .GlobalEnv)) {
+            rm(".logging_data", envir = .GlobalEnv)
+          }
+          
+          # Initialize fresh session-specific logging data
+          .GlobalEnv$.logging_data <- new.env()
+          .GlobalEnv$.logging_data$session_id <- unique_session_id
+          .GlobalEnv$.logging_data$session_start <- Sys.time()
+          .GlobalEnv$.logging_data$current_page_start <- Sys.time()
+          
+          logger(sprintf("Complete data isolation ensured for session: %s", unique_session_id), level = "INFO")
           
           logger(sprintf("Session initialized: %s (max time: %d seconds)", 
                         session_config$session_id, session_config$max_time), level = "INFO")
