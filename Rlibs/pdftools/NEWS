@@ -1,0 +1,126 @@
+3.5.0
+  - Windows: use poppler from Rtools if found
+
+3.4.1
+  - Remove some test verbosity as per CRAN requeset
+  - Update maintainer email address
+
+3.4.0
+  - Windows: update to poppler 23.08.0 + deps
+
+3.3.3
+  - Fix a bug in the version checking macro
+  - Remove CXX11 from Makevars.win
+
+3.3.2
+  - Compile with the default CXX standard (i.e. C++14 for current R)
+
+3.3.1
+  - Workaround for a bug in Rcpp
+
+3.3.0
+  - Fix some deprecated poppler APIs
+
+3.2.1
+  - MacOS: avoid linking to poppler builds which depend on 3rd party shared
+    libraries from xQuartz.
+
+3.2.0
+  - CRAN macbuilder: try to find local poppler-data via pkg-config
+  - Windows: update to poppler 22.04.0
+
+3.1.1
+  - Fix bug when pkg is compiled with -D_GLIBCXX_ASSERTIONS, e.g. Fedora.
+
+3.1.0
+  - Fix a test that could segfault with recent versions of poppler
+  - Windows / MacOS: update to poppler 22.02.0
+
+3.0.1
+  - Fix configure script to run under Solaris
+
+3.0.0
+  - Note: the poppler library 0.88 introduced changes in whitespace rendering for
+    pdf_text(). This can result in extra linebreaks or spaces in text output.
+  - Windows: update to poppler 21.04.0 and add UCRT support.
+  - MacOS: update poppler to 20.12.1.
+  - Trim \r and \f characters from pdf_text()
+
+2.3.1
+  - Minor tweaks for configure script
+  - Show poppler version during CMD check
+
+2.3
+  - pdf_text() now tries better to get all text in the page media-box.
+  - New functions pdf_ocr_text and pdf_ocr_data (wrappers for tesseract)
+
+2.2
+  - Import new qpdf package with pdf transformation tools
+  - Enable pdf_data() in poppler 0.71 now Debian has backported the encoding patch.
+  - Document new PPA for Ubuntu 16.04 and 18.04 with poppler 0.74
+
+2.1
+  - Windows / MacOS: update poppler to 0.73.0
+  - Remove code that used the 'unstable' xpdf api
+  - Use unique_ptr objects to fix memory leaks
+
+2.0
+  - Windows, MacOS: update poppler to 0.72.1 (backported UTF-8 fix)
+  - Enable pdf_data() on systems with 0.72.1 or newer
+  - Several encoding related fixes in text/metadata extraction
+  - Add a 'tibble' class to data frames for pretty printing
+
+1.8
+  - Run configure script in bash
+
+1.7
+  - Change autobrew script to avoid dependency on xQuartz
+
+1.6
+  - pdf_render_page() and pdf_convert() gain argument to control 'antialias'
+  - Small tweaks in pdf_text() for dealing with malformed pdf files
+
+1.5
+  - On Windows and MacOS we now bundle poppler-data to support non-latin text
+  - Windows: Upgrade libpoppler to 0.61.0 from rwinlib
+  - Windows: patch libpoppler bug that would cause pdf_convert() to generate corrupt files
+  - PDF rendering errors are relayed via message() instead of warning()
+
+1.4
+  - Hide symbols in supported platforms
+  - Upgrade libpoppler on Windows
+
+1.3
+  - Improve support for reading passworded and encyrpted pdf files (+ unit tests)
+  - Support direct conversion from pdf to png, jpeg, tiff (+ unit tests)
+  - Switch to Rcpp automatic symbol registration
+  - Tweak autobrew script for legacy Mavericks builds
+
+1.2
+  - Fix autobrew for OSX Mavericks
+
+1.1
+  - Extract autobrew script to separate repo
+
+1.0
+  - Add workaround for poppler landscape truncation bug (fixes #7)
+
+0.5
+  - Rebuild poppler on Windows to support PDF rendering
+
+0.4
+  - Update Homebrew URL in configure script.
+  - Fix autobrew (rename libopenjepg -> libopenjp2)
+  - Update libpoppler 0.46 for Windows
+
+0.3
+  - Update libpoppler 0.42 for Windows
+  - Use the COMPILED_BY variable on Windows to support R 3.3
+
+0.2
+  - Switch pdf_render_page to 1 based indexing
+  - Fix for red/blue channel mixup in pdf_render_page
+  - Update example to use local PDF file
+
+0.1
+  - Initial release

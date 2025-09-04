@@ -1,0 +1,17 @@
+%eq%                    Check equality of two objects
+%p%                     An infix operator for 'paste0()'
+Sys.path                Returns the path of the current program
+changed                 Identify changed values
+copy.attributes         Copy attributes between two data frames
+dir.find                Search for directories
+file.find               Search for files
+find.names              Search for names
+labels.data.frame       Get or set labels for a data frame
+roundup                 Rounds numbers up
+sort.data.frame         Sorts a data frame
+source.all              Source all programs in a directory
+spaces                  Creates a string of blank spaces
+subsc                   Converts a string to UTF-8 subscript
+supsc                   Converts a string to UTF-8 superscript
+symbol                  Gets UTF-8 symbol characters
+v                       Combine unquoted values

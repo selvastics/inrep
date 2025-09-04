@@ -21,7 +21,7 @@
 #' @details This module implements security best practices to protect assessment data
 #' and prevent common web vulnerabilities. It includes authentication, authorization,
 #' input validation, and audit logging capabilities.
-#' @name enhanced_security
+#' @rdname enhanced_features
 #' @docType data
 NULL
 
@@ -512,7 +512,7 @@ clear_security_state <- function() {
 #' @details This module implements performance optimizations to handle large-scale
 #' assessments with thousands of concurrent users and large item banks. It includes
 #' caching strategies, memory management, and efficient data processing.
-#' @name enhanced_performance
+#' @rdname enhanced_features
 #' @docType data
 NULL
 
@@ -1076,7 +1076,7 @@ clear_performance_state <- function() {
 #' @details This module implements session management to prevent data loss
 #' during assessment administration. It includes automatic saving, browser storage
 #' integration, and recovery mechanisms for interrupted sessions.
-#' @name enhanced_session_recovery
+#' @rdname enhanced_features
 #' @docType data
 NULL
 
@@ -1518,7 +1518,7 @@ get_recovery_status <- function() {
 #' 
 #' Handles all edge cases and validates study configurations to prevent errors
 #' 
-#' @name enhanced_config_handler
+#' @rdname enhanced_features
 #' @docType data
 NULL
 
@@ -2632,7 +2632,7 @@ validate_response_report <- function(original_responses, report_data, config) {
 #' 
 #' Provides responsive, mobile-optimized UI with improved themes and layouts
 #' 
-#' @name enhanced_responsive_ui
+#' @rdname enhanced_features
 #' @docType data
 NULL
 

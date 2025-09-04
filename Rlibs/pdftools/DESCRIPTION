@@ -1,0 +1,29 @@
+Package: pdftools
+Type: Package
+Title: Text Extraction, Rendering and Converting of PDF Documents
+Version: 3.5.0
+Authors@R: person("Jeroen", "Ooms", role = c("aut", "cre"), email = "jeroenooms@gmail.com",
+      comment = c(ORCID = "0000-0002-4035-0289"))
+Description: Utilities based on 'libpoppler' <https://poppler.freedesktop.org> for extracting
+    text, fonts, attachments and metadata from a PDF file. Also supports high quality rendering
+    of PDF documents into PNG, JPEG, TIFF format, or into raw bitmap vectors for further 
+    processing in R.
+License: MIT + file LICENSE
+URL: https://ropensci.r-universe.dev/pdftools,
+        https://docs.ropensci.org/pdftools/
+BugReports: https://github.com/ropensci/pdftools/issues
+SystemRequirements: Poppler C++ API: libpoppler-cpp-dev (deb) or
+        poppler-cpp-devel (rpm), and poppler-data (rpm/deb) package.
+Encoding: UTF-8
+Imports: Rcpp (>= 0.12.12), qpdf
+LinkingTo: Rcpp
+Suggests: png, webp, tesseract, testthat
+RoxygenNote: 7.2.3
+NeedsCompilation: yes
+Packaged: 2025-03-03 13:55:55 UTC; jeroen
+Author: Jeroen Ooms [aut, cre] (<https://orcid.org/0000-0002-4035-0289>)
+Maintainer: Jeroen Ooms <jeroenooms@gmail.com>
+Repository: CRAN
+Date/Publication: 2025-03-03 15:10:05 UTC
+Built: R 4.5.1; x86_64-w64-mingw32; 2025-09-02 09:29:41 UTC; windows
+Archs: x64

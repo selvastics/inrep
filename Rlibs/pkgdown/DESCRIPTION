@@ -1,0 +1,56 @@
+Package: pkgdown
+Title: Make Static HTML Documentation for a Package
+Version: 2.1.3
+Authors@R: c(
+    person("Hadley", "Wickham", , "hadley@posit.co", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0003-4757-117X")),
+    person("Jay", "Hesselberth", role = "aut",
+           comment = c(ORCID = "0000-0002-6299-179X")),
+    person("Maëlle", "Salmon", role = "aut",
+           comment = c(ORCID = "0000-0002-2815-0399")),
+    person("Olivier", "Roy", role = "aut"),
+    person("Salim", "Brüggemann", role = "aut",
+           comment = c(ORCID = "0000-0002-5329-5987")),
+    person("Posit Software, PBC", role = c("cph", "fnd"),
+           comment = c(ROR = "03wc8by49"))
+  )
+Description: Generate an attractive and useful website from a source
+    package.  'pkgdown' converts your documentation, vignettes, 'README',
+    and more to 'HTML' making it easy to share information about your
+    package online.
+License: MIT + file LICENSE
+URL: https://pkgdown.r-lib.org/, https://github.com/r-lib/pkgdown
+BugReports: https://github.com/r-lib/pkgdown/issues
+Depends: R (>= 4.0.0)
+Imports: bslib (>= 0.5.1), callr (>= 3.7.3), cli (>= 3.6.1), desc (>=
+        1.4.0), downlit (>= 0.4.4), fontawesome, fs (>= 1.4.0), httr2
+        (>= 1.0.2), jsonlite, openssl, purrr (>= 1.0.0), ragg (>=
+        1.4.0), rlang (>= 1.1.4), rmarkdown (>= 2.27), tibble, whisker,
+        withr (>= 2.4.3), xml2 (>= 1.3.1), yaml
+Suggests: covr, diffviewer, evaluate (>= 0.24.0), gert, gt, htmltools,
+        htmlwidgets, knitr (>= 1.50), lifecycle, magick, methods,
+        pkgload (>= 1.0.2), quarto, rsconnect, rstudioapi, rticles,
+        sass, testthat (>= 3.1.3), tools
+VignetteBuilder: knitr, quarto
+Config/Needs/website: usethis, servr
+Config/potools/style: explicit
+Config/testthat/edition: 3
+Config/testthat/parallel: true
+Config/testthat/start-first: build-article, build-quarto-article,
+        build-reference
+Encoding: UTF-8
+SystemRequirements: pandoc
+RoxygenNote: 7.3.2
+NeedsCompilation: no
+Packaged: 2025-05-16 20:22:22 UTC; hadleywickham
+Author: Hadley Wickham [aut, cre] (ORCID:
+    <https://orcid.org/0000-0003-4757-117X>),
+  Jay Hesselberth [aut] (ORCID: <https://orcid.org/0000-0002-6299-179X>),
+  Maëlle Salmon [aut] (ORCID: <https://orcid.org/0000-0002-2815-0399>),
+  Olivier Roy [aut],
+  Salim Brüggemann [aut] (ORCID: <https://orcid.org/0000-0002-5329-5987>),
+  Posit Software, PBC [cph, fnd] (ROR: <https://ror.org/03wc8by49>)
+Maintainer: Hadley Wickham <hadley@posit.co>
+Repository: CRAN
+Date/Publication: 2025-05-25 00:30:01 UTC
+Built: R 4.5.1; ; 2025-09-02 09:57:29 UTC; windows

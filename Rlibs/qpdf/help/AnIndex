@@ -1,0 +1,8 @@
+pdf_combine	qpdf
+pdf_compress	qpdf
+pdf_length	qpdf
+pdf_overlay_stamp	qpdf
+pdf_rotate_pages	qpdf
+pdf_split	qpdf
+pdf_subset	qpdf
+qpdf	qpdf
