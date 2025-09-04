@@ -3744,6 +3744,11 @@ launch_study <- function(
                   # Move to next page immediately - CSS handles the transition
           rv$current_page <- rv$current_page + 1
           logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
+          
+          # Scroll to top of page when navigating to next page
+          if (requireNamespace("shinyjs", quietly = TRUE)) {
+            shinyjs::runjs("window.scrollTo(0, 0);")
+          }
       }
     })
     
@@ -3755,6 +3760,11 @@ launch_study <- function(
                   # Move to previous page immediately - CSS handles the transition
           rv$current_page <- rv$current_page - 1
           logger(sprintf("Moving back to page %d of %d", rv$current_page, rv$total_pages))
+          
+          # Scroll to top of page when navigating to previous page
+          if (requireNamespace("shinyjs", quietly = TRUE)) {
+            shinyjs::runjs("window.scrollTo(0, 0);")
+          }
       }
     })
     
@@ -3822,6 +3832,11 @@ launch_study <- function(
           # Move to last page (results)
           rv$current_page <- length(config$custom_page_flow)
           rv$stage <- "custom_page_flow"  # Stay in custom flow to show results page
+          
+          # Scroll to top of page when showing results
+          if (requireNamespace("shinyjs", quietly = TRUE)) {
+            shinyjs::runjs("window.scrollTo(0, 0);")
+          }
         }
         
         logger("Study completed via custom page flow")
@@ -3927,6 +3942,11 @@ launch_study <- function(
       
       rv$stage <- "assessment"  # Fixed: was "test", now "assessment"
       rv$start_time <- base::Sys.time()
+      
+      # Scroll to top of page when starting assessment
+      if (requireNamespace("shinyjs", quietly = TRUE)) {
+        shinyjs::runjs("window.scrollTo(0, 0);")
+      }
       
       # Initialize item selection for assessment stage
       if (!config$adaptive) {
@@ -4318,6 +4338,11 @@ launch_study <- function(
           rv$stage = "results"
           logger("No more items available, proceeding to results")
           
+          # Scroll to top of page when showing results
+          if (requireNamespace("shinyjs", quietly = TRUE)) {
+            shinyjs::runjs("window.scrollTo(0, 0);")
+          }
+          
           # Log test completion
           if (session_save && exists("log_session_event") && is.function(log_session_event)) {
             tryCatch({
@@ -4386,6 +4411,11 @@ launch_study <- function(
         rv$error_message <- NULL
         rv$stage <- "assessment"
         
+        # Scroll to top of page when recovering from error
+        if (requireNamespace("shinyjs", quietly = TRUE)) {
+          shinyjs::runjs("window.scrollTo(0, 0);")
+        }
+        
         # Ensure we have a current item
         if (is.null(rv$current_item)) {
           remaining_items <- setdiff(1:nrow(item_bank), rv$administered)
@@ -4441,6 +4471,11 @@ launch_study <- function(
       rv$error_message <- NULL
       rv$stage <- "assessment"
       
+      # Scroll to top of page when auto-recovering from error
+      if (requireNamespace("shinyjs", quietly = TRUE)) {
+        shinyjs::runjs("window.scrollTo(0, 0);")
+      }
+      
       # Ensure we have a current item
       if (is.null(rv$current_item)) {
         remaining_items <- setdiff(1:nrow(item_bank), rv$administered)
@@ -4484,6 +4519,11 @@ launch_study <- function(
         rv$stage <- "assessment"  # Fixed: was "test", now "assessment"
         rv$error_message <- NULL
         logger("Fallback error recovery - returning to assessment", level = "INFO")
+        
+        # Scroll to top of page when fallback recovering from error
+        if (requireNamespace("shinyjs", quietly = TRUE)) {
+          shinyjs::runjs("window.scrollTo(0, 0);")
+        }
       }
     })
     
@@ -4507,6 +4547,11 @@ launch_study <- function(
           logger("Automatic error recovery - continuing assessment", level = "INFO")
           rv$stage <- "assessment"
           rv$error_message <- NULL
+          
+          # Scroll to top of page when automatically recovering from error
+          if (requireNamespace("shinyjs", quietly = TRUE)) {
+            shinyjs::runjs("window.scrollTo(0, 0);")
+          }
           
           # Ensure we have a current item
           if (is.null(rv$current_item)) {
@@ -4559,6 +4604,11 @@ launch_study <- function(
       rv$stage = "demographics"
       rv$current_ability <- config$theta_prior[1]
       rv$current_se <- config$theta_prior[2]
+      
+      # Scroll to top of page when restarting
+      if (requireNamespace("shinyjs", quietly = TRUE)) {
+        shinyjs::runjs("window.scrollTo(0, 0);")
+      }
       rv$administered <- base::c()
       rv$responses = base::c()
       rv$response_times = base::c()

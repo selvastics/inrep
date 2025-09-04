@@ -93,12 +93,22 @@ launch_study_fast <- function(config, item_bank,
         return()
       }
       rv$current_page <- 2
+      
+      # Scroll to top of page when starting the study
+      if (requireNamespace("shinyjs", quietly = TRUE)) {
+        shinyjs::runjs("window.scrollTo(0, 0);")
+      }
     })
     
     # Handle navigation
     observeEvent(input$next_page, {
       save_current_page_data(rv, input)
       rv$current_page <- rv$current_page + 1
+      
+      # Scroll to top of page when navigating to next page
+      if (requireNamespace("shinyjs", quietly = TRUE)) {
+        shinyjs::runjs("window.scrollTo(0, 0);")
+      }
     })
     
     # Results page with downloads
