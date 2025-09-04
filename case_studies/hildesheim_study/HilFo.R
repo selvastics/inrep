@@ -1132,7 +1132,8 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                       label = "Adaptive Items", size = 4, color = "gray40") +
     # Scales
     ggplot2::scale_x_continuous(breaks = 1:10, labels = 1:10) +
-    ggplot2::scale_color_manual(values = c("Fixed" = "#e8041c", "Adaptive" = "#4ecdc4")) +
+    ggplot2::scale_color_manual(values = c("Fixed" = "#e8041c", "Adaptive" = "#4ecdc4"), 
+                                breaks = c("Fixed", "Adaptive")) +
     # Theme
     ggplot2::theme_minimal(base_size = 14) +
     ggplot2::theme(
