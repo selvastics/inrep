@@ -486,9 +486,8 @@ custom_page_flow <- list(
       '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
       # Language switcher in top right corner (uses global toggle function)
       '<div style="position: absolute; top: 10px; right: 10px;">',
-      '<button type="button" id="lang_switch" onclick="window.toggleLanguage()" style="',
-      'background: white; border: 2px solid #e8041c; color: #e8041c; ',
-      'padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">',
+      '<button type="button" id="lang_switch" class="btn-primary" onclick="window.toggleLanguage()" style="',
+      'background: white; color: #e8041c; border: 2px solid #e8041c;">',
       '<span id="lang_switch_text">English Version</span></button>',
       '</div>',
       # German content (default)
@@ -1493,9 +1492,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     '<div style="display: flex; gap: 10px;">',
     
     # PDF Download Button - Direct download, not print
-    '<button style="background: #e8041c; color: white; ',
-    'padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; ',
-    'font-size: 14px; margin-right: 10px;" onclick="',
+    '<button class="btn-primary" style="margin-right: 10px;" onclick="',
     "(function(){",
     "try {",
     # Create a comprehensive text version for PDF
@@ -1533,9 +1530,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     '</button>',
     
     # CSV Download Button with working inline JavaScript
-    '<button style="background: #28a745; color: white; ',
-    'padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; ',
-    'font-size: 14px;" onclick="',
+    '<button class="btn-success" onclick="',
     "(function(){",
     "try {",
     "var csv = 'Dimension;Score\\n';",
@@ -2095,249 +2090,299 @@ monitor_adaptive <- function(session_data) {
 # Complete JavaScript solution for FULL APP translation and radio deselection
 custom_js_enhanced <- '
 <style>
-/* Minimalistic Hildesheim theme with UMA-style hover effects */
+/* Original inrep styling with Hildesheim theme colors */
 
-/* Fixed language button - Clean minimalistic design */
+/* Fixed language button - Original inrep style */
 #language-toggle-btn {
   position: fixed !important;
   top: 10px !important;
   right: 10px !important;
   z-index: 9999 !important;
   background: white !important;
-  border: 1px solid #e8041c !important;
+  border: 2px solid #e8041c !important;
   color: #e8041c !important;
   padding: 8px 16px !important;
   border-radius: 4px !important;
   cursor: pointer !important;
   font-size: 14px !important;
-  font-weight: 500 !important;
-  transition: all 0.2s ease !important;
+  font-weight: bold !important;
+  transition: all 0.3s ease !important;
 }
 #language-toggle-btn:hover {
   background: #e8041c !important;
   color: white !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(232, 4, 28, 0.3) !important;
+}
+
+/* Original inrep button styling */
+.btn-klee {
+  background-color: #e8041c !important;
+  color: white !important;
+  border: none !important;
+  padding: 12px 24px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  transition: background-color 0.2s !important;
+  text-decoration: none !important;
+  display: inline-block !important;
+  text-align: center !important;
+}
+
+.btn-klee:hover {
+  background-color: #c7031f !important;
   transform: translateY(-1px) !important;
   box-shadow: 0 2px 8px rgba(232, 4, 28, 0.2) !important;
 }
 
-/* Radio buttons - Clean minimalistic design with subtle hover effects */
+/* Override Bootstrap button colors for Hildesheim theme */
+.btn-primary {
+  background-color: #e8041c !important;
+  border-color: #e8041c !important;
+  color: white !important;
+  padding: 12px 24px !important;
+  border-radius: 6px !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-primary:hover {
+  background-color: #c7031f !important;
+  border-color: #c7031f !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(232, 4, 28, 0.2) !important;
+}
+
+.btn-success {
+  background-color: #28a745 !important;
+  border-color: #28a745 !important;
+  color: white !important;
+  padding: 12px 24px !important;
+  border-radius: 6px !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-success:hover {
+  background-color: #218838 !important;
+  border-color: #218838 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2) !important;
+}
+
+.btn-secondary {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+  color: white !important;
+  padding: 12px 24px !important;
+  border-radius: 6px !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Radio buttons - Original inrep style with Hildesheim colors */
 .shiny-input-radiogroup .shiny-options-group {
   display: flex !important;
   flex-wrap: wrap !important;
-  gap: 8px !important;
+  gap: 12px !important;
   justify-content: center !important;
-  margin: 20px 0 !important;
+  margin: 25px 0 !important;
 }
 
 .shiny-options-group label {
   display: flex !important;
   align-items: center !important;
-  padding: 10px 16px !important;
-  margin: 2px !important;
-  border: 1px solid #ddd !important;
-  border-radius: 6px !important;
+  padding: 12px 20px !important;
+  margin: 4px !important;
+  border: 2px solid #e0e0e0 !important;
+  border-radius: 8px !important;
   background: white !important;
   cursor: pointer !important;
-  transition: all 0.2s ease !important;
+  transition: all 0.3s ease !important;
   font-size: 14px !important;
-  font-weight: 400 !important;
-  min-width: 100px !important;
+  font-weight: 500 !important;
+  min-width: 120px !important;
   justify-content: center !important;
   text-align: center !important;
+  position: relative !important;
+  overflow: hidden !important;
 }
 
 .shiny-options-group label:hover {
   border-color: #e8041c !important;
-  background: #fff8f8 !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 2px 8px rgba(232, 4, 28, 0.1) !important;
+  background: linear-gradient(135deg, #fff3f4 0%, #ffe6e8 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(232, 4, 28, 0.15) !important;
 }
 
 .shiny-options-group input[type="radio"]:checked + label,
 .shiny-options-group label:has(input[type="radio"]:checked) {
   border-color: #e8041c !important;
-  background: #e8041c !important;
+  background: linear-gradient(135deg, #e8041c 0%, #c7031f 100%) !important;
   color: white !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 2px 8px rgba(232, 4, 28, 0.2) !important;
+  box-shadow: 0 3px 8px rgba(232, 4, 28, 0.3) !important;
 }
 
 .shiny-options-group input[type="radio"] {
-  display: none !important;
+  margin-right: 8px !important;
+  transform: scale(1.2) !important;
+  accent-color: #e8041c !important;
 }
 
-/* Checkboxes - Same clean design */
+/* Checkbox styling with Hildesheim theme */
 .shiny-input-checkboxgroup .shiny-options-group {
   display: flex !important;
   flex-wrap: wrap !important;
-  gap: 8px !important;
+  gap: 12px !important;
   justify-content: center !important;
-  margin: 20px 0 !important;
+  margin: 25px 0 !important;
 }
 
 .shiny-input-checkboxgroup .shiny-options-group label {
   display: flex !important;
   align-items: center !important;
-  padding: 10px 16px !important;
-  margin: 2px !important;
-  border: 1px solid #ddd !important;
-  border-radius: 6px !important;
+  padding: 12px 20px !important;
+  margin: 4px !important;
+  border: 2px solid #e0e0e0 !important;
+  border-radius: 8px !important;
   background: white !important;
   cursor: pointer !important;
-  transition: all 0.2s ease !important;
+  transition: all 0.3s ease !important;
   font-size: 14px !important;
-  font-weight: 400 !important;
-  min-width: 100px !important;
+  font-weight: 500 !important;
+  min-width: 120px !important;
   justify-content: center !important;
   text-align: center !important;
 }
 
 .shiny-input-checkboxgroup .shiny-options-group label:hover {
   border-color: #e8041c !important;
-  background: #fff8f8 !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 2px 8px rgba(232, 4, 28, 0.1) !important;
+  background: #fff3f4 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(232, 4, 28, 0.15) !important;
 }
 
-.shiny-input-checkboxgroup .shiny-options-group input[type="checkbox"]:checked + label,
-.shiny-input-checkboxgroup .shiny-options-group label:has(input[type="checkbox"]:checked) {
+.shiny-input-checkboxgroup input[type="checkbox"]:checked + label,
+.shiny-input-checkboxgroup label:has(input[type="checkbox"]:checked) {
   border-color: #e8041c !important;
-  background: #e8041c !important;
+  background: linear-gradient(135deg, #e8041c 0%, #c7031f 100%) !important;
   color: white !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 2px 8px rgba(232, 4, 28, 0.2) !important;
+  box-shadow: 0 3px 8px rgba(232, 4, 28, 0.3) !important;
 }
 
-.shiny-input-checkboxgroup .shiny-options-group input[type="checkbox"] {
-  display: none !important;
-}
-
-/* Select dropdowns - Clean minimalistic design */
+/* Select dropdown styling */
 .shiny-input-select {
+  border: 2px solid #e0e0e0 !important;
+  border-radius: 8px !important;
+  padding: 12px !important;
+  font-size: 14px !important;
+  transition: all 0.3s ease !important;
   margin: 20px 0 !important;
 }
 
 .shiny-input-select select {
   width: 100% !important;
-  padding: 10px 12px !important;
-  border: 1px solid #ddd !important;
-  border-radius: 6px !important;
+  padding: 12px 16px !important;
+  border: none !important;
   background: white !important;
   font-size: 14px !important;
-  transition: all 0.2s ease !important;
-  cursor: pointer !important;
+  border-radius: 6px !important;
 }
 
-.shiny-input-select select:hover {
+.shiny-input-select:focus-within {
   border-color: #e8041c !important;
-  background: #fff8f8 !important;
-  box-shadow: 0 1px 4px rgba(232, 4, 28, 0.1) !important;
+  box-shadow: 0 0 0 3px rgba(232, 4, 28, 0.1) !important;
 }
 
-.shiny-input-select select:focus {
-  border-color: #e8041c !important;
-  outline: none !important;
-  box-shadow: 0 0 0 2px rgba(232, 4, 28, 0.1) !important;
-}
-
-/* Text inputs - Clean minimalistic design */
+/* Text input styling */
 .shiny-input-text {
+  border: 2px solid #e0e0e0 !important;
+  border-radius: 8px !important;
+  padding: 12px !important;
+  font-size: 14px !important;
+  transition: all 0.3s ease !important;
   margin: 20px 0 !important;
 }
 
 .shiny-input-text input {
   width: 100% !important;
-  padding: 10px 12px !important;
-  border: 1px solid #ddd !important;
-  border-radius: 6px !important;
+  padding: 12px 16px !important;
+  border: none !important;
   background: white !important;
   font-size: 14px !important;
-  transition: all 0.2s ease !important;
-}
-
-.shiny-input-text input:hover {
-  border-color: #e8041c !important;
-  background: #fff8f8 !important;
-  box-shadow: 0 1px 4px rgba(232, 4, 28, 0.1) !important;
-}
-
-.shiny-input-text input:focus {
-  border-color: #e8041c !important;
-  outline: none !important;
-  box-shadow: 0 0 0 2px rgba(232, 4, 28, 0.1) !important;
-}
-
-/* Buttons - Clean minimalistic design with subtle hover effects */
-.btn, button {
-  padding: 10px 20px !important;
-  border: 1px solid #e8041c !important;
   border-radius: 6px !important;
-  background: white !important;
-  color: #e8041c !important;
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
-  text-decoration: none !important;
-  display: inline-block !important;
-  text-align: center !important;
 }
 
-.btn:hover, button:hover {
-  background: #e8041c !important;
-  color: white !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 2px 8px rgba(232, 4, 28, 0.2) !important;
+.shiny-input-text:focus-within {
+  border-color: #e8041c !important;
+  box-shadow: 0 0 0 3px rgba(232, 4, 28, 0.1) !important;
 }
 
-.btn:active, button:active {
-  transform: translateY(0) !important;
-  box-shadow: 0 1px 4px rgba(232, 4, 28, 0.3) !important;
-}
-
-/* Progress bar - Clean minimalistic design */
-.progress {
-  height: 6px !important;
-  background: #f0f0f0 !important;
-  border-radius: 3px !important;
-  overflow: hidden !important;
-  margin: 20px 0 !important;
-}
-
+/* Progress bar styling */
 .progress-bar {
-  background: #e8041c !important;
+  background: linear-gradient(90deg, #e8041c 0%, #c7031f 100%) !important;
+  border-radius: 4px !important;
   transition: width 0.3s ease !important;
-  height: 100% !important;
 }
 
-/* Assessment card - Clean minimalistic design */
+/* Card styling for better visual hierarchy */
 .assessment-card {
   background: white !important;
-  border: 1px solid #e0e0e0 !important;
-  border-radius: 8px !important;
-  padding: 25px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  padding: 30px !important;
   margin: 20px 0 !important;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.05) !important;
-  transition: all 0.2s ease !important;
+  border: 1px solid #f0f0f0 !important;
+  transition: all 0.3s ease !important;
 }
 
 .assessment-card:hover {
-  border-color: #e8041c !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 2px 12px rgba(232, 4, 28, 0.08) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-2px) !important;
 }
 
-/* Responsive design */
+/* Navigation buttons */
+.nav-buttons {
+  margin-top: 30px !important;
+  text-align: center !important;
+}
+
+.nav-buttons button {
+  margin: 0 10px !important;
+  padding: 12px 24px !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Responsive design for mobile */
 @media (max-width: 768px) {
+  .shiny-options-group {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  
   .shiny-options-group label {
-    min-width: 80px !important;
-    padding: 8px 12px !important;
-    font-size: 13px !important;
+    min-width: auto !important;
+    width: 100% !important;
+    margin: 2px 0 !important;
   }
-  .btn, button {
-    padding: 8px 16px !important;
-    font-size: 13px !important;
+  
+  .btn-klee, .btn-primary, .btn-success, .btn-secondary {
+    width: 100% !important;
+    margin: 8px 0 !important;
+    padding: 12px 20px !important;
+    font-size: 16px !important;
   }
+  
   .assessment-card {
     padding: 20px !important;
     margin: 15px 0 !important;
