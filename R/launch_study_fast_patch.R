@@ -95,15 +95,13 @@ launch_study_fast <- function(config, item_bank,
       rv$current_page <- 2
       
       # Initialize comprehensive dataset for fast patch
-      if (exists("initialize_comprehensive_dataset")) {
-        tryCatch({
-          comprehensive_dataset <- initialize_comprehensive_dataset(config, item_bank, config$study_key %||% "fast_patch")
-          rv$comprehensive_dataset <- comprehensive_dataset
-          logger("Comprehensive dataset initialized for fast patch", level = "INFO")
-        }, error = function(e) {
-          logger(sprintf("Failed to initialize comprehensive dataset for fast patch: %s", e$message), level = "WARNING")
-        })
-      }
+      tryCatch({
+        comprehensive_dataset <- inrep:::initialize_comprehensive_dataset(config, item_bank, config$study_key %||% "fast_patch")
+        rv$comprehensive_dataset <- comprehensive_dataset
+        logger("Comprehensive dataset initialized for fast patch", level = "INFO")
+      }, error = function(e) {
+        logger(sprintf("Failed to initialize comprehensive dataset for fast patch: %s", e$message), level = "WARNING")
+      })
       
       # Scroll to top of page when starting the study
       if (requireNamespace("shinyjs", quietly = TRUE)) {
@@ -127,9 +125,9 @@ launch_study_fast <- function(config, item_bank,
         }
         
         # Update comprehensive dataset
-        if (exists("update_comprehensive_dataset") && length(page_data) > 0) {
+        if (length(page_data) > 0) {
           tryCatch({
-            update_comprehensive_dataset("demographics", page_data, stage = "fast_patch", current_page = rv$current_page)
+            inrep:::update_comprehensive_dataset("demographics", page_data, stage = "fast_patch", current_page = rv$current_page)
             logger("Updated comprehensive dataset with fast patch demographic data", level = "DEBUG")
           }, error = function(e) {
             logger(sprintf("Failed to update comprehensive dataset with fast patch demographics: %s", e$message), level = "WARNING")
