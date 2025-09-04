@@ -85,12 +85,12 @@ all_items_de <- data.frame(
     "Statistik_gutfolgen", "Statistik_selbstwirksam"
   ),
   Question = c(
-    # Programming Anxiety (German) - NEW
-    "Wie sicher fühlen Sie sich, einen Fehler in Ihrem Code ohne Hilfe zu beheben?",
-    "Fühlen Sie sich überfordert, wenn Sie mit einem neuen Programmierprojekt beginnen?",
-    "Ich mache mir Sorgen, dass meine Programmierkenntnisse für komplexere Aufgaben nicht ausreichen.",
-    "Beim Lesen von Dokumentation fühle ich mich oft verloren oder verwirrt.",
-    "Das Debuggen von Code macht mich nervös, besonders wenn ich den Fehler nicht sofort finde.",
+    # Programming Anxiety (German) - NEW - First 5 items suitable for all experience levels
+    "Ich fühle mich unsicher, wenn ich programmieren soll.",
+    "Der Gedanke, programmieren zu lernen, macht mich nervös.",
+    "Ich habe Angst, beim Programmieren Fehler zu machen.",
+    "Ich fühle mich überfordert, wenn ich an Programmieraufgaben denke.",
+    "Ich bin besorgt, dass ich nicht gut genug programmieren kann.",
     "Ich vermeide es, neue Programmiersprachen zu nutzen, weil ich Angst habe, Fehler zu machen.",
     "In Gruppencodier-Sitzungen bin ich nervös, dass meine Beiträge nicht geschätzt werden.",
     "Ich habe Sorge, Programmieraufgaben nicht rechtzeitig aufgrund fehlender Fähigkeiten abschließen zu können.",
@@ -148,12 +148,12 @@ all_items_de <- data.frame(
     "Ich bin in der Lage, Statistik zu erlernen."
   ),
   Question_EN = c(
-    # Programming Anxiety (English) - NEW
-    "How confident are you in your ability to fix an error in your code without help?",
-    "Do you feel overwhelmed when starting a new programming project?",
-    "I worry that my programming skills are not good enough for more complex tasks.",
-    "When reading documentation, I often feel lost or confused.",
-    "Debugging code makes me anxious, especially when I cannot immediately spot the issue.",
+    # Programming Anxiety (English) - NEW - First 5 items suitable for all experience levels
+    "I feel uncertain when I have to program.",
+    "The thought of learning to program makes me nervous.",
+    "I am afraid of making mistakes when programming.",
+    "I feel overwhelmed when I think about programming tasks.",
+    "I am worried that I am not good enough at programming.",
     "I avoid using new programming languages because I am afraid of making mistakes.",
     "During group coding sessions, I am nervous that my contributions will not be valued.",
     "I worry that I will be unable to finish a coding assignment on time due to lack of skills.",
