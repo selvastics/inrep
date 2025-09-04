@@ -126,10 +126,10 @@ custom_page_flow <- list(
     )
   ),
   
-  # Page 2: Demographics Page with Code Input
+  # Page 2: Custom Code Input Page with Demographics Storage
   list(
     id = "page2",
-    type = "demographics",
+    type = "custom",
     title = "",
     content = paste0(
       '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
@@ -145,7 +145,58 @@ custom_page_flow <- list(
       '</div>',
       '</div>'
     ),
-    demographics = c("Teilnahme_Code")
+    render_function = function(input, output, session, rv) {
+      # Custom render function for page 2 - show code instructions and input field
+      output$page_content <- renderUI({
+        shiny::div(
+          class = "assessment-card",
+          style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
+          shiny::h3("Teilnahme-Code", class = "card-header"),
+          shiny::div(
+            style = "padding: 20px; font-size: 16px; line-height: 1.8;",
+            shiny::div(
+              style = "background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;",
+              shiny::p(shiny::strong("Bitte erstelle deinen Code nach folgender Anleitung:")),
+              shiny::tags$ul(
+                style = "list-style-type: none; padding-left: 0;",
+                shiny::tags$li(style = "margin: 10px 0;", "Ersten Buchstaben des Vornamens deiner Mutter (z.B. Karla = K)"),
+                shiny::tags$li(style = "margin: 10px 0;", "Ersten Buchstaben des Vornamens deines Vaters (z.B. Yusuf = Y)"),
+                shiny::tags$li(style = "margin: 10px 0;", "Geburtsmonat (z.B. September = 09)")
+              ),
+              shiny::p(
+                style = "margin-top: 20px; font-weight: bold; color: #3498db;",
+                "Es entsteht ein Code = KY09"
+              )
+            ),
+            shiny::div(
+              style = "margin: 20px 0;",
+              shiny::tags$label(
+                `for` = "demo_Teilnahme_Code",
+                style = "display: block; margin-bottom: 10px; font-weight: bold;",
+                "Bitte geben Sie Ihren persönlichen Code ein:"
+              ),
+              shiny::tags$input(
+                type = "text",
+                id = "demo_Teilnahme_Code",
+                name = "demo_Teilnahme_Code",
+                placeholder = "z.B. KY09",
+                style = "width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 4px; font-size: 16px;"
+              )
+            )
+          )
+        )
+      })
+    },
+    completion_handler = function(input, rv) {
+      # Store the participant code in multiple places to ensure it's available
+      if (!is.null(input$demo_Teilnahme_Code) && !is.null(rv)) {
+        rv$demo_data <- list(Teilnahme_Code = input$demo_Teilnahme_Code)
+        rv$demo_Teilnahme_Code <- input$demo_Teilnahme_Code
+        rv$participant_code <- input$demo_Teilnahme_Code
+        message("Saved demographic Teilnahme_Code: ", input$demo_Teilnahme_Code)
+        message("Stored in rv$demo_data, rv$demo_Teilnahme_Code, and rv$participant_code")
+      }
+    }
   ),
   
   # Page 3: Section 1 intro and items 1-5
@@ -203,7 +254,7 @@ custom_page_flow <- list(
     id = "page8",
     type = "items",
     title = "",
-    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.\n\nIch habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…",
+    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.\n\n_Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…_",
     item_indices = 24:27,
     scale_type = "likert"
   ),
