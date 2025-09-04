@@ -1454,6 +1454,51 @@ launch_study <- function(
     
     # ULTIMATE CORNER FLASH ELIMINATION - ALL METHODS COMBINED!
     shiny::tags$head(
+      # Logging JavaScript for testing center data collection
+      if (config$log_data %||% FALSE) {
+        shiny::tags$script(shiny::HTML(paste0("
+          $(document).ready(function() {
+            // Track input changes
+            $(document).on('change input', 'input, select, textarea', function() {
+              Shiny.setInputValue('log_input_change', {
+                element_id: $(this).attr('id'),
+                element_type: this.tagName.toLowerCase(),
+                timestamp: new Date().toISOString(),
+                value: $(this).val()
+              }, {priority: 'event'});
+            });
+            
+            // Track button clicks
+            $(document).on('click', 'button, .btn, input[type=\"button\"], input[type=\"submit\"]', function() {
+              Shiny.setInputValue('log_button_click', {
+                element_id: $(this).attr('id'),
+                element_text: $(this).text().trim(),
+                timestamp: new Date().toISOString()
+              }, {priority: 'event'});
+            });
+            
+            // Track page visibility changes (tab switching)
+            document.addEventListener('visibilitychange', function() {
+              Shiny.setInputValue('log_visibility_change', {
+                hidden: document.hidden,
+                timestamp: new Date().toISOString()
+              }, {priority: 'event'});
+            });
+            
+            // Track mouse movements (throttled)
+            var mouseMoveCount = 0;
+            $(document).on('mousemove', function() {
+              mouseMoveCount++;
+              if (mouseMoveCount % 100 === 0) { // Log every 100 mouse movements
+                Shiny.setInputValue('log_mouse_activity', {
+                  count: mouseMoveCount,
+                  timestamp: new Date().toISOString()
+                }, {priority: 'event'});
+              }
+            });
+          });
+        ")))
+      },
       shiny::tags$style(shiny::HTML("
         /* NUCLEAR UNIVERSAL RESET - FORCE EVERYTHING TO CENTER */
         * {
@@ -2569,14 +2614,23 @@ launch_study <- function(
   # POPULATE rv IMMEDIATELY - No observe, no async, no delays
   rv$demo_data <- stats::setNames(base::rep(NA, base::length(config$demographics)), config$demographics)
   
-  # Initialize comprehensive dataset system
-  tryCatch({
-    comprehensive_dataset <- inrep:::initialize_comprehensive_dataset(config, item_bank, effective_study_key)
-    rv$comprehensive_dataset <- comprehensive_dataset
-    logger("Comprehensive dataset initialized successfully", level = "INFO")
-  }, error = function(e) {
-    logger(sprintf("Failed to initialize comprehensive dataset: %s", e$message), level = "WARNING")
-  })
+      # Initialize comprehensive dataset system
+    tryCatch({
+      comprehensive_dataset <- inrep:::initialize_comprehensive_dataset(config, item_bank, effective_study_key)
+      rv$comprehensive_dataset <- comprehensive_dataset
+      logger("Comprehensive dataset initialized successfully", level = "INFO")
+      
+      # Initialize page start time for logging
+      if (config$log_data %||% FALSE) {
+        tryCatch({
+          inrep:::update_page_start_time("page_1")
+        }, error = function(e) {
+          logger(sprintf("Failed to initialize page start time: %s", e$message), level = "WARNING")
+        })
+      }
+    }, error = function(e) {
+      logger(sprintf("Failed to initialize comprehensive dataset: %s", e$message), level = "WARNING")
+    })
   rv$stage <- if (!is.null(config$custom_page_flow)) {
     "custom_page_flow"
   } else if (!is.null(config$custom_study_flow) && config$enable_custom_navigation) {
@@ -3740,6 +3794,54 @@ launch_study <- function(
       }
     )
     
+    # Logging observers for testing center data collection
+    if (config$log_data %||% FALSE) {
+      # Track input changes
+      shiny::observeEvent(input$log_input_change, {
+        tryCatch({
+          log_data <- input$log_input_change
+          current_page_id <- paste0("page_", rv$current_page)
+          inrep:::log_action("input_change", log_data, current_page_id)
+        }, error = function(e) {
+          logger(sprintf("Failed to log input change: %s", e$message), level = "WARNING")
+        })
+      }, ignoreInit = TRUE)
+      
+      # Track button clicks
+      shiny::observeEvent(input$log_button_click, {
+        tryCatch({
+          log_data <- input$log_button_click
+          current_page_id <- paste0("page_", rv$current_page)
+          inrep:::log_action("button_click", log_data, current_page_id)
+        }, error = function(e) {
+          logger(sprintf("Failed to log button click: %s", e$message), level = "WARNING")
+        })
+      }, ignoreInit = TRUE)
+      
+      # Track visibility changes (tab switching)
+      shiny::observeEvent(input$log_visibility_change, {
+        tryCatch({
+          log_data <- input$log_visibility_change
+          current_page_id <- paste0("page_", rv$current_page)
+          action_type <- if (log_data$hidden) "tab_switch_away" else "tab_switch_back"
+          inrep:::log_action(action_type, log_data, current_page_id)
+        }, error = function(e) {
+          logger(sprintf("Failed to log visibility change: %s", e$message), level = "WARNING")
+        })
+      }, ignoreInit = TRUE)
+      
+      # Track mouse activity
+      shiny::observeEvent(input$log_mouse_activity, {
+        tryCatch({
+          log_data <- input$log_mouse_activity
+          current_page_id <- paste0("page_", rv$current_page)
+          inrep:::log_action("mouse_activity", log_data, current_page_id)
+        }, error = function(e) {
+          logger(sprintf("Failed to log mouse activity: %s", e$message), level = "WARNING")
+        })
+      }, ignoreInit = TRUE)
+    }
+    
     shiny::observe({
       if (config$session_save) {
         base::tryCatch({
@@ -3866,9 +3968,30 @@ launch_study <- function(
           }
         }
         
+                  # Log page time before moving
+          if (exists("log_page_time") && exists("update_page_start_time")) {
+            tryCatch({
+              current_page_id <- paste0("page_", rv$current_page)
+              time_spent <- as.numeric(difftime(Sys.time(), .logging_data$current_page_start, units = "secs"))
+              inrep:::log_page_time(current_page_id, time_spent)
+            }, error = function(e) {
+              logger(sprintf("Failed to log page time: %s", e$message), level = "WARNING")
+            })
+          }
+          
                   # Move to next page immediately - CSS handles the transition
           rv$current_page <- rv$current_page + 1
           logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
+          
+          # Log page switch and update start time
+          if (exists("update_page_start_time")) {
+            tryCatch({
+              new_page_id <- paste0("page_", rv$current_page)
+              inrep:::update_page_start_time(new_page_id)
+            }, error = function(e) {
+              logger(sprintf("Failed to update page start time: %s", e$message), level = "WARNING")
+            })
+          }
           
           # Scroll to top of page when navigating to next page
           if (requireNamespace("shinyjs", quietly = TRUE)) {
@@ -3882,9 +4005,30 @@ launch_study <- function(
         # Clear any validation errors when going back
         output$validation_errors <- shiny::renderUI({ NULL })
         
+        # Log page time before moving back
+        if (exists("log_page_time") && exists("update_page_start_time")) {
+          tryCatch({
+            current_page_id <- paste0("page_", rv$current_page)
+            time_spent <- as.numeric(difftime(Sys.time(), .logging_data$current_page_start, units = "secs"))
+            inrep:::log_page_time(current_page_id, time_spent)
+          }, error = function(e) {
+            logger(sprintf("Failed to log page time: %s", e$message), level = "WARNING")
+          })
+        }
+        
                   # Move to previous page immediately - CSS handles the transition
           rv$current_page <- rv$current_page - 1
           logger(sprintf("Moving back to page %d of %d", rv$current_page, rv$total_pages))
+          
+          # Log page switch and update start time
+          if (exists("update_page_start_time")) {
+            tryCatch({
+              new_page_id <- paste0("page_", rv$current_page)
+              inrep:::update_page_start_time(new_page_id)
+            }, error = function(e) {
+              logger(sprintf("Failed to update page start time: %s", e$message), level = "WARNING")
+            })
+          }
           
           # Scroll to top of page when navigating to previous page
           if (requireNamespace("shinyjs", quietly = TRUE)) {
