@@ -2132,10 +2132,6 @@ launch_study <- function(
             document.getElementById('study_ui').style.visibility = 'visible';
           });
           
-          // Handle scroll-to-top messages from Shiny
-          Shiny.addCustomMessageHandler('scrollToTop', function(message) {
-            window.scrollTo(0, 0);
-          });
         });
       ")),
         shiny::tags$style(shiny::HTML("
@@ -4051,7 +4047,7 @@ launch_study <- function(
             shinyjs::runjs("window.scrollTo(0, 0);")
           }, error = function(e) {
             # Fallback: use JavaScript directly
-            session$sendCustomMessage("scrollToTop", list())
+            shinyjs::runjs("window.scrollTo(0, 0);")
           })
       }
     })
@@ -4070,7 +4066,7 @@ launch_study <- function(
             shinyjs::runjs("window.scrollTo(0, 0);")
           }, error = function(e) {
             # Fallback: use JavaScript directly
-            session$sendCustomMessage("scrollToTop", list())
+            shinyjs::runjs("window.scrollTo(0, 0);")
           })
       }
     })
