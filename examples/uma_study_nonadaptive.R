@@ -148,24 +148,43 @@ custom_page_flow <- list(
     render_function = function(input, output, session, rv) {
       # Custom render function for page 2 - show code instructions and input field
       output$page_content <- renderUI({
-        HTML(paste0(
-          '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
-          '<h3 style="color: #2c3e50;">Teilnahme-Code</h3>',
-          '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">',
-          '<p><strong>Bitte erstelle deinen Code nach folgender Anleitung:</strong></p>',
-          '<ul style="list-style-type: none; padding-left: 0;">',
-          '<li style="margin: 10px 0;">Ersten Buchstaben des Vornamens deiner Mutter (z.B. Karla = K)</li>',
-          '<li style="margin: 10px 0;">Ersten Buchstaben des Vornamens deines Vaters (z.B. Yusuf = Y)</li>',
-          '<li style="margin: 10px 0;">Geburtsmonat (z.B. September = 09)</li>',
-          '</ul>',
-          '<p style="margin-top: 20px; font-weight: bold; color: #3498db;">Es entsteht ein Code = KY09</p>',
-          '</div>',
-          '<div style="margin: 20px 0;">',
-          '<label for="demo_Teilnahme_Code" style="display: block; margin-bottom: 10px; font-weight: bold;">Bitte geben Sie Ihren persönlichen Code ein:</label>',
-          '<input type="text" id="demo_Teilnahme_Code" name="demo_Teilnahme_Code" placeholder="z.B. KY09" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 4px; font-size: 16px;">',
-          '</div>',
-          '</div>'
-        ))
+        shiny::div(
+          class = "assessment-card",
+          style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
+          shiny::h3("Teilnahme-Code", class = "card-header"),
+          shiny::div(
+            style = "padding: 20px; font-size: 16px; line-height: 1.8;",
+            shiny::div(
+              style = "background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;",
+              shiny::p(shiny::strong("Bitte erstelle deinen Code nach folgender Anleitung:")),
+              shiny::tags$ul(
+                style = "list-style-type: none; padding-left: 0;",
+                shiny::tags$li(style = "margin: 10px 0;", "Ersten Buchstaben des Vornamens deiner Mutter (z.B. Karla = K)"),
+                shiny::tags$li(style = "margin: 10px 0;", "Ersten Buchstaben des Vornamens deines Vaters (z.B. Yusuf = Y)"),
+                shiny::tags$li(style = "margin: 10px 0;", "Geburtsmonat (z.B. September = 09)")
+              ),
+              shiny::p(
+                style = "margin-top: 20px; font-weight: bold; color: #3498db;",
+                "Es entsteht ein Code = KY09"
+              )
+            ),
+            shiny::div(
+              style = "margin: 20px 0;",
+              shiny::tags$label(
+                `for` = "demo_Teilnahme_Code",
+                style = "display: block; margin-bottom: 10px; font-weight: bold;",
+                "Bitte geben Sie Ihren persönlichen Code ein:"
+              ),
+              shiny::tags$input(
+                type = "text",
+                id = "demo_Teilnahme_Code",
+                name = "demo_Teilnahme_Code",
+                placeholder = "z.B. KY09",
+                style = "width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 4px; font-size: 16px;"
+              )
+            )
+          )
+        )
       })
     },
     completion_handler = function(input, rv) {
