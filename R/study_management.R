@@ -1583,13 +1583,32 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
         results_content <- config$results_processor(rv$cat_result$responses, item_bank)
       }
     } else {
-      # Clean responses before passing to processor
-      clean_responses <- rv$responses[!is.na(rv$responses)]
-      if (length(clean_responses) > 0) {
+      # ROBUST: Ensure all responses are collected before processing
+      # Don't remove NA values - they might be valid missing responses
+      all_responses <- rv$responses
+      
+      # Log response collection status
+      if (!is.null(all_responses)) {
+        message("DEBUG: Total responses in rv$responses: ", length(all_responses))
+        message("DEBUG: Non-NA responses: ", sum(!is.na(all_responses)))
+        message("DEBUG: Response indices: ", paste(which(!is.na(all_responses)), collapse=", "))
+      }
+      
+      # For non-adaptive studies, ensure we have the expected number of responses
+      if (!is.null(config$fixed_items) && length(config$fixed_items) > 0) {
+        expected_items <- length(config$fixed_items)
+        if (length(all_responses) < expected_items) {
+          message("WARNING: Only ", length(all_responses), " responses collected, expected ", expected_items)
+          # Pad with NA to maintain proper indexing
+          all_responses <- c(all_responses, rep(NA, expected_items - length(all_responses)))
+        }
+      }
+      
+      if (length(all_responses) > 0) {
         if ("demographics" %in% processor_args) {
-          results_content <- config$results_processor(clean_responses, item_bank, rv$demo_data)
+          results_content <- config$results_processor(all_responses, item_bank, rv$demo_data)
         } else {
-          results_content <- config$results_processor(clean_responses, item_bank)
+          results_content <- config$results_processor(all_responses, item_bank)
         }
       } else {
         results_content <- shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>")

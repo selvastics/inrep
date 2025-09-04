@@ -4324,18 +4324,37 @@ launch_study <- function(
           }
         }
         
-        # Clean up responses - remove NAs for final processing
-        final_responses <- rv$responses[!is.na(rv$responses)]
+        # ROBUST: Preserve all responses including NAs for proper indexing
+        # Don't remove NAs - they might be valid missing responses that need to be preserved
+        all_responses <- rv$responses
         
-        logger(sprintf("Study completed with %d responses collected", length(final_responses)))
+        # Log response collection status
+        logger(sprintf("Study completed with %d total responses (including NAs)", length(all_responses)))
+        logger(sprintf("Non-NA responses: %d", sum(!is.na(all_responses))))
+        logger(sprintf("Response indices with data: %s", paste(which(!is.na(all_responses)), collapse=", ")))
+        
+        # FINAL VALIDATION: For UMA study, ensure we have exactly 30 responses
+        if (!is.null(config$fixed_items) && length(config$fixed_items) == 30) {
+          if (length(all_responses) != 30) {
+            logger(sprintf("CRITICAL: UMA study expects 30 responses but got %d. Padding/truncating to 30.", length(all_responses)), level = "WARNING")
+            if (length(all_responses) < 30) {
+              # Pad with NA
+              all_responses <- c(all_responses, rep(NA, 30 - length(all_responses)))
+            } else if (length(all_responses) > 30) {
+              # Truncate
+              all_responses <- all_responses[1:30]
+            }
+            logger("FINAL VALIDATION: Adjusted responses to exactly 30 items", level = "INFO")
+          }
+        }
         
         # Generate results
         if (!is.null(config$results_processor)) {
           rv$cat_result <- list(
             theta = rv$current_ability,
             se = rv$current_se,
-            administered = 1:length(final_responses),
-            responses = final_responses,
+            administered = 1:length(all_responses),
+            responses = all_responses,  # Pass all responses including NAs
             response_times = rv$response_times,
             demo_data = rv$demo_data
           )
@@ -4345,7 +4364,7 @@ launch_study <- function(
             results_data <- list(
               theta = rv$current_ability,
               se = rv$current_se,
-              administered = 1:length(final_responses)
+              administered = 1:length(all_responses)
             )
             if (exists("update_comprehensive_dataset", mode = "function")) {
               update_comprehensive_dataset("results", results_data, stage = "results", current_page = length(config$custom_page_flow))
