@@ -885,28 +885,56 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   theta_trace <- numeric(10)
   se_trace <- numeric(10)
   
-  # Simulate theta progression
+  # More robust theta progression simulation
   for (i in 1:10) {
     # Calculate theta up to item i
     resp_subset <- (pa_responses[1:i] - 1) / 4
     a_subset <- a_params[1:i]
     b_subset <- b_params[1:i]
     
-    # Quick theta estimation for this subset
+    # Robust theta estimation with better convergence
     theta_temp <- 0
-    for (iter in 1:5) {
+    max_iter <- 20
+    tolerance <- 1e-6
+    
+    for (iter in 1:max_iter) {
+      # Calculate probabilities
       probs <- 1 / (1 + exp(-a_subset * (theta_temp - b_subset)))
+      
+      # First derivative (gradient)
       first_d <- sum(a_subset * (resp_subset - probs))
+      
+      # Second derivative (Hessian)
       second_d <- -sum(a_subset^2 * probs * (1 - probs))
-      if (abs(second_d) > 0.01) {
-        theta_temp <- theta_temp - first_d / second_d
+      
+      # Check for convergence
+      if (abs(first_d) < tolerance) break
+      
+      # Update theta with safeguards
+      if (abs(second_d) > 1e-6) {
+        step <- first_d / second_d
+        # Limit step size to prevent instability
+        step <- sign(step) * min(abs(step), 0.5)
+        theta_temp <- theta_temp - step
+      } else {
+        # Fallback: simple gradient descent
+        theta_temp <- theta_temp - 0.1 * first_d
       }
+      
+      # Bound theta to reasonable range
+      theta_temp <- pmax(-4, pmin(4, theta_temp))
     }
     
-    # Calculate SE for this estimate
-    info_temp <- sum(a_subset^2 * (1 / (1 + exp(-a_subset * (theta_temp - b_subset)))) * 
-                       (1 - 1 / (1 + exp(-a_subset * (theta_temp - b_subset)))))
+    # Calculate information and SE with safeguards
+    probs_final <- 1 / (1 + exp(-a_subset * (theta_temp - b_subset)))
+    info_temp <- sum(a_subset^2 * probs_final * (1 - probs_final))
+    
+    # Ensure information is positive and not too small
+    info_temp <- max(info_temp, 0.1)
     se_temp <- 1 / sqrt(info_temp)
+    
+    # Bound standard error to reasonable range
+    se_temp <- pmax(0.1, pmin(2.0, se_temp))
     
     theta_trace[i] <- theta_temp
     se_trace[i] <- se_temp
@@ -1104,13 +1132,21 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     )
   
   # Create trace plot for Programming Anxiety adaptive testing
+  # Add safeguards for extreme values
+  theta_trace_bounded <- pmax(-3, pmin(3, theta_trace))
+  se_trace_bounded <- pmax(0.1, pmin(1.5, se_trace))
+  
   trace_data <- data.frame(
     item = 1:10,
-    theta = theta_trace,
-    se_upper = theta_trace + se_trace,
-    se_lower = theta_trace - se_trace,
+    theta = theta_trace_bounded,
+    se_upper = theta_trace_bounded + se_trace_bounded,
+    se_lower = theta_trace_bounded - se_trace_bounded,
     item_type = c(rep("Fixed", 5), rep("Adaptive", 5))
   )
+  
+  # Calculate plot limits dynamically
+  y_min <- min(trace_data$se_lower) - 0.2
+  y_max <- max(trace_data$se_upper) + 0.2
   
   trace_plot <- ggplot2::ggplot(trace_data, ggplot2::aes(x = item, y = theta)) +
     # Confidence band
@@ -1125,13 +1161,14 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     # Vertical line separating fixed and adaptive
     ggplot2::geom_vline(xintercept = 5.5, linetype = "dotted", 
                         color = "gray50", alpha = 0.7) +
-    # Annotations
-    ggplot2::annotate("text", x = 2.5, y = max(trace_data$se_upper) * 0.9, 
+    # Annotations with dynamic positioning
+    ggplot2::annotate("text", x = 2.5, y = y_max * 0.9, 
                       label = "Fixed Items", size = 4, color = "gray40") +
-    ggplot2::annotate("text", x = 8, y = max(trace_data$se_upper) * 0.9, 
+    ggplot2::annotate("text", x = 8, y = y_max * 0.9, 
                       label = "Adaptive Items", size = 4, color = "gray40") +
-    # Scales
+    # Scales with dynamic limits
     ggplot2::scale_x_continuous(breaks = 1:10, labels = 1:10) +
+    ggplot2::scale_y_continuous(limits = c(y_min, y_max)) +
     ggplot2::scale_color_manual(values = c("Fixed" = "#e8041c", "Adaptive" = "#4ecdc4"), 
                                 breaks = c("Fixed", "Adaptive")) +
     # Theme
