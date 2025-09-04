@@ -1281,7 +1281,7 @@ create_custom_page_flow <- function(pages) {
 
 #' Process custom page flow for UI rendering
 #' @export
-process_page_flow <- function(config, rv, input, output, session, item_bank, ui_labels, logger) {
+process_page_flow <- function(config, rv, input, output, session, item_bank, ui_labels, logger, auto_close_time = 300, auto_close_time_unit = "seconds", disable_auto_close = FALSE) {
   
   # Check if custom page flow is defined
   if (is.null(config$custom_page_flow)) {
@@ -1308,7 +1308,7 @@ process_page_flow <- function(config, rv, input, output, session, item_bank, ui_
     
     "custom" = render_custom_page(current_page, config, rv, ui_labels, input),
     
-    "results" = render_results_page(current_page, config, rv, item_bank, ui_labels),
+    "results" = render_results_page(current_page, config, rv, item_bank, ui_labels, auto_close_time, auto_close_time_unit, disable_auto_close),
     
     # Default fallback
     shiny::div(
@@ -1569,7 +1569,7 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
 }
 
 #' Render results page
-render_results_page <- function(page, config, rv, item_bank, ui_labels) {
+render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_close_time = 300, auto_close_time_unit = "seconds", disable_auto_close = FALSE) {
   # Use custom results processor if available
   if (!is.null(config$results_processor) && is.function(config$results_processor)) {
     # Check if function accepts demographics parameter
@@ -1599,10 +1599,35 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels) {
     results_content <- shiny::HTML("<p>Assessment completed. Thank you!</p>")
   }
   
+  # Convert time to seconds if needed
+  if (auto_close_time_unit == "minutes") {
+    auto_close_seconds <- auto_close_time * 60
+  } else {
+    auto_close_seconds <- auto_close_time
+  }
+  
+  # Create auto-close timer UI if not disabled
+  auto_close_ui <- NULL
+  if (!disable_auto_close && auto_close_seconds > 0) {
+    auto_close_ui <- shiny::div(
+      id = "auto-close-timer",
+      class = "auto-close-timer",
+      style = "text-align: center; margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; border: 2px solid #007bff;",
+      shiny::h4("Session will close automatically", style = "color: #007bff; margin-bottom: 10px;"),
+      shiny::div(
+        id = "countdown-display",
+        style = "font-size: 24px; font-weight: bold; color: #dc3545; margin-bottom: 10px;",
+        shiny::textOutput("countdown_timer", inline = TRUE)
+      ),
+      shiny::p("Thank you for participating!", style = "margin: 0; color: #6c757d;")
+    )
+  }
+  
   shiny::div(
     class = "assessment-card results-container",
     shiny::h3(page$title %||% "Results", class = "card-header"),
-    results_content
+    results_content,
+    auto_close_ui
   )
 }
 
