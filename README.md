@@ -116,8 +116,6 @@ data(bfi_items)
 webdav_url <- "https://sync.academiccloud.de/index.php/s/Y51QPXzJVLWSAcb"
 password <- "inreptest"  # Password for the public share
 
-
-
 # Adaptive assessment with item selection based on ability
 config <- create_study_config(
   name = "Adaptive Personality Assessment",
