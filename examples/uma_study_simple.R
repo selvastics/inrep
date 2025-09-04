@@ -252,11 +252,148 @@ custom_page_flow <- list(
   # Page 8: Items 24-27 (4.1-4.4) - Special section with stem
   list(
     id = "page8",
-    type = "items",
+    type = "custom",
     title = "",
-    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.\n\n<strong><u>Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…</u></strong>",
-    item_indices = 24:27,
-    scale_type = "likert"
+    content = paste0(
+      '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
+      '<h3 style="color: #2c3e50;">Beratungsgespräche zum Thema "Langfristige persönliche Lebensperspektive der UMA"</h3>',
+      '<p>Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema "Langfristige persönliche Lebensperspektive der UMA".</p>',
+      '<p><strong>Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…</strong></p>',
+      '</div>'
+    ),
+    render_function = function(input, output, session, rv) {
+      # Custom render function for page 8 - show items with stem format
+      output$page_content <- renderUI({
+        shiny::div(
+          class = "assessment-card",
+          style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
+          shiny::h3("Beratungsgespräche zum Thema \"Langfristige persönliche Lebensperspektive der UMA\"", class = "card-header"),
+          shiny::div(
+            style = "padding: 20px; font-size: 16px; line-height: 1.8;",
+            shiny::p("Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema \"Langfristige persönliche Lebensperspektive der UMA\"."),
+            shiny::p(shiny::strong("Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…")),
+            shiny::div(
+              style = "margin: 20px 0;",
+              # Item 24
+              shiny::div(
+                style = "margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;",
+                shiny::p(
+                  style = "margin: 0; font-weight: bold;",
+                  "…eine langfristige persönliche Lebensperspektive entwickeln konnten."
+                ),
+                shiny::div(
+                  style = "margin-top: 10px;",
+                  shiny::radioButtons(
+                    inputId = "Item_24",
+                    label = "",
+                    choices = list(
+                      "Trifft überhaupt nicht zu" = 1,
+                      "Trifft eher nicht zu" = 2,
+                      "Teils/teils" = 3,
+                      "Trifft eher zu" = 4,
+                      "Trifft voll und ganz zu" = 5
+                    ),
+                    selected = character(0),
+                    inline = FALSE
+                  )
+                )
+              ),
+              # Item 25
+              shiny::div(
+                style = "margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;",
+                shiny::p(
+                  style = "margin: 0; font-weight: bold;",
+                  "…umsetzbare Ideen für erste Schritte nach dem Auszug haben."
+                ),
+                shiny::div(
+                  style = "margin-top: 10px;",
+                  shiny::radioButtons(
+                    inputId = "Item_25",
+                    label = "",
+                    choices = list(
+                      "Trifft überhaupt nicht zu" = 1,
+                      "Trifft eher nicht zu" = 2,
+                      "Teils/teils" = 3,
+                      "Trifft eher zu" = 4,
+                      "Trifft voll und ganz zu" = 5
+                    ),
+                    selected = character(0),
+                    inline = FALSE
+                  )
+                )
+              ),
+              # Item 26
+              shiny::div(
+                style = "margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;",
+                shiny::p(
+                  style = "margin: 0; font-weight: bold;",
+                  "…zugängliche Ansprechstellen für mögliche Unterstützung kennengelernt haben."
+                ),
+                shiny::div(
+                  style = "margin-top: 10px;",
+                  shiny::radioButtons(
+                    inputId = "Item_26",
+                    label = "",
+                    choices = list(
+                      "Trifft überhaupt nicht zu" = 1,
+                      "Trifft eher nicht zu" = 2,
+                      "Teils/teils" = 3,
+                      "Trifft eher zu" = 4,
+                      "Trifft voll und ganz zu" = 5
+                    ),
+                    selected = character(0),
+                    inline = FALSE
+                  )
+                )
+              ),
+              # Item 27
+              shiny::div(
+                style = "margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;",
+                shiny::p(
+                  style = "margin: 0; font-weight: bold;",
+                  "…Problemlösefähigkeiten verbessern konnten."
+                ),
+                shiny::div(
+                  style = "margin-top: 10px;",
+                  shiny::radioButtons(
+                    inputId = "Item_27",
+                    label = "",
+                    choices = list(
+                      "Trifft überhaupt nicht zu" = 1,
+                      "Trifft eher nicht zu" = 2,
+                      "Teils/teils" = 3,
+                      "Trifft eher zu" = 4,
+                      "Trifft voll und ganz zu" = 5
+                    ),
+                    selected = character(0),
+                    inline = FALSE
+                  )
+                )
+              )
+            )
+          )
+        )
+      })
+    },
+    completion_handler = function(input, rv) {
+      # Store the responses for items 24-27
+      if (!is.null(input$Item_24) && !is.null(rv)) {
+        rv$responses$Item_24 <- as.numeric(input$Item_24)
+        message("Saved item response 24 (id: Item_24): ", input$Item_24)
+      }
+      if (!is.null(input$Item_25) && !is.null(rv)) {
+        rv$responses$Item_25 <- as.numeric(input$Item_25)
+        message("Saved item response 25 (id: Item_25): ", input$Item_25)
+      }
+      if (!is.null(input$Item_26) && !is.null(rv)) {
+        rv$responses$Item_26 <- as.numeric(input$Item_26)
+        message("Saved item response 26 (id: Item_26): ", input$Item_26)
+      }
+      if (!is.null(input$Item_27) && !is.null(rv)) {
+        rv$responses$Item_27 <- as.numeric(input$Item_27)
+        message("Saved item response 27 (id: Item_27): ", input$Item_27)
+      }
+    }
   ),
   
   # Page 9: Items 28-30 (Final items 5, 6, 7)
@@ -413,6 +550,9 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
   if (!is.null(rv$demo_data)) {
     message("DEBUG: rv$demo_data$Teilnahme_Code = ", rv$demo_data$Teilnahme_Code)
   }
+  message("DEBUG: rv$demo_Teilnahme_Code = ", if(is.null(rv$demo_Teilnahme_Code)) "NULL" else rv$demo_Teilnahme_Code)
+  message("DEBUG: rv$participant_code = ", if(is.null(rv$participant_code)) "NULL" else rv$participant_code)
+  message("DEBUG: rv keys = ", if(is.null(rv)) "NULL" else paste(names(rv), collapse=", "))
   
   # Handle demographics as either list or atomic vector
   if (!is.null(demographics) && !is.na(demographics)) {
@@ -463,7 +603,7 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
     study_name = "UMA Befragung",
     
     # Participant information
-    participant_code = if(!is.null(participant_code) && participant_code != "" && participant_code != "UNKNOWN") participant_code else NA,
+    participant_code = if(!is.null(participant_code) && participant_code != "" && participant_code != "UNKNOWN") participant_code else "UNKNOWN",
     
     # Study completion info
     total_items = 30,
