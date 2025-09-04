@@ -535,44 +535,88 @@ launch_study <- function(
   
   # Helper function for robust scroll-to-top functionality (works on desktop and mobile)
   scroll_to_top_enhanced <- function() {
-    # Simple, reliable scroll function that works on all platforms
+    # Enhanced scroll function that works reliably in web browsers
     scroll_js <- "
     (function() {
-      // Method 1: Standard scrollTo (works on all modern browsers)
-      if (window.scrollTo) {
-        window.scrollTo(0, 0);
+      // Force immediate scroll with multiple methods
+      try {
+        // Method 1: Modern scrollTo with options
+        if (window.scrollTo) {
+          window.scrollTo({
+            top: 0,
+            left: 0,
+            behavior: 'instant'
+          });
+        }
+      } catch(e) {
+        try {
+          // Method 2: Simple scrollTo
+          window.scrollTo(0, 0);
+        } catch(e2) {
+          // Method 3: Direct element scrolling
+          if (document.documentElement) {
+            document.documentElement.scrollTop = 0;
+            document.documentElement.scrollLeft = 0;
+          }
+          if (document.body) {
+            document.body.scrollTop = 0;
+            document.body.scrollLeft = 0;
+          }
+        }
       }
       
-      // Method 2: Direct element scrolling (fallback for older browsers)
-      if (document.documentElement) {
-        document.documentElement.scrollTop = 0;
-      }
+      // Additional methods for stubborn browsers
+      setTimeout(function() {
+        try {
+          window.scrollTo(0, 0);
+        } catch(e) {
+          if (document.documentElement) {
+            document.documentElement.scrollTop = 0;
+          }
+          if (document.body) {
+            document.body.scrollTop = 0;
+          }
+        }
+      }, 10);
       
-      // Method 3: Body scrolling (additional fallback)
-      if (document.body) {
-        document.body.scrollTop = 0;
-      }
+      // Final attempt after a short delay
+      setTimeout(function() {
+        try {
+          window.scrollTo(0, 0);
+        } catch(e) {
+          if (document.documentElement) {
+            document.documentElement.scrollTop = 0;
+          }
+        }
+      }, 100);
     })();
     "
     
-    # Try shinyjs first
+    # Execute with multiple fallbacks
     if (requireNamespace("shinyjs", quietly = TRUE)) {
       tryCatch({
         shinyjs::runjs(scroll_js)
       }, error = function(e) {
-        # If shinyjs fails, try direct JavaScript
         tryCatch({
           shiny::runjs(scroll_js)
         }, error = function(e2) {
-          logger(sprintf("Scroll to top failed: %s", e2$message), level = "WARNING")
+          # Final fallback - simple scroll
+          tryCatch({
+            shinyjs::runjs("window.scrollTo(0, 0);")
+          }, error = function(e3) {
+            logger(sprintf("Scroll to top failed: %s", e3$message), level = "WARNING")
+          })
         })
       })
     } else {
-      # Fallback: Direct JavaScript execution
       tryCatch({
         shiny::runjs(scroll_js)
       }, error = function(e) {
-        logger(sprintf("Scroll to top failed: %s", e$message), level = "WARNING")
+        tryCatch({
+          shiny::runjs("window.scrollTo(0, 0);")
+        }, error = function(e2) {
+          logger(sprintf("Scroll to top failed: %s", e2$message), level = "WARNING")
+        })
       })
     }
   }
@@ -2570,7 +2614,36 @@ launch_study <- function(
       shiny::div(
         id = "main-study-container",
         style = "min-height: 500px; width: 100%; max-width: 100%; margin: 0 auto; padding: 0; position: relative; overflow: hidden;",
-        shiny::uiOutput("page_content")
+        shiny::uiOutput("page_content"),
+        # Global scroll-to-top script that runs on every page load
+        shiny::tags$script(HTML("
+          // Global scroll-to-top function for web browsers
+          function forceScrollToTop() {
+            try {
+              window.scrollTo(0, 0);
+            } catch(e) {
+              try {
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+              } catch(e2) {
+                // Ignore errors
+              }
+            }
+          }
+          
+          // Execute scroll on page load
+          document.addEventListener('DOMContentLoaded', forceScrollToTop);
+          
+          // Execute scroll when Shiny updates content
+          $(document).on('shiny:value', function(event) {
+            setTimeout(forceScrollToTop, 10);
+          });
+          
+          // Execute scroll on any content change
+          $(document).on('shiny:recalculated', function(event) {
+            setTimeout(forceScrollToTop, 10);
+          });
+        "))
       )
     })
     
@@ -4209,6 +4282,17 @@ launch_study <- function(
           
           # Scroll to top of page when navigating to next page (enhanced for mobile/app)
           scroll_to_top_enhanced()
+          
+          # Additional browser-specific scroll fix
+          if (requireNamespace("shinyjs", quietly = TRUE)) {
+            shinyjs::runjs("
+              setTimeout(function() {
+                window.scrollTo(0, 0);
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+              }, 50);
+            ")
+          }
       }
     })
     
@@ -4244,6 +4328,17 @@ launch_study <- function(
           
           # Scroll to top of page when navigating to previous page (enhanced for mobile/app)
           scroll_to_top_enhanced()
+          
+          # Additional browser-specific scroll fix
+          if (requireNamespace("shinyjs", quietly = TRUE)) {
+            shinyjs::runjs("
+              setTimeout(function() {
+                window.scrollTo(0, 0);
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+              }, 50);
+            ")
+          }
       }
     })
     
