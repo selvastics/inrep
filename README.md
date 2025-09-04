@@ -112,6 +112,12 @@ The package requires R ≥ 4.1.0 and integrates with the following packages:
 library(inrep)
 data(bfi_items)
 
+# Store data on a cloud sever (replace with one only you have access to)
+webdav_url <- "https://sync.academiccloud.de/index.php/s/Y51QPXzJVLWSAcb"
+password <- "inreptest"  # Password for the public share
+
+
+
 # Adaptive assessment with item selection based on ability
 config <- create_study_config(
   name = "Adaptive Personality Assessment",
@@ -124,7 +130,9 @@ config <- create_study_config(
   theme = "professional"
 )
 
-launch_study(config, bfi_items)
+launch_study(config, bfi_items,
+             webdav_url = webdav_url,
+             password = password)
 ```
 
 ### Non-Adaptive Testing (Fixed questionnaire)

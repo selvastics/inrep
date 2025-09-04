@@ -57,8 +57,9 @@ the ability spectrum. Discrimination parameters range from 0.8 to 2.4,
 indicating items with varying precision for ability estimation.
 }
 \examples{
+\dontrun{
 # Load the cognitive items dataset
-data(cognitive_items)
+# data(cognitive_items)  # Load dataset when needed
 
 # Examine the structure
 str(cognitive_items)
@@ -80,6 +81,7 @@ if (interactive()) {
   
   # Launch study (requires Shiny environment)
   # launch_study(config, cognitive_items)
+}
 }
 
 }
