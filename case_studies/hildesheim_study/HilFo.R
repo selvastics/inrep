@@ -1544,18 +1544,9 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     '</span></h4>',
     '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">',
     
-    # Use inrep's built-in download buttons - these will be handled by inrep automatically
-    '<div style="margin: 5px;">',
-    '<button class="btn-primary" onclick="document.getElementById(\'save_report\').click();" style="padding: 10px 20px; border-radius: 4px; color: white; background: #e8041c; border: none; cursor: pointer;">',
-    if (current_lang == "en") 'Save as PDF' else 'Als PDF speichern',
-    '</button>',
-    '</div>',
-    
-    '<div style="margin: 5px;">',
-    '<button class="btn-success" onclick="document.getElementById(\'download_comprehensive_dataset\').click();" style="padding: 10px 20px; border-radius: 4px; color: white; background: #28a745; border: none; cursor: pointer;">',
-    if (current_lang == "en") 'Save as CSV' else 'Als CSV speichern',
-    '</button>',
-    '</div>',
+    # Use inrep's built-in download buttons - these are automatically provided by inrep
+    # The download buttons are already available in the results page via inrep's built-in system
+    # No custom download buttons needed - inrep handles this automatically
     
     '</div>',
     '</div>',
@@ -1917,36 +1908,14 @@ study_config <- inrep::create_study_config(
   response_ui_type = "radio",
   progress_style = "bar",
   language = "de",  # Start with German
-  bilingual = TRUE,  # Enable bilingual support
-  language_switching = TRUE,  # Enable language switching during study
+  bilingual = TRUE,  # Enable inrep's built-in bilingual support
   session_save = TRUE,
   session_timeout = 7200,
   results_processor = create_hilfo_report,
   estimation_method = "EAP",  # Use EAP for ability estimation
   page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
-  item_bank = all_items,  # Full item bank
-  save_to_file = TRUE,
-  save_format = "csv",
-  cloud_storage = TRUE,
-  enable_download = TRUE,
-  # Enhanced download options for Hildesheim
-  download_formats = c("pdf", "csv", "json"),
-  download_handler = create_hilfo_download_handler(),
-  export_options = list(
-    include_raw_responses = TRUE,
-    include_demographics = TRUE,
-    include_timestamps = TRUE,
-    include_plots = TRUE,
-    pdf_template = "hildesheim",
-    csv_separator = ";",  # German standard
-    json_pretty = TRUE
-  ),
-  # Adaptive settings for PA items
-  fixed_items = c(1:5, 21:51),  # First 5 PA are fixed, then all BFI+ are fixed
-  adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
-  # Don't override the built-in Hildesheim theme
-  custom_css = NULL,
-  allow_deselect = TRUE  # Allow response deselection
+  save_format = "csv"  # Use inrep's built-in save format
+  adaptive_items = 6:20  # PA items 6-20 are in adaptive pool
 )
 
 cat("\n================================================================================\n")
@@ -2083,13 +2052,7 @@ monitor_adaptive <- function(session_data) {
   }
 }
 
-# Complete JavaScript solution for FULL APP translation and radio deselection
-custom_js_enhanced <- '
-<style>
-/* Original inrep styling with Hildesheim theme colors */
-
-/* Fixed language button - Original inrep style */
-#language-toggle-btn {
+# No custom CSS or JavaScript needed - inrep handles everything automatically
   position: fixed !important;
   top: 10px !important;
   right: 10px !important;
@@ -2828,63 +2791,18 @@ if (typeof Shiny !== "undefined") {
 }
 </script>'
 
-# Server extensions for language handling
-server_extensions <- function(input, output, session) {
-  # Track current language
-  session$userData$current_language <- reactiveVal("de")
-  
-  # Handle language switching
-  observeEvent(input$study_language, {
-    new_lang <- input$study_language
-    session$userData$current_language(new_lang)
-    
-    # Update item bank language
-    if (new_lang == "en") {
-      # Switch to English questions
-      session$userData$item_bank <- all_items_de
-      session$userData$item_bank$Question <- all_items_de$Question_EN
-      # Update demographics to English
-      for (i in 1:length(demographic_configs)) {
-        if (!is.null(demographic_configs[[i]]$options_en)) {
-          demographic_configs[[i]]$options <- demographic_configs[[i]]$options_en
-        }
-        if (!is.null(demographic_configs[[i]]$question_en)) {
-          demographic_configs[[i]]$question <- demographic_configs[[i]]$question_en
-        }
-      }
-    } else {
-      # Switch to German questions
-      session$userData$item_bank <- all_items_de
-      # Update demographics to German
-      for (i in 1:length(demographic_configs)) {
-        if (!is.null(demographic_configs[[i]]$options)) {
-          # Keep original German options
-        }
-        if (!is.null(demographic_configs[[i]]$question)) {
-          # Keep original German questions
-        }
-      }
-    }
-    
-    # Send message to update UI
-    session$sendCustomMessage("update_language", new_lang)
-    
-    # Force page refresh to apply language changes
-    session$reload()
-  })
-  
-}
+# No custom server extensions needed - inrep handles language switching automatically
 
-# Launch with cloud storage, adaptive testing, and enhanced features
+# Launch with inrep's built-in capabilities
 inrep::launch_study(
   config = study_config,
   item_bank = all_items_de,  # Bilingual item bank
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
-  save_format = "csv",
-  custom_css = custom_js_enhanced,  # Enhanced JavaScript
-  admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
-  server_extensions = server_extensions  # Language handling
+  save_format = "csv"
+  # No custom CSS needed - inrep handles theming
+  # No server extensions needed - inrep handles language switching
+  # No admin dashboard hook needed - inrep handles monitoring
 )
 
 
