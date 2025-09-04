@@ -94,11 +94,49 @@ launch_study_fast <- function(config, item_bank,
       }
       rv$current_page <- 2
       
+      # Initialize comprehensive dataset for fast patch
+      if (exists("initialize_comprehensive_dataset")) {
+        tryCatch({
+          comprehensive_dataset <- initialize_comprehensive_dataset(config, item_bank, config$study_key %||% "fast_patch")
+          rv$comprehensive_dataset <- comprehensive_dataset
+          logger("Comprehensive dataset initialized for fast patch", level = "INFO")
+        }, error = function(e) {
+          logger(sprintf("Failed to initialize comprehensive dataset for fast patch: %s", e$message), level = "WARNING")
+        })
+      }
+      
       # Scroll to top of page when starting the study
       if (requireNamespace("shinyjs", quietly = TRUE)) {
         shinyjs::runjs("window.scrollTo(0, 0);")
       }
     })
+    
+    # Save current page data function
+    save_current_page_data <- function(rv, input) {
+      # Collect demographic data
+      if (!is.null(config$demographics)) {
+        page_data <- list()
+        for (i in seq_along(config$demographics)) {
+          dem <- config$demographics[i]
+          input_id <- paste0("demo_", i)
+          value <- input[[input_id]]
+          if (!is.null(value) && value != "") {
+            rv$demo_data[[dem]] <- value
+            page_data[[dem]] <- value
+          }
+        }
+        
+        # Update comprehensive dataset
+        if (exists("update_comprehensive_dataset") && length(page_data) > 0) {
+          tryCatch({
+            update_comprehensive_dataset("demographics", page_data, stage = "fast_patch", current_page = rv$current_page)
+            logger("Updated comprehensive dataset with fast patch demographic data", level = "DEBUG")
+          }, error = function(e) {
+            logger(sprintf("Failed to update comprehensive dataset with fast patch demographics: %s", e$message), level = "WARNING")
+          })
+        }
+      }
+    }
     
     # Handle navigation
     observeEvent(input$next_page, {
