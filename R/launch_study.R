@@ -2532,13 +2532,31 @@ launch_study <- function(
         # Initialize session management if needed (was deferred from startup)
         if (exists(".needs_session_init") && .needs_session_init) {
           logger("Initializing robust session management", level = "INFO")
+          
+          # Generate unique session ID with enhanced isolation
+          timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S_%OS3")
+          process_id <- Sys.getpid()
+          random_suffix <- paste(sample(c(letters, LETTERS, 0:9), 12, replace = TRUE), collapse = "")
+          machine_id <- Sys.info()["nodename"]
+          combined_string <- paste(timestamp, process_id, random_suffix, machine_id, sep = "_")
+          hash_suffix <- substr(digest::digest(combined_string, algo = "md5"), 1, 8)
+          unique_session_id <- paste0("SESS_", timestamp, "_", process_id, "_", hash_suffix)
+          
           session_config <<- list(
-            session_id = paste0("SESS_", format(Sys.time(), "%Y%m%d_%H%M%S_"),
-                               paste0(sample(letters, 8), collapse = "")),
+            session_id = unique_session_id,
             start_time = Sys.time(),
             max_time = max_session_time %||% 7200,
             log_file = NULL
           )
+          
+          # Ensure participant code isolation - generate unique participant code for this session
+          if (!is.null(study_key)) {
+            # Create session-specific participant code to prevent conflicts
+            session_specific_key <- paste0(study_key, "_", substr(unique_session_id, -8, -1))
+            study_key <<- session_specific_key
+            logger(sprintf("Generated session-specific participant code: %s", study_key), level = "INFO")
+          }
+          
           logger(sprintf("Session initialized: %s (max time: %d seconds)", 
                         session_config$session_id, session_config$max_time), level = "INFO")
         }
