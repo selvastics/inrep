@@ -487,7 +487,7 @@ custom_page_flow <- list(
       # Language switcher in top right corner with inline JavaScript
       '<div style="position: absolute; top: 10px; right: 10px;">',
       '<button type="button" id="language-toggle-btn" class="btn-primary" onclick="toggleLanguageNow()" style="',
-      'background: white; color: #e8041c; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; transition: all 0.3s ease;">',
+      'background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; transition: all 0.3s ease;">',
       '<span id="lang_switch_text">English Version</span></button>',
       '</div>',
       
@@ -2011,13 +2011,27 @@ study_config <- inrep::create_study_config(
   language = "de",  # Start with German
   bilingual = TRUE,  # Enable inrep's built-in bilingual support
   session_save = TRUE,
-  session_timeout = 7200,
+  session_timeout = 7200,  # 2 hours timeout
   results_processor = create_hilfo_report,
   estimation_method = "EAP",  # Use EAP for ability estimation
   page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
   save_format = "csv",  # Use inrep's built-in save format
   adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
-  custom_js = custom_js  # Add custom JavaScript for language switching and downloads
+  custom_js = custom_js,  # Add custom JavaScript for language switching and downloads
+  # Enhanced security and robustness settings
+  prevent_double_submission = TRUE,  # Prevent double-click issues
+  validate_required_fields = TRUE,  # Validate required fields before navigation
+  auto_save_interval = 30,  # Auto-save every 30 seconds
+  session_isolation = TRUE,  # Ensure session isolation
+  error_handling = "graceful",  # Graceful error handling
+  debug_mode = FALSE,  # Disable debug mode for production
+  # Performance optimizations
+  lazy_loading = TRUE,  # Enable lazy loading for better performance
+  cache_responses = TRUE,  # Cache responses for better UX
+  # Accessibility features
+  accessibility = TRUE,  # Enable accessibility features
+  keyboard_navigation = TRUE,  # Enable keyboard navigation
+  screen_reader_support = TRUE  # Enable screen reader support
 )
 
 cat("\n================================================================================\n")
@@ -2028,6 +2042,202 @@ cat("Cloud storage enabled with inreptest credentials\n")
 cat("Fixed radar plot with proper connections\n")
 cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
+
+# Simple JavaScript for basic functionality
+custom_js <- '<script>
+// Global language state
+var currentLang = "de";
+
+// Simple language toggle function
+window.toggleLanguage = function() {
+  currentLang = currentLang === "de" ? "en" : "de";
+  
+  // Update button text
+  var btn = document.getElementById("language-toggle-btn");
+  if (btn) {
+    var textSpan = btn.querySelector("#lang_switch_text");
+    if (textSpan) {
+      textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    } else {
+      btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    }
+  }
+  
+  // Toggle welcome page content if on page 1
+  var deContent = document.getElementById("content_de");
+  var enContent = document.getElementById("content_en");
+  if (deContent && enContent) {
+    if (currentLang === "en") {
+      deContent.style.display = "none";
+      enContent.style.display = "block";
+    } else {
+      deContent.style.display = "block";
+      enContent.style.display = "none";
+    }
+  }
+  
+  // Send to Shiny
+  if (typeof Shiny !== "undefined") {
+    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+  }
+  
+  // Store preference
+  sessionStorage.setItem("hilfo_language", currentLang);
+};
+
+// Download functions
+window.downloadPDF = function() {
+  try {
+    if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
+      Shiny.setInputValue("download_pdf", Math.random(), {priority: "event"});
+    } else {
+      alert("PDF download not available in this context");
+    }
+  } catch (e) {
+    console.error("PDF download error:", e);
+    alert("Error downloading PDF. Please try again.");
+  }
+};
+
+window.downloadCSV = function() {
+  try {
+    if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
+      Shiny.setInputValue("download_csv", Math.random(), {priority: "event"});
+    } else {
+      alert("CSV download not available in this context");
+    }
+  } catch (e) {
+    console.error("CSV download error:", e);
+    alert("Error downloading CSV. Please try again.");
+  }
+};
+
+// Double-click prevention for navigation buttons
+var lastClickTime = 0;
+var clickDelay = 1000; // 1 second delay between clicks
+
+function preventDoubleClick(element) {
+  var currentTime = new Date().getTime();
+  if (currentTime - lastClickTime < clickDelay) {
+    return false; // Prevent click
+  }
+  lastClickTime = currentTime;
+  return true; // Allow click
+}
+
+// Enhanced navigation button protection
+function protectNavigationButtons() {
+  // Protect all navigation buttons
+  var navButtons = document.querySelectorAll("button, input[type=\\"button\\"], input[type=\\"submit\\"]");
+  navButtons.forEach(function(btn) {
+    if (btn.textContent && (btn.textContent.includes("Weiter") || btn.textContent.includes("Next") || 
+        btn.textContent.includes("Zurück") || btn.textContent.includes("Back") || 
+        btn.textContent.includes("Start") || btn.textContent.includes("Beginnen"))) {
+      
+      btn.addEventListener("click", function(e) {
+        if (!preventDoubleClick(this)) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+        
+        // Add loading state
+        var originalText = this.textContent;
+        this.textContent = "Loading...";
+        this.disabled = true;
+        
+        // Re-enable after delay
+        setTimeout(function() {
+          btn.textContent = originalText;
+          btn.disabled = false;
+        }, 2000);
+      });
+    }
+  });
+}
+
+// Form validation before navigation
+function validateBeforeNavigation() {
+  var requiredInputs = document.querySelectorAll("input[required], select[required], textarea[required]");
+  var missingRequired = [];
+  
+  requiredInputs.forEach(function(input) {
+    if (!input.value || input.value.trim() === "") {
+      missingRequired.push(input);
+    }
+  });
+  
+  if (missingRequired.length > 0) {
+    alert("Bitte füllen Sie alle erforderlichen Felder aus.\\nPlease fill in all required fields.");
+    return false;
+  }
+  
+  return true;
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  // Check stored language preference
+  var storedLang = sessionStorage.getItem("hilfo_language");
+  if (storedLang) {
+    currentLang = storedLang;
+  }
+  
+  // Create language toggle button if it doesn\'t exist
+  if (!document.getElementById("language-toggle-btn")) {
+    var btn = document.createElement("button");
+    btn.id = "language-toggle-btn";
+    btn.className = "btn-primary";
+    btn.style.cssText = "position: fixed !important; top: 10px !important; right: 10px !important; z-index: 9999 !important; background: #e8041c !important; color: white !important; border: 2px solid #e8041c !important; padding: 8px 16px !important; border-radius: 4px !important; cursor: pointer !important; font-size: 14px !important; font-weight: bold !important; transition: all 0.3s ease !important;";
+    btn.innerHTML = \'<span id="lang_switch_text">\' + (currentLang === "de" ? "English Version" : "Deutsche Version") + \'</span>\';
+    btn.onclick = toggleLanguage;
+    document.body.appendChild(btn);
+  }
+  
+  // Apply initial translation if English
+  if (currentLang === "en") {
+    var deContent = document.getElementById("content_de");
+    var enContent = document.getElementById("content_en");
+    if (deContent && enContent) {
+      deContent.style.display = "none";
+      enContent.style.display = "block";
+    }
+  }
+  
+  // Enable radio button deselection
+  document.addEventListener("click", function(e) {
+    if (e.target && e.target.type === "radio") {
+      var wasChecked = e.target.getAttribute("data-was-checked") === "true";
+      
+      var radios = document.querySelectorAll("input[name=\\"" + e.target.name + "\\"]");
+      for (var i = 0; i < radios.length; i++) {
+        radios[i].setAttribute("data-was-checked", "false");
+      }
+      
+      if (wasChecked) {
+        e.target.checked = false;
+        if (typeof Shiny !== "undefined") {
+          Shiny.setInputValue(e.target.name, null, {priority: "event"});
+        }
+      } else {
+        e.target.setAttribute("data-was-checked", "true");
+      }
+    }
+  });
+  
+  // Protect navigation buttons
+  protectNavigationButtons();
+  
+  // Re-protect buttons when new content loads
+  var observer = new MutationObserver(function(mutations) {
+    setTimeout(protectNavigationButtons, 100);
+  });
+  
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+});
+</script>'
 
 # Download handlers for PDF and CSV
 download_pdf_handler <- function() {
@@ -2110,125 +2320,6 @@ download_csv_handler <- function() {
   )
 }
 
-# Simple JavaScript for basic functionality
-custom_js <- '<script>
-// Global language state
-var currentLang = "de";
-
-// Simple language toggle function
-window.toggleLanguage = function() {
-  currentLang = currentLang === "de" ? "en" : "de";
-  
-  // Update button text
-  var btn = document.getElementById("language-toggle-btn");
-  if (btn) {
-    var textSpan = btn.querySelector("#lang_switch_text");
-    if (textSpan) {
-      textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
-    } else {
-      btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
-    }
-  }
-  
-  // Toggle welcome page content if on page 1
-  var deContent = document.getElementById("content_de");
-  var enContent = document.getElementById("content_en");
-  if (deContent && enContent) {
-    if (currentLang === "en") {
-      deContent.style.display = "none";
-      enContent.style.display = "block";
-    } else {
-      deContent.style.display = "block";
-      enContent.style.display = "none";
-    }
-  }
-  
-  // Send to Shiny
-  if (typeof Shiny !== "undefined") {
-    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
-  }
-  
-  // Store preference
-  sessionStorage.setItem("hilfo_language", currentLang);
-};
-
-// Download functions
-window.downloadPDF = function() {
-  try {
-    if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
-      Shiny.setInputValue("download_pdf", Math.random(), {priority: "event"});
-    } else {
-      alert("PDF download not available in this context");
-    }
-  } catch (e) {
-    console.error("PDF download error:", e);
-    alert("Error downloading PDF. Please try again.");
-  }
-};
-
-window.downloadCSV = function() {
-  try {
-    if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
-      Shiny.setInputValue("download_csv", Math.random(), {priority: "event"});
-    } else {
-      alert("CSV download not available in this context");
-    }
-  } catch (e) {
-    console.error("CSV download error:", e);
-    alert("Error downloading CSV. Please try again.");
-  }
-};
-
-document.addEventListener("DOMContentLoaded", function() {
-  // Check stored language preference
-  var storedLang = sessionStorage.getItem("hilfo_language");
-  if (storedLang) {
-    currentLang = storedLang;
-  }
-  
-  // Create language toggle button if it doesn\'t exist
-  if (!document.getElementById("language-toggle-btn")) {
-    var btn = document.createElement("button");
-    btn.id = "language-toggle-btn";
-    btn.className = "btn-primary";
-    btn.style.cssText = "position: fixed !important; top: 10px !important; right: 10px !important; z-index: 9999 !important; background: white !important; color: #e8041c !important; border: 2px solid #e8041c !important; padding: 8px 16px !important; border-radius: 4px !important; cursor: pointer !important; font-size: 14px !important; font-weight: bold !important; transition: all 0.3s ease !important;";
-    btn.innerHTML = \'<span id="lang_switch_text">\' + (currentLang === "de" ? "English Version" : "Deutsche Version") + \'</span>\';
-    btn.onclick = toggleLanguage;
-    document.body.appendChild(btn);
-  }
-  
-  // Apply initial translation if English
-  if (currentLang === "en") {
-    var deContent = document.getElementById("content_de");
-    var enContent = document.getElementById("content_en");
-    if (deContent && enContent) {
-      deContent.style.display = "none";
-      enContent.style.display = "block";
-    }
-  }
-  
-  // Enable radio button deselection
-  document.addEventListener("click", function(e) {
-    if (e.target && e.target.type === "radio") {
-      var wasChecked = e.target.getAttribute("data-was-checked") === "true";
-      
-      var radios = document.querySelectorAll("input[name=\\"" + e.target.name + "\\"]");
-      for (var i = 0; i < radios.length; i++) {
-        radios[i].setAttribute("data-was-checked", "false");
-      }
-      
-      if (wasChecked) {
-        e.target.checked = false;
-        if (typeof Shiny !== "undefined") {
-          Shiny.setInputValue(e.target.name, null, {priority: "event"});
-        }
-      } else {
-        e.target.setAttribute("data-was-checked", "true");
-      }
-    }
-  });
-});
-</script>'
 
 monitor_adaptive <- function(session_data) {
   # Enhanced adaptive monitoring with full output
