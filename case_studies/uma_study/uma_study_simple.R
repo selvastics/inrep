@@ -598,5 +598,5 @@ inrep::launch_study(
   # Auto-close timer settings for UMA study
   auto_close_time = 15,           # 15 seconds
   auto_close_time_unit = "seconds", # Use seconds as unit
-  disable_auto_close = FALSE      # Enable auto-close timer
+  disable_auto_close = FALSE      # Enable auto-close timer (FALSE = enabled)
 )

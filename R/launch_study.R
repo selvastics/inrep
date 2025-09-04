@@ -2507,6 +2507,15 @@ launch_study <- function(
     # Initialize package loading state
     .packages_loaded <- FALSE
     
+    # Define package loading function
+    .load_packages_once <- function() {
+      if (!.packages_loaded) {
+        # Load packages immediately without delay
+        safe_load_packages(immediate = TRUE)
+        .packages_loaded <<- TRUE
+      }
+    }
+    
     # CRITICAL: Session isolation - ensure each user gets a completely fresh session
     if (exists(".force_new_session") && .force_new_session) {
       # Clear any existing session data to prevent session sharing
@@ -2696,14 +2705,16 @@ launch_study <- function(
   rv <- shiny::reactiveValues()
   
   # CRITICAL: Ensure complete session isolation - each user gets fresh data
+  # Generate unique session ID first
+  unique_session_id <- paste0("USER_", format(Sys.time(), "%Y%m%d_%H%M%S_%OS3"), "_", 
+                              paste0(sample(c(letters, LETTERS, 0:9), 12, replace = TRUE), collapse = ""))
+  
   # Clear any existing session data to prevent session sharing
   rv$session_isolation_enforced <- TRUE
   rv$session_start_time <- Sys.time()
-  rv$unique_session_id <- paste0("USER_", format(Sys.time(), "%Y%m%d_%H%M%S_%OS3"), "_", 
-                                 paste0(sample(c(letters, LETTERS, 0:9), 12, replace = TRUE), collapse = ""))
+  rv$unique_session_id <- unique_session_id
   
-  # Log session isolation for security (store ID in variable to avoid reactive access error)
-  unique_session_id <- rv$unique_session_id
+  # Log session isolation for security
   logger(sprintf("CRITICAL: Session isolation enforced. New user session: %s", unique_session_id), level = "WARNING")
   
   # Variables needed for session management (define immediately)
@@ -3017,14 +3028,7 @@ launch_study <- function(
         (base::length(rv$administered) >= config$max_items || rv$current_se <= config$min_SEM)
     }
     
-    # Load packages immediately for better performance
-    .load_packages_once <- function() {
-      if (!.packages_loaded) {
-        # Load packages immediately without delay
-        safe_load_packages(immediate = TRUE)
-        .packages_loaded <<- TRUE
-      }
-    }
+    # Package loading function already defined above
     
     # REMOVED: Duplicate output$study_ui definition that was overriding the instant one
     # The first definition now handles everything including package loading
