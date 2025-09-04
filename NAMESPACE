@@ -159,24 +159,14 @@ export(test_assessment)
 export(show_examples)
 export(get_help)
 
-# Later Package Integration Functions
-export(inrep_later)
-export(create_managed_loop)
-export(inrep_with_temp_loop)
-export(create_task_manager)
-export(monitor_fd)
-export(get_next_operation_time)
-export(batch_later)
-export(async_execute)
-export(create_background_queue)
-export(async_file_op)
+# Later Package Integration Functions - REMOVED TO FIX PARSING ERROR
 
 import(shiny)
 import(methods)
 import(stats)
 import(utils)
-import(later)
+# import(later) - REMOVED TO FIX PARSING ERROR
 importFrom(graphics, polygon)
-importFrom(Rcpp, sourceCpp)
-importFrom(rlang, as_function)
+# importFrom(Rcpp, sourceCpp) - REMOVED TO FIX PARSING ERROR  
+# importFrom(rlang, as_function) - REMOVED TO FIX PARSING ERROR
 importFrom(shinyjs, runjs)
