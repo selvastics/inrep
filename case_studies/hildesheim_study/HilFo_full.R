@@ -2053,17 +2053,250 @@ monitor_adaptive <- function(session_data) {
 }
 
 # No custom CSS or JavaScript needed - inrep handles everything automatically
-# Launch with inrep's built-in capabilities
-inrep::launch_study(
-  config = study_config,
-  item_bank = all_items_de,  # Bilingual item bank
-  webdav_url = WEBDAV_URL,
-  password = WEBDAV_PASSWORD,
-  save_format = "csv"
-  # No custom CSS needed - inrep handles theming
-  # No server extensions needed - inrep handles language switching
-  # No admin dashboard hook needed - inrep handles monitoring
-)
+
+/* Original inrep button styling */
+.btn-klee {
+  background-color: #e8041c !important;
+  color: white !important;
+  border: none !important;
+  padding: 12px 24px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  transition: background-color 0.2s !important;
+  text-decoration: none !important;
+  display: inline-block !important;
+  text-align: center !important;
+}
+
+.btn-klee:hover {
+  background-color: #c7031f !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(232, 4, 28, 0.2) !important;
+}
+
+/* Override Bootstrap button colors for Hildesheim theme */
+.btn-primary {
+  background-color: #e8041c !important;
+  border-color: #e8041c !important;
+  color: white !important;
+  padding: 12px 24px !important;
+  border-radius: 6px !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-primary:hover {
+  background-color: #c7031f !important;
+  border-color: #c7031f !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(232, 4, 28, 0.2) !important;
+}
+
+.btn-success {
+  background-color: #28a745 !important;
+  border-color: #28a745 !important;
+  color: white !important;
+  padding: 12px 24px !important;
+  border-radius: 6px !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-success:hover {
+  background-color: #218838 !important;
+  border-color: #218838 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2) !important;
+}
+
+.btn-secondary {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+  color: white !important;
+  padding: 12px 24px !important;
+  border-radius: 6px !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Radio buttons - Enhanced alignment with Hildesheim colors */
+.shiny-input-radiogroup .shiny-options-group {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 6px !important;
+  justify-content: space-between !important;
+  align-items: stretch !important;
+  margin: 25px 0 !important;
+  width: 100% !important;
+}
+
+.shiny-options-group label {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 12px 6px !important;
+  margin: 0 !important;
+  border: 2px solid #e0e0e0 !important;
+  border-radius: 8px !important;
+  background: white !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  text-align: center !important;
+  position: relative !important;
+  overflow: hidden !important;
+  word-wrap: break-word !important;
+  line-height: 1.2 !important;
+}
+
+.shiny-options-group label:hover {
+  border-color: #e8041c !important;
+  background: linear-gradient(135deg, #fff3f4 0%, #ffe6e8 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(232, 4, 28, 0.15) !important;
+}
+
+.shiny-options-group input[type="radio"]:checked + label,
+.shiny-options-group label:has(input[type="radio"]:checked) {
+  border-color: #e8041c !important;
+  background: linear-gradient(135deg, #e8041c 0%, #c7031f 100%) !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 3px 8px rgba(232, 4, 28, 0.3) !important;
+}
+
+.shiny-options-group input[type="radio"] {
+  margin-right: 8px !important;
+  transform: scale(1.2) !important;
+  accent-color: #e8041c !important;
+}
+
+/* Checkbox styling with Hildesheim theme */
+.shiny-input-checkboxgroup .shiny-options-group {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+  justify-content: center !important;
+  margin: 25px 0 !important;
+}
+
+.shiny-input-checkboxgroup .shiny-options-group label {
+  display: flex !important;
+  align-items: center !important;
+  padding: 12px 20px !important;
+  margin: 4px !important;
+  border: 2px solid #e0e0e0 !important;
+  border-radius: 8px !important;
+  background: white !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  min-width: 120px !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+.shiny-input-checkboxgroup .shiny-options-group label:hover {
+  border-color: #e8041c !important;
+  background: #fff3f4 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(232, 4, 28, 0.15) !important;
+}
+
+.shiny-input-checkboxgroup input[type="checkbox"]:checked + label,
+.shiny-input-checkboxgroup label:has(input[type="checkbox"]:checked) {
+  border-color: #e8041c !important;
+  background: linear-gradient(135deg, #e8041c 0%, #c7031f 100%) !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 3px 8px rgba(232, 4, 28, 0.3) !important;
+}
+
+/* Select dropdown styling - Enhanced to match item pages */
+.shiny-input-select {
+  border: 2px solid #e0e0e0 !important;
+  border-radius: 8px !important;
+  padding: 12px !important;
+  background: white !important;
+  margin: 25px 0 !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.shiny-input-select select {
+  width: 100% !important;
+  padding: 12px 16px !important;
+  border: none !important;
+  background: transparent !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  color: #333 !important;
+}
+
+.shiny-input-select:focus-within {
+  border-color: #e8041c !important;
+  box-shadow: 0 0 0 3px rgba(232, 4, 28, 0.1) !important;
+  transform: translateY(-1px) !important;
+}
+
+.shiny-input-select:hover {
+  border-color: #e8041c !important;
+  box-shadow: 0 4px 8px rgba(232, 4, 28, 0.15) !important;
+}
+
+/* Text input styling - Enhanced to match item pages */
+.shiny-input-text {
+  border: 2px solid #e0e0e0 !important;
+  border-radius: 8px !important;
+  padding: 12px !important;
+  background: white !important;
+  margin: 25px 0 !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.shiny-input-text input {
+  width: 100% !important;
+  padding: 12px 16px !important;
+  border: none !important;
+  background: transparent !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  color: #333 !important;
+}
+
+.shiny-input-text:focus-within {
+  border-color: #e8041c !important;
+  box-shadow: 0 0 0 3px rgba(232, 4, 28, 0.1) !important;
+  transform: translateY(-1px) !important;
+}
+
+.shiny-input-text:hover {
+  border-color: #e8041c !important;
+  box-shadow: 0 4px 8px rgba(232, 4, 28, 0.15) !important;
+}
+
+/* Label styling for demographics */
+.shiny-input-select label,
+.shiny-input-text label {
+  display: block !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #333 !important;
+  margin-bottom: 8px !important;
+  padding-left: 4px !important;
+}
 
 /* Progress bar styling */
 .progress-bar {
