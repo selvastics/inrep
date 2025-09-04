@@ -535,74 +535,43 @@ launch_study <- function(
   
   # Helper function for robust scroll-to-top functionality (works on desktop and mobile)
   scroll_to_top_enhanced <- function() {
+    # Simple, reliable scroll function that works on all platforms
+    scroll_js <- "
+    (function() {
+      // Method 1: Standard scrollTo (works on all modern browsers)
+      if (window.scrollTo) {
+        window.scrollTo(0, 0);
+      }
+      
+      // Method 2: Direct element scrolling (fallback for older browsers)
+      if (document.documentElement) {
+        document.documentElement.scrollTop = 0;
+      }
+      
+      // Method 3: Body scrolling (additional fallback)
+      if (document.body) {
+        document.body.scrollTop = 0;
+      }
+    })();
+    "
+    
+    # Try shinyjs first
     if (requireNamespace("shinyjs", quietly = TRUE)) {
-      # Robust scroll function that works reliably on all platforms
-      scroll_js <- "
-      (function() {
-        try {
-          // Primary method: Modern browsers (desktop and mobile)
-          if (window.scrollTo) {
-            window.scrollTo(0, 0);
-          }
-          
-          // Fallback 1: Direct element scrolling
-          if (document.documentElement) {
-            document.documentElement.scrollTop = 0;
-          }
-          
-          // Fallback 2: Body scrolling
-          if (document.body) {
-            document.body.scrollTop = 0;
-          }
-          
-          // Fallback 3: Smooth scrolling for modern browsers
-          if (window.scrollTo && typeof window.scrollTo === 'function') {
-            try {
-              window.scrollTo({top: 0, left: 0, behavior: 'smooth'});
-            } catch(e) {
-              // If smooth scrolling fails, use instant scrolling
-              window.scrollTo(0, 0);
-            }
-          }
-          
-          // Mobile app support (only if available)
-          if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.scrollToTop) {
-            try {
-              window.webkit.messageHandlers.scrollToTop.postMessage({});
-            } catch(e) {
-              // Ignore mobile app errors
-            }
-          }
-          
-          // React Native WebView support (only if available)
-          if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
-            try {
-              window.ReactNativeWebView.postMessage(JSON.stringify({type: 'scrollToTop'}));
-            } catch(e) {
-              // Ignore React Native errors
-            }
-          }
-        } catch(e) {
-          // Final fallback: Simple scroll
-          try {
-            window.scrollTo(0, 0);
-          } catch(e2) {
-            // If all else fails, try document scrolling
-            if (document.documentElement) {
-              document.documentElement.scrollTop = 0;
-            }
-          }
-        }
-      })();
-      "
-      shinyjs::runjs(scroll_js)
-    } else {
-      # Fallback: Simple scroll without shinyjs
       tryCatch({
-        # Try basic JavaScript execution
-        shiny::runjs("window.scrollTo(0, 0);")
+        shinyjs::runjs(scroll_js)
       }, error = function(e) {
-        # If JavaScript fails, log the error but don't break the app
+        # If shinyjs fails, try direct JavaScript
+        tryCatch({
+          shiny::runjs(scroll_js)
+        }, error = function(e2) {
+          logger(sprintf("Scroll to top failed: %s", e2$message), level = "WARNING")
+        })
+      })
+    } else {
+      # Fallback: Direct JavaScript execution
+      tryCatch({
+        shiny::runjs(scroll_js)
+      }, error = function(e) {
         logger(sprintf("Scroll to top failed: %s", e$message), level = "WARNING")
       })
     }
@@ -3593,6 +3562,15 @@ launch_study <- function(
           ) # End of page-wrapper div
       })
     
+    # Countdown timer output for auto-close functionality
+    output$countdown_timer <- shiny::renderText({
+      if (isTRUE(rv$auto_close_timer_active) && !is.null(rv$countdown_time)) {
+        sprintf("%d", rv$countdown_time)
+      } else {
+        ""
+      }
+    })
+    
     output$theta_plot <- shiny::renderPlot({
       logger(sprintf("Plot rendering triggered - adaptive: %s, theta_history length: %d", config$adaptive, base::length(rv$theta_history)))
       
@@ -4440,6 +4418,27 @@ launch_study <- function(
             rv$auto_close_timer_active <- TRUE
             
             logger(sprintf("Auto-close timer started: %d seconds", auto_close_seconds), level = "INFO")
+            
+            # Start countdown timer
+            countdown_observer <- shiny::observe({
+              if (isTRUE(rv$auto_close_timer_active) && rv$countdown_time > 0) {
+                # Update countdown
+                rv$countdown_time <- rv$countdown_time - 1
+                
+                # Schedule next update
+                shiny::invalidateLater(1000, session)
+              } else if (isTRUE(rv$auto_close_timer_active) && rv$countdown_time <= 0) {
+                # Time's up - close the app
+                logger("Auto-close timer expired - closing app", level = "INFO")
+                rv$auto_close_timer_active <- FALSE
+                
+                # Close the app
+                shiny::stopApp()
+              }
+            })
+            
+            # Store observer to prevent memory leaks
+            session$userData$countdown_observer <- countdown_observer
           }
         }
         

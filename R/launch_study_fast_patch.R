@@ -106,32 +106,28 @@ launch_study_fast <- function(config, item_bank,
       })
       
       # Scroll to top of page when starting the study (enhanced for all platforms)
+      scroll_js <- "
+      (function() {
+        if (window.scrollTo) {
+          window.scrollTo(0, 0);
+        }
+        if (document.documentElement) {
+          document.documentElement.scrollTop = 0;
+        }
+        if (document.body) {
+          document.body.scrollTop = 0;
+        }
+      })();
+      "
+      
       if (requireNamespace("shinyjs", quietly = TRUE)) {
-        scroll_js <- "
-        (function() {
-          try {
-            if (window.scrollTo) {
-              window.scrollTo(0, 0);
-            }
-            if (document.documentElement) {
-              document.documentElement.scrollTop = 0;
-            }
-            if (document.body) {
-              document.body.scrollTop = 0;
-            }
-          } catch(e) {
-            // Fallback
-            try {
-              window.scrollTo(0, 0);
-            } catch(e2) {
-              if (document.documentElement) {
-                document.documentElement.scrollTop = 0;
-              }
-            }
-          }
-        })();
-        "
-        shinyjs::runjs(scroll_js)
+        tryCatch({
+          shinyjs::runjs(scroll_js)
+        }, error = function(e) {
+          shiny::runjs(scroll_js)
+        })
+      } else {
+        shiny::runjs(scroll_js)
       }
     })
     
@@ -170,32 +166,28 @@ launch_study_fast <- function(config, item_bank,
       rv$current_page <- rv$current_page + 1
       
       # Scroll to top of page when navigating to next page (enhanced for all platforms)
+      scroll_js <- "
+      (function() {
+        if (window.scrollTo) {
+          window.scrollTo(0, 0);
+        }
+        if (document.documentElement) {
+          document.documentElement.scrollTop = 0;
+        }
+        if (document.body) {
+          document.body.scrollTop = 0;
+        }
+      })();
+      "
+      
       if (requireNamespace("shinyjs", quietly = TRUE)) {
-        scroll_js <- "
-        (function() {
-          try {
-            if (window.scrollTo) {
-              window.scrollTo(0, 0);
-            }
-            if (document.documentElement) {
-              document.documentElement.scrollTop = 0;
-            }
-            if (document.body) {
-              document.body.scrollTop = 0;
-            }
-          } catch(e) {
-            // Fallback
-            try {
-              window.scrollTo(0, 0);
-            } catch(e2) {
-              if (document.documentElement) {
-                document.documentElement.scrollTop = 0;
-              }
-            }
-          }
-        })();
-        "
-        shinyjs::runjs(scroll_js)
+        tryCatch({
+          shinyjs::runjs(scroll_js)
+        }, error = function(e) {
+          shiny::runjs(scroll_js)
+        })
+      } else {
+        shiny::runjs(scroll_js)
       }
     })
     
