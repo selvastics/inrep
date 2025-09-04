@@ -126,14 +126,14 @@ custom_page_flow <- list(
     )
   ),
   
-  # Page 2: Code Generation with input field
+  # Page 2: Demographics Page with Code Input
   list(
     id = "page2",
     type = "demographics",
     title = "",
     content = paste0(
       '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
-      '<h3 style="color: #2c3e50;">Generierung deines persönlichen Codes</h3>',
+      '<h3 style="color: #2c3e50;">Teilnahme-Code</h3>',
       '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">',
       '<p><strong>Bitte erstelle deinen Code nach folgender Anleitung:</strong></p>',
       '<ul style="list-style-type: none; padding-left: 0;">',
@@ -208,14 +208,101 @@ custom_page_flow <- list(
     scale_type = "likert"
   ),
   
-  # Page 9: Items 28-30 (Final items 5, 6, 7)
+  # Page 9: Items 28-30 (Final items 5, 6, 7) - Special page with highlighted stem
   list(
     id = "page9",
-    type = "items",
+    type = "custom",
     title = "",
-    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.",
-    item_indices = 28:30,
-    scale_type = "likert"
+    content = paste0(
+      '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
+      '<p style="margin-bottom: 20px;">Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema "Langfristige persönliche Lebensperspektive der UMA".</p>',
+      '<div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2196F3;">',
+      '<p style="font-weight: bold; font-size: 18px; color: #1976d2; margin: 0;">Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…</p>',
+      '</div>',
+      '</div>'
+    ),
+    render_function = function(input, output, session, rv) {
+      # Custom render function for page 9 - show items with ... prefix
+      output$page_content <- renderUI({
+        items_to_render <- 28:30
+        item_html <- ""
+        
+        for (i in items_to_render) {
+          item_id <- paste0("Item_", sprintf("%02d", i))
+          item_text <- all_items$Question[i]
+          
+          # Remove the stem part and add ... prefix
+          if (grepl("Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit ", item_text)) {
+            item_text <- gsub("Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit ", "...", item_text)
+          } else if (grepl("Ich habe das Gefühl, dass ich die jungen Männer ", item_text)) {
+            item_text <- gsub("Ich habe das Gefühl, dass ich die jungen Männer ", "...", item_text)
+          } else if (grepl("Ich habe das Gefühl, dass ich positiven Einfluss ", item_text)) {
+            item_text <- gsub("Ich habe das Gefühl, dass ich positiven Einfluss ", "...", item_text)
+          }
+          
+          item_html <- paste0(item_html, 
+            '<div class="item-container" style="margin: 20px 0; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px;">',
+            '<div class="item-text" style="font-size: 16px; margin-bottom: 15px;">', item_text, '</div>',
+            '<div class="response-options">',
+            '<div class="shiny-options-group">',
+            '<label style="display: flex; align-items: center; padding: 8px 12px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s; margin: 5px;">',
+            '<input type="radio" name="', item_id, '" value="1" style="margin-right: 8px;">',
+            '<span>1 - stimme überhaupt nicht zu</span>',
+            '</label>',
+            '<label style="display: flex; align-items: center; padding: 8px 12px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s; margin: 5px;">',
+            '<input type="radio" name="', item_id, '" value="2" style="margin-right: 8px;">',
+            '<span>2 - stimme nicht zu</span>',
+            '</label>',
+            '<label style="display: flex; align-items: center; padding: 8px 12px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s; margin: 5px;">',
+            '<input type="radio" name="', item_id, '" value="3" style="margin-right: 8px;">',
+            '<span>3 - stimme eher nicht zu</span>',
+            '</label>',
+            '<label style="display: flex; align-items: center; padding: 8px 12px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s; margin: 5px;">',
+            '<input type="radio" name="', item_id, '" value="4" style="margin-right: 8px;">',
+            '<span>4 - weder noch</span>',
+            '</label>',
+            '<label style="display: flex; align-items: center; padding: 8px 12px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s; margin: 5px;">',
+            '<input type="radio" name="', item_id, '" value="5" style="margin-right: 8px;">',
+            '<span>5 - stimme eher zu</span>',
+            '</label>',
+            '<label style="display: flex; align-items: center; padding: 8px 12px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s; margin: 5px;">',
+            '<input type="radio" name="', item_id, '" value="6" style="margin-right: 8px;">',
+            '<span>6 - stimme zu</span>',
+            '</label>',
+            '<label style="display: flex; align-items: center; padding: 8px 12px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s; margin: 5px;">',
+            '<input type="radio" name="', item_id, '" value="7" style="margin-right: 8px;">',
+            '<span>7 - stimme voll und ganz zu</span>',
+            '</label>',
+            '</div>',
+            '</div>',
+            '</div>'
+          )
+        }
+        
+        HTML(paste0(
+          '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
+          '<p style="margin-bottom: 20px;">Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema "Langfristige persönliche Lebensperspektive der UMA".</p>',
+          '<div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2196F3;">',
+          '<p style="font-weight: bold; font-size: 18px; color: #1976d2; margin: 0;">Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…</p>',
+          '</div>',
+          item_html,
+          '</div>'
+        ))
+      })
+    },
+    completion_handler = function(input, rv) {
+      # Store responses for items 28-30
+      items_to_store <- 28:30
+      for (i in items_to_store) {
+        item_id <- paste0("Item_", sprintf("%02d", i))
+        if (!is.null(input[[item_id]])) {
+          if (!is.null(rv)) {
+            rv[[paste0("item_", item_id)]] <- as.numeric(input[[item_id]])
+          }
+          message("Saved item response ", i, " (id: ", item_id, "): ", input[[item_id]])
+        }
+      }
+    }
   ),
   
   # Page 10: Thank you with data submission
