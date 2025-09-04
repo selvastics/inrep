@@ -249,100 +249,11 @@ custom_page_flow <- list(
   # Page 8: Items 24-27 (4.1-4.4) - Special section with stem
   list(
     id = "page8",
-    type = "custom",
+    type = "items",
     title = "",
-    content = paste0(
-      '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
-      '<p style="margin-bottom: 20px;">Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema "Langfristige persönliche Lebensperspektive der UMA".</p>',
-      '<div style="background: #f0f8ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3498db;">',
-      '<p style="font-weight: bold; font-size: 18px; color: #2c3e50; margin: 0;">4. Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…</p>',
-      '</div>',
-      '</div>'
-    ),
-    render_function = function(input, output, session, rv) {
-      # Custom render function for page 8 - show items 4.1-4.4 with ... prefix
-      output$page_content <- renderUI({
-        items_to_render <- 24:27
-        item_elements <- list()
-        
-        for (i in items_to_render) {
-          item_id <- paste0("Item_", sprintf("%02d", i))
-          item_text <- all_items$Question[i]
-          
-          # Remove the stem part and add 4.1, 4.2, 4.3, 4.4 prefix
-          if (grepl("Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit ", item_text)) {
-            item_text <- gsub("Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit ", "...", item_text)
-          }
-          
-          # Create radio button group with proper Shiny elements (NO numbering)
-          item_elements[[length(item_elements) + 1]] <- shiny::div(
-            class = "item-container",
-            style = "margin: 20px 0; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px;",
-            shiny::div(
-              class = "item-text",
-              style = "font-size: 16px; margin-bottom: 15px;",
-              item_text
-            ),
-            shiny::div(
-              class = "response-options",
-              shiny::div(
-                class = "shiny-options-group",
-                shiny::radioButtons(
-                  inputId = item_id,
-                  label = NULL,
-                  choices = list(
-                    "1 - stimme überhaupt nicht zu" = 1,
-                    "2 - stimme nicht zu" = 2,
-                    "3 - stimme eher nicht zu" = 3,
-                    "4 - weder noch" = 4,
-                    "5 - stimme eher zu" = 5,
-                    "6 - stimme zu" = 6,
-                    "7 - stimme voll und ganz zu" = 7
-                  ),
-                  selected = character(0),
-                  inline = FALSE
-                )
-              )
-            )
-          )
-        }
-        
-        # Return with assessment-card frame
-        shiny::div(
-          class = "assessment-card",
-          style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
-          shiny::h3("", class = "card-header"), # Empty header
-          shiny::div(
-            style = "padding: 20px; font-size: 16px; line-height: 1.8;",
-            shiny::p(
-              style = "margin-bottom: 20px;",
-              "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema \"Langfristige persönliche Lebensperspektive der UMA\"."
-            ),
-            shiny::div(
-              style = "background: #f0f8ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3498db;",
-              shiny::p(
-                style = "font-weight: bold; font-size: 18px; color: #2c3e50; margin: 0;",
-                "4. Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…"
-              )
-            ),
-            item_elements
-          )
-        )
-      })
-    },
-    completion_handler = function(input, rv) {
-      # Store responses for items 24-27
-      items_to_store <- 24:27
-      for (i in items_to_store) {
-        item_id <- paste0("Item_", sprintf("%02d", i))
-        if (!is.null(input[[item_id]])) {
-          if (!is.null(rv)) {
-            rv[[paste0("item_", item_id)]] <- as.numeric(input[[item_id]])
-          }
-          message("Saved item response ", i, " (id: ", item_id, "): ", input[[item_id]])
-        }
-      }
-    }
+    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.\n\n4. Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…",
+    item_indices = 24:27,
+    scale_type = "likert"
   ),
   
   # Page 9: Items 28-30 (Final items 5, 6, 7)
