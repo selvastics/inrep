@@ -1,4 +1,0 @@
-Name: Build full site
-Description: Build website for current package
-Binding: build_site
-Interactive: true

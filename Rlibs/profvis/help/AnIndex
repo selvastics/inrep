@@ -1,9 +1,0 @@
-profvis-package	profvis-package
-parse_rprof	parse_rprof
-pause	pause
-print.profvis	print.profvis
-profvis	profvis
-profvisOutput	profvisOutput
-profvis_server	profvis_ui
-profvis_ui	profvis_ui
-renderProfvis	profvisOutput

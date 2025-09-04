@@ -1,7 +1,0 @@
-pause                   Pause an R process
-print.profvis           Print a profvis object
-profvis                 Profile an R expression and visualize profiling
-                        data
-profvisOutput           Widget output and renders functions for use in
-                        Shiny
-profvis_ui              profvis UI for Shiny Apps

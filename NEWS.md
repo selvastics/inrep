@@ -3,10 +3,6 @@
 ## Version 2.0.0 (Development)
 
 ### Major New Features
-- Added `log_data = TRUE` option. Logging now records start and end times plus full interaction data.  
-- Updated **Next Page** function to jump directly to the head of the page.  
-- Expanded **scale size support**. Any scale length is now handled automatically (2, 3, 4, 5, 6, 7, 10, 20, or custom).  
-
 
 #### Enhanced LLM Assistance System
 - **Complete overhaul of LLM assistance** implementing Anthropic's Claude 4 best practices
