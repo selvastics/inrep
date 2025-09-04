@@ -157,6 +157,10 @@ export(get_help)
 # export(reset_comprehensive_dataset)
 # export(get_dataset_summary)
 
+# Enhanced Response Label Functions
+export(generate_response_categories)
+export(update_item_bank_scale)
+
 import(shiny)
 import(methods)
 import(stats)

@@ -3099,17 +3099,12 @@ launch_study <- function(
                          choices <- 1:5
                        }
                        
-                       labels <- base::switch(current_language(),
-                                              de = base::c("Stark ablehnen", "Ablehnen", "Neutral", "Zustimmen", "Stark zustimmen")[1:base::length(choices)],
-                                              en = base::c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")[1:base::length(choices)],
-                                              es = base::c("Totalmente en desacuerdo", "En desacuerdo", "Neutral", "De acuerdo", "Totalmente de acuerdo")[1:base::length(choices)],
-                                              fr = base::c("Fortement en désaccord", "En désaccord", "Neutre", "D'accord", "Fortement d'accord")[1:base::length(choices)]
+                       # Use the enhanced get_response_labels function
+                       labels <- get_response_labels(
+                         scale_type = "likert",
+                         choices = choices,
+                         language = current_language()
                        )
-                       
-                       # Ensure we have valid labels
-                       if (length(labels) == 0 || all(is.na(labels))) {
-                         labels <- base::c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")[1:base::length(choices)]
-                       }
                        base::switch(config$response_ui_type,
                                     "slider" = shiny::div(class = "slider-container",
                                                           shiny::sliderInput(
