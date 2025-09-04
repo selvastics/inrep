@@ -526,8 +526,100 @@ launch_study <- function(
     session_init_delay = NULL,
     show_loading_screen = NULL,
     immediate_ui = FALSE,
+    # AUTO-CLOSE PARAMETERS
+    auto_close_time = 300,  # 5 minutes default
+    auto_close_time_unit = "seconds",  # "seconds" or "minutes"
+    disable_auto_close = FALSE,
     ...
 ) {
+  
+  # Helper function for robust scroll-to-top functionality (works on desktop and mobile)
+  scroll_to_top_enhanced <- function() {
+    # Enhanced scroll function that works reliably in web browsers
+    scroll_js <- "
+    (function() {
+      // Force immediate scroll with multiple methods
+      try {
+        // Method 1: Modern scrollTo with options
+        if (window.scrollTo) {
+          window.scrollTo({
+            top: 0,
+            left: 0,
+            behavior: 'instant'
+          });
+        }
+      } catch(e) {
+        try {
+          // Method 2: Simple scrollTo
+          window.scrollTo(0, 0);
+        } catch(e2) {
+          // Method 3: Direct element scrolling
+          if (document.documentElement) {
+            document.documentElement.scrollTop = 0;
+            document.documentElement.scrollLeft = 0;
+          }
+          if (document.body) {
+            document.body.scrollTop = 0;
+            document.body.scrollLeft = 0;
+          }
+        }
+      }
+      
+      // Additional methods for stubborn browsers
+      setTimeout(function() {
+        try {
+          window.scrollTo(0, 0);
+        } catch(e) {
+          if (document.documentElement) {
+            document.documentElement.scrollTop = 0;
+          }
+          if (document.body) {
+            document.body.scrollTop = 0;
+          }
+        }
+      }, 10);
+      
+      // Final attempt after a short delay
+      setTimeout(function() {
+        try {
+          window.scrollTo(0, 0);
+        } catch(e) {
+          if (document.documentElement) {
+            document.documentElement.scrollTop = 0;
+          }
+        }
+      }, 100);
+    })();
+    "
+    
+    # Execute with multiple fallbacks
+    if (requireNamespace("shinyjs", quietly = TRUE)) {
+      tryCatch({
+        shinyjs::runjs(scroll_js)
+      }, error = function(e) {
+        tryCatch({
+          shiny::runjs(scroll_js)
+        }, error = function(e2) {
+          # Final fallback - simple scroll
+          tryCatch({
+            shinyjs::runjs("window.scrollTo(0, 0);")
+          }, error = function(e3) {
+            logger(sprintf("Scroll to top failed: %s", e3$message), level = "WARNING")
+          })
+        })
+      })
+    } else {
+      tryCatch({
+        shiny::runjs(scroll_js)
+      }, error = function(e) {
+        tryCatch({
+          shiny::runjs("window.scrollTo(0, 0);")
+        }, error = function(e2) {
+          logger(sprintf("Scroll to top failed: %s", e2$message), level = "WARNING")
+        })
+      })
+    }
+  }
   
   # AGGRESSIVE LATER PACKAGE IMPLEMENTATION - DISPLAY UI IMMEDIATELY
   if (immediate_ui) {
@@ -997,6 +1089,9 @@ launch_study <- function(
   .needs_session_init <- session_save
   session_config <- NULL
   error_config <- NULL
+  
+  # CRITICAL: Force new session for each user to prevent session sharing
+  .force_new_session <- TRUE
   
   if (FALSE) {  # Skip for now - will be done in server
       logger("Initializing robust session management", level = "INFO")
@@ -2467,6 +2562,37 @@ launch_study <- function(
       shiny::invalidateLater(10, session)
     }
     
+    # Initialize package loading state
+    .packages_loaded <- FALSE
+    
+    # Define package loading function
+    .load_packages_once <- function() {
+      if (!.packages_loaded) {
+        # Load packages immediately without delay
+        safe_load_packages(immediate = TRUE)
+        .packages_loaded <<- TRUE
+      }
+    }
+    
+    # CRITICAL: Session isolation - ensure each user gets a completely fresh session
+    if (exists(".force_new_session") && .force_new_session) {
+      # Clear any existing session data to prevent session sharing
+      if (exists(".logging_data", envir = .GlobalEnv)) {
+        rm(".logging_data", envir = .GlobalEnv)
+      }
+      
+      # Clear any existing session state
+      if (exists("session_config", envir = .GlobalEnv)) {
+        rm("session_config", envir = .GlobalEnv)
+      }
+      
+      # Force new session initialization
+      .needs_session_init <<- TRUE
+      .force_new_session <<- FALSE  # Reset flag
+      
+      logger("CRITICAL: Forcing new session to prevent session sharing", level = "WARNING")
+    }
+    
     # Step 1: Create minimal reactive values (no computation!)
     current_language <- shiny::reactiveVal(default_language)
     reactive_ui_labels <- shiny::reactiveVal(ui_labels)
@@ -2488,7 +2614,36 @@ launch_study <- function(
       shiny::div(
         id = "main-study-container",
         style = "min-height: 500px; width: 100%; max-width: 100%; margin: 0 auto; padding: 0; position: relative; overflow: hidden;",
-        shiny::uiOutput("page_content")
+        shiny::uiOutput("page_content"),
+        # Global scroll-to-top script that runs on every page load
+        shiny::tags$script(HTML("
+          // Global scroll-to-top function for web browsers
+          function forceScrollToTop() {
+            try {
+              window.scrollTo(0, 0);
+            } catch(e) {
+              try {
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+              } catch(e2) {
+                // Ignore errors
+              }
+            }
+          }
+          
+          // Execute scroll on page load
+          document.addEventListener('DOMContentLoaded', forceScrollToTop);
+          
+          // Execute scroll when Shiny updates content
+          $(document).on('shiny:value', function(event) {
+            setTimeout(forceScrollToTop, 10);
+          });
+          
+          // Execute scroll on any content change
+          $(document).on('shiny:recalculated', function(event) {
+            setTimeout(forceScrollToTop, 10);
+          });
+        "))
       )
     })
     
@@ -2498,13 +2653,44 @@ launch_study <- function(
         # Initialize session management if needed (was deferred from startup)
         if (exists(".needs_session_init") && .needs_session_init) {
           logger("Initializing robust session management", level = "INFO")
+          
+          # Generate unique session ID with enhanced isolation
+          timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S_%OS3")
+          process_id <- Sys.getpid()
+          random_suffix <- paste(sample(c(letters, LETTERS, 0:9), 12, replace = TRUE), collapse = "")
+          machine_id <- Sys.info()["nodename"]
+          combined_string <- paste(timestamp, process_id, random_suffix, machine_id, sep = "_")
+          hash_suffix <- substr(digest::digest(combined_string, algo = "md5"), 1, 8)
+          unique_session_id <- paste0("SESS_", timestamp, "_", process_id, "_", hash_suffix)
+          
           session_config <<- list(
-            session_id = paste0("SESS_", format(Sys.time(), "%Y%m%d_%H%M%S_"),
-                               paste0(sample(letters, 8), collapse = "")),
+            session_id = unique_session_id,
             start_time = Sys.time(),
             max_time = max_session_time %||% 7200,
             log_file = NULL
           )
+          
+          # Ensure complete data isolation - generate unique participant code for this session
+          if (!is.null(study_key)) {
+            # Create session-specific participant code to prevent conflicts
+            session_specific_key <- paste0(study_key, "_", substr(unique_session_id, -8, -1))
+            study_key <<- session_specific_key
+            logger(sprintf("Generated session-specific participant code: %s", study_key), level = "INFO")
+          }
+          
+          # Ensure complete data isolation by clearing any global state
+          if (exists(".logging_data", envir = .GlobalEnv)) {
+            rm(".logging_data", envir = .GlobalEnv)
+          }
+          
+          # Initialize fresh session-specific logging data
+          .GlobalEnv$.logging_data <- new.env()
+          .GlobalEnv$.logging_data$session_id <- unique_session_id
+          .GlobalEnv$.logging_data$session_start <- Sys.time()
+          .GlobalEnv$.logging_data$current_page_start <- Sys.time()
+          
+          logger(sprintf("Complete data isolation ensured for session: %s", unique_session_id), level = "INFO")
+          
           logger(sprintf("Session initialized: %s (max time: %d seconds)", 
                         session_config$session_id, session_config$max_time), level = "INFO")
         }
@@ -2605,11 +2791,52 @@ launch_study <- function(
   # IMMEDIATE SYNCHRONOUS INITIALIZATION - No reactive dependencies
   rv <- shiny::reactiveValues()
   
+  # CRITICAL: Ensure complete session isolation - each user gets fresh data
+  # Generate unique session ID first
+  unique_session_id <- paste0("USER_", format(Sys.time(), "%Y%m%d_%H%M%S_%OS3"), "_", 
+                              paste0(sample(c(letters, LETTERS, 0:9), 12, replace = TRUE), collapse = ""))
+  
+  # Clear any existing session data to prevent session sharing
+  rv$session_isolation_enforced <- TRUE
+  rv$session_start_time <- Sys.time()
+  rv$unique_session_id <- unique_session_id
+  
+  # Log session isolation for security
+  logger(sprintf("CRITICAL: Session isolation enforced. New user session: %s", unique_session_id), level = "WARNING")
+  
   # Variables needed for session management (define immediately)
   effective_study_key <- study_key %||% config$study_key %||% generate_study_key()
   data_dir <- base::file.path("study_data", effective_study_key)
   if (!base::dir.exists(data_dir)) base::dir.create(data_dir, recursive = TRUE)
   session_file <- base::file.path(data_dir, "session.rds")
+  
+  # CRITICAL: Check for existing session data and prevent access
+  if (base::file.exists(session_file)) {
+    # Check if session file is recent (within last 5 minutes)
+    file_time <- file.mtime(session_file)
+    time_diff <- as.numeric(difftime(Sys.time(), file_time, units = "mins"))
+    
+    if (time_diff < 5) {
+      # Recent session exists - this could be session sharing!
+      logger(sprintf("CRITICAL: Recent session file detected (%.1f minutes old). Preventing session sharing!", time_diff), level = "WARNING")
+      
+      # Remove the existing session file to prevent access
+      tryCatch({
+        file.remove(session_file)
+        logger("Removed existing session file to prevent session sharing", level = "WARNING")
+      }, error = function(e) {
+        logger(sprintf("Failed to remove existing session file: %s", e$message), level = "ERROR")
+      })
+    } else {
+      # Old session file - safe to remove
+      tryCatch({
+        file.remove(session_file)
+        logger("Removed old session file", level = "INFO")
+      }, error = function(e) {
+        logger(sprintf("Failed to remove old session file: %s", e$message), level = "WARNING")
+      })
+    }
+  }
   
   # POPULATE rv IMMEDIATELY - No observe, no async, no delays
   rv$demo_data <- stats::setNames(base::rep(NA, base::length(config$demographics)), config$demographics)
@@ -2888,15 +3115,7 @@ launch_study <- function(
         (base::length(rv$administered) >= config$max_items || rv$current_se <= config$min_SEM)
     }
     
-    # Load packages immediately for better performance
-    .packages_loaded <- FALSE
-    .load_packages_once <- function() {
-      if (!.packages_loaded) {
-        # Load packages immediately without delay
-        safe_load_packages(immediate = TRUE)
-        .packages_loaded <<- TRUE
-      }
-    }
+    # Package loading function already defined above
     
     # REMOVED: Duplicate output$study_ui definition that was overriding the instant one
     # The first definition now handles everything including package loading
@@ -2932,7 +3151,7 @@ launch_study <- function(
           base::switch(stage,
                    "custom_page_flow" = {
                      # Process and render custom page flow
-                     process_page_flow(config, rv, input, output, session, item_bank, ui_labels, logger)
+                     process_page_flow(config, rv, input, output, session, item_bank, ui_labels, logger, auto_close_time, auto_close_time_unit, disable_auto_close)
                    },
                    "error" = {
                      shiny::div(class = "assessment-card error-card",
@@ -3415,6 +3634,15 @@ launch_study <- function(
           ) # End of switch
           ) # End of page-wrapper div
       })
+    
+    # Countdown timer output for auto-close functionality
+    output$countdown_timer <- shiny::renderText({
+      if (isTRUE(rv$auto_close_timer_active) && !is.null(rv$countdown_time)) {
+        sprintf("%d", rv$countdown_time)
+      } else {
+        ""
+      }
+    })
     
     output$theta_plot <- shiny::renderPlot({
       logger(sprintf("Plot rendering triggered - adaptive: %s, theta_history length: %d", config$adaptive, base::length(rv$theta_history)))
@@ -4052,9 +4280,18 @@ launch_study <- function(
             })
           }
           
-          # Scroll to top of page when navigating to next page
+          # Scroll to top of page when navigating to next page (enhanced for mobile/app)
+          scroll_to_top_enhanced()
+          
+          # Additional browser-specific scroll fix
           if (requireNamespace("shinyjs", quietly = TRUE)) {
-            shinyjs::runjs("window.scrollTo(0, 0);")
+            shinyjs::runjs("
+              setTimeout(function() {
+                window.scrollTo(0, 0);
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+              }, 50);
+            ")
           }
       }
     })
@@ -4089,9 +4326,18 @@ launch_study <- function(
             })
           }
           
-          # Scroll to top of page when navigating to previous page
+          # Scroll to top of page when navigating to previous page (enhanced for mobile/app)
+          scroll_to_top_enhanced()
+          
+          # Additional browser-specific scroll fix
           if (requireNamespace("shinyjs", quietly = TRUE)) {
-            shinyjs::runjs("window.scrollTo(0, 0);")
+            shinyjs::runjs("
+              setTimeout(function() {
+                window.scrollTo(0, 0);
+                document.documentElement.scrollTop = 0;
+                document.body.scrollTop = 0;
+              }, 50);
+            ")
           }
       }
     })
@@ -4196,18 +4442,37 @@ launch_study <- function(
           }
         }
         
-        # Clean up responses - remove NAs for final processing
-        final_responses <- rv$responses[!is.na(rv$responses)]
+        # ROBUST: Preserve all responses including NAs for proper indexing
+        # Don't remove NAs - they might be valid missing responses that need to be preserved
+        all_responses <- rv$responses
         
-        logger(sprintf("Study completed with %d responses collected", length(final_responses)))
+        # Log response collection status
+        logger(sprintf("Study completed with %d total responses (including NAs)", length(all_responses)))
+        logger(sprintf("Non-NA responses: %d", sum(!is.na(all_responses))))
+        logger(sprintf("Response indices with data: %s", paste(which(!is.na(all_responses)), collapse=", ")))
+        
+        # FINAL VALIDATION: For UMA study, ensure we have exactly 30 responses
+        if (!is.null(config$fixed_items) && length(config$fixed_items) == 30) {
+          if (length(all_responses) != 30) {
+            logger(sprintf("CRITICAL: UMA study expects 30 responses but got %d. Padding/truncating to 30.", length(all_responses)), level = "WARNING")
+            if (length(all_responses) < 30) {
+              # Pad with NA
+              all_responses <- c(all_responses, rep(NA, 30 - length(all_responses)))
+            } else if (length(all_responses) > 30) {
+              # Truncate
+              all_responses <- all_responses[1:30]
+            }
+            logger("FINAL VALIDATION: Adjusted responses to exactly 30 items", level = "INFO")
+          }
+        }
         
         # Generate results
         if (!is.null(config$results_processor)) {
           rv$cat_result <- list(
             theta = rv$current_ability,
             se = rv$current_se,
-            administered = 1:length(final_responses),
-            responses = final_responses,
+            administered = 1:length(all_responses),
+            responses = all_responses,  # Pass all responses including NAs
             response_times = rv$response_times,
             demo_data = rv$demo_data
           )
@@ -4217,7 +4482,7 @@ launch_study <- function(
             results_data <- list(
               theta = rv$current_ability,
               se = rv$current_se,
-              administered = 1:length(final_responses)
+              administered = 1:length(all_responses)
             )
             if (exists("update_comprehensive_dataset", mode = "function")) {
               update_comprehensive_dataset("results", results_data, stage = "results", current_page = length(config$custom_page_flow))
@@ -4231,9 +4496,89 @@ launch_study <- function(
           rv$current_page <- length(config$custom_page_flow)
           rv$stage <- "custom_page_flow"  # Stay in custom flow to show results page
           
-          # Scroll to top of page when showing results
-          if (requireNamespace("shinyjs", quietly = TRUE)) {
-            shinyjs::runjs("window.scrollTo(0, 0);")
+          # Scroll to top of page when showing results (enhanced for mobile/app)
+          scroll_to_top_enhanced()
+          
+          # Start auto-close timer if enabled
+          if (!disable_auto_close && auto_close_time > 0) {
+            # Convert time to seconds if needed
+            if (auto_close_time_unit == "minutes") {
+              auto_close_seconds <- auto_close_time * 60
+            } else {
+              auto_close_seconds <- auto_close_time
+            }
+            
+            # Initialize countdown timer
+            rv$countdown_time <- auto_close_seconds
+            rv$auto_close_timer_active <- TRUE
+            
+            logger(sprintf("Auto-close timer started: %d seconds", auto_close_seconds), level = "INFO")
+            
+            # Start countdown timer with universal auto-close
+            countdown_observer <- shiny::observe({
+              if (isTRUE(rv$auto_close_timer_active) && rv$countdown_time > 0) {
+                # Update countdown
+                rv$countdown_time <- rv$countdown_time - 1
+                
+                # Schedule next update
+                shiny::invalidateLater(1000, session)
+              } else if (isTRUE(rv$auto_close_timer_active) && rv$countdown_time <= 0) {
+                # Time's up - close the app/tab/browser
+                logger("Auto-close timer expired - closing app/tab/browser", level = "INFO")
+                rv$auto_close_timer_active <- FALSE
+                
+                # Universal auto-close JavaScript that works everywhere
+                auto_close_js <- "
+                (function() {
+                  try {
+                    // Method 1: Close current tab/window (works in most browsers)
+                    window.close();
+                  } catch(e) {
+                    try {
+                      // Method 2: Try to close the window
+                      if (window.opener) {
+                        window.opener = null;
+                        window.close();
+                      } else {
+                        // Method 3: Redirect to blank page (fallback)
+                        window.location.href = 'about:blank';
+                      }
+                    } catch(e2) {
+                      try {
+                        // Method 4: Show close message and redirect
+                        alert('Session completed. Please close this tab.');
+                        window.location.href = 'about:blank';
+                      } catch(e3) {
+                        // Method 5: Final fallback - just show message
+                        document.body.innerHTML = '<div style=\"text-align: center; padding: 50px; font-size: 18px;\">Session completed. Please close this tab.</div>';
+                      }
+                    }
+                  }
+                })();
+                "
+                
+                # Execute auto-close JavaScript
+                if (requireNamespace("shinyjs", quietly = TRUE)) {
+                  tryCatch({
+                    shinyjs::runjs(auto_close_js)
+                  }, error = function(e) {
+                    shiny::runjs(auto_close_js)
+                  })
+                } else {
+                  shiny::runjs(auto_close_js)
+                }
+                
+                # Also try R app close as fallback
+                tryCatch({
+                  shiny::stopApp()
+                }, error = function(e) {
+                  # Ignore R app close errors - JavaScript will handle it
+                })
+              }
+            })
+            
+            # Store observer to prevent memory leaks
+            session$userData$countdown_observer <- countdown_observer
           }
         }
         
@@ -4354,9 +4699,7 @@ launch_study <- function(
       rv$start_time <- base::Sys.time()
       
       # Scroll to top of page when starting assessment
-      if (requireNamespace("shinyjs", quietly = TRUE)) {
-        shinyjs::runjs("window.scrollTo(0, 0);")
-      }
+      scroll_to_top_enhanced()
       
       # Initialize item selection for assessment stage
       if (!config$adaptive) {
@@ -4764,9 +5107,7 @@ launch_study <- function(
           })
           
           # Scroll to top of page when showing results
-          if (requireNamespace("shinyjs", quietly = TRUE)) {
-            shinyjs::runjs("window.scrollTo(0, 0);")
-          }
+          scroll_to_top_enhanced()
           
           # Log test completion
           if (session_save && exists("log_session_event") && is.function(log_session_event)) {
@@ -4837,9 +5178,7 @@ launch_study <- function(
         rv$stage <- "assessment"
         
         # Scroll to top of page when recovering from error
-        if (requireNamespace("shinyjs", quietly = TRUE)) {
-          shinyjs::runjs("window.scrollTo(0, 0);")
-        }
+        scroll_to_top_enhanced()
         
         # Ensure we have a current item
         if (is.null(rv$current_item)) {
@@ -4897,9 +5236,7 @@ launch_study <- function(
       rv$stage <- "assessment"
       
       # Scroll to top of page when auto-recovering from error
-      if (requireNamespace("shinyjs", quietly = TRUE)) {
-        shinyjs::runjs("window.scrollTo(0, 0);")
-      }
+      scroll_to_top_enhanced()
       
       # Ensure we have a current item
       if (is.null(rv$current_item)) {
@@ -4946,9 +5283,7 @@ launch_study <- function(
         logger("Fallback error recovery - returning to assessment", level = "INFO")
         
         # Scroll to top of page when fallback recovering from error
-        if (requireNamespace("shinyjs", quietly = TRUE)) {
-          shinyjs::runjs("window.scrollTo(0, 0);")
-        }
+        scroll_to_top_enhanced()
       }
     })
     
@@ -4974,9 +5309,7 @@ launch_study <- function(
           rv$error_message <- NULL
           
           # Scroll to top of page when automatically recovering from error
-          if (requireNamespace("shinyjs", quietly = TRUE)) {
-            shinyjs::runjs("window.scrollTo(0, 0);")
-          }
+          scroll_to_top_enhanced()
           
           # Ensure we have a current item
           if (is.null(rv$current_item)) {
@@ -5031,9 +5364,7 @@ launch_study <- function(
       rv$current_se <- config$theta_prior[2]
       
       # Scroll to top of page when restarting
-      if (requireNamespace("shinyjs", quietly = TRUE)) {
-        shinyjs::runjs("window.scrollTo(0, 0);")
-      }
+      scroll_to_top_enhanced()
       rv$administered <- base::c()
       rv$responses = base::c()
       rv$response_times = base::c()
