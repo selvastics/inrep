@@ -263,7 +263,7 @@ custom_page_flow <- list(
       # Custom render function for page 8 - show items 4.1-4.4 with ... prefix
       output$page_content <- renderUI({
         items_to_render <- 24:27
-        item_html <- ""
+        item_elements <- list()
         
         for (i in items_to_render) {
           item_id <- paste0("Item_", sprintf("%02d", i))
@@ -276,54 +276,61 @@ custom_page_flow <- list(
           
           # Add item numbering (4.1, 4.2, 4.3, 4.4)
           item_number <- paste0("4.", i - 23)
-          item_html <- paste0(item_html, 
-            '<div class="item-container" style="margin: 20px 0; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px;">',
-            '<div class="item-text" style="font-size: 16px; margin-bottom: 15px;"><strong>', item_number, '</strong> ', item_text, '</div>',
-            '<div class="response-options">',
-            '<div class="shiny-options-group">',
-            '<label style="display: flex; align-items: center; padding: 8px 12px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s; margin: 5px;">',
-            '<input type="radio" name="', item_id, '" value="1" style="margin-right: 8px;">',
-            '<span>1 - stimme überhaupt nicht zu</span>',
-            '</label>',
-            '<label style="display: flex; align-items: center; padding: 8px 12px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s; margin: 5px;">',
-            '<input type="radio" name="', item_id, '" value="2" style="margin-right: 8px;">',
-            '<span>2 - stimme nicht zu</span>',
-            '</label>',
-            '<label style="display: flex; align-items: center; padding: 8px 12px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s; margin: 5px;">',
-            '<input type="radio" name="', item_id, '" value="3" style="margin-right: 8px;">',
-            '<span>3 - stimme eher nicht zu</span>',
-            '</label>',
-            '<label style="display: flex; align-items: center; padding: 8px 12px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s; margin: 5px;">',
-            '<input type="radio" name="', item_id, '" value="4" style="margin-right: 8px;">',
-            '<span>4 - weder noch</span>',
-            '</label>',
-            '<label style="display: flex; align-items: center; padding: 8px 12px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s; margin: 5px;">',
-            '<input type="radio" name="', item_id, '" value="5" style="margin-right: 8px;">',
-            '<span>5 - stimme eher zu</span>',
-            '</label>',
-            '<label style="display: flex; align-items: center; padding: 8px 12px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s; margin: 5px;">',
-            '<input type="radio" name="', item_id, '" value="6" style="margin-right: 8px;">',
-            '<span>6 - stimme zu</span>',
-            '</label>',
-            '<label style="display: flex; align-items: center; padding: 8px 12px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s; margin: 5px;">',
-            '<input type="radio" name="', item_id, '" value="7" style="margin-right: 8px;">',
-            '<span>7 - stimme voll und ganz zu</span>',
-            '</label>',
-            '</div>',
-            '</div>',
-            '</div>'
+          
+          # Create radio button group with proper Shiny elements
+          item_elements[[length(item_elements) + 1]] <- shiny::div(
+            class = "item-container",
+            style = "margin: 20px 0; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px;",
+            shiny::div(
+              class = "item-text",
+              style = "font-size: 16px; margin-bottom: 15px;",
+              shiny::strong(item_number), " ", item_text
+            ),
+            shiny::div(
+              class = "response-options",
+              shiny::div(
+                class = "shiny-options-group",
+                shiny::radioButtons(
+                  inputId = item_id,
+                  label = NULL,
+                  choices = list(
+                    "1 - stimme überhaupt nicht zu" = 1,
+                    "2 - stimme nicht zu" = 2,
+                    "3 - stimme eher nicht zu" = 3,
+                    "4 - weder noch" = 4,
+                    "5 - stimme eher zu" = 5,
+                    "6 - stimme zu" = 6,
+                    "7 - stimme voll und ganz zu" = 7
+                  ),
+                  selected = character(0),
+                  inline = FALSE
+                )
+              )
+            )
           )
         }
         
-        HTML(paste0(
-          '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
-          '<p style="margin-bottom: 20px;">Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema "Langfristige persönliche Lebensperspektive der UMA".</p>',
-          '<div style="background: #f0f8ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3498db;">',
-          '<p style="font-weight: bold; font-size: 18px; color: #2c3e50; margin: 0;">4. Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…</p>',
-          '</div>',
-          item_html,
-          '</div>'
-        ))
+        # Return with assessment-card frame
+        shiny::div(
+          class = "assessment-card",
+          style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
+          shiny::h3("", class = "card-header"), # Empty header
+          shiny::div(
+            style = "padding: 20px; font-size: 16px; line-height: 1.8;",
+            shiny::p(
+              style = "margin-bottom: 20px;",
+              "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema \"Langfristige persönliche Lebensperspektive der UMA\"."
+            ),
+            shiny::div(
+              style = "background: #f0f8ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3498db;",
+              shiny::p(
+                style = "font-weight: bold; font-size: 18px; color: #2c3e50; margin: 0;",
+                "4. Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…"
+              )
+            ),
+            item_elements
+          )
+        )
       })
     },
     completion_handler = function(input, rv) {
