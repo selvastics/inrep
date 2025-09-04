@@ -2616,14 +2616,14 @@ launch_study <- function(
   
       # Initialize comprehensive dataset system
     tryCatch({
-      comprehensive_dataset <- inrep:::initialize_comprehensive_dataset(config, item_bank, effective_study_key)
+      comprehensive_dataset <- initialize_comprehensive_dataset(config, item_bank, effective_study_key)
       rv$comprehensive_dataset <- comprehensive_dataset
       logger("Comprehensive dataset initialized successfully", level = "INFO")
       
       # Initialize page start time for logging
       if (config$log_data %||% FALSE) {
         tryCatch({
-          inrep:::update_page_start_time("page_1")
+          update_page_start_time("page_1")
         }, error = function(e) {
           logger(sprintf("Failed to initialize page start time: %s", e$message), level = "WARNING")
         })
@@ -3711,7 +3711,7 @@ launch_study <- function(
         } else if (save_format == "csv") {
           # Use comprehensive dataset if available, otherwise fall back to original method
           tryCatch({
-            comprehensive_data <- inrep:::get_comprehensive_dataset()
+            comprehensive_data <- get_comprehensive_dataset()
             if (!is.null(comprehensive_data)) {
               # Use comprehensive dataset for export
               utils::write.csv(comprehensive_data, file, row.names = FALSE)
@@ -3758,7 +3758,7 @@ launch_study <- function(
       },
       content = function(file) {
         tryCatch({
-          comprehensive_data <- inrep:::get_comprehensive_dataset()
+          comprehensive_data <- get_comprehensive_dataset()
           if (!is.null(comprehensive_data)) {
             utils::write.csv(comprehensive_data, file, row.names = FALSE)
             logger("Comprehensive dataset downloaded successfully", level = "INFO")
@@ -3796,7 +3796,7 @@ launch_study <- function(
         tryCatch({
           log_data <- input$log_input_change
           current_page_id <- paste0("page_", rv$current_page)
-          inrep:::log_action("input_change", log_data, current_page_id)
+          log_action("input_change", log_data, current_page_id)
         }, error = function(e) {
           logger(sprintf("Failed to log input change: %s", e$message), level = "WARNING")
         })
@@ -3807,7 +3807,7 @@ launch_study <- function(
         tryCatch({
           log_data <- input$log_button_click
           current_page_id <- paste0("page_", rv$current_page)
-          inrep:::log_action("button_click", log_data, current_page_id)
+          log_action("button_click", log_data, current_page_id)
         }, error = function(e) {
           logger(sprintf("Failed to log button click: %s", e$message), level = "WARNING")
         })
@@ -3819,7 +3819,7 @@ launch_study <- function(
           log_data <- input$log_visibility_change
           current_page_id <- paste0("page_", rv$current_page)
           action_type <- if (log_data$hidden) "tab_switch_away" else "tab_switch_back"
-          inrep:::log_action(action_type, log_data, current_page_id)
+          log_action(action_type, log_data, current_page_id)
         }, error = function(e) {
           logger(sprintf("Failed to log visibility change: %s", e$message), level = "WARNING")
         })
@@ -3830,7 +3830,7 @@ launch_study <- function(
         tryCatch({
           log_data <- input$log_mouse_activity
           current_page_id <- paste0("page_", rv$current_page)
-          inrep:::log_action("mouse_activity", log_data, current_page_id)
+          log_action("mouse_activity", log_data, current_page_id)
         }, error = function(e) {
           logger(sprintf("Failed to log mouse activity: %s", e$message), level = "WARNING")
         })
@@ -3895,7 +3895,7 @@ launch_study <- function(
           # Update comprehensive dataset
           if (length(page_data) > 0) {
             tryCatch({
-              inrep:::update_comprehensive_dataset("demographics", page_data, stage = rv$stage, current_page = rv$current_page)
+              update_comprehensive_dataset("demographics", page_data, stage = rv$stage, current_page = rv$current_page)
               logger("Updated comprehensive dataset with demographic data", level = "DEBUG")
             }, error = function(e) {
               logger(sprintf("Failed to update comprehensive dataset with demographics: %s", e$message), level = "WARNING")
@@ -3926,7 +3926,7 @@ launch_study <- function(
             # Update comprehensive dataset
             if (length(page_data) > 0) {
               tryCatch({
-                inrep:::update_comprehensive_dataset("items", page_data, stage = rv$stage, current_page = rv$current_page)
+                update_comprehensive_dataset("items", page_data, stage = rv$stage, current_page = rv$current_page)
                 logger("Updated comprehensive dataset with item responses", level = "DEBUG")
               }, error = function(e) {
                 logger(sprintf("Failed to update comprehensive dataset with item responses: %s", e$message), level = "WARNING")
@@ -3955,7 +3955,7 @@ launch_study <- function(
           # Update comprehensive dataset
           if (length(page_data) > 0) {
             tryCatch({
-              inrep:::update_comprehensive_dataset("custom_page", page_data, page_id = page_id, stage = rv$stage, current_page = rv$current_page)
+              update_comprehensive_dataset("custom_page", page_data, page_id = page_id, stage = rv$stage, current_page = rv$current_page)
               logger("Updated comprehensive dataset with custom page data", level = "DEBUG")
             }, error = function(e) {
               logger(sprintf("Failed to update comprehensive dataset with custom page data: %s", e$message), level = "WARNING")
@@ -3968,7 +3968,7 @@ launch_study <- function(
             tryCatch({
               current_page_id <- paste0("page_", rv$current_page)
               time_spent <- as.numeric(difftime(Sys.time(), .logging_data$current_page_start, units = "secs"))
-              inrep:::log_page_time(current_page_id, time_spent)
+              log_page_time(current_page_id, time_spent)
             }, error = function(e) {
               logger(sprintf("Failed to log page time: %s", e$message), level = "WARNING")
             })
@@ -3982,7 +3982,7 @@ launch_study <- function(
           if (exists("update_page_start_time")) {
             tryCatch({
               new_page_id <- paste0("page_", rv$current_page)
-              inrep:::update_page_start_time(new_page_id)
+              update_page_start_time(new_page_id)
             }, error = function(e) {
               logger(sprintf("Failed to update page start time: %s", e$message), level = "WARNING")
             })
@@ -4005,7 +4005,7 @@ launch_study <- function(
           tryCatch({
             current_page_id <- paste0("page_", rv$current_page)
             time_spent <- as.numeric(difftime(Sys.time(), .logging_data$current_page_start, units = "secs"))
-            inrep:::log_page_time(current_page_id, time_spent)
+            log_page_time(current_page_id, time_spent)
           }, error = function(e) {
             logger(sprintf("Failed to log page time: %s", e$message), level = "WARNING")
           })
@@ -4019,7 +4019,7 @@ launch_study <- function(
           if (exists("update_page_start_time")) {
             tryCatch({
               new_page_id <- paste0("page_", rv$current_page)
-              inrep:::update_page_start_time(new_page_id)
+              update_page_start_time(new_page_id)
             }, error = function(e) {
               logger(sprintf("Failed to update page start time: %s", e$message), level = "WARNING")
             })
@@ -4067,7 +4067,7 @@ launch_study <- function(
           # Update comprehensive dataset with final demographic data
           if (length(page_data) > 0) {
             tryCatch({
-              inrep:::update_comprehensive_dataset("demographics", page_data, stage = rv$stage, current_page = rv$current_page)
+              update_comprehensive_dataset("demographics", page_data, stage = rv$stage, current_page = rv$current_page)
             }, error = function(e) {
               logger(sprintf("Failed to update comprehensive dataset with final demographics: %s", e$message), level = "WARNING")
             })
@@ -4091,7 +4091,7 @@ launch_study <- function(
             # Update comprehensive dataset with final item responses
             if (length(page_data) > 0) {
               tryCatch({
-                inrep:::update_comprehensive_dataset("items", page_data, stage = rv$stage, current_page = rv$current_page)
+                update_comprehensive_dataset("items", page_data, stage = rv$stage, current_page = rv$current_page)
               }, error = function(e) {
                 logger(sprintf("Failed to update comprehensive dataset with final item responses: %s", e$message), level = "WARNING")
               })
@@ -4122,7 +4122,7 @@ launch_study <- function(
               se = rv$current_se,
               administered = 1:length(final_responses)
             )
-            inrep:::update_comprehensive_dataset("results", results_data, stage = "results", current_page = length(config$custom_page_flow))
+            update_comprehensive_dataset("results", results_data, stage = "results", current_page = length(config$custom_page_flow))
             logger("Updated comprehensive dataset with final results", level = "INFO")
           }, error = function(e) {
             logger(sprintf("Failed to update comprehensive dataset with final results: %s", e$message), level = "WARNING")
@@ -4194,7 +4194,7 @@ launch_study <- function(
       tryCatch({
         # Convert to list format for comprehensive dataset
         demo_list <- as.list(rv$demo_data)
-        inrep:::update_comprehensive_dataset("demographics", demo_list, stage = rv$stage, current_page = rv$current_page)
+        update_comprehensive_dataset("demographics", demo_list, stage = rv$stage, current_page = rv$current_page)
         logger("Updated comprehensive dataset with demographic data", level = "DEBUG")
       }, error = function(e) {
         logger(sprintf("Failed to update comprehensive dataset with demographics: %s", e$message), level = "WARNING")
@@ -4654,7 +4654,7 @@ launch_study <- function(
               se = rv$current_se,
               administered = rv$administered
             )
-            inrep:::update_comprehensive_dataset("results", results_data, stage = "results", current_page = rv$current_page)
+            update_comprehensive_dataset("results", results_data, stage = "results", current_page = rv$current_page)
             logger("Updated comprehensive dataset with assessment results", level = "INFO")
           }, error = function(e) {
             logger(sprintf("Failed to update comprehensive dataset with assessment results: %s", e$message), level = "WARNING")

@@ -96,7 +96,7 @@ launch_study_fast <- function(config, item_bank,
       
       # Initialize comprehensive dataset for fast patch
       tryCatch({
-        comprehensive_dataset <- inrep:::initialize_comprehensive_dataset(config, item_bank, config$study_key %||% "fast_patch")
+        comprehensive_dataset <- initialize_comprehensive_dataset(config, item_bank, config$study_key %||% "fast_patch")
         rv$comprehensive_dataset <- comprehensive_dataset
         logger("Comprehensive dataset initialized for fast patch", level = "INFO")
       }, error = function(e) {
@@ -127,7 +127,7 @@ launch_study_fast <- function(config, item_bank,
         # Update comprehensive dataset
         if (length(page_data) > 0) {
           tryCatch({
-            inrep:::update_comprehensive_dataset("demographics", page_data, stage = "fast_patch", current_page = rv$current_page)
+            update_comprehensive_dataset("demographics", page_data, stage = "fast_patch", current_page = rv$current_page)
             logger("Updated comprehensive dataset with fast patch demographic data", level = "DEBUG")
           }, error = function(e) {
             logger(sprintf("Failed to update comprehensive dataset with fast patch demographics: %s", e$message), level = "WARNING")
