@@ -2504,6 +2504,9 @@ launch_study <- function(
       shiny::invalidateLater(10, session)
     }
     
+    # Initialize package loading state
+    .packages_loaded <- FALSE
+    
     # CRITICAL: Session isolation - ensure each user gets a completely fresh session
     if (exists(".force_new_session") && .force_new_session) {
       # Clear any existing session data to prevent session sharing
@@ -2699,8 +2702,9 @@ launch_study <- function(
   rv$unique_session_id <- paste0("USER_", format(Sys.time(), "%Y%m%d_%H%M%S_%OS3"), "_", 
                                  paste0(sample(c(letters, LETTERS, 0:9), 12, replace = TRUE), collapse = ""))
   
-  # Log session isolation for security
-  logger(sprintf("CRITICAL: Session isolation enforced. New user session: %s", rv$unique_session_id), level = "WARNING")
+  # Log session isolation for security (store ID in variable to avoid reactive access error)
+  unique_session_id <- rv$unique_session_id
+  logger(sprintf("CRITICAL: Session isolation enforced. New user session: %s", unique_session_id), level = "WARNING")
   
   # Variables needed for session management (define immediately)
   effective_study_key <- study_key %||% config$study_key %||% generate_study_key()
@@ -3014,7 +3018,6 @@ launch_study <- function(
     }
     
     # Load packages immediately for better performance
-    .packages_loaded <- FALSE
     .load_packages_once <- function() {
       if (!.packages_loaded) {
         # Load packages immediately without delay
