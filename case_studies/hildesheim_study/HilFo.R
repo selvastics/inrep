@@ -512,6 +512,10 @@ custom_page_flow <- list(
       '<input type="checkbox" id="consent_check" style="margin-right: 10px; width: 20px; height: 20px;" required>',
       '<span><strong>Ich bin mit der Teilnahme an der Befragung einverstanden</strong></span>',
       '</label>',
+      '<div style="margin-top: 15px; padding: 10px; background: #fff3f4; border-left: 4px solid #e8041c;">',
+      '<p style="margin: 0; font-size: 14px; color: #666;">',
+      '<strong>Hinweis:</strong> Die Teilnahme ist nur möglich, wenn Sie der Einverständniserklärung zustimmen.</p>',
+      '</div>',
       '</div>',
       '</div>',
       # English content (hidden by default)
@@ -536,6 +540,10 @@ custom_page_flow <- list(
       '<input type="checkbox" id="consent_check_en" style="margin-right: 10px; width: 20px; height: 20px;" required>',
       '<span><strong>I agree to participate in the survey</strong></span>',
       '</label>',
+      '<div style="margin-top: 15px; padding: 10px; background: #fff3f4; border-left: 4px solid #e8041c;">',
+      '<p style="margin: 0; font-size: 14px; color: #666;">',
+      '<strong>Note:</strong> Participation is only possible if you agree to the declaration of consent.</p>',
+      '</div>',
       '</div>',
       '</div>',
       '</div>',
@@ -734,12 +742,57 @@ document.addEventListener("DOMContentLoaded", function() {
     type = "demographics",
     title = "Studienzufriedenheit",
     title_en = "Study Satisfaction",
-    demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st", "Persönlicher_Code")
+    demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st")
   ),
   
-  # Page 20: Results (now with PA results included)
+  # Page 20: Personal Code
   list(
     id = "page20",
+    type = "custom",
+    title = "Persönlicher Code",
+    title_en = "Personal Code",
+    content = paste0(
+      '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
+      '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
+      '<span data-lang-de="Persönlicher Code" data-lang-en="Personal Code">Persönlicher Code</span></h2>',
+      '<p style="text-align: center; margin-bottom: 30px; font-size: 18px;">',
+      '<span data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">',
+      'Bitte erstellen Sie einen persönlichen Code:</span></p>',
+      '<div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">',
+      '<p style="margin: 0; font-weight: 500;">',
+      '<span data-lang-de="Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags" data-lang-en="First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday">',
+      'Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</span></p>',
+      '</div>',
+      '<div style="text-align: center; margin: 30px 0;">',
+      '<input type="text" id="personal_code" placeholder="z.B. MAHA15" style="',
+      'padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; ',
+      'text-align: center; width: 200px; text-transform: uppercase;" required>',
+      '</div>',
+      '<div style="text-align: center; color: #666; font-size: 14px;">',
+      '<span data-lang-de="Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15" data-lang-en="Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15">',
+      'Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</span></div>',
+      '</div>',
+      '<script>
+      document.addEventListener("DOMContentLoaded", function() {
+        var input = document.getElementById("personal_code");
+        if (input) {
+          input.addEventListener("input", function() {
+            this.value = this.value.toUpperCase();
+          });
+          input.addEventListener("blur", function() {
+            if (this.value.trim() !== "") {
+              Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
+            }
+          });
+        }
+      });
+      </script>'
+    )
+  ),
+  
+  # Page 21: Results (now with PA results included)
+  list(
+    id = "page21",
     type = "results",
     title = "Ihre Ergebnisse",
     title_en = "Your Results"
@@ -1923,6 +1976,7 @@ study_config <- inrep::create_study_config(
   progress_style = "bar",
   language = "de",  # Start with German
   bilingual = TRUE,  # Enable bilingual support
+  language_switching = TRUE,  # Enable language switching during study
   session_save = TRUE,
   session_timeout = 7200,
   results_processor = create_hilfo_report,
@@ -2788,14 +2842,37 @@ server_extensions <- function(input, output, session) {
     
     # Update item bank language
     if (new_lang == "en") {
+      # Switch to English questions
       session$userData$item_bank <- all_items_de
       session$userData$item_bank$Question <- all_items_de$Question_EN
+      # Update demographics to English
+      for (i in 1:length(demographic_configs)) {
+        if (!is.null(demographic_configs[[i]]$options_en)) {
+          demographic_configs[[i]]$options <- demographic_configs[[i]]$options_en
+        }
+        if (!is.null(demographic_configs[[i]]$question_en)) {
+          demographic_configs[[i]]$question <- demographic_configs[[i]]$question_en
+        }
+      }
     } else {
+      # Switch to German questions
       session$userData$item_bank <- all_items_de
+      # Update demographics to German
+      for (i in 1:length(demographic_configs)) {
+        if (!is.null(demographic_configs[[i]]$options)) {
+          # Keep original German options
+        }
+        if (!is.null(demographic_configs[[i]]$question)) {
+          # Keep original German questions
+        }
+      }
     }
     
     # Send message to update UI
     session$sendCustomMessage("update_language", new_lang)
+    
+    # Force page refresh to apply language changes
+    session$reload()
   })
 }
 
@@ -2807,7 +2884,8 @@ inrep::launch_study(
   password = WEBDAV_PASSWORD,
   save_format = "csv",
   custom_css = custom_js_enhanced,  # Enhanced JavaScript
-  admin_dashboard_hook = monitor_adaptive  # Monitor adaptive selection
+  admin_dashboard_hook = monitor_adaptive,  # Monitor adaptive selection
+  server_extensions = server_extensions  # Language handling
 )
 
 
