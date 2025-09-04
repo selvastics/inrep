@@ -3983,6 +3983,16 @@ launch_study <- function(
           }
         }
         
+        # Call completion handler for custom pages
+        if (current_page$type == "custom" && !is.null(current_page$completion_handler) && is.function(current_page$completion_handler)) {
+          tryCatch({
+            current_page$completion_handler(input, rv)
+            logger("Called completion handler for custom page", level = "DEBUG")
+          }, error = function(e) {
+            logger(sprintf("Error in completion handler: %s", e$message), level = "WARNING")
+          })
+        }
+        
                   # Log page time before moving
           if (exists("log_page_time") && exists("update_page_start_time")) {
             tryCatch({

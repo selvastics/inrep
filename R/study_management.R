@@ -1490,10 +1490,34 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
     style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
     shiny::h3(page_title, class = "card-header"),
     if (!is.null(page_instructions)) {
-      shiny::p(page_instructions, class = "instructions-text")
+      # Convert markdown formatting to HTML
+      formatted_instructions <- convert_markdown_to_html(page_instructions)
+      shiny::HTML(formatted_instructions)
     },
     item_elements
   )
+}
+
+#' Convert markdown formatting to HTML for instructions
+convert_markdown_to_html <- function(text) {
+  if (is.null(text) || text == "") {
+    return("")
+  }
+  
+  # Convert line breaks to HTML
+  text <- gsub("\n\n", "</p><p>", text)
+  text <- paste0("<p>", text, "</p>")
+  
+  # Convert bold and underline: _text_ to <strong><u>text</u></strong>
+  text <- gsub("_([^_]+)_", "<strong><u>\\1</u></strong>", text)
+  
+  # Convert bold: **text** to <strong>text</strong>
+  text <- gsub("\\*\\*([^*]+)\\*\\*", "<strong>\\1</strong>", text)
+  
+  # Convert italic: *text* to <em>text</em>
+  text <- gsub("\\*([^*]+)\\*", "<em>\\1</em>", text)
+  
+  return(text)
 }
 
 #' Render custom page
@@ -1515,7 +1539,7 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
   
   # Default rendering
   if (!is.null(page$render_function) && is.function(page$render_function)) {
-    page$render_function(page, config, rv, ui_labels)
+    page$render_function(input, output, session, rv)
   } else {
     shiny::div(
       class = "assessment-card",
