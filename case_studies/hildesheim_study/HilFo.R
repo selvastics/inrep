@@ -845,23 +845,23 @@ document.addEventListener("DOMContentLoaded", function() {
     content = paste0(
       '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
       '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
-      '<span data-lang-de="Persönlicher Code" data-lang-en="Personal Code">Persönlicher Code</span></h2>',
+      '<span data-lang-de="Persönlicher Code" data-lang-en="Personal Code">Personal Code</span></h2>',
       '<p style="text-align: center; margin-bottom: 30px; font-size: 18px;">',
       '<span data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">',
-      'Bitte erstellen Sie einen persönlichen Code:</span></p>',
+      'Please create a personal code:</span></p>',
       '<div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">',
       '<p style="margin: 0; font-weight: 500;">',
       '<span data-lang-de="Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags" data-lang-en="First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday">',
-      'Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</span></p>',
+      'First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday</span></p>',
       '</div>',
       '<div style="text-align: center; margin: 30px 0;">',
-      '<input type="text" id="personal_code" placeholder="z.B. MAHA15" style="',
+      '<input type="text" id="personal_code" placeholder="e.g. MAHA15" style="',
       'padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; ',
       'text-align: center; width: 200px; text-transform: uppercase;" required>',
       '</div>',
       '<div style="text-align: center; color: #666; font-size: 14px;">',
       '<span data-lang-de="Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15" data-lang-en="Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15">',
-      'Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</span></div>',
+      'Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</span></div>',
       '</div>',
       '<script>
       document.addEventListener("DOMContentLoaded", function() {
@@ -904,7 +904,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   }
   
   # Get current language from session if available
-  current_lang <- "de"  # Default to German
+  current_lang <- "en"  # Default to English
   if (!is.null(session) && !is.null(session$userData$current_language)) {
     current_lang <- session$userData$current_language
   }
@@ -1377,41 +1377,41 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     # Radar plot
     '<div class="report-section">',
     '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
-    '<span data-lang-de="Persönlichkeitsprofil" data-lang-en="Personality Profile">Persönlichkeitsprofil</span></h2>',
+    '<span data-lang-de="Persönlichkeitsprofil" data-lang-en="Personality Profile">Personality Profile</span></h2>',
     if (radar_base64 != "") paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">'),
     '</div>',
     
     # Trace plot for Programming Anxiety
     '<div class="report-section">',
     '<h2 style="color: #9b59b6; text-align: center; margin-bottom: 25px;">',
-    '<span data-lang-de="Programmierangst - Adaptive Testung" data-lang-en="Programming Anxiety - Adaptive Testing Trace">Programmierangst - Adaptive Testung</span></h2>',
+    '<span data-lang-de="Programmierangst - Adaptive Testung" data-lang-en="Programming Anxiety - Adaptive Testing Trace">Programming Anxiety - Adaptive Testing Trace</span></h2>',
     if (exists("trace_base64") && trace_base64 != "") paste0('<img src="data:image/png;base64,', trace_base64, '" style="width: 100%; max-width: 800px; display: block; margin: 0 auto; border-radius: 8px;">'),
     '<p style="text-align: center; color: #666; margin-top: 10px; font-size: 14px;">',
     '<span data-lang-de="Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items." ',
     'data-lang-en="This trace plot shows how the theta estimate evolved during the assessment. The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.">',
-    'Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items.',
+    'This trace plot shows how the theta estimate evolved during the assessment. The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.',
     '</span></p>',
     '</div>',
     
     # Bar chart
     '<div class="report-section">',
     '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
-    '<span data-lang-de="Alle Dimensionen im Überblick" data-lang-en="All Dimensions Overview">Alle Dimensionen im Überblick</span></h2>',
+    '<span data-lang-de="Alle Dimensionen im Überblick" data-lang-en="All Dimensions Overview">All Dimensions Overview</span></h2>',
     if (bar_base64 != "") paste0('<img src="data:image/png;base64,', bar_base64, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 8px;">'),
     '</div>',
     
     # Table
     '<div class="report-section">',
     '<h2 style="color: #e8041c;">',
-    '<span data-lang-de="Detaillierte Auswertung" data-lang-en="Detailed Results">Detaillierte Auswertung</span></h2>',
+    '<span data-lang-de="Detaillierte Auswertung" data-lang-en="Detailed Results">Detailed Results</span></h2>',
     '<table style="width: 100%; border-collapse: collapse;">',
     '<tr style="background: #f8f8f8;">',
     '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">',
     '<span data-lang-de="Dimension" data-lang-en="Dimension">Dimension</span></th>',
     '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">',
-    '<span data-lang-de="Mittelwert" data-lang-en="Mean">Mittelwert</span></th>',
+    '<span data-lang-de="Mittelwert" data-lang-en="Mean">Mean</span></th>',
     '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">',
-    '<span data-lang-de="Standardabweichung" data-lang-en="Standard Deviation">Standardabweichung</span></th>',
+    '<span data-lang-de="Standardabweichung" data-lang-en="Standard Deviation">Standard Deviation</span></th>',
     '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">',
     '<span data-lang-de="Interpretation" data-lang-en="Interpretation">Interpretation</span></th>',
     '</tr>'
@@ -2026,6 +2026,16 @@ window.toggleLanguage = function() {
     }
   }
   
+  // Toggle all language-aware elements
+  var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+  langElements.forEach(function(element) {
+    if (currentLang === "en") {
+      element.textContent = element.getAttribute("data-lang-en");
+    } else {
+      element.textContent = element.getAttribute("data-lang-de");
+    }
+  });
+  
   // Send to Shiny
   if (typeof Shiny !== "undefined") {
     Shiny.setInputValue("study_language", currentLang, {priority: "event"});
@@ -2151,6 +2161,12 @@ document.addEventListener("DOMContentLoaded", function() {
       deContent.style.display = "none";
       enContent.style.display = "block";
     }
+    
+    // Apply English translation to all language-aware elements
+    var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+    langElements.forEach(function(element) {
+      element.textContent = element.getAttribute("data-lang-en");
+    });
   }
   
   // Enable radio button deselection
@@ -2180,6 +2196,16 @@ document.addEventListener("DOMContentLoaded", function() {
   // Re-protect buttons when new content loads
   var observer = new MutationObserver(function(mutations) {
     setTimeout(protectNavigationButtons, 100);
+    
+    // Apply language translation to new content
+    var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+    langElements.forEach(function(element) {
+      if (currentLang === "en") {
+        element.textContent = element.getAttribute("data-lang-en");
+      } else {
+        element.textContent = element.getAttribute("data-lang-de");
+      }
+    });
   });
   
   observer.observe(document.body, {
