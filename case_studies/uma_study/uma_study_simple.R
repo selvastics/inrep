@@ -131,6 +131,7 @@ custom_page_flow <- list(
     id = "page2",
     type = "custom",
     title = "",
+    required = TRUE,
     content = paste0(
       '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
       '<h3 style="color: #2c3e50;">Teilnahme-Code</h3>',
@@ -510,14 +511,38 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
 # VALIDATION FUNCTION
 # =============================================================================
 validate_page <- function(page_id, input, rv) {
-  if (page_id == "page2") {
-    # Check code input
-    code_value <- input$demo_Teilnahme_Code
-    if (is.null(code_value) || trimws(code_value) == "") {
-      return(list(
-        valid = FALSE,
-        message = "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
-      ))
+  # Get the current page configuration
+  current_page_idx <- rv$current_page %||% 1
+  current_page <- rv$config$custom_page_flow[[current_page_idx]]
+  
+  if (is.null(current_page)) {
+    return(list(valid = TRUE))
+  }
+  
+  # Check if this is a required custom page
+  if (current_page$type == "custom" && isTRUE(current_page$required)) {
+    # For page2 (code input), check the specific input field
+    if (page_id == "page2" || current_page$id == "page2") {
+      code_value <- input$demo_Teilnahme_Code
+      if (is.null(code_value) || trimws(code_value) == "") {
+        return(list(
+          valid = FALSE,
+          message = "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
+        ))
+      }
+    }
+    
+    # For other custom pages, check if they have required input fields
+    if (!is.null(current_page$required_fields)) {
+      for (field in current_page$required_fields) {
+        field_value <- input[[field]]
+        if (is.null(field_value) || field_value == "" || (is.character(field_value) && nchar(trimws(field_value)) == 0)) {
+          return(list(
+            valid = FALSE,
+            message = "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
+          ))
+        }
+      }
     }
   }
   
