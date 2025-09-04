@@ -2058,30 +2058,32 @@ monitor_adaptive <- function(session_data) {
 # Complete JavaScript solution for FULL APP translation and radio deselection
 custom_js_enhanced <- '
 <style>
-/* Fixed language button on all pages */
+/* Minimalistic Hildesheim theme with UMA-style hover effects */
+
+/* Fixed language button - Clean minimalistic design */
 #language-toggle-btn {
   position: fixed !important;
   top: 10px !important;
   right: 10px !important;
   z-index: 9999 !important;
   background: white !important;
-  border: 2px solid #e8041c !important;
+  border: 1px solid #e8041c !important;
   color: #e8041c !important;
   padding: 8px 16px !important;
   border-radius: 4px !important;
   cursor: pointer !important;
   font-size: 14px !important;
-  font-weight: bold !important;
-  transition: all 0.3s ease !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
 }
 #language-toggle-btn:hover {
   background: #e8041c !important;
   color: white !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 8px rgba(232, 4, 28, 0.3) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(232, 4, 28, 0.2) !important;
 }
 
-/* UMA-style hover effects for radio buttons - Hildesheim theme */
+/* Radio buttons - Clean minimalistic design with subtle hover effects */
 .shiny-input-radiogroup .shiny-options-group {
   display: flex !important;
   flex-wrap: wrap !important;
@@ -2093,168 +2095,215 @@ custom_js_enhanced <- '
 .shiny-options-group label {
   display: flex !important;
   align-items: center !important;
-  padding: 12px 16px !important;
-  margin: 4px !important;
-  border: 2px solid #e0e0e0 !important;
-  border-radius: 8px !important;
-  background: white !important;
-  cursor: pointer !important;
-  transition: all 0.3s ease !important;
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  min-width: 120px !important;
-  justify-content: center !important;
-  text-align: center !important;
-  position: relative !important;
-  overflow: hidden !important;
-}
-
-/* Hover effect with Hildesheim colors */
-.shiny-options-group label:hover {
-  border-color: #e8041c !important;
-  background: linear-gradient(135deg, #fff3f4 0%, #ffe6e8 100%) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 12px rgba(232, 4, 28, 0.15) !important;
-}
-
-/* Selected state with Hildesheim colors */
-.shiny-options-group input[type="radio"]:checked + label,
-.shiny-options-group label:has(input[type="radio"]:checked) {
-  border-color: #e8041c !important;
-  background: linear-gradient(135deg, #e8041c 0%, #c7031f 100%) !important;
-  color: white !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 3px 8px rgba(232, 4, 28, 0.3) !important;
-}
-
-/* Radio button styling */
-.shiny-options-group input[type="radio"] {
-  margin-right: 8px !important;
-  transform: scale(1.2) !important;
-  accent-color: #e8041c !important;
-}
-
-/* Checkbox styling with Hildesheim theme */
-.shiny-input-checkboxgroup .shiny-options-group label {
-  display: flex !important;
-  align-items: center !important;
-  padding: 10px 14px !important;
-  margin: 4px !important;
-  border: 2px solid #e0e0e0 !important;
+  padding: 10px 16px !important;
+  margin: 2px !important;
+  border: 1px solid #ddd !important;
   border-radius: 6px !important;
   background: white !important;
   cursor: pointer !important;
-  transition: all 0.3s ease !important;
+  transition: all 0.2s ease !important;
   font-size: 14px !important;
+  font-weight: 400 !important;
+  min-width: 100px !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+.shiny-options-group label:hover {
+  border-color: #e8041c !important;
+  background: #fff8f8 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(232, 4, 28, 0.1) !important;
+}
+
+.shiny-options-group input[type="radio"]:checked + label,
+.shiny-options-group label:has(input[type="radio"]:checked) {
+  border-color: #e8041c !important;
+  background: #e8041c !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(232, 4, 28, 0.2) !important;
+}
+
+.shiny-options-group input[type="radio"] {
+  display: none !important;
+}
+
+/* Checkboxes - Same clean design */
+.shiny-input-checkboxgroup .shiny-options-group {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  justify-content: center !important;
+  margin: 20px 0 !important;
+}
+
+.shiny-input-checkboxgroup .shiny-options-group label {
+  display: flex !important;
+  align-items: center !important;
+  padding: 10px 16px !important;
+  margin: 2px !important;
+  border: 1px solid #ddd !important;
+  border-radius: 6px !important;
+  background: white !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  min-width: 100px !important;
+  justify-content: center !important;
+  text-align: center !important;
 }
 
 .shiny-input-checkboxgroup .shiny-options-group label:hover {
   border-color: #e8041c !important;
-  background: #fff3f4 !important;
+  background: #fff8f8 !important;
   transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(232, 4, 28, 0.1) !important;
 }
 
-.shiny-input-checkboxgroup input[type="checkbox"]:checked + label,
-.shiny-input-checkboxgroup label:has(input[type="checkbox"]:checked) {
+.shiny-input-checkboxgroup .shiny-options-group input[type="checkbox"]:checked + label,
+.shiny-input-checkboxgroup .shiny-options-group label:has(input[type="checkbox"]:checked) {
   border-color: #e8041c !important;
   background: #e8041c !important;
   color: white !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(232, 4, 28, 0.2) !important;
 }
 
-/* Select dropdown styling */
+.shiny-input-checkboxgroup .shiny-options-group input[type="checkbox"] {
+  display: none !important;
+}
+
+/* Select dropdowns - Clean minimalistic design */
 .shiny-input-select {
-  border: 2px solid #e0e0e0 !important;
+  margin: 20px 0 !important;
+}
+
+.shiny-input-select select {
+  width: 100% !important;
+  padding: 10px 12px !important;
+  border: 1px solid #ddd !important;
   border-radius: 6px !important;
-  padding: 10px !important;
+  background: white !important;
   font-size: 14px !important;
-  transition: all 0.3s ease !important;
-}
-
-.shiny-input-select:focus {
-  border-color: #e8041c !important;
-  outline: none !important;
-  box-shadow: 0 0 0 3px rgba(232, 4, 28, 0.1) !important;
-}
-
-/* Text input styling */
-.shiny-input-text {
-  border: 2px solid #e0e0e0 !important;
-  border-radius: 6px !important;
-  padding: 10px !important;
-  font-size: 14px !important;
-  transition: all 0.3s ease !important;
-}
-
-.shiny-input-text:focus {
-  border-color: #e8041c !important;
-  outline: none !important;
-  box-shadow: 0 0 0 3px rgba(232, 4, 28, 0.1) !important;
-}
-
-/* Button styling with Hildesheim theme */
-.btn, button {
-  background: #e8041c !important;
-  color: white !important;
-  border: 2px solid #e8041c !important;
-  border-radius: 6px !important;
-  padding: 12px 24px !important;
-  font-size: 16px !important;
-  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
   cursor: pointer !important;
-  transition: all 0.3s ease !important;
-  text-transform: none !important;
+}
+
+.shiny-input-select select:hover {
+  border-color: #e8041c !important;
+  background: #fff8f8 !important;
+  box-shadow: 0 1px 4px rgba(232, 4, 28, 0.1) !important;
+}
+
+.shiny-input-select select:focus {
+  border-color: #e8041c !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(232, 4, 28, 0.1) !important;
+}
+
+/* Text inputs - Clean minimalistic design */
+.shiny-input-text {
+  margin: 20px 0 !important;
+}
+
+.shiny-input-text input {
+  width: 100% !important;
+  padding: 10px 12px !important;
+  border: 1px solid #ddd !important;
+  border-radius: 6px !important;
+  background: white !important;
+  font-size: 14px !important;
+  transition: all 0.2s ease !important;
+}
+
+.shiny-input-text input:hover {
+  border-color: #e8041c !important;
+  background: #fff8f8 !important;
+  box-shadow: 0 1px 4px rgba(232, 4, 28, 0.1) !important;
+}
+
+.shiny-input-text input:focus {
+  border-color: #e8041c !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(232, 4, 28, 0.1) !important;
+}
+
+/* Buttons - Clean minimalistic design with subtle hover effects */
+.btn, button {
+  padding: 10px 20px !important;
+  border: 1px solid #e8041c !important;
+  border-radius: 6px !important;
+  background: white !important;
+  color: #e8041c !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  text-decoration: none !important;
+  display: inline-block !important;
+  text-align: center !important;
 }
 
 .btn:hover, button:hover {
-  background: #c7031f !important;
-  border-color: #c7031f !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 12px rgba(232, 4, 28, 0.3) !important;
+  background: #e8041c !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(232, 4, 28, 0.2) !important;
 }
 
 .btn:active, button:active {
   transform: translateY(0) !important;
-  box-shadow: 0 2px 6px rgba(232, 4, 28, 0.3) !important;
+  box-shadow: 0 1px 4px rgba(232, 4, 28, 0.3) !important;
 }
 
-/* Progress bar styling */
+/* Progress bar - Clean minimalistic design */
+.progress {
+  height: 6px !important;
+  background: #f0f0f0 !important;
+  border-radius: 3px !important;
+  overflow: hidden !important;
+  margin: 20px 0 !important;
+}
+
 .progress-bar {
-  background: linear-gradient(90deg, #e8041c 0%, #c7031f 100%) !important;
-  border-radius: 4px !important;
+  background: #e8041c !important;
+  transition: width 0.3s ease !important;
+  height: 100% !important;
 }
 
-/* Card styling for better visual hierarchy */
+/* Assessment card - Clean minimalistic design */
 .assessment-card {
   background: white !important;
-  border-radius: 12px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-  padding: 24px !important;
-  margin: 16px 0 !important;
-  border: 1px solid #f0f0f0 !important;
-  transition: all 0.3s ease !important;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 8px !important;
+  padding: 25px !important;
+  margin: 20px 0 !important;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05) !important;
+  transition: all 0.2s ease !important;
 }
 
 .assessment-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
-  transform: translateY(-2px) !important;
+  border-color: #e8041c !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 12px rgba(232, 4, 28, 0.08) !important;
 }
 
-/* Responsive design for mobile */
+/* Responsive design */
 @media (max-width: 768px) {
-  .shiny-options-group {
-    flex-direction: column !important;
-    align-items: stretch !important;
-  }
-  
   .shiny-options-group label {
-    min-width: auto !important;
-    width: 100% !important;
-    margin: 2px 0 !important;
+    min-width: 80px !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
   }
-  
   .btn, button {
-    width: 100% !important;
-    margin: 8px 0 !important;
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+  }
+  .assessment-card {
+    padding: 20px !important;
+    margin: 15px 0 !important;
   }
 }
 </style>
