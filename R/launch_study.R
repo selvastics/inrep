@@ -1032,6 +1032,9 @@ launch_study <- function(
   session_config <- NULL
   error_config <- NULL
   
+  # CRITICAL: Force new session for each user to prevent session sharing
+  .force_new_session <- TRUE
+  
   if (FALSE) {  # Skip for now - will be done in server
       logger("Initializing robust session management", level = "INFO")
       
@@ -2501,6 +2504,25 @@ launch_study <- function(
       shiny::invalidateLater(10, session)
     }
     
+    # CRITICAL: Session isolation - ensure each user gets a completely fresh session
+    if (exists(".force_new_session") && .force_new_session) {
+      # Clear any existing session data to prevent session sharing
+      if (exists(".logging_data", envir = .GlobalEnv)) {
+        rm(".logging_data", envir = .GlobalEnv)
+      }
+      
+      # Clear any existing session state
+      if (exists("session_config", envir = .GlobalEnv)) {
+        rm("session_config", envir = .GlobalEnv)
+      }
+      
+      # Force new session initialization
+      .needs_session_init <<- TRUE
+      .force_new_session <<- FALSE  # Reset flag
+      
+      logger("CRITICAL: Forcing new session to prevent session sharing", level = "WARNING")
+    }
+    
     # Step 1: Create minimal reactive values (no computation!)
     current_language <- shiny::reactiveVal(default_language)
     reactive_ui_labels <- shiny::reactiveVal(ui_labels)
@@ -2670,11 +2692,49 @@ launch_study <- function(
   # IMMEDIATE SYNCHRONOUS INITIALIZATION - No reactive dependencies
   rv <- shiny::reactiveValues()
   
+  # CRITICAL: Ensure complete session isolation - each user gets fresh data
+  # Clear any existing session data to prevent session sharing
+  rv$session_isolation_enforced <- TRUE
+  rv$session_start_time <- Sys.time()
+  rv$unique_session_id <- paste0("USER_", format(Sys.time(), "%Y%m%d_%H%M%S_%OS3"), "_", 
+                                 paste0(sample(c(letters, LETTERS, 0:9), 12, replace = TRUE), collapse = ""))
+  
+  # Log session isolation for security
+  logger(sprintf("CRITICAL: Session isolation enforced. New user session: %s", rv$unique_session_id), level = "WARNING")
+  
   # Variables needed for session management (define immediately)
   effective_study_key <- study_key %||% config$study_key %||% generate_study_key()
   data_dir <- base::file.path("study_data", effective_study_key)
   if (!base::dir.exists(data_dir)) base::dir.create(data_dir, recursive = TRUE)
   session_file <- base::file.path(data_dir, "session.rds")
+  
+  # CRITICAL: Check for existing session data and prevent access
+  if (base::file.exists(session_file)) {
+    # Check if session file is recent (within last 5 minutes)
+    file_time <- file.mtime(session_file)
+    time_diff <- as.numeric(difftime(Sys.time(), file_time, units = "mins"))
+    
+    if (time_diff < 5) {
+      # Recent session exists - this could be session sharing!
+      logger(sprintf("CRITICAL: Recent session file detected (%.1f minutes old). Preventing session sharing!", time_diff), level = "WARNING")
+      
+      # Remove the existing session file to prevent access
+      tryCatch({
+        file.remove(session_file)
+        logger("Removed existing session file to prevent session sharing", level = "WARNING")
+      }, error = function(e) {
+        logger(sprintf("Failed to remove existing session file: %s", e$message), level = "ERROR")
+      })
+    } else {
+      # Old session file - safe to remove
+      tryCatch({
+        file.remove(session_file)
+        logger("Removed old session file", level = "INFO")
+      }, error = function(e) {
+        logger(sprintf("Failed to remove old session file: %s", e$message), level = "WARNING")
+      })
+    }
+  }
   
   # POPULATE rv IMMEDIATELY - No observe, no async, no delays
   rv$demo_data <- stats::setNames(base::rep(NA, base::length(config$demographics)), config$demographics)

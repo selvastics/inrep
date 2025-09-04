@@ -1614,7 +1614,6 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
     
     # Set language-dependent messages
     auto_close_title <- if (current_lang == "en") "Session will close automatically" else "Die Sitzung wird automatisch geschlossen"
-    thank_you_message <- if (current_lang == "en") "Thank you for participating!" else "Vielen Dank für Ihre Teilnahme!"
     
     auto_close_ui <- shiny::div(
       id = "auto-close-timer",
@@ -1625,8 +1624,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
         id = "countdown-display",
         style = "font-size: 24px; font-weight: bold; color: #dc3545; margin-bottom: 10px;",
         shiny::textOutput("countdown_timer", inline = TRUE)
-      ),
-      shiny::p(thank_you_message, style = "margin: 0; color: #6c757d;")
+      )
     )
   }
   
