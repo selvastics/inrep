@@ -1643,7 +1643,53 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
         id = "countdown-display",
         style = "font-size: 24px; font-weight: bold; color: #dc3545; margin-bottom: 10px;",
         shiny::textOutput("countdown_timer", inline = TRUE)
-      )
+      ),
+      # Add JavaScript-based auto-close as backup
+      shiny::tags$script(HTML(sprintf("
+        (function() {
+          var timeLeft = %d;
+          var countdownElement = document.getElementById('countdown-display');
+          
+          function updateCountdown() {
+            if (countdownElement) {
+              countdownElement.textContent = timeLeft;
+            }
+            
+            if (timeLeft <= 0) {
+              // Auto-close with multiple methods
+              try {
+                window.close();
+              } catch(e) {
+                try {
+                  if (window.opener) {
+                    window.opener = null;
+                    window.close();
+                  } else {
+                    window.location.href = 'about:blank';
+                  }
+                } catch(e2) {
+                  try {
+                    alert('Session completed. Please close this tab.');
+                    window.location.href = 'about:blank';
+                  } catch(e3) {
+                    document.body.innerHTML = '<div style=\"text-align: center; padding: 50px; font-size: 18px;\">Session completed. Please close this tab.</div>';
+                  }
+                }
+              }
+            } else {
+              timeLeft--;
+              setTimeout(updateCountdown, 1000);
+            }
+          }
+          
+          // Start countdown
+          setTimeout(updateCountdown, 1000);
+        })();
+      ", auto_close_seconds))),
+      # Add meta refresh as additional fallback for mobile
+      shiny::tags$meta(HTML(sprintf("
+        <meta http-equiv='refresh' content='%d;url=about:blank'>
+      ", auto_close_seconds + 1)))
     )
   }
   

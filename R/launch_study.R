@@ -4419,7 +4419,7 @@ launch_study <- function(
             
             logger(sprintf("Auto-close timer started: %d seconds", auto_close_seconds), level = "INFO")
             
-            # Start countdown timer
+            # Start countdown timer with universal auto-close
             countdown_observer <- shiny::observe({
               if (isTRUE(rv$auto_close_timer_active) && rv$countdown_time > 0) {
                 # Update countdown
@@ -4428,12 +4428,57 @@ launch_study <- function(
                 # Schedule next update
                 shiny::invalidateLater(1000, session)
               } else if (isTRUE(rv$auto_close_timer_active) && rv$countdown_time <= 0) {
-                # Time's up - close the app
-                logger("Auto-close timer expired - closing app", level = "INFO")
+                # Time's up - close the app/tab/browser
+                logger("Auto-close timer expired - closing app/tab/browser", level = "INFO")
                 rv$auto_close_timer_active <- FALSE
                 
-                # Close the app
-                shiny::stopApp()
+                # Universal auto-close JavaScript that works everywhere
+                auto_close_js <- "
+                (function() {
+                  try {
+                    // Method 1: Close current tab/window (works in most browsers)
+                    window.close();
+                  } catch(e) {
+                    try {
+                      // Method 2: Try to close the window
+                      if (window.opener) {
+                        window.opener = null;
+                        window.close();
+                      } else {
+                        // Method 3: Redirect to blank page (fallback)
+                        window.location.href = 'about:blank';
+                      }
+                    } catch(e2) {
+                      try {
+                        // Method 4: Show close message and redirect
+                        alert('Session completed. Please close this tab.');
+                        window.location.href = 'about:blank';
+                      } catch(e3) {
+                        // Method 5: Final fallback - just show message
+                        document.body.innerHTML = '<div style=\"text-align: center; padding: 50px; font-size: 18px;\">Session completed. Please close this tab.</div>';
+                      }
+                    }
+                  }
+                })();
+                "
+                
+                # Execute auto-close JavaScript
+                if (requireNamespace("shinyjs", quietly = TRUE)) {
+                  tryCatch({
+                    shinyjs::runjs(auto_close_js)
+                  }, error = function(e) {
+                    shiny::runjs(auto_close_js)
+                  })
+                } else {
+                  shiny::runjs(auto_close_js)
+                }
+                
+                # Also try R app close as fallback
+                tryCatch({
+                  shiny::stopApp()
+                }, error = function(e) {
+                  # Ignore R app close errors - JavaScript will handle it
+                })
               }
             })
             
