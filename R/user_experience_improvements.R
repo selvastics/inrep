@@ -627,4 +627,3 @@ cli_check <- function() "[OK]"
 cli_cross <- function() "[X]"
 cli_warning <- function() "[!]"
 cli_tip <- function() "[TIP]"
-}

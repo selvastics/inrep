@@ -11,6 +11,4 @@ utils::globalVariables(c(
   "get_participant", "grid", "Item", "list_participants", "polygon",
   "print.inrep_config", "print.professional_survey", "remove_participant",
   "SE", "send_invitation", "send_reminder", "Theta", "update_participant"
-
-))
 ))
