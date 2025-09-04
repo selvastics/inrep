@@ -126,10 +126,10 @@ custom_page_flow <- list(
     )
   ),
   
-  # Page 2: Custom Code Input Page
+  # Page 2: Demographics Page with Code Input
   list(
     id = "page2",
-    type = "custom",
+    type = "demographics",
     title = "",
     content = paste0(
       '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
@@ -145,55 +145,7 @@ custom_page_flow <- list(
       '</div>',
       '</div>'
     ),
-    render_function = function(input, output, session, rv) {
-      # Custom render function for page 2 - show code instructions and input field
-      output$page_content <- renderUI({
-        shiny::div(
-          class = "assessment-card",
-          style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
-          shiny::h3("Teilnahme-Code", class = "card-header"),
-          shiny::div(
-            style = "padding: 20px; font-size: 16px; line-height: 1.8;",
-            shiny::div(
-              style = "background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;",
-              shiny::p(shiny::strong("Bitte erstelle deinen Code nach folgender Anleitung:")),
-              shiny::tags$ul(
-                style = "list-style-type: none; padding-left: 0;",
-                shiny::tags$li(style = "margin: 10px 0;", "Ersten Buchstaben des Vornamens deiner Mutter (z.B. Karla = K)"),
-                shiny::tags$li(style = "margin: 10px 0;", "Ersten Buchstaben des Vornamens deines Vaters (z.B. Yusuf = Y)"),
-                shiny::tags$li(style = "margin: 10px 0;", "Geburtsmonat (z.B. September = 09)")
-              ),
-              shiny::p(
-                style = "margin-top: 20px; font-weight: bold; color: #3498db;",
-                "Es entsteht ein Code = KY09"
-              )
-            ),
-            shiny::div(
-              style = "margin: 20px 0;",
-              shiny::tags$label(
-                `for` = "demo_Teilnahme_Code",
-                style = "display: block; margin-bottom: 10px; font-weight: bold;",
-                "Bitte geben Sie Ihren persönlichen Code ein:"
-              ),
-              shiny::tags$input(
-                type = "text",
-                id = "demo_Teilnahme_Code",
-                name = "demo_Teilnahme_Code",
-                placeholder = "z.B. KY09",
-                style = "width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 4px; font-size: 16px;"
-              )
-            )
-          )
-        )
-      })
-    },
-    completion_handler = function(input, rv) {
-      # Store the participant code
-      if (!is.null(input$demo_Teilnahme_Code) && !is.null(rv)) {
-        rv$demo_data <- list(Teilnahme_Code = input$demo_Teilnahme_Code)
-        message("Saved demographic Teilnahme_Code: ", input$demo_Teilnahme_Code)
-      }
-    }
+    demographics = c("Teilnahme_Code")
   ),
   
   # Page 3: Section 1 intro and items 1-5
@@ -412,11 +364,11 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
   }
   
   # Handle demographics as either list or atomic vector
-  if (!is.null(demographics)) {
+  if (!is.null(demographics) && !is.na(demographics)) {
     if (is.list(demographics) && !is.null(demographics$Teilnahme_Code)) {
       participant_code <- demographics$Teilnahme_Code
       message("DEBUG: Got participant code from demographics list: ", participant_code)
-    } else if (is.atomic(demographics) && length(demographics) > 0) {
+    } else if (is.atomic(demographics) && length(demographics) > 0 && !is.na(demographics[1])) {
       # If demographics is an atomic vector, it might be the participant code directly
       participant_code <- demographics[1]
       message("DEBUG: Got participant code from demographics vector: ", participant_code)
@@ -432,8 +384,21 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
     message("DEBUG: Got participant code from rv$demo_Teilnahme_Code: ", participant_code)
   }
   
+  # Additional fallback - try to get from global environment or session
   if (is.null(participant_code)) {
+    # Try to get from session storage
+    if (exists("session") && !is.null(session)) {
+      session_data <- session$userData
+      if (!is.null(session_data) && !is.null(session_data$demo_data) && !is.null(session_data$demo_data$Teilnahme_Code)) {
+        participant_code <- session_data$demo_data$Teilnahme_Code
+        message("DEBUG: Got participant code from session data: ", participant_code)
+      }
+    }
+  }
+  
+  if (is.null(participant_code) || is.na(participant_code)) {
     message("DEBUG: No participant code found!")
+    participant_code <- "UNKNOWN"
   }
   
   # Create comprehensive data frame with ALL data
@@ -444,7 +409,7 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
     study_name = "UMA Befragung",
     
     # Participant information
-    participant_code = if(!is.null(participant_code) && participant_code != "") participant_code else NA,
+    participant_code = if(!is.null(participant_code) && participant_code != "" && participant_code != "UNKNOWN") participant_code else NA,
     
     # Study completion info
     total_items = 30,
