@@ -30,34 +30,34 @@ all_items <- data.frame(
     "Ich kann einschätzen, welche Einflüsse meine nonverbale Kommunikation (z.B. Mimik, Gestik) auf Beratungsgespräche haben kann.",
     "Ich habe einen Überblick darüber, inwiefern ich Faktoren für das Gelingen von Beratung beeinflussen kann.",
     "Mir ist bewusst, inwiefern mir der Austausch mit Kolleg*innen bei der Vorbereitung von Beratungsgesprächen hilft.",
-    "Ich kann einschätzen, welche Rolle meine eigene Haltung und Einstellung in der Beratung spielt.",
-    "Ich habe eine klare Vorstellung davon, wie ich mit kulturellen Unterschieden in der Beratung umgehen kann.",
-    "Ich kann einschätzen, welche Bedeutung Vertrauen und Beziehungsaufbau in der Beratung haben.",
-    "Ich habe einen Überblick darüber, wie ich mit schwierigen Gesprächssituationen umgehen kann.",
+    "Mir ist bewusst, inwiefern mir der Austausch mit Kolleg*innen bei der Reflexion von Beratungsgesprächen hilft.",
+    "Mir ist bewusst, inwiefern frühere Erfahrungen der jungen Männer Beratungsgespräche beeinflussen können.",
+    "Mir ist bewusst, inwiefern mein eigenes Stresslevel Beratungsgespräche beeinflussen kann.",
+    "Mir ist bewusst, inwiefern kulturelle & sprachliche Hintergründe die Interaktionen prägen können.",
     
     # Abschnitt 2 (Items 11-20)
-    "Ich kann einschätzen, wie wichtig es ist, die individuellen Bedürfnisse der UMA zu verstehen.",
-    "Ich habe eine klare Vorstellung davon, wie ich mit Traumata und belastenden Erfahrungen umgehen kann.",
-    "Ich kann einschätzen, welche Rolle Sprache und Kommunikation in der Beratung spielen.",
-    "Ich habe einen Überblick darüber, wie ich mit Unsicherheiten und Ängsten der UMA umgehen kann.",
-    "Ich kann einschätzen, welche Bedeutung Bildung und Zukunftsperspektiven für die UMA haben.",
-    "Ich habe eine klare Vorstellung davon, wie ich mit familiären Bindungen und Verlusten umgehen kann.",
-    "Ich kann einschätzen, welche Rolle Religion und Spiritualität in der Beratung spielen können.",
-    "Ich habe einen Überblick darüber, wie ich mit rechtlichen Fragen und Unsicherheiten umgehen kann.",
-    "Ich kann einschätzen, welche Bedeutung soziale Kontakte und Freundschaften für die UMA haben.",
-    "Ich habe eine klare Vorstellung davon, wie ich mit Rassismus und Diskriminierung umgehen kann.",
+    "Ich habe genügend Zeit, alle von mir für sinnvoll erachteten Beratungsgespräche zu führen.",
+    "Ich habe geeignete räumliche Bedingungen für Beratungsgespräche zur Verfügung.",
+    "Ich habe die Möglichkeit, mich bei Bedarf mit Kolleg*innen zur Vorbereitung auf Beratungsgespräche auszutauschen.",
+    "Ich habe die Möglichkeit, meine geführten Beratungsgespräche bei Bedarf mit Kolleg*innen zu reflektieren.",
+    "Ich habe viele Positiv-Beispiele gelungener Beratungsgespräche meiner Kolleg*innen mitbekommen.",
+    "Ich achte darauf, wie meine nonverbale Kommunikation (z.B. Mimik, Gestik) in Beratungsgesprächen wirkt.",
+    "Ich achte darauf, meine Wortwahl sensibel an meinen Klienten anzupassen.",
+    "Ich kann durch die Gestaltung des Gesprächssettings die Atmosphäre beeinflussen.",
+    "Ich kann durch meine Vorbereitung (z.B. Unterlagen, Zeitplanung) die Qualität der Beratung beeinflussen.",
+    "Ich kann in den Beratungsgesprächen immer geeignete Methoden einsetzen.",
     
     # Abschnitt 3 (Items 21-30)
-    "Ich kann einschätzen, wie wichtig es ist, die Stärken und Ressourcen der UMA zu erkennen.",
-    "Ich habe eine klare Vorstellung davon, wie ich mit Rückfällen und Rückschlägen umgehen kann.",
-    "Ich kann einschätzen, welche Rolle Motivation und Zielsetzung in der Beratung spielen.",
-    "Ich habe einen Überblick darüber, wie ich mit Konflikten und Spannungen umgehen kann.",
-    "Ich kann einschätzen, welche Bedeutung Selbstbestimmung und Eigenverantwortung für die UMA haben.",
-    "Ich habe eine klare Vorstellung davon, wie ich mit Abhängigkeiten und Suchtverhalten umgehen kann.",
-    "Ich kann einschätzen, welche Rolle Kreativität und kulturelle Ausdrucksformen in der Beratung spielen.",
-    "Ich habe einen Überblick darüber, wie ich mit Einsamkeit und Isolation umgehen kann.",
-    "Ich kann einschätzen, welche Bedeutung Hoffnung und Optimismus für die UMA haben.",
-    "Ich habe eine klare Vorstellung davon, wie ich mit Abschied und Übergängen umgehen kann."
+    "Mir ist bewusst, inwiefern gelungene Beratung ein Zusammenspiel von beeinflussbaren und nicht beeinflussbaren Faktoren ist.",
+    "Ich habe das Gefühl, meinen Einfluss realistisch einschätzen zu können.",
+    "Ich akzeptiere Dinge, die ich nicht beeinflussen kann.",
+    "Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit eine langfristige persönliche Lebensperspektive entwickeln konnten.",
+    "Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit umsetzbare Ideen für erste Schritte nach dem Auszug haben.",
+    "Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit zugängliche Ansprechstellen für mögliche Unterstützung kennengelernt haben.",
+    "Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit Problemlösefähigkeiten verbessern konnten.",
+    "Ich habe das Gefühl, dass ich die jungen Männer in den ersten Monaten nach dem Auszug gut begleiten kann.",
+    "Ich habe das Gefühl, dass ich die jungen Männer im Stationären Wohnen ausreichend helfen kann.",
+    "Ich habe das Gefühl, dass ich positiven Einfluss auf die Entwicklung der langfristigen persönlichen Lebensperspektive der UMA nehmen kann."
   ),
   # NON-ADAPTIVE: Use Option columns for 7-point scale
   Option1 = "stimme überhaupt nicht zu",
@@ -158,12 +158,12 @@ custom_page_flow <- list(
     scale_type = "likert"
   ),
   
-  # Page 4: Items 6-10
+  # Page 4: Items 6-10 (Section 1 continued)
   list(
     id = "page4",
     type = "items",
     title = "",
-    instructions = "Abschnitt 1 von 3\n\nFolgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.",
+    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.",
     item_indices = 6:10,
     scale_type = "likert"
   ),
@@ -178,23 +178,23 @@ custom_page_flow <- list(
     scale_type = "likert"
   ),
   
-  # Page 6: Items 16-20
+  # Page 6: Items 16-20 (Section 2 continued)
   list(
     id = "page6",
     type = "items",
     title = "",
-    instructions = "Abschnitt 2 von 3\n\nFolgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.",
+    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.",
     item_indices = 16:20,
     scale_type = "likert"
   ),
   
-  # Page 7: Section 3 intro and items 21-25
+  # Page 7: Section 3 intro and items 21-23
   list(
     id = "page7",
     type = "items",
     title = "",
     instructions = "Abschnitt 3 von 3\n\nFolgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.",
-    item_indices = 21:25,
+    item_indices = 21:23,
     scale_type = "likert"
   ),
   
