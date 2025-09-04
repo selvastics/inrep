@@ -1539,7 +1539,21 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
   
   # Default rendering
   if (!is.null(page$render_function) && is.function(page$render_function)) {
-    page$render_function(input, output, session, rv)
+    # Call render function and return the result
+    tryCatch({
+      page$render_function(input, NULL, NULL, rv)
+    }, error = function(e) {
+      # Fallback to content if render function fails
+      shiny::div(
+        class = "assessment-card",
+        style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
+        shiny::h3(page$title, class = "card-header"),
+        shiny::p("Error rendering custom page"),
+        if (!is.null(page$content)) {
+          shiny::HTML(page$content)
+        }
+      )
+    })
   } else {
     shiny::div(
       class = "assessment-card",
