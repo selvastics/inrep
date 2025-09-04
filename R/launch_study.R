@@ -2613,6 +2613,7 @@ launch_study <- function(
   
   # POPULATE rv IMMEDIATELY - No observe, no async, no delays
   rv$demo_data <- stats::setNames(base::rep(NA, base::length(config$demographics)), config$demographics)
+  rv$config <- config  # Store config in rv for access by validation functions
   
       # Initialize comprehensive dataset system (if functions are available)
     if (exists("initialize_comprehensive_dataset", mode = "function")) {
@@ -3867,6 +3868,9 @@ launch_study <- function(
     shiny::observeEvent(input$next_page, {
       if (rv$stage == "custom_page_flow" && rv$current_page < rv$total_pages) {
         # Validate current page before progression
+        validation_passed <- TRUE
+        
+        # First check built-in validation
         if (exists("validate_page_progression")) {
           # Pass item_bank in config for validation
           config_with_items <- config
@@ -3882,8 +3886,38 @@ launch_study <- function(
             # Field highlighting disabled for performance
             # (shinyjs was causing lag in page transitions)
             
-            return()  # Don't proceed if validation fails
+            validation_passed <- FALSE
           }
+        }
+        
+        # Then check custom validation function if provided
+        if (validation_passed && !is.null(config$validation_function) && is.function(config$validation_function)) {
+          tryCatch({
+            # Get current page info for custom validation
+            current_page <- config$custom_page_flow[[rv$current_page]]
+            page_id <- current_page$id %||% paste0("page_", rv$current_page)
+            
+            # Call custom validation function
+            custom_validation <- config$validation_function(page_id, input, rv)
+            
+            if (!is.null(custom_validation) && !custom_validation$valid) {
+              # Show custom validation error messages
+              output$validation_errors <- shiny::renderUI({
+                current_lang <- rv$language %||% config$language %||% "de"
+                error_message <- custom_validation$message %||% "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
+                show_validation_errors(error_message, language = current_lang)
+              })
+              
+              validation_passed <- FALSE
+            }
+          }, error = function(e) {
+            logger(sprintf("Error in custom validation function: %s", e$message), level = "WARNING")
+            # Continue with validation passed if custom validation fails
+          })
+        }
+        
+        if (!validation_passed) {
+          return()  # Don't proceed if validation fails
         }
         
         # Clear any previous validation errors
@@ -4065,6 +4099,9 @@ launch_study <- function(
     shiny::observeEvent(input$submit_study, {
       if (rv$stage == "custom_page_flow") {
         # Validate final page before submission
+        validation_passed <- TRUE
+        
+        # First check built-in validation
         if (exists("validate_page_progression")) {
           # Pass item_bank in config for validation
           config_with_items <- config
@@ -4075,8 +4112,38 @@ launch_study <- function(
               current_lang <- rv$language %||% config$language %||% "de"
               show_validation_errors(validation$errors, language = current_lang)
             })
-            return()
+            validation_passed <- FALSE
           }
+        }
+        
+        # Then check custom validation function if provided
+        if (validation_passed && !is.null(config$validation_function) && is.function(config$validation_function)) {
+          tryCatch({
+            # Get current page info for custom validation
+            current_page <- config$custom_page_flow[[rv$current_page]]
+            page_id <- current_page$id %||% paste0("page_", rv$current_page)
+            
+            # Call custom validation function
+            custom_validation <- config$validation_function(page_id, input, rv)
+            
+            if (!is.null(custom_validation) && !custom_validation$valid) {
+              # Show custom validation error messages
+              output$validation_errors <- shiny::renderUI({
+                current_lang <- rv$language %||% config$language %||% "de"
+                error_message <- custom_validation$message %||% "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
+                show_validation_errors(error_message, language = current_lang)
+              })
+              
+              validation_passed <- FALSE
+            }
+          }, error = function(e) {
+            logger(sprintf("Error in custom validation function: %s", e$message), level = "WARNING")
+            # Continue with validation passed if custom validation fails
+          })
+        }
+        
+        if (!validation_passed) {
+          return()  # Don't proceed if validation fails
         }
         
         # Collect final page data (could be demographics or items)

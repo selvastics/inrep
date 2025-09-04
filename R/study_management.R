@@ -2184,6 +2184,56 @@ validate_page_progression <- function(current_page, input, config) {
         }
       }
     }
+  } else if (page$type == "custom" && isTRUE(page$required)) {
+    # Handle custom pages with required fields
+    # Check for specific required fields if defined
+    if (!is.null(page$required_fields)) {
+      for (field in page$required_fields) {
+        value <- input[[field]]
+        if (is.null(value) || value == "" || (is.character(value) && nchar(trimws(value)) == 0)) {
+          # Get language
+          current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
+          error_msg <- if (current_lang == "en") {
+            "Please complete all required fields on this page."
+          } else {
+            "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
+          }
+          errors <- c(errors, error_msg)
+          missing_fields <- c(missing_fields, field)
+        }
+      }
+    } else {
+      # For custom pages without specific required_fields, check common input patterns
+      # This handles cases like page2 with demo_Teilnahme_Code
+      page_id <- page$id %||% paste0("page_", current_page)
+      
+      # Check for demographic-style inputs (demo_ prefix)
+      if (page_id == "page2") {
+        # Special case for page2 - check for code input
+        code_value <- input$demo_Teilnahme_Code
+        if (is.null(code_value) || trimws(code_value) == "") {
+          current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
+          error_msg <- if (current_lang == "en") {
+            "Please complete all required fields on this page."
+          } else {
+            "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
+          }
+          errors <- c(errors, error_msg)
+          missing_fields <- c(missing_fields, "demo_Teilnahme_Code")
+        }
+      } else {
+        # Generic check for other custom pages - look for any input fields
+        # This is a fallback for custom pages that don't specify required_fields
+        # but still need validation
+        current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
+        error_msg <- if (current_lang == "en") {
+          "Please complete all required fields on this page."
+        } else {
+          "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
+        }
+        errors <- c(errors, error_msg)
+      }
+    }
   }
   
   return(list(
