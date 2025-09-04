@@ -1993,56 +1993,6 @@ custom_item_selection <- function(rv, item_bank, config) {
   return(NULL)
 }
 
-study_config <- inrep::create_study_config(
-  name = "HilFo Studie",
-  study_key = session_uuid,
-  theme = "hildesheim",  # Use built-in Hildesheim theme
-  custom_page_flow = custom_page_flow,
-  demographics = names(demographic_configs),
-  demographic_configs = demographic_configs,
-  input_types = input_types,
-  model = "2PL",  # Use 2PL model for IRT
-  adaptive = TRUE,  # Enable adaptive for PA items
-  max_items = 51,  # Total items in bank
-  min_items = 51,  # Must show all items
-  criteria = "MFI",  # Maximum Fisher Information
-  response_ui_type = "radio",
-  progress_style = "bar",
-  language = "de",  # Start with German
-  bilingual = TRUE,  # Enable inrep's built-in bilingual support
-  session_save = TRUE,
-  session_timeout = 7200,  # 2 hours timeout
-  results_processor = create_hilfo_report,
-  estimation_method = "EAP",  # Use EAP for ability estimation
-  page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
-  save_format = "csv",  # Use inrep's built-in save format
-  adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
-  custom_js = custom_js,  # Add custom JavaScript for language switching and downloads
-  # Enhanced security and robustness settings
-  prevent_double_submission = TRUE,  # Prevent double-click issues
-  validate_required_fields = TRUE,  # Validate required fields before navigation
-  auto_save_interval = 30,  # Auto-save every 30 seconds
-  session_isolation = TRUE,  # Ensure session isolation
-  error_handling = "graceful",  # Graceful error handling
-  debug_mode = FALSE,  # Disable debug mode for production
-  # Performance optimizations
-  lazy_loading = TRUE,  # Enable lazy loading for better performance
-  cache_responses = TRUE,  # Cache responses for better UX
-  # Accessibility features
-  accessibility = TRUE,  # Enable accessibility features
-  keyboard_navigation = TRUE,  # Enable keyboard navigation
-  screen_reader_support = TRUE  # Enable screen reader support
-)
-
-cat("\n================================================================================\n")
-cat("HILFO STUDIE - PRODUCTION VERSION\n")
-cat("================================================================================\n")
-cat("All 48 variables recorded with proper names\n")
-cat("Cloud storage enabled with inreptest credentials\n")
-cat("Fixed radar plot with proper connections\n")
-cat("Complete data file will be saved as CSV\n")
-cat("================================================================================\n\n")
-
 # Simple JavaScript for basic functionality
 custom_js <- '<script>
 // Global language state
@@ -2238,6 +2188,57 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 });
 </script>'
+
+study_config <- inrep::create_study_config(
+  name = "HilFo Studie",
+  study_key = session_uuid,
+  theme = "hildesheim",  # Use built-in Hildesheim theme
+  custom_page_flow = custom_page_flow,
+  demographics = names(demographic_configs),
+  demographic_configs = demographic_configs,
+  input_types = input_types,
+  model = "2PL",  # Use 2PL model for IRT
+  adaptive = TRUE,  # Enable adaptive for PA items
+  max_items = 51,  # Total items in bank
+  min_items = 51,  # Must show all items
+  criteria = "MFI",  # Maximum Fisher Information
+  response_ui_type = "radio",
+  progress_style = "bar",
+  language = "de",  # Start with German
+  bilingual = TRUE,  # Enable inrep's built-in bilingual support
+  session_save = TRUE,
+  session_timeout = 7200,  # 2 hours timeout
+  results_processor = create_hilfo_report,
+  estimation_method = "EAP",  # Use EAP for ability estimation
+  page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
+  save_format = "csv",  # Use inrep's built-in save format
+  adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
+  custom_js = custom_js,  # Add custom JavaScript for language switching and downloads
+  # Enhanced security and robustness settings
+  prevent_double_submission = TRUE,  # Prevent double-click issues
+  validate_required_fields = TRUE,  # Validate required fields before navigation
+  auto_save_interval = 30,  # Auto-save every 30 seconds
+  session_isolation = TRUE,  # Ensure session isolation
+  error_handling = "graceful",  # Graceful error handling
+  debug_mode = FALSE,  # Disable debug mode for production
+  # Performance optimizations
+  lazy_loading = TRUE,  # Enable lazy loading for better performance
+  cache_responses = TRUE,  # Cache responses for better UX
+  # Accessibility features
+  accessibility = TRUE,  # Enable accessibility features
+  keyboard_navigation = TRUE,  # Enable keyboard navigation
+  screen_reader_support = TRUE  # Enable screen reader support
+)
+
+cat("\n================================================================================\n")
+cat("HILFO STUDIE - PRODUCTION VERSION\n")
+cat("================================================================================\n")
+cat("All 48 variables recorded with proper names\n")
+cat("Cloud storage enabled with inreptest credentials\n")
+cat("Fixed radar plot with proper connections\n")
+cat("Complete data file will be saved as CSV\n")
+cat("================================================================================\n\n")
+
 
 # Download handlers for PDF and CSV
 download_pdf_handler <- function() {
