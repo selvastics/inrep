@@ -1,0 +1,32 @@
+Package: downlit
+Title: Syntax Highlighting and Automatic Linking
+Version: 0.4.4
+Authors@R: c(
+    person("Hadley", "Wickham", , "hadley@posit.co", role = c("aut", "cre")),
+    person("Posit Software, PBC", role = c("cph", "fnd"))
+  )
+Description: Syntax highlighting of R code, specifically designed for the
+    needs of 'RMarkdown' packages like 'pkgdown', 'hugodown', and
+    'bookdown'. It includes linking of function calls to their
+    documentation on the web, and automatic translation of ANSI escapes in
+    output to the equivalent HTML.
+License: MIT + file LICENSE
+URL: https://downlit.r-lib.org/, https://github.com/r-lib/downlit
+BugReports: https://github.com/r-lib/downlit/issues
+Depends: R (>= 4.0.0)
+Imports: brio, desc, digest, evaluate, fansi, memoise, rlang, vctrs,
+        withr, yaml
+Suggests: covr, htmltools, jsonlite, MASS, MassSpecWavelet, pkgload,
+        rmarkdown, testthat (>= 3.0.0), xml2
+Config/Needs/website: tidyverse/tidytemplate
+Config/testthat/edition: 3
+Encoding: UTF-8
+RoxygenNote: 7.3.1
+NeedsCompilation: no
+Packaged: 2024-06-07 19:03:38 UTC; hadleywickham
+Author: Hadley Wickham [aut, cre],
+  Posit Software, PBC [cph, fnd]
+Maintainer: Hadley Wickham <hadley@posit.co>
+Repository: CRAN
+Date/Publication: 2024-06-10 09:10:02 UTC
+Built: R 4.5.1; ; 2025-09-02 09:41:08 UTC; windows

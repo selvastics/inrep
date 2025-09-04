@@ -1,0 +1,33 @@
+Package: qpdf
+Type: Package
+Title: Split, Combine and Compress PDF Files
+Version: 1.4.1
+Authors@R: c(person("Jeroen", "Ooms", role = c("aut", "cre"), 
+    email = "jeroenooms@gmail.com", comment = c(ORCID = "0000-0002-4035-0289")),
+        person("Ben", "Raymond", role = "ctb"),
+        person("Jay Berkenbilt", role = "cph", comment = "Author of libqpdf"))
+Description: Content-preserving transformations transformations of PDF files such 
+    as split, combine, and compress. This package interfaces directly to the 'qpdf' 
+    C++ library <https://qpdf.sourceforge.io/> and does not require any command 
+    line utilities. Note that 'qpdf' does not read actual content from PDF files: 
+    to extract text and data you need the 'pdftools' package.
+License: Apache License 2.0
+URL: https://docs.ropensci.org/qpdf/
+        https://ropensci.r-universe.dev/qpdf
+BugReports: https://github.com/ropensci/qpdf/issues
+Encoding: UTF-8
+Imports: Rcpp, askpass, curl
+LinkingTo: Rcpp
+RoxygenNote: 7.2.1
+Suggests: testthat
+SystemRequirements: libjpeg
+NeedsCompilation: yes
+Packaged: 2025-06-30 11:12:14 UTC; jeroen
+Author: Jeroen Ooms [aut, cre] (ORCID: <https://orcid.org/0000-0002-4035-0289>),
+  Ben Raymond [ctb],
+  Jay Berkenbilt [cph] (Author of libqpdf)
+Maintainer: Jeroen Ooms <jeroenooms@gmail.com>
+Repository: CRAN
+Date/Publication: 2025-07-02 09:40:02 UTC
+Built: R 4.5.1; x86_64-w64-mingw32; 2025-09-02 09:14:16 UTC; windows
+Archs: x64

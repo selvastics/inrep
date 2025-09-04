@@ -1,0 +1,50 @@
+Package: profvis
+Title: Interactive Visualizations for Profiling R Code
+Version: 0.4.0
+Authors@R: c(
+    person("Hadley", "Wickham", , "hadley@posit.co", role = c("aut", "cre")),
+    person("Winston", "Chang", role = "aut"),
+    person("Javier", "Luraschi", role = "aut"),
+    person("Timothy", "Mastny", role = "aut"),
+    person("Posit Software, PBC", role = c("cph", "fnd")),
+    person(, "jQuery Foundation", role = "cph",
+           comment = "jQuery library"),
+    person(, "jQuery contributors", role = c("ctb", "cph"),
+           comment = "jQuery library; authors listed in inst/htmlwidgets/lib/jquery/AUTHORS.txt"),
+    person("Mike", "Bostock", role = c("ctb", "cph"),
+           comment = "D3 library"),
+    person(, "D3 contributors", role = "ctb",
+           comment = "D3 library"),
+    person("Ivan", "Sagalaev", role = c("ctb", "cph"),
+           comment = "highlight.js library")
+  )
+Description: Interactive visualizations for profiling R code.
+License: MIT + file LICENSE
+URL: https://profvis.r-lib.org, https://github.com/r-lib/profvis
+BugReports: https://github.com/r-lib/profvis/issues
+Depends: R (>= 4.0)
+Imports: htmlwidgets (>= 0.3.2), rlang (>= 1.1.0), vctrs
+Suggests: htmltools, knitr, rmarkdown, shiny, testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Config/Needs/website: tidyverse/tidytemplate, rmarkdown
+Config/testthat/edition: 3
+Encoding: UTF-8
+RoxygenNote: 7.3.2
+NeedsCompilation: yes
+Packaged: 2024-09-19 19:26:06 UTC; hadleywickham
+Author: Hadley Wickham [aut, cre],
+  Winston Chang [aut],
+  Javier Luraschi [aut],
+  Timothy Mastny [aut],
+  Posit Software, PBC [cph, fnd],
+  jQuery Foundation [cph] (jQuery library),
+  jQuery contributors [ctb, cph] (jQuery library; authors listed in
+    inst/htmlwidgets/lib/jquery/AUTHORS.txt),
+  Mike Bostock [ctb, cph] (D3 library),
+  D3 contributors [ctb] (D3 library),
+  Ivan Sagalaev [ctb, cph] (highlight.js library)
+Maintainer: Hadley Wickham <hadley@posit.co>
+Repository: CRAN
+Date/Publication: 2024-09-20 11:50:10 UTC
+Built: R 4.5.1; x86_64-w64-mingw32; 2025-08-20 02:48:55 UTC; windows
+Archs: x64

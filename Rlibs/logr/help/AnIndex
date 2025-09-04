@@ -1,0 +1,17 @@
+logr-package	logr
+get_warnings	get_warnings
+logr	logr
+log_close	log_close
+log_code	log_code
+log_error	log_error
+log_hook	log_print
+log_info	log_info
+log_open	log_open
+log_path	log_path
+log_print	log_print
+log_resume	log_resume
+log_status	log_status
+log_suspend	log_suspend
+log_warning	log_warning
+put	log_print
+sep	log_print

@@ -2,7 +2,7 @@
 % Please edit documentation in R/llm_assistance.R
 \name{generate_llm_prompt}
 \alias{generate_llm_prompt}
-\title{Generate LLM Prompts for Advanced Package Customization}
+\title{Generate Consultation Prompts for Advanced Package Customization}
 \usage{
 generate_llm_prompt(
   component = "study_config",
@@ -10,7 +10,8 @@ generate_llm_prompt(
   study_type = "personality",
   output_format = "console",
   include_examples = TRUE,
-  verbose = TRUE
+  verbose = TRUE,
+  llm_model = "generic"
 )
 }
 \arguments{
@@ -32,13 +33,16 @@ in the prompt. Default is TRUE.}
 
 \item{verbose}{Logical indicating whether to display detailed information.
 Default is TRUE.}
+
+\item{llm_model}{Character string specifying the target consultation format.
+Options: "claude", "gpt4", "gemini", "generic". Default is "generic".}
 }
 \value{
-Character string containing the LLM prompt, or invisibly returns the prompt
+Character string containing the consultation prompt, or invisibly returns the prompt
   if output_format is "file" or "clipboard".
 }
 \description{
-Provides comprehensive LLM assistance prompts for various aspects of inrep package
+Provides comprehensive assistance prompts for various aspects of inrep package
 customization, including study configuration, item bank optimization, demographic
 questionnaires, validation procedures, and advanced UI customization.
 }
