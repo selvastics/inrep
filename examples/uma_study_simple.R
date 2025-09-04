@@ -489,7 +489,7 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
   }
   
   # Add response labels for reference
-  data$response_scale <- "1=stimme überhaupt nicht zu, 2=stimme nicht zu, 3=stimme eher nicht zu, 4=weder noch, 5=stimme eher zu, 6=stimme zu, 7=stimme voll und ganz zu"
+  data$response_scale <- "1=stimme überhaupt nicht zu, 2=stimme nicht zu, 3=weder noch, 4=stimme eher zu, 5=stimme voll und ganz zu"
   
   # Save to INREP cloud
   save_to_cloud(data, filename)
