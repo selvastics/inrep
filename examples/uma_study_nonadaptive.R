@@ -344,10 +344,25 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
   
   # Get participant code from inrep's built-in demographic storage
   participant_code <- NULL
+  
+  # Debug: Log what we're receiving
+  message("DEBUG: demographics = ", if(is.null(demographics)) "NULL" else paste(names(demographics), collapse=", "))
+  message("DEBUG: rv$demo_data = ", if(is.null(rv$demo_data)) "NULL" else paste(names(rv$demo_data), collapse=", "))
+  if (!is.null(rv$demo_data)) {
+    message("DEBUG: rv$demo_data$Teilnahme_Code = ", rv$demo_data$Teilnahme_Code)
+  }
+  
   if (!is.null(demographics) && !is.null(demographics$Teilnahme_Code)) {
     participant_code <- demographics$Teilnahme_Code
+    message("DEBUG: Got participant code from demographics: ", participant_code)
+  } else if (!is.null(rv) && !is.null(rv$demo_data) && !is.null(rv$demo_data$Teilnahme_Code)) {
+    participant_code <- rv$demo_data$Teilnahme_Code
+    message("DEBUG: Got participant code from rv$demo_data: ", participant_code)
   } else if (!is.null(rv) && !is.null(rv$demo_Teilnahme_Code)) {
     participant_code <- rv$demo_Teilnahme_Code
+    message("DEBUG: Got participant code from rv$demo_Teilnahme_Code: ", participant_code)
+  } else {
+    message("DEBUG: No participant code found!")
   }
   
   # Create data frame with participant code
