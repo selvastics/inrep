@@ -265,7 +265,7 @@ demographic_configs <- list(
     question_en = "Declaration of Consent",
     options = c("Ich bin mit der Teilnahme an der Befragung einverstanden" = "1"),
     options_en = c("I agree to participate in the survey" = "1"),
-    required = TRUE
+    required = FALSE
   ),
   Alter_VPN = list(
     question = "Wie alt sind Sie?",
@@ -276,21 +276,21 @@ demographic_configs <- list(
     options_en = c("17"="17", "18"="18", "19"="19", "20"="20", "21"="21", 
                    "22"="22", "23"="23", "24"="24", "25"="25", "26"="26", 
                    "27"="27", "28"="28", "29"="29", "30"="30", "older than 30"="0"),
-    required = TRUE
+    required = FALSE
   ),
   Studiengang = list(
     question = "In welchem Studiengang befinden Sie sich?",
     question_en = "Which study program are you in?",
     options = c("Bachelor Psychologie"="1", "Master Psychologie"="2"),
     options_en = c("Bachelor Psychology"="1", "Master Psychology"="2"),
-    required = TRUE
+    required = FALSE
   ),
   Geschlecht = list(
     question = "Welches Geschlecht haben Sie?",
     question_en = "What is your gender?",
     options = c("weiblich oder divers"="1", "männlich"="2"),
     options_en = c("female or diverse"="1", "male"="2"),
-    required = TRUE
+    required = FALSE
   ),
   Wohnstatus = list(
     question = "Wie wohnen Sie?",
@@ -562,7 +562,7 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>'
     ),
     validate = "function(inputs) { return document.getElementById('consent_check').checked || document.getElementById('consent_check_en').checked; }",
-    required = TRUE
+    required = FALSE
   ),
   
   # Page 2: Basic demographics
@@ -663,8 +663,8 @@ document.addEventListener("DOMContentLoaded", function() {
   list(
     id = "page12",
     type = "items",
-    title = "Persönlichkeit - Teil 1",
-    title_en = "Personality - Part 1",
+    title = "",
+    title_en = "",
     instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
     instructions_en = "Please indicate to what extent the following statements apply to you.",
     item_indices = 21:25,  # BFI items (after 20 PA items)
@@ -673,24 +673,24 @@ document.addEventListener("DOMContentLoaded", function() {
   list(
     id = "page13",
     type = "items",
-    title = "Persönlichkeit - Teil 2",
-    title_en = "Personality - Part 2",
+    title = "",
+    title_en = "",
     item_indices = 26:30,  # BFI items continued
     scale_type = "likert"
   ),
   list(
     id = "page14",
     type = "items",
-    title = "Persönlichkeit - Teil 3",
-    title_en = "Personality - Part 3",
+    title = "",
+    title_en = "",
     item_indices = 31:35,  # BFI items continued
     scale_type = "likert"
   ),
   list(
     id = "page15",
     type = "items",
-    title = "Persönlichkeit - Teil 4",
-    title_en = "Personality - Part 4",
+    title = "",
+    title_en = "",
     item_indices = 36:40,  # BFI items final
     scale_type = "likert"
   ),
@@ -699,8 +699,8 @@ document.addEventListener("DOMContentLoaded", function() {
   list(
     id = "page16",
     type = "items",
-    title = "Stress",
-    title_en = "Stress",
+    title = "",
+    title_en = "",
     instructions = "Wie sehr treffen die folgenden Aussagen auf Sie zu?",
     instructions_en = "How much do the following statements apply to you?",
     item_indices = 41:45,  # PSQ items (after 20 PA + 20 BFI)
@@ -2054,10 +2054,190 @@ custom_js_enhanced <- '
   cursor: pointer !important;
   font-size: 14px !important;
   font-weight: bold !important;
+  transition: all 0.3s ease !important;
 }
 #language-toggle-btn:hover {
   background: #e8041c !important;
   color: white !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(232, 4, 28, 0.3) !important;
+}
+
+/* UMA-style hover effects for radio buttons - Hildesheim theme */
+.shiny-input-radiogroup .shiny-options-group {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  justify-content: center !important;
+  margin: 20px 0 !important;
+}
+
+.shiny-options-group label {
+  display: flex !important;
+  align-items: center !important;
+  padding: 12px 16px !important;
+  margin: 4px !important;
+  border: 2px solid #e0e0e0 !important;
+  border-radius: 8px !important;
+  background: white !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  min-width: 120px !important;
+  justify-content: center !important;
+  text-align: center !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* Hover effect with Hildesheim colors */
+.shiny-options-group label:hover {
+  border-color: #e8041c !important;
+  background: linear-gradient(135deg, #fff3f4 0%, #ffe6e8 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(232, 4, 28, 0.15) !important;
+}
+
+/* Selected state with Hildesheim colors */
+.shiny-options-group input[type="radio"]:checked + label,
+.shiny-options-group label:has(input[type="radio"]:checked) {
+  border-color: #e8041c !important;
+  background: linear-gradient(135deg, #e8041c 0%, #c7031f 100%) !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 3px 8px rgba(232, 4, 28, 0.3) !important;
+}
+
+/* Radio button styling */
+.shiny-options-group input[type="radio"] {
+  margin-right: 8px !important;
+  transform: scale(1.2) !important;
+  accent-color: #e8041c !important;
+}
+
+/* Checkbox styling with Hildesheim theme */
+.shiny-input-checkboxgroup .shiny-options-group label {
+  display: flex !important;
+  align-items: center !important;
+  padding: 10px 14px !important;
+  margin: 4px !important;
+  border: 2px solid #e0e0e0 !important;
+  border-radius: 6px !important;
+  background: white !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  font-size: 14px !important;
+}
+
+.shiny-input-checkboxgroup .shiny-options-group label:hover {
+  border-color: #e8041c !important;
+  background: #fff3f4 !important;
+  transform: translateY(-1px) !important;
+}
+
+.shiny-input-checkboxgroup input[type="checkbox"]:checked + label,
+.shiny-input-checkboxgroup label:has(input[type="checkbox"]:checked) {
+  border-color: #e8041c !important;
+  background: #e8041c !important;
+  color: white !important;
+}
+
+/* Select dropdown styling */
+.shiny-input-select {
+  border: 2px solid #e0e0e0 !important;
+  border-radius: 6px !important;
+  padding: 10px !important;
+  font-size: 14px !important;
+  transition: all 0.3s ease !important;
+}
+
+.shiny-input-select:focus {
+  border-color: #e8041c !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(232, 4, 28, 0.1) !important;
+}
+
+/* Text input styling */
+.shiny-input-text {
+  border: 2px solid #e0e0e0 !important;
+  border-radius: 6px !important;
+  padding: 10px !important;
+  font-size: 14px !important;
+  transition: all 0.3s ease !important;
+}
+
+.shiny-input-text:focus {
+  border-color: #e8041c !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(232, 4, 28, 0.1) !important;
+}
+
+/* Button styling with Hildesheim theme */
+.btn, button {
+  background: #e8041c !important;
+  color: white !important;
+  border: 2px solid #e8041c !important;
+  border-radius: 6px !important;
+  padding: 12px 24px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  text-transform: none !important;
+}
+
+.btn:hover, button:hover {
+  background: #c7031f !important;
+  border-color: #c7031f !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(232, 4, 28, 0.3) !important;
+}
+
+.btn:active, button:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 6px rgba(232, 4, 28, 0.3) !important;
+}
+
+/* Progress bar styling */
+.progress-bar {
+  background: linear-gradient(90deg, #e8041c 0%, #c7031f 100%) !important;
+  border-radius: 4px !important;
+}
+
+/* Card styling for better visual hierarchy */
+.assessment-card {
+  background: white !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  padding: 24px !important;
+  margin: 16px 0 !important;
+  border: 1px solid #f0f0f0 !important;
+  transition: all 0.3s ease !important;
+}
+
+.assessment-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Responsive design for mobile */
+@media (max-width: 768px) {
+  .shiny-options-group {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  
+  .shiny-options-group label {
+    min-width: auto !important;
+    width: 100% !important;
+    margin: 2px 0 !important;
+  }
+  
+  .btn, button {
+    width: 100% !important;
+    margin: 8px 0 !important;
+  }
 }
 </style>
 <script>
