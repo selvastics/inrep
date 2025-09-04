@@ -1914,8 +1914,7 @@ study_config <- inrep::create_study_config(
   results_processor = create_hilfo_report,
   estimation_method = "EAP",  # Use EAP for ability estimation
   page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
-  save_format = "csv",  # Use inrep's built-in save format
-  adaptive_items = 6:20  # PA items 6-20 are in adaptive pool
+  save_format = "csv"  # Use inrep's built-in save format
 )
 
 cat("\n================================================================================\n")
