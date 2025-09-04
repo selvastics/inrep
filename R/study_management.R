@@ -1281,7 +1281,7 @@ create_custom_page_flow <- function(pages) {
 
 #' Process custom page flow for UI rendering
 #' @export
-process_page_flow <- function(config, rv, input, output, session, item_bank, ui_labels, logger) {
+process_page_flow <- function(config, rv, input, output, session, item_bank, ui_labels, logger, auto_close_time = 300, auto_close_time_unit = "seconds", disable_auto_close = FALSE) {
   
   # Check if custom page flow is defined
   if (is.null(config$custom_page_flow)) {
@@ -1308,7 +1308,7 @@ process_page_flow <- function(config, rv, input, output, session, item_bank, ui_
     
     "custom" = render_custom_page(current_page, config, rv, ui_labels, input),
     
-    "results" = render_results_page(current_page, config, rv, item_bank, ui_labels),
+    "results" = render_results_page(current_page, config, rv, item_bank, ui_labels, auto_close_time, auto_close_time_unit, disable_auto_close),
     
     # Default fallback
     shiny::div(
@@ -1569,7 +1569,7 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
 }
 
 #' Render results page
-render_results_page <- function(page, config, rv, item_bank, ui_labels) {
+render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_close_time = 300, auto_close_time_unit = "seconds", disable_auto_close = FALSE) {
   # Use custom results processor if available
   if (!is.null(config$results_processor) && is.function(config$results_processor)) {
     # Check if function accepts demographics parameter
@@ -1583,13 +1583,32 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels) {
         results_content <- config$results_processor(rv$cat_result$responses, item_bank)
       }
     } else {
-      # Clean responses before passing to processor
-      clean_responses <- rv$responses[!is.na(rv$responses)]
-      if (length(clean_responses) > 0) {
+      # ROBUST: Ensure all responses are collected before processing
+      # Don't remove NA values - they might be valid missing responses
+      all_responses <- rv$responses
+      
+      # Log response collection status
+      if (!is.null(all_responses)) {
+        message("DEBUG: Total responses in rv$responses: ", length(all_responses))
+        message("DEBUG: Non-NA responses: ", sum(!is.na(all_responses)))
+        message("DEBUG: Response indices: ", paste(which(!is.na(all_responses)), collapse=", "))
+      }
+      
+      # For non-adaptive studies, ensure we have the expected number of responses
+      if (!is.null(config$fixed_items) && length(config$fixed_items) > 0) {
+        expected_items <- length(config$fixed_items)
+        if (length(all_responses) < expected_items) {
+          message("WARNING: Only ", length(all_responses), " responses collected, expected ", expected_items)
+          # Pad with NA to maintain proper indexing
+          all_responses <- c(all_responses, rep(NA, expected_items - length(all_responses)))
+        }
+      }
+      
+      if (length(all_responses) > 0) {
         if ("demographics" %in% processor_args) {
-          results_content <- config$results_processor(clean_responses, item_bank, rv$demo_data)
+          results_content <- config$results_processor(all_responses, item_bank, rv$demo_data)
         } else {
-          results_content <- config$results_processor(clean_responses, item_bank)
+          results_content <- config$results_processor(all_responses, item_bank)
         }
       } else {
         results_content <- shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>")
@@ -1599,10 +1618,86 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels) {
     results_content <- shiny::HTML("<p>Assessment completed. Thank you!</p>")
   }
   
+  # Convert time to seconds if needed
+  if (auto_close_time_unit == "minutes") {
+    auto_close_seconds <- auto_close_time * 60
+  } else {
+    auto_close_seconds <- auto_close_time
+  }
+  
+  # Create auto-close timer UI if not disabled
+  auto_close_ui <- NULL
+  if (!disable_auto_close && auto_close_seconds > 0) {
+    # Get current language for auto-close messages
+    current_lang <- rv$language %||% config$language %||% "de"
+    
+    # Set language-dependent messages
+    auto_close_title <- if (current_lang == "en") "Session will close automatically" else "Die Sitzung wird automatisch geschlossen"
+    
+    auto_close_ui <- shiny::div(
+      id = "auto-close-timer",
+      class = "auto-close-timer",
+      style = "text-align: center; margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; border: 2px solid #007bff;",
+      shiny::h4(auto_close_title, style = "color: #007bff; margin-bottom: 10px;"),
+      shiny::div(
+        id = "countdown-display",
+        style = "font-size: 24px; font-weight: bold; color: #dc3545; margin-bottom: 10px;",
+        shiny::textOutput("countdown_timer", inline = TRUE)
+      ),
+      # Add JavaScript-based auto-close as backup
+      shiny::tags$script(HTML(sprintf("
+        (function() {
+          var timeLeft = %d;
+          var countdownElement = document.getElementById('countdown-display');
+          
+          function updateCountdown() {
+            if (countdownElement) {
+              countdownElement.textContent = timeLeft;
+            }
+            
+            if (timeLeft <= 0) {
+              // Auto-close with multiple methods
+              try {
+                window.close();
+              } catch(e) {
+                try {
+                  if (window.opener) {
+                    window.opener = null;
+                    window.close();
+                  } else {
+                    window.location.href = 'about:blank';
+                  }
+                } catch(e2) {
+                  try {
+                    alert('Session completed. Please close this tab.');
+                    window.location.href = 'about:blank';
+                  } catch(e3) {
+                    document.body.innerHTML = '<div style=\"text-align: center; padding: 50px; font-size: 18px;\">Session completed. Please close this tab.</div>';
+                  }
+                }
+              }
+            } else {
+              timeLeft--;
+              setTimeout(updateCountdown, 1000);
+            }
+          }
+          
+          // Start countdown
+          setTimeout(updateCountdown, 1000);
+        })();
+      ", auto_close_seconds))),
+      # Add meta refresh as additional fallback for mobile
+      shiny::tags$meta(HTML(sprintf("
+        <meta http-equiv='refresh' content='%d;url=about:blank'>
+      ", auto_close_seconds + 1)))
+    )
+  }
+  
   shiny::div(
     class = "assessment-card results-container",
     shiny::h3(page$title %||% "Results", class = "card-header"),
-    results_content
+    results_content,
+    auto_close_ui
   )
 }
 

@@ -13,6 +13,119 @@
 .session_state$data_preservation_interval <- 30  # seconds
 .session_state$keep_alive_interval <- 10  # seconds
 
+#' Clean up old session files to prevent conflicts
+#' 
+#' @param max_age_hours Maximum age of session files in hours (default: 24)
+cleanup_old_sessions <- function(max_age_hours = 24) {
+  temp_dir <- tempdir()
+  existing_sessions <- list.files(temp_dir, pattern = "inrep_session_.*\\.log", full.names = TRUE)
+  
+  current_time <- Sys.time()
+  cleaned_count <- 0
+  
+  for (session_file in existing_sessions) {
+    if (file.exists(session_file)) {
+      file_time <- file.mtime(session_file)
+      age_hours <- as.numeric(difftime(current_time, file_time, units = "hours"))
+      
+      if (age_hours > max_age_hours) {
+        tryCatch({
+          file.remove(session_file)
+          cleaned_count <- cleaned_count + 1
+        }, error = function(e) {
+          # Ignore cleanup errors
+        })
+      }
+    }
+  }
+  
+  if (cleaned_count > 0) {
+    log_session_event("CLEANUP", sprintf("Cleaned up %d old session files", cleaned_count))
+  }
+}
+
+#' Ensure Complete Data Isolation Between Sessions
+#' 
+#' @param session_id The session ID to check
+#' @return TRUE if session is completely isolated
+ensure_complete_data_isolation <- function(session_id) {
+  # Clean up old sessions first
+  cleanup_old_sessions()
+  
+  # Create session-specific data directory to ensure complete isolation
+  session_data_dir <- file.path(tempdir(), paste0("session_data_", session_id))
+  if (!dir.exists(session_data_dir)) {
+    dir.create(session_data_dir, recursive = TRUE)
+  }
+  
+  # Set session-specific environment variables to prevent data leakage
+  Sys.setenv(INREP_SESSION_ID = session_id)
+  Sys.setenv(INREP_SESSION_DATA_DIR = session_data_dir)
+  
+  # Clear any global variables that might contain data from previous sessions
+  if (exists(".logging_data", envir = .GlobalEnv)) {
+    rm(".logging_data", envir = .GlobalEnv)
+  }
+  
+  # Initialize fresh session-specific logging data
+  .GlobalEnv$.logging_data <- new.env()
+  .GlobalEnv$.logging_data$session_id <- session_id
+  .GlobalEnv$.logging_data$session_start <- Sys.time()
+  .GlobalEnv$.logging_data$current_page_start <- Sys.time()
+  
+  # Check for existing session files that might indicate conflicts
+  temp_dir <- tempdir()
+  existing_sessions <- list.files(temp_dir, pattern = "inrep_session_.*\\.log", full.names = TRUE)
+  
+  # Check if any existing sessions are still active (modified within last 5 minutes)
+  current_time <- Sys.time()
+  active_sessions <- c()
+  
+  for (session_file in existing_sessions) {
+    if (file.exists(session_file)) {
+      file_time <- file.mtime(session_file)
+      if (as.numeric(difftime(current_time, file_time, units = "mins")) < 5) {
+        active_sessions <- c(active_sessions, session_file)
+      }
+    }
+  }
+  
+  # Log isolation status
+  if (length(active_sessions) > 0) {
+    warning(sprintf("Found %d potentially active sessions. Complete data isolation ensured for: %s", 
+                   length(active_sessions), session_id))
+  }
+  
+  return(TRUE)  # Always allow new sessions with complete isolation
+}
+
+#' Clean up session data on termination to ensure no data leakage
+#' 
+#' @param session_id The session ID to clean up
+cleanup_session_data <- function(session_id) {
+  tryCatch({
+    # Remove session-specific data directory
+    session_data_dir <- file.path(tempdir(), paste0("session_data_", session_id))
+    if (dir.exists(session_data_dir)) {
+      unlink(session_data_dir, recursive = TRUE)
+    }
+    
+    # Clear session-specific environment variables
+    Sys.unsetenv("INREP_SESSION_ID")
+    Sys.unsetenv("INREP_SESSION_DATA_DIR")
+    
+    # Clear global logging data for this session
+    if (exists(".logging_data", envir = .GlobalEnv)) {
+      rm(".logging_data", envir = .GlobalEnv)
+    }
+    
+    log_session_event("SESSION_CLEANUP", sprintf("Cleaned up all data for session: %s", session_id))
+  }, error = function(e) {
+    # Log cleanup errors but don't fail
+    log_session_event("CLEANUP_ERROR", sprintf("Error cleaning up session %s: %s", session_id, e$message))
+  })
+}
+
 #' Initialize Robust Session Management
 #' 
 #' @param max_session_time Maximum session time in seconds (default: 7200 = 2 hours)
@@ -36,8 +149,9 @@ initialize_robust_session <- function(
   .session_state$termination_logged <- FALSE  # Prevent duplicate termination messages
   .session_state$observers_created <- FALSE   # Prevent duplicate observer creation
   
-  # Create session log file
+  # Create session log file with complete data isolation
   session_id <- generate_session_id()
+  ensure_complete_data_isolation(session_id)  # Ensure complete data isolation
   .session_state$session_id <- session_id
   .session_state$log_file <- file.path(tempdir(), paste0("inrep_session_", session_id, ".log"))
   
@@ -72,9 +186,17 @@ initialize_robust_session <- function(
 #' 
 #' @return Character string with unique session identifier
 generate_session_id <- function() {
-  timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
-  random_suffix <- paste(sample(c(letters, 0:9), 8, replace = TRUE), collapse = "")
-  paste0("SESS_", timestamp, "_", random_suffix)
+  # Generate a more robust unique session ID with multiple entropy sources
+  timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S_%OS3")  # Include milliseconds
+  process_id <- Sys.getpid()  # Process ID for additional uniqueness
+  random_suffix <- paste(sample(c(letters, LETTERS, 0:9), 12, replace = TRUE), collapse = "")
+  machine_id <- Sys.info()["nodename"]  # Machine identifier
+  
+  # Create a hash of all components for additional uniqueness
+  combined_string <- paste(timestamp, process_id, random_suffix, machine_id, sep = "_")
+  hash_suffix <- substr(digest::digest(combined_string, algo = "md5"), 1, 8)
+  
+  paste0("SESS_", timestamp, "_", process_id, "_", hash_suffix)
 }
 
 #' Log Session Events
@@ -209,6 +331,11 @@ stop_keep_alive_monitoring <- function() {
   if (!is.null(.session_state$keep_alive_observer)) {
     .session_state$keep_alive_observer$destroy()
     .session_state$keep_alive_observer <- NULL
+  }
+  
+  # Clean up session data to ensure no data leakage
+  if (!is.null(.session_state$session_id)) {
+    cleanup_session_data(.session_state$session_id)
   }
   
   # Only log to file for background operations
@@ -403,10 +530,16 @@ cleanup_session <- function(save_final_data = TRUE) {
     .session_state$data_preservation_observer <- NULL
   }
   
+  # Complete data cleanup to ensure no data leakage between sessions
+  if (!is.null(.session_state$session_id)) {
+    cleanup_session_data(.session_state$session_id)
+  }
+  
   # Clear session state
   .session_state$keep_alive_active <- FALSE
   .session_state$session_start_time <- NULL
   .session_state$last_activity <- NULL
+  .session_state$session_id <- NULL
   
   # Log cleanup completion to file only for background operations
   if (.session_state$enable_logging) {

@@ -475,18 +475,34 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
     stringsAsFactors = FALSE
   )
   
+  # DEBUG: Log response information
+  message("DEBUG: responses length = ", if(is.null(responses)) "NULL" else length(responses))
+  message("DEBUG: responses = ", if(is.null(responses)) "NULL" else paste(responses, collapse=", "))
+  
   # Add all item responses with proper column names
   if (!is.null(responses) && length(responses) > 0) {
-    for (i in 1:length(responses)) {
+    # Ensure we have exactly 30 responses
+    if (length(responses) < 30) {
+      message("WARNING: Only ", length(responses), " responses received, expected 30. Padding with NA.")
+      # Pad with NA if we have fewer than 30 responses
+      responses <- c(responses, rep(NA, 30 - length(responses)))
+    } else if (length(responses) > 30) {
+      message("WARNING: ", length(responses), " responses received, expected 30. Truncating.")
+      # Truncate if we have more than 30 responses
+      responses <- responses[1:30]
+    }
+    
+    for (i in 1:30) {
       item_name <- paste0("Item_", sprintf("%02d", i))
       data[[item_name]] <- responses[i]
     }
-  }
-  
-  # Add any missing items as NA
-  for (i in (length(responses) + 1):30) {
-    item_name <- paste0("Item_", sprintf("%02d", i))
-    data[[item_name]] <- NA
+  } else {
+    # No responses - fill all with NA
+    message("WARNING: No responses received!")
+    for (i in 1:30) {
+      item_name <- paste0("Item_", sprintf("%02d", i))
+      data[[item_name]] <- NA
+    }
   }
   
   # Add response labels for reference
@@ -594,5 +610,9 @@ study_config <- inrep::create_study_config(
 inrep::launch_study(
   config = study_config,
   item_bank = all_items,
-  custom_css = custom_css
+  custom_css = custom_css,
+  # Auto-close timer settings for UMA study
+  auto_close_time = 15,           # 15 seconds
+  auto_close_time_unit = "seconds", # Use seconds as unit
+  disable_auto_close = FALSE      # Enable auto-close timer (FALSE = enabled)
 )
