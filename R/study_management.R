@@ -1609,17 +1609,24 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
   # Create auto-close timer UI if not disabled
   auto_close_ui <- NULL
   if (!disable_auto_close && auto_close_seconds > 0) {
+    # Get current language for auto-close messages
+    current_lang <- rv$language %||% config$language %||% "de"
+    
+    # Set language-dependent messages
+    auto_close_title <- if (current_lang == "en") "Session will close automatically" else "Die Sitzung wird automatisch geschlossen"
+    thank_you_message <- if (current_lang == "en") "Thank you for participating!" else "Vielen Dank für Ihre Teilnahme!"
+    
     auto_close_ui <- shiny::div(
       id = "auto-close-timer",
       class = "auto-close-timer",
       style = "text-align: center; margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; border: 2px solid #007bff;",
-      shiny::h4("Session will close automatically", style = "color: #007bff; margin-bottom: 10px;"),
+      shiny::h4(auto_close_title, style = "color: #007bff; margin-bottom: 10px;"),
       shiny::div(
         id = "countdown-display",
         style = "font-size: 24px; font-weight: bold; color: #dc3545; margin-bottom: 10px;",
         shiny::textOutput("countdown_timer", inline = TRUE)
       ),
-      shiny::p("Thank you for participating!", style = "margin: 0; color: #6c757d;")
+      shiny::p(thank_you_message, style = "margin: 0; color: #6c757d;")
     )
   }
   
