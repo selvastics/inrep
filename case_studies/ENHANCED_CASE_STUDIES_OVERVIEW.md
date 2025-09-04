@@ -1,18 +1,18 @@
-# Enhanced inrep Case Studies - Complete Overview
+# inrep Case Studies - Complete Overview
 
-## 🎯 **Overview**
+## Overview
 
-This document provides a comprehensive overview of the enhanced case studies that demonstrate the unique capabilities of the `inrep` package. Each case study has been carefully designed to highlight specific advanced features and use cases.
+This document provides a comprehensive overview of the case studies that demonstrate the capabilities of the `inrep` package. Each case study has been designed to highlight specific features and use cases.
 
-## 📚 **Case Studies Overview**
+## Case Studies Overview
 
-### 1. 🧠 **Programming Anxiety Assessment** - Advanced IRT Features
+### 1. Programming Anxiety Assessment - IRT Features
 **Location**: `programming_anxiety_assessment/`
 **Launch**: `launch_programming_anxiety.R`
 
-#### **Unique Features Highlighted:**
-- **Plausible Values Generation** - Multiple estimates for robust statistical inference
-- **Advanced IRT Models** - Graded Response Model (GRM) with confidence intervals
+#### **Features Highlighted:**
+- **Plausible Values Generation** - Multiple estimates for statistical inference
+- **IRT Models** - Graded Response Model (GRM) with confidence intervals
 - **Interactive Dashboard** - Real-time analytics and visualizations
 - **Multi-dimensional Profiling** - 5 anxiety dimensions with detailed analysis
 - **Risk Assessment** - Personalized recommendations and intervention strategies
@@ -37,11 +37,11 @@ demonstrate_risk_assessment(results)
 
 ---
 
-### 2. 👥 **Big Five Personality Assessment** - Multi-Dimensional Features
+### 2. Big Five Personality Assessment - Multi-Dimensional Features
 **Location**: `big_five_personality/`
 **Launch**: `launch_big_five.R`
 
-#### **Unique Features Highlighted:**
+#### **Features Highlighted:**
 - **Multi-dimensional Personality Model** - Five-factor model with trait-specific adaptation
 - **Cross-cultural Validation** - Multiple language support and cultural adaptations
 - **Comprehensive Profiling** - Radar plots, bar charts, and detailed trait analysis
@@ -71,11 +71,11 @@ demonstrate_comprehensive_profiling(results)
 
 ---
 
-### 3. 🏥 **Depression Screening Assessment** - Clinical Features
+### 3. Depression Screening Assessment - Clinical Features
 **Location**: `depression_screening/`
 **Launch**: `launch_depression_screening.R`
 
-#### **Unique Features Highlighted:**
+#### **Features Highlighted:**
 - **Clinical Cutoffs & Severity Classification** - Automatic severity assessment
 - **Risk Assessment & Intervention Recommendations** - Actionable clinical insights
 - **Multiple Validated Instruments** - PHQ-9, CES-D, BDI-II, DASS-21 integration
@@ -110,7 +110,7 @@ demonstrate_quality_assurance(results)
 **Location**: `rater_participant_design/`
 **Launch**: `launch_rater_participant.R`
 
-#### **Unique Features Highlighted:**
+#### **Features Highlighted:**
 - **Multi-Rater Assessment** - Multiple raters evaluating participants with reliability analysis
 - **Inter-Rater Reliability** - ICC calculations and agreement analysis
 - **Advanced Sample Linking** - Bidirectional linking between participants and raters
@@ -141,11 +141,11 @@ demonstrate_comprehensive_reporting(multi_rater_results)
 
 ---
 
-### 5. 🎓 **HILFO Study** - Production-Ready Assessment
+### 5. HILFO Study - Production-Ready Assessment
 **Location**: `hildesheim_study/`
 **Launch**: `HilFo.R`
 
-#### **Unique Features Highlighted:**
+#### **Features Highlighted:**
 - **Production-Ready Implementation** - Real-world academic assessment
 - **Bilingual Support** - German/English with seamless switching
 - **Comprehensive Demographics** - Extensive demographic data collection
@@ -178,7 +178,7 @@ Rscript HilFo.R
 **Location**: `uma_study/`
 **Launch**: `uma_study_simple.R`
 
-#### **Unique Features Highlighted:**
+#### **Features Highlighted:**
 - **Modern UI Design** - Hover effects and responsive design
 - **Auto-Close Functionality** - Configurable timer with universal compatibility
 - **Scroll-to-Top** - Enhanced navigation across all platforms
@@ -241,7 +241,7 @@ Rscript uma_study_simple.R
 | **Cloud Storage** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Interactive Dashboard** | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
-## 🎯 **Choosing the Right Case Study**
+## Choosing the Right Case Study
 
 ### **For IRT Research:**
 - **Programming Anxiety Assessment** - Advanced IRT with plausible values
@@ -262,7 +262,7 @@ Rscript uma_study_simple.R
 - **Big Five Personality** - Cross-cultural validation
 - **Programming Anxiety** - Student support applications
 
-## 📚 **Documentation and Support**
+## Documentation and Support
 
 Each case study includes:
 - **Comprehensive README** - Detailed setup and usage instructions

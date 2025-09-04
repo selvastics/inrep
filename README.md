@@ -30,14 +30,14 @@
 - **Adaptive & Non-Adaptive Testing**: Support for multiple IRT models (1PL, 2PL, 3PL, GRM) with item selection algorithms, plus fixed-order questionnaires
 - **Web-based Interface**: Modern Shiny applications for test administration and data collection  
 - **TAM Integration**: All psychometric computations performed using the validated TAM package  
-- **Professional Survey Features**: 30+ question types, branching logic, randomization, piping, quota control, and participant management
-- **Enhanced Security**: Input validation, rate limiting, CSRF protection, encryption, and audit logging
+- **Survey Features**: 30+ question types, branching logic, randomization, piping, quota control, and participant management
+- **Security**: Input validation, rate limiting, CSRF protection, encryption, and audit logging
 - **Multilingual Support**: Interface available in English, German, Spanish, and French with complete translations
 - **10+ Beautiful Themes**: Including Light, Professional, Ocean, Forest, Midnight, Sunset, Hildesheim, and more
 - **Reporting**: Multiple export formats (CSV, JSON, SPSS, PDF) with detailed analytics and visualizations  
 - **Session Recovery**: Session handling with automatic save and crash recovery capabilities
 - **Smart Argument Validation**: Fuzzy matching for typos, case-insensitive parameters, helpful error messages
-- **Performance Optimized**: Caching, parallel processing, memory management for large-scale deployments
+- **Performance**: Caching, parallel processing, memory management for large-scale deployments
 - **Accessibility Options**: WCAG-compliant with colorblind-safe palettes, large text, dyslexia-friendly fonts, and high-contrast modes
 - **CRAN-Ready**: Clean code, documentation, full test coverage
 
@@ -148,7 +148,7 @@ config_fixed <- create_study_config(
 launch_study(config_fixed, bfi_items)
 ```
 
-### Advanced Cognitive Ability Study (2PL) — Fully Specified
+### Cognitive Ability Study (2PL) — Fully Specified
 
 ```r
 # Fully specified cognitive ability study (2PL) with custom item bank
@@ -190,7 +190,7 @@ if (length(spatial_rows) > 0) {
 }
 
 # Create a detailed configuration
-advanced_config <- create_study_config(
+config <- create_study_config(
   name = "Cognitive Ability Assessment",
   model = "2PL",
   estimation_method = "TAM",
@@ -211,12 +211,12 @@ advanced_config <- create_study_config(
   session_save = TRUE,
   parallel_computation = TRUE,
   cache_enabled = TRUE,
-  accessibility_enhanced = TRUE,
+  accessibility = TRUE,
   participant_report = list(
     show_theta_plot = TRUE,
     show_response_table = TRUE,
     show_recommendations = TRUE,
-    use_enhanced_report = TRUE,
+    use_detailed_report = TRUE,
     show_item_difficulty_trend = TRUE,
     show_domain_breakdown = TRUE
   )
@@ -224,7 +224,7 @@ advanced_config <- create_study_config(
 
 # Launch the study (opens a Shiny app)
 launch_study(
-  config = advanced_config,
+  config = config,
   item_bank = cognitive_items,
   accessibility = TRUE,
   admin_dashboard_hook = function(session_data) {
