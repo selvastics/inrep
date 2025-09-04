@@ -486,7 +486,7 @@ custom_page_flow <- list(
       '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
       # Language switcher in top right corner (uses global toggle function)
       '<div style="position: absolute; top: 10px; right: 10px;">',
-      '<button type="button" id="lang_switch" class="btn-primary" onclick="window.toggleLanguage()" style="',
+      '<button type="button" id="language-toggle-btn" class="btn-primary" onclick="window.toggleLanguage()" style="',
       'background: white; color: #e8041c; border: 2px solid #e8041c;">',
       '<span id="lang_switch_text">English Version</span></button>',
       '</div>',
@@ -2700,19 +2700,24 @@ window.toggleLanguage = function() {
   
   currentLang = currentLang === "de" ? "en" : "de";
   
-  // Update button text
+  // Update button text - handle both button IDs and text spans
   var btn = document.getElementById("language-toggle-btn");
   if (btn) {
-    btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    var textSpan = btn.querySelector("#lang_switch_text");
+    if (textSpan) {
+      textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    } else {
+      btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    }
   }
   
-  // Also update the welcome page button if it exists
+  // Also update the welcome page button if it exists (legacy support)
   var welcomeBtn = document.getElementById("lang_switch");
   if (welcomeBtn) {
     welcomeBtn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
   }
   
-  // Update the welcome page button text span if it exists
+  // Update the welcome page button text span if it exists (legacy support)
   var welcomeBtnText = document.getElementById("lang_switch_text");
   if (welcomeBtnText) {
     welcomeBtnText.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
@@ -2755,6 +2760,8 @@ document.addEventListener("DOMContentLoaded", function() {
   if (!document.getElementById("language-toggle-btn")) {
     var btn = document.createElement("button");
     btn.id = "language-toggle-btn";
+    btn.className = "btn-primary";
+    btn.style.cssText = "position: fixed !important; top: 10px !important; right: 10px !important; z-index: 9999 !important; background: white !important; color: #e8041c !important; border: 2px solid #e8041c !important; padding: 8px 16px !important; border-radius: 4px !important; cursor: pointer !important; font-size: 14px !important; font-weight: bold !important; transition: all 0.3s ease !important;";
     btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
     btn.onclick = toggleLanguage;
     document.body.appendChild(btn);
@@ -2792,7 +2799,12 @@ document.addEventListener("DOMContentLoaded", function() {
     currentLang = stored;
     var btn = document.getElementById("language-toggle-btn");
     if (btn) {
-      btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+      var textSpan = btn.querySelector("#lang_switch_text");
+      if (textSpan) {
+        textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+      } else {
+        btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+      }
     }
   }
   
