@@ -81,7 +81,7 @@ export(clear_performance_state)
 export(validate_and_fix_config)
 export(handle_extreme_parameters)
 export(create_fallback_config)
-export(_unicode_text)
+export(validate_unicode_text)
 export(handle_branching_rules)
 export(optimize_for_scale)
 
