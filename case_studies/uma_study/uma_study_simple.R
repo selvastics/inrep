@@ -594,5 +594,9 @@ study_config <- inrep::create_study_config(
 inrep::launch_study(
   config = study_config,
   item_bank = all_items,
-  custom_css = custom_css
+  custom_css = custom_css,
+  # Auto-close timer settings for UMA study
+  auto_close_time = 15,           # 15 seconds
+  auto_close_time_unit = "seconds", # Use seconds as unit
+  disable_auto_close = FALSE      # Enable auto-close timer
 )
