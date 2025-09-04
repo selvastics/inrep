@@ -533,33 +533,78 @@ launch_study <- function(
     ...
 ) {
   
-  # Helper function for enhanced scroll-to-top functionality
+  # Helper function for robust scroll-to-top functionality (works on desktop and mobile)
   scroll_to_top_enhanced <- function() {
     if (requireNamespace("shinyjs", quietly = TRUE)) {
-      # Enhanced scroll function that works on all platforms including mobile apps
+      # Robust scroll function that works reliably on all platforms
       scroll_js <- "
       (function() {
-        // Try multiple scroll methods for maximum compatibility
-        if (window.scrollTo) {
-          window.scrollTo({top: 0, left: 0, behavior: 'smooth'});
-        }
-        if (document.documentElement) {
-          document.documentElement.scrollTop = 0;
-        }
-        if (document.body) {
-          document.body.scrollTop = 0;
-        }
-        // For mobile webview apps
-        if (window.webkit && window.webkit.messageHandlers) {
-          window.webkit.messageHandlers.scrollToTop.postMessage({});
-        }
-        // For React Native WebView
-        if (window.ReactNativeWebView) {
-          window.ReactNativeWebView.postMessage(JSON.stringify({type: 'scrollToTop'}));
+        try {
+          // Primary method: Modern browsers (desktop and mobile)
+          if (window.scrollTo) {
+            window.scrollTo(0, 0);
+          }
+          
+          // Fallback 1: Direct element scrolling
+          if (document.documentElement) {
+            document.documentElement.scrollTop = 0;
+          }
+          
+          // Fallback 2: Body scrolling
+          if (document.body) {
+            document.body.scrollTop = 0;
+          }
+          
+          // Fallback 3: Smooth scrolling for modern browsers
+          if (window.scrollTo && typeof window.scrollTo === 'function') {
+            try {
+              window.scrollTo({top: 0, left: 0, behavior: 'smooth'});
+            } catch(e) {
+              // If smooth scrolling fails, use instant scrolling
+              window.scrollTo(0, 0);
+            }
+          }
+          
+          // Mobile app support (only if available)
+          if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.scrollToTop) {
+            try {
+              window.webkit.messageHandlers.scrollToTop.postMessage({});
+            } catch(e) {
+              // Ignore mobile app errors
+            }
+          }
+          
+          // React Native WebView support (only if available)
+          if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
+            try {
+              window.ReactNativeWebView.postMessage(JSON.stringify({type: 'scrollToTop'}));
+            } catch(e) {
+              // Ignore React Native errors
+            }
+          }
+        } catch(e) {
+          // Final fallback: Simple scroll
+          try {
+            window.scrollTo(0, 0);
+          } catch(e2) {
+            // If all else fails, try document scrolling
+            if (document.documentElement) {
+              document.documentElement.scrollTop = 0;
+            }
+          }
         }
       })();
       "
       shinyjs::runjs(scroll_js)
+    } else {
+      # Fallback: Simple scroll without shinyjs
+      tryCatch({
+        # Try basic JavaScript execution
+        shiny::runjs("window.scrollTo(0, 0);")
+      }, error = function(e) {
+        # If JavaScript fails, log the error but don't break the app
+        logger(sprintf("Scroll to top failed: %s", e$message), level = "WARNING")
+      })
     }
   }
   
