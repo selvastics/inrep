@@ -51,10 +51,10 @@ all_items <- data.frame(
     "Mir ist bewusst, inwiefern gelungene Beratung ein Zusammenspiel von beeinflussbaren und nicht beeinflussbaren Faktoren ist.",
     "Ich habe das Gefühl, meinen Einfluss realistisch einschätzen zu können.",
     "Ich akzeptiere Dinge, die ich nicht beeinflussen kann.",
-    "Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit eine langfristige persönliche Lebensperspektive entwickeln konnten.",
-    "Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit umsetzbare Ideen für erste Schritte nach dem Auszug haben.",
-    "Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit zugängliche Ansprechstellen für mögliche Unterstützung kennengelernt haben.",
-    "Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit Problemlösefähigkeiten verbessern konnten.",
+    "…eine langfristige persönliche Lebensperspektive entwickeln konnten.",
+    "…umsetzbare Ideen für erste Schritte nach dem Auszug haben.",
+    "…zugängliche Ansprechstellen für mögliche Unterstützung kennengelernt haben.",
+    "…Problemlösefähigkeiten verbessern konnten.",
     "Ich habe das Gefühl, dass ich die jungen Männer in den ersten Monaten nach dem Auszug gut begleiten kann.",
     "Ich habe das Gefühl, dass ich die jungen Männer im Stationären Wohnen ausreichend helfen kann.",
     "Ich habe das Gefühl, dass ich positiven Einfluss auf die Entwicklung der langfristigen persönlichen Lebensperspektive der UMA nehmen kann."
@@ -126,10 +126,10 @@ custom_page_flow <- list(
     )
   ),
   
-  # Page 2: Custom Code Input Page
+  # Page 2: Demographics Page with Code Input
   list(
     id = "page2",
-    type = "custom",
+    type = "demographics",
     title = "",
     content = paste0(
       '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
@@ -145,58 +145,7 @@ custom_page_flow <- list(
       '</div>',
       '</div>'
     ),
-    render_function = function(input, output, session, rv) {
-      # Custom render function for page 2 - show code instructions and input field
-      output$page_content <- renderUI({
-        shiny::div(
-          class = "assessment-card",
-          style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
-          shiny::h3("Teilnahme-Code", class = "card-header"),
-          shiny::div(
-            style = "padding: 20px; font-size: 16px; line-height: 1.8;",
-            shiny::div(
-              style = "background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;",
-              shiny::p(shiny::strong("Bitte erstelle deinen Code nach folgender Anleitung:")),
-              shiny::tags$ul(
-                style = "list-style-type: none; padding-left: 0;",
-                shiny::tags$li(style = "margin: 10px 0;", "Ersten Buchstaben des Vornamens deiner Mutter (z.B. Karla = K)"),
-                shiny::tags$li(style = "margin: 10px 0;", "Ersten Buchstaben des Vornamens deines Vaters (z.B. Yusuf = Y)"),
-                shiny::tags$li(style = "margin: 10px 0;", "Geburtsmonat (z.B. September = 09)")
-              ),
-              shiny::p(
-                style = "margin-top: 20px; font-weight: bold; color: #3498db;",
-                "Es entsteht ein Code = KY09"
-              )
-            ),
-            shiny::div(
-              style = "margin: 20px 0;",
-              shiny::tags$label(
-                `for` = "demo_Teilnahme_Code",
-                style = "display: block; margin-bottom: 10px; font-weight: bold;",
-                "Bitte geben Sie Ihren persönlichen Code ein:"
-              ),
-              shiny::tags$input(
-                type = "text",
-                id = "demo_Teilnahme_Code",
-                name = "demo_Teilnahme_Code",
-                placeholder = "z.B. KY09",
-                style = "width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 4px; font-size: 16px;"
-              )
-            )
-          )
-        )
-      })
-    },
-    completion_handler = function(input, rv) {
-      # Store the participant code in multiple places to ensure it's available
-      if (!is.null(input$demo_Teilnahme_Code) && !is.null(rv)) {
-        rv$demo_data <- list(Teilnahme_Code = input$demo_Teilnahme_Code)
-        rv$demo_Teilnahme_Code <- input$demo_Teilnahme_Code
-        rv$participant_code <- input$demo_Teilnahme_Code
-        message("Saved demographic Teilnahme_Code: ", input$demo_Teilnahme_Code)
-        message("Stored in rv$demo_data, rv$demo_Teilnahme_Code, and rv$participant_code")
-      }
-    }
+    demographics = c("Teilnahme_Code")
   ),
   
   # Page 3: Section 1 intro and items 1-5
@@ -252,148 +201,11 @@ custom_page_flow <- list(
   # Page 8: Items 24-27 (4.1-4.4) - Special section with stem
   list(
     id = "page8",
-    type = "custom",
+    type = "items",
     title = "",
-    content = paste0(
-      '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
-      '<h3 style="color: #2c3e50;">Beratungsgespräche zum Thema "Langfristige persönliche Lebensperspektive der UMA"</h3>',
-      '<p>Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema "Langfristige persönliche Lebensperspektive der UMA".</p>',
-      '<p><strong>Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…</strong></p>',
-      '</div>'
-    ),
-    render_function = function(input, output, session, rv) {
-      # Custom render function for page 8 - show items with stem format
-      output$page_content <- renderUI({
-        shiny::div(
-          class = "assessment-card",
-          style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
-          shiny::h3("Beratungsgespräche zum Thema \"Langfristige persönliche Lebensperspektive der UMA\"", class = "card-header"),
-          shiny::div(
-            style = "padding: 20px; font-size: 16px; line-height: 1.8;",
-            shiny::p("Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema \"Langfristige persönliche Lebensperspektive der UMA\"."),
-            shiny::p(shiny::strong("Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…")),
-            shiny::div(
-              style = "margin: 20px 0;",
-              # Item 24
-              shiny::div(
-                style = "margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;",
-                shiny::p(
-                  style = "margin: 0; font-weight: bold;",
-                  "…eine langfristige persönliche Lebensperspektive entwickeln konnten."
-                ),
-                shiny::div(
-                  style = "margin-top: 10px;",
-                  shiny::radioButtons(
-                    inputId = "Item_24",
-                    label = "",
-                    choices = list(
-                      "Trifft überhaupt nicht zu" = 1,
-                      "Trifft eher nicht zu" = 2,
-                      "Teils/teils" = 3,
-                      "Trifft eher zu" = 4,
-                      "Trifft voll und ganz zu" = 5
-                    ),
-                    selected = character(0),
-                    inline = FALSE
-                  )
-                )
-              ),
-              # Item 25
-              shiny::div(
-                style = "margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;",
-                shiny::p(
-                  style = "margin: 0; font-weight: bold;",
-                  "…umsetzbare Ideen für erste Schritte nach dem Auszug haben."
-                ),
-                shiny::div(
-                  style = "margin-top: 10px;",
-                  shiny::radioButtons(
-                    inputId = "Item_25",
-                    label = "",
-                    choices = list(
-                      "Trifft überhaupt nicht zu" = 1,
-                      "Trifft eher nicht zu" = 2,
-                      "Teils/teils" = 3,
-                      "Trifft eher zu" = 4,
-                      "Trifft voll und ganz zu" = 5
-                    ),
-                    selected = character(0),
-                    inline = FALSE
-                  )
-                )
-              ),
-              # Item 26
-              shiny::div(
-                style = "margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;",
-                shiny::p(
-                  style = "margin: 0; font-weight: bold;",
-                  "…zugängliche Ansprechstellen für mögliche Unterstützung kennengelernt haben."
-                ),
-                shiny::div(
-                  style = "margin-top: 10px;",
-                  shiny::radioButtons(
-                    inputId = "Item_26",
-                    label = "",
-                    choices = list(
-                      "Trifft überhaupt nicht zu" = 1,
-                      "Trifft eher nicht zu" = 2,
-                      "Teils/teils" = 3,
-                      "Trifft eher zu" = 4,
-                      "Trifft voll und ganz zu" = 5
-                    ),
-                    selected = character(0),
-                    inline = FALSE
-                  )
-                )
-              ),
-              # Item 27
-              shiny::div(
-                style = "margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;",
-                shiny::p(
-                  style = "margin: 0; font-weight: bold;",
-                  "…Problemlösefähigkeiten verbessern konnten."
-                ),
-                shiny::div(
-                  style = "margin-top: 10px;",
-                  shiny::radioButtons(
-                    inputId = "Item_27",
-                    label = "",
-                    choices = list(
-                      "Trifft überhaupt nicht zu" = 1,
-                      "Trifft eher nicht zu" = 2,
-                      "Teils/teils" = 3,
-                      "Trifft eher zu" = 4,
-                      "Trifft voll und ganz zu" = 5
-                    ),
-                    selected = character(0),
-                    inline = FALSE
-                  )
-                )
-              )
-            )
-          )
-        )
-      })
-    },
-    completion_handler = function(input, rv) {
-      # Store the responses for items 24-27
-      if (!is.null(input$Item_24) && !is.null(rv)) {
-        rv$responses$Item_24 <- as.numeric(input$Item_24)
-        message("Saved item response 24 (id: Item_24): ", input$Item_24)
-      }
-      if (!is.null(input$Item_25) && !is.null(rv)) {
-        rv$responses$Item_25 <- as.numeric(input$Item_25)
-        message("Saved item response 25 (id: Item_25): ", input$Item_25)
-      }
-      if (!is.null(input$Item_26) && !is.null(rv)) {
-        rv$responses$Item_26 <- as.numeric(input$Item_26)
-        message("Saved item response 26 (id: Item_26): ", input$Item_26)
-      }
-      if (!is.null(input$Item_27) && !is.null(rv)) {
-        rv$responses$Item_27 <- as.numeric(input$Item_27)
-        message("Saved item response 27 (id: Item_27): ", input$Item_27)
-      }
-    }
+    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.\n\nIch habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…",
+    item_indices = 24:27,
+    scale_type = "likert"
   ),
   
   # Page 9: Items 28-30 (Final items 5, 6, 7)
