@@ -2131,6 +2131,11 @@ launch_study <- function(
             document.getElementById('study_ui').className += ' positioned';
             document.getElementById('study_ui').style.visibility = 'visible';
           });
+          
+          // Handle scroll-to-top messages from Shiny
+          Shiny.addCustomMessageHandler('scrollToTop', function(message) {
+            window.scrollTo(0, 0);
+          });
         });
       ")),
         shiny::tags$style(shiny::HTML("
@@ -4040,6 +4045,14 @@ launch_study <- function(
                   # Move to next page immediately - CSS handles the transition
           rv$current_page <- rv$current_page + 1
           logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
+          
+          # Scroll to top of page after navigation
+          tryCatch({
+            shinyjs::runjs("window.scrollTo(0, 0);")
+          }, error = function(e) {
+            # Fallback: use JavaScript directly
+            session$sendCustomMessage("scrollToTop", list())
+          })
       }
     })
     
@@ -4051,6 +4064,14 @@ launch_study <- function(
                   # Move to previous page immediately - CSS handles the transition
           rv$current_page <- rv$current_page - 1
           logger(sprintf("Moving back to page %d of %d", rv$current_page, rv$total_pages))
+          
+          # Scroll to top of page after navigation
+          tryCatch({
+            shinyjs::runjs("window.scrollTo(0, 0);")
+          }, error = function(e) {
+            # Fallback: use JavaScript directly
+            session$sendCustomMessage("scrollToTop", list())
+          })
       }
     })
     

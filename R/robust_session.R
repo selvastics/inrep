@@ -270,7 +270,7 @@ preserve_session_data <- function(force = FALSE) {
         )
         
         # Log data preservation to file only (minimal console output)
-        if (.session_state$enable_logging) {
+        if (exists(".session_state") && !is.null(.session_state$enable_logging) && .session_state$enable_logging) {
           log_session_event("DATA_PRESERVED", "Session data preserved using enhanced system")
         }
         return(TRUE)
@@ -282,25 +282,26 @@ preserve_session_data <- function(force = FALSE) {
     
     if (length(session_data) > 0) {
       # Save to temporary file
-      temp_file <- file.path(tempdir(), paste0("inrep_data_", .session_state$session_id, ".rds"))
+      session_id <- if (exists(".session_state") && !is.null(.session_state$session_id)) .session_state$session_id else "unknown"
+      temp_file <- file.path(tempdir(), paste0("inrep_data_", session_id, ".rds"))
       saveRDS(session_data, temp_file)
       
       # Log data preservation to file only (minimal console output)
-      if (.session_state$enable_logging) {
+      if (exists(".session_state") && !is.null(.session_state$enable_logging) && .session_state$enable_logging) {
         log_session_event("DATA_PRESERVED", "Session data automatically preserved", 
                          list(file = temp_file, size = file.size(temp_file)))
       }
       return(TRUE)
     } else {
       # Log to file only for background operations
-      if (.session_state$enable_logging) {
+      if (exists(".session_state") && !is.null(.session_state$enable_logging) && .session_state$enable_logging) {
         log_session_event("DATA_PRESERVATION_EMPTY", "No session data to preserve")
       }
       return(FALSE)
     }
   }, error = function(e) {
     # Log errors to file only for background operations
-    if (.session_state$enable_logging) {
+    if (exists(".session_state") && !is.null(.session_state$enable_logging) && .session_state$enable_logging) {
       log_session_event("DATA_PRESERVATION_ERROR", "Failed to preserve session data", 
                        list(error = if (!is.null(e$message)) e$message else "Unknown error"))
     }
@@ -377,9 +378,9 @@ get_enhanced_session_data <- function() {
         
         # Extract session information
         session_data$session_info <- list(
-          session_id = .session_state$session_id,
+          session_id = if (exists(".session_state") && !is.null(.session_state$session_id)) .session_state$session_id else "unknown",
           participant_id = rv_list$participant_id %||% "unknown",
-          start_time = .session_state$session_start_time,
+          start_time = if (exists(".session_state") && !is.null(.session_state$session_start_time)) .session_state$session_start_time else Sys.time(),
           end_time = Sys.time(),
           completion_status = rv_list$completion_status %||% "incomplete",
           total_items = length(rv_list$responses %||% c()),
@@ -423,7 +424,7 @@ get_enhanced_session_data <- function() {
     
   }, error = function(e) {
     # Log data collection errors
-    if (.session_state$enable_logging) {
+    if (exists(".session_state") && !is.null(.session_state$enable_logging) && .session_state$enable_logging) {
       log_session_event("ENHANCED_DATA_COLLECTION_ERROR", "Failed to collect enhanced session data", 
                        list(error = if (!is.null(e$message)) e$message else "Unknown error"))
     }
