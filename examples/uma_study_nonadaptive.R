@@ -346,22 +346,35 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
   participant_code <- NULL
   
   # Debug: Log what we're receiving
-  message("DEBUG: demographics = ", if(is.null(demographics)) "NULL" else paste(names(demographics), collapse=", "))
+  message("DEBUG: demographics type = ", class(demographics))
+  message("DEBUG: demographics = ", if(is.null(demographics)) "NULL" else if(is.list(demographics)) paste(names(demographics), collapse=", ") else paste(demographics, collapse=", "))
   message("DEBUG: rv$demo_data = ", if(is.null(rv$demo_data)) "NULL" else paste(names(rv$demo_data), collapse=", "))
   if (!is.null(rv$demo_data)) {
     message("DEBUG: rv$demo_data$Teilnahme_Code = ", rv$demo_data$Teilnahme_Code)
   }
   
-  if (!is.null(demographics) && !is.null(demographics$Teilnahme_Code)) {
-    participant_code <- demographics$Teilnahme_Code
-    message("DEBUG: Got participant code from demographics: ", participant_code)
-  } else if (!is.null(rv) && !is.null(rv$demo_data) && !is.null(rv$demo_data$Teilnahme_Code)) {
+  # Handle demographics as either list or atomic vector
+  if (!is.null(demographics)) {
+    if (is.list(demographics) && !is.null(demographics$Teilnahme_Code)) {
+      participant_code <- demographics$Teilnahme_Code
+      message("DEBUG: Got participant code from demographics list: ", participant_code)
+    } else if (is.atomic(demographics) && length(demographics) > 0) {
+      # If demographics is an atomic vector, it might be the participant code directly
+      participant_code <- demographics[1]
+      message("DEBUG: Got participant code from demographics vector: ", participant_code)
+    }
+  }
+  
+  # Fallback to rv$demo_data
+  if (is.null(participant_code) && !is.null(rv) && !is.null(rv$demo_data) && !is.null(rv$demo_data$Teilnahme_Code)) {
     participant_code <- rv$demo_data$Teilnahme_Code
     message("DEBUG: Got participant code from rv$demo_data: ", participant_code)
-  } else if (!is.null(rv) && !is.null(rv$demo_Teilnahme_Code)) {
+  } else if (is.null(participant_code) && !is.null(rv) && !is.null(rv$demo_Teilnahme_Code)) {
     participant_code <- rv$demo_Teilnahme_Code
     message("DEBUG: Got participant code from rv$demo_Teilnahme_Code: ", participant_code)
-  } else {
+  }
+  
+  if (is.null(participant_code)) {
     message("DEBUG: No participant code found!")
   }
   
