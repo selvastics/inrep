@@ -154,4 +154,6 @@
 #'   \item Samejima, F. (1997). Graded response model. \emph{Handbook of modern item response theory}, 85-100.
 #'   \item Embretson, S. E., & Reise, S. P. (2000). \emph{Item response theory for psychologists}. Lawrence Erlbaum.
 #' }
+## Export the dataset so roxygen includes it in NAMESPACE
+#' @export
 "math_items"
