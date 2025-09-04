@@ -141,7 +141,7 @@ custom_page_flow <- list(
       '<li style="margin: 10px 0;">Ersten Buchstaben des Vornamens deines Vaters (z.B. Yusuf = Y)</li>',
       '<li style="margin: 10px 0;">Geburtsmonat (z.B. September = 09)</li>',
       '</ul>',
-      '<p style="margin-top: 20px; font-weight: bold; color: #3498db;">Es entsteht ein Code</p>',
+      '<p style="margin-top: 20px; font-weight: bold; color: #3498db;">Es entsteht ein Code = KY09</p>',
       '</div>',
       '</div>'
     ),
@@ -198,19 +198,29 @@ custom_page_flow <- list(
     scale_type = "likert"
   ),
   
-  # Page 8: Items 26-30
+  # Page 8: Items 24-27 (4.1-4.4) - Special section with stem
   list(
     id = "page8",
     type = "items",
     title = "",
-    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.\n\n    Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit...",
-    item_indices = 26:30,
+    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.\n\n4. Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit...",
+    item_indices = 24:27,
     scale_type = "likert"
   ),
   
-  # Page 9: Thank you with data submission
+  # Page 9: Items 28-30 (Final items 5, 6, 7)
   list(
     id = "page9",
+    type = "items",
+    title = "",
+    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.",
+    item_indices = 28:30,
+    scale_type = "likert"
+  ),
+  
+  # Page 10: Thank you with data submission
+  list(
+    id = "page10",
     type = "results",
     title = "",
     submit_data = TRUE,
