@@ -105,9 +105,33 @@ launch_study_fast <- function(config, item_bank,
         logger(sprintf("Failed to initialize comprehensive dataset for fast patch: %s", e$message), level = "WARNING")
       })
       
-      # Scroll to top of page when starting the study
+      # Scroll to top of page when starting the study (enhanced for all platforms)
       if (requireNamespace("shinyjs", quietly = TRUE)) {
-        shinyjs::runjs("window.scrollTo(0, 0);")
+        scroll_js <- "
+        (function() {
+          try {
+            if (window.scrollTo) {
+              window.scrollTo(0, 0);
+            }
+            if (document.documentElement) {
+              document.documentElement.scrollTop = 0;
+            }
+            if (document.body) {
+              document.body.scrollTop = 0;
+            }
+          } catch(e) {
+            // Fallback
+            try {
+              window.scrollTo(0, 0);
+            } catch(e2) {
+              if (document.documentElement) {
+                document.documentElement.scrollTop = 0;
+              }
+            }
+          }
+        })();
+        "
+        shinyjs::runjs(scroll_js)
       }
     })
     
@@ -145,9 +169,33 @@ launch_study_fast <- function(config, item_bank,
       save_current_page_data(rv, input)
       rv$current_page <- rv$current_page + 1
       
-      # Scroll to top of page when navigating to next page
+      # Scroll to top of page when navigating to next page (enhanced for all platforms)
       if (requireNamespace("shinyjs", quietly = TRUE)) {
-        shinyjs::runjs("window.scrollTo(0, 0);")
+        scroll_js <- "
+        (function() {
+          try {
+            if (window.scrollTo) {
+              window.scrollTo(0, 0);
+            }
+            if (document.documentElement) {
+              document.documentElement.scrollTop = 0;
+            }
+            if (document.body) {
+              document.body.scrollTop = 0;
+            }
+          } catch(e) {
+            // Fallback
+            try {
+              window.scrollTo(0, 0);
+            } catch(e2) {
+              if (document.documentElement) {
+                document.documentElement.scrollTop = 0;
+              }
+            }
+          }
+        })();
+        "
+        shinyjs::runjs(scroll_js)
       }
     })
     
