@@ -274,17 +274,14 @@ custom_page_flow <- list(
             item_text <- gsub("Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit ", "...", item_text)
           }
           
-          # Add item numbering (4.1, 4.2, 4.3, 4.4)
-          item_number <- paste0("4.", i - 23)
-          
-          # Create radio button group with proper Shiny elements
+          # Create radio button group with proper Shiny elements (NO numbering)
           item_elements[[length(item_elements) + 1]] <- shiny::div(
             class = "item-container",
             style = "margin: 20px 0; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px;",
             shiny::div(
               class = "item-text",
               style = "font-size: 16px; margin-bottom: 15px;",
-              shiny::strong(item_number), " ", item_text
+              item_text
             ),
             shiny::div(
               class = "response-options",
