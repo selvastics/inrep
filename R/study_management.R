@@ -1490,10 +1490,34 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
     style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
     shiny::h3(page_title, class = "card-header"),
     if (!is.null(page_instructions)) {
-      shiny::p(page_instructions, class = "instructions-text")
+      # Convert markdown formatting to HTML
+      formatted_instructions <- convert_markdown_to_html(page_instructions)
+      shiny::HTML(formatted_instructions)
     },
     item_elements
   )
+}
+
+#' Convert markdown formatting to HTML for instructions
+convert_markdown_to_html <- function(text) {
+  if (is.null(text) || text == "") {
+    return("")
+  }
+  
+  # Convert line breaks to HTML
+  text <- gsub("\n\n", "</p><p>", text)
+  text <- paste0("<p>", text, "</p>")
+  
+  # Convert bold and underline: _text_ to <strong><u>text</u></strong>
+  text <- gsub("_([^_]+)_", "<strong><u>\\1</u></strong>", text)
+  
+  # Convert bold: **text** to <strong>text</strong>
+  text <- gsub("\\*\\*([^*]+)\\*\\*", "<strong>\\1</strong>", text)
+  
+  # Convert italic: *text* to <em>text</em>
+  text <- gsub("\\*([^*]+)\\*", "<em>\\1</em>", text)
+  
+  return(text)
 }
 
 #' Render custom page
@@ -1515,7 +1539,21 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
   
   # Default rendering
   if (!is.null(page$render_function) && is.function(page$render_function)) {
-    page$render_function(page, config, rv, ui_labels)
+    # Call render function and return the result
+    tryCatch({
+      page$render_function(input, NULL, NULL, rv)
+    }, error = function(e) {
+      # Fallback to content if render function fails
+      shiny::div(
+        class = "assessment-card",
+        style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
+        shiny::h3(page$title, class = "card-header"),
+        shiny::p("Error rendering custom page"),
+        if (!is.null(page$content)) {
+          shiny::HTML(page$content)
+        }
+      )
+    })
   } else {
     shiny::div(
       class = "assessment-card",
@@ -1540,7 +1578,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels) {
     # Use cat_result if available (contains cleaned responses), otherwise use raw responses
     if (!is.null(rv$cat_result) && !is.null(rv$cat_result$responses)) {
       if ("demographics" %in% processor_args) {
-        results_content <- config$results_processor(rv$cat_result$responses, item_bank, rv$demographics)
+        results_content <- config$results_processor(rv$cat_result$responses, item_bank, rv$demo_data)
       } else {
         results_content <- config$results_processor(rv$cat_result$responses, item_bank)
       }
@@ -1549,7 +1587,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels) {
       clean_responses <- rv$responses[!is.na(rv$responses)]
       if (length(clean_responses) > 0) {
         if ("demographics" %in% processor_args) {
-          results_content <- config$results_processor(clean_responses, item_bank, rv$demographics)
+          results_content <- config$results_processor(clean_responses, item_bank, rv$demo_data)
         } else {
           results_content <- config$results_processor(clean_responses, item_bank)
         }
@@ -1799,34 +1837,272 @@ create_demographic_input <- function(input_id, demo_config, input_type, current_
 }
 
 #' Get response labels for different scale types
-get_response_labels <- function(scale_type, choices, language = "de") {
+#' 
+#' This function generates appropriate labels for any number of response options
+#' and supports various scale types including Likert scales of any length.
+#' 
+#' @param scale_type Type of scale ("likert", "difficulty", "frequency", "numeric", "custom")
+#' @param choices Numeric vector of response options (e.g., 1:7 for 7-point scale)
+#' @param language Language code ("de", "en", "es", etc.)
+#' @param custom_labels Optional custom labels (overrides automatic generation)
+#' @return Character vector of labels
+#' @export
+get_response_labels <- function(scale_type, choices, language = "de", custom_labels = NULL) {
   n_choices <- length(choices)
   
+  # If custom labels provided, use them (but ensure correct length)
+  if (!is.null(custom_labels)) {
+    if (length(custom_labels) >= n_choices) {
+      return(custom_labels[1:n_choices])
+    } else {
+      # Extend custom labels if needed
+      extended_labels <- c(custom_labels, rep("", n_choices - length(custom_labels)))
+      return(extended_labels[1:n_choices])
+    }
+  }
+  
+  # Generate labels based on scale type and number of choices
   labels <- switch(scale_type,
-    "likert" = switch(language,
-      "de" = c("Stimme überhaupt nicht zu", "Stimme eher nicht zu", 
-               "Teils, teils", "Stimme eher zu", "Stimme voll und ganz zu")[1:n_choices],
-      "en" = c("Strongly Disagree", "Disagree", "Neutral", 
-               "Agree", "Strongly Agree")[1:n_choices]
-    ),
-    
-    "difficulty" = switch(language,
-      "de" = c("sehr schwer", "eher schwer", "teils-teils", 
-               "eher leicht", "sehr leicht")[1:n_choices],
-      "en" = c("Very Difficult", "Difficult", "Neutral", 
-               "Easy", "Very Easy")[1:n_choices]
-    ),
-    
-    "frequency" = switch(language,
-      "de" = c("Nie", "Selten", "Manchmal", "Oft", "Immer")[1:n_choices],
-      "en" = c("Never", "Rarely", "Sometimes", "Often", "Always")[1:n_choices]
-    ),
-    
-    # Default
+    "likert" = generate_likert_labels(n_choices, language),
+    "difficulty" = generate_difficulty_labels(n_choices, language),
+    "frequency" = generate_frequency_labels(n_choices, language),
+    "numeric" = as.character(choices),
+    "custom" = as.character(choices),
+    # Default fallback
     as.character(choices)
   )
   
-  labels
+  return(labels)
+}
+
+#' Generate Likert scale labels for any number of points
+#' 
+#' @param n_choices Number of response options
+#' @param language Language code
+#' @return Character vector of labels
+#' @keywords internal
+generate_likert_labels <- function(n_choices, language = "de") {
+  switch(language,
+    "de" = {
+      if (n_choices == 2) {
+        c("Nein", "Ja")
+      } else if (n_choices == 3) {
+        c("Stimme nicht zu", "Neutral", "Stimme zu")
+      } else if (n_choices == 4) {
+        c("Stimme nicht zu", "Stimme eher nicht zu", "Stimme eher zu", "Stimme zu")
+      } else if (n_choices == 5) {
+        c("Stimme überhaupt nicht zu", "Stimme eher nicht zu", "Teils, teils", 
+          "Stimme eher zu", "Stimme voll und ganz zu")
+      } else if (n_choices == 6) {
+        c("Stimme überhaupt nicht zu", "Stimme nicht zu", "Stimme eher nicht zu",
+          "Stimme eher zu", "Stimme zu", "Stimme voll und ganz zu")
+      } else if (n_choices == 7) {
+        c("Stimme überhaupt nicht zu", "Stimme nicht zu", "Stimme eher nicht zu", 
+          "Weder noch", "Stimme eher zu", "Stimme zu", "Stimme voll und ganz zu")
+      } else if (n_choices == 10) {
+        c("1 - Stimme überhaupt nicht zu", "2", "3", "4", "5 - Neutral", 
+          "6", "7", "8", "9", "10 - Stimme voll und ganz zu")
+      } else if (n_choices == 20) {
+        c("1 - Stimme überhaupt nicht zu", "2", "3", "4", "5", "6", "7", "8", "9", "10 - Neutral",
+          "11", "12", "13", "14", "15", "16", "17", "18", "19", "20 - Stimme voll und ganz zu")
+      } else {
+        # Generic labels for any number of choices
+        if (n_choices %% 2 == 1) {
+          # Odd number of choices - include neutral middle
+          middle <- ceiling(n_choices / 2)
+          labels <- paste0(1:n_choices)
+          labels[middle] <- paste0(middle, " - Neutral")
+          labels[1] <- paste0("1 - Stimme überhaupt nicht zu")
+          labels[n_choices] <- paste0(n_choices, " - Stimme voll und ganz zu")
+          labels
+        } else {
+          # Even number of choices - no neutral middle
+          labels <- paste0(1:n_choices)
+          labels[1] <- paste0("1 - Stimme überhaupt nicht zu")
+          labels[n_choices] <- paste0(n_choices, " - Stimme voll und ganz zu")
+          labels
+        }
+      }
+    },
+    "en" = {
+      if (n_choices == 2) {
+        c("No", "Yes")
+      } else if (n_choices == 3) {
+        c("Disagree", "Neutral", "Agree")
+      } else if (n_choices == 4) {
+        c("Disagree", "Somewhat Disagree", "Somewhat Agree", "Agree")
+      } else if (n_choices == 5) {
+        c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")
+      } else if (n_choices == 6) {
+        c("Strongly Disagree", "Disagree", "Somewhat Disagree",
+          "Somewhat Agree", "Agree", "Strongly Agree")
+      } else if (n_choices == 7) {
+        c("Strongly Disagree", "Disagree", "Somewhat Disagree", 
+          "Neither Agree nor Disagree", "Somewhat Agree", "Agree", "Strongly Agree")
+      } else if (n_choices == 10) {
+        c("1 - Strongly Disagree", "2", "3", "4", "5 - Neutral", 
+          "6", "7", "8", "9", "10 - Strongly Agree")
+      } else if (n_choices == 20) {
+        c("1 - Strongly Disagree", "2", "3", "4", "5", "6", "7", "8", "9", "10 - Neutral",
+          "11", "12", "13", "14", "15", "16", "17", "18", "19", "20 - Strongly Agree")
+      } else {
+        # Generic labels for any number of choices
+        if (n_choices %% 2 == 1) {
+          # Odd number of choices - include neutral middle
+          middle <- ceiling(n_choices / 2)
+          labels <- paste0(1:n_choices)
+          labels[middle] <- paste0(middle, " - Neutral")
+          labels[1] <- paste0("1 - Strongly Disagree")
+          labels[n_choices] <- paste0(n_choices, " - Strongly Agree")
+          labels
+        } else {
+          # Even number of choices - no neutral middle
+          labels <- paste0(1:n_choices)
+          labels[1] <- paste0("1 - Strongly Disagree")
+          labels[n_choices] <- paste0(n_choices, " - Strongly Agree")
+          labels
+        }
+      }
+    },
+    # Default to English if language not supported
+    generate_likert_labels(n_choices, "en")
+  )
+}
+
+#' Generate difficulty scale labels for any number of points
+#' 
+#' @param n_choices Number of response options
+#' @param language Language code
+#' @return Character vector of labels
+#' @keywords internal
+generate_difficulty_labels <- function(n_choices, language = "de") {
+  switch(language,
+    "de" = {
+      if (n_choices <= 5) {
+        c("sehr schwer", "eher schwer", "teils-teils", "eher leicht", "sehr leicht")[1:n_choices]
+      } else {
+        # Generic labels for more choices
+        labels <- paste0(1:n_choices)
+        labels[1] <- paste0("1 - sehr schwer")
+        labels[n_choices] <- paste0(n_choices, " - sehr leicht")
+        if (n_choices %% 2 == 1) {
+          middle <- ceiling(n_choices / 2)
+          labels[middle] <- paste0(middle, " - teils-teils")
+        }
+        labels
+      }
+    },
+    "en" = {
+      if (n_choices <= 5) {
+        c("Very Difficult", "Difficult", "Neutral", "Easy", "Very Easy")[1:n_choices]
+      } else {
+        # Generic labels for more choices
+        labels <- paste0(1:n_choices)
+        labels[1] <- paste0("1 - Very Difficult")
+        labels[n_choices] <- paste0(n_choices, " - Very Easy")
+        if (n_choices %% 2 == 1) {
+          middle <- ceiling(n_choices / 2)
+          labels[middle] <- paste0(middle, " - Neutral")
+        }
+        labels
+      }
+    },
+    # Default to English
+    generate_difficulty_labels(n_choices, "en")
+  )
+}
+
+#' Generate frequency scale labels for any number of points
+#' 
+#' @param n_choices Number of response options
+#' @param language Language code
+#' @return Character vector of labels
+#' @keywords internal
+generate_frequency_labels <- function(n_choices, language = "de") {
+  switch(language,
+    "de" = {
+      if (n_choices <= 5) {
+        c("Nie", "Selten", "Manchmal", "Oft", "Immer")[1:n_choices]
+      } else {
+        # Generic labels for more choices
+        labels <- paste0(1:n_choices)
+        labels[1] <- paste0("1 - Nie")
+        labels[n_choices] <- paste0(n_choices, " - Immer")
+        labels
+      }
+    },
+    "en" = {
+      if (n_choices <= 5) {
+        c("Never", "Rarely", "Sometimes", "Often", "Always")[1:n_choices]
+      } else {
+        # Generic labels for more choices
+        labels <- paste0(1:n_choices)
+        labels[1] <- paste0("1 - Never")
+        labels[n_choices] <- paste0(n_choices, " - Always")
+        labels
+      }
+    },
+    # Default to English
+    generate_frequency_labels(n_choices, "en")
+  )
+}
+
+#' Generate ResponseCategories string for any scale
+#' 
+#' This helper function creates the ResponseCategories string needed for item banks
+#' with any number of response options.
+#' 
+#' @param n_points Number of response points (e.g., 7 for 7-point scale)
+#' @param start_value Starting value (default: 1)
+#' @return Character string of comma-separated values
+#' @export
+#' @examples
+#' # 7-point scale
+#' generate_response_categories(7)  # "1,2,3,4,5,6,7"
+#' 
+#' # 10-point scale starting from 0
+#' generate_response_categories(10, 0)  # "0,1,2,3,4,5,6,7,8,9"
+#' 
+#' # 20-point scale
+#' generate_response_categories(20)  # "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20"
+generate_response_categories <- function(n_points, start_value = 1) {
+  if (n_points < 2) {
+    stop("Number of response points must be at least 2")
+  }
+  
+  end_value <- start_value + n_points - 1
+  values <- start_value:end_value
+  paste(values, collapse = ",")
+}
+
+#' Update item bank ResponseCategories for any scale
+#' 
+#' This function updates all items in an item bank to use the specified
+#' number of response points.
+#' 
+#' @param item_bank Data frame with item bank
+#' @param n_points Number of response points
+#' @param start_value Starting value (default: 1)
+#' @return Updated item bank with ResponseCategories column
+#' @export
+#' @examples
+#' # Update all items to use 7-point scale
+#' updated_bank <- update_item_bank_scale(bfi_items, 7)
+#' 
+#' # Update all items to use 10-point scale starting from 0
+#' updated_bank <- update_item_bank_scale(bfi_items, 10, 0)
+update_item_bank_scale <- function(item_bank, n_points, start_value = 1) {
+  if (!is.data.frame(item_bank)) {
+    stop("item_bank must be a data frame")
+  }
+  
+  # Generate the ResponseCategories string
+  response_categories <- generate_response_categories(n_points, start_value)
+  
+  # Update the item bank
+  item_bank$ResponseCategories <- response_categories
+  
+  return(item_bank)
 }
 
 # ============================================================================

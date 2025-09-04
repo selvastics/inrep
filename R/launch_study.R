@@ -1454,6 +1454,51 @@ launch_study <- function(
     
     # ULTIMATE CORNER FLASH ELIMINATION - ALL METHODS COMBINED!
     shiny::tags$head(
+      # Logging JavaScript for testing center data collection
+      if (config$log_data %||% FALSE) {
+        shiny::tags$script(shiny::HTML(paste0("
+          $(document).ready(function() {
+            // Track input changes
+            $(document).on('change input', 'input, select, textarea', function() {
+              Shiny.setInputValue('log_input_change', {
+                element_id: $(this).attr('id'),
+                element_type: this.tagName.toLowerCase(),
+                timestamp: new Date().toISOString(),
+                value: $(this).val()
+              }, {priority: 'event'});
+            });
+            
+            // Track button clicks
+            $(document).on('click', 'button, .btn, input[type=\"button\"], input[type=\"submit\"]', function() {
+              Shiny.setInputValue('log_button_click', {
+                element_id: $(this).attr('id'),
+                element_text: $(this).text().trim(),
+                timestamp: new Date().toISOString()
+              }, {priority: 'event'});
+            });
+            
+            // Track page visibility changes (tab switching)
+            document.addEventListener('visibilitychange', function() {
+              Shiny.setInputValue('log_visibility_change', {
+                hidden: document.hidden,
+                timestamp: new Date().toISOString()
+              }, {priority: 'event'});
+            });
+            
+            // Track mouse movements (throttled)
+            var mouseMoveCount = 0;
+            $(document).on('mousemove', function() {
+              mouseMoveCount++;
+              if (mouseMoveCount % 100 === 0) { // Log every 100 mouse movements
+                Shiny.setInputValue('log_mouse_activity', {
+                  count: mouseMoveCount,
+                  timestamp: new Date().toISOString()
+                }, {priority: 'event'});
+              }
+            });
+          });
+        ")))
+      },
       shiny::tags$style(shiny::HTML("
         /* NUCLEAR UNIVERSAL RESET - FORCE EVERYTHING TO CENTER */
         * {
@@ -2568,6 +2613,28 @@ launch_study <- function(
   
   # POPULATE rv IMMEDIATELY - No observe, no async, no delays
   rv$demo_data <- stats::setNames(base::rep(NA, base::length(config$demographics)), config$demographics)
+  
+      # Initialize comprehensive dataset system (if functions are available)
+    if (exists("initialize_comprehensive_dataset", mode = "function")) {
+      tryCatch({
+        comprehensive_dataset <- initialize_comprehensive_dataset(config, item_bank, effective_study_key)
+        rv$comprehensive_dataset <- comprehensive_dataset
+        logger("Comprehensive dataset initialized successfully", level = "INFO")
+        
+        # Initialize page start time for logging
+        if (config$log_data %||% FALSE && exists("update_page_start_time", mode = "function")) {
+          tryCatch({
+            update_page_start_time("page_1")
+          }, error = function(e) {
+            logger(sprintf("Failed to initialize page start time: %s", e$message), level = "WARNING")
+          })
+        }
+      }, error = function(e) {
+        logger(sprintf("Failed to initialize comprehensive dataset: %s", e$message), level = "WARNING")
+      })
+    } else {
+      logger("Comprehensive dataset functions not available - using basic data storage", level = "INFO")
+    }
   rv$stage <- if (!is.null(config$custom_page_flow)) {
     "custom_page_flow"
   } else if (!is.null(config$custom_study_flow) && config$enable_custom_navigation) {
@@ -3036,17 +3103,12 @@ launch_study <- function(
                          choices <- 1:5
                        }
                        
-                       labels <- base::switch(current_language(),
-                                              de = base::c("Stark ablehnen", "Ablehnen", "Neutral", "Zustimmen", "Stark zustimmen")[1:base::length(choices)],
-                                              en = base::c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")[1:base::length(choices)],
-                                              es = base::c("Totalmente en desacuerdo", "En desacuerdo", "Neutral", "De acuerdo", "Totalmente de acuerdo")[1:base::length(choices)],
-                                              fr = base::c("Fortement en désaccord", "En désaccord", "Neutre", "D'accord", "Fortement d'accord")[1:base::length(choices)]
+                       # Use the enhanced get_response_labels function
+                       labels <- get_response_labels(
+                         scale_type = "likert",
+                         choices = choices,
+                         language = current_language()
                        )
-                       
-                       # Ensure we have valid labels
-                       if (length(labels) == 0 || all(is.na(labels))) {
-                         labels <- base::c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")[1:base::length(choices)]
-                       }
                        base::switch(config$response_ui_type,
                                     "slider" = shiny::div(class = "slider-container",
                                                           shiny::sliderInput(
@@ -3340,6 +3402,7 @@ launch_study <- function(
                        ),
                        shiny::div(class = "nav-buttons",
                                   shiny::downloadButton("save_report", ui_labels$save_button, class = "btn-klee"),
+                                  shiny::downloadButton("download_comprehensive_dataset", "Download Complete Dataset", class = "btn-klee"),
                                   shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee")
                        )
                      ))
@@ -3650,22 +3713,145 @@ launch_study <- function(
         } else if (save_format == "rds") {
           base::saveRDS(report_data, file)
         } else if (save_format == "csv") {
-          flat_data <- base::data.frame(
-            Timestamp = report_data$timestamp,
-            Theta = if (config$adaptive) report_data$theta else NA,
-            SE = if (config$adaptive) report_data$se else NA,
-            base::t(report_data$demographics),
-            Items = base::paste(report_data$administered, collapse = ";"),
-            Responses = base::paste(report_data$responses, collapse = ";"),
-            Response_Times = base::paste(report_data$response_times, collapse = ";"),
-            Recommendations = base::paste(report_data$recommendations, collapse = ";")
-          )
-          utils::write.csv(flat_data, file, row.names = FALSE)
+          # Use comprehensive dataset if available, otherwise fall back to original method
+          tryCatch({
+            if (exists("get_comprehensive_dataset", mode = "function")) {
+              comprehensive_data <- get_comprehensive_dataset()
+              if (!is.null(comprehensive_data)) {
+                # Use comprehensive dataset for export
+                utils::write.csv(comprehensive_data, file, row.names = FALSE)
+                logger("Exported comprehensive dataset to CSV", level = "INFO")
+              } else {
+                # Fall back to original method
+              flat_data <- base::data.frame(
+                Timestamp = report_data$timestamp,
+                Theta = if (config$adaptive) report_data$theta else NA,
+                SE = if (config$adaptive) report_data$se else NA,
+                base::t(report_data$demographics),
+                Items = base::paste(report_data$administered, collapse = ";"),
+                Responses = base::paste(report_data$responses, collapse = ";"),
+                Response_Times = base::paste(report_data$response_times, collapse = ";"),
+                Recommendations = base::paste(report_data$recommendations, collapse = ";")
+              )
+              utils::write.csv(flat_data, file, row.names = FALSE)
+              }
+            }
+          }, error = function(e) {
+            logger(sprintf("Failed to export comprehensive dataset, using fallback: %s", e$message), level = "WARNING")
+            # Fall back to original method
+            flat_data <- base::data.frame(
+              Timestamp = report_data$timestamp,
+              Theta = if (config$adaptive) report_data$theta else NA,
+              SE = if (config$adaptive) report_data$se else NA,
+              base::t(report_data$demographics),
+              Items = base::paste(report_data$administered, collapse = ";"),
+              Responses = base::paste(report_data$responses, collapse = ";"),
+              Response_Times = base::paste(report_data$response_times, collapse = ";"),
+              Recommendations = base::paste(report_data$recommendations, collapse = ";")
+            )
+            utils::write.csv(flat_data, file, row.names = FALSE)
+          })
         } else if (save_format == "json") {
           jsonlite::write_json(report_data, file, pretty = TRUE, auto_unbox = TRUE)
         }
       }
     )
+    
+    # Comprehensive dataset download handler
+    output$download_comprehensive_dataset <- shiny::downloadHandler(
+      filename = function() {
+        base::paste0("comprehensive_dataset_", config$study_key %||% "study", "_", base::format(base::Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
+      },
+      content = function(file) {
+        tryCatch({
+          if (exists("get_comprehensive_dataset", mode = "function")) {
+            comprehensive_data <- get_comprehensive_dataset()
+            if (!is.null(comprehensive_data)) {
+              utils::write.csv(comprehensive_data, file, row.names = FALSE)
+              logger("Comprehensive dataset downloaded successfully", level = "INFO")
+            } else {
+              # Fallback to basic data
+            basic_data <- data.frame(
+              study_key = config$study_key %||% "study",
+              timestamp = Sys.time(),
+              demographics = paste(rv$demo_data, collapse = ";"),
+              theta = if (config$adaptive) rv$cat_result$theta else NA,
+              se = if (config$adaptive) rv$cat_result$se else NA,
+              items_administered = length(rv$cat_result$administered %||% 0),
+              responses = paste(rv$cat_result$responses, collapse = ";")
+            )
+            utils::write.csv(basic_data, file, row.names = FALSE)
+            logger("Downloaded basic dataset (comprehensive dataset not available)", level = "WARNING")
+            }
+          }
+        }, error = function(e) {
+          logger(sprintf("Failed to download comprehensive dataset: %s", e$message), level = "ERROR")
+          # Create minimal fallback
+          fallback_data <- data.frame(
+            error = "Dataset download failed",
+            timestamp = Sys.time(),
+            message = e$message
+          )
+          utils::write.csv(fallback_data, file, row.names = FALSE)
+        })
+      }
+    )
+    
+    # Logging observers for testing center data collection
+    if (config$log_data %||% FALSE) {
+      # Track input changes
+      shiny::observeEvent(input$log_input_change, {
+        tryCatch({
+          log_data <- input$log_input_change
+          current_page_id <- paste0("page_", rv$current_page)
+          if (exists("log_action", mode = "function")) {
+            log_action("input_change", log_data, current_page_id)
+          }
+        }, error = function(e) {
+          logger(sprintf("Failed to log input change: %s", e$message), level = "WARNING")
+        })
+      }, ignoreInit = TRUE)
+      
+      # Track button clicks
+      shiny::observeEvent(input$log_button_click, {
+        tryCatch({
+          log_data <- input$log_button_click
+          current_page_id <- paste0("page_", rv$current_page)
+          if (exists("log_action", mode = "function")) {
+            log_action("button_click", log_data, current_page_id)
+          }
+        }, error = function(e) {
+          logger(sprintf("Failed to log button click: %s", e$message), level = "WARNING")
+        })
+      }, ignoreInit = TRUE)
+      
+      # Track visibility changes (tab switching)
+      shiny::observeEvent(input$log_visibility_change, {
+        tryCatch({
+          log_data <- input$log_visibility_change
+          current_page_id <- paste0("page_", rv$current_page)
+          action_type <- if (log_data$hidden) "tab_switch_away" else "tab_switch_back"
+          if (exists("log_action", mode = "function")) {
+            log_action(action_type, log_data, current_page_id)
+          }
+        }, error = function(e) {
+          logger(sprintf("Failed to log visibility change: %s", e$message), level = "WARNING")
+        })
+      }, ignoreInit = TRUE)
+      
+      # Track mouse activity
+      shiny::observeEvent(input$log_mouse_activity, {
+        tryCatch({
+          log_data <- input$log_mouse_activity
+          current_page_id <- paste0("page_", rv$current_page)
+          if (exists("log_action", mode = "function")) {
+            log_action("mouse_activity", log_data, current_page_id)
+          }
+        }, error = function(e) {
+          logger(sprintf("Failed to log mouse activity: %s", e$message), level = "WARNING")
+        })
+      }, ignoreInit = TRUE)
+    }
     
     shiny::observe({
       if (config$session_save) {
@@ -3711,39 +3897,131 @@ launch_study <- function(
         # Collect demographics from current page
         if (current_page$type == "demographics") {
           demo_vars <- current_page$demographics %||% config$demographics
+          page_data <- list()
           for (dem in demo_vars) {
             input_id <- paste0("demo_", dem)
             value <- input[[input_id]]
             if (!is.null(value) && value != "") {
               rv$demo_data[[dem]] <- value
+              page_data[[dem]] <- value
               logger(sprintf("Saved demographic %s: %s", dem, substr(as.character(value), 1, 20)))
             }
+          }
+          
+          # Update comprehensive dataset (if function is available)
+          if (length(page_data) > 0 && exists("update_comprehensive_dataset", mode = "function")) {
+            tryCatch({
+              update_comprehensive_dataset("demographics", page_data, stage = rv$stage, current_page = rv$current_page)
+              logger("Updated comprehensive dataset with demographic data", level = "DEBUG")
+            }, error = function(e) {
+              logger(sprintf("Failed to update comprehensive dataset with demographics: %s", e$message), level = "WARNING")
+            })
           }
         }
         
         # Collect item responses from current page
         if (current_page$type == "items") {
           if (!is.null(current_page$item_indices) && !is.null(item_bank)) {
+            page_data <- list()
             for (idx in current_page$item_indices) {
               # Get the actual item to get its ID
               if (idx <= nrow(item_bank)) {
                 item <- item_bank[idx, ]
-                item_id <- paste0("item_", item$id %||% idx)
-                value <- input[[item_id]]
+                item_id <- item$id %||% paste0("item_", idx)
+                value <- input[[paste0("item_", item_id)]]
                 if (!is.null(value) && value != "") {
-                  rv$item_responses[[item_id]] <- value
+                  rv$item_responses[[paste0("item_", item_id)]] <- value
                   # Store in responses vector at the correct position
                   rv$responses[idx] <- as.numeric(value)
-                  logger(sprintf("Saved item response %d (id: %s): %s", idx, item$id %||% idx, value))
+                  page_data[[item_id]] <- as.numeric(value)
+                  logger(sprintf("Saved item response %d (id: %s): %s", idx, item_id, value))
                 }
               }
+            }
+            
+            # Update comprehensive dataset
+            if (length(page_data) > 0) {
+                              if (exists("update_comprehensive_dataset", mode = "function")) {
+                  tryCatch({
+                    update_comprehensive_dataset("items", page_data, stage = rv$stage, current_page = rv$current_page)
+                    logger("Updated comprehensive dataset with item responses", level = "DEBUG")
+                  }, error = function(e) {
+                    logger(sprintf("Failed to update comprehensive dataset with item responses: %s", e$message), level = "WARNING")
+                  })
+                }
             }
           }
         }
         
+        # Collect data from other custom page types
+        if (current_page$type != "demographics" && current_page$type != "items") {
+          page_data <- list()
+          page_id <- current_page$id %||% paste0("page_", rv$current_page)
+          
+          # Try to collect any input data from the page
+          # This is a general approach for text inputs, checkboxes, etc.
+          if (!is.null(current_page$input_fields)) {
+            for (field in current_page$input_fields) {
+              field_id <- paste0("custom_", page_id, "_", field)
+              value <- input[[field_id]]
+              if (!is.null(value) && value != "") {
+                page_data[[field]] <- value
+              }
+            }
+          }
+          
+          # Update comprehensive dataset
+          if (length(page_data) > 0) {
+                          if (exists("update_comprehensive_dataset", mode = "function")) {
+                tryCatch({
+                  update_comprehensive_dataset("custom_page", page_data, page_id = page_id, stage = rv$stage, current_page = rv$current_page)
+                  logger("Updated comprehensive dataset with custom page data", level = "DEBUG")
+                }, error = function(e) {
+                  logger(sprintf("Failed to update comprehensive dataset with custom page data: %s", e$message), level = "WARNING")
+                })
+              }
+          }
+        }
+        
+        # Call completion handler for custom pages
+        if (current_page$type == "custom" && !is.null(current_page$completion_handler) && is.function(current_page$completion_handler)) {
+          tryCatch({
+            current_page$completion_handler(input, rv)
+            logger("Called completion handler for custom page", level = "DEBUG")
+          }, error = function(e) {
+            logger(sprintf("Error in completion handler: %s", e$message), level = "WARNING")
+          })
+        }
+        
+                  # Log page time before moving
+          if (exists("log_page_time") && exists("update_page_start_time")) {
+            tryCatch({
+              current_page_id <- paste0("page_", rv$current_page)
+              time_spent <- as.numeric(difftime(Sys.time(), .logging_data$current_page_start, units = "secs"))
+              log_page_time(current_page_id, time_spent)
+            }, error = function(e) {
+              logger(sprintf("Failed to log page time: %s", e$message), level = "WARNING")
+            })
+          }
+          
                   # Move to next page immediately - CSS handles the transition
           rv$current_page <- rv$current_page + 1
           logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
+          
+          # Log page switch and update start time
+          if (exists("update_page_start_time")) {
+            tryCatch({
+              new_page_id <- paste0("page_", rv$current_page)
+              update_page_start_time(new_page_id)
+            }, error = function(e) {
+              logger(sprintf("Failed to update page start time: %s", e$message), level = "WARNING")
+            })
+          }
+          
+          # Scroll to top of page when navigating to next page
+          if (requireNamespace("shinyjs", quietly = TRUE)) {
+            shinyjs::runjs("window.scrollTo(0, 0);")
+          }
       }
     })
     
@@ -3752,9 +4030,35 @@ launch_study <- function(
         # Clear any validation errors when going back
         output$validation_errors <- shiny::renderUI({ NULL })
         
+        # Log page time before moving back
+        if (exists("log_page_time") && exists("update_page_start_time")) {
+          tryCatch({
+            current_page_id <- paste0("page_", rv$current_page)
+            time_spent <- as.numeric(difftime(Sys.time(), .logging_data$current_page_start, units = "secs"))
+            log_page_time(current_page_id, time_spent)
+          }, error = function(e) {
+            logger(sprintf("Failed to log page time: %s", e$message), level = "WARNING")
+          })
+        }
+        
                   # Move to previous page immediately - CSS handles the transition
           rv$current_page <- rv$current_page - 1
           logger(sprintf("Moving back to page %d of %d", rv$current_page, rv$total_pages))
+          
+          # Log page switch and update start time
+          if (exists("update_page_start_time")) {
+            tryCatch({
+              new_page_id <- paste0("page_", rv$current_page)
+              update_page_start_time(new_page_id)
+            }, error = function(e) {
+              logger(sprintf("Failed to update page start time: %s", e$message), level = "WARNING")
+            })
+          }
+          
+          # Scroll to top of page when navigating to previous page
+          if (requireNamespace("shinyjs", quietly = TRUE)) {
+            shinyjs::runjs("window.scrollTo(0, 0);")
+          }
       }
     })
     
@@ -3780,25 +4084,47 @@ launch_study <- function(
         
         if (current_page$type == "demographics") {
           demo_vars <- current_page$demographics
+          page_data <- list()
           for (dem in demo_vars) {
             input_id <- paste0("demo_", dem)
             value <- input[[input_id]]
             if (!is.null(value) && value != "") {
               rv$demo_data[[dem]] <- value
+              page_data[[dem]] <- value
             }
+          }
+          
+          # Update comprehensive dataset with final demographic data
+          if (length(page_data) > 0 && exists("update_comprehensive_dataset", mode = "function")) {
+            tryCatch({
+              update_comprehensive_dataset("demographics", page_data, stage = rv$stage, current_page = rv$current_page)
+            }, error = function(e) {
+              logger(sprintf("Failed to update comprehensive dataset with final demographics: %s", e$message), level = "WARNING")
+            })
           }
         } else if (current_page$type == "items") {
           # Collect item responses from final page
           if (!is.null(current_page$item_indices) && !is.null(item_bank)) {
+            page_data <- list()
             for (idx in current_page$item_indices) {
               if (idx <= nrow(item_bank)) {
                 item <- item_bank[idx, ]
-                item_id <- paste0("item_", item$id %||% idx)
-                value <- input[[item_id]]
+                item_id <- item$id %||% paste0("item_", idx)
+                value <- input[[paste0("item_", item_id)]]
                 if (!is.null(value) && value != "") {
                   rv$responses[idx] <- as.numeric(value)
+                  page_data[[item_id]] <- as.numeric(value)
                 }
               }
+            }
+            
+            # Update comprehensive dataset with final item responses
+            if (length(page_data) > 0 && exists("update_comprehensive_dataset", mode = "function")) {
+              tryCatch({
+                update_comprehensive_dataset("items", page_data, stage = rv$stage, current_page = rv$current_page)
+              }, error = function(e) {
+                logger(sprintf("Failed to update comprehensive dataset with final item responses: %s", e$message), level = "WARNING")
+              })
             }
           }
         }
@@ -3819,9 +4145,29 @@ launch_study <- function(
             demo_data = rv$demo_data
           )
           
+          # Update comprehensive dataset with final results
+          tryCatch({
+            results_data <- list(
+              theta = rv$current_ability,
+              se = rv$current_se,
+              administered = 1:length(final_responses)
+            )
+            if (exists("update_comprehensive_dataset", mode = "function")) {
+              update_comprehensive_dataset("results", results_data, stage = "results", current_page = length(config$custom_page_flow))
+              logger("Updated comprehensive dataset with final results", level = "INFO")
+            }
+          }, error = function(e) {
+            logger(sprintf("Failed to update comprehensive dataset with final results: %s", e$message), level = "WARNING")
+          })
+          
           # Move to last page (results)
           rv$current_page <- length(config$custom_page_flow)
           rv$stage <- "custom_page_flow"  # Stay in custom flow to show results page
+          
+          # Scroll to top of page when showing results
+          if (requireNamespace("shinyjs", quietly = TRUE)) {
+            shinyjs::runjs("window.scrollTo(0, 0);")
+          }
         }
         
         logger("Study completed via custom page flow")
@@ -3876,6 +4222,18 @@ launch_study <- function(
       })
       base::names(rv$demo_data) <- config$demographics
       
+      # Update comprehensive dataset with demographic data
+      tryCatch({
+        # Convert to list format for comprehensive dataset
+        if (exists("update_comprehensive_dataset", mode = "function")) {
+          demo_list <- as.list(rv$demo_data)
+          update_comprehensive_dataset("demographics", demo_list, stage = rv$stage, current_page = rv$current_page)
+          logger("Updated comprehensive dataset with demographic data", level = "DEBUG")
+        }
+      }, error = function(e) {
+        logger(sprintf("Failed to update comprehensive dataset with demographics: %s", e$message), level = "WARNING")
+      })
+      
       # More flexible demographic validation - allow some empty fields
       non_age_dems <- base::setdiff(config$demographics, "Age")
       if (base::length(non_age_dems) > 0) {
@@ -3927,6 +4285,11 @@ launch_study <- function(
       
       rv$stage <- "assessment"  # Fixed: was "test", now "assessment"
       rv$start_time <- base::Sys.time()
+      
+      # Scroll to top of page when starting assessment
+      if (requireNamespace("shinyjs", quietly = TRUE)) {
+        shinyjs::runjs("window.scrollTo(0, 0);")
+      }
       
       # Initialize item selection for assessment stage
       if (!config$adaptive) {
@@ -4318,6 +4681,26 @@ launch_study <- function(
           rv$stage = "results"
           logger("No more items available, proceeding to results")
           
+          # Update comprehensive dataset with final results
+          tryCatch({
+            results_data <- list(
+              theta = rv$current_ability,
+              se = rv$current_se,
+              administered = rv$administered
+            )
+            if (exists("update_comprehensive_dataset", mode = "function")) {
+              update_comprehensive_dataset("results", results_data, stage = "results", current_page = rv$current_page)
+              logger("Updated comprehensive dataset with assessment results", level = "INFO")
+            }
+          }, error = function(e) {
+            logger(sprintf("Failed to update comprehensive dataset with assessment results: %s", e$message), level = "WARNING")
+          })
+          
+          # Scroll to top of page when showing results
+          if (requireNamespace("shinyjs", quietly = TRUE)) {
+            shinyjs::runjs("window.scrollTo(0, 0);")
+          }
+          
           # Log test completion
           if (session_save && exists("log_session_event") && is.function(log_session_event)) {
             tryCatch({
@@ -4386,6 +4769,11 @@ launch_study <- function(
         rv$error_message <- NULL
         rv$stage <- "assessment"
         
+        # Scroll to top of page when recovering from error
+        if (requireNamespace("shinyjs", quietly = TRUE)) {
+          shinyjs::runjs("window.scrollTo(0, 0);")
+        }
+        
         # Ensure we have a current item
         if (is.null(rv$current_item)) {
           remaining_items <- setdiff(1:nrow(item_bank), rv$administered)
@@ -4441,6 +4829,11 @@ launch_study <- function(
       rv$error_message <- NULL
       rv$stage <- "assessment"
       
+      # Scroll to top of page when auto-recovering from error
+      if (requireNamespace("shinyjs", quietly = TRUE)) {
+        shinyjs::runjs("window.scrollTo(0, 0);")
+      }
+      
       # Ensure we have a current item
       if (is.null(rv$current_item)) {
         remaining_items <- setdiff(1:nrow(item_bank), rv$administered)
@@ -4484,6 +4877,11 @@ launch_study <- function(
         rv$stage <- "assessment"  # Fixed: was "test", now "assessment"
         rv$error_message <- NULL
         logger("Fallback error recovery - returning to assessment", level = "INFO")
+        
+        # Scroll to top of page when fallback recovering from error
+        if (requireNamespace("shinyjs", quietly = TRUE)) {
+          shinyjs::runjs("window.scrollTo(0, 0);")
+        }
       }
     })
     
@@ -4507,6 +4905,11 @@ launch_study <- function(
           logger("Automatic error recovery - continuing assessment", level = "INFO")
           rv$stage <- "assessment"
           rv$error_message <- NULL
+          
+          # Scroll to top of page when automatically recovering from error
+          if (requireNamespace("shinyjs", quietly = TRUE)) {
+            shinyjs::runjs("window.scrollTo(0, 0);")
+          }
           
           # Ensure we have a current item
           if (is.null(rv$current_item)) {
@@ -4559,6 +4962,11 @@ launch_study <- function(
       rv$stage = "demographics"
       rv$current_ability <- config$theta_prior[1]
       rv$current_se <- config$theta_prior[2]
+      
+      # Scroll to top of page when restarting
+      if (requireNamespace("shinyjs", quietly = TRUE)) {
+        shinyjs::runjs("window.scrollTo(0, 0);")
+      }
       rv$administered <- base::c()
       rv$responses = base::c()
       rv$response_times = base::c()

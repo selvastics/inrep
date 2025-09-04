@@ -47,7 +47,7 @@
 
 ```r
 # Install from GitHub (clean installation with dependency management)
-devtools::install_github("selvastics/inrep", ref = "main", force = TRUE)
+devtools::install_github("selvastics/inrep", ref = "master", force = TRUE)
 
 # Load the package
 library(inrep)
