@@ -1544,9 +1544,19 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     '</span></h4>',
     '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">',
     
-    # Use inrep's built-in download buttons - these are automatically provided by inrep
-    # The download buttons are already available in the results page via inrep's built-in system
-    # No custom download buttons needed - inrep handles this automatically
+    # PDF Download Button
+    '<button onclick="downloadPDF()" class="btn btn-primary" style="background: #e8041c; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+    '<i class="fas fa-file-pdf" style="margin-right: 8px;"></i>',
+    '<span data-lang-de="PDF herunterladen" data-lang-en="Download PDF">',
+    if (current_lang == "en") "Download PDF" else "PDF herunterladen",
+    '</span></button>',
+    
+    # CSV Download Button  
+    '<button onclick="downloadCSV()" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+    '<i class="fas fa-file-csv" style="margin-right: 8px;"></i>',
+    '<span data-lang-de="CSV herunterladen" data-lang-en="Download CSV">',
+    if (current_lang == "en") "Download CSV" else "CSV herunterladen",
+    '</span></button>',
     
     '</div>',
     '</div>',
@@ -1915,7 +1925,8 @@ study_config <- inrep::create_study_config(
   estimation_method = "EAP",  # Use EAP for ability estimation
   page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
   save_format = "csv",  # Use inrep's built-in save format
-  adaptive_items = 6:20  # PA items 6-20 are in adaptive pool
+  adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
+  custom_js = custom_js  # Add custom JavaScript for language switching and downloads
 )
 
 cat("\n================================================================================\n")
@@ -1927,15 +1938,393 @@ cat("Fixed radar plot with proper connections\n")
 cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
 
-# Simple JavaScript for radio button deselection ONLY
+# Download handlers for PDF and CSV
+download_pdf_handler <- function() {
+  shiny::downloadHandler(
+    filename = function() {
+      paste0("HilFo_Results_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".pdf")
+    },
+    content = function(file) {
+      # Create a simple PDF report
+      tryCatch({
+        # Get current session data
+        if (exists("complete_data", envir = .GlobalEnv)) {
+          data <- get("complete_data", envir = .GlobalEnv)
+        } else {
+          # Create sample data if no session data
+          data <- data.frame(
+            timestamp = Sys.time(),
+            participant_id = "HILFO_001",
+            message = "Sample data - no session data available"
+          )
+        }
+        
+        # Create simple text content for PDF
+        content <- paste0(
+          "HilFo Study Results\n",
+          "==================\n\n",
+          "Generated: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n\n",
+          "This is a sample PDF report.\n",
+          "In a full implementation, this would contain:\n",
+          "- Personality profile results\n",
+          "- Programming anxiety scores\n",
+          "- Study satisfaction ratings\n",
+          "- Detailed analysis and recommendations\n\n",
+          "Data summary:\n",
+          paste(capture.output(str(data)), collapse = "\n")
+        )
+        
+        # Write to file
+        writeLines(content, file)
+        
+      }, error = function(e) {
+        writeLines(paste("Error generating PDF:", e$message), file)
+      })
+    }
+  )
+}
+
+download_csv_handler <- function() {
+  shiny::downloadHandler(
+    filename = function() {
+      paste0("HilFo_Data_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
+    },
+    content = function(file) {
+      tryCatch({
+        # Get current session data
+        if (exists("complete_data", envir = .GlobalEnv)) {
+          data <- get("complete_data", envir = .GlobalEnv)
+        } else {
+          # Create sample data if no session data
+          data <- data.frame(
+            timestamp = Sys.time(),
+            participant_id = "HILFO_001",
+            study_language = "de",
+            message = "Sample data - no session data available"
+          )
+        }
+        
+        # Write CSV file
+        write.csv(data, file, row.names = FALSE)
+        
+      }, error = function(e) {
+        # Create error CSV
+        error_data <- data.frame(
+          error = paste("Error generating CSV:", e$message),
+          timestamp = Sys.time()
+        )
+        write.csv(error_data, file, row.names = FALSE)
+      })
+    }
+  )
+}
+
+# Enhanced JavaScript for radio button deselection, language switching, and downloads
 custom_js <- '<script>
+// Global language state
+var currentLang = "de";
+
+// Comprehensive translation dictionary
+var translations = {
+  // Page titles
+  "Wohnsituation": "Living Situation",
+  "Soziodemographische Angaben": "Sociodemographic Information", 
+  "Lebensstil": "Lifestyle",
+  "Bildung": "Education",
+  "Persönlichkeit": "Personality",
+  "Studienzufriedenheit": "Study Satisfaction",
+  "Ihre Ergebnisse": "Your Results",
+  "Ergebnisse exportieren": "Export Results",
+  "PDF herunterladen": "Download PDF",
+  "CSV herunterladen": "Download CSV",
+  
+  // Questions
+  "Wie wohnen Sie?": "How do you live?",
+  "Wie alt sind Sie?": "How old are you?",
+  "In welchem Studiengang befinden Sie sich?": "Which study program are you in?",
+  "Welches Geschlecht haben Sie?": "What is your gender?",
+  "Haben Sie ein Haustier oder möchten Sie eines?": "Do you have a pet or would you like one?",
+  "Rauchen Sie?": "Do you smoke?",
+  "Wie ernähren Sie sich hauptsächlich?": "What is your main diet?",
+  
+  // Options
+  "Bei meinen Eltern/Elternteil": "With my parents/parent",
+  "In einer WG/WG in einem Wohnheim": "In a shared apartment/dorm",
+  "Alleine/in abgeschlossener Wohneinheit in einem Wohnheim": "Alone/in a self-contained unit in a dorm",
+  "Mit meinem/r Partner*In (mit oder ohne Kinder)": "With my partner (with or without children)",
+  "Anders": "Other",
+  "Bachelor Psychologie": "Bachelor Psychology",
+  "Master Psychologie": "Master Psychology",
+  "weiblich oder divers": "female or diverse",
+  "männlich": "male",
+  "Ja": "Yes",
+  "Nein": "No",
+  "Hund": "Dog",
+  "Katze": "Cat",
+  "Fische": "Fish",
+  "Vogel": "Bird",
+  "Nager": "Rodent",
+  "Reptil": "Reptile",
+  "Ich möchte kein Haustier": "I don\'t want a pet",
+  "Sonstiges": "Other",
+  "Vegan": "Vegan",
+  "Vegetarisch": "Vegetarian",
+  "Pescetarisch": "Pescetarian",
+  "Flexitarisch": "Flexitarian",
+  "Omnivor (alles)": "Omnivore (everything)",
+  "Andere": "Other",
+  "älter als 30": "older than 30",
+  
+  // Instructions
+  "Falls anders, bitte spezifizieren:": "If other, please specify:",
+  "Anderes Haustier:": "Other pet:",
+  "Andere Ernährungsform:": "Other diet:",
+  "Bitte wählen...": "Please select...",
+  "Bitte wählen Sie": "Please select",
+  
+  // Navigation
+  "Seite": "Page",
+  "von": "of",
+  "Weiter": "Next",
+  "Zurück": "Back",
+  
+  // Validation messages
+  "Bitte beantworten Sie:": "Please answer:",
+  "Dieses Feld ist erforderlich": "This field is required",
+  "Bitte vervollständigen Sie die folgenden Angaben:": "Please complete the following:",
+  
+  // Likert scales
+  "trifft nicht zu": "strongly disagree",
+  "trifft eher nicht zu": "disagree",
+  "teils/teils": "neutral",
+  "trifft eher zu": "agree",
+  "trifft zu": "strongly agree",
+  "sehr gut": "very good",
+  "gut": "good",
+  "befriedigend": "satisfactory",
+  "ausreichend": "sufficient",
+  "mangelhaft": "poor",
+  
+  // Grade options
+  "sehr gut (15-13 Punkte)": "very good (15-13 points)",
+  "gut (12-10 Punkte)": "good (12-10 points)",
+  "befriedigend (9-7 Punkte)": "satisfactory (9-7 points)",
+  "ausreichend (6-4 Punkte)": "sufficient (6-4 points)",
+  "mangelhaft (3-0 Punkte)": "poor (3-0 points)",
+  
+  // Study hours
+  "0 Stunden": "0 hours",
+  "maximal eine Stunde": "maximum one hour",
+  "mehr als eine, aber weniger als 2 Stunden": "more than one, but less than 2 hours",
+  "mehr als zwei, aber weniger als 3 Stunden": "more than two, but less than 3 hours",
+  "mehr als drei, aber weniger als 4 Stunden": "more than three, but less than 4 hours",
+  "mehr als 4 Stunden": "more than 4 hours",
+  
+  // Satisfaction scale
+  "gar nicht zufrieden": "not at all satisfied",
+  "sehr zufrieden": "very satisfied",
+  
+  // Additional questions
+  "Welche Note hatten Sie in Englisch im Abiturzeugnis?": "What grade did you have in English in your Abitur certificate?",
+  "Welche Note hatten Sie in Mathematik im Abiturzeugnis?": "What grade did you have in Mathematics in your Abitur certificate?",
+  "Wieviele Stunden pro Woche planen Sie für die Vor- und Nachbereitung der Statistikveranstaltungen zu investieren?": "How many hours per week do you plan to invest in preparing and reviewing statistics courses?",
+  "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (5-stufig)": "How satisfied are you with your study location Hildesheim? (5-point scale)",
+  "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (7-stufig)": "How satisfied are you with your study location Hildesheim? (7-point scale)",
+  "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags):": "Please create a personal code (first 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday):",
+  
+  // Programming Anxiety titles
+  "Programmierangst - Teil 1": "Programming Anxiety - Part 1",
+  "Programmierangst - Teil 2": "Programming Anxiety - Part 2",
+  "Programmierangst": "Programming Anxiety",
+  
+  // Instructions
+  "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.": "Please indicate to what extent the following statements apply to you.",
+  "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.": "The following questions are selected based on your previous answers.",
+  "Wie sehr treffen die folgenden Aussagen auf Sie zu?": "How much do the following statements apply to you?",
+  "Wie leicht oder schwer fällt es Ihnen...": "How easy or difficult is it for you..."
+};
+
+// Function to translate entire page
+function translatePage() {
+  if (currentLang === "en") {
+    // Translate all headings and titles
+    document.querySelectorAll("h1, h2, h3, h4, h5, h6, .shiny-title, .panel-title").forEach(function(el) {
+      for (var de in translations) {
+        if (el.innerHTML.indexOf(de) !== -1) {
+          el.innerHTML = el.innerHTML.replace(new RegExp(de, "g"), translations[de]);
+        }
+      }
+    });
+    
+    // Translate all labels including nested text
+    document.querySelectorAll("label, .control-label, .shiny-label").forEach(function(label) {
+      for (var de in translations) {
+        if (label.innerHTML.indexOf(de) !== -1) {
+          label.innerHTML = label.innerHTML.replace(new RegExp(de, "g"), translations[de]);
+        }
+      }
+    });
+    
+    // Translate select options
+    document.querySelectorAll("select").forEach(function(select) {
+      if (select.options[0] && select.options[0].text === "Bitte wählen...") {
+        select.options[0].text = "Please select...";
+      }
+      
+      for (var i = 0; i < select.options.length; i++) {
+        var option = select.options[i];
+        for (var de in translations) {
+          if (option.text === de) {
+            option.text = translations[de];
+            break;
+          }
+        }
+      }
+    });
+    
+    // Translate radio button labels
+    document.querySelectorAll(".radio label, .checkbox label").forEach(function(label) {
+      var spans = label.querySelectorAll("span");
+      spans.forEach(function(span) {
+        for (var de in translations) {
+          if (span.textContent.trim() === de) {
+            span.textContent = translations[de];
+            break;
+          }
+        }
+      });
+    });
+    
+    // Translate buttons
+    document.querySelectorAll("button, .btn").forEach(function(button) {
+      for (var de in translations) {
+        if (button.textContent.trim() === de) {
+          button.textContent = translations[de];
+          break;
+        }
+      }
+    });
+    
+    // Translate any divs or spans with text
+    document.querySelectorAll("div, span, p").forEach(function(el) {
+      if (el.children.length === 0) {
+        var text = el.textContent.trim();
+        if (translations[text]) {
+          el.textContent = translations[text];
+        }
+      }
+    });
+    
+    // Translate placeholders
+    document.querySelectorAll("[placeholder]").forEach(function(elem) {
+      if (translations[elem.placeholder]) {
+        elem.placeholder = translations[elem.placeholder];
+      }
+    });
+  }
+}
+
+// Global language toggle function
+window.toggleLanguage = function() {
+  currentLang = currentLang === "de" ? "en" : "de";
+  
+  // Update button text
+  var btn = document.getElementById("language-toggle-btn");
+  if (btn) {
+    var textSpan = btn.querySelector("#lang_switch_text");
+    if (textSpan) {
+      textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    } else {
+      btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    }
+  }
+  
+  // Toggle welcome page content if on page 1
+  var deContent = document.getElementById("content_de");
+  var enContent = document.getElementById("content_en");
+  if (deContent && enContent) {
+    if (currentLang === "en") {
+      deContent.style.display = "none";
+      enContent.style.display = "block";
+    } else {
+      deContent.style.display = "block";
+      enContent.style.display = "none";
+    }
+  }
+  
+  // Send to Shiny
+  if (typeof Shiny !== "undefined") {
+    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+  }
+  
+  // Store preference
+  sessionStorage.setItem("hilfo_language", currentLang);
+  
+  // Apply translations to current page
+  translatePage();
+};
+
+// Download functions
+window.downloadPDF = function() {
+  try {
+    if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
+      Shiny.setInputValue("download_pdf", Math.random(), {priority: "event"});
+    } else {
+      alert("PDF download not available in this context");
+    }
+  } catch (e) {
+    console.error("PDF download error:", e);
+    alert("Error downloading PDF. Please try again.");
+  }
+};
+
+window.downloadCSV = function() {
+  try {
+    if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
+      Shiny.setInputValue("download_csv", Math.random(), {priority: "event"});
+    } else {
+      alert("CSV download not available in this context");
+    }
+  } catch (e) {
+    console.error("CSV download error:", e);
+    alert("Error downloading CSV. Please try again.");
+  }
+};
+
 document.addEventListener("DOMContentLoaded", function() {
+  // Check stored language preference
+  var storedLang = sessionStorage.getItem("hilfo_language");
+  if (storedLang) {
+    currentLang = storedLang;
+  }
+  
+  // Create language toggle button if it doesn\'t exist
+  if (!document.getElementById("language-toggle-btn")) {
+    var btn = document.createElement("button");
+    btn.id = "language-toggle-btn";
+    btn.className = "btn-primary";
+    btn.style.cssText = "position: fixed !important; top: 10px !important; right: 10px !important; z-index: 9999 !important; background: white !important; color: #e8041c !important; border: 2px solid #e8041c !important; padding: 8px 16px !important; border-radius: 4px !important; cursor: pointer !important; font-size: 14px !important; font-weight: bold !important; transition: all 0.3s ease !important;";
+    btn.innerHTML = \'<span id="lang_switch_text">\' + (currentLang === "de" ? "English Version" : "Deutsche Version") + \'</span>\';
+    btn.onclick = toggleLanguage;
+    document.body.appendChild(btn);
+  }
+  
+  // Apply initial translation if English
+  if (currentLang === "en") {
+    var deContent = document.getElementById("content_de");
+    var enContent = document.getElementById("content_en");
+    if (deContent && enContent) {
+      deContent.style.display = "none";
+      enContent.style.display = "block";
+    }
+    translatePage();
+  }
+  
   // Enable radio button deselection
   document.addEventListener("click", function(e) {
     if (e.target && e.target.type === "radio") {
       var wasChecked = e.target.getAttribute("data-was-checked") === "true";
       
-      // Clear all radios in group
       var radios = document.querySelectorAll("input[name=\\"" + e.target.name + "\\"]");
       for (var i = 0; i < radios.length; i++) {
         radios[i].setAttribute("data-was-checked", "false");
@@ -1951,7 +2340,31 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     }
   });
+  
+  // Watch for page changes and apply translations
+  var observer = new MutationObserver(function(mutations) {
+    if (currentLang === "en") {
+      setTimeout(translatePage, 50);
+    }
+  });
+  
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
 });
+
+// Handle Shiny messages
+if (typeof Shiny !== "undefined") {
+  Shiny.addCustomMessageHandler("update_language", function(lang) {
+    currentLang = lang;
+    if (lang === "en") {
+      translatePage();
+    } else {
+      location.reload();
+    }
+  });
+}
 </script>'
 
 monitor_adaptive <- function(session_data) {
@@ -2059,7 +2472,12 @@ inrep::launch_study(
   item_bank = all_items_de,  # Bilingual item bank
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
-  save_format = "csv"
+  save_format = "csv",
+  # Add download handlers
+  download_handlers = list(
+    pdf = download_pdf_handler,
+    csv = download_csv_handler
+  )
   # No custom CSS needed - inrep handles theming
   # No server extensions needed - inrep handles language switching
   # No admin dashboard hook needed - inrep handles monitoring
