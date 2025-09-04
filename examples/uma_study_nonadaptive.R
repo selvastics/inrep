@@ -126,10 +126,10 @@ custom_page_flow <- list(
     )
   ),
   
-  # Page 2: Demographics Page with Code Input
+  # Page 2: Custom Code Input Page
   list(
     id = "page2",
-    type = "demographics",
+    type = "custom",
     title = "",
     content = paste0(
       '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
@@ -145,7 +145,36 @@ custom_page_flow <- list(
       '</div>',
       '</div>'
     ),
-    demographics = c("Teilnahme_Code")
+    render_function = function(input, output, session, rv) {
+      # Custom render function for page 2 - show code instructions and input field
+      output$page_content <- renderUI({
+        HTML(paste0(
+          '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
+          '<h3 style="color: #2c3e50;">Teilnahme-Code</h3>',
+          '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">',
+          '<p><strong>Bitte erstelle deinen Code nach folgender Anleitung:</strong></p>',
+          '<ul style="list-style-type: none; padding-left: 0;">',
+          '<li style="margin: 10px 0;">Ersten Buchstaben des Vornamens deiner Mutter (z.B. Karla = K)</li>',
+          '<li style="margin: 10px 0;">Ersten Buchstaben des Vornamens deines Vaters (z.B. Yusuf = Y)</li>',
+          '<li style="margin: 10px 0;">Geburtsmonat (z.B. September = 09)</li>',
+          '</ul>',
+          '<p style="margin-top: 20px; font-weight: bold; color: #3498db;">Es entsteht ein Code = KY09</p>',
+          '</div>',
+          '<div style="margin: 20px 0;">',
+          '<label for="demo_Teilnahme_Code" style="display: block; margin-bottom: 10px; font-weight: bold;">Bitte geben Sie Ihren persönlichen Code ein:</label>',
+          '<input type="text" id="demo_Teilnahme_Code" name="demo_Teilnahme_Code" placeholder="z.B. KY09" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 4px; font-size: 16px;">',
+          '</div>',
+          '</div>'
+        ))
+      })
+    },
+    completion_handler = function(input, rv) {
+      # Store the participant code
+      if (!is.null(input$demo_Teilnahme_Code) && !is.null(rv)) {
+        rv$demo_data <- list(Teilnahme_Code = input$demo_Teilnahme_Code)
+        message("Saved demographic Teilnahme_Code: ", input$demo_Teilnahme_Code)
+      }
+    }
   ),
   
   # Page 3: Section 1 intro and items 1-5
@@ -201,48 +230,36 @@ custom_page_flow <- list(
   # Page 8: Items 24-27 (4.1-4.4) - Special section with stem
   list(
     id = "page8",
-    type = "items",
-    title = "",
-    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.\n\n4. Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit...",
-    item_indices = 24:27,
-    scale_type = "likert"
-  ),
-  
-  # Page 9: Items 28-30 (Final items 5, 6, 7) - Special page with highlighted stem
-  list(
-    id = "page9",
     type = "custom",
     title = "",
     content = paste0(
       '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
       '<p style="margin-bottom: 20px;">Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema "Langfristige persönliche Lebensperspektive der UMA".</p>',
-      '<div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2196F3;">',
-      '<p style="font-weight: bold; font-size: 18px; color: #1976d2; margin: 0;">Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…</p>',
+      '<div style="background: #f0f8ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3498db;">',
+      '<p style="font-weight: bold; font-size: 18px; color: #2c3e50; margin: 0;">4. Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…</p>',
       '</div>',
       '</div>'
     ),
     render_function = function(input, output, session, rv) {
-      # Custom render function for page 9 - show items with ... prefix
+      # Custom render function for page 8 - show items 4.1-4.4 with ... prefix
       output$page_content <- renderUI({
-        items_to_render <- 28:30
+        items_to_render <- 24:27
         item_html <- ""
         
         for (i in items_to_render) {
           item_id <- paste0("Item_", sprintf("%02d", i))
           item_text <- all_items$Question[i]
           
-          # Remove the stem part and add ... prefix
+          # Remove the stem part and add 4.1, 4.2, 4.3, 4.4 prefix
           if (grepl("Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit ", item_text)) {
             item_text <- gsub("Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit ", "...", item_text)
-          } else if (grepl("Ich habe das Gefühl, dass ich die jungen Männer ", item_text)) {
-            item_text <- gsub("Ich habe das Gefühl, dass ich die jungen Männer ", "...", item_text)
-          } else if (grepl("Ich habe das Gefühl, dass ich positiven Einfluss ", item_text)) {
-            item_text <- gsub("Ich habe das Gefühl, dass ich positiven Einfluss ", "...", item_text)
           }
           
+          # Add item numbering (4.1, 4.2, 4.3, 4.4)
+          item_number <- paste0("4.", i - 23)
           item_html <- paste0(item_html, 
             '<div class="item-container" style="margin: 20px 0; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px;">',
-            '<div class="item-text" style="font-size: 16px; margin-bottom: 15px;">', item_text, '</div>',
+            '<div class="item-text" style="font-size: 16px; margin-bottom: 15px;"><strong>', item_number, '</strong> ', item_text, '</div>',
             '<div class="response-options">',
             '<div class="shiny-options-group">',
             '<label style="display: flex; align-items: center; padding: 8px 12px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; transition: all 0.2s; margin: 5px;">',
@@ -282,8 +299,8 @@ custom_page_flow <- list(
         HTML(paste0(
           '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
           '<p style="margin-bottom: 20px;">Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema "Langfristige persönliche Lebensperspektive der UMA".</p>',
-          '<div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2196F3;">',
-          '<p style="font-weight: bold; font-size: 18px; color: #1976d2; margin: 0;">Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…</p>',
+          '<div style="background: #f0f8ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3498db;">',
+          '<p style="font-weight: bold; font-size: 18px; color: #2c3e50; margin: 0;">4. Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…</p>',
           '</div>',
           item_html,
           '</div>'
@@ -291,8 +308,8 @@ custom_page_flow <- list(
       })
     },
     completion_handler = function(input, rv) {
-      # Store responses for items 28-30
-      items_to_store <- 28:30
+      # Store responses for items 24-27
+      items_to_store <- 24:27
       for (i in items_to_store) {
         item_id <- paste0("Item_", sprintf("%02d", i))
         if (!is.null(input[[item_id]])) {
@@ -303,6 +320,16 @@ custom_page_flow <- list(
         }
       }
     }
+  ),
+  
+  # Page 9: Items 28-30 (Final items 5, 6, 7)
+  list(
+    id = "page9",
+    type = "items",
+    title = "",
+    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.",
+    item_indices = 28:30,
+    scale_type = "likert"
   ),
   
   # Page 10: Thank you with data submission
