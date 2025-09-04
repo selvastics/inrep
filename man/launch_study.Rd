@@ -12,20 +12,8 @@ launch_study(
   webdav_url = NULL,
   password = NULL,
   save_format = "rds",
-  logger = function(msg, ...) message(msg),
+  logger = function(msg, ...) print(msg),
   study_key = NULL,
-  accessibility = FALSE,
-  admin_dashboard_hook = NULL,
-  max_session_time = 7200,
-  session_save = TRUE,
-  data_preservation_interval = 30,
-  keep_alive_interval = 10,
-  enable_error_recovery = TRUE,
-  ui_render_delay = NULL,
-  package_loading_delay = NULL,
-  session_init_delay = NULL,
-  show_loading_screen = NULL,
-  immediate_ui = FALSE,
   ...
 )
 }
@@ -39,7 +27,7 @@ Column structure varies by IRT model (see \strong{Item Bank Requirements} sectio
 \item{custom_css}{Character string containing CSS code for UI customization. 
 When provided, overrides both built-in themes and \code{theme_config} settings.}
 
-\item{theme_config}{Named list of theme parameters for custom theming.
+\item{theme_config}{Named list of theme parameters (e.g., from \code{\link{launch_theme_editor}}).
 Contains CSS variable definitions like \code{primary_color}, \code{font_family}, etc.}
 
 \item{webdav_url}{Character string specifying WebDAV URL for cloud-based result storage,
@@ -60,25 +48,13 @@ Should accept \code{message} and \code{level} parameters.}
 
 \item{study_key}{Character string for unique study identification. Overrides config$study_key.}
 
-\item{accessibility}{Logical indicating whether to enable accessibility features
-including ARIA labels, keyboard navigation, and screen reader support.}
+\item{...}{Additional parameters passed to Shiny application configuration.}
 
 \item{admin_dashboard_hook}{Optional function receiving real-time assessment updates.
 Called with participant progress, ability estimates, and session metrics.}
 
-\item{max_session_time}{Maximum session time in seconds (default: 7200 = 2 hours).
-The assessment will automatically terminate after this time to ensure data security.}
-
-\item{session_save}{Logical indicating whether to enable session saving and recovery.}
-
-\item{data_preservation_interval}{Interval for automatic data preservation in seconds (default: 30).}
-
-\item{keep_alive_interval}{Keep-alive ping interval in seconds (default: 10).}
-
-\item{enable_error_recovery}{Logical indicating whether to enable automatic error recovery
-with up to 3 recovery attempts before graceful degradation.}
-
-\item{...}{Additional parameters passed to Shiny application configuration.}
+\item{accessibility}{Logical indicating whether to enable accessibility features
+including ARIA labels, keyboard navigation, and screen reader support.}
 }
 \value{
 A Shiny application object that can be run with \code{shiny::runApp()}.
@@ -291,7 +267,7 @@ The interface supports extensive theming capabilities through multiple mechanism
 \itemize{
   \item \code{theme_config}: Named list with CSS variable definitions
   \item \code{custom_css}: Direct CSS injection for complete control
-  \item \code{\link{get_theme_config}}: Get theme configuration for available themes
+  \item \code{\link{launch_theme_editor}}: Interactive theme builder with real-time preview
 }
 
 \strong{CSS Variables:} Key customization options include:

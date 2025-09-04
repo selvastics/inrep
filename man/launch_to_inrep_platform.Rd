@@ -37,7 +37,7 @@ launch_to_inrep_platform(
 \item{advanced_features}{List of advanced features to include:
 \itemize{
   \item "multilingual" - Multi-language support
-  \item "accessibility" - Accessibility features
+  \item "accessibility" - Enhanced accessibility features
   \item "mobile_optimized" - Mobile-responsive design
   \item "real_time_monitoring" - Live study monitoring  
   \item "automated_reporting" - Automated result generation
@@ -395,5 +395,5 @@ Deploymentguides:https://inrep-platform.org/docs/deployment
 \code{\link{create_study_config}}forcreatingstudyconfigurations,
 \code{\link{validate_item_bank}}foritembankvalidation,
 \code{\link{build_study_ui}}forUIcomponents,
-\code{\link{create_response_report}}forresultsprocessing
+\code{\link{create_enhanced_response_report}}forresultsprocessing
 }

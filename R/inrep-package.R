@@ -181,4 +181,4 @@
 #'
 #' @docType package
 #' @name inrep-package
-"_PACKAGE"
+NULL

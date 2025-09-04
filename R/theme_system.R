@@ -16,7 +16,7 @@
 #' 
 #' Provides comprehensive theme definitions for the UI
 #' 
-#' @rdname theme_system
+#' @name themes
 #' @docType data
 NULL
 
