@@ -484,12 +484,103 @@ custom_page_flow <- list(
     title_en = "Welcome to the HilFo Study",
     content = paste0(
       '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
-      # Language switcher in top right corner (uses global toggle function)
+      # Language switcher in top right corner with inline JavaScript
       '<div style="position: absolute; top: 10px; right: 10px;">',
-      '<button type="button" id="language-toggle-btn" class="btn-primary" onclick="window.toggleLanguage()" style="',
-      'background: white; color: #e8041c; border: 2px solid #e8041c;">',
+      '<button type="button" id="language-toggle-btn" class="btn-primary" onclick="toggleLanguageNow()" style="',
+      'background: white; color: #e8041c; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; transition: all 0.3s ease;">',
       '<span id="lang_switch_text">English Version</span></button>',
       '</div>',
+      
+      # Inline JavaScript for immediate language switching
+      '<script>
+      var currentLang = "de";
+      var translations = {
+        "Liebe Studierende,": "Dear Students,",
+        "In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.": "In the exercises on statistical methods, we want to work with illustrative data that comes from you. That\'s why we want to learn a few things about you.",
+        "Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene Themenbereiche ab, die voneinander teilweise unabhängig sind.": "Since we want to enable various evaluations, the questionnaire covers different topic areas that are partially independent of each other.",
+        "Bitte füllen Sie den Fragebogen vollständig aus. Alle Angaben werden streng vertraulich behandelt und nur für wissenschaftliche Zwecke verwendet.": "Please fill out the questionnaire completely. All information will be treated strictly confidentially and used only for scientific purposes.",
+        "Die Bearbeitung dauert etwa 15-20 Minuten.": "The processing takes about 15-20 minutes.",
+        "Vielen Dank für Ihre Teilnahme!": "Thank you for your participation!",
+        "Ich stimme der Teilnahme an der Studie zu und bestätige, dass ich mindestens 18 Jahre alt bin.": "I agree to participate in the study and confirm that I am at least 18 years old.",
+        "I agree to participate in the study and confirm that I am at least 18 years old.": "Ich stimme der Teilnahme an der Studie zu und bestätige, dass ich mindestens 18 Jahre alt bin.",
+        "English Version": "Deutsche Version",
+        "Deutsche Version": "English Version"
+      };
+      
+      function toggleLanguageNow() {
+        currentLang = currentLang === "de" ? "en" : "de";
+        
+        // Update button text
+        var btn = document.getElementById("language-toggle-btn");
+        if (btn) {
+          var textSpan = btn.querySelector("#lang_switch_text");
+          if (textSpan) {
+            textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+          }
+        }
+        
+        // Toggle content visibility with smooth transition
+        var deContent = document.getElementById("content_de");
+        var enContent = document.getElementById("content_en");
+        
+        if (deContent && enContent) {
+          if (currentLang === "en") {
+            deContent.style.opacity = "0";
+            deContent.style.transform = "translateX(-20px)";
+            setTimeout(function() {
+              deContent.style.display = "none";
+              enContent.style.display = "block";
+              enContent.style.opacity = "0";
+              enContent.style.transform = "translateX(20px)";
+              setTimeout(function() {
+                enContent.style.opacity = "1";
+                enContent.style.transform = "translateX(0)";
+              }, 50);
+            }, 300);
+          } else {
+            enContent.style.opacity = "0";
+            enContent.style.transform = "translateX(20px)";
+            setTimeout(function() {
+              enContent.style.display = "none";
+              deContent.style.display = "block";
+              deContent.style.opacity = "0";
+              deContent.style.transform = "translateX(-20px)";
+              setTimeout(function() {
+                deContent.style.opacity = "1";
+                deContent.style.transform = "translateX(0)";
+              }, 50);
+            }, 300);
+          }
+        }
+        
+        // Send to Shiny
+        if (typeof Shiny !== "undefined") {
+          Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+        }
+        
+        // Store preference
+        sessionStorage.setItem("hilfo_language", currentLang);
+      }
+      
+      // Apply smooth transitions
+      document.addEventListener("DOMContentLoaded", function() {
+        var deContent = document.getElementById("content_de");
+        var enContent = document.getElementById("content_en");
+        
+        if (deContent) {
+          deContent.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+        }
+        if (enContent) {
+          enContent.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+        }
+        
+        // Check stored language preference
+        var storedLang = sessionStorage.getItem("hilfo_language");
+        if (storedLang === "en") {
+          toggleLanguageNow();
+        }
+      });
+      </script>',
       # German content (default)
       '<div id="content_de">',
       '<h2 style="color: #e8041c;">Liebe Studierende,</h2>',
@@ -1926,7 +2017,80 @@ study_config <- inrep::create_study_config(
   page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
   save_format = "csv",  # Use inrep's built-in save format
   adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
-  custom_js = custom_js  # Add custom JavaScript for language switching and downloads
+  custom_js = custom_js,  # Add custom JavaScript for language switching and downloads
+  # Add smooth transitions globally
+  custom_css = "
+    /* Global smooth transitions for inrep */
+    .shiny-page, .container-fluid, .main-content {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    
+    .shiny-page.loaded, .container-fluid.loaded, .main-content.loaded {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    /* Smooth button transitions */
+    .btn, button, input[type='button'], input[type='submit'] {
+      transition: all 0.2s ease !important;
+    }
+    
+    .btn:hover, button:hover, input[type='button']:hover, input[type='submit']:hover {
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+    }
+    
+    /* Smooth form transitions */
+    .shiny-input-container, .form-group {
+      transition: all 0.3s ease !important;
+    }
+    
+    .shiny-input-container:hover, .form-group:hover {
+      transform: translateY(-1px) !important;
+    }
+    
+    /* Smooth progress transitions */
+    .progress-bar {
+      transition: width 0.5s ease !important;
+    }
+    
+    /* Smooth navigation */
+    .nav-buttons button, .btn-group button {
+      transition: all 0.3s ease !important;
+    }
+    
+    .nav-buttons button:hover, .btn-group button:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2) !important;
+    }
+    
+    /* Smooth radio button transitions */
+    .shiny-options-group label {
+      transition: all 0.3s ease !important;
+    }
+    
+    .shiny-options-group label:hover {
+      transform: translateY(-2px) !important;
+    }
+    
+    /* Smooth page loading */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .page-loading {
+      animation: fadeInUp 0.4s ease forwards;
+    }
+  "
 )
 
 cat("\n================================================================================\n")
@@ -2292,6 +2456,65 @@ window.downloadCSV = function() {
 };
 
 document.addEventListener("DOMContentLoaded", function() {
+  // Add smooth page transitions
+  var style = document.createElement("style");
+  style.textContent = `
+    /* Smooth page transitions */
+    .shiny-page {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    
+    .shiny-page.loaded {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    /* Smooth button transitions */
+    .btn, button {
+      transition: all 0.2s ease !important;
+    }
+    
+    .btn:hover, button:hover {
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+    }
+    
+    /* Smooth form element transitions */
+    .shiny-input-container {
+      transition: all 0.3s ease !important;
+    }
+    
+    .shiny-input-container:hover {
+      transform: translateY(-1px) !important;
+    }
+    
+    /* Smooth progress bar */
+    .progress-bar {
+      transition: width 0.5s ease !important;
+    }
+    
+    /* Smooth navigation buttons */
+    .nav-buttons button {
+      transition: all 0.3s ease !important;
+    }
+    
+    .nav-buttons button:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2) !important;
+    }
+  `;
+  document.head.appendChild(style);
+  
+  // Apply loaded class to current page
+  setTimeout(function() {
+    var pages = document.querySelectorAll(".shiny-page, .container-fluid, .main-content");
+    pages.forEach(function(page) {
+      page.classList.add("loaded");
+    });
+  }, 100);
+  
   // Check stored language preference
   var storedLang = sessionStorage.getItem("hilfo_language");
   if (storedLang) {
@@ -2341,11 +2564,46 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   });
   
-  // Watch for page changes and apply translations
+  // Watch for page changes and apply translations + smooth transitions
   var observer = new MutationObserver(function(mutations) {
     if (currentLang === "en") {
       setTimeout(translatePage, 50);
     }
+    
+    // Apply smooth transitions to new elements
+    mutations.forEach(function(mutation) {
+      mutation.addedNodes.forEach(function(node) {
+        if (node.nodeType === 1) { // Element node
+          // Add smooth transition to new pages
+          var pages = node.querySelectorAll ? node.querySelectorAll(".shiny-page, .container-fluid, .main-content") : [];
+          if (node.classList && (node.classList.contains("shiny-page") || node.classList.contains("container-fluid") || node.classList.contains("main-content"))) {
+            pages = [node];
+          }
+          
+          pages.forEach(function(page) {
+            page.style.opacity = "0";
+            page.style.transform = "translateY(20px)";
+            page.style.transition = "opacity 0.4s ease, transform 0.4s ease";
+            
+            setTimeout(function() {
+              page.style.opacity = "1";
+              page.style.transform = "translateY(0)";
+              page.classList.add("loaded");
+            }, 50);
+          });
+          
+          // Add smooth transitions to new buttons
+          var buttons = node.querySelectorAll ? node.querySelectorAll(".btn, button") : [];
+          if (node.tagName === "BUTTON" || (node.classList && node.classList.contains("btn"))) {
+            buttons = [node];
+          }
+          
+          buttons.forEach(function(btn) {
+            btn.style.transition = "all 0.2s ease";
+          });
+        }
+      });
+    });
   });
   
   observer.observe(document.body, {
