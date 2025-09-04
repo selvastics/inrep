@@ -22,10 +22,10 @@ library(shinyjs)
 
 
 # =============================================================================
-# HILFO STUDIE - PRODUCTION VERSION WITH COMPLETE DATA RECORDING
+# HILFO STUDIE - PRODUCTION VERSION
 # =============================================================================
 # All variables recorded with proper names, cloud storage enabled
-# NOW WITH PROGRAMMING ANXIETY ADDED (2 pages before BFI)
+# Programming Anxiety assessment included
 
 # ULTRA-FAST STARTUP: Check package but don't load until needed
 if (!requireNamespace("inrep", quietly = TRUE)) {
@@ -63,13 +63,13 @@ WEBDAV_PASSWORD <- "ws2526"
 WEBDAV_SHARE_TOKEN <- "OUarlqGbhYopkBc"  # Share token for authentication
 
 # =============================================================================
-# COMPLETE ITEM BANK WITH PROPER VARIABLE NAMES
+# ITEM BANK WITH PROPER VARIABLE NAMES
 # =============================================================================
 
 # Create bilingual item bank
 all_items_de <- data.frame(
   id = c(
-    # Programming Anxiety items (20) - ADDED FIRST
+    # Programming Anxiety items (20)
     paste0("PA_", sprintf("%02d", 1:20)),
     # BFI items with proper naming convention
     "BFE_01", "BFE_02", "BFE_03", "BFE_04", # Extraversion
@@ -85,7 +85,7 @@ all_items_de <- data.frame(
     "Statistik_gutfolgen", "Statistik_selbstwirksam"
   ),
   Question = c(
-    # Programming Anxiety (German) - NEW - First 5 items suitable for all experience levels
+    # Programming Anxiety (German) - First 5 items suitable for all experience levels
     "Ich fühle mich unsicher, wenn ich programmieren soll.",
     "Der Gedanke, programmieren zu lernen, macht mich nervös.",
     "Ich habe Angst, beim Programmieren Fehler zu machen.",
@@ -148,7 +148,7 @@ all_items_de <- data.frame(
     "Ich bin in der Lage, Statistik zu erlernen."
   ),
   Question_EN = c(
-    # Programming Anxiety (English) - NEW - First 5 items suitable for all experience levels
+    # Programming Anxiety (English) - First 5 items suitable for all experience levels
     "I feel uncertain when I have to program.",
     "The thought of learning to program makes me nervous.",
     "I am afraid of making mistakes when programming.",
@@ -1573,7 +1573,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
 }
 
 # =============================================================================
-# ENHANCED DOWNLOAD HANDLER FOR HILDESHEIM
+# DOWNLOAD HANDLER FOR HILDESHEIM
 # =============================================================================
 
 create_hilfo_download_handler <- function() {
@@ -1955,7 +1955,7 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>'
 
 monitor_adaptive <- function(session_data) {
-  # Enhanced adaptive monitoring with full output
+  # Adaptive monitoring with full output
   if (!is.null(session_data$current_item)) {
     item_num <- session_data$current_item
     
@@ -2144,7 +2144,7 @@ monitor_adaptive <- function(session_data) {
   transition: all 0.2s ease !important;
 }
 
-/* Radio buttons - Enhanced alignment with Hildesheim colors */
+/* Radio buttons - Alignment with Hildesheim colors */
 .shiny-input-radiogroup .shiny-options-group {
   display: flex !important;
   flex-wrap: nowrap !important;
@@ -2241,7 +2241,7 @@ monitor_adaptive <- function(session_data) {
   box-shadow: 0 3px 8px rgba(232, 4, 28, 0.3) !important;
 }
 
-/* Select dropdown styling - Enhanced to match item pages */
+/* Select dropdown styling - Match item pages */
 .shiny-input-select {
   border: 2px solid #e0e0e0 !important;
   border-radius: 8px !important;
@@ -2274,7 +2274,7 @@ monitor_adaptive <- function(session_data) {
   box-shadow: 0 4px 8px rgba(232, 4, 28, 0.15) !important;
 }
 
-/* Text input styling - Enhanced to match item pages */
+/* Text input styling - Match item pages */
 .shiny-input-text {
   border: 2px solid #e0e0e0 !important;
   border-radius: 8px !important;
