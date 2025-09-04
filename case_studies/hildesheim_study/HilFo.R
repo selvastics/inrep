@@ -1,5 +1,26 @@
 
 
+
+# Ensure inrep is installed only if not present
+if (!requireNamespace("inrep", quietly = TRUE)) {
+  if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
+  devtools::install_github("selvastics/inrep", ref = "master")
+}
+library(inrep)
+
+
+library(shiny)
+library(ggplot2)
+library(broom)
+library(emmeans)
+library(ggthemes)
+library(DT)
+library(shinycssloaders)
+library(patchwork)
+library(markdown)
+library(shinyjs)
+
+
 # =============================================================================
 # HILFO STUDIE - PRODUCTION VERSION WITH COMPLETE DATA RECORDING
 # =============================================================================
@@ -2447,34 +2468,6 @@ inrep::launch_study(
   custom_css = custom_js_enhanced,  # Enhanced JavaScript
   admin_dashboard_hook = monitor_adaptive  # Monitor adaptive selection
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
