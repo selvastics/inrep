@@ -201,7 +201,7 @@ custom_page_flow <- list(
     id = "page3",
     type = "items",
     title = "",
-    instructions = "Abschnitt 1 von 3\n\nFolgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der Unbegleiteten Minderjährigen Ausländer (UMA)'.",
+    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der Unbegleiteten Minderjährigen Ausländer (UMA)'.",
     item_indices = 1:5,
     scale_type = "likert"
   ),
@@ -221,7 +221,7 @@ custom_page_flow <- list(
     id = "page5",
     type = "items",
     title = "",
-    instructions = "Abschnitt 2 von 3\n\nFolgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.",
+    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.",
     item_indices = 11:15,
     scale_type = "likert"
   ),
@@ -241,7 +241,7 @@ custom_page_flow <- list(
     id = "page7",
     type = "items",
     title = "",
-    instructions = "Abschnitt 3 von 3\n\nFolgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.",
+    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema 'Langfristige persönliche Lebensperspektive der UMA'.",
     item_indices = 21:23,
     scale_type = "likert"
   ),
