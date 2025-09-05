@@ -865,13 +865,15 @@ custom_page_flow <- list(
 # =============================================================================
 
 create_hilfo_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
-    # Lazy load packages only when actually needed
-    if (!requireNamespace("ggplot2", quietly = TRUE)) {
-        stop("ggplot2 package is required for report generation")
-    }
-    if (!requireNamespace("base64enc", quietly = TRUE)) {
-        stop("base64enc package is required for report generation")
-    }
+    # Global error handling for the entire function
+    tryCatch({
+        # Lazy load packages only when actually needed
+        if (!requireNamespace("ggplot2", quietly = TRUE)) {
+            stop("ggplot2 package is required for report generation")
+        }
+        if (!requireNamespace("base64enc", quietly = TRUE)) {
+            stop("base64enc package is required for report generation")
+        }
     
     # Get current language from session if available
     current_lang <- "de"  # Default to German
@@ -1730,15 +1732,30 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     
     # Save data to CSV file and upload to cloud
     if (exists("responses") && exists("item_bank")) {
+        cat("DEBUG: Starting complete_data creation\n")
         tryCatch({
-            # Prepare complete dataset
-            complete_data <- data.frame(
-                timestamp = Sys.time(),
-                session_id = paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S")),
-                study_language = ifelse(exists("session") && !is.null(session$userData$language), 
-                                        session$userData$language, "de"),
-                stringsAsFactors = FALSE
-            )
+            # Prepare complete dataset with error handling
+            tryCatch({
+                complete_data <- data.frame(
+                    timestamp = Sys.time(),
+                    session_id = paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S")),
+                    study_language = ifelse(exists("session") && !is.null(session$userData$language), 
+                                            session$userData$language, "de"),
+                    stringsAsFactors = FALSE,
+                    row.names = NULL
+                )
+                cat("DEBUG: complete_data created successfully\n")
+            }, error = function(e) {
+                cat("Error creating complete_data data.frame:", e$message, "\n")
+                # Create fallback complete_data
+                complete_data <- data.frame(
+                    timestamp = Sys.time(),
+                    session_id = paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S")),
+                    study_language = "de",
+                    stringsAsFactors = FALSE,
+                    row.names = NULL
+                )
+            })
             
             # Add demographics from the session
             if (exists("demographics") && is.list(demographics)) {
@@ -1747,23 +1764,33 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                 }
             }
             
-            # Add item responses
+            # Add item responses with validation
+            cat("DEBUG: Adding item responses to complete_data\n")
+            cat("DEBUG: nrow(item_bank) =", nrow(item_bank), "\n")
+            cat("DEBUG: length(responses) =", length(responses), "\n")
             for (i in seq_along(responses)) {
                 if (i <= nrow(item_bank)) {
                     col_name <- item_bank$id[i]
-                    complete_data[[col_name]] <- responses[i]
+                    cat("DEBUG: Item", i, "col_name =", col_name, "(is.na:", is.na(col_name), ")\n")
+                    # Ensure col_name is valid and not NA
+                    if (!is.na(col_name) && !is.null(col_name) && col_name != "") {
+                        complete_data[[col_name]] <- responses[i]
+                    } else {
+                        # Use fallback column name
+                        complete_data[[paste0("Item_", i)]] <- responses[i]
+                    }
                 }
             }
             
-            # Add calculated scores
-            complete_data$BFI_Extraversion <- scores$Extraversion
-            complete_data$BFI_Vertraeglichkeit <- scores$Verträglichkeit
-            complete_data$BFI_Gewissenhaftigkeit <- scores$Gewissenhaftigkeit
-            complete_data$BFI_Neurotizismus <- scores$Neurotizismus
-            complete_data$BFI_Offenheit <- scores$Offenheit
-            complete_data$PSQ_Stress <- scores$Stress
-            complete_data$MWS_Studierfaehigkeiten <- scores$Studierfähigkeiten
-            complete_data$Statistik <- scores$Statistik
+            # Add calculated scores with validation
+            complete_data$BFI_Extraversion <- if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) 3 else scores$Extraversion
+            complete_data$BFI_Vertraeglichkeit <- if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) 3 else scores$Verträglichkeit
+            complete_data$BFI_Gewissenhaftigkeit <- if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) 3 else scores$Gewissenhaftigkeit
+            complete_data$BFI_Neurotizismus <- if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) 3 else scores$Neurotizismus
+            complete_data$BFI_Offenheit <- if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit
+            complete_data$PSQ_Stress <- if (is.na(scores$Stress) || is.nan(scores$Stress)) 3 else scores$Stress
+            complete_data$MWS_Studierfaehigkeiten <- if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) 3 else scores$Studierfähigkeiten
+            complete_data$Statistik <- if (is.na(scores$Statistik) || is.nan(scores$Statistik)) 3 else scores$Statistik
             
             # Save locally with proper connection handling
             local_file <- paste0("hilfo_results_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
@@ -1882,6 +1909,13 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     )
     
     return(shiny::HTML(html))
+    
+    }, error = function(e) {
+        cat("CRITICAL ERROR in create_hilfo_report:", e$message, "\n")
+        cat("Error details:", toString(e), "\n")
+        # Return a simple error message
+        return(shiny::HTML('<div style="padding: 20px; color: red;"><h2>Error generating report</h2><p>An error occurred while generating your results. Please try again.</p><p>Error: ' + e$message + '</p></div>'))
+    })
 }
 
 # =============================================================================
