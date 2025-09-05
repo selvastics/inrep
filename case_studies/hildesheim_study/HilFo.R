@@ -557,12 +557,12 @@ custom_page_flow <- list(
       
       if (deContent && enContent) {
         if (deContent.style.display === "none") {
-          // Switch to German
+          /* Switch to German */
           deContent.style.display = "block";
           enContent.style.display = "none";
           if (textSpan) textSpan.textContent = "English Version";
           
-          // Send German language to global system
+          /* Send German language to global system */
           if (typeof Shiny !== "undefined") {
             Shiny.setInputValue("study_language", "de", {priority: "event"});
             Shiny.setInputValue("language", "de", {priority: "event"});
@@ -573,12 +573,12 @@ custom_page_flow <- list(
           sessionStorage.setItem("current_language", "de");
           sessionStorage.setItem("hilfo_language_preference", "de");
         } else {
-          // Switch to English
+          /* Switch to English */
           deContent.style.display = "none";
           enContent.style.display = "block";
           if (textSpan) textSpan.textContent = "Deutsche Version";
           
-          // Send English language to global system
+          /* Send English language to global system */
           if (typeof Shiny !== "undefined") {
             Shiny.setInputValue("study_language", "en", {priority: "event"});
             Shiny.setInputValue("language", "en", {priority: "event"});
@@ -1963,6 +1963,12 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         if (is_english) "Download CSV" else "CSV herunterladen",
         '</button>',
         
+        # Test Button (temporary)
+        '<button onclick="testDownload()" class="btn btn-warning" style="background: #ffc107; border: none; color: black; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+        '<i class="fas fa-bug" style="margin-right: 8px;"></i>',
+        'Test JS',
+        '</button>',
+        
         '</div>',
         '</div>',
         
@@ -2321,7 +2327,7 @@ var currentLang = "de";
 window.toggleLanguage = function() {
   currentLang = currentLang === "de" ? "en" : "de";
   
-  // Update button text
+  /* Update button text */
   var btn = document.getElementById("language-toggle-btn");
   if (btn) {
     var textSpan = btn.querySelector("#lang_switch_text");
@@ -2330,7 +2336,7 @@ window.toggleLanguage = function() {
     }
   }
   
-  // Toggle language elements
+  /* Toggle language elements */
   var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
   langElements.forEach(function(element) {
     if (currentLang === "en") {
@@ -2340,16 +2346,16 @@ window.toggleLanguage = function() {
     }
   });
   
-  // Send to Shiny for global language switching
+  /* Send to Shiny for global language switching */
   if (typeof Shiny !== "undefined") {
     Shiny.setInputValue("study_language", currentLang, {priority: "event"});
     Shiny.setInputValue("language", currentLang, {priority: "event"});
   }
   
-  // Store preference
+  /* Store preference */
   sessionStorage.setItem("hilfo_language", currentLang);
   
-  // Only refresh if not on page 1 (page 1 handles its own switching)
+  /* Only refresh if not on page 1 (page 1 handles its own switching) */
   if (!window.location.pathname.includes("page1")) {
     setTimeout(function() {
       location.reload();
@@ -2357,7 +2363,7 @@ window.toggleLanguage = function() {
   }
 };
 
-// Create language button
+/* Create language button */
 function createLanguageButton() {
   if (document.getElementById("language-toggle-btn")) {
     return;
@@ -2373,7 +2379,7 @@ function createLanguageButton() {
   document.body.appendChild(btn);
 }
 
-// Initialize
+/* Initialize */
 document.addEventListener("DOMContentLoaded", function() {
   var storedLang = sessionStorage.getItem("hilfo_language");
   if (storedLang) {
@@ -2382,12 +2388,12 @@ document.addEventListener("DOMContentLoaded", function() {
   
   createLanguageButton();
   
-  // Send initial language to Shiny
+  /* Send initial language to Shiny */
   if (currentLang !== "de" && typeof Shiny !== "undefined") {
     Shiny.setInputValue("study_language", currentLang, {priority: "event"});
   }
   
-  // Show English content if needed
+  /* Show English content if needed */
   if (currentLang === "en") {
     var deContent = document.getElementById("content_de");
     var enContent = document.getElementById("content_en");
@@ -2407,10 +2413,13 @@ observer.observe(document.body, {
 });
 
 window.downloadPDF = function() {
+  console.log("downloadPDF function called");
   try {
     if (typeof Shiny !== "undefined") {
+      console.log("Shiny available, triggering download_pdf_trigger");
       Shiny.setInputValue("download_pdf_trigger", Math.random(), {priority: "event"});
     } else {
+      console.log("Shiny not available, using fallback");
       downloadPDFFallback();
     }
   } catch (e) {
@@ -2420,16 +2429,25 @@ window.downloadPDF = function() {
 };
 
 window.downloadCSV = function() {
+  console.log("downloadCSV function called");
   try {
     if (typeof Shiny !== "undefined") {
+      console.log("Shiny available, triggering download_csv_trigger");
       Shiny.setInputValue("download_csv_trigger", Math.random(), {priority: "event"});
     } else {
+      console.log("Shiny not available, using fallback");
       downloadCSVFallback();
     }
   } catch (e) {
     console.error("CSV download error:", e);
     downloadCSVFallback();
   }
+};
+
+// Test function to verify JavaScript is working
+window.testDownload = function() {
+  console.log("Test function called - JavaScript is working!");
+  alert("JavaScript is working! Download functions should work too.");
 };
 
 function downloadPDFFallback() {
@@ -2642,6 +2660,7 @@ inrep::launch_study(
             
             # Handle PDF download trigger
             shiny::observeEvent(input$download_pdf_trigger, {
+                cat("PDF download trigger received\n")
                 tryCatch({
                     if (exists("complete_data", envir = .GlobalEnv)) {
                         data <- get("complete_data", envir = .GlobalEnv)
@@ -2687,6 +2706,7 @@ inrep::launch_study(
             
             # Handle CSV download trigger
             shiny::observeEvent(input$download_csv_trigger, {
+                cat("CSV download trigger received\n")
                 tryCatch({
                     if (exists("complete_data", envir = .GlobalEnv)) {
                         data <- get("complete_data", envir = .GlobalEnv)
