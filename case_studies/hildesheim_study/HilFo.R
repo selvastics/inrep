@@ -488,12 +488,12 @@ custom_page_flow <- list(
       '<div style="position: absolute; top: 10px; right: 10px;">',
       '<button type="button" id="language-toggle-btn" class="btn-primary" onclick="toggleLanguageNow()" style="',
       'background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; transition: all 0.3s ease;">',
-      '<span id="lang_switch_text">Deutsche Version</span></button>',
+      '<span id="lang_switch_text">English Version</span></button>',
       '</div>',
       
       # Inline JavaScript for immediate language switching
       '<script>
-      var currentLang = "en";
+      var currentLang = "de";
       var translations = {
         "Liebe Studierende,": "Dear Students,",
         "In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.": "In the exercises on statistical methods, we want to work with illustrative data that comes from you. That\'s why we want to learn a few things about you.",
@@ -582,19 +582,19 @@ custom_page_flow <- list(
         
         // Check stored language preference
         var storedLang = sessionStorage.getItem("hilfo_language");
-        if (storedLang === "de") {
-          // User previously selected German, switch to German
-          currentLang = "de";
+        if (storedLang === "en") {
+          // User previously selected English, switch to English
+          currentLang = "en";
           toggleLanguageNow();
         } else {
-          // Default to English (current state)
-          currentLang = "en";
+          // Default to German (current state)
+          currentLang = "de";
           // Ensure button text is correct
           var btn = document.getElementById("language-toggle-btn");
           if (btn) {
             var textSpan = btn.querySelector("#lang_switch_text");
             if (textSpan) {
-              textSpan.textContent = "Deutsche Version";
+              textSpan.textContent = "English Version";
             }
           }
         }
@@ -606,11 +606,12 @@ custom_page_flow <- list(
         }
       });
       </script>',
-      # German content (hidden by default)
-      '<div id="content_de" style="display: none;">',
-      '<h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px;">',
-      '<span data-lang-de="HilFo" data-lang-en="HilFo">HilFo</span></h1>',
-      '<h2 style="color: #e8041c;">Liebe Studierende,</h2>',
+      # German content (default)
+      '<div id="content_de">',
+      '<h1 style="color: #e8041c; text-align: center; margin-bottom: 10px; font-size: 28px;">HilFo</h1>',
+      '<h2 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 20px; font-weight: normal;">',
+      '<span data-lang-de="Willkommen zur HilFo Studie" data-lang-en="Welcome to the HilFo Study">Willkommen zur HilFo Studie</span></h2>',
+      '<h3 style="color: #e8041c;">Liebe Studierende,</h3>',
       '<p>In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, ',
       'die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.</p>',
       '<p>Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene ',
@@ -636,11 +637,12 @@ custom_page_flow <- list(
       '</div>',
       '</div>',
       '</div>',
-      # English content (default)
-      '<div id="content_en">',
-      '<h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px;">',
-      '<span data-lang-de="HilFo" data-lang-en="HilFo">HilFo</span></h1>',
-      '<h2 style="color: #e8041c;">Dear Students,</h2>',
+      # English content (hidden by default)
+      '<div id="content_en" style="display: none;">',
+      '<h1 style="color: #e8041c; text-align: center; margin-bottom: 10px; font-size: 28px;">HilFo</h1>',
+      '<h2 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 20px; font-weight: normal;">',
+      '<span data-lang-de="Willkommen zur HilFo Studie" data-lang-en="Welcome to the HilFo Study">Welcome to the HilFo Study</span></h2>',
+      '<h3 style="color: #e8041c;">Dear Students,</h3>',
       '<p>In the statistics exercises, we want to work with illustrative data ',
       'that comes from you. Therefore, we would like to learn a few things about you.</p>',
       '<p>Since we want to enable various analyses, the questionnaire covers different ',
@@ -2064,7 +2066,7 @@ custom_item_selection <- function(rv, item_bank, config) {
 # Simple JavaScript for basic functionality
 custom_js <- '<script>
 // Global language state
-var currentLang = "en";
+var currentLang = "de";
 
 // Simple language toggle function
 window.toggleLanguage = function() {
