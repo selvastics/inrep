@@ -547,7 +547,58 @@ custom_page_flow <- list(
           </div>
         </div>
       </div>
-    </div>',
+    </div>
+    
+    <script>
+    // Simple language toggle for page 1 only
+    function toggleLanguage() {
+      var deContent = document.getElementById("content_de");
+      var enContent = document.getElementById("content_en");
+      var btn = document.getElementById("language-toggle-btn");
+      var textSpan = document.getElementById("lang_switch_text");
+      
+      if (deContent && enContent) {
+        if (deContent.style.display === "none") {
+          deContent.style.display = "block";
+          enContent.style.display = "none";
+          if (textSpan) textSpan.textContent = "English Version";
+        } else {
+          deContent.style.display = "none";
+          enContent.style.display = "block";
+          if (textSpan) textSpan.textContent = "Deutsche Version";
+        }
+      }
+      
+      // Sync checkboxes
+      var deCheck = document.getElementById("consent_check");
+      var enCheck = document.getElementById("consent_check_en");
+      if (deCheck && enCheck) {
+        if (deContent.style.display === "none") {
+          enCheck.checked = deCheck.checked;
+        } else {
+          deCheck.checked = enCheck.checked;
+        }
+      }
+    }
+    
+    // Sync checkboxes when they change
+    document.addEventListener("DOMContentLoaded", function() {
+      var deCheck = document.getElementById("consent_check");
+      var enCheck = document.getElementById("consent_check_en");
+      
+      if (deCheck) {
+        deCheck.addEventListener("change", function() {
+          if (enCheck) enCheck.checked = deCheck.checked;
+        });
+      }
+      
+      if (enCheck) {
+        enCheck.addEventListener("change", function() {
+          if (deCheck) deCheck.checked = enCheck.checked;
+        });
+      }
+    });
+    </script>',
     validate = "function(inputs) { 
       try {
         var deCheck = document.getElementById('consent_check');
