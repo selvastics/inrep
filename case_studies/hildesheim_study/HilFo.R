@@ -488,12 +488,12 @@ custom_page_flow <- list(
       '<div style="position: absolute; top: 10px; right: 10px;">',
       '<button type="button" id="language-toggle-btn" class="btn-primary" onclick="toggleLanguageNow()" style="',
       'background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; transition: all 0.3s ease;">',
-      '<span id="lang_switch_text">English Version</span></button>',
+      '<span id="lang_switch_text">Deutsche Version</span></button>',
       '</div>',
       
       # Inline JavaScript for immediate language switching
       '<script>
-      var currentLang = "de";
+      var currentLang = "en";
       var translations = {
         "Liebe Studierende,": "Dear Students,",
         "In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.": "In the exercises on statistical methods, we want to work with illustrative data that comes from you. That\'s why we want to learn a few things about you.",
@@ -525,6 +525,7 @@ custom_page_flow <- list(
         
         if (deContent && enContent) {
           if (currentLang === "en") {
+            // Switch to English
             deContent.style.opacity = "0";
             deContent.style.transform = "translateX(-20px)";
             setTimeout(function() {
@@ -538,6 +539,7 @@ custom_page_flow <- list(
               }, 50);
             }, 300);
           } else {
+            // Switch to German
             enContent.style.opacity = "0";
             enContent.style.transform = "translateX(20px)";
             setTimeout(function() {
@@ -576,13 +578,15 @@ custom_page_flow <- list(
         
         // Check stored language preference
         var storedLang = sessionStorage.getItem("hilfo_language");
-        if (storedLang === "en") {
+        if (storedLang === "de") {
           toggleLanguageNow();
         }
       });
       </script>',
-      # German content (default)
-      '<div id="content_de">',
+      # German content (hidden by default)
+      '<div id="content_de" style="display: none;">',
+      '<h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px;">',
+      '<span data-lang-de="Willkommen zur HilFo Studie" data-lang-en="Welcome to the HilFo Study">Willkommen zur HilFo Studie</span></h1>',
       '<h2 style="color: #e8041c;">Liebe Studierende,</h2>',
       '<p>In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, ',
       'die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.</p>',
@@ -609,8 +613,10 @@ custom_page_flow <- list(
       '</div>',
       '</div>',
       '</div>',
-      # English content (hidden by default)
-      '<div id="content_en" style="display: none;">',
+      # English content (default)
+      '<div id="content_en">',
+      '<h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px;">',
+      '<span data-lang-de="Willkommen zur HilFo Studie" data-lang-en="Welcome to the HilFo Study">Welcome to the HilFo Study</span></h1>',
       '<h2 style="color: #e8041c;">Dear Students,</h2>',
       '<p>In the statistics exercises, we want to work with illustrative data ',
       'that comes from you. Therefore, we would like to learn a few things about you.</p>',
@@ -2035,7 +2041,7 @@ custom_item_selection <- function(rv, item_bank, config) {
 # Simple JavaScript for basic functionality
 custom_js <- '<script>
 // Global language state
-var currentLang = "de";
+var currentLang = "en";
 
 // Simple language toggle function
 window.toggleLanguage = function() {
@@ -2283,7 +2289,7 @@ study_config <- inrep::create_study_config(
   criteria = "MFI",  # Maximum Fisher Information
   response_ui_type = "radio",
   progress_style = "bar",
-  language = "de",  # Start with German
+  language = "en",  # Start with English
   bilingual = TRUE,  # Enable inrep's built-in bilingual support
   session_save = TRUE,
   session_timeout = 7200,  # 2 hours timeout
