@@ -1659,13 +1659,13 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         '<table style="width: 100%; border-collapse: collapse;">',
         '<tr style="background: #f8f8f8;">',
         '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">',
-        '<span data-lang-de="Dimension" data-lang-en="Dimension">', if (is_english) "Dimension" else "Dimension", '</span></th>',
+        if (is_english) "Dimension" else "Dimension", '</th>',
         '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">',
-        '<span data-lang-de="Mittelwert" data-lang-en="Mean">', if (is_english) "Mean" else "Mittelwert", '</span></th>',
+        if (is_english) "Mean" else "Mittelwert", '</th>',
         '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">',
-        '<span data-lang-de="Standardabweichung" data-lang-en="Standard Deviation">', if (is_english) "Standard Deviation" else "Standardabweichung", '</span></th>',
+        if (is_english) "Standard Deviation" else "Standardabweichung", '</th>',
         '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">',
-        '<span data-lang-de="Interpretation" data-lang-en="Interpretation">', if (is_english) "Interpretation" else "Interpretation", '</span></th>',
+        if (is_english) "Interpretation" else "Interpretation", '</th>',
         '</tr>'
     )
     
@@ -1711,9 +1711,23 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     sd_val <- sd(stat_items, na.rm = TRUE)
     sds[["Statistik"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
     
-    for (name in names(scores)) {
-        value <- round(scores[[name]], 2)
-        sd_value <- ifelse(name %in% names(sds), sds[[name]], NA)
+    for (name in names(ordered_scores)) {
+        value <- round(ordered_scores[[name]], 2)
+        # Map back to original scores for SD calculation
+        original_name <- if (is_english) {
+            switch(name,
+                   "Agreeableness" = "Verträglichkeit",
+                   "Conscientiousness" = "Gewissenhaftigkeit", 
+                   "Neuroticism" = "Neurotizismus",
+                   "Openness" = "Offenheit",
+                   "StudySkills" = "Studierfähigkeiten",
+                   "Statistics" = "Statistik",
+                   name  # Keep same for others
+            )
+        } else {
+            name
+        }
+        sd_value <- ifelse(original_name %in% names(sds), sds[[original_name]], NA)
         level <- ifelse(value >= 3.7, 
                         if (is_english) "High" else "Hoch", 
                         ifelse(value >= 2.3, 
