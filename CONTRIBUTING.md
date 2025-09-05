@@ -4,10 +4,10 @@ Thank you for your interest in contributing to the **inrep** package! This docum
 
 ## How to Contribute
 
-We welcome contributions from researchers, developers, and users in the psychological assessment community. There are many ways to contribute:
+Everyone is welcome to contribute — you don't need to be a researcher, developer, or have written a line of code in your life. This is a place for users, students, translators, writers, testers, designers, and anyone who cares about better assessments. There are many ways to contribute:
 
 ### Report Issues
-- **Bug reports**: Help us identify and fix problems
+- **Bug reports**: Help me identify and fix problems
 - **Feature requests**: Suggest new capabilities or improvements
 - **Documentation issues**: Report unclear or missing documentation
 - **Performance problems**: Identify areas for optimization
@@ -178,7 +178,7 @@ test_that("function_name works correctly", {
 - **Search existing issues**: Check if your concern is already reported
 - **Create new issue**: Use appropriate issue template
 - **Provide details**: Include reproducible examples and context
-- **Discuss solutions**: Engage with maintainers and community
+- **Discuss solutions**: Engage with me via the issue
 
 ### 2. Development Process
 - **Create feature branch**: Use descriptive branch names
@@ -190,13 +190,13 @@ test_that("function_name works correctly", {
 - **Create PR**: Use the pull request template
 - **Describe changes**: Clearly explain what and why
 - **Link issues**: Reference related issues and discussions
-- **Request review**: Ask for feedback from maintainers
+- **Request review**: Ask for feedback
 
 ### 4. Review and Merge
 - **Code review**: Address feedback and suggestions
 - **Final testing**: Ensure all checks pass
 - **Documentation**: Update relevant documentation
-- **Merge**: Maintainers will merge approved changes
+- **Merge**: I will merge approved changes
 
 ## Architecture Guidelines
 
@@ -299,10 +299,10 @@ inrep/
 - **Email**: For sensitive or private communications
 
 ### Response Times
-- **Critical issues**: We aim to respond within 24 hours
-- **General questions**: We aim to respond within 3-5 days
-- **Code reviews**: We aim to review within 1 week
-- **Feature requests**: We evaluate and respond within 2 weeks
+- **Critical issues**: I aim to respond within 24 hours
+- **General questions**: I aim to respond within 3-5 days
+- **Code reviews**: I aim to review within 1 week
+- **Feature requests**: I evaluate and respond within 2 weeks
 
 ### Community Guidelines
 - **Be respectful**: Treat all contributors with respect and courtesy
@@ -361,15 +361,15 @@ Before submitting a contribution, please ensure:
 
 ## Ready to Contribute?
 
-Thank you for reading through these guidelines! We're excited to work with you to improve the **inrep** package. Here's how to get started:
+Thank you for reading through these guidelines! I'm excited to work with you to improve the **inrep** package. Here's how to get started:
 
 1. **Fork the repository** and set up your development environment
 2. **Choose an issue** to work on or create a new one
 3. **Follow the guidelines** in this document
 4. **Submit your contribution** and engage with the community
 
-Your contributions help make **inrep** a better tool for psychological assessment research and practice. We appreciate your time and effort!
+Your contributions help make **inrep** a better tool for psychological assessment research and practice. I appreciate your time and effort!
 
 ---
 
-**Questions?** Feel free to open an issue or start a discussion on GitHub. We're here to help!
+**Questions?** Feel free to open an issue or start a discussion on GitHub. I'm here to help!
