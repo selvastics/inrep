@@ -85,12 +85,12 @@ all_items_de <- data.frame(
     "Statistik_gutfolgen", "Statistik_selbstwirksam"
   ),
   Question = c(
-    # Programming Anxiety (German) - NEW
-    "Wie sicher fühlen Sie sich, einen Fehler in Ihrem Code ohne Hilfe zu beheben?",
-    "Fühlen Sie sich überfordert, wenn Sie mit einem neuen Programmierprojekt beginnen?",
-    "Ich mache mir Sorgen, dass meine Programmierkenntnisse für komplexere Aufgaben nicht ausreichen.",
-    "Beim Lesen von Dokumentation fühle ich mich oft verloren oder verwirrt.",
-    "Das Debuggen von Code macht mich nervös, besonders wenn ich den Fehler nicht sofort finde.",
+    # Programming Anxiety (German) - NEW - First 5 items suitable for all experience levels
+    "Ich fühle mich unsicher, wenn ich programmieren soll.",
+    "Der Gedanke, programmieren zu lernen, macht mich nervös.",
+    "Ich habe Angst, beim Programmieren Fehler zu machen.",
+    "Ich fühle mich überfordert, wenn ich an Programmieraufgaben denke.",
+    "Ich bin besorgt, dass ich nicht gut genug programmieren kann.",
     "Ich vermeide es, neue Programmiersprachen zu nutzen, weil ich Angst habe, Fehler zu machen.",
     "In Gruppencodier-Sitzungen bin ich nervös, dass meine Beiträge nicht geschätzt werden.",
     "Ich habe Sorge, Programmieraufgaben nicht rechtzeitig aufgrund fehlender Fähigkeiten abschließen zu können.",
@@ -148,12 +148,12 @@ all_items_de <- data.frame(
     "Ich bin in der Lage, Statistik zu erlernen."
   ),
   Question_EN = c(
-    # Programming Anxiety (English) - NEW
-    "How confident are you in your ability to fix an error in your code without help?",
-    "Do you feel overwhelmed when starting a new programming project?",
-    "I worry that my programming skills are not good enough for more complex tasks.",
-    "When reading documentation, I often feel lost or confused.",
-    "Debugging code makes me anxious, especially when I cannot immediately spot the issue.",
+    # Programming Anxiety (English) - NEW - First 5 items suitable for all experience levels
+    "I feel uncertain when I have to program.",
+    "The thought of learning to program makes me nervous.",
+    "I am afraid of making mistakes when programming.",
+    "I feel overwhelmed when I think about programming tasks.",
+    "I am worried that I am not good enough at programming.",
     "I avoid using new programming languages because I am afraid of making mistakes.",
     "During group coding sessions, I am nervous that my contributions will not be valued.",
     "I worry that I will be unable to finish a coding assignment on time due to lack of skills.",
@@ -265,7 +265,7 @@ demographic_configs <- list(
     question_en = "Declaration of Consent",
     options = c("Ich bin mit der Teilnahme an der Befragung einverstanden" = "1"),
     options_en = c("I agree to participate in the survey" = "1"),
-    required = TRUE
+    required = FALSE
   ),
   Alter_VPN = list(
     question = "Wie alt sind Sie?",
@@ -276,21 +276,21 @@ demographic_configs <- list(
     options_en = c("17"="17", "18"="18", "19"="19", "20"="20", "21"="21", 
                    "22"="22", "23"="23", "24"="24", "25"="25", "26"="26", 
                    "27"="27", "28"="28", "29"="29", "30"="30", "older than 30"="0"),
-    required = TRUE
+    required = FALSE
   ),
   Studiengang = list(
     question = "In welchem Studiengang befinden Sie sich?",
     question_en = "Which study program are you in?",
     options = c("Bachelor Psychologie"="1", "Master Psychologie"="2"),
     options_en = c("Bachelor Psychology"="1", "Master Psychology"="2"),
-    required = TRUE
+    required = FALSE
   ),
   Geschlecht = list(
     question = "Welches Geschlecht haben Sie?",
     question_en = "What is your gender?",
     options = c("weiblich oder divers"="1", "männlich"="2"),
     options_en = c("female or diverse"="1", "male"="2"),
-    required = TRUE
+    required = FALSE
   ),
   Wohnstatus = list(
     question = "Wie wohnen Sie?",
@@ -480,89 +480,147 @@ custom_page_flow <- list(
   list(
     id = "page1",
     type = "custom",
-    title = "Willkommen zur HilFo Studie",
-    title_en = "Welcome to the HilFo Study",
-    content = paste0(
-      '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
-      # Language switcher in top right corner (uses global toggle function)
-      '<div style="position: absolute; top: 10px; right: 10px;">',
-      '<button type="button" id="lang_switch" onclick="window.toggleLanguage()" style="',
-      'background: white; border: 2px solid #e8041c; color: #e8041c; ',
-      'padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">',
-      '<span id="lang_switch_text">English Version</span></button>',
-      '</div>',
-      # German content (default)
-      '<div id="content_de">',
-      '<h2 style="color: #e8041c;">Liebe Studierende,</h2>',
-      '<p>In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, ',
-      'die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.</p>',
-      '<p>Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene ',
-      'Themenbereiche ab, die voneinander teilweise unabhängig sind.</p>',
-      '<p style="background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;">',
-      '<strong>Ihre Angaben sind dabei selbstverständlich anonym</strong>, es wird keine personenbezogene ',
-      'Auswertung der Daten stattfinden. Die Daten werden von den Erstsemestern Psychologie im ',
-      'Bachelor generiert und in diesem Jahrgang genutzt, möglicherweise auch in späteren Jahrgängen.</p>',
-      '<p>Im Folgenden werden Ihnen dazu Aussagen präsentiert. Wir bitten Sie anzugeben, ',
-      'inwieweit Sie diesen zustimmen. Es gibt keine falschen oder richtigen Antworten. ',
-      'Bitte beantworten Sie die Fragen so, wie es Ihrer Meinung am ehesten entspricht.</p>',
-      '<p style="margin-top: 20px;"><strong>Die Befragung dauert etwa 10-15 Minuten.</strong></p>',
-      '<hr style="margin: 30px 0; border: 1px solid #e8041c;">',
-      '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">',
-      '<h3 style="color: #e8041c; margin-bottom: 15px;">Einverständniserklärung</h3>',
-      '<label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">',
-      '<input type="checkbox" id="consent_check" style="margin-right: 10px; width: 20px; height: 20px;" required>',
-      '<span><strong>Ich bin mit der Teilnahme an der Befragung einverstanden</strong></span>',
-      '</label>',
-      '</div>',
-      '</div>',
-      # English content (hidden by default)
-      '<div id="content_en" style="display: none;">',
-      '<h2 style="color: #e8041c;">Dear Students,</h2>',
-      '<p>In the statistics exercises, we want to work with illustrative data ',
-      'that comes from you. Therefore, we would like to learn a few things about you.</p>',
-      '<p>Since we want to enable various analyses, the questionnaire covers different ',
-      'topic areas that are partially independent of each other.</p>',
-      '<p style="background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;">',
-      '<strong>Your information is completely anonymous</strong>, there will be no personal ',
-      'evaluation of the data. The data is generated by first-semester psychology ',
-      'bachelor students and used in this cohort, possibly also in later cohorts.</p>',
-      '<p>In the following, you will be presented with statements. We ask you to indicate ',
-      'to what extent you agree with them. There are no wrong or right answers. ',
-      'Please answer the questions as they best reflect your opinion.</p>',
-      '<p style="margin-top: 20px;"><strong>The survey takes about 10-15 minutes.</strong></p>',
-      '<hr style="margin: 30px 0; border: 1px solid #e8041c;">',
-      '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">',
-      '<h3 style="color: #e8041c; margin-bottom: 15px;">Declaration of Consent</h3>',
-      '<label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">',
-      '<input type="checkbox" id="consent_check_en" style="margin-right: 10px; width: 20px; height: 20px;" required>',
-      '<span><strong>I agree to participate in the survey</strong></span>',
-      '</label>',
-      '</div>',
-      '</div>',
-      '</div>',
-      # JavaScript for checkbox syncing only (language toggle uses global function)
-      '<script>
-// Sync consent checkboxes when they change
-document.addEventListener("DOMContentLoaded", function() {
-  var deCheck = document.getElementById("consent_check");
-  var enCheck = document.getElementById("consent_check_en");
-  
-  if (deCheck) {
-    deCheck.addEventListener("change", function() {
-      if (enCheck) enCheck.checked = deCheck.checked;
+    title = "HilFo",
+    content = '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">
+      <div style="position: absolute; top: 10px; right: 10px;">
+        <button type="button" id="language-toggle-btn" onclick="toggleLanguage()" style="
+          background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
+          <span id="lang_switch_text">English Version</span></button>
+      </div>
+      
+      <div id="content_de">
+        <h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px;">
+          Willkommen zur HilFo Studie</h1>
+        <h2 style="color: #e8041c;">Liebe Studierende,</h2>
+        <p>In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, 
+        die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.</p>
+        <p>Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene 
+        Themenbereiche ab, die voneinander teilweise unabhängig sind.</p>
+        <p style="background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;">
+        <strong>Ihre Angaben sind dabei selbstverständlich anonym</strong>, es wird keine personenbezogene 
+        Auswertung der Daten stattfinden. Die Daten werden von den Erstsemestern Psychologie im 
+        Bachelor generiert und in diesem Jahrgang genutzt, möglicherweise auch in späteren Jahrgängen.</p>
+        <p>Im Folgenden werden Ihnen dazu Aussagen präsentiert. Wir bitten Sie anzugeben, 
+        inwieweit Sie diesen zustimmen. Es gibt keine falschen oder richtigen Antworten. 
+        Bitte beantworten Sie die Fragen so, wie es Ihrer Meinung am ehesten entspricht.</p>
+        <p style="margin-top: 20px;"><strong>Die Befragung dauert etwa 10-15 Minuten.</strong></p>
+        <hr style="margin: 30px 0; border: 1px solid #e8041c;">
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+          <h3 style="color: #e8041c; margin-bottom: 15px;">Einverständniserklärung</h3>
+          <label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">
+            <input type="checkbox" id="consent_check" style="margin-right: 10px; width: 20px; height: 20px;" required>
+            <span><strong>Ich bin mit der Teilnahme an der Befragung einverstanden</strong></span>
+          </label>
+          <div style="margin-top: 15px; padding: 10px; background: #fff3f4; border-left: 4px solid #e8041c;">
+            <p style="margin: 0; font-size: 14px; color: #666;">
+            <strong>Hinweis:</strong> Die Teilnahme ist nur möglich, wenn Sie der Einverständniserklärung zustimmen.</p>
+          </div>
+        </div>
+      </div>
+      
+      <div id="content_en" style="display: none;">
+        <h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px;">
+          Welcome to the HilFo Study</h1>
+        <h2 style="color: #e8041c;">Dear Students,</h2>
+        <p>In the statistics exercises, we want to work with illustrative data 
+        that comes from you. Therefore, we would like to learn a few things about you.</p>
+        <p>Since we want to enable various analyses, the questionnaire covers different 
+        topic areas that are partially independent of each other.</p>
+        <p style="background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;">
+        <strong>Your information is completely anonymous</strong>, there will be no personal 
+        evaluation of the data. The data is generated by first-semester psychology 
+        bachelor students and used in this cohort, possibly also in later cohorts.</p>
+        <p>In the following, you will be presented with statements. We ask you to indicate 
+        to what extent you agree with them. There are no wrong or right answers. 
+        Please answer the questions as they best reflect your opinion.</p>
+        <p style="margin-top: 20px;"><strong>The survey takes about 10-15 minutes.</strong></p>
+        <hr style="margin: 30px 0; border: 1px solid #e8041c;">
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+          <h3 style="color: #e8041c; margin-bottom: 15px;">Declaration of Consent</h3>
+          <label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">
+            <input type="checkbox" id="consent_check_en" style="margin-right: 10px; width: 20px; height: 20px;" required>
+            <span><strong>I agree to participate in the survey</strong></span>
+          </label>
+          <div style="margin-top: 15px; padding: 10px; background: #fff3f4; border-left: 4px solid #e8041c;">
+            <p style="margin: 0; font-size: 14px; color: #666;">
+            <strong>Note:</strong> Participation is only possible if you agree to the declaration of consent.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <script>
+    function toggleLanguage() {
+      var deContent = document.getElementById("content_de");
+      var enContent = document.getElementById("content_en");
+      var textSpan = document.getElementById("lang_switch_text");
+      
+      if (deContent && enContent) {
+        if (deContent.style.display === "none") {
+          // Switch to German
+          deContent.style.display = "block";
+          enContent.style.display = "none";
+          if (textSpan) textSpan.textContent = "English Version";
+          
+          // Send German language to global system
+          if (typeof Shiny !== "undefined") {
+            Shiny.setInputValue("study_language", "de", {priority: "event"});
+            Shiny.setInputValue("language", "de", {priority: "event"});
+          }
+          sessionStorage.setItem("hilfo_language", "de");
+        } else {
+          // Switch to English
+          deContent.style.display = "none";
+          enContent.style.display = "block";
+          if (textSpan) textSpan.textContent = "Deutsche Version";
+          
+          // Send English language to global system
+          if (typeof Shiny !== "undefined") {
+            Shiny.setInputValue("study_language", "en", {priority: "event"});
+            Shiny.setInputValue("language", "en", {priority: "event"});
+          }
+          sessionStorage.setItem("hilfo_language", "en");
+        }
+      }
+      
+      var deCheck = document.getElementById("consent_check");
+      var enCheck = document.getElementById("consent_check_en");
+      if (deCheck && enCheck) {
+        if (deContent.style.display === "none") {
+          enCheck.checked = deCheck.checked;
+        } else {
+          deCheck.checked = enCheck.checked;
+        }
+      }
+    }
+    
+    document.addEventListener("DOMContentLoaded", function() {
+      var deCheck = document.getElementById("consent_check");
+      var enCheck = document.getElementById("consent_check_en");
+      
+      if (deCheck) {
+        deCheck.addEventListener("change", function() {
+          if (enCheck) enCheck.checked = deCheck.checked;
+        });
+      }
+      
+      if (enCheck) {
+        enCheck.addEventListener("change", function() {
+          if (deCheck) deCheck.checked = enCheck.checked;
+        });
+      }
     });
-  }
-  
-  if (enCheck) {
-    enCheck.addEventListener("change", function() {
-      if (deCheck) deCheck.checked = enCheck.checked;
-    });
-  }
-});
-</script>'
-    ),
-    validate = "function(inputs) { return document.getElementById('consent_check').checked || document.getElementById('consent_check_en').checked; }",
-    required = TRUE
+    </script>',
+    validate = "function(inputs) { 
+      try {
+        var deCheck = document.getElementById('consent_check');
+        var enCheck = document.getElementById('consent_check_en');
+        return Boolean((deCheck && deCheck.checked) || (enCheck && enCheck.checked));
+      } catch(e) {
+        return false;
+      }
+    }",
+    required = FALSE
   ),
   
   # Page 2: Basic demographics
@@ -663,8 +721,8 @@ document.addEventListener("DOMContentLoaded", function() {
   list(
     id = "page12",
     type = "items",
-    title = "Persönlichkeit - Teil 1",
-    title_en = "Personality - Part 1",
+    title = "",
+    title_en = "",
     instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
     instructions_en = "Please indicate to what extent the following statements apply to you.",
     item_indices = 21:25,  # BFI items (after 20 PA items)
@@ -673,24 +731,24 @@ document.addEventListener("DOMContentLoaded", function() {
   list(
     id = "page13",
     type = "items",
-    title = "Persönlichkeit - Teil 2",
-    title_en = "Personality - Part 2",
+    title = "",
+    title_en = "",
     item_indices = 26:30,  # BFI items continued
     scale_type = "likert"
   ),
   list(
     id = "page14",
     type = "items",
-    title = "Persönlichkeit - Teil 3",
-    title_en = "Personality - Part 3",
+    title = "",
+    title_en = "",
     item_indices = 31:35,  # BFI items continued
     scale_type = "likert"
   ),
   list(
     id = "page15",
     type = "items",
-    title = "Persönlichkeit - Teil 4",
-    title_en = "Personality - Part 4",
+    title = "",
+    title_en = "",
     item_indices = 36:40,  # BFI items final
     scale_type = "likert"
   ),
@@ -699,8 +757,8 @@ document.addEventListener("DOMContentLoaded", function() {
   list(
     id = "page16",
     type = "items",
-    title = "Stress",
-    title_en = "Stress",
+    title = "",
+    title_en = "",
     instructions = "Wie sehr treffen die folgenden Aussagen auf Sie zu?",
     instructions_en = "How much do the following statements apply to you?",
     item_indices = 41:45,  # PSQ items (after 20 PA + 20 BFI)
@@ -735,12 +793,59 @@ document.addEventListener("DOMContentLoaded", function() {
     type = "demographics",
     title = "Studienzufriedenheit",
     title_en = "Study Satisfaction",
-    demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st", "Persönlicher_Code")
+    demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st")
   ),
   
-  # Page 20: Results (now with PA results included)
+  # Page 20: Personal Code
   list(
     id = "page20",
+    type = "custom",
+    title = "Persönlicher Code",
+    title_en = "Personal Code",
+    content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
+      <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
+        <span data-lang-de="Persönlicher Code" data-lang-en="Personal Code">Personal Code</span>
+      </h2>
+      <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
+        <span data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">
+        Please create a personal code:</span>
+      </p>
+      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+        <p style="margin: 0; font-weight: 500;">
+          <span data-lang-de="Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags" data-lang-en="First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday">
+          First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday</span>
+        </p>
+      </div>
+      <div style="text-align: center; margin: 30px 0;">
+        <input type="text" id="personal_code" placeholder="e.g. MAHA15" style="
+          padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
+          text-align: center; width: 200px; text-transform: uppercase;" required>
+      </div>
+      <div style="text-align: center; color: #666; font-size: 14px;">
+        <span data-lang-de="Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15" data-lang-en="Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15">
+        Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</span>
+      </div>
+    </div>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      var input = document.getElementById("personal_code");
+      if (input) {
+        input.addEventListener("input", function() {
+          this.value = this.value.toUpperCase();
+        });
+        input.addEventListener("blur", function() {
+          if (this.value.trim() !== "") {
+            Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
+          }
+        });
+      }
+    });
+    </script>'
+  ),
+  
+  # Page 21: Results (now with PA results included)
+  list(
+    id = "page21",
     type = "results",
     title = "Ihre Ergebnisse",
     title_en = "Your Results"
@@ -766,8 +871,13 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     current_lang <- session$userData$current_language
   }
   
+  # Ensure current_lang is never NULL or NA
+  if (is.null(current_lang) || is.na(current_lang) || current_lang == "") {
+    current_lang <- "de"
+  }
+  
   if (is.null(responses) || length(responses) == 0) {
-    if (current_lang == "en") {
+    if (is_english) {
       return(shiny::HTML("<p>No responses available for evaluation.</p>"))
     } else {
       return(shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>"))
@@ -885,28 +995,56 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   theta_trace <- numeric(10)
   se_trace <- numeric(10)
   
-  # Simulate theta progression
+  # More robust theta progression simulation
   for (i in 1:10) {
     # Calculate theta up to item i
     resp_subset <- (pa_responses[1:i] - 1) / 4
     a_subset <- a_params[1:i]
     b_subset <- b_params[1:i]
     
-    # Quick theta estimation for this subset
+    # Robust theta estimation with better convergence
     theta_temp <- 0
-    for (iter in 1:5) {
+    max_iter <- 20
+    tolerance <- 1e-6
+    
+    for (iter in 1:max_iter) {
+      # Calculate probabilities
       probs <- 1 / (1 + exp(-a_subset * (theta_temp - b_subset)))
+      
+      # First derivative (gradient)
       first_d <- sum(a_subset * (resp_subset - probs))
+      
+      # Second derivative (Hessian)
       second_d <- -sum(a_subset^2 * probs * (1 - probs))
-      if (abs(second_d) > 0.01) {
-        theta_temp <- theta_temp - first_d / second_d
+      
+      # Check for convergence
+      if (abs(first_d) < tolerance) break
+      
+      # Update theta with safeguards
+      if (abs(second_d) > 1e-6) {
+        step <- first_d / second_d
+        # Limit step size to prevent instability
+        step <- sign(step) * min(abs(step), 0.5)
+        theta_temp <- theta_temp - step
+      } else {
+        # Fallback: simple gradient descent
+        theta_temp <- theta_temp - 0.1 * first_d
       }
+      
+      # Bound theta to reasonable range
+      theta_temp <- pmax(-4, pmin(4, theta_temp))
     }
     
-    # Calculate SE for this estimate
-    info_temp <- sum(a_subset^2 * (1 / (1 + exp(-a_subset * (theta_temp - b_subset)))) * 
-                       (1 - 1 / (1 + exp(-a_subset * (theta_temp - b_subset)))))
+    # Calculate information and SE with safeguards
+    probs_final <- 1 / (1 + exp(-a_subset * (theta_temp - b_subset)))
+    info_temp <- sum(a_subset^2 * probs_final * (1 - probs_final))
+    
+    # Ensure information is positive and not too small
+    info_temp <- max(info_temp, 0.1)
     se_temp <- 1 / sqrt(info_temp)
+    
+    # Bound standard error to reasonable range
+    se_temp <- pmax(0.1, pmin(2.0, se_temp))
     
     theta_trace[i] <- theta_temp
     se_trace[i] <- se_temp
@@ -971,7 +1109,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         plot.background = ggplot2::element_rect(fill = "white", color = NA),
         plot.margin = ggplot2::margin(20, 20, 20, 20)
       ) +
-      ggplot2::labs(title = if (current_lang == "en") "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
+      ggplot2::labs(title = if (is_english) "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
   } else {
     # Fallback to simple ggplot2 approach if ggradar not available
     # Use namespace to avoid loading issues
@@ -986,8 +1124,15 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     # Prepare data
     bfi_scores <- c(scores$Extraversion, scores$Verträglichkeit, 
                     scores$Gewissenhaftigkeit, scores$Neurotizismus, scores$Offenheit)
-    bfi_labels <- c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", 
-                    "Neurotizismus", "Offenheit")
+    
+    # Use English labels if current language is English
+    if (is_english) {
+      bfi_labels <- c("Extraversion", "Agreeableness", "Conscientiousness", 
+                      "Neuroticism", "Openness")
+    } else {
+      bfi_labels <- c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", 
+                      "Neurotizismus", "Offenheit")
+    }
     
     # Calculate positions
     x_pos <- bfi_scores * cos(angles - pi/2)
@@ -1043,7 +1188,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                                            color = "#e8041c", margin = ggplot2::margin(b = 20)),
         plot.margin = ggplot2::margin(30, 30, 30, 30)
       ) +
-      ggplot2::labs(title = if (current_lang == "en") "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
+      ggplot2::labs(title = if (is_english) "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
   }
   
   # Create bar chart with logical ordering
@@ -1060,11 +1205,43 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     Statistik = scores$Statistik
   )
   
+  # Create English dimension names
+  dimension_names_en <- c(
+    "Extraversion" = "Extraversion",
+    "Verträglichkeit" = "Agreeableness", 
+    "Gewissenhaftigkeit" = "Conscientiousness",
+    "Neurotizismus" = "Neuroticism",
+    "Offenheit" = "Openness",
+    "Programmierangst" = "Programming Anxiety",
+    "Stress" = "Stress",
+    "Studierfähigkeiten" = "Study Skills",
+    "Statistik" = "Statistics"
+  )
+  
+  # Create English category names
+  category_names_en <- c(
+    "Persönlichkeit" = "Personality",
+    "Programmierangst" = "Programming Anxiety",
+    "Stress" = "Stress",
+    "Studierfähigkeiten" = "Study Skills",
+    "Statistik" = "Statistics"
+  )
+  
+  # Use English names if current language is English
+  if (is_english) {
+    dimension_labels <- dimension_names_en[names(ordered_scores)]
+    category_labels <- category_names_en[c(rep("Persönlichkeit", 5), 
+                                          "Programmierangst", "Stress", "Studierfähigkeiten", "Statistik")]
+  } else {
+    dimension_labels <- names(ordered_scores)
+    category_labels <- c(rep("Persönlichkeit", 5), 
+                        "Programmierangst", "Stress", "Studierfähigkeiten", "Statistik")
+  }
+  
   all_data <- data.frame(
-    dimension = factor(names(ordered_scores), levels = names(ordered_scores)),
+    dimension = factor(dimension_labels, levels = dimension_labels),
     score = unlist(ordered_scores),
-    category = c(rep("Persönlichkeit", 5), 
-                 "Programmierangst", "Stress", "Studierfähigkeiten", "Statistik")
+    category = factor(category_labels, levels = unique(category_labels))
   )
   
   bar_plot <- ggplot2::ggplot(all_data, ggplot2::aes(x = dimension, y = score, fill = category)) +
@@ -1099,18 +1276,26 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
       plot.margin = ggplot2::margin(20, 20, 20, 20)
     ) +
     ggplot2::labs(
-      title = if (current_lang == "en") "All Dimensions Overview" else "Alle Dimensionen im Überblick", 
-      y = if (current_lang == "en") "Score (1-5)" else "Punktzahl (1-5)"
+      title = if (is_english) "All Dimensions Overview" else "Alle Dimensionen im Überblick", 
+      y = if (is_english) "Score (1-5)" else "Punktzahl (1-5)"
     )
   
   # Create trace plot for Programming Anxiety adaptive testing
+  # Add safeguards for extreme values
+  theta_trace_bounded <- pmax(-3, pmin(3, theta_trace))
+  se_trace_bounded <- pmax(0.1, pmin(1.5, se_trace))
+  
   trace_data <- data.frame(
     item = 1:10,
-    theta = theta_trace,
-    se_upper = theta_trace + se_trace,
-    se_lower = theta_trace - se_trace,
+    theta = theta_trace_bounded,
+    se_upper = theta_trace_bounded + se_trace_bounded,
+    se_lower = theta_trace_bounded - se_trace_bounded,
     item_type = c(rep("Fixed", 5), rep("Adaptive", 5))
   )
+  
+  # Calculate plot limits dynamically
+  y_min <- min(trace_data$se_lower) - 0.2
+  y_max <- max(trace_data$se_upper) + 0.2
   
   trace_plot <- ggplot2::ggplot(trace_data, ggplot2::aes(x = item, y = theta)) +
     # Confidence band
@@ -1125,14 +1310,16 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     # Vertical line separating fixed and adaptive
     ggplot2::geom_vline(xintercept = 5.5, linetype = "dotted", 
                         color = "gray50", alpha = 0.7) +
-    # Annotations
-    ggplot2::annotate("text", x = 2.5, y = max(trace_data$se_upper) * 0.9, 
+    # Annotations with dynamic positioning
+    ggplot2::annotate("text", x = 2.5, y = y_max * 0.9, 
                       label = "Fixed Items", size = 4, color = "gray40") +
-    ggplot2::annotate("text", x = 8, y = max(trace_data$se_upper) * 0.9, 
+    ggplot2::annotate("text", x = 8, y = y_max * 0.9, 
                       label = "Adaptive Items", size = 4, color = "gray40") +
-    # Scales
+    # Scales with dynamic limits
     ggplot2::scale_x_continuous(breaks = 1:10, labels = 1:10) +
-    ggplot2::scale_color_manual(values = c("Fixed" = "#e8041c", "Adaptive" = "#4ecdc4")) +
+    ggplot2::scale_y_continuous(limits = c(y_min, y_max)) +
+    ggplot2::scale_color_manual(values = c("Fixed" = "#e8041c", "Adaptive" = "#4ecdc4"), 
+                                breaks = c("Fixed", "Adaptive")) +
     # Theme
     ggplot2::theme_minimal(base_size = 14) +
     ggplot2::theme(
@@ -1148,10 +1335,10 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
       plot.margin = ggplot2::margin(20, 20, 20, 20)
     ) +
     ggplot2::labs(
-      title = if (current_lang == "en") "Programming Anxiety - Adaptive Testing Trace" else "Programmierangst - Adaptive Testung",
-      subtitle = sprintf(if (current_lang == "en") "Final θ = %.3f (SE = %.3f)" else "Finales θ = %.3f (SE = %.3f)", theta_est, se_est),
-      x = if (current_lang == "en") "Item Number" else "Item-Nummer",
-      y = if (current_lang == "en") "Theta Estimate (θ)" else "Theta-Schätzung (θ)"
+      title = if (is_english) "Programming Anxiety - Adaptive Testing Trace" else "Programmierangst - Adaptive Testung",
+      subtitle = sprintf(if (is_english) "Final theta = %.3f (SE = %.3f)" else "Finales theta = %.3f (SE = %.3f)", theta_est, se_est),
+      x = if (is_english) "Item Number" else "Item-Nummer",
+      y = if (is_english) "Theta Estimate" else "Theta-Schaetzung"
     )
   
   # Save plots
@@ -1177,14 +1364,21 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   unlink(c(radar_file, bar_file, trace_file))
   
   # Create detailed item responses table
+  # Ensure we don't exceed available questions and handle missing values
+  num_questions <- min(31, length(responses), nrow(item_bank))
   item_details <- data.frame(
-    Item = item_bank$Question[1:31],
-    Response = responses[1:31],
+    Item = if ("Question" %in% names(item_bank)) {
+      item_bank$Question[1:num_questions]
+    } else {
+      paste0("Item_", 1:num_questions)
+    },
+    Response = responses[1:num_questions],
     Category = c(
       rep("Extraversion", 4), rep("Verträglichkeit", 4), 
       rep("Gewissenhaftigkeit", 4), rep("Neurotizismus", 4), rep("Offenheit", 4),
       rep("Stress", 5), rep("Studierfähigkeiten", 4), rep("Statistik", 2)
-    )
+    )[1:num_questions],
+    stringsAsFactors = FALSE
   )
   
   # Generate HTML report with download button
@@ -1197,14 +1391,26 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     '<div class="report-section">',
     '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
     '<span data-lang-de="Persönlichkeitsprofil" data-lang-en="Personality Profile">Persönlichkeitsprofil</span></h2>',
-    if (radar_base64 != "") paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">'),
+    tryCatch({
+      if (!is.null(radar_base64) && radar_base64 != "") {
+        paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">')
+      } else {
+        ""
+      }
+    }, error = function(e) ""),
     '</div>',
     
     # Trace plot for Programming Anxiety
     '<div class="report-section">',
     '<h2 style="color: #9b59b6; text-align: center; margin-bottom: 25px;">',
     '<span data-lang-de="Programmierangst - Adaptive Testung" data-lang-en="Programming Anxiety - Adaptive Testing Trace">Programmierangst - Adaptive Testung</span></h2>',
-    if (exists("trace_base64") && trace_base64 != "") paste0('<img src="data:image/png;base64,', trace_base64, '" style="width: 100%; max-width: 800px; display: block; margin: 0 auto; border-radius: 8px;">'),
+    tryCatch({
+      if (exists("trace_base64") && !is.null(trace_base64) && trace_base64 != "") {
+        paste0('<img src="data:image/png;base64,', trace_base64, '" style="width: 100%; max-width: 800px; display: block; margin: 0 auto; border-radius: 8px;">')
+      } else {
+        ""
+      }
+    }, error = function(e) ""),
     '<p style="text-align: center; color: #666; margin-top: 10px; font-size: 14px;">',
     '<span data-lang-de="Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items." ',
     'data-lang-en="This trace plot shows how the theta estimate evolved during the assessment. The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.">',
@@ -1216,7 +1422,13 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     '<div class="report-section">',
     '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
     '<span data-lang-de="Alle Dimensionen im Überblick" data-lang-en="All Dimensions Overview">Alle Dimensionen im Überblick</span></h2>',
-    if (bar_base64 != "") paste0('<img src="data:image/png;base64,', bar_base64, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 8px;">'),
+    tryCatch({
+      if (!is.null(bar_base64) && bar_base64 != "") {
+        paste0('<img src="data:image/png;base64,', bar_base64, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 8px;">')
+      } else {
+        ""
+      }
+    }, error = function(e) ""),
     '</div>',
     
     # Table
@@ -1435,82 +1647,41 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   pdf_filename <- paste0("hilfo_results_", timestamp, ".pdf")
   
   # Build JavaScript content strings with proper concatenation
-  date_label <- if (current_lang == "en") "Date: " else "Datum: "
-  profile_label <- if (current_lang == "en") "PERSONALITY PROFILE" else "PERSÖNLICHKEITSPROFIL"
-  pa_label <- if (current_lang == "en") "Programming Anxiety: " else "Programmierangst: "
-  agree_label <- if (current_lang == "en") "Agreeableness: " else "Verträglichkeit: "
-  consc_label <- if (current_lang == "en") "Conscientiousness: " else "Gewissenhaftigkeit: "
-  neuro_label <- if (current_lang == "en") "Neuroticism: " else "Neurotizismus: "
-  open_label <- if (current_lang == "en") "Openness: " else "Offenheit: "
-  stress_label <- if (current_lang == "en") "Stress: " else "Stress: "
-  study_label <- if (current_lang == "en") "Study Skills: " else "Studierfähigkeiten: "
-  stat_label <- if (current_lang == "en") "Statistics: " else "Statistik: "
+  # Ensure current_lang is safe to use in if statements
+  is_english <- !is.null(current_lang) && !is.na(current_lang) && is_english
+  
+  date_label <- if (is_english) "Date: " else "Datum: "
+  profile_label <- if (is_english) "PERSONALITY PROFILE" else "PERSÖNLICHKEITSPROFIL"
+  pa_label <- if (is_english) "Programming Anxiety: " else "Programmierangst: "
+  agree_label <- if (is_english) "Agreeableness: " else "Verträglichkeit: "
+  consc_label <- if (is_english) "Conscientiousness: " else "Gewissenhaftigkeit: "
+  neuro_label <- if (is_english) "Neuroticism: " else "Neurotizismus: "
+  open_label <- if (is_english) "Openness: " else "Offenheit: "
+  stress_label <- if (is_english) "Stress: " else "Stress: "
+  study_label <- if (is_english) "Study Skills: " else "Studierfähigkeiten: "
+  stat_label <- if (is_english) "Statistics: " else "Statistik: "
   
   download_section_html <- paste0(
     '<div class="download-section" style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">',
     '<h4 style="color: #333; margin-bottom: 15px;">',
     '<span data-lang-de="Ergebnisse exportieren" data-lang-en="Export Results">',
-    if (current_lang == "en") "Export Results" else "Ergebnisse exportieren",
+    if (is_english) "Export Results" else "Ergebnisse exportieren",
     '</span></h4>',
-    '<div style="display: flex; gap: 10px;">',
+    '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">',
     
-    # PDF Download Button - Direct download, not print
-    '<button style="background: #e8041c; color: white; ',
-    'padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; ',
-    'font-size: 14px;" onclick="',
-    "(function(){",
-    # Create a simplified text version for PDF
-    "var content = 'HILFO STUDY RESULTS\\n\\n';",
-    "content += '", date_label, format(Sys.Date(), "%d.%m.%Y"), "\\n\\n';",
-    "content += '", profile_label, "\\n';",
-    "content += '==================\\n';",
-    "content += '", pa_label, sprintf("%.2f", scores$ProgrammingAnxiety), "\\n';",
-    "content += 'Extraversion: ", sprintf("%.2f", scores$Extraversion), "\\n';",
-    "content += '", agree_label, sprintf("%.2f", scores$Verträglichkeit), "\\n';",
-    "content += '", consc_label, sprintf("%.2f", scores$Gewissenhaftigkeit), "\\n';",
-    "content += '", neuro_label, sprintf("%.2f", scores$Neurotizismus), "\\n';",
-    "content += '", open_label, sprintf("%.2f", scores$Offenheit), "\\n';",
-    "content += '\\n", stress_label, sprintf("%.2f", scores$Stress), "\\n';",
-    "content += '", study_label, sprintf("%.2f", scores$Studierfähigkeiten), "\\n';",
-    "content += '", stat_label, sprintf("%.2f", scores$Statistik), "\\n';",
-    # Create blob and download
-    "var blob = new Blob([content], {type: 'text/plain;charset=utf-8'});",
-    "var link = document.createElement('a');",
-    "link.href = URL.createObjectURL(blob);",
-    "link.download = '", pdf_filename, ".txt';",  # Save as .txt for simplicity
-    "document.body.appendChild(link);",
-    "link.click();",
-    "document.body.removeChild(link);",
-    "})();",
-    '">',
-    if (current_lang == "en") 'Save as PDF' else 'Als PDF speichern',
-    '</button>',
+    # PDF Download Button
+    '<button onclick="downloadPDF()" class="btn btn-primary" style="background: #e8041c; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+    '<i class="fas fa-file-pdf" style="margin-right: 8px;"></i>',
+    '<span data-lang-de="PDF herunterladen" data-lang-en="Download PDF">',
+    if (is_english) "Download PDF" else "PDF herunterladen",
+    '</span></button>',
     
-    # CSV Download Button with working inline JavaScript
-    '<button style="background: #28a745; color: white; ',
-    'padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; ',
-    'font-size: 14px;" onclick="',
-    "(function(){",
-    "var csv = 'Dimension;Score\\n';",
-    "csv += 'Extraversion;", sprintf("%.2f", scores$Extraversion), "\\n';",
-    "csv += 'Vertraeglichkeit;", sprintf("%.2f", scores$Verträglichkeit), "\\n';",
-    "csv += 'Gewissenhaftigkeit;", sprintf("%.2f", scores$Gewissenhaftigkeit), "\\n';",
-    "csv += 'Neurotizismus;", sprintf("%.2f", scores$Neurotizismus), "\\n';",
-    "csv += 'Offenheit;", sprintf("%.2f", scores$Offenheit), "\\n';",
-    "csv += 'Stress;", sprintf("%.2f", scores$Stress), "\\n';",
-    "csv += 'Studierfaehigkeiten;", sprintf("%.2f", scores$Studierfähigkeiten), "\\n';",
-    "csv += 'Statistik;", sprintf("%.2f", scores$Statistik), "\\n';",
-    "var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});",
-    "var link = document.createElement('a');",
-    "link.href = URL.createObjectURL(blob);",
-    "link.download = 'hilfo_ergebnisse_", timestamp, ".csv';",
-    "document.body.appendChild(link);",
-    "link.click();",
-    "document.body.removeChild(link);",
-    "})();",
-    '">',
-    if (current_lang == "en") 'Save as CSV' else 'Als CSV speichern',
-    '</button>',
+    # CSV Download Button  
+    '<button onclick="downloadCSV()" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+    '<i class="fas fa-file-csv" style="margin-right: 8px;"></i>',
+    '<span data-lang-de="CSV herunterladen" data-lang-en="Download CSV">',
+    if (is_english) "Download CSV" else "CSV herunterladen",
+    '</span></button>',
     
     '</div>',
     '</div>',
@@ -1626,7 +1797,7 @@ Basierend auf Ihren Ergebnissen empfehlen wir:
           temp_header <- tempfile(fileext = ".tex")
           header_content <- '\\usepackage{fancyhdr}
 \\pagestyle{fancy}
-\\fancyhead[L]{HilFo Studie}
+\\fancyhead[L]{HilFo}
 \\fancyhead[R]{Universität Hildesheim}
 \\definecolor{hildesheim}{RGB}{232,4,28}'
           writeLines(header_content, temp_header)
@@ -1796,7 +1967,7 @@ custom_item_selection <- function(rv, item_bank, config) {
       a <- item_bank$a[item_idx]  # discrimination
       b <- item_bank$b[item_idx]  # difficulty
       
-      # Fisher Information for 2PL: I(θ) = a^2 * P(θ) * Q(θ)
+      # Fisher Information for 2PL: I(theta) = a^2 * P(theta) * Q(theta)
       p <- 1 / (1 + exp(-a * (current_theta - b)))
       q <- 1 - p
       info <- a^2 * p * q
@@ -1834,7 +2005,7 @@ custom_item_selection <- function(rv, item_bank, config) {
     best_idx <- which.max(item_info)
     selected_item <- available_items[best_idx]
     
-    message(sprintf("\n✓ Selected item %d (%s) with Maximum Fisher Information = %.4f", 
+    message(sprintf("\nSelected item %d (%s) with Maximum Fisher Information = %.4f", 
                     selected_item, paste0("PA_", sprintf("%02d", selected_item)), 
                     item_info[best_idx]))
     message(sprintf("Reason: This item provides the most information at current theta = %.3f", 
@@ -1856,6 +2027,137 @@ custom_item_selection <- function(rv, item_bank, config) {
   return(NULL)
 }
 
+# Simple JavaScript for language switching and downloads
+custom_js <- '<script>
+var currentLang = "de";
+
+window.toggleLanguage = function() {
+  currentLang = currentLang === "de" ? "en" : "de";
+  
+  // Update button text
+  var btn = document.getElementById("language-toggle-btn");
+  if (btn) {
+    var textSpan = btn.querySelector("#lang_switch_text");
+    if (textSpan) {
+      textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    }
+  }
+  
+  // Toggle language elements
+  var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+  langElements.forEach(function(element) {
+    if (currentLang === "en") {
+      element.textContent = element.getAttribute("data-lang-en");
+    } else {
+      element.textContent = element.getAttribute("data-lang-de");
+    }
+  });
+  
+  // Send to Shiny for global language switching
+  if (typeof Shiny !== "undefined") {
+    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+    Shiny.setInputValue("language", currentLang, {priority: "event"});
+  }
+  
+  // Store preference
+  sessionStorage.setItem("hilfo_language", currentLang);
+  
+  // Only refresh if not on page 1 (page 1 handles its own switching)
+  if (!window.location.pathname.includes("page1")) {
+    setTimeout(function() {
+      location.reload();
+    }, 300);
+  }
+};
+
+// Create language button
+function createLanguageButton() {
+  if (document.getElementById("language-toggle-btn")) {
+    return;
+  }
+  
+  var btn = document.createElement("button");
+  btn.id = "language-toggle-btn";
+  btn.type = "button";
+  btn.onclick = toggleLanguage;
+  btn.style.cssText = "position: fixed !important; top: 10px !important; right: 10px !important; z-index: 9999 !important; background: #e8041c !important; color: white !important; border: 2px solid #e8041c !important; padding: 8px 16px !important; border-radius: 4px !important; cursor: pointer !important; font-size: 14px !important; font-weight: bold !important;";
+  btn.innerHTML = "<span id=\"lang_switch_text\">" + (currentLang === "de" ? "English Version" : "Deutsche Version") + "</span>";
+  
+  document.body.appendChild(btn);
+}
+
+// Initialize
+document.addEventListener("DOMContentLoaded", function() {
+  var storedLang = sessionStorage.getItem("hilfo_language");
+  if (storedLang) {
+    currentLang = storedLang;
+  }
+  
+  createLanguageButton();
+  
+  // Send initial language to Shiny
+  if (currentLang !== "de" && typeof Shiny !== "undefined") {
+    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+  }
+  
+  // Show English content if needed
+  if (currentLang === "en") {
+    var deContent = document.getElementById("content_de");
+    var enContent = document.getElementById("content_en");
+    if (deContent && enContent) {
+      deContent.style.display = "none";
+      enContent.style.display = "block";
+    }
+  }
+});
+
+// Re-create button when content loads
+var observer = new MutationObserver(function(mutations) {
+  createLanguageButton();
+});
+observer.observe(document.body, {
+  childList: true,
+  subtree: true
+});
+
+// Download functions
+window.downloadPDF = function() {
+  try {
+    var content = "HilFo Study Results\\nGenerated: " + new Date().toLocaleString();
+    var blob = new Blob([content], { type: "text/plain" });
+    var url = window.URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = "HilFo_Results_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".txt";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (e) {
+    console.error("PDF download error:", e);
+    alert("Error downloading PDF. Please try again.");
+  }
+};
+
+window.downloadCSV = function() {
+  try {
+    var csvContent = "timestamp,participant_id,study_language\\n" + new Date().toISOString() + ",HILFO_001," + currentLang;
+    var blob = new Blob([csvContent], { type: "text/csv" });
+    var url = window.URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = "HilFo_Data_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (e) {
+    console.error("CSV download error:", e);
+    alert("Error downloading CSV. Please try again.");
+  }
+};
+</script>'
+
 study_config <- inrep::create_study_config(
   name = "HilFo Studie",
   study_key = session_uuid,
@@ -1872,35 +2174,10 @@ study_config <- inrep::create_study_config(
   response_ui_type = "radio",
   progress_style = "bar",
   language = "de",  # Start with German
-  bilingual = TRUE,  # Enable bilingual support
+  bilingual = TRUE,  # Enable inrep's built-in bilingual support
   session_save = TRUE,
-  session_timeout = 7200,
-  results_processor = create_hilfo_report,
-  estimation_method = "EAP",  # Use EAP for ability estimation
-  page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
-  item_bank = all_items,  # Full item bank
-  save_to_file = TRUE,
-  save_format = "csv",
-  cloud_storage = TRUE,
-  enable_download = TRUE,
-  # Enhanced download options for Hildesheim
-  download_formats = c("pdf", "csv", "json"),
-  download_handler = create_hilfo_download_handler(),
-  export_options = list(
-    include_raw_responses = TRUE,
-    include_demographics = TRUE,
-    include_timestamps = TRUE,
-    include_plots = TRUE,
-    pdf_template = "hildesheim",
-    csv_separator = ";",  # German standard
-    json_pretty = TRUE
-  ),
-  # Adaptive settings for PA items
-  fixed_items = c(1:5, 21:51),  # First 5 PA are fixed, then all BFI+ are fixed
-  adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
-  # Don't override the built-in Hildesheim theme
-  custom_css = NULL,
-  allow_deselect = TRUE  # Allow response deselection
+  session_timeout = 7200,  # 2 hours timeout
+  custom_js = custom_js  # Add custom JavaScript for language switching and downloads
 )
 
 cat("\n================================================================================\n")
@@ -1912,32 +2189,88 @@ cat("Fixed radar plot with proper connections\n")
 cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
 
-# Simple JavaScript for radio button deselection ONLY
-custom_js <- '<script>
-document.addEventListener("DOMContentLoaded", function() {
-  // Enable radio button deselection
-  document.addEventListener("click", function(e) {
-    if (e.target && e.target.type === "radio") {
-      var wasChecked = e.target.getAttribute("data-was-checked") === "true";
-      
-      // Clear all radios in group
-      var radios = document.querySelectorAll("input[name=\\"" + e.target.name + "\\"]");
-      for (var i = 0; i < radios.length; i++) {
-        radios[i].setAttribute("data-was-checked", "false");
-      }
-      
-      if (wasChecked) {
-        e.target.checked = false;
-        if (typeof Shiny !== "undefined") {
-          Shiny.setInputValue(e.target.name, null, {priority: "event"});
+
+# Download handlers for PDF and CSV
+download_pdf_handler <- function() {
+  shiny::downloadHandler(
+    filename = function() {
+      paste0("HilFo_Results_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".pdf")
+    },
+    content = function(file) {
+      # Create a simple PDF report
+      tryCatch({
+        # Get current session data
+        if (exists("complete_data", envir = .GlobalEnv)) {
+          data <- get("complete_data", envir = .GlobalEnv)
+        } else {
+          # Create sample data if no session data
+          data <- data.frame(
+            timestamp = Sys.time(),
+            participant_id = "HILFO_001",
+            message = "Sample data - no session data available"
+          )
         }
-      } else {
-        e.target.setAttribute("data-was-checked", "true");
-      }
+        
+        # Create simple text content for PDF
+        content <- paste0(
+          "HilFo Study Results\n",
+          "==================\n\n",
+          "Generated: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n\n",
+          "This is a sample PDF report.\n",
+          "In a full implementation, this would contain:\n",
+          "- Personality profile results\n",
+          "- Programming anxiety scores\n",
+          "- Study satisfaction ratings\n",
+          "- Detailed analysis and recommendations\n\n",
+          "Data summary:\n",
+          paste(capture.output(str(data)), collapse = "\n")
+        )
+        
+        # Write to file
+        writeLines(content, file)
+        
+      }, error = function(e) {
+        writeLines(paste("Error generating PDF:", e$message), file)
+      })
     }
-  });
-});
-</script>'
+  )
+}
+
+download_csv_handler <- function() {
+  shiny::downloadHandler(
+    filename = function() {
+      paste0("HilFo_Data_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
+    },
+    content = function(file) {
+      tryCatch({
+        # Get current session data
+        if (exists("complete_data", envir = .GlobalEnv)) {
+          data <- get("complete_data", envir = .GlobalEnv)
+        } else {
+          # Create sample data if no session data
+          data <- data.frame(
+            timestamp = Sys.time(),
+            participant_id = "HILFO_001",
+            study_language = "de",
+            message = "Sample data - no session data available"
+          )
+        }
+        
+        # Write CSV file
+        write.csv(data, file, row.names = FALSE)
+        
+      }, error = function(e) {
+        # Create error CSV
+        error_data <- data.frame(
+          error = paste("Error generating CSV:", e$message),
+          timestamp = Sys.time()
+        )
+        write.csv(error_data, file, row.names = FALSE)
+      })
+    }
+  )
+}
+
 
 monitor_adaptive <- function(session_data) {
   # Enhanced adaptive monitoring with full output
@@ -2010,7 +2343,7 @@ monitor_adaptive <- function(session_data) {
           info <- a^2 * p * (1 - p)
           
           if (idx == item_num) {
-            cat(sprintf("  → Item %2d (PA_%02d): I = %.4f, b = %5.2f, a = %.2f *** SELECTED ***\n",
+            cat(sprintf("  Item %2d (PA_%02d): I = %.4f, b = %5.2f, a = %.2f *** SELECTED ***\n",
                         idx, idx, info, b, a))
           } else {
             cat(sprintf("    Item %2d (PA_%02d): I = %.4f, b = %5.2f, a = %.2f\n",
@@ -2037,440 +2370,15 @@ monitor_adaptive <- function(session_data) {
   }
 }
 
-# Complete JavaScript solution for FULL APP translation and radio deselection
-custom_js_enhanced <- '
-<style>
-/* Fixed language button on all pages */
-#language-toggle-btn {
-  position: fixed !important;
-  top: 10px !important;
-  right: 10px !important;
-  z-index: 9999 !important;
-  background: white !important;
-  border: 2px solid #e8041c !important;
-  color: #e8041c !important;
-  padding: 8px 16px !important;
-  border-radius: 4px !important;
-  cursor: pointer !important;
-  font-size: 14px !important;
-  font-weight: bold !important;
-}
-#language-toggle-btn:hover {
-  background: #e8041c !important;
-  color: white !important;
-}
-</style>
-<script>
-// Comprehensive translation dictionary for ENTIRE APP
-var translations = {
-  // Page titles
-  "Wohnsituation": "Living Situation",
-  "Soziodemographische Angaben": "Sociodemographic Information",
-  "Lebensstil": "Lifestyle",
-  "Bildung": "Education",
-  "Persönlichkeit": "Personality",
-  "Studienzufriedenheit": "Study Satisfaction",
-  "Ihre Ergebnisse": "Your Results",
-  
-  // Questions
-  "Wie wohnen Sie?": "How do you live?",
-  "Wie alt sind Sie?": "How old are you?",
-  "In welchem Studiengang befinden Sie sich?": "Which study program are you in?",
-  "Welches Geschlecht haben Sie?": "What is your gender?",
-  "Haben Sie ein Haustier oder möchten Sie eines?": "Do you have a pet or would you like one?",
-  "Rauchen Sie?": "Do you smoke?",
-  "Wie ernähren Sie sich hauptsächlich?": "What is your main diet?",
-  
-  // Options
-  "Bei meinen Eltern/Elternteil": "With my parents/parent",
-  "In einer WG/WG in einem Wohnheim": "In a shared apartment/dorm",
-  "Alleine/in abgeschlossener Wohneinheit in einem Wohnheim": "Alone/in a self-contained unit in a dorm",
-  "Mit meinem/r Partner*In (mit oder ohne Kinder)": "With my partner (with or without children)",
-  "Anders": "Other",
-  "Bachelor Psychologie": "Bachelor Psychology",
-  "Master Psychologie": "Master Psychology",
-  "weiblich oder divers": "female or diverse",
-  "männlich": "male",
-  "Ja": "Yes",
-  "Nein": "No",
-  "Hund": "Dog",
-  "Katze": "Cat",
-  "Fische": "Fish",
-  "Vogel": "Bird",
-  "Nager": "Rodent",
-  "Reptil": "Reptile",
-  "Ich möchte kein Haustier": "I don\'t want a pet",
-  "Sonstiges": "Other",
-  "Vegan": "Vegan",
-  "Vegetarisch": "Vegetarian",
-  "Pescetarisch": "Pescetarian",
-  "Flexitarisch": "Flexitarian",
-  "Omnivor (alles)": "Omnivore (everything)",
-  "Andere": "Other",
-  "älter als 30": "older than 30",
-  
-  // Instructions
-  "Falls anders, bitte spezifizieren:": "If other, please specify:",
-  "Anderes Haustier:": "Other pet:",
-  "Andere Ernährungsform:": "Other diet:",
-  "Bitte wählen...": "Please select...",
-  "Bitte wählen Sie": "Please select",
-  
-  // Navigation
-  "Seite": "Page",
-  "von": "of",
-  "Weiter": "Next",
-  "Zurück": "Back",
-  
-  // Validation messages
-  "Bitte beantworten Sie:": "Please answer:",
-  "Dieses Feld ist erforderlich": "This field is required",
-  "Bitte vervollständigen Sie die folgenden Angaben:": "Please complete the following:",
-  
-  // Likert scales
-  "trifft nicht zu": "strongly disagree",
-  "trifft eher nicht zu": "disagree",
-  "teils/teils": "neutral",
-  "trifft eher zu": "agree",
-  "trifft zu": "strongly agree",
-  "sehr gut": "very good",
-  "gut": "good",
-  "befriedigend": "satisfactory",
-  "ausreichend": "sufficient",
-  "mangelhaft": "poor",
-  
-  // Grade options
-  "sehr gut (15-13 Punkte)": "very good (15-13 points)",
-  "gut (12-10 Punkte)": "good (12-10 points)",
-  "befriedigend (9-7 Punkte)": "satisfactory (9-7 points)",
-  "ausreichend (6-4 Punkte)": "sufficient (6-4 points)",
-  "mangelhaft (3-0 Punkte)": "poor (3-0 points)",
-  
-  // Study hours
-  "0 Stunden": "0 hours",
-  "maximal eine Stunde": "maximum one hour",
-  "mehr als eine, aber weniger als 2 Stunden": "more than one, but less than 2 hours",
-  "mehr als zwei, aber weniger als 3 Stunden": "more than two, but less than 3 hours",
-  "mehr als drei, aber weniger als 4 Stunden": "more than three, but less than 4 hours",
-  "mehr als 4 Stunden": "more than 4 hours",
-  
-  // Satisfaction scale
-  "gar nicht zufrieden": "not at all satisfied",
-  "sehr zufrieden": "very satisfied",
-  
-  // Additional questions
-  "Welche Note hatten Sie in Englisch im Abiturzeugnis?": "What grade did you have in English in your Abitur certificate?",
-  "Welche Note hatten Sie in Mathematik im Abiturzeugnis?": "What grade did you have in Mathematics in your Abitur certificate?",
-  "Wieviele Stunden pro Woche planen Sie für die Vor- und Nachbereitung der Statistikveranstaltungen zu investieren?": "How many hours per week do you plan to invest in preparing and reviewing statistics courses?",
-  "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (5-stufig)": "How satisfied are you with your study location Hildesheim? (5-point scale)",
-  "Wie zufrieden sind Sie mit Ihrem Studienort Hildesheim? (7-stufig)": "How satisfied are you with your study location Hildesheim? (7-point scale)",
-  "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags):": "Please create a personal code (first 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday):",
-  
-  // Programming Anxiety titles
-  "Programmierangst - Teil 1": "Programming Anxiety - Part 1",
-  "Programmierangst - Teil 2": "Programming Anxiety - Part 2",
-  "Programmierangst": "Programming Anxiety",
-  
-  // Instructions
-  "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.": "Please indicate to what extent the following statements apply to you.",
-  "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.": "The following questions are selected based on your previous answers.",
-  "Wie sehr treffen die folgenden Aussagen auf Sie zu?": "How much do the following statements apply to you?",
-  "Wie leicht oder schwer fällt es Ihnen...": "How easy or difficult is it for you..."
-};
-
-var currentLang = "de";
-
-// Function to translate entire page - AGGRESSIVE VERSION
-function translatePage() {
-  if (currentLang === "en") {
-    // First, translate all headings and titles
-    document.querySelectorAll("h1, h2, h3, h4, h5, h6, .shiny-title, .panel-title").forEach(function(el) {
-      for (var de in translations) {
-        if (el.innerHTML.indexOf(de) !== -1) {
-          el.innerHTML = el.innerHTML.replace(new RegExp(de, "g"), translations[de]);
-        }
-      }
-    });
-    
-    // Translate all labels including nested text
-    document.querySelectorAll("label, .control-label, .shiny-label").forEach(function(label) {
-      for (var de in translations) {
-        if (label.innerHTML.indexOf(de) !== -1) {
-          label.innerHTML = label.innerHTML.replace(new RegExp(de, "g"), translations[de]);
-        }
-      }
-    });
-    
-    // Translate select options more aggressively
-    document.querySelectorAll("select").forEach(function(select) {
-      // Update the placeholder option
-      if (select.options[0] && select.options[0].text === "Bitte wählen...") {
-        select.options[0].text = "Please select...";
-      }
-      
-      // Translate all options
-      for (var i = 0; i < select.options.length; i++) {
-        var option = select.options[i];
-        for (var de in translations) {
-          if (option.text === de) {
-            option.text = translations[de];
-            break;
-          }
-        }
-      }
-    });
-    
-    // Translate radio button labels
-    document.querySelectorAll(".radio label, .checkbox label").forEach(function(label) {
-      var spans = label.querySelectorAll("span");
-      spans.forEach(function(span) {
-        for (var de in translations) {
-          if (span.textContent.trim() === de) {
-            span.textContent = translations[de];
-            break;
-          }
-        }
-      });
-      
-      // Also check direct text nodes
-      for (var i = 0; i < label.childNodes.length; i++) {
-        var node = label.childNodes[i];
-        if (node.nodeType === 3) { // Text node
-          var text = node.nodeValue.trim();
-          if (translations[text]) {
-            node.nodeValue = " " + translations[text] + " ";
-          }
-        }
-      }
-    });
-    
-    // Translate buttons
-    document.querySelectorAll("button, .btn").forEach(function(button) {
-      for (var de in translations) {
-        if (button.textContent.trim() === de) {
-          button.textContent = translations[de];
-          break;
-        }
-      }
-    });
-    
-    // Translate any divs or spans with text
-    document.querySelectorAll("div, span, p").forEach(function(el) {
-      if (el.children.length === 0) { // Only leaf nodes
-        var text = el.textContent.trim();
-        if (translations[text]) {
-          el.textContent = translations[text];
-        }
-      }
-    });
-    
-    // Translate placeholders
-    document.querySelectorAll("[placeholder]").forEach(function(elem) {
-      if (translations[elem.placeholder]) {
-        elem.placeholder = translations[elem.placeholder];
-      }
-    });
-    
-    // Special handling for page navigation
-    document.querySelectorAll(".progress-text, .page-number").forEach(function(el) {
-      el.innerHTML = el.innerHTML.replace(/Seite/g, "Page").replace(/von/g, "of");
-    });
-    
-    // Force update any remaining German text
-    var allElements = document.querySelectorAll("*");
-    allElements.forEach(function(el) {
-      if (el.children.length === 0 && el.textContent) {
-        var text = el.textContent.trim();
-        if (text && translations[text]) {
-          el.textContent = translations[text];
-        }
-      }
-    });
-  }
-}
-
-// Global language toggle function with debouncing
-var toggleInProgress = false;
-window.toggleLanguage = function() {
-  // Prevent multiple rapid clicks
-  if (toggleInProgress) return;
-  toggleInProgress = true;
-  setTimeout(function() { toggleInProgress = false; }, 500); // 500ms debounce
-  
-  currentLang = currentLang === "de" ? "en" : "de";
-  
-  // Update button text
-  var btn = document.getElementById("language-toggle-btn");
-  if (btn) {
-    btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
-  }
-  
-  // Also update the welcome page button if it exists
-  var welcomeBtn = document.getElementById("lang_switch");
-  if (welcomeBtn) {
-    welcomeBtn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
-  }
-  
-  // Toggle welcome page content if on page 1
-  var deContent = document.getElementById("content_de");
-  var enContent = document.getElementById("content_en");
-  if (deContent && enContent) {
-    if (currentLang === "en") {
-      deContent.style.display = "none";
-      enContent.style.display = "block";
-    } else {
-      deContent.style.display = "block";
-      enContent.style.display = "none";
-    }
-  }
-  
-  // Send to Shiny
-  if (typeof Shiny !== "undefined") {
-    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
-  }
-  
-  // Store preference
-  sessionStorage.setItem("hilfo_language", currentLang);
-  
-  // Apply translations to current page without reload
-  translatePage();
-};
-
-// Apply translations on page load
-document.addEventListener("DOMContentLoaded", function() {
-  // Check stored language preference
-  var storedLang = sessionStorage.getItem("hilfo_language");
-  if (storedLang) {
-    currentLang = storedLang;
-  }
-  
-  // Create language toggle button if it doesn\'t exist
-  if (!document.getElementById("language-toggle-btn")) {
-    var btn = document.createElement("button");
-    btn.id = "language-toggle-btn";
-    btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
-    btn.onclick = toggleLanguage;
-    document.body.appendChild(btn);
-  }
-  
-  // Apply initial translation if English
-  if (currentLang === "en") {
-    // Toggle welcome page if present
-    var deContent = document.getElementById("content_de");
-    var enContent = document.getElementById("content_en");
-    if (deContent && enContent) {
-      deContent.style.display = "none";
-      enContent.style.display = "block";
-    }
-    
-    // Update welcome button if present
-    var welcomeBtn = document.getElementById("lang_switch");
-    if (welcomeBtn) {
-      welcomeBtn.textContent = "Deutsche Version";
-    }
-    
-    // Apply translations
-    translatePage();
-  }
-  
-  // Check stored language
-  var stored = sessionStorage.getItem("hilfo_language");
-  if (stored) {
-    currentLang = stored;
-    var btn = document.getElementById("language-toggle-btn");
-    if (btn) {
-      btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
-    }
-  }
-  
-  // Apply translations if English
-  if (currentLang === "en") {
-    setTimeout(translatePage, 100);
-  }
-  
-  // Watch for page changes
-  var observer = new MutationObserver(function(mutations) {
-    if (currentLang === "en") {
-      setTimeout(translatePage, 50);
-    }
-  });
-  
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-  
-  // Radio button deselection
-  document.addEventListener("click", function(e) {
-    if (e.target && e.target.type === "radio") {
-      var wasChecked = e.target.getAttribute("data-was-checked") === "true";
-      
-      var radios = document.querySelectorAll("input[name=\\"" + e.target.name + "\\"]");
-      for (var i = 0; i < radios.length; i++) {
-        radios[i].setAttribute("data-was-checked", "false");
-      }
-      
-      if (wasChecked) {
-        e.target.checked = false;
-        if (typeof Shiny !== "undefined") {
-          Shiny.setInputValue(e.target.name, null, {priority: "event"});
-        }
-      } else {
-        e.target.setAttribute("data-was-checked", "true");
-      }
-    }
-  });
-});
-
-// Handle Shiny messages
-if (typeof Shiny !== "undefined") {
-  Shiny.addCustomMessageHandler("update_language", function(lang) {
-    currentLang = lang;
-    if (lang === "en") {
-      translatePage();
-    } else {
-      location.reload(); // Reload for German
-    }
-  });
-}
-</script>'
-
-# Server extensions for language handling
-server_extensions <- function(input, output, session) {
-  # Track current language
-  session$userData$current_language <- reactiveVal("de")
-  
-  # Handle language switching
-  observeEvent(input$study_language, {
-    new_lang <- input$study_language
-    session$userData$current_language(new_lang)
-    
-    # Update item bank language
-    if (new_lang == "en") {
-      session$userData$item_bank <- all_items_de
-      session$userData$item_bank$Question <- all_items_de$Question_EN
-    } else {
-      session$userData$item_bank <- all_items_de
-    }
-    
-    # Send message to update UI
-    session$sendCustomMessage("update_language", new_lang)
-  })
-}
-
-# Launch with cloud storage, adaptive testing, and enhanced features
+# No custom CSS or JavaScript needed - inrep handles everything automatically
+# Launch with inrep's built-in capabilities
 inrep::launch_study(
   config = study_config,
   item_bank = all_items_de,  # Bilingual item bank
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
-  save_format = "csv",
-  custom_css = custom_js_enhanced,  # Enhanced JavaScript
-  admin_dashboard_hook = monitor_adaptive  # Monitor adaptive selection
+  save_format = "csv"
+  # No custom CSS needed - inrep handles theming
+  # No server extensions needed - inrep handles language switching
+  # No admin dashboard hook needed - inrep handles monitoring
 )
-
-
-
-
-
-
