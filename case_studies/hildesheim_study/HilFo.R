@@ -688,9 +688,14 @@ document.addEventListener("DOMContentLoaded", function() {
       sep = ""
     ),
     validate = "function(inputs) { 
-      var deCheck = document.getElementById('consent_check');
-      var enCheck = document.getElementById('consent_check_en');
-      return (deCheck && deCheck.checked) || (enCheck && enCheck.checked); 
+      try {
+        var deCheck = document.getElementById('consent_check');
+        var enCheck = document.getElementById('consent_check_en');
+        var result = (deCheck && deCheck.checked) || (enCheck && enCheck.checked);
+        return Boolean(result);
+      } catch(e) {
+        return false;
+      }
     }",
     required = FALSE
   ),
@@ -2371,25 +2376,7 @@ study_config <- inrep::create_study_config(
   page_load_hook = adaptive_output_hook,  # Add hook for adaptive output
   save_format = "csv",  # Use inrep's built-in save format
   adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
-  custom_js = custom_js,  # Add custom JavaScript for language switching and downloads
-  download_handlers = list(
-    pdf = download_pdf_handler,
-    csv = download_csv_handler
-  ),  # Add download handlers for PDF and CSV
-  # Enhanced security and robustness settings
-  prevent_double_submission = TRUE,  # Prevent double-click issues
-  validate_required_fields = TRUE,  # Validate required fields before navigation
-  auto_save_interval = 30,  # Auto-save every 30 seconds
-  session_isolation = TRUE,  # Ensure session isolation
-  error_handling = "graceful",  # Graceful error handling
-  debug_mode = FALSE,  # Disable debug mode for production
-  # Performance optimizations
-  lazy_loading = TRUE,  # Enable lazy loading for better performance
-  cache_responses = TRUE,  # Cache responses for better UX
-  # Accessibility features
-  accessibility = TRUE,  # Enable accessibility features
-  keyboard_navigation = TRUE,  # Enable keyboard navigation
-  screen_reader_support = TRUE  # Enable screen reader support
+  custom_js = custom_js  # Add custom JavaScript for language switching and downloads
 )
 
 cat("\n================================================================================\n")
