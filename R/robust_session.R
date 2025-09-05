@@ -381,7 +381,8 @@ preserve_session_data <- function(force = FALSE) {
     # Get current session data from global environment
     session_data <- get_session_data()
     
-    if (length(session_data) > 0) {
+    # Check if session_data is valid and not empty
+    if (!is.null(session_data) && length(session_data) > 0) {
       # Save to temporary file
       temp_file <- file.path(tempdir(), paste0("inrep_data_", .session_state$session_id, ".rds"))
       saveRDS(session_data, temp_file)
@@ -405,6 +406,7 @@ preserve_session_data <- function(force = FALSE) {
       log_session_event("DATA_PRESERVATION_ERROR", "Failed to preserve session data", 
                        list(error = e$message))
     }
+    # Don't re-throw the error to prevent crashes
     return(FALSE)
   })
 }
@@ -423,7 +425,11 @@ get_session_data <- function() {
     tryCatch({
       rv <- get("rv", envir = .GlobalEnv)
       if (is.reactivevalues(rv)) {
-        session_data$reactive_values <- reactiveValuesToList(rv)
+        # Check if rv has any values before converting
+        rv_list <- reactiveValuesToList(rv)
+        if (length(rv_list) > 0) {
+          session_data$reactive_values <- rv_list
+        }
       }
     }, error = function(e) {
       # Log data collection errors to file only for background operations

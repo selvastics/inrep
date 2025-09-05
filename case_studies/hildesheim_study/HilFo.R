@@ -946,6 +946,15 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         }
     }
     
+    # Final check to ensure is_english is properly set
+    if (is.null(is_english) || is.na(is_english)) {
+        is_english <- (current_lang == "en")
+        cat("DEBUG: Reset is_english to:", is_english, "\n")
+    }
+    
+    # Additional debug output
+    cat("DEBUG: Final language settings - current_lang:", current_lang, ", is_english:", is_english, "\n")
+    
     if (is.null(responses) || length(responses) == 0) {
         if (is_english) {
             return(shiny::HTML("<p>No responses available for evaluation.</p>"))
