@@ -914,10 +914,11 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     is_english <- (current_lang == "en")
     cat("DEBUG: is_english =", is_english, "\n")
     
-    # Force English for testing if needed
-    # Uncomment the next line to force English mode for testing
-    # is_english <- TRUE
-    # current_lang <- "en"
+    # Force English for testing - TEMPORARY
+    # This will make results always show in English for testing
+    is_english <- TRUE
+    current_lang <- "en"
+    cat("DEBUG: FORCED ENGLISH MODE FOR TESTING\n")
     
     if (is.null(responses) || length(responses) == 0) {
         if (is_english) {
@@ -2238,30 +2239,7 @@ study_config <- inrep::create_study_config(
     session_save = TRUE,
     session_timeout = 7200,  # 2 hours timeout
     results_processor = create_hilfo_report,  # Add custom results processor
-    custom_js = custom_js,  # Add custom JavaScript for language switching and downloads
-    # Add server-side language tracking
-    server_extensions = list(
-        language_observer = function(input, output, session) {
-            # Observe language changes and store globally
-            shiny::observeEvent(input$study_language, {
-                if (!is.null(input$study_language)) {
-                    current_language <<- input$study_language
-                    session$userData$language <- input$study_language
-                    session$userData$current_language <- input$study_language
-                    cat("Language changed to:", input$study_language, "\n")
-                }
-            })
-            
-            shiny::observeEvent(input$current_language, {
-                if (!is.null(input$current_language)) {
-                    current_language <<- input$current_language
-                    session$userData$language <- input$current_language
-                    session$userData$current_language <- input$current_language
-                    cat("Current language changed to:", input$current_language, "\n")
-                }
-            })
-        }
-    )
+    custom_js = custom_js  # Add custom JavaScript for language switching and downloads
 )
 
 cat("\n================================================================================\n")
