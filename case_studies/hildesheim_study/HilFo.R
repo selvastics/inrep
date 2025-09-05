@@ -2408,7 +2408,6 @@ observer.observe(document.body, {
   subtree: true
 });
 
-// Download function that triggers inrep's download functionality
 function triggerDownload() {
   try {
     // Try to trigger inrep's built-in download functionality
@@ -2425,7 +2424,6 @@ function triggerDownload() {
   }
 }
 
-// Fallback CSV download function
 function downloadCSVFallback() {
   try {
     var csvContent = "timestamp,participant_id,study_language,message\\n";
