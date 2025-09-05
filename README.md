@@ -222,7 +222,6 @@ config <- create_study_config(
   )
 )
 
-# Launch the study (opens a Shiny app)
 launch_study(
   config = config,
   item_bank = cognitive_items,
