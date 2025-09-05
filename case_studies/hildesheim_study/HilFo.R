@@ -1453,14 +1453,26 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     '<div class="report-section">',
     '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
     '<span data-lang-de="Persönlichkeitsprofil" data-lang-en="Personality Profile">Persönlichkeitsprofil</span></h2>',
-    if (radar_base64 != "") paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">'),
+    tryCatch({
+      if (!is.null(radar_base64) && radar_base64 != "") {
+        paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">')
+      } else {
+        ""
+      }
+    }, error = function(e) ""),
     '</div>',
     
     # Trace plot for Programming Anxiety
     '<div class="report-section">',
     '<h2 style="color: #9b59b6; text-align: center; margin-bottom: 25px;">',
     '<span data-lang-de="Programmierangst - Adaptive Testung" data-lang-en="Programming Anxiety - Adaptive Testing Trace">Programmierangst - Adaptive Testung</span></h2>',
-    if (exists("trace_base64") && trace_base64 != "") paste0('<img src="data:image/png;base64,', trace_base64, '" style="width: 100%; max-width: 800px; display: block; margin: 0 auto; border-radius: 8px;">'),
+    tryCatch({
+      if (exists("trace_base64") && !is.null(trace_base64) && trace_base64 != "") {
+        paste0('<img src="data:image/png;base64,', trace_base64, '" style="width: 100%; max-width: 800px; display: block; margin: 0 auto; border-radius: 8px;">')
+      } else {
+        ""
+      }
+    }, error = function(e) ""),
     '<p style="text-align: center; color: #666; margin-top: 10px; font-size: 14px;">',
     '<span data-lang-de="Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items." ',
     'data-lang-en="This trace plot shows how the theta estimate evolved during the assessment. The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.">',
@@ -1472,7 +1484,13 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     '<div class="report-section">',
     '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
     '<span data-lang-de="Alle Dimensionen im Überblick" data-lang-en="All Dimensions Overview">Alle Dimensionen im Überblick</span></h2>',
-    if (bar_base64 != "") paste0('<img src="data:image/png;base64,', bar_base64, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 8px;">'),
+    tryCatch({
+      if (!is.null(bar_base64) && bar_base64 != "") {
+        paste0('<img src="data:image/png;base64,', bar_base64, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 8px;">')
+      } else {
+        ""
+      }
+    }, error = function(e) ""),
     '</div>',
     
     # Table
