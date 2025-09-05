@@ -1375,14 +1375,24 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         # Add value labels with better formatting
         ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", score)), 
                            vjust = -0.5, size = 6, fontface = "bold", color = "#333") +
-        # Custom color scheme
-        ggplot2::scale_fill_manual(values = c(
-            "Programmierangst" = "#9b59b6",
-            "Persönlichkeit" = "#e8041c",
-            "Stress" = "#ff6b6b",
-            "Studierfähigkeiten" = "#4ecdc4",
-            "Statistik" = "#45b7d1"
-        )) +
+        # Custom color scheme - handle both German and English
+        if (is_english) {
+            ggplot2::scale_fill_manual(values = c(
+                "Programming Anxiety" = "#9b59b6",
+                "Personality" = "#e8041c",
+                "Stress" = "#ff6b6b",
+                "Study Skills" = "#4ecdc4",
+                "Statistics" = "#45b7d1"
+            )) +
+        } else {
+            ggplot2::scale_fill_manual(values = c(
+                "Programmierangst" = "#9b59b6",
+                "Persönlichkeit" = "#e8041c",
+                "Stress" = "#ff6b6b",
+                "Studierfähigkeiten" = "#4ecdc4",
+                "Statistik" = "#45b7d1"
+            )) +
+        }
         # Y-axis customization
         ggplot2::scale_y_continuous(limits = c(0, 5.5), breaks = 0:5) +
         # Theme with larger text
@@ -1570,7 +1580,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         # Radar plot
         '<div class="report-section">',
         '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
-        '<span data-lang-de="Persönlichkeitsprofil" data-lang-en="Personality Profile">Persönlichkeitsprofil</span></h2>',
+        '<span data-lang-de="Persönlichkeitsprofil" data-lang-en="Personality Profile">', if (is_english) "Personality Profile" else "Persönlichkeitsprofil", '</span></h2>',
         tryCatch({
             if (!is.null(radar_base64) && radar_base64 != "") {
                 paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">')
@@ -1583,7 +1593,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         # Trace plot for Programming Anxiety
         '<div class="report-section">',
         '<h2 style="color: #9b59b6; text-align: center; margin-bottom: 25px;">',
-        '<span data-lang-de="Programmierangst - Adaptive Testung" data-lang-en="Programming Anxiety - Adaptive Testing Trace">Programmierangst - Adaptive Testung</span></h2>',
+        '<span data-lang-de="Programmierangst - Adaptive Testung" data-lang-en="Programming Anxiety - Adaptive Testing Trace">', if (is_english) "Programming Anxiety - Adaptive Testing Trace" else "Programmierangst - Adaptive Testung", '</span></h2>',
         tryCatch({
             if (exists("trace_base64") && !is.null(trace_base64) && trace_base64 != "") {
                 paste0('<img src="data:image/png;base64,', trace_base64, '" style="width: 100%; max-width: 800px; display: block; margin: 0 auto; border-radius: 8px;">')
@@ -1594,14 +1604,14 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         '<p style="text-align: center; color: #666; margin-top: 10px; font-size: 14px;">',
         '<span data-lang-de="Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items." ',
         'data-lang-en="This trace plot shows how the theta estimate evolved during the assessment. The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.">',
-        'Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items.',
+        if (is_english) "This trace plot shows how the theta estimate evolved during the assessment. The shaded area represents the standard error band. Vertical line separates fixed and adaptive items." else "Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items.",
         '</span></p>',
         '</div>',
         
         # Bar chart
         '<div class="report-section">',
         '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
-        '<span data-lang-de="Alle Dimensionen im Überblick" data-lang-en="All Dimensions Overview">Alle Dimensionen im Überblick</span></h2>',
+        '<span data-lang-de="Alle Dimensionen im Überblick" data-lang-en="All Dimensions Overview">', if (is_english) "All Dimensions Overview" else "Alle Dimensionen im Überblick", '</span></h2>',
         tryCatch({
             if (!is.null(bar_base64) && bar_base64 != "") {
                 paste0('<img src="data:image/png;base64,', bar_base64, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 8px;">')
@@ -1614,17 +1624,17 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         # Table
         '<div class="report-section">',
         '<h2 style="color: #e8041c;">',
-        '<span data-lang-de="Detaillierte Auswertung" data-lang-en="Detailed Results">Detaillierte Auswertung</span></h2>',
+        '<span data-lang-de="Detaillierte Auswertung" data-lang-en="Detailed Results">', if (is_english) "Detailed Results" else "Detaillierte Auswertung", '</span></h2>',
         '<table style="width: 100%; border-collapse: collapse;">',
         '<tr style="background: #f8f8f8;">',
         '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">',
-        '<span data-lang-de="Dimension" data-lang-en="Dimension">Dimension</span></th>',
+        '<span data-lang-de="Dimension" data-lang-en="Dimension">', if (is_english) "Dimension" else "Dimension", '</span></th>',
         '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">',
-        '<span data-lang-de="Mittelwert" data-lang-en="Mean">Mittelwert</span></th>',
+        '<span data-lang-de="Mittelwert" data-lang-en="Mean">', if (is_english) "Mean" else "Mittelwert", '</span></th>',
         '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">',
-        '<span data-lang-de="Standardabweichung" data-lang-en="Standard Deviation">Standardabweichung</span></th>',
+        '<span data-lang-de="Standardabweichung" data-lang-en="Standard Deviation">', if (is_english) "Standard Deviation" else "Standardabweichung", '</span></th>',
         '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">',
-        '<span data-lang-de="Interpretation" data-lang-en="Interpretation">Interpretation</span></th>',
+        '<span data-lang-de="Interpretation" data-lang-en="Interpretation">', if (is_english) "Interpretation" else "Interpretation", '</span></th>',
         '</tr>'
     )
     
@@ -1674,23 +1684,23 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         value <- round(scores[[name]], 2)
         sd_value <- ifelse(name %in% names(sds), sds[[name]], NA)
         level <- ifelse(value >= 3.7, 
-                        '<span data-lang-de="Hoch" data-lang-en="High">Hoch</span>', 
+                        if (is_english) "High" else "Hoch", 
                         ifelse(value >= 2.3, 
-                               '<span data-lang-de="Mittel" data-lang-en="Medium">Mittel</span>', 
-                               '<span data-lang-de="Niedrig" data-lang-en="Low">Niedrig</span>'))
+                               if (is_english) "Medium" else "Mittel", 
+                               if (is_english) "Low" else "Niedrig"))
         color <- ifelse(value >= 3.7, "#28a745", ifelse(value >= 2.3, "#ffc107", "#dc3545"))
         
         # Translate dimension names
         name_display <- switch(name,
-                               "ProgrammingAnxiety" = '<span data-lang-de="Programmierangst" data-lang-en="Programming Anxiety">Programmierangst</span>',
-                               "Extraversion" = '<span data-lang-de="Extraversion" data-lang-en="Extraversion">Extraversion</span>',
-                               "Verträglichkeit" = '<span data-lang-de="Verträglichkeit" data-lang-en="Agreeableness">Verträglichkeit</span>',
-                               "Gewissenhaftigkeit" = '<span data-lang-de="Gewissenhaftigkeit" data-lang-en="Conscientiousness">Gewissenhaftigkeit</span>',
-                               "Neurotizismus" = '<span data-lang-de="Neurotizismus" data-lang-en="Neuroticism">Neurotizismus</span>',
-                               "Offenheit" = '<span data-lang-de="Offenheit" data-lang-en="Openness">Offenheit</span>',
-                               "Stress" = '<span data-lang-de="Stress" data-lang-en="Stress">Stress</span>',
-                               "Studierfähigkeiten" = '<span data-lang-de="Studierfähigkeiten" data-lang-en="Study Skills">Studierfähigkeiten</span>',
-                               "Statistik" = '<span data-lang-de="Statistik" data-lang-en="Statistics">Statistik</span>',
+                               "ProgrammingAnxiety" = if (is_english) "Programming Anxiety" else "Programmierangst",
+                               "Extraversion" = "Extraversion",
+                               "Verträglichkeit" = if (is_english) "Agreeableness" else "Verträglichkeit",
+                               "Gewissenhaftigkeit" = if (is_english) "Conscientiousness" else "Gewissenhaftigkeit",
+                               "Neurotizismus" = if (is_english) "Neuroticism" else "Neurotizismus",
+                               "Offenheit" = if (is_english) "Openness" else "Offenheit",
+                               "Stress" = "Stress",
+                               "Studierfähigkeiten" = if (is_english) "Study Skills" else "Studierfähigkeiten",
+                               "Statistik" = if (is_english) "Statistics" else "Statistik",
                                name  # Default fallback
         )
         
@@ -1868,7 +1878,6 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     download_section_html <- paste0(
         '<div class="download-section" style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">',
         '<h4 style="color: #333; margin-bottom: 15px;">',
-        '<span data-lang-de="Ergebnisse exportieren" data-lang-en="Export Results">',
         if (is_english) "Export Results" else "Ergebnisse exportieren",
         '</span></h4>',
         '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">',
@@ -1876,16 +1885,14 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         # PDF Download Button
         '<button onclick="downloadPDF()" class="btn btn-primary" style="background: #e8041c; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
         '<i class="fas fa-file-pdf" style="margin-right: 8px;"></i>',
-        '<span data-lang-de="PDF herunterladen" data-lang-en="Download PDF">',
         if (is_english) "Download PDF" else "PDF herunterladen",
-        '</span></button>',
+        '</button>',
         
         # CSV Download Button  
         '<button onclick="downloadCSV()" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
         '<i class="fas fa-file-csv" style="margin-right: 8px;"></i>',
-        '<span data-lang-de="CSV herunterladen" data-lang-en="Download CSV">',
         if (is_english) "Download CSV" else "CSV herunterladen",
-        '</span></button>',
+        '</button>',
         
         '</div>',
         '</div>',
