@@ -1797,7 +1797,7 @@ Basierend auf Ihren Ergebnissen empfehlen wir:
           temp_header <- tempfile(fileext = ".tex")
           header_content <- '\\usepackage{fancyhdr}
 \\pagestyle{fancy}
-\\fancyhead[L]{HilFo Studie}
+\\fancyhead[L]{HilFo}
 \\fancyhead[R]{Universität Hildesheim}
 \\definecolor{hildesheim}{RGB}{232,4,28}'
           writeLines(header_content, temp_header)
