@@ -480,7 +480,7 @@ custom_page_flow <- list(
   list(
     id = "page1",
     type = "custom",
-    title = "HilFo Studie",
+    title = "HilFo",
     content = '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">
       <div style="position: absolute; top: 10px; right: 10px;">
         <button type="button" id="language-toggle-btn" onclick="toggleLanguage()" style="
