@@ -606,8 +606,8 @@ custom_page_flow <- list(
       </script>',
       # German content (default)
       '<div id="content_de">',
-      '<h2 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 20px; font-weight: normal;">',
-      '<span data-lang-de="Willkommen zur HilFo Studie" data-lang-en="Welcome to the HilFo Study">Willkommen zur HilFo Studie</span></h2>',
+      '<h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px; font-weight: bold;">',
+      '<span data-lang-de="Willkommen zur HilFo Studie" data-lang-en="Welcome to the HilFo Study">Willkommen zur HilFo Studie</span></h1>',
       '<h3 style="color: #e8041c;">Liebe Studierende,</h3>',
       '<p>In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, ',
       'die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.</p>',
@@ -636,8 +636,8 @@ custom_page_flow <- list(
       '</div>',
       # English content (hidden by default)
       '<div id="content_en" style="display: none;">',
-      '<h2 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 20px; font-weight: normal;">',
-      '<span data-lang-de="Willkommen zur HilFo Studie" data-lang-en="Welcome to the HilFo Study">Welcome to the HilFo Study</span></h2>',
+      '<h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px; font-weight: bold;">',
+      '<span data-lang-de="Willkommen zur HilFo Studie" data-lang-en="Welcome to the HilFo Study">Welcome to the HilFo Study</span></h1>',
       '<h3 style="color: #e8041c;">Dear Students,</h3>',
       '<p>In the statistics exercises, we want to work with illustrative data ',
       'that comes from you. Therefore, we would like to learn a few things about you.</p>',
