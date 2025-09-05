@@ -800,11 +800,11 @@ custom_page_flow <- list(
   list(
     id = "page20",
     type = "custom",
-    title = "Persönlicher Code",
+    title = "",
     title_en = "Personal Code",
     content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
       <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
-        <span data-lang-de="Persönlicher Code" data-lang-en="Personal Code">Personal Code</span>
+        <span data-lang-de="" data-lang-en="Personal Code">Personal Code</span>
       </h2>
       <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
         <span data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">
