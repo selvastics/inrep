@@ -480,7 +480,7 @@ custom_page_flow <- list(
   list(
     id = "page1",
     type = "custom",
-    content = "<h1>HilFo Studie</h1><p>Willkommen zur HilFo Studie</p>",
+    content = "Test",
     required = FALSE
   ),
   
@@ -2139,25 +2139,10 @@ document.addEventListener("DOMContentLoaded", function() {
 study_config <- inrep::create_study_config(
   name = "HilFo Studie",
   study_key = session_uuid,
-  theme = "hildesheim",  # Use built-in Hildesheim theme
   custom_page_flow = custom_page_flow,
   demographics = names(demographic_configs),
   demographic_configs = demographic_configs,
-  input_types = input_types,
-  model = "2PL",  # Use 2PL model for IRT
-  adaptive = TRUE,  # Enable adaptive for PA items
-  max_items = 51,  # Total items in bank
-  min_items = 51,  # Must show all items
-  criteria = "MFI",  # Maximum Fisher Information
-  response_ui_type = "radio",
-  progress_style = "bar",
-  language = "de",  # Start with German
-  bilingual = TRUE,  # Enable inrep's built-in bilingual support
-  session_save = TRUE,
-  session_timeout = 7200,  # 2 hours timeout
-  estimation_method = "EAP",  # Use EAP for ability estimation
-  save_format = "csv",  # Use inrep's built-in save format
-  adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
+  input_types = input_types
 )
 
 cat("\n================================================================================\n")
@@ -2354,11 +2339,5 @@ monitor_adaptive <- function(session_data) {
 # Launch with inrep's built-in capabilities
 inrep::launch_study(
   config = study_config,
-  item_bank = all_items_de,  # Bilingual item bank
-  webdav_url = WEBDAV_URL,
-  password = WEBDAV_PASSWORD,
-  save_format = "csv"
-  # No custom CSS needed - inrep handles theming
-  # No server extensions needed - inrep handles language switching
-  # No admin dashboard hook needed - inrep handles monitoring
+  item_bank = all_items_de
 )
