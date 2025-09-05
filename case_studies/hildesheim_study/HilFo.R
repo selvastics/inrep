@@ -2061,22 +2061,30 @@ window.toggleLanguage = function() {
   
   // Send to Shiny for inrep built-in language system
   if (typeof Shiny !== "undefined") {
-    console.log("Switching language to:", currentLang);
-    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+    console.log("🔄 Switching language to:", currentLang);
+    console.log("📤 Sending to Shiny inputs...");
     
-    // Also try alternative input names
+    // Send to the main language input that inrep listens for
+    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+    console.log("✅ Sent to study_language input");
+    
+    // Also try alternative input names for compatibility
     Shiny.setInputValue("language", currentLang, {priority: "event"});
     Shiny.setInputValue("current_language", currentLang, {priority: "event"});
+    console.log("✅ Sent to alternative language inputs");
+  } else {
+    console.log("❌ Shiny not available");
   }
   
   // Store preference
   sessionStorage.setItem("hilfo_language", currentLang);
+  console.log("💾 Stored language preference:", currentLang);
   
   // Wait a bit for Shiny to process the language change, then refresh
   setTimeout(function() {
-    console.log("Refreshing page for language change");
+    console.log("🔄 Refreshing page for language change to:", currentLang);
     location.reload();
-  }, 500);
+  }, 800);
 };
 
 // Create language toggle button on every page
@@ -2097,28 +2105,44 @@ function createLanguageButton() {
 
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", function() {
+  console.log("🚀 Initializing language system...");
+  
   var storedLang = sessionStorage.getItem("hilfo_language");
   if (storedLang) {
     currentLang = storedLang;
-    console.log("Restored language from storage:", currentLang);
+    console.log("📱 Restored language from storage:", currentLang);
+  } else {
+    console.log("📱 No stored language, using default: de");
   }
   
   createLanguageButton();
+  console.log("🔘 Language button created");
   
   // Send initial language to Shiny if not German
   if (currentLang !== "de" && typeof Shiny !== "undefined") {
-    console.log("Sending initial language to Shiny:", currentLang);
+    console.log("📤 Sending initial language to Shiny:", currentLang);
     Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+    console.log("✅ Initial language sent to Shiny");
+  } else if (currentLang === "de") {
+    console.log("🇩🇪 Using default German language");
   }
   
   if (currentLang === "en") {
+    console.log("🇬🇧 Switching to English content");
     var deContent = document.getElementById("content_de");
     var enContent = document.getElementById("content_en");
     if (deContent && enContent) {
       deContent.style.display = "none";
       enContent.style.display = "block";
+      console.log("✅ English content displayed");
+    } else {
+      console.log("❌ Content elements not found");
     }
+  } else {
+    console.log("🇩🇪 Using German content");
   }
+  
+  console.log("✅ Language system initialized");
 });
 
 // Re-create button when new content loads
