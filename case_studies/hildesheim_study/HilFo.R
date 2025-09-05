@@ -1414,7 +1414,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                 "Stress" = "#ff6b6b",
                 "Study Skills" = "#4ecdc4",
                 "Statistics" = "#45b7d1"
-            )) +
+            ))
         } else {
             ggplot2::scale_fill_manual(values = c(
                 "Programmierangst" = "#9b59b6",
@@ -1422,8 +1422,8 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                 "Stress" = "#ff6b6b",
                 "Studierfähigkeiten" = "#4ecdc4",
                 "Statistik" = "#45b7d1"
-            )) +
-        }
+            ))
+        } +
         # Y-axis customization
         ggplot2::scale_y_continuous(limits = c(0, 5.5), breaks = 0:5) +
         # Theme with larger text
