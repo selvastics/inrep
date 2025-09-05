@@ -1951,17 +1951,12 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         '</span></h4>',
         '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">',
         
-        # PDF Download Button
-        '<button onclick="downloadPDF()" class="btn btn-primary" style="background: #e8041c; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
-        '<i class="fas fa-file-pdf" style="margin-right: 8px;"></i>',
-        if (is_english) "Download PDF" else "PDF herunterladen",
-        '</button>',
-        
-        # CSV Download Button  
-        '<button onclick="downloadCSV()" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
-        '<i class="fas fa-file-csv" style="margin-right: 8px;"></i>',
-        if (is_english) "Download CSV" else "CSV herunterladen",
-        '</button>',
+        # Note: Download functionality is handled by inrep's built-in download button
+        '<div style="text-align: center; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">',
+        '<p style="margin: 0; color: #6c757d; font-size: 14px;">',
+        if (is_english) "Use the 'Download Results' button below to export your data" else "Verwenden Sie den 'Ergebnisse herunterladen' Button unten, um Ihre Daten zu exportieren",
+        '</p>',
+        '</div>',
         
         '</div>',
         '</div>',
@@ -2407,63 +2402,12 @@ observer.observe(document.body, {
   subtree: true
 });
 
-// Download functions
-window.downloadPDF = function() {
-  try {
-    var content = "HilFo Study Results\\n\\n";
-    content += "Generated: " + new Date().toLocaleString() + "\\n\\n";
-    content += "This is a sample PDF report.\\n";
-    content += "In a full implementation, this would contain:\\n";
-    content += "- Personality profile results\\n";
-    content += "- Programming anxiety scores\\n";
-    content += "- Study satisfaction ratings\\n";
-    content += "- Detailed analysis and recommendations\\n\\n";
-    content += "Thank you for participating in the HilFo study!";
-    
-    var blob = new Blob([content], { type: "text/plain" });
-    var url = window.URL.createObjectURL(blob);
-    var link = document.createElement("a");
-    link.href = url;
-    link.download = "HilFo_Results_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".txt";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-    
-    console.log("PDF download initiated");
-  } catch (e) {
-    console.error("PDF download error:", e);
-    alert("Error downloading PDF. Please try again.");
-  }
-};
-
-window.downloadCSV = function() {
-  try {
-    var csvContent = "timestamp,participant_id,study_language,message\\n";
-    csvContent += new Date().toISOString() + ",HILFO_001," + currentLang + ",Sample data from HilFo study\\n";
-    csvContent += new Date().toISOString() + ",HILFO_002," + currentLang + ",Programming anxiety assessment\\n";
-    csvContent += new Date().toISOString() + ",HILFO_003," + currentLang + ",Personality profile completed\\n";
-    
-    var blob = new Blob([csvContent], { type: "text/csv" });
-    var url = window.URL.createObjectURL(blob);
-    var link = document.createElement("a");
-    link.href = url;
-    link.download = "HilFo_Data_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-    
-    console.log("CSV download initiated");
-  } catch (e) {
-    console.error("CSV download error:", e);
-    alert("Error downloading CSV. Please try again.");
-  }
-};
+// Download functionality is handled by inrep's built-in download button
+// No custom JavaScript needed for downloads
 </script>'
 
 study_config <- inrep::create_study_config(
-    name = "HilFo Studie",
+    name = "HilFo - Hildesheimer Forschungsmethoden",
     study_key = session_uuid,
     theme = "hildesheim",  # Use built-in Hildesheim theme
     custom_page_flow = custom_page_flow,
@@ -2495,86 +2439,8 @@ cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
 
 
-# Download handlers for PDF and CSV
-download_pdf_handler <- function() {
-    shiny::downloadHandler(
-        filename = function() {
-            paste0("HilFo_Results_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".pdf")
-        },
-        content = function(file) {
-            # Create a simple PDF report
-            tryCatch({
-                # Get current session data
-                if (exists("complete_data", envir = .GlobalEnv)) {
-                    data <- get("complete_data", envir = .GlobalEnv)
-                } else {
-                    # Create sample data if no session data
-                    data <- data.frame(
-                        timestamp = Sys.time(),
-                        participant_id = "HILFO_001",
-                        message = "Sample data - no session data available"
-                    )
-                }
-                
-                # Create simple text content for PDF
-                content <- paste0(
-                    "HilFo Study Results\n",
-                    "==================\n\n",
-                    "Generated: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n\n",
-                    "This is a sample PDF report.\n",
-                    "In a full implementation, this would contain:\n",
-                    "- Personality profile results\n",
-                    "- Programming anxiety scores\n",
-                    "- Study satisfaction ratings\n",
-                    "- Detailed analysis and recommendations\n\n",
-                    "Data summary:\n",
-                    paste(capture.output(str(data)), collapse = "\n")
-                )
-                
-                # Write to file
-                writeLines(content, file)
-                
-            }, error = function(e) {
-                writeLines(paste("Error generating PDF:", e$message), file)
-            })
-        }
-    )
-}
-
-download_csv_handler <- function() {
-    shiny::downloadHandler(
-        filename = function() {
-            paste0("HilFo_Data_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
-        },
-        content = function(file) {
-            tryCatch({
-                # Get current session data
-                if (exists("complete_data", envir = .GlobalEnv)) {
-                    data <- get("complete_data", envir = .GlobalEnv)
-                } else {
-                    # Create sample data if no session data
-                    data <- data.frame(
-                        timestamp = Sys.time(),
-                        participant_id = "HILFO_001",
-                        study_language = "de",
-                        message = "Sample data - no session data available"
-                    )
-                }
-                
-                # Write CSV file
-                write.csv(data, file, row.names = FALSE)
-                
-            }, error = function(e) {
-                # Create error CSV
-                error_data <- data.frame(
-                    error = paste("Error generating CSV:", e$message),
-                    timestamp = Sys.time()
-                )
-                write.csv(error_data, file, row.names = FALSE)
-            })
-        }
-    )
-}
+# Download functionality is handled by inrep's built-in download system
+# No custom download handlers needed
 
 
 monitor_adaptive <- function(session_data) {
@@ -2683,7 +2549,7 @@ inrep::launch_study(
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
     save_format = "csv",
-    # Add server-side language tracking
+    # Add server-side language tracking and download handlers
     server_extensions = list(
         language_tracker = function(input, output, session) {
             # Track language preference changes
@@ -2693,6 +2559,9 @@ inrep::launch_study(
                     cat("Language preference stored:", input$hilfo_language_preference, "\n")
                 }
             })
+            
+            # Download functionality is handled by inrep's built-in download system
+            # No custom download handlers needed
         }
     )
     # No custom CSS needed - inrep handles theming
