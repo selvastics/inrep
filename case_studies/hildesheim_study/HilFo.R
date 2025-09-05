@@ -938,8 +938,13 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     current_lang <- session$userData$current_language
   }
   
+  # Ensure current_lang is never NULL or NA
+  if (is.null(current_lang) || is.na(current_lang) || current_lang == "") {
+    current_lang <- "de"
+  }
+  
   if (is.null(responses) || length(responses) == 0) {
-    if (current_lang == "en") {
+    if (is_english) {
       return(shiny::HTML("<p>No responses available for evaluation.</p>"))
     } else {
       return(shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>"))
@@ -1171,7 +1176,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         plot.background = ggplot2::element_rect(fill = "white", color = NA),
         plot.margin = ggplot2::margin(20, 20, 20, 20)
       ) +
-      ggplot2::labs(title = if (current_lang == "en") "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
+      ggplot2::labs(title = if (is_english) "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
   } else {
     # Fallback to simple ggplot2 approach if ggradar not available
     # Use namespace to avoid loading issues
@@ -1188,7 +1193,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                     scores$Gewissenhaftigkeit, scores$Neurotizismus, scores$Offenheit)
     
     # Use English labels if current language is English
-    if (current_lang == "en") {
+    if (is_english) {
       bfi_labels <- c("Extraversion", "Agreeableness", "Conscientiousness", 
                       "Neuroticism", "Openness")
     } else {
@@ -1250,7 +1255,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                                            color = "#e8041c", margin = ggplot2::margin(b = 20)),
         plot.margin = ggplot2::margin(30, 30, 30, 30)
       ) +
-      ggplot2::labs(title = if (current_lang == "en") "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
+      ggplot2::labs(title = if (is_english) "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
   }
   
   # Create bar chart with logical ordering
@@ -1290,7 +1295,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   )
   
   # Use English names if current language is English
-  if (current_lang == "en") {
+  if (is_english) {
     dimension_labels <- dimension_names_en[names(ordered_scores)]
     category_labels <- category_names_en[c(rep("Persönlichkeit", 5), 
                                           "Programmierangst", "Stress", "Studierfähigkeiten", "Statistik")]
@@ -1338,8 +1343,8 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
       plot.margin = ggplot2::margin(20, 20, 20, 20)
     ) +
     ggplot2::labs(
-      title = if (current_lang == "en") "All Dimensions Overview" else "Alle Dimensionen im Überblick", 
-      y = if (current_lang == "en") "Score (1-5)" else "Punktzahl (1-5)"
+      title = if (is_english) "All Dimensions Overview" else "Alle Dimensionen im Überblick", 
+      y = if (is_english) "Score (1-5)" else "Punktzahl (1-5)"
     )
   
   # Create trace plot for Programming Anxiety adaptive testing
@@ -1397,10 +1402,10 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
       plot.margin = ggplot2::margin(20, 20, 20, 20)
     ) +
     ggplot2::labs(
-      title = if (current_lang == "en") "Programming Anxiety - Adaptive Testing Trace" else "Programmierangst - Adaptive Testung",
-      subtitle = sprintf(if (current_lang == "en") "Final θ = %.3f (SE = %.3f)" else "Finales θ = %.3f (SE = %.3f)", theta_est, se_est),
-      x = if (current_lang == "en") "Item Number" else "Item-Nummer",
-      y = if (current_lang == "en") "Theta Estimate (θ)" else "Theta-Schätzung (θ)"
+      title = if (is_english) "Programming Anxiety - Adaptive Testing Trace" else "Programmierangst - Adaptive Testung",
+      subtitle = sprintf(if (is_english) "Final θ = %.3f (SE = %.3f)" else "Finales θ = %.3f (SE = %.3f)", theta_est, se_est),
+      x = if (is_english) "Item Number" else "Item-Nummer",
+      y = if (is_english) "Theta Estimate (θ)" else "Theta-Schätzung (θ)"
     )
   
   # Save plots
@@ -1709,22 +1714,25 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   pdf_filename <- paste0("hilfo_results_", timestamp, ".pdf")
   
   # Build JavaScript content strings with proper concatenation
-  date_label <- if (current_lang == "en") "Date: " else "Datum: "
-  profile_label <- if (current_lang == "en") "PERSONALITY PROFILE" else "PERSÖNLICHKEITSPROFIL"
-  pa_label <- if (current_lang == "en") "Programming Anxiety: " else "Programmierangst: "
-  agree_label <- if (current_lang == "en") "Agreeableness: " else "Verträglichkeit: "
-  consc_label <- if (current_lang == "en") "Conscientiousness: " else "Gewissenhaftigkeit: "
-  neuro_label <- if (current_lang == "en") "Neuroticism: " else "Neurotizismus: "
-  open_label <- if (current_lang == "en") "Openness: " else "Offenheit: "
-  stress_label <- if (current_lang == "en") "Stress: " else "Stress: "
-  study_label <- if (current_lang == "en") "Study Skills: " else "Studierfähigkeiten: "
-  stat_label <- if (current_lang == "en") "Statistics: " else "Statistik: "
+  # Ensure current_lang is safe to use in if statements
+  is_english <- !is.null(current_lang) && !is.na(current_lang) && is_english
+  
+  date_label <- if (is_english) "Date: " else "Datum: "
+  profile_label <- if (is_english) "PERSONALITY PROFILE" else "PERSÖNLICHKEITSPROFIL"
+  pa_label <- if (is_english) "Programming Anxiety: " else "Programmierangst: "
+  agree_label <- if (is_english) "Agreeableness: " else "Verträglichkeit: "
+  consc_label <- if (is_english) "Conscientiousness: " else "Gewissenhaftigkeit: "
+  neuro_label <- if (is_english) "Neuroticism: " else "Neurotizismus: "
+  open_label <- if (is_english) "Openness: " else "Offenheit: "
+  stress_label <- if (is_english) "Stress: " else "Stress: "
+  study_label <- if (is_english) "Study Skills: " else "Studierfähigkeiten: "
+  stat_label <- if (is_english) "Statistics: " else "Statistik: "
   
   download_section_html <- paste0(
     '<div class="download-section" style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">',
     '<h4 style="color: #333; margin-bottom: 15px;">',
     '<span data-lang-de="Ergebnisse exportieren" data-lang-en="Export Results">',
-    if (current_lang == "en") "Export Results" else "Ergebnisse exportieren",
+    if (is_english) "Export Results" else "Ergebnisse exportieren",
     '</span></h4>',
     '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">',
     
@@ -1732,14 +1740,14 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     '<button onclick="downloadPDF()" class="btn btn-primary" style="background: #e8041c; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
     '<i class="fas fa-file-pdf" style="margin-right: 8px;"></i>',
     '<span data-lang-de="PDF herunterladen" data-lang-en="Download PDF">',
-    if (current_lang == "en") "Download PDF" else "PDF herunterladen",
+    if (is_english) "Download PDF" else "PDF herunterladen",
     '</span></button>',
     
     # CSV Download Button  
     '<button onclick="downloadCSV()" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
     '<i class="fas fa-file-csv" style="margin-right: 8px;"></i>',
     '<span data-lang-de="CSV herunterladen" data-lang-en="Download CSV">',
-    if (current_lang == "en") "Download CSV" else "CSV herunterladen",
+    if (is_english) "Download CSV" else "CSV herunterladen",
     '</span></button>',
     
     '</div>',
