@@ -2393,7 +2393,6 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 });
 
-// Re-create button when content loads
 var observer = new MutationObserver(function(mutations) {
   createLanguageButton();
 });
