@@ -547,63 +547,7 @@ custom_page_flow <- list(
           </div>
         </div>
       </div>
-    </div>
-    
-    <script>
-    var currentLang = "de";
-    
-    function toggleLanguage() {
-      currentLang = currentLang === "de" ? "en" : "de";
-      
-      var deContent = document.getElementById("content_de");
-      var enContent = document.getElementById("content_en");
-      var btn = document.getElementById("language-toggle-btn");
-      var textSpan = document.getElementById("lang_switch_text");
-      
-      if (deContent && enContent) {
-        if (currentLang === "en") {
-          deContent.style.display = "none";
-          enContent.style.display = "block";
-        } else {
-          enContent.style.display = "none";
-          deContent.style.display = "block";
-        }
-      }
-      
-      if (textSpan) {
-        textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
-      }
-      
-      // Sync checkboxes
-      var deCheck = document.getElementById("consent_check");
-      var enCheck = document.getElementById("consent_check_en");
-      if (deCheck && enCheck) {
-        if (currentLang === "en") {
-          enCheck.checked = deCheck.checked;
-        } else {
-          deCheck.checked = enCheck.checked;
-        }
-      }
-    }
-    
-    // Sync checkboxes when they change
-    document.addEventListener("DOMContentLoaded", function() {
-      var deCheck = document.getElementById("consent_check");
-      var enCheck = document.getElementById("consent_check_en");
-      
-      if (deCheck) {
-        deCheck.addEventListener("change", function() {
-          if (enCheck) enCheck.checked = deCheck.checked;
-        });
-      }
-      
-      if (enCheck) {
-        enCheck.addEventListener("change", function() {
-          if (deCheck) deCheck.checked = enCheck.checked;
-        });
-      }
-    });
-    </script>',
+    </div>',
     validate = "function(inputs) { 
       try {
         var deCheck = document.getElementById('consent_check');
@@ -1329,9 +1273,9 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     ) +
     ggplot2::labs(
       title = if (is_english) "Programming Anxiety - Adaptive Testing Trace" else "Programmierangst - Adaptive Testung",
-      subtitle = sprintf(if (is_english) "Final θ = %.3f (SE = %.3f)" else "Finales θ = %.3f (SE = %.3f)", theta_est, se_est),
+      subtitle = sprintf(if (is_english) "Final theta = %.3f (SE = %.3f)" else "Finales theta = %.3f (SE = %.3f)", theta_est, se_est),
       x = if (is_english) "Item Number" else "Item-Nummer",
-      y = if (is_english) "Theta Estimate (θ)" else "Theta-Schätzung (θ)"
+      y = if (is_english) "Theta Estimate" else "Theta-Schaetzung"
     )
   
   # Save plots
@@ -1960,7 +1904,7 @@ custom_item_selection <- function(rv, item_bank, config) {
       a <- item_bank$a[item_idx]  # discrimination
       b <- item_bank$b[item_idx]  # difficulty
       
-      # Fisher Information for 2PL: I(θ) = a^2 * P(θ) * Q(θ)
+      # Fisher Information for 2PL: I(theta) = a^2 * P(theta) * Q(theta)
       p <- 1 / (1 + exp(-a * (current_theta - b)))
       q <- 1 - p
       info <- a^2 * p * q
@@ -1998,7 +1942,7 @@ custom_item_selection <- function(rv, item_bank, config) {
     best_idx <- which.max(item_info)
     selected_item <- available_items[best_idx]
     
-    message(sprintf("\n✓ Selected item %d (%s) with Maximum Fisher Information = %.4f", 
+    message(sprintf("\nSelected item %d (%s) with Maximum Fisher Information = %.4f", 
                     selected_item, paste0("PA_", sprintf("%02d", selected_item)), 
                     item_info[best_idx]))
     message(sprintf("Reason: This item provides the most information at current theta = %.3f", 
@@ -2347,7 +2291,7 @@ monitor_adaptive <- function(session_data) {
           info <- a^2 * p * (1 - p)
           
           if (idx == item_num) {
-            cat(sprintf("  → Item %2d (PA_%02d): I = %.4f, b = %5.2f, a = %.2f *** SELECTED ***\n",
+            cat(sprintf("  Item %2d (PA_%02d): I = %.4f, b = %5.2f, a = %.2f *** SELECTED ***\n",
                         idx, idx, info, b, a))
           } else {
             cat(sprintf("    Item %2d (PA_%02d): I = %.4f, b = %5.2f, a = %.2f\n",
