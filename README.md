@@ -236,15 +236,60 @@ launch_study(
 )
 ```
 
-## Theme Customization 
+## Hosting Your Study Online with Shiny
 
-![inrep themes](man/figures/inrep_themes.png)
+You can host `inrep` studies on [shinyapps.io](https://www.shinyapps.io), the cloud platform by Posit (RStudio). This allows participants to access your study online without installing R or RStudio.
 
-> **Themes:** `inrep` supports multiple default UI themes for customizing assessment components.  
-> In addition to built-in options, users can extract CSS styles from institutional websites  
-> or define fully custom themes through direct CSS editing.  
->  
-> New themes are added incrementally. Contributions are welcome to share themes that can be made available to other users.
+### Step 1: Create Accounts
+
+* Register a [GitHub account](https://github.com) (optional but recommended).
+* Register a [shinyapps.io account](https://www.shinyapps.io). You can sign up with GitHub or email.
+
+### Step 2: Install Deployment Tools
+
+Install the **rsconnect** package:
+
+```r
+install.packages("rsconnect")
+```
+
+### Step 3: Link RStudio to Shinyapps.io
+
+1. Log in to [shinyapps.io](https://www.shinyapps.io).
+2. Go to **Account → Tokens**.
+3. Click **Show Token** and copy the code snippet, which looks like this:
+
+```r
+rsconnect::setAccountInfo(
+  name = "yourname",
+  token = "XXXXXXXXXXXXXXXXXXXXXXXX",
+  secret = "YYYYYYYYYYYYYYYYYYYYYYYY"
+)
+```
+
+4. Paste and run this snippet in your R console. This links your local R session with your shinyapps.io account.
+
+### Step 4: Deploy Your Study
+
+If your study is stored in a folder (for example, `~/Documents/inrep_study`), run:
+
+```r
+rsconnect::deployApp("~/Documents/inrep_study")
+```
+
+After uploading, you will receive a URL such as:
+
+```
+https://yourname.shinyapps.io/inrep_study
+```
+
+You can share this link with participants.
+
+### Step 5: Manage and Update
+
+* Run `deployApp()` again to update your app.
+* Manage apps from the shinyapps.io dashboard (pause, delete, view logs).
+* Free accounts allow up to 25 active hours per month and 5 deployed apps.
 
 ## Documentation
 
@@ -275,6 +320,18 @@ launch_study(
 * Themes and Languages
 * Session Management
 * LLM Integration
+
+
+## Theme Customization 
+
+![inrep themes](man/figures/inrep_themes.png)
+
+> **Themes:** `inrep` supports multiple default UI themes for customizing assessment components.  
+> In addition to built-in options, users can extract CSS styles from institutional websites  
+> or define fully custom themes through direct CSS editing.  
+>  
+> New themes are added incrementally. Contributions are welcome to share themes that can be made available to other users.
+
 
 ## Citation
 
