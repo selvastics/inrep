@@ -867,14 +867,22 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     
     # Get current language from session if available
     current_lang <- "de"  # Default to German
-    if (!is.null(session) && !is.null(session$userData$current_language)) {
-        current_lang <- session$userData$current_language
+    if (!is.null(session) && !is.null(session$userData$language)) {
+        current_lang <- session$userData$language
+    }
+    
+    # Also check for study_language in session
+    if (!is.null(session) && !is.null(session$userData$study_language)) {
+        current_lang <- session$userData$study_language
     }
     
     # Ensure current_lang is never NULL or NA
     if (is.null(current_lang) || is.na(current_lang) || current_lang == "") {
         current_lang <- "de"
     }
+    
+    # Create is_english variable for compatibility
+    is_english <- (current_lang == "en")
     
     if (is.null(responses) || length(responses) == 0) {
         if (is_english) {
@@ -2123,7 +2131,16 @@ observer.observe(document.body, {
 // Download functions
 window.downloadPDF = function() {
   try {
-    var content = "HilFo Study Results\\nGenerated: " + new Date().toLocaleString();
+    var content = "HilFo Study Results\\n\\n";
+    content += "Generated: " + new Date().toLocaleString() + "\\n\\n";
+    content += "This is a sample PDF report.\\n";
+    content += "In a full implementation, this would contain:\\n";
+    content += "- Personality profile results\\n";
+    content += "- Programming anxiety scores\\n";
+    content += "- Study satisfaction ratings\\n";
+    content += "- Detailed analysis and recommendations\\n\\n";
+    content += "Thank you for participating in the HilFo study!";
+    
     var blob = new Blob([content], { type: "text/plain" });
     var url = window.URL.createObjectURL(blob);
     var link = document.createElement("a");
@@ -2133,6 +2150,8 @@ window.downloadPDF = function() {
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
+    
+    console.log("PDF download initiated");
   } catch (e) {
     console.error("PDF download error:", e);
     alert("Error downloading PDF. Please try again.");
@@ -2141,7 +2160,11 @@ window.downloadPDF = function() {
 
 window.downloadCSV = function() {
   try {
-    var csvContent = "timestamp,participant_id,study_language\\n" + new Date().toISOString() + ",HILFO_001," + currentLang;
+    var csvContent = "timestamp,participant_id,study_language,message\\n";
+    csvContent += new Date().toISOString() + ",HILFO_001," + currentLang + ",Sample data from HilFo study\\n";
+    csvContent += new Date().toISOString() + ",HILFO_002," + currentLang + ",Programming anxiety assessment\\n";
+    csvContent += new Date().toISOString() + ",HILFO_003," + currentLang + ",Personality profile completed\\n";
+    
     var blob = new Blob([csvContent], { type: "text/csv" });
     var url = window.URL.createObjectURL(blob);
     var link = document.createElement("a");
@@ -2151,6 +2174,8 @@ window.downloadCSV = function() {
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
+    
+    console.log("CSV download initiated");
   } catch (e) {
     console.error("CSV download error:", e);
     alert("Error downloading CSV. Please try again.");
@@ -2177,6 +2202,7 @@ study_config <- inrep::create_study_config(
     bilingual = TRUE,  # Enable inrep's built-in bilingual support
     session_save = TRUE,
     session_timeout = 7200,  # 2 hours timeout
+    results_processor = create_hilfo_report,  # Add custom results processor
     custom_js = custom_js  # Add custom JavaScript for language switching and downloads
 )
 
