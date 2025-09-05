@@ -845,7 +845,7 @@ document.addEventListener("DOMContentLoaded", function() {
     content = paste0(
       '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
       '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
-      '<span data-lang-de="Persönlicher Code" data-lang-en="Personal Code">Personal Code</span></h2>',
+      '<span data-lang-de="Persönlicher Code" data-lang-en="Personal Code">Persönlicher Code</span></h2>',
       '<p style="text-align: center; margin-bottom: 30px; font-size: 18px;">',
       '<span data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">',
       'Please create a personal code:</span></p>',
@@ -1157,8 +1157,15 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     # Prepare data
     bfi_scores <- c(scores$Extraversion, scores$Verträglichkeit, 
                     scores$Gewissenhaftigkeit, scores$Neurotizismus, scores$Offenheit)
-    bfi_labels <- c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", 
-                    "Neurotizismus", "Offenheit")
+    
+    # Use English labels if current language is English
+    if (current_lang == "en") {
+      bfi_labels <- c("Extraversion", "Agreeableness", "Conscientiousness", 
+                      "Neuroticism", "Openness")
+    } else {
+      bfi_labels <- c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", 
+                      "Neurotizismus", "Offenheit")
+    }
     
     # Calculate positions
     x_pos <- bfi_scores * cos(angles - pi/2)
@@ -1231,11 +1238,43 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     Statistik = scores$Statistik
   )
   
+  # Create English dimension names
+  dimension_names_en <- c(
+    "Extraversion" = "Extraversion",
+    "Verträglichkeit" = "Agreeableness", 
+    "Gewissenhaftigkeit" = "Conscientiousness",
+    "Neurotizismus" = "Neuroticism",
+    "Offenheit" = "Openness",
+    "Programmierangst" = "Programming Anxiety",
+    "Stress" = "Stress",
+    "Studierfähigkeiten" = "Study Skills",
+    "Statistik" = "Statistics"
+  )
+  
+  # Create English category names
+  category_names_en <- c(
+    "Persönlichkeit" = "Personality",
+    "Programmierangst" = "Programming Anxiety",
+    "Stress" = "Stress",
+    "Studierfähigkeiten" = "Study Skills",
+    "Statistik" = "Statistics"
+  )
+  
+  # Use English names if current language is English
+  if (current_lang == "en") {
+    dimension_labels <- dimension_names_en[names(ordered_scores)]
+    category_labels <- category_names_en[c(rep("Persönlichkeit", 5), 
+                                          "Programmierangst", "Stress", "Studierfähigkeiten", "Statistik")]
+  } else {
+    dimension_labels <- names(ordered_scores)
+    category_labels <- c(rep("Persönlichkeit", 5), 
+                        "Programmierangst", "Stress", "Studierfähigkeiten", "Statistik")
+  }
+  
   all_data <- data.frame(
-    dimension = factor(names(ordered_scores), levels = names(ordered_scores)),
+    dimension = factor(dimension_labels, levels = dimension_labels),
     score = unlist(ordered_scores),
-    category = c(rep("Persönlichkeit", 5), 
-                 "Programmierangst", "Stress", "Studierfähigkeiten", "Statistik")
+    category = factor(category_labels, levels = unique(category_labels))
   )
   
   bar_plot <- ggplot2::ggplot(all_data, ggplot2::aes(x = dimension, y = score, fill = category)) +
@@ -1463,23 +1502,23 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     value <- round(scores[[name]], 2)
     sd_value <- ifelse(name %in% names(sds), sds[[name]], NA)
     level <- ifelse(value >= 3.7, 
-                    '<span data-lang-de="Hoch" data-lang-en="High">Hoch</span>', 
+                    '<span data-lang-de="Hoch" data-lang-en="High">High</span>', 
                     ifelse(value >= 2.3, 
-                           '<span data-lang-de="Mittel" data-lang-en="Medium">Mittel</span>', 
-                           '<span data-lang-de="Niedrig" data-lang-en="Low">Niedrig</span>'))
+                           '<span data-lang-de="Mittel" data-lang-en="Medium">Medium</span>', 
+                           '<span data-lang-de="Niedrig" data-lang-en="Low">Low</span>'))
     color <- ifelse(value >= 3.7, "#28a745", ifelse(value >= 2.3, "#ffc107", "#dc3545"))
     
     # Translate dimension names
     name_display <- switch(name,
-                           "ProgrammingAnxiety" = '<span data-lang-de="Programmierangst" data-lang-en="Programming Anxiety">Programmierangst</span>',
+                           "ProgrammingAnxiety" = '<span data-lang-de="Programmierangst" data-lang-en="Programming Anxiety">Programming Anxiety</span>',
                            "Extraversion" = '<span data-lang-de="Extraversion" data-lang-en="Extraversion">Extraversion</span>',
-                           "Verträglichkeit" = '<span data-lang-de="Verträglichkeit" data-lang-en="Agreeableness">Verträglichkeit</span>',
-                           "Gewissenhaftigkeit" = '<span data-lang-de="Gewissenhaftigkeit" data-lang-en="Conscientiousness">Gewissenhaftigkeit</span>',
-                           "Neurotizismus" = '<span data-lang-de="Neurotizismus" data-lang-en="Neuroticism">Neurotizismus</span>',
-                           "Offenheit" = '<span data-lang-de="Offenheit" data-lang-en="Openness">Offenheit</span>',
+                           "Verträglichkeit" = '<span data-lang-de="Verträglichkeit" data-lang-en="Agreeableness">Agreeableness</span>',
+                           "Gewissenhaftigkeit" = '<span data-lang-de="Gewissenhaftigkeit" data-lang-en="Conscientiousness">Conscientiousness</span>',
+                           "Neurotizismus" = '<span data-lang-de="Neurotizismus" data-lang-en="Neuroticism">Neuroticism</span>',
+                           "Offenheit" = '<span data-lang-de="Offenheit" data-lang-en="Openness">Openness</span>',
                            "Stress" = '<span data-lang-de="Stress" data-lang-en="Stress">Stress</span>',
-                           "Studierfähigkeiten" = '<span data-lang-de="Studierfähigkeiten" data-lang-en="Study Skills">Studierfähigkeiten</span>',
-                           "Statistik" = '<span data-lang-de="Statistik" data-lang-en="Statistics">Statistik</span>',
+                           "Studierfähigkeiten" = '<span data-lang-de="Studierfähigkeiten" data-lang-en="Study Skills">Study Skills</span>',
+                           "Statistik" = '<span data-lang-de="Statistik" data-lang-en="Statistics">Statistics</span>',
                            name  # Default fallback
     )
     
@@ -2049,9 +2088,16 @@ window.toggleLanguage = function() {
 window.downloadPDF = function() {
   try {
     if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
+      // Trigger the PDF download handler
       Shiny.setInputValue("download_pdf", Math.random(), {priority: "event"});
     } else {
-      alert("PDF download not available in this context");
+      // Fallback: try to trigger download directly
+      var link = document.createElement("a");
+      link.href = "#";
+      link.download = "HilFo_Results_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   } catch (e) {
     console.error("PDF download error:", e);
@@ -2062,9 +2108,16 @@ window.downloadPDF = function() {
 window.downloadCSV = function() {
   try {
     if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
+      // Trigger the CSV download handler
       Shiny.setInputValue("download_csv", Math.random(), {priority: "event"});
     } else {
-      alert("CSV download not available in this context");
+      // Fallback: try to trigger download directly
+      var link = document.createElement("a");
+      link.href = "#";
+      link.download = "HilFo_Data_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".csv";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   } catch (e) {
     console.error("CSV download error:", e);
@@ -2240,6 +2293,10 @@ study_config <- inrep::create_study_config(
   save_format = "csv",  # Use inrep's built-in save format
   adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
   custom_js = custom_js,  # Add custom JavaScript for language switching and downloads
+  download_handlers = list(
+    pdf = download_pdf_handler,
+    csv = download_csv_handler
+  ),  # Add download handlers for PDF and CSV
   # Enhanced security and robustness settings
   prevent_double_submission = TRUE,  # Prevent double-click issues
   validate_required_fields = TRUE,  # Validate required fields before navigation
