@@ -1137,18 +1137,58 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     scores$Studierfähigkeiten <- mean(responses[46:49], na.rm=TRUE)
     scores$Statistik <- mean(responses[50:51], na.rm=TRUE)
     
+    # Debug: Check scores for missing values
+    cat("DEBUG: Scores values:\n")
+    for (name in names(scores)) {
+        cat(sprintf("  %s: %s (is.na: %s, is.nan: %s)\n", 
+                   name, scores[[name]], is.na(scores[[name]]), is.nan(scores[[name]])))
+    }
+    
     # Create radar plot using ggradar approach
     # Check for ggradar (should be pre-installed)
     
     # Prepare data for ggradar - needs to be scaled 0-1
-    radar_data <- data.frame(
-        group = "Ihr Profil",
-        Extraversion = scores$Extraversion / 5,
-        Verträglichkeit = scores$Verträglichkeit / 5,
-        Gewissenhaftigkeit = scores$Gewissenhaftigkeit / 5,
-        Neurotizismus = scores$Neurotizismus / 5,
-        Offenheit = scores$Offenheit / 5
+    # Ensure all scores are valid numbers and handle missing values
+    radar_scores <- list(
+        Extraversion = if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) 3 else scores$Extraversion,
+        Verträglichkeit = if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) 3 else scores$Verträglichkeit,
+        Gewissenhaftigkeit = if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) 3 else scores$Gewissenhaftigkeit,
+        Neurotizismus = if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) 3 else scores$Neurotizismus,
+        Offenheit = if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit
     )
+    
+    # Debug: Check radar scores
+    cat("DEBUG: Radar scores values:\n")
+    for (name in names(radar_scores)) {
+        cat(sprintf("  %s: %s\n", name, radar_scores[[name]]))
+    }
+    
+    tryCatch({
+        radar_data <- data.frame(
+            group = "Ihr Profil",
+            Extraversion = radar_scores$Extraversion / 5,
+            Verträglichkeit = radar_scores$Verträglichkeit / 5,
+            Gewissenhaftigkeit = radar_scores$Gewissenhaftigkeit / 5,
+            Neurotizismus = radar_scores$Neurotizismus / 5,
+            Offenheit = radar_scores$Offenheit / 5,
+            stringsAsFactors = FALSE,
+            row.names = NULL
+        )
+        cat("DEBUG: radar_data created successfully\n")
+    }, error = function(e) {
+        cat("Error creating radar_data data.frame:", e$message, "\n")
+        # Create fallback radar_data
+        radar_data <- data.frame(
+            group = "Ihr Profil",
+            Extraversion = 0.6,
+            Verträglichkeit = 0.6,
+            Gewissenhaftigkeit = 0.6,
+            Neurotizismus = 0.6,
+            Offenheit = 0.6,
+            stringsAsFactors = FALSE,
+            row.names = NULL
+        )
+    })
     
     # Create radar plot with ggradar
     if (requireNamespace("ggradar", quietly = TRUE)) {
@@ -1261,16 +1301,17 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     
     # Create bar chart with logical ordering
     # Show BFI scales first, then Programming Anxiety, then others
+    # Ensure all scores are valid numbers (replace NA/NaN with 3)
     ordered_scores <- list(
-        Extraversion = scores$Extraversion,
-        Verträglichkeit = scores$Verträglichkeit,
-        Gewissenhaftigkeit = scores$Gewissenhaftigkeit,
-        Neurotizismus = scores$Neurotizismus,
-        Offenheit = scores$Offenheit,
-        ProgrammingAnxiety = scores$ProgrammingAnxiety,
-        Stress = scores$Stress,
-        Studierfähigkeiten = scores$Studierfähigkeiten,
-        Statistik = scores$Statistik
+        Extraversion = if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) 3 else scores$Extraversion,
+        Verträglichkeit = if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) 3 else scores$Verträglichkeit,
+        Gewissenhaftigkeit = if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) 3 else scores$Gewissenhaftigkeit,
+        Neurotizismus = if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) 3 else scores$Neurotizismus,
+        Offenheit = if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit,
+        ProgrammingAnxiety = if (is.na(scores$ProgrammingAnxiety) || is.nan(scores$ProgrammingAnxiety)) 3 else scores$ProgrammingAnxiety,
+        Stress = if (is.na(scores$Stress) || is.nan(scores$Stress)) 3 else scores$Stress,
+        Studierfähigkeiten = if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) 3 else scores$Studierfähigkeiten,
+        Statistik = if (is.na(scores$Statistik) || is.nan(scores$Statistik)) 3 else scores$Statistik
     )
     
     # Create English dimension names
@@ -1306,11 +1347,26 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                              "Programmierangst", "Stress", "Studierfähigkeiten", "Statistik")
     }
     
-    all_data <- data.frame(
-        dimension = factor(dimension_labels, levels = dimension_labels),
-        score = unlist(ordered_scores),
-        category = factor(category_labels, levels = unique(category_labels))
-    )
+    # Create all_data with error handling
+    tryCatch({
+        all_data <- data.frame(
+            dimension = factor(dimension_labels, levels = dimension_labels),
+            score = unlist(ordered_scores),
+            category = factor(category_labels, levels = unique(category_labels)),
+            stringsAsFactors = FALSE,
+            row.names = NULL
+        )
+    }, error = function(e) {
+        cat("Error creating all_data data.frame:", e$message, "\n")
+        # Create fallback data.frame
+        all_data <- data.frame(
+            dimension = factor(c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", "Neurotizismus", "Offenheit", "ProgrammingAnxiety", "Stress", "Studierfähigkeiten", "Statistik")),
+            score = rep(3, 9),
+            category = factor(c(rep("Persönlichkeit", 5), "Programmierangst", "Stress", "Studierfähigkeiten", "Statistik")),
+            stringsAsFactors = FALSE,
+            row.names = NULL
+        )
+    })
     
     bar_plot <- ggplot2::ggplot(all_data, ggplot2::aes(x = dimension, y = score, fill = category)) +
         ggplot2::geom_bar(stat = "identity", width = 0.7) +
@@ -1358,7 +1414,9 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         theta = theta_trace_bounded,
         se_upper = theta_trace_bounded + se_trace_bounded,
         se_lower = theta_trace_bounded - se_trace_bounded,
-        item_type = c(rep("Fixed", 5), rep("Adaptive", 5))
+        item_type = c(rep("Fixed", 5), rep("Adaptive", 5)),
+        stringsAsFactors = FALSE,
+        row.names = NULL
     )
     
     # Calculate plot limits dynamically
