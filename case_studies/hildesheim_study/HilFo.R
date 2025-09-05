@@ -2061,17 +2061,22 @@ window.toggleLanguage = function() {
   
   // Send to Shiny for inrep built-in language system
   if (typeof Shiny !== "undefined") {
+    console.log("Switching language to:", currentLang);
     Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+    
+    // Also try alternative input names
     Shiny.setInputValue("language", currentLang, {priority: "event"});
+    Shiny.setInputValue("current_language", currentLang, {priority: "event"});
   }
   
   // Store preference
   sessionStorage.setItem("hilfo_language", currentLang);
   
-  // Force page refresh to apply language change to all elements
+  // Wait a bit for Shiny to process the language change, then refresh
   setTimeout(function() {
+    console.log("Refreshing page for language change");
     location.reload();
-  }, 100);
+  }, 500);
 };
 
 // Create language toggle button on every page
@@ -2095,9 +2100,16 @@ document.addEventListener("DOMContentLoaded", function() {
   var storedLang = sessionStorage.getItem("hilfo_language");
   if (storedLang) {
     currentLang = storedLang;
+    console.log("Restored language from storage:", currentLang);
   }
   
   createLanguageButton();
+  
+  // Send initial language to Shiny if not German
+  if (currentLang !== "de" && typeof Shiny !== "undefined") {
+    console.log("Sending initial language to Shiny:", currentLang);
+    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+  }
   
   if (currentLang === "en") {
     var deContent = document.getElementById("content_de");
