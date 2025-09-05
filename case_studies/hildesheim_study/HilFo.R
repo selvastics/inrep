@@ -480,6 +480,7 @@ custom_page_flow <- list(
   list(
     id = "page1",
     type = "custom",
+    title = "HilFo Studie",
     content = '<div style="padding: 20px; text-align: center;">
       <h1 style="color: #e8041c;">HilFo Studie</h1>
       <p>Willkommen zur HilFo Studie</p>
