@@ -1435,6 +1435,16 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     # Ensure we don't exceed available questions and handle missing values
     num_questions <- min(31, length(responses), nrow(item_bank))
     
+    # Debug output
+    cat("DEBUG: Creating item details table\n")
+    cat("DEBUG: num_questions =", num_questions, "\n")
+    cat("DEBUG: length(responses) =", length(responses), "\n")
+    cat("DEBUG: nrow(item_bank) =", nrow(item_bank), "\n")
+    if (!is.null(item_bank) && "Question" %in% names(item_bank)) {
+        cat("DEBUG: item_bank$Question has", length(item_bank$Question), "items\n")
+        cat("DEBUG: First few Question values:", head(item_bank$Question, 5), "\n")
+    }
+    
     # Create category vector that matches the actual number of questions
     category_vector <- c(
         rep("Extraversion", 4), rep("Verträglichkeit", 4), 
@@ -1449,16 +1459,47 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         category_vector <- c(category_vector, rep("Other", num_questions - length(category_vector)))
     }
     
-    item_details <- data.frame(
-        Item = if ("Question" %in% names(item_bank)) {
-            item_bank$Question[1:num_questions]
+    # Create item details with proper handling of missing values
+    tryCatch({
+        item_names <- if ("Question" %in% names(item_bank)) {
+            # Ensure no NA or NULL values in item names
+            item_names_raw <- item_bank$Question[1:num_questions]
+            ifelse(is.na(item_names_raw) | is.null(item_names_raw) | item_names_raw == "", 
+                   paste0("Item_", 1:num_questions), 
+                   as.character(item_names_raw))
         } else {
             paste0("Item_", 1:num_questions)
-        },
-        Response = responses[1:num_questions],
-        Category = category_vector,
-        stringsAsFactors = FALSE
-    )
+        }
+        
+        # Ensure all vectors have the same length and no missing values
+        item_responses <- responses[1:num_questions]
+        if (length(item_responses) < num_questions) {
+            item_responses <- c(item_responses, rep(NA, num_questions - length(item_responses)))
+        }
+        
+        # Ensure category vector is the right length
+        if (length(category_vector) < num_questions) {
+            category_vector <- c(category_vector, rep("Other", num_questions - length(category_vector)))
+        }
+        
+        item_details <- data.frame(
+            Item = item_names,
+            Response = item_responses,
+            Category = category_vector[1:num_questions],
+            stringsAsFactors = FALSE,
+            row.names = NULL  # Explicitly set row names to NULL to avoid issues
+        )
+    }, error = function(e) {
+        cat("Error creating item_details data.frame:", e$message, "\n")
+        # Create a simple fallback data.frame
+        item_details <- data.frame(
+            Item = paste0("Item_", 1:min(num_questions, 10)),
+            Response = rep(NA, min(num_questions, 10)),
+            Category = rep("Unknown", min(num_questions, 10)),
+            stringsAsFactors = FALSE,
+            row.names = NULL
+        )
+    })
     
     # Generate HTML report with download button
     report_id <- paste0("report_", format(Sys.time(), "%Y%m%d_%H%M%S"))
@@ -1658,13 +1699,12 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             
             # Add calculated scores
             complete_data$BFI_Extraversion <- scores$Extraversion
-            complete_data$BFI_Vertraeglichkeit <- scores$Vertraeglichkeit
+            complete_data$BFI_Vertraeglichkeit <- scores$Verträglichkeit
             complete_data$BFI_Gewissenhaftigkeit <- scores$Gewissenhaftigkeit
             complete_data$BFI_Neurotizismus <- scores$Neurotizismus
             complete_data$BFI_Offenheit <- scores$Offenheit
             complete_data$PSQ_Stress <- scores$Stress
-            complete_data$MWS_Kooperation <- scores$Kooperation
-            complete_data$Studierfähigkeiten <- scores$Studierfähigkeiten
+            complete_data$MWS_Studierfaehigkeiten <- scores$Studierfähigkeiten
             complete_data$Statistik <- scores$Statistik
             
             # Save locally with proper connection handling
