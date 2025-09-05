@@ -557,13 +557,29 @@ custom_page_flow <- list(
       
       if (deContent && enContent) {
         if (deContent.style.display === "none") {
+          // Switch to German
           deContent.style.display = "block";
           enContent.style.display = "none";
           if (textSpan) textSpan.textContent = "English Version";
+          
+          // Send German language to global system
+          if (typeof Shiny !== "undefined") {
+            Shiny.setInputValue("study_language", "de", {priority: "event"});
+            Shiny.setInputValue("language", "de", {priority: "event"});
+          }
+          sessionStorage.setItem("hilfo_language", "de");
         } else {
+          // Switch to English
           deContent.style.display = "none";
           enContent.style.display = "block";
           if (textSpan) textSpan.textContent = "Deutsche Version";
+          
+          // Send English language to global system
+          if (typeof Shiny !== "undefined") {
+            Shiny.setInputValue("study_language", "en", {priority: "event"});
+            Shiny.setInputValue("language", "en", {priority: "event"});
+          }
+          sessionStorage.setItem("hilfo_language", "en");
         }
       }
       
