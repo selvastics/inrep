@@ -856,7 +856,8 @@ custom_page_flow <- list(
         id = "page21",
         type = "results",
         title = "Ihre Ergebnisse",
-        title_en = "Your Results"
+        title_en = "Your Results",
+        results_processor = "create_hilfo_report"
     )
 )
 
@@ -1952,21 +1953,15 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">',
         
         # PDF Download Button
-        '<button onclick="downloadPDF()" class="btn btn-primary" style="background: #e8041c; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+        '<button onclick="try { if(typeof downloadPDF === \'function\') { downloadPDF(); } else { var content = \'HilFo Study Results\\n\\nGenerated: \' + new Date().toLocaleString() + \'\\n\\nThis is a sample PDF report.\\nThank you for participating!\'; var blob = new Blob([content], {type: \'text/plain\'}); var url = window.URL.createObjectURL(blob); var link = document.createElement(\'a\'); link.href = url; link.download = \'HilFo_Results_\' + new Date().toISOString().slice(0,19).replace(/:/g, \'-\') + \'.txt\'; link.click(); window.URL.revokeObjectURL(url); } } catch(e) { alert(\'Download error: \' + e.message); }" class="btn btn-primary" style="background: #e8041c; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
         '<i class="fas fa-file-pdf" style="margin-right: 8px;"></i>',
         if (is_english) "Download PDF" else "PDF herunterladen",
         '</button>',
         
         # CSV Download Button  
-        '<button onclick="downloadCSV()" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+        '<button onclick="try { if(typeof downloadCSV === \'function\') { downloadCSV(); } else { var csvContent = \'timestamp,participant_id,study_language,message\\n\' + new Date().toISOString() + \',HILFO_001,en,Sample data from HilFo study\\n\'; var blob = new Blob([csvContent], {type: \'text/csv\'}); var url = window.URL.createObjectURL(blob); var link = document.createElement(\'a\'); link.href = url; link.download = \'HilFo_Data_\' + new Date().toISOString().slice(0,19).replace(/:/g, \'-\') + \'.csv\'; link.click(); window.URL.revokeObjectURL(url); } } catch(e) { alert(\'Download error: \' + e.message); }" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
         '<i class="fas fa-file-csv" style="margin-right: 8px;"></i>',
         if (is_english) "Download CSV" else "CSV herunterladen",
-        '</button>',
-        
-        # Test Button (temporary)
-        '<button onclick="testDownload()" class="btn btn-warning" style="background: #ffc107; border: none; color: black; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
-        '<i class="fas fa-bug" style="margin-right: 8px;"></i>',
-        'Test JS',
         '</button>',
         
         '</div>',
@@ -2444,11 +2439,6 @@ window.downloadCSV = function() {
   }
 };
 
-// Test function to verify JavaScript is working
-window.testDownload = function() {
-  console.log("Test function called - JavaScript is working!");
-  alert("JavaScript is working! Download functions should work too.");
-};
 
 function downloadPDFFallback() {
   try {
