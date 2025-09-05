@@ -480,8 +480,8 @@ custom_page_flow <- list(
   list(
     id = "page1",
     type = "custom",
-    title = "Willkommen zur HilFo Studie",
-    title_en = "Welcome to the HilFo Study",
+    title = "HilFo",
+    title_en = "HilFo",
     content = paste0(
       '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
       # Language switcher in top right corner with inline JavaScript
@@ -508,67 +508,71 @@ custom_page_flow <- list(
       };
       
       function toggleLanguageNow() {
+        // Toggle language
         currentLang = currentLang === "de" ? "en" : "de";
         
-        // Update button text
+        // Update button text immediately
         var btn = document.getElementById("language-toggle-btn");
         if (btn) {
           var textSpan = btn.querySelector("#lang_switch_text");
           if (textSpan) {
             textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+          } else {
+            // Fallback if span not found
+            btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
           }
         }
         
-        // Toggle content visibility with smooth transition
+        // Get content elements
         var deContent = document.getElementById("content_de");
         var enContent = document.getElementById("content_en");
         
         if (deContent && enContent) {
           if (currentLang === "en") {
-            // Switch to English
-            deContent.style.opacity = "0";
-            deContent.style.transform = "translateX(-20px)";
-            setTimeout(function() {
-              deContent.style.display = "none";
-              enContent.style.display = "block";
-              enContent.style.opacity = "0";
-              enContent.style.transform = "translateX(20px)";
-              setTimeout(function() {
-                enContent.style.opacity = "1";
-                enContent.style.transform = "translateX(0)";
-              }, 50);
-            }, 300);
+            // Switch to English - hide German, show English
+            deContent.style.display = "none";
+            enContent.style.display = "block";
+            enContent.style.opacity = "1";
+            enContent.style.transform = "translateX(0)";
           } else {
-            // Switch to German
-            enContent.style.opacity = "0";
-            enContent.style.transform = "translateX(20px)";
-            setTimeout(function() {
-              enContent.style.display = "none";
-              deContent.style.display = "block";
-              deContent.style.opacity = "0";
-              deContent.style.transform = "translateX(-20px)";
-              setTimeout(function() {
-                deContent.style.opacity = "1";
-                deContent.style.transform = "translateX(0)";
-              }, 50);
-            }, 300);
+            // Switch to German - hide English, show German
+            enContent.style.display = "none";
+            deContent.style.display = "block";
+            deContent.style.opacity = "1";
+            deContent.style.transform = "translateX(0)";
           }
         }
+        
+        // Translate all language-aware elements
+        var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+        langElements.forEach(function(element) {
+          if (currentLang === "en") {
+            element.textContent = element.getAttribute("data-lang-en");
+          } else {
+            element.textContent = element.getAttribute("data-lang-de");
+          }
+        });
         
         // Send to Shiny
         if (typeof Shiny !== "undefined") {
           Shiny.setInputValue("study_language", currentLang, {priority: "event"});
         }
         
-        // Store preference
+        // Store preference persistently
         sessionStorage.setItem("hilfo_language", currentLang);
+        
+        // Also store in global scope for other functions
+        if (typeof window !== "undefined") {
+          window.currentLanguage = currentLang;
+        }
       }
       
-      // Apply smooth transitions
+      // Initialize language system
       document.addEventListener("DOMContentLoaded", function() {
         var deContent = document.getElementById("content_de");
         var enContent = document.getElementById("content_en");
         
+        // Set up smooth transitions
         if (deContent) {
           deContent.style.transition = "opacity 0.3s ease, transform 0.3s ease";
         }
@@ -579,14 +583,33 @@ custom_page_flow <- list(
         // Check stored language preference
         var storedLang = sessionStorage.getItem("hilfo_language");
         if (storedLang === "de") {
+          // User previously selected German, switch to German
+          currentLang = "de";
           toggleLanguageNow();
+        } else {
+          // Default to English (current state)
+          currentLang = "en";
+          // Ensure button text is correct
+          var btn = document.getElementById("language-toggle-btn");
+          if (btn) {
+            var textSpan = btn.querySelector("#lang_switch_text");
+            if (textSpan) {
+              textSpan.textContent = "Deutsche Version";
+            }
+          }
+        }
+        
+        // Store initial language
+        sessionStorage.setItem("hilfo_language", currentLang);
+        if (typeof window !== "undefined") {
+          window.currentLanguage = currentLang;
         }
       });
       </script>',
       # German content (hidden by default)
       '<div id="content_de" style="display: none;">',
       '<h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px;">',
-      '<span data-lang-de="Willkommen zur HilFo Studie" data-lang-en="Welcome to the HilFo Study">Willkommen zur HilFo Studie</span></h1>',
+      '<span data-lang-de="HilFo" data-lang-en="HilFo">HilFo</span></h1>',
       '<h2 style="color: #e8041c;">Liebe Studierende,</h2>',
       '<p>In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, ',
       'die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.</p>',
@@ -616,7 +639,7 @@ custom_page_flow <- list(
       # English content (default)
       '<div id="content_en">',
       '<h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px;">',
-      '<span data-lang-de="Willkommen zur HilFo Studie" data-lang-en="Welcome to the HilFo Study">Welcome to the HilFo Study</span></h1>',
+      '<span data-lang-de="HilFo" data-lang-en="HilFo">HilFo</span></h1>',
       '<h2 style="color: #e8041c;">Dear Students,</h2>',
       '<p>In the statistics exercises, we want to work with illustrative data ',
       'that comes from you. Therefore, we would like to learn a few things about you.</p>',
