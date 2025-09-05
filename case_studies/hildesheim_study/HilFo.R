@@ -2016,12 +2016,10 @@ custom_item_selection <- function(rv, item_bank, config) {
   return(NULL)
 }
 
-# Simple JavaScript for basic functionality
+# Simple JavaScript for language switching and downloads
 custom_js <- '<script>
-// Global language state
 var currentLang = "de";
 
-// Enhanced language toggle function that works with inrep built-in system
 window.toggleLanguage = function() {
   currentLang = currentLang === "de" ? "en" : "de";
   
@@ -2031,12 +2029,10 @@ window.toggleLanguage = function() {
     var textSpan = btn.querySelector("#lang_switch_text");
     if (textSpan) {
       textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
-    } else {
-      btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
     }
   }
   
-  // Toggle welcome page content if on page 1
+  // Toggle welcome page content
   var deContent = document.getElementById("content_de");
   var enContent = document.getElementById("content_en");
   if (deContent && enContent) {
@@ -2049,7 +2045,7 @@ window.toggleLanguage = function() {
     }
   }
   
-  // Toggle all language-aware elements
+  // Toggle language elements
   var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
   langElements.forEach(function(element) {
     if (currentLang === "en") {
@@ -2059,35 +2055,22 @@ window.toggleLanguage = function() {
     }
   });
   
-  // Send to Shiny for inrep built-in language system
+  // Send to Shiny
   if (typeof Shiny !== "undefined") {
-    console.log("🔄 Switching language to:", currentLang);
-    console.log("📤 Sending to Shiny inputs...");
-    
-    // Send to the main language input that inrep listens for
+    console.log("Switching language to:", currentLang);
     Shiny.setInputValue("study_language", currentLang, {priority: "event"});
-    console.log("✅ Sent to study_language input");
-    
-    // Also try alternative input names for compatibility
-    Shiny.setInputValue("language", currentLang, {priority: "event"});
-    Shiny.setInputValue("current_language", currentLang, {priority: "event"});
-    console.log("✅ Sent to alternative language inputs");
-  } else {
-    console.log("❌ Shiny not available");
   }
   
   // Store preference
   sessionStorage.setItem("hilfo_language", currentLang);
-  console.log("💾 Stored language preference:", currentLang);
   
-  // Wait a bit for Shiny to process the language change, then refresh
+  // Refresh page
   setTimeout(function() {
-    console.log("🔄 Refreshing page for language change to:", currentLang);
     location.reload();
-  }, 800);
+  }, 500);
 };
 
-// Create language toggle button on every page
+// Create language button
 function createLanguageButton() {
   if (document.getElementById("language-toggle-btn")) {
     return;
@@ -2103,70 +2086,44 @@ function createLanguageButton() {
   document.body.appendChild(btn);
 }
 
-// Initialize on page load
+// Initialize
 document.addEventListener("DOMContentLoaded", function() {
-  console.log("🚀 Initializing language system...");
-  
   var storedLang = sessionStorage.getItem("hilfo_language");
   if (storedLang) {
     currentLang = storedLang;
-    console.log("📱 Restored language from storage:", currentLang);
-  } else {
-    console.log("📱 No stored language, using default: de");
   }
   
   createLanguageButton();
-  console.log("🔘 Language button created");
   
-  // Send initial language to Shiny if not German
+  // Send initial language to Shiny
   if (currentLang !== "de" && typeof Shiny !== "undefined") {
-    console.log("📤 Sending initial language to Shiny:", currentLang);
     Shiny.setInputValue("study_language", currentLang, {priority: "event"});
-    console.log("✅ Initial language sent to Shiny");
-  } else if (currentLang === "de") {
-    console.log("🇩🇪 Using default German language");
   }
   
+  // Show English content if needed
   if (currentLang === "en") {
-    console.log("🇬🇧 Switching to English content");
     var deContent = document.getElementById("content_de");
     var enContent = document.getElementById("content_en");
     if (deContent && enContent) {
       deContent.style.display = "none";
       enContent.style.display = "block";
-      console.log("✅ English content displayed");
-    } else {
-      console.log("❌ Content elements not found");
     }
-  } else {
-    console.log("🇩🇪 Using German content");
   }
-  
-  console.log("✅ Language system initialized");
 });
 
-// Re-create button when new content loads
+// Re-create button when content loads
 var observer = new MutationObserver(function(mutations) {
   createLanguageButton();
 });
-observer.observe(document.body, { childList: true, subtree: true });
+observer.observe(document.body, {
+  childList: true,
+  subtree: true
+});
 
 // Download functions
 window.downloadPDF = function() {
   try {
-    // Create a simple PDF content
-    var content = "HilFo Study Results\\n";
-    content += "==================\\n\\n";
-    content += "Generated: " + new Date().toLocaleString() + "\\n\\n";
-    content += "This is a sample PDF report.\\n";
-    content += "In a full implementation, this would contain:\\n";
-    content += "- Personality profile results\\n";
-    content += "- Programming anxiety scores\\n";
-    content += "- Study satisfaction ratings\\n";
-    content += "- Detailed analysis and recommendations\\n\\n";
-    content += "Thank you for participating in the HilFo study!";
-    
-    // Create and trigger download
+    var content = "HilFo Study Results\\nGenerated: " + new Date().toLocaleString();
     var blob = new Blob([content], { type: "text/plain" });
     var url = window.URL.createObjectURL(blob);
     var link = document.createElement("a");
@@ -2176,7 +2133,6 @@ window.downloadPDF = function() {
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
-    
   } catch (e) {
     console.error("PDF download error:", e);
     alert("Error downloading PDF. Please try again.");
@@ -2185,13 +2141,7 @@ window.downloadPDF = function() {
 
 window.downloadCSV = function() {
   try {
-    // Create sample CSV content
-    var csvContent = "timestamp,participant_id,study_language,message\\n";
-    csvContent += new Date().toISOString() + ",HILFO_001,en,Sample data from HilFo study\\n";
-    csvContent += new Date().toISOString() + ",HILFO_002,en,Programming anxiety assessment\\n";
-    csvContent += new Date().toISOString() + ",HILFO_003,en,Personality profile completed\\n";
-    
-    // Create and trigger download
+    var csvContent = "timestamp,participant_id,study_language\\n" + new Date().toISOString() + ",HILFO_001," + currentLang;
     var blob = new Blob([csvContent], { type: "text/csv" });
     var url = window.URL.createObjectURL(blob);
     var link = document.createElement("a");
@@ -2201,154 +2151,11 @@ window.downloadCSV = function() {
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
-    
   } catch (e) {
     console.error("CSV download error:", e);
     alert("Error downloading CSV. Please try again.");
   }
 };
-
-// Double-click prevention for navigation buttons
-var lastClickTime = 0;
-var clickDelay = 1000; // 1 second delay between clicks
-
-function preventDoubleClick(element) {
-  var currentTime = new Date().getTime();
-  if (currentTime - lastClickTime < clickDelay) {
-    return false; // Prevent click
-  }
-  lastClickTime = currentTime;
-  return true; // Allow click
-}
-
-// Enhanced navigation button protection
-function protectNavigationButtons() {
-  // Protect all navigation buttons
-  var navButtons = document.querySelectorAll("button, input[type=\\"button\\"], input[type=\\"submit\\"]");
-  navButtons.forEach(function(btn) {
-    if (btn.textContent && (btn.textContent.includes("Weiter") || btn.textContent.includes("Next") || 
-        btn.textContent.includes("Zurück") || btn.textContent.includes("Back") || 
-        btn.textContent.includes("Start") || btn.textContent.includes("Beginnen"))) {
-      
-      btn.addEventListener("click", function(e) {
-        if (!preventDoubleClick(this)) {
-          e.preventDefault();
-          e.stopPropagation();
-          return false;
-        }
-        
-        // Add loading state
-        var originalText = this.textContent;
-        this.textContent = "Loading...";
-        this.disabled = true;
-        
-        // Re-enable after delay
-        setTimeout(function() {
-          btn.textContent = originalText;
-          btn.disabled = false;
-        }, 2000);
-      });
-    }
-  });
-}
-
-// Form validation before navigation
-function validateBeforeNavigation() {
-  var requiredInputs = document.querySelectorAll("input[required], select[required], textarea[required]");
-  var missingRequired = [];
-  
-  requiredInputs.forEach(function(input) {
-    if (!input.value || input.value.trim() === "") {
-      missingRequired.push(input);
-    }
-  });
-  
-  if (missingRequired.length > 0) {
-    alert("Bitte füllen Sie alle erforderlichen Felder aus.\\nPlease fill in all required fields.");
-    return false;
-  }
-  
-  return true;
-}
-
-document.addEventListener("DOMContentLoaded", function() {
-  // Check stored language preference
-  var storedLang = sessionStorage.getItem("hilfo_language");
-  if (storedLang) {
-    currentLang = storedLang;
-  }
-  
-  // Create language toggle button if it doesn\'t exist
-  if (!document.getElementById("language-toggle-btn")) {
-    var btn = document.createElement("button");
-    btn.id = "language-toggle-btn";
-    btn.className = "btn-primary";
-    btn.style.cssText = "position: fixed !important; top: 10px !important; right: 10px !important; z-index: 9999 !important; background: #e8041c !important; color: white !important; border: 2px solid #e8041c !important; padding: 8px 16px !important; border-radius: 4px !important; cursor: pointer !important; font-size: 14px !important; font-weight: bold !important; transition: all 0.3s ease !important;";
-    btn.innerHTML = \'<span id="lang_switch_text">\' + (currentLang === "de" ? "English Version" : "Deutsche Version") + \'</span>\';
-    btn.onclick = toggleLanguage;
-    document.body.appendChild(btn);
-  }
-  
-  // Apply initial translation if English
-  if (currentLang === "en") {
-    var deContent = document.getElementById("content_de");
-    var enContent = document.getElementById("content_en");
-    if (deContent && enContent) {
-      deContent.style.display = "none";
-      enContent.style.display = "block";
-    }
-    
-    // Apply English translation to all language-aware elements
-    var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
-    langElements.forEach(function(element) {
-      element.textContent = element.getAttribute("data-lang-en");
-    });
-  }
-  
-  // Enable radio button deselection
-  document.addEventListener("click", function(e) {
-    if (e.target && e.target.type === "radio") {
-      var wasChecked = e.target.getAttribute("data-was-checked") === "true";
-      
-      var radios = document.querySelectorAll("input[name=\\"" + e.target.name + "\\"]");
-      for (var i = 0; i < radios.length; i++) {
-        radios[i].setAttribute("data-was-checked", "false");
-      }
-      
-      if (wasChecked) {
-        e.target.checked = false;
-        if (typeof Shiny !== "undefined") {
-          Shiny.setInputValue(e.target.name, null, {priority: "event"});
-        }
-      } else {
-        e.target.setAttribute("data-was-checked", "true");
-      }
-    }
-  });
-  
-  // Protect navigation buttons
-  protectNavigationButtons();
-  
-  // Re-protect buttons when new content loads
-  var observer = new MutationObserver(function(mutations) {
-    setTimeout(protectNavigationButtons, 100);
-    
-    // Apply language translation to new content
-    var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
-    langElements.forEach(function(element) {
-      if (currentLang === "en") {
-        element.textContent = element.getAttribute("data-lang-en");
-      } else {
-        element.textContent = element.getAttribute("data-lang-de");
-      }
-    });
-  });
-  
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-});
 </script>'
 
 study_config <- inrep::create_study_config(
