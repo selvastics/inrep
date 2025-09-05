@@ -686,7 +686,11 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 </script>'
     ),
-    validate = "function(inputs) { return document.getElementById('consent_check').checked || document.getElementById('consent_check_en').checked; }",
+    validate = "function(inputs) { 
+      var deCheck = document.getElementById('consent_check');
+      var enCheck = document.getElementById('consent_check_en');
+      return (deCheck && deCheck.checked) || (enCheck && enCheck.checked); 
+    }",
     required = FALSE
   ),
   
