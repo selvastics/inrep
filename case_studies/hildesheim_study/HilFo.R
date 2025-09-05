@@ -2021,7 +2021,7 @@ custom_js <- '<script>
 // Global language state
 var currentLang = "de";
 
-// Enhanced language toggle function that works with inrep's built-in system
+// Enhanced language toggle function that works with inrep built-in system
 window.toggleLanguage = function() {
   currentLang = currentLang === "de" ? "en" : "de";
   
@@ -2059,10 +2059,9 @@ window.toggleLanguage = function() {
     }
   });
   
-  // Send to Shiny for inrep's built-in language system
+  // Send to Shiny for inrep built-in language system
   if (typeof Shiny !== "undefined") {
     Shiny.setInputValue("study_language", currentLang, {priority: "event"});
-    // Also try the inrep-specific input
     Shiny.setInputValue("language", currentLang, {priority: "event"});
   }
   
@@ -2077,35 +2076,29 @@ window.toggleLanguage = function() {
 
 // Create language toggle button on every page
 function createLanguageButton() {
-  // Check if button already exists
   if (document.getElementById("language-toggle-btn")) {
     return;
   }
   
-  // Create button
   var btn = document.createElement("button");
   btn.id = "language-toggle-btn";
   btn.type = "button";
   btn.onclick = toggleLanguage;
   btn.style.cssText = "position: fixed !important; top: 10px !important; right: 10px !important; z-index: 9999 !important; background: #e8041c !important; color: white !important; border: 2px solid #e8041c !important; padding: 8px 16px !important; border-radius: 4px !important; cursor: pointer !important; font-size: 14px !important; font-weight: bold !important;";
-  btn.innerHTML = \'<span id="lang_switch_text">\' + (currentLang === "de" ? "English Version" : "Deutsche Version") + \'</span>\';
+  btn.innerHTML = "<span id=\"lang_switch_text\">" + (currentLang === "de" ? "English Version" : "Deutsche Version") + "</span>";
   
-  // Add to page
   document.body.appendChild(btn);
 }
 
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", function() {
-  // Check stored language preference
   var storedLang = sessionStorage.getItem("hilfo_language");
   if (storedLang) {
     currentLang = storedLang;
   }
   
-  // Create language button
   createLanguageButton();
   
-  // Apply initial language if English
   if (currentLang === "en") {
     var deContent = document.getElementById("content_de");
     var enContent = document.getElementById("content_en");
