@@ -488,7 +488,7 @@ custom_page_flow <- list(
       '<div style="position: absolute; top: 10px; right: 10px;">',
       '<button type="button" id="language-toggle-btn" class="btn-primary" onclick="toggleLanguage()" style="',
       'background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; transition: all 0.3s ease;">',
-      '<span id="lang_switch_text">Deutsche Version</span></button>',
+      '<span id="lang_switch_text">English Version</span></button>',
       '</div>',
       
       # Simple language switching - uses global function
@@ -496,8 +496,8 @@ custom_page_flow <- list(
       // This page uses the global toggleLanguage function
       // No inline language switching needed here
       </script>',
-      # German content (hidden by default)
-      '<div id="content_de" style="display: none;">',
+      # German content (default)
+      '<div id="content_de">',
       '<h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px;">',
       '<span data-lang-de="Willkommen zur HilFo Studie" data-lang-en="Welcome to the HilFo Study">Willkommen zur HilFo Studie</span></h1>',
       '<h2 style="color: #e8041c;">Liebe Studierende,</h2>',
@@ -526,8 +526,8 @@ custom_page_flow <- list(
       '</div>',
       '</div>',
       '</div>',
-      # English content (default)
-      '<div id="content_en">',
+      # English content (hidden by default)
+      '<div id="content_en" style="display: none;">',
       '<h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px;">',
       '<span data-lang-de="Willkommen zur HilFo Studie" data-lang-en="Welcome to the HilFo Study">Welcome to the HilFo Study</span></h1>',
       '<h2 style="color: #e8041c;">Dear Students,</h2>',
@@ -823,7 +823,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   }
   
   # Get current language from session if available
-  current_lang <- "en"  # Default to English
+  current_lang <- "de"  # Default to German
   if (!is.null(session) && !is.null(session$userData$current_language)) {
     current_lang <- session$userData$current_language
   }
@@ -1077,7 +1077,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     bfi_scores <- c(scores$Extraversion, scores$Verträglichkeit, 
                     scores$Gewissenhaftigkeit, scores$Neurotizismus, scores$Offenheit)
     
-    # Use English labels if current language is English
+    # Use German labels by default, English if current language is English
     if (current_lang == "en") {
       bfi_labels <- c("Extraversion", "Agreeableness", "Conscientiousness", 
                       "Neuroticism", "Openness")
@@ -1179,7 +1179,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     "Statistik" = "Statistics"
   )
   
-  # Use English names if current language is English
+  # Use German names by default, English if current language is English
   if (current_lang == "en") {
     dimension_labels <- dimension_names_en[names(ordered_scores)]
     category_labels <- category_names_en[c(rep("Persönlichkeit", 5), 
@@ -1335,41 +1335,41 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     # Radar plot
     '<div class="report-section">',
     '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
-    '<span data-lang-de="Persönlichkeitsprofil" data-lang-en="Personality Profile">Personality Profile</span></h2>',
+    '<span data-lang-de="Persönlichkeitsprofil" data-lang-en="Personality Profile">Persönlichkeitsprofil</span></h2>',
     if (radar_base64 != "") paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">'),
     '</div>',
     
     # Trace plot for Programming Anxiety
     '<div class="report-section">',
     '<h2 style="color: #9b59b6; text-align: center; margin-bottom: 25px;">',
-    '<span data-lang-de="Programmierangst - Adaptive Testung" data-lang-en="Programming Anxiety - Adaptive Testing Trace">Programming Anxiety - Adaptive Testing Trace</span></h2>',
+    '<span data-lang-de="Programmierangst - Adaptive Testung" data-lang-en="Programming Anxiety - Adaptive Testing Trace">Programmierangst - Adaptive Testung</span></h2>',
     if (exists("trace_base64") && trace_base64 != "") paste0('<img src="data:image/png;base64,', trace_base64, '" style="width: 100%; max-width: 800px; display: block; margin: 0 auto; border-radius: 8px;">'),
     '<p style="text-align: center; color: #666; margin-top: 10px; font-size: 14px;">',
     '<span data-lang-de="Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items." ',
     'data-lang-en="This trace plot shows how the theta estimate evolved during the assessment. The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.">',
-    'This trace plot shows how the theta estimate evolved during the assessment. The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.',
+    'Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items.',
     '</span></p>',
     '</div>',
     
     # Bar chart
     '<div class="report-section">',
     '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
-    '<span data-lang-de="Alle Dimensionen im Überblick" data-lang-en="All Dimensions Overview">All Dimensions Overview</span></h2>',
+    '<span data-lang-de="Alle Dimensionen im Überblick" data-lang-en="All Dimensions Overview">Alle Dimensionen im Überblick</span></h2>',
     if (bar_base64 != "") paste0('<img src="data:image/png;base64,', bar_base64, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 8px;">'),
     '</div>',
     
     # Table
     '<div class="report-section">',
     '<h2 style="color: #e8041c;">',
-    '<span data-lang-de="Detaillierte Auswertung" data-lang-en="Detailed Results">Detailed Results</span></h2>',
+    '<span data-lang-de="Detaillierte Auswertung" data-lang-en="Detailed Results">Detaillierte Auswertung</span></h2>',
     '<table style="width: 100%; border-collapse: collapse;">',
     '<tr style="background: #f8f8f8;">',
     '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">',
     '<span data-lang-de="Dimension" data-lang-en="Dimension">Dimension</span></th>',
     '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">',
-    '<span data-lang-de="Mittelwert" data-lang-en="Mean">Mean</span></th>',
+    '<span data-lang-de="Mittelwert" data-lang-en="Mean">Mittelwert</span></th>',
     '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">',
-    '<span data-lang-de="Standardabweichung" data-lang-en="Standard Deviation">Standard Deviation</span></th>',
+    '<span data-lang-de="Standardabweichung" data-lang-en="Standard Deviation">Standardabweichung</span></th>',
     '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">',
     '<span data-lang-de="Interpretation" data-lang-en="Interpretation">Interpretation</span></th>',
     '</tr>'
@@ -1421,23 +1421,23 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     value <- round(scores[[name]], 2)
     sd_value <- ifelse(name %in% names(sds), sds[[name]], NA)
     level <- ifelse(value >= 3.7, 
-                    '<span data-lang-de="Hoch" data-lang-en="High">High</span>', 
+                    '<span data-lang-de="Hoch" data-lang-en="High">Hoch</span>', 
                     ifelse(value >= 2.3, 
-                           '<span data-lang-de="Mittel" data-lang-en="Medium">Medium</span>', 
-                           '<span data-lang-de="Niedrig" data-lang-en="Low">Low</span>'))
+                           '<span data-lang-de="Mittel" data-lang-en="Medium">Mittel</span>', 
+                           '<span data-lang-de="Niedrig" data-lang-en="Low">Niedrig</span>'))
     color <- ifelse(value >= 3.7, "#28a745", ifelse(value >= 2.3, "#ffc107", "#dc3545"))
     
     # Translate dimension names
     name_display <- switch(name,
-                           "ProgrammingAnxiety" = '<span data-lang-de="Programmierangst" data-lang-en="Programming Anxiety">Programming Anxiety</span>',
+                           "ProgrammingAnxiety" = '<span data-lang-de="Programmierangst" data-lang-en="Programming Anxiety">Programmierangst</span>',
                            "Extraversion" = '<span data-lang-de="Extraversion" data-lang-en="Extraversion">Extraversion</span>',
-                           "Verträglichkeit" = '<span data-lang-de="Verträglichkeit" data-lang-en="Agreeableness">Agreeableness</span>',
-                           "Gewissenhaftigkeit" = '<span data-lang-de="Gewissenhaftigkeit" data-lang-en="Conscientiousness">Conscientiousness</span>',
-                           "Neurotizismus" = '<span data-lang-de="Neurotizismus" data-lang-en="Neuroticism">Neuroticism</span>',
-                           "Offenheit" = '<span data-lang-de="Offenheit" data-lang-en="Openness">Openness</span>',
+                           "Verträglichkeit" = '<span data-lang-de="Verträglichkeit" data-lang-en="Agreeableness">Verträglichkeit</span>',
+                           "Gewissenhaftigkeit" = '<span data-lang-de="Gewissenhaftigkeit" data-lang-en="Conscientiousness">Gewissenhaftigkeit</span>',
+                           "Neurotizismus" = '<span data-lang-de="Neurotizismus" data-lang-en="Neuroticism">Neurotizismus</span>',
+                           "Offenheit" = '<span data-lang-de="Offenheit" data-lang-en="Openness">Offenheit</span>',
                            "Stress" = '<span data-lang-de="Stress" data-lang-en="Stress">Stress</span>',
-                           "Studierfähigkeiten" = '<span data-lang-de="Studierfähigkeiten" data-lang-en="Study Skills">Study Skills</span>',
-                           "Statistik" = '<span data-lang-de="Statistik" data-lang-en="Statistics">Statistics</span>',
+                           "Studierfähigkeiten" = '<span data-lang-de="Studierfähigkeiten" data-lang-en="Study Skills">Studierfähigkeiten</span>',
+                           "Statistik" = '<span data-lang-de="Statistik" data-lang-en="Statistics">Statistik</span>',
                            name  # Default fallback
     )
     
@@ -1954,7 +1954,7 @@ custom_item_selection <- function(rv, item_bank, config) {
 # Simple JavaScript for basic functionality
 custom_js <- '<script>
 // Global language state
-var currentLang = "en";
+var currentLang = "de";
 
 // Simple language toggle function
 window.toggleLanguage = function() {
@@ -2218,7 +2218,7 @@ study_config <- inrep::create_study_config(
   criteria = "MFI",  # Maximum Fisher Information
   response_ui_type = "radio",
   progress_style = "bar",
-  language = "en",  # Start with English
+  language = "de",  # Start with German
   bilingual = TRUE,  # Enable inrep's built-in bilingual support
   session_save = TRUE,
   session_timeout = 7200,  # 2 hours timeout
