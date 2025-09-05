@@ -480,7 +480,7 @@ custom_page_flow <- list(
   list(
     id = "page1",
     type = "custom",
-    content = paste(
+    content = paste0(
       '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
       # Language switcher in top right corner with inline JavaScript
       '<div style="position: absolute; top: 10px; right: 10px;">',
@@ -684,18 +684,12 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
 });
-</script>',
-      sep = ""
+</script>'
     ),
     validate = "function(inputs) { 
-      try {
-        var deCheck = document.getElementById('consent_check');
-        var enCheck = document.getElementById('consent_check_en');
-        var result = (deCheck && deCheck.checked) || (enCheck && enCheck.checked);
-        return Boolean(result);
-      } catch(e) {
-        return false;
-      }
+      var deCheck = document.getElementById('consent_check');
+      var enCheck = document.getElementById('consent_check_en');
+      return (deCheck && deCheck.checked) || (enCheck && enCheck.checked); 
     }",
     required = FALSE
   ),
