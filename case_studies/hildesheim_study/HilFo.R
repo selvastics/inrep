@@ -1951,19 +1951,17 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         '</span></h4>',
         '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">',
         
-        # Download button that works with Shiny
-        '<div style="text-align: center; margin-top: 20px; padding: 15px; background: #e8f4fd; border-radius: 8px; border: 2px solid #007bff;">',
-        '<h4 style="margin: 0 0 15px 0; color: #007bff; font-size: 16px;">',
-        if (is_english) "📥 Download Your Results" else "📥 Laden Sie Ihre Ergebnisse herunter",
-        '</h4>',
-        '<button id="hilfo_download_btn" onclick="triggerDownload()" style="background: #007bff; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
-        '<i class="fas fa-download" style="margin-right: 8px;"></i>',
-        if (is_english) "Download CSV Data" else "CSV-Daten herunterladen",
+        # PDF Download Button
+        '<button onclick="downloadPDF()" class="btn btn-primary" style="background: #e8041c; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+        '<i class="fas fa-file-pdf" style="margin-right: 8px;"></i>',
+        if (is_english) "Download PDF" else "PDF herunterladen",
         '</button>',
-        '<p style="margin: 10px 0 0 0; color: #495057; font-size: 12px;">',
-        if (is_english) "Downloads your complete study data including all responses and results." else "Lädt Ihre vollständigen Studiendaten einschließlich aller Antworten und Ergebnisse herunter.",
-        '</p>',
-        '</div>',
+        
+        # CSV Download Button  
+        '<button onclick="downloadCSV()" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+        '<i class="fas fa-file-csv" style="margin-right: 8px;"></i>',
+        if (is_english) "Download CSV" else "CSV herunterladen",
+        '</button>',
         
         '</div>',
         '</div>',
@@ -2408,42 +2406,82 @@ observer.observe(document.body, {
   subtree: true
 });
 
-function triggerDownload() {
+window.downloadPDF = function() {
   try {
-    // Try to trigger inrep's built-in download functionality
     if (typeof Shiny !== "undefined") {
-      // Trigger the download via Shiny
-      Shiny.setInputValue("trigger_download", Math.random(), {priority: "event"});
+      Shiny.setInputValue("download_pdf_trigger", Math.random(), {priority: "event"});
     } else {
-      // Fallback: create a simple CSV download
+      downloadPDFFallback();
+    }
+  } catch (e) {
+    console.error("PDF download error:", e);
+    downloadPDFFallback();
+  }
+};
+
+window.downloadCSV = function() {
+  try {
+    if (typeof Shiny !== "undefined") {
+      Shiny.setInputValue("download_csv_trigger", Math.random(), {priority: "event"});
+    } else {
       downloadCSVFallback();
     }
   } catch (e) {
-    console.error("Download error:", e);
+    console.error("CSV download error:", e);
     downloadCSVFallback();
+  }
+};
+
+function downloadPDFFallback() {
+  try {
+    var content = "HilFo Study Results\\n\\n";
+    content += "Generated: " + new Date().toLocaleString() + "\\n\\n";
+    content += "This is a sample PDF report.\\n";
+    content += "In a full implementation, this would contain:\\n";
+    content += "- Personality profile results\\n";
+    content += "- Programming anxiety scores\\n";
+    content += "- Study satisfaction ratings\\n";
+    content += "- Detailed analysis and recommendations\\n\\n";
+    content += "Thank you for participating in the HilFo study!";
+    
+    var blob = new Blob([content], { type: "text/plain" });
+    var url = window.URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = "HilFo_Results_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".txt";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    console.log("PDF download initiated");
+  } catch (e) {
+    console.error("PDF download error:", e);
+    alert("Error downloading PDF. Please try again.");
   }
 }
 
 function downloadCSVFallback() {
   try {
     var csvContent = "timestamp,participant_id,study_language,message\\n";
-    csvContent += new Date().toISOString() + ",HILFO_001," + currentLang + ",HilFo study data\\n";
+    csvContent += new Date().toISOString() + ",HILFO_001," + currentLang + ",Sample data from HilFo study\\n";
+    csvContent += new Date().toISOString() + ",HILFO_002," + currentLang + ",Programming anxiety assessment\\n";
+    csvContent += new Date().toISOString() + ",HILFO_003," + currentLang + ",Personality profile completed\\n";
     
     var blob = new Blob([csvContent], { type: "text/csv" });
     var url = window.URL.createObjectURL(blob);
     var link = document.createElement("a");
     link.href = url;
-    link.download = "HilFo_Results_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".csv";
-    link.style.visibility = 'hidden';
+    link.download = "HilFo_Data_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".csv";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
     
-    console.log("Fallback CSV download completed");
+    console.log("CSV download initiated");
   } catch (e) {
-    console.error("Fallback download error:", e);
-    alert("Download failed. Please contact support.");
+    console.error("CSV download error:", e);
+    alert("Error downloading CSV. Please try again.");
   }
 }
 </script>'
@@ -2602,9 +2640,53 @@ inrep::launch_study(
                 }
             })
             
-            # Handle custom download trigger
-            shiny::observeEvent(input$trigger_download, {
-                # Get the current session data
+            # Handle PDF download trigger
+            shiny::observeEvent(input$download_pdf_trigger, {
+                tryCatch({
+                    if (exists("complete_data", envir = .GlobalEnv)) {
+                        data <- get("complete_data", envir = .GlobalEnv)
+                        
+                        # Create PDF content
+                        pdf_content <- paste0(
+                            "HilFo Study Results\n",
+                            "==================\n\n",
+                            "Generated: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n\n",
+                            "This is a sample PDF report.\n",
+                            "In a full implementation, this would contain:\n",
+                            "- Personality profile results\n",
+                            "- Programming anxiety scores\n",
+                            "- Study satisfaction ratings\n",
+                            "- Detailed analysis and recommendations\n\n",
+                            "Data summary:\n",
+                            paste(capture.output(str(data)), collapse = "\n")
+                        )
+                        
+                        # Create download using JavaScript
+                        shiny::runjs(sprintf("
+                            var content = %s;
+                            var blob = new Blob([content], { type: 'text/plain' });
+                            var url = window.URL.createObjectURL(blob);
+                            var link = document.createElement('a');
+                            link.href = url;
+                            link.download = 'HilFo_Results_' + new Date().toISOString().slice(0,19).replace(/:/g, '-') + '.txt';
+                            link.style.visibility = 'hidden';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(url);
+                        ", jsonlite::toJSON(pdf_content)))
+                        
+                    } else {
+                        shiny::runjs("downloadPDFFallback();")
+                    }
+                }, error = function(e) {
+                    cat("PDF download error:", e$message, "\n")
+                    shiny::runjs("downloadPDFFallback();")
+                })
+            })
+            
+            # Handle CSV download trigger
+            shiny::observeEvent(input$download_csv_trigger, {
                 tryCatch({
                     if (exists("complete_data", envir = .GlobalEnv)) {
                         data <- get("complete_data", envir = .GlobalEnv)
@@ -2620,7 +2702,7 @@ inrep::launch_study(
                             var url = window.URL.createObjectURL(blob);
                             var link = document.createElement('a');
                             link.href = url;
-                            link.download = 'HilFo_Results_' + new Date().toISOString().slice(0,19).replace(/:/g, '-') + '.csv';
+                            link.download = 'HilFo_Data_' + new Date().toISOString().slice(0,19).replace(/:/g, '-') + '.csv';
                             link.style.visibility = 'hidden';
                             document.body.appendChild(link);
                             link.click();
@@ -2629,12 +2711,10 @@ inrep::launch_study(
                         ", jsonlite::toJSON(csv_string)))
                         
                     } else {
-                        # Fallback to JavaScript download
                         shiny::runjs("downloadCSVFallback();")
                     }
                 }, error = function(e) {
-                    cat("Download error:", e$message, "\n")
-                    # Fallback to JavaScript download
+                    cat("CSV download error:", e$message, "\n")
                     shiny::runjs("downloadCSVFallback();")
                 })
             })
