@@ -557,53 +557,81 @@ custom_page_flow <- list(
       var enContent = document.getElementById("content_en");
       var textSpan = document.getElementById("lang_switch_text");
       
+      // Determine current state and what to switch to
+      var isCurrentlyEnglish = deContent.style.display === "none";
+      var newLang = isCurrentlyEnglish ? "de" : "en";
+      
       if (deContent && enContent) {
-        if (deContent.style.display === "none") {
+        if (isCurrentlyEnglish) {
           // Switch to German
           deContent.style.display = "block";
           enContent.style.display = "none";
-          if (textSpan) textSpan.textContent = "English Version";
         } else {
           // Switch to English
           deContent.style.display = "none";
           enContent.style.display = "block";
-          if (textSpan) textSpan.textContent = "Deutsche Version";
         }
       }
       
-      // 2. TRIGGER GLOBAL LANGUAGE SYSTEM (switch to English mode)
-      var currentLang = deContent.style.display === "none" ? "en" : "de";
+      // Update button text immediately and correctly
+      if (textSpan) {
+        textSpan.textContent = newLang === "de" ? "English Version" : "Deutsche Version";
+      }
       
+      // 2. TRIGGER GLOBAL LANGUAGE SYSTEM (switch to English mode)
       // Send to Shiny for global language switching
       if (typeof Shiny !== "undefined") {
-        console.log("Switching global language to:", currentLang);
-        Shiny.setInputValue("study_language", currentLang, {priority: "event"});
-        Shiny.setInputValue("language", currentLang, {priority: "event"});
+        console.log("Switching global language to:", newLang);
+        Shiny.setInputValue("study_language", newLang, {priority: "event"});
+        Shiny.setInputValue("language", newLang, {priority: "event"});
       }
       
       // Store preference for global system
-      sessionStorage.setItem("hilfo_language", currentLang);
+      sessionStorage.setItem("hilfo_language", newLang);
       
       // Sync checkboxes
       var deCheck = document.getElementById("consent_check");
       var enCheck = document.getElementById("consent_check_en");
       if (deCheck && enCheck) {
-        if (deContent.style.display === "none") {
+        if (newLang === "en") {
           enCheck.checked = deCheck.checked;
         } else {
           deCheck.checked = enCheck.checked;
         }
       }
       
-      // Refresh page after a short delay to apply global language change
-      setTimeout(function() {
-        console.log("Refreshing page for global language change to:", currentLang);
-        location.reload();
-      }, 500);
+      // Only refresh if we're switching away from page 1 (to apply global changes)
+      // For page 1, just update the content without refresh
+      if (window.location.pathname.includes("page") && !window.location.pathname.includes("page1")) {
+        setTimeout(function() {
+          console.log("Refreshing page for global language change to:", newLang);
+          location.reload();
+        }, 300);
+      } else {
+        console.log("Language switched on page 1, no refresh needed");
+      }
     }
     
-    // Sync checkboxes when they change
+    // Initialize page 1 language state
     document.addEventListener("DOMContentLoaded", function() {
+      // Check if we should start in English mode
+      var storedLang = sessionStorage.getItem("hilfo_language");
+      if (storedLang === "en") {
+        var deContent = document.getElementById("content_de");
+        var enContent = document.getElementById("content_en");
+        var textSpan = document.getElementById("lang_switch_text");
+        
+        if (deContent && enContent) {
+          deContent.style.display = "none";
+          enContent.style.display = "block";
+        }
+        
+        if (textSpan) {
+          textSpan.textContent = "Deutsche Version";
+        }
+      }
+      
+      // Sync checkboxes
       var deCheck = document.getElementById("consent_check");
       var enCheck = document.getElementById("consent_check_en");
       
