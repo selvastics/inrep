@@ -795,41 +795,45 @@ custom_page_flow <- list(
     type = "custom",
     title = "Persönlicher Code",
     title_en = "Personal Code",
-    content = paste0(
-      '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
-      '<p style="text-align: center; margin-bottom: 30px; font-size: 18px;">',
-      '<span data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">',
-      'Please create a personal code:</span></p>',
-      '<div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">',
-      '<p style="margin: 0; font-weight: 500;">',
-      '<span data-lang-de="Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags" data-lang-en="First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday">',
-      'First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday</span></p>',
-      '</div>',
-      '<div style="text-align: center; margin: 30px 0;">',
-      '<input type="text" id="personal_code" placeholder="e.g. MAHA15" style="',
-      'padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; ',
-      'text-align: center; width: 200px; text-transform: uppercase;" required>',
-      '</div>',
-      '<div style="text-align: center; color: #666; font-size: 14px;">',
-      '<span data-lang-de="Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15" data-lang-en="Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15">',
-      'Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</span></div>',
-      '</div>',
-      '<script>
-      document.addEventListener("DOMContentLoaded", function() {
-        var input = document.getElementById("personal_code");
-        if (input) {
-          input.addEventListener("input", function() {
-            this.value = this.value.toUpperCase();
-          });
-          input.addEventListener("blur", function() {
-            if (this.value.trim() !== "") {
-              Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
-            }
-          });
-        }
-      });
-      </script>'
-    )
+    content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
+      <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
+        <span data-lang-de="Persönlicher Code" data-lang-en="Personal Code">Personal Code</span>
+      </h2>
+      <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
+        <span data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">
+        Please create a personal code:</span>
+      </p>
+      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+        <p style="margin: 0; font-weight: 500;">
+          <span data-lang-de="Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags" data-lang-en="First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday">
+          First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday</span>
+        </p>
+      </div>
+      <div style="text-align: center; margin: 30px 0;">
+        <input type="text" id="personal_code" placeholder="e.g. MAHA15" style="
+          padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
+          text-align: center; width: 200px; text-transform: uppercase;" required>
+      </div>
+      <div style="text-align: center; color: #666; font-size: 14px;">
+        <span data-lang-de="Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15" data-lang-en="Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15">
+        Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</span>
+      </div>
+    </div>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      var input = document.getElementById("personal_code");
+      if (input) {
+        input.addEventListener("input", function() {
+          this.value = this.value.toUpperCase();
+        });
+        input.addEventListener("blur", function() {
+          if (this.value.trim() !== "") {
+            Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
+          }
+        });
+      }
+    });
+    </script>'
   ),
   
   # Page 21: Results (now with PA results included)
