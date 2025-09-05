@@ -2401,9 +2401,6 @@ observer.observe(document.body, {
   childList: true,
   subtree: true
 });
-
-// Download functionality is handled by inrep's built-in download button
-// No custom JavaScript needed for downloads
 </script>'
 
 study_config <- inrep::create_study_config(
