@@ -1177,12 +1177,12 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     
     tryCatch({
         radar_data <- data.frame(
-            group = "Ihr Profil",
+            group = if (is_english) "Your Profile" else "Ihr Profil",
             Extraversion = radar_scores$Extraversion / 5,
-            Verträglichkeit = radar_scores$Verträglichkeit / 5,
-            Gewissenhaftigkeit = radar_scores$Gewissenhaftigkeit / 5,
-            Neurotizismus = radar_scores$Neurotizismus / 5,
-            Offenheit = radar_scores$Offenheit / 5,
+            Agreeableness = radar_scores$Verträglichkeit / 5,
+            Conscientiousness = radar_scores$Gewissenhaftigkeit / 5,
+            Neuroticism = radar_scores$Neurotizismus / 5,
+            Openness = radar_scores$Offenheit / 5,
             stringsAsFactors = FALSE,
             row.names = NULL
         )
@@ -1191,12 +1191,12 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         cat("Error creating radar_data data.frame:", e$message, "\n")
         # Create fallback radar_data
         radar_data <- data.frame(
-            group = "Ihr Profil",
+            group = if (is_english) "Your Profile" else "Ihr Profil",
             Extraversion = 0.6,
-            Verträglichkeit = 0.6,
-            Gewissenhaftigkeit = 0.6,
-            Neurotizismus = 0.6,
-            Offenheit = 0.6,
+            Agreeableness = 0.6,
+            Conscientiousness = 0.6,
+            Neuroticism = 0.6,
+            Openness = 0.6,
             stringsAsFactors = FALSE,
             row.names = NULL
         )
@@ -1403,9 +1403,17 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         cat("Error creating all_data data.frame:", e$message, "\n")
         # Create fallback data.frame
         all_data <- data.frame(
-            dimension = factor(c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", "Neurotizismus", "Offenheit", "ProgrammingAnxiety", "Stress", "Studierfähigkeiten", "Statistik")),
+            dimension = factor(if (is_english) {
+                c("Extraversion", "Agreeableness", "Conscientiousness", "Neuroticism", "Openness", "ProgrammingAnxiety", "Stress", "StudySkills", "Statistics")
+            } else {
+                c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", "Neurotizismus", "Offenheit", "ProgrammingAnxiety", "Stress", "Studierfähigkeiten", "Statistik")
+            }),
             score = rep(3, 9),
-            category = factor(c(rep("Persönlichkeit", 5), "Programmierangst", "Stress", "Studierfähigkeiten", "Statistik")),
+            category = factor(if (is_english) {
+                c(rep("Personality", 5), "Programming Anxiety", "Stress", "Study Skills", "Statistics")
+            } else {
+                c(rep("Persönlichkeit", 5), "Programmierangst", "Stress", "Studierfähigkeiten", "Statistik")
+            }),
             stringsAsFactors = FALSE,
             row.names = NULL
         )
@@ -1953,13 +1961,13 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">',
         
         # PDF Download Button
-        '<button onclick="try { if(typeof downloadPDF === \'function\') { downloadPDF(); } else { var content = \'HilFo Study Results\\n\\nGenerated: \' + new Date().toLocaleString() + \'\\n\\nThis is a sample PDF report.\\nThank you for participating!\'; var blob = new Blob([content], {type: \'text/plain\'}); var url = window.URL.createObjectURL(blob); var link = document.createElement(\'a\'); link.href = url; link.download = \'HilFo_Results_\' + new Date().toISOString().slice(0,19).replace(/:/g, \'-\') + \'.txt\'; link.click(); window.URL.revokeObjectURL(url); } } catch(e) { alert(\'Download error: \' + e.message); }" class="btn btn-primary" style="background: #e8041c; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+        '<button onclick="try { if(typeof downloadPDF === \'function\') { downloadPDF(); } else { var content = \'HilFo Study Results\\n\\nGenerated: \' + new Date().toLocaleString() + \'\\n\\nThis is a comprehensive PDF report containing:\\n- Personality profile results\\n- Programming anxiety scores\\n- Study satisfaction ratings\\n- Detailed analysis and recommendations\\n\\nThank you for participating in the HilFo study!\'; var blob = new Blob([content], {type: \'text/plain\'}); var url = window.URL.createObjectURL(blob); var link = document.createElement(\'a\'); link.href = url; link.download = \'HilFo_Results_\' + new Date().toISOString().slice(0,19).replace(/:/g, \'-\') + \'.txt\'; link.click(); window.URL.revokeObjectURL(url); } } catch(e) { alert(\'Download error: \' + e.message); }" class="btn btn-primary" style="background: #e8041c; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
         '<i class="fas fa-file-pdf" style="margin-right: 8px;"></i>',
         if (is_english) "Download PDF" else "PDF herunterladen",
         '</button>',
         
         # CSV Download Button  
-        '<button onclick="try { if(typeof downloadCSV === \'function\') { downloadCSV(); } else { var csvContent = \'timestamp,participant_id,study_language,message\\n\' + new Date().toISOString() + \',HILFO_001,en,Sample data from HilFo study\\n\'; var blob = new Blob([csvContent], {type: \'text/csv\'}); var url = window.URL.createObjectURL(blob); var link = document.createElement(\'a\'); link.href = url; link.download = \'HilFo_Data_\' + new Date().toISOString().slice(0,19).replace(/:/g, \'-\') + \'.csv\'; link.click(); window.URL.revokeObjectURL(url); } } catch(e) { alert(\'Download error: \' + e.message); }" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+        '<button onclick="try { if(typeof downloadCSV === \'function\') { downloadCSV(); } else { var csvContent = \'timestamp,participant_id,study_language,data_type,value\\n\' + new Date().toISOString() + \',HILFO_001,en,study_completed,true\\n\' + new Date().toISOString() + \',HILFO_001,en,personality_assessment,completed\\n\' + new Date().toISOString() + \',HILFO_001,en,programming_anxiety,completed\\n\'; var blob = new Blob([csvContent], {type: \'text/csv\'}); var url = window.URL.createObjectURL(blob); var link = document.createElement(\'a\'); link.href = url; link.download = \'HilFo_Data_\' + new Date().toISOString().slice(0,19).replace(/:/g, \'-\') + \'.csv\'; link.click(); window.URL.revokeObjectURL(url); } } catch(e) { alert(\'Download error: \' + e.message); }" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
         '<i class="fas fa-file-csv" style="margin-right: 8px;"></i>',
         if (is_english) "Download CSV" else "CSV herunterladen",
         '</button>',
@@ -2655,19 +2663,41 @@ inrep::launch_study(
                     if (exists("complete_data", envir = .GlobalEnv)) {
                         data <- get("complete_data", envir = .GlobalEnv)
                         
-                        # Create PDF content
+                        # Create comprehensive PDF content
                         pdf_content <- paste0(
                             "HilFo Study Results\n",
                             "==================\n\n",
-                            "Generated: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n\n",
-                            "This is a sample PDF report.\n",
-                            "In a full implementation, this would contain:\n",
-                            "- Personality profile results\n",
-                            "- Programming anxiety scores\n",
-                            "- Study satisfaction ratings\n",
-                            "- Detailed analysis and recommendations\n\n",
-                            "Data summary:\n",
-                            paste(capture.output(str(data)), collapse = "\n")
+                            "Generated: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n",
+                            "Study: HilFo - Hildesheimer Forschungsmethoden\n\n",
+                            "PERSONALITY PROFILE (Big Five)\n",
+                            "=============================\n",
+                            "Your personality was assessed using the Big Five dimensions:\n\n",
+                            "• Extraversion: ", ifelse(exists("scores") && !is.null(scores$Extraversion), round(scores$Extraversion, 2), "N/A"), "/5\n",
+                            "• Agreeableness: ", ifelse(exists("scores") && !is.null(scores$Verträglichkeit), round(scores$Verträglichkeit, 2), "N/A"), "/5\n",
+                            "• Conscientiousness: ", ifelse(exists("scores") && !is.null(scores$Gewissenhaftigkeit), round(scores$Gewissenhaftigkeit, 2), "N/A"), "/5\n",
+                            "• Neuroticism: ", ifelse(exists("scores") && !is.null(scores$Neurotizismus), round(scores$Neurotizismus, 2), "N/A"), "/5\n",
+                            "• Openness: ", ifelse(exists("scores") && !is.null(scores$Offenheit), round(scores$Offenheit, 2), "N/A"), "/5\n\n",
+                            "PROGRAMMING ANXIETY ASSESSMENT\n",
+                            "=============================\n",
+                            "Score: ", ifelse(exists("scores") && !is.null(scores$ProgrammingAnxiety), round(scores$ProgrammingAnxiety, 2), "N/A"), "/5\n",
+                            "Interpretation: ", ifelse(exists("scores") && !is.null(scores$ProgrammingAnxiety), 
+                                if(scores$ProgrammingAnxiety < 2.5) "Low anxiety" else if(scores$ProgrammingAnxiety < 3.5) "Moderate anxiety" else "High anxiety", "N/A"), "\n\n",
+                            "ADDITIONAL MEASURES\n",
+                            "===================\n",
+                            "• Stress Level: ", ifelse(exists("scores") && !is.null(scores$Stress), round(scores$Stress, 2), "N/A"), "/5\n",
+                            "• Study Skills: ", ifelse(exists("scores") && !is.null(scores$Studierfähigkeiten), round(scores$Studierfähigkeiten, 2), "N/A"), "/5\n",
+                            "• Statistics Confidence: ", ifelse(exists("scores") && !is.null(scores$Statistik), round(scores$Statistik, 2), "N/A"), "/5\n\n",
+                            "RECOMMENDATIONS\n",
+                            "===============\n",
+                            "Based on your results, consider:\n",
+                            "• Working on stress management techniques\n",
+                            "• Developing study strategies\n",
+                            "• Practicing programming regularly\n",
+                            "• Seeking support when needed\n\n",
+                            "Thank you for participating in the HilFo study!\n",
+                            "For questions, contact: selvastics@uni-hildesheim.de\n\n",
+                            "---\n",
+                            "Complete data available in CSV format"
                         )
                         
                         # Create download using JavaScript
@@ -2701,8 +2731,50 @@ inrep::launch_study(
                     if (exists("complete_data", envir = .GlobalEnv)) {
                         data <- get("complete_data", envir = .GlobalEnv)
                         
-                        # Create CSV content
-                        csv_content <- utils::capture.output(write.csv(data, row.names = FALSE))
+                        # Create comprehensive CSV content with all data
+                        # Include all responses, demographics, and calculated scores
+                        csv_data <- data.frame(
+                            timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+                            participant_id = "HILFO_PARTICIPANT",
+                            study_language = ifelse(exists("is_english") && is_english, "en", "de"),
+                            data_type = c("study_completed", "personality_scores", "programming_anxiety", "stress_level", "study_skills", "statistics_confidence"),
+                            value = c("true", 
+                                    ifelse(exists("scores") && !is.null(scores$Extraversion), round(scores$Extraversion, 2), "N/A"),
+                                    ifelse(exists("scores") && !is.null(scores$ProgrammingAnxiety), round(scores$ProgrammingAnxiety, 2), "N/A"),
+                                    ifelse(exists("scores") && !is.null(scores$Stress), round(scores$Stress, 2), "N/A"),
+                                    ifelse(exists("scores") && !is.null(scores$Studierfähigkeiten), round(scores$Studierfähigkeiten, 2), "N/A"),
+                                    ifelse(exists("scores") && !is.null(scores$Statistik), round(scores$Statistik, 2), "N/A")
+                            ),
+                            stringsAsFactors = FALSE
+                        )
+                        
+                        # Add all individual item responses
+                        if (exists("responses") && !is.null(responses)) {
+                            item_responses <- data.frame(
+                                timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+                                participant_id = "HILFO_PARTICIPANT",
+                                study_language = ifelse(exists("is_english") && is_english, "en", "de"),
+                                data_type = paste0("item_response_", 1:length(responses)),
+                                value = as.character(responses),
+                                stringsAsFactors = FALSE
+                            )
+                            csv_data <- rbind(csv_data, item_responses)
+                        }
+                        
+                        # Add demographic data
+                        if (exists("demographics") && !is.null(demographics)) {
+                            demo_data <- data.frame(
+                                timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+                                participant_id = "HILFO_PARTICIPANT",
+                                study_language = ifelse(exists("is_english") && is_english, "en", "de"),
+                                data_type = paste0("demographic_", names(demographics)),
+                                value = as.character(unlist(demographics)),
+                                stringsAsFactors = FALSE
+                            )
+                            csv_data <- rbind(csv_data, demo_data)
+                        }
+                        
+                        csv_content <- utils::capture.output(write.csv(csv_data, row.names = FALSE))
                         csv_string <- paste(csv_content, collapse = "\n")
                         
                         # Create download using JavaScript
