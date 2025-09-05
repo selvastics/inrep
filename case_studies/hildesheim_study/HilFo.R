@@ -550,24 +550,39 @@ custom_page_flow <- list(
     </div>
     
     <script>
-    // Simple language toggle for page 1 only
+    // Language toggle that does BOTH: instruction change AND global language switch
     function toggleLanguage() {
+      // 1. TOGGLE WELCOME PAGE CONTENT (instruction change)
       var deContent = document.getElementById("content_de");
       var enContent = document.getElementById("content_en");
-      var btn = document.getElementById("language-toggle-btn");
       var textSpan = document.getElementById("lang_switch_text");
       
       if (deContent && enContent) {
         if (deContent.style.display === "none") {
+          // Switch to German
           deContent.style.display = "block";
           enContent.style.display = "none";
           if (textSpan) textSpan.textContent = "English Version";
         } else {
+          // Switch to English
           deContent.style.display = "none";
           enContent.style.display = "block";
           if (textSpan) textSpan.textContent = "Deutsche Version";
         }
       }
+      
+      // 2. TRIGGER GLOBAL LANGUAGE SYSTEM (switch to English mode)
+      var currentLang = deContent.style.display === "none" ? "en" : "de";
+      
+      // Send to Shiny for global language switching
+      if (typeof Shiny !== "undefined") {
+        console.log("Switching global language to:", currentLang);
+        Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+        Shiny.setInputValue("language", currentLang, {priority: "event"});
+      }
+      
+      // Store preference for global system
+      sessionStorage.setItem("hilfo_language", currentLang);
       
       // Sync checkboxes
       var deCheck = document.getElementById("consent_check");
@@ -579,6 +594,12 @@ custom_page_flow <- list(
           deCheck.checked = enCheck.checked;
         }
       }
+      
+      // Refresh page after a short delay to apply global language change
+      setTimeout(function() {
+        console.log("Refreshing page for global language change to:", currentLang);
+        location.reload();
+      }, 500);
     }
     
     // Sync checkboxes when they change
