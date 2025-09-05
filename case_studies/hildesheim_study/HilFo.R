@@ -566,8 +566,10 @@ custom_page_flow <- list(
           if (typeof Shiny !== "undefined") {
             Shiny.setInputValue("study_language", "de", {priority: "event"});
             Shiny.setInputValue("language", "de", {priority: "event"});
+            Shiny.setInputValue("current_language", "de", {priority: "event"});
           }
           sessionStorage.setItem("hilfo_language", "de");
+          sessionStorage.setItem("current_language", "de");
         } else {
           // Switch to English
           deContent.style.display = "none";
@@ -578,8 +580,10 @@ custom_page_flow <- list(
           if (typeof Shiny !== "undefined") {
             Shiny.setInputValue("study_language", "en", {priority: "event"});
             Shiny.setInputValue("language", "en", {priority: "event"});
+            Shiny.setInputValue("current_language", "en", {priority: "event"});
           }
           sessionStorage.setItem("hilfo_language", "en");
+          sessionStorage.setItem("current_language", "en");
         }
       }
       
@@ -867,22 +871,53 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     
     # Get current language from session if available
     current_lang <- "de"  # Default to German
-    if (!is.null(session) && !is.null(session$userData$language)) {
-        current_lang <- session$userData$language
+    
+    # Try multiple ways to get the language
+    if (!is.null(session)) {
+        # Check various possible locations for language
+        if (!is.null(session$userData$language)) {
+            current_lang <- session$userData$language
+        } else if (!is.null(session$userData$study_language)) {
+            current_lang <- session$userData$study_language
+        } else if (!is.null(session$userData$current_language)) {
+            current_lang <- session$userData$current_language
+        } else if (!is.null(session$input$study_language)) {
+            current_lang <- session$input$study_language
+        } else if (!is.null(session$input$language)) {
+            current_lang <- session$input$language
+        }
     }
     
-    # Also check for study_language in session
-    if (!is.null(session) && !is.null(session$userData$study_language)) {
-        current_lang <- session$userData$study_language
+    # Also check global environment for language
+    if (exists("current_language", envir = .GlobalEnv)) {
+        current_lang <- get("current_language", envir = .GlobalEnv)
+    }
+    
+    # Debug: Print what language we detected
+    cat("DEBUG: Detected language in results processor:", current_lang, "\n")
+    
+    # Additional debugging - check session structure
+    if (!is.null(session)) {
+        cat("DEBUG: Session userData keys:", names(session$userData), "\n")
+        if (!is.null(session$input)) {
+            cat("DEBUG: Session input keys:", names(session$input), "\n")
+        }
     }
     
     # Ensure current_lang is never NULL or NA
     if (is.null(current_lang) || is.na(current_lang) || current_lang == "") {
         current_lang <- "de"
+        cat("DEBUG: Using default German language\n")
     }
     
     # Create is_english variable for compatibility
     is_english <- (current_lang == "en")
+    cat("DEBUG: is_english =", is_english, "\n")
+    
+    # Force English for testing if needed
+    # Uncomment the next line to force English mode for testing
+    # is_english <- TRUE
+    # current_lang <- "en"
     
     if (is.null(responses) || length(responses) == 0) {
         if (is_english) {
@@ -2203,7 +2238,30 @@ study_config <- inrep::create_study_config(
     session_save = TRUE,
     session_timeout = 7200,  # 2 hours timeout
     results_processor = create_hilfo_report,  # Add custom results processor
-    custom_js = custom_js  # Add custom JavaScript for language switching and downloads
+    custom_js = custom_js,  # Add custom JavaScript for language switching and downloads
+    # Add server-side language tracking
+    server_extensions = list(
+        language_observer = function(input, output, session) {
+            # Observe language changes and store globally
+            shiny::observeEvent(input$study_language, {
+                if (!is.null(input$study_language)) {
+                    current_language <<- input$study_language
+                    session$userData$language <- input$study_language
+                    session$userData$current_language <- input$study_language
+                    cat("Language changed to:", input$study_language, "\n")
+                }
+            })
+            
+            shiny::observeEvent(input$current_language, {
+                if (!is.null(input$current_language)) {
+                    current_language <<- input$current_language
+                    session$userData$language <- input$current_language
+                    session$userData$current_language <- input$current_language
+                    cat("Current language changed to:", input$current_language, "\n")
+                }
+            })
+        }
+    )
 )
 
 cat("\n================================================================================\n")
