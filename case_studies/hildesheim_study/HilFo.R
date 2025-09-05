@@ -486,18 +486,105 @@ custom_page_flow <- list(
       '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
       # Language switcher in top right corner with inline JavaScript
       '<div style="position: absolute; top: 10px; right: 10px;">',
-      '<button type="button" id="language-toggle-btn" class="btn-primary" onclick="toggleLanguage()" style="',
+      '<button type="button" id="language-toggle-btn" class="btn-primary" onclick="toggleLanguageNow()" style="',
       'background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; transition: all 0.3s ease;">',
-      '<span id="lang_switch_text">English Version</span></button>',
+      '<span id="lang_switch_text">Deutsche Version</span></button>',
       '</div>',
       
-      # Simple language switching - uses global function
+      # Inline JavaScript for immediate language switching
       '<script>
-      // This page uses the global toggleLanguage function
-      // No inline language switching needed here
+      var currentLang = "en";
+      var translations = {
+        "Liebe Studierende,": "Dear Students,",
+        "In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.": "In the exercises on statistical methods, we want to work with illustrative data that comes from you. That\'s why we want to learn a few things about you.",
+        "Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene Themenbereiche ab, die voneinander teilweise unabhängig sind.": "Since we want to enable various evaluations, the questionnaire covers different topic areas that are partially independent of each other.",
+        "Bitte füllen Sie den Fragebogen vollständig aus. Alle Angaben werden streng vertraulich behandelt und nur für wissenschaftliche Zwecke verwendet.": "Please fill out the questionnaire completely. All information will be treated strictly confidentially and used only for scientific purposes.",
+        "Die Bearbeitung dauert etwa 15-20 Minuten.": "The processing takes about 15-20 minutes.",
+        "Vielen Dank für Ihre Teilnahme!": "Thank you for your participation!",
+        "Ich stimme der Teilnahme an der Studie zu und bestätige, dass ich mindestens 18 Jahre alt bin.": "I agree to participate in the study and confirm that I am at least 18 years old.",
+        "I agree to participate in the study and confirm that I am at least 18 years old.": "Ich stimme der Teilnahme an der Studie zu und bestätige, dass ich mindestens 18 Jahre alt bin.",
+        "English Version": "Deutsche Version",
+        "Deutsche Version": "English Version"
+      };
+      
+      function toggleLanguageNow() {
+        currentLang = currentLang === "de" ? "en" : "de";
+        
+        // Update button text
+        var btn = document.getElementById("language-toggle-btn");
+        if (btn) {
+          var textSpan = btn.querySelector("#lang_switch_text");
+          if (textSpan) {
+            textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+          }
+        }
+        
+        // Toggle content visibility with smooth transition
+        var deContent = document.getElementById("content_de");
+        var enContent = document.getElementById("content_en");
+        
+        if (deContent && enContent) {
+          if (currentLang === "en") {
+            // Switch to English
+            deContent.style.opacity = "0";
+            deContent.style.transform = "translateX(-20px)";
+            setTimeout(function() {
+              deContent.style.display = "none";
+              enContent.style.display = "block";
+              enContent.style.opacity = "0";
+              enContent.style.transform = "translateX(20px)";
+              setTimeout(function() {
+                enContent.style.opacity = "1";
+                enContent.style.transform = "translateX(0)";
+              }, 50);
+            }, 300);
+          } else {
+            // Switch to German
+            enContent.style.opacity = "0";
+            enContent.style.transform = "translateX(20px)";
+            setTimeout(function() {
+              enContent.style.display = "none";
+              deContent.style.display = "block";
+              deContent.style.opacity = "0";
+              deContent.style.transform = "translateX(-20px)";
+              setTimeout(function() {
+                deContent.style.opacity = "1";
+                deContent.style.transform = "translateX(0)";
+              }, 50);
+            }, 300);
+          }
+        }
+        
+        // Send to Shiny
+        if (typeof Shiny !== "undefined") {
+          Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+        }
+        
+        // Store preference
+        sessionStorage.setItem("hilfo_language", currentLang);
+      }
+      
+      // Apply smooth transitions
+      document.addEventListener("DOMContentLoaded", function() {
+        var deContent = document.getElementById("content_de");
+        var enContent = document.getElementById("content_en");
+        
+        if (deContent) {
+          deContent.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+        }
+        if (enContent) {
+          enContent.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+        }
+        
+        // Check stored language preference
+        var storedLang = sessionStorage.getItem("hilfo_language");
+        if (storedLang === "de") {
+          toggleLanguageNow();
+        }
+      });
       </script>',
-      # German content (default)
-      '<div id="content_de">',
+      # German content (hidden by default)
+      '<div id="content_de" style="display: none;">',
       '<h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px;">',
       '<span data-lang-de="Willkommen zur HilFo Studie" data-lang-en="Welcome to the HilFo Study">Willkommen zur HilFo Studie</span></h1>',
       '<h2 style="color: #e8041c;">Liebe Studierende,</h2>',
@@ -526,8 +613,8 @@ custom_page_flow <- list(
       '</div>',
       '</div>',
       '</div>',
-      # English content (hidden by default)
-      '<div id="content_en" style="display: none;">',
+      # English content (default)
+      '<div id="content_en">',
       '<h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px;">',
       '<span data-lang-de="Willkommen zur HilFo Studie" data-lang-en="Welcome to the HilFo Study">Welcome to the HilFo Study</span></h1>',
       '<h2 style="color: #e8041c;">Dear Students,</h2>',
@@ -823,7 +910,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   }
   
   # Get current language from session if available
-  current_lang <- "de"  # Default to German
+  current_lang <- "en"  # Default to English
   if (!is.null(session) && !is.null(session$userData$current_language)) {
     current_lang <- session$userData$current_language
   }
@@ -1077,7 +1164,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     bfi_scores <- c(scores$Extraversion, scores$Verträglichkeit, 
                     scores$Gewissenhaftigkeit, scores$Neurotizismus, scores$Offenheit)
     
-    # Use German labels by default, English if current language is English
+    # Use English labels if current language is English
     if (current_lang == "en") {
       bfi_labels <- c("Extraversion", "Agreeableness", "Conscientiousness", 
                       "Neuroticism", "Openness")
@@ -1179,7 +1266,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     "Statistik" = "Statistics"
   )
   
-  # Use German names by default, English if current language is English
+  # Use English names if current language is English
   if (current_lang == "en") {
     dimension_labels <- dimension_names_en[names(ordered_scores)]
     category_labels <- category_names_en[c(rep("Persönlichkeit", 5), 
@@ -1335,41 +1422,41 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     # Radar plot
     '<div class="report-section">',
     '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
-    '<span data-lang-de="Persönlichkeitsprofil" data-lang-en="Personality Profile">Persönlichkeitsprofil</span></h2>',
+    '<span data-lang-de="Persönlichkeitsprofil" data-lang-en="Personality Profile">Personality Profile</span></h2>',
     if (radar_base64 != "") paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">'),
     '</div>',
     
     # Trace plot for Programming Anxiety
     '<div class="report-section">',
     '<h2 style="color: #9b59b6; text-align: center; margin-bottom: 25px;">',
-    '<span data-lang-de="Programmierangst - Adaptive Testung" data-lang-en="Programming Anxiety - Adaptive Testing Trace">Programmierangst - Adaptive Testung</span></h2>',
+    '<span data-lang-de="Programmierangst - Adaptive Testung" data-lang-en="Programming Anxiety - Adaptive Testing Trace">Programming Anxiety - Adaptive Testing Trace</span></h2>',
     if (exists("trace_base64") && trace_base64 != "") paste0('<img src="data:image/png;base64,', trace_base64, '" style="width: 100%; max-width: 800px; display: block; margin: 0 auto; border-radius: 8px;">'),
     '<p style="text-align: center; color: #666; margin-top: 10px; font-size: 14px;">',
     '<span data-lang-de="Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items." ',
     'data-lang-en="This trace plot shows how the theta estimate evolved during the assessment. The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.">',
-    'Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items.',
+    'This trace plot shows how the theta estimate evolved during the assessment. The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.',
     '</span></p>',
     '</div>',
     
     # Bar chart
     '<div class="report-section">',
     '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
-    '<span data-lang-de="Alle Dimensionen im Überblick" data-lang-en="All Dimensions Overview">Alle Dimensionen im Überblick</span></h2>',
+    '<span data-lang-de="Alle Dimensionen im Überblick" data-lang-en="All Dimensions Overview">All Dimensions Overview</span></h2>',
     if (bar_base64 != "") paste0('<img src="data:image/png;base64,', bar_base64, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 8px;">'),
     '</div>',
     
     # Table
     '<div class="report-section">',
     '<h2 style="color: #e8041c;">',
-    '<span data-lang-de="Detaillierte Auswertung" data-lang-en="Detailed Results">Detaillierte Auswertung</span></h2>',
+    '<span data-lang-de="Detaillierte Auswertung" data-lang-en="Detailed Results">Detailed Results</span></h2>',
     '<table style="width: 100%; border-collapse: collapse;">',
     '<tr style="background: #f8f8f8;">',
     '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">',
     '<span data-lang-de="Dimension" data-lang-en="Dimension">Dimension</span></th>',
     '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">',
-    '<span data-lang-de="Mittelwert" data-lang-en="Mean">Mittelwert</span></th>',
+    '<span data-lang-de="Mittelwert" data-lang-en="Mean">Mean</span></th>',
     '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">',
-    '<span data-lang-de="Standardabweichung" data-lang-en="Standard Deviation">Standardabweichung</span></th>',
+    '<span data-lang-de="Standardabweichung" data-lang-en="Standard Deviation">Standard Deviation</span></th>',
     '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">',
     '<span data-lang-de="Interpretation" data-lang-en="Interpretation">Interpretation</span></th>',
     '</tr>'
@@ -1421,23 +1508,23 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     value <- round(scores[[name]], 2)
     sd_value <- ifelse(name %in% names(sds), sds[[name]], NA)
     level <- ifelse(value >= 3.7, 
-                    '<span data-lang-de="Hoch" data-lang-en="High">Hoch</span>', 
+                    '<span data-lang-de="Hoch" data-lang-en="High">High</span>', 
                     ifelse(value >= 2.3, 
-                           '<span data-lang-de="Mittel" data-lang-en="Medium">Mittel</span>', 
-                           '<span data-lang-de="Niedrig" data-lang-en="Low">Niedrig</span>'))
+                           '<span data-lang-de="Mittel" data-lang-en="Medium">Medium</span>', 
+                           '<span data-lang-de="Niedrig" data-lang-en="Low">Low</span>'))
     color <- ifelse(value >= 3.7, "#28a745", ifelse(value >= 2.3, "#ffc107", "#dc3545"))
     
     # Translate dimension names
     name_display <- switch(name,
-                           "ProgrammingAnxiety" = '<span data-lang-de="Programmierangst" data-lang-en="Programming Anxiety">Programmierangst</span>',
+                           "ProgrammingAnxiety" = '<span data-lang-de="Programmierangst" data-lang-en="Programming Anxiety">Programming Anxiety</span>',
                            "Extraversion" = '<span data-lang-de="Extraversion" data-lang-en="Extraversion">Extraversion</span>',
-                           "Verträglichkeit" = '<span data-lang-de="Verträglichkeit" data-lang-en="Agreeableness">Verträglichkeit</span>',
-                           "Gewissenhaftigkeit" = '<span data-lang-de="Gewissenhaftigkeit" data-lang-en="Conscientiousness">Gewissenhaftigkeit</span>',
-                           "Neurotizismus" = '<span data-lang-de="Neurotizismus" data-lang-en="Neuroticism">Neurotizismus</span>',
-                           "Offenheit" = '<span data-lang-de="Offenheit" data-lang-en="Openness">Offenheit</span>',
+                           "Verträglichkeit" = '<span data-lang-de="Verträglichkeit" data-lang-en="Agreeableness">Agreeableness</span>',
+                           "Gewissenhaftigkeit" = '<span data-lang-de="Gewissenhaftigkeit" data-lang-en="Conscientiousness">Conscientiousness</span>',
+                           "Neurotizismus" = '<span data-lang-de="Neurotizismus" data-lang-en="Neuroticism">Neuroticism</span>',
+                           "Offenheit" = '<span data-lang-de="Offenheit" data-lang-en="Openness">Openness</span>',
                            "Stress" = '<span data-lang-de="Stress" data-lang-en="Stress">Stress</span>',
-                           "Studierfähigkeiten" = '<span data-lang-de="Studierfähigkeiten" data-lang-en="Study Skills">Studierfähigkeiten</span>',
-                           "Statistik" = '<span data-lang-de="Statistik" data-lang-en="Statistics">Statistik</span>',
+                           "Studierfähigkeiten" = '<span data-lang-de="Studierfähigkeiten" data-lang-en="Study Skills">Study Skills</span>',
+                           "Statistik" = '<span data-lang-de="Statistik" data-lang-en="Statistics">Statistics</span>',
                            name  # Default fallback
     )
     
@@ -1954,7 +2041,7 @@ custom_item_selection <- function(rv, item_bank, config) {
 # Simple JavaScript for basic functionality
 custom_js <- '<script>
 // Global language state
-var currentLang = "de";
+var currentLang = "en";
 
 // Simple language toggle function
 window.toggleLanguage = function() {
@@ -1984,7 +2071,7 @@ window.toggleLanguage = function() {
     }
   }
   
-  // Toggle all language-aware elements with smooth transition
+  // Toggle all language-aware elements
   var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
   langElements.forEach(function(element) {
     if (currentLang === "en") {
@@ -2003,7 +2090,7 @@ window.toggleLanguage = function() {
   sessionStorage.setItem("hilfo_language", currentLang);
 };
 
-// Download functions - create actual downloadable content
+// Download functions
 window.downloadPDF = function() {
   try {
     // Create a simple PDF content
@@ -2218,7 +2305,7 @@ study_config <- inrep::create_study_config(
   criteria = "MFI",  # Maximum Fisher Information
   response_ui_type = "radio",
   progress_style = "bar",
-  language = "de",  # Start with German
+  language = "en",  # Start with English
   bilingual = TRUE,  # Enable inrep's built-in bilingual support
   session_save = TRUE,
   session_timeout = 7200,  # 2 hours timeout
@@ -2228,7 +2315,10 @@ study_config <- inrep::create_study_config(
   save_format = "csv",  # Use inrep's built-in save format
   adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
   custom_js = custom_js,  # Add custom JavaScript for language switching and downloads
-  # Note: Download handlers are handled via custom JavaScript and Shiny inputs
+  download_handlers = list(
+    pdf = download_pdf_handler,
+    csv = download_csv_handler
+  ),  # Add download handlers for PDF and CSV
   # Enhanced security and robustness settings
   prevent_double_submission = TRUE,  # Prevent double-click issues
   validate_required_fields = TRUE,  # Validate required fields before navigation
