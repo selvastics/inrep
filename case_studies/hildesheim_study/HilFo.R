@@ -1304,30 +1304,60 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     # Create bar chart with logical ordering
     # Show BFI scales first, then Programming Anxiety, then others
     # Ensure all scores are valid numbers (replace NA/NaN with 3)
-    ordered_scores <- list(
-        Extraversion = if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) 3 else scores$Extraversion,
-        Verträglichkeit = if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) 3 else scores$Verträglichkeit,
-        Gewissenhaftigkeit = if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) 3 else scores$Gewissenhaftigkeit,
-        Neurotizismus = if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) 3 else scores$Neurotizismus,
-        Offenheit = if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit,
-        ProgrammingAnxiety = if (is.na(scores$ProgrammingAnxiety) || is.nan(scores$ProgrammingAnxiety)) 3 else scores$ProgrammingAnxiety,
-        Stress = if (is.na(scores$Stress) || is.nan(scores$Stress)) 3 else scores$Stress,
-        Studierfähigkeiten = if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) 3 else scores$Studierfähigkeiten,
-        Statistik = if (is.na(scores$Statistik) || is.nan(scores$Statistik)) 3 else scores$Statistik
-    )
+    if (is_english) {
+        # Use English names as keys for English mode
+        ordered_scores <- list(
+            Extraversion = if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) 3 else scores$Extraversion,
+            Agreeableness = if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) 3 else scores$Verträglichkeit,
+            Conscientiousness = if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) 3 else scores$Gewissenhaftigkeit,
+            Neuroticism = if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) 3 else scores$Neurotizismus,
+            Openness = if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit,
+            ProgrammingAnxiety = if (is.na(scores$ProgrammingAnxiety) || is.nan(scores$ProgrammingAnxiety)) 3 else scores$ProgrammingAnxiety,
+            Stress = if (is.na(scores$Stress) || is.nan(scores$Stress)) 3 else scores$Stress,
+            StudySkills = if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) 3 else scores$Studierfähigkeiten,
+            Statistics = if (is.na(scores$Statistik) || is.nan(scores$Statistik)) 3 else scores$Statistik
+        )
+    } else {
+        # Use German names as keys for German mode
+        ordered_scores <- list(
+            Extraversion = if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) 3 else scores$Extraversion,
+            Verträglichkeit = if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) 3 else scores$Verträglichkeit,
+            Gewissenhaftigkeit = if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) 3 else scores$Gewissenhaftigkeit,
+            Neurotizismus = if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) 3 else scores$Neurotizismus,
+            Offenheit = if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit,
+            ProgrammingAnxiety = if (is.na(scores$ProgrammingAnxiety) || is.nan(scores$ProgrammingAnxiety)) 3 else scores$ProgrammingAnxiety,
+            Stress = if (is.na(scores$Stress) || is.nan(scores$Stress)) 3 else scores$Stress,
+            Studierfähigkeiten = if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) 3 else scores$Studierfähigkeiten,
+            Statistik = if (is.na(scores$Statistik) || is.nan(scores$Statistik)) 3 else scores$Statistik
+        )
+    }
     
     # Create English dimension names
-    dimension_names_en <- c(
-        "Extraversion" = "Extraversion",
-        "Verträglichkeit" = "Agreeableness", 
-        "Gewissenhaftigkeit" = "Conscientiousness",
-        "Neurotizismus" = "Neuroticism",
-        "Offenheit" = "Openness",
-        "Programmierangst" = "Programming Anxiety",
-        "Stress" = "Stress",
-        "Studierfähigkeiten" = "Study Skills",
-        "Statistik" = "Statistics"
-    )
+    if (is_english) {
+        dimension_names_en <- c(
+            "Extraversion" = "Extraversion",
+            "Agreeableness" = "Agreeableness", 
+            "Conscientiousness" = "Conscientiousness",
+            "Neuroticism" = "Neuroticism",
+            "Openness" = "Openness",
+            "ProgrammingAnxiety" = "Programming Anxiety",
+            "Stress" = "Stress",
+            "StudySkills" = "Study Skills",
+            "Statistics" = "Statistics"
+        )
+    } else {
+        dimension_names_en <- c(
+            "Extraversion" = "Extraversion",
+            "Verträglichkeit" = "Agreeableness", 
+            "Gewissenhaftigkeit" = "Conscientiousness",
+            "Neurotizismus" = "Neuroticism",
+            "Offenheit" = "Openness",
+            "ProgrammingAnxiety" = "Programming Anxiety",
+            "Stress" = "Stress",
+            "Studierfähigkeiten" = "Study Skills",
+            "Statistik" = "Statistics"
+        )
+    }
     
     # Create English category names
     category_names_en <- c(
@@ -1341,8 +1371,9 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     # Use English names if current language is English
     if (is_english) {
         dimension_labels <- dimension_names_en[names(ordered_scores)]
-        category_labels <- category_names_en[c(rep("Persönlichkeit", 5), 
-                                               "Programmierangst", "Stress", "Studierfähigkeiten", "Statistik")]
+        # Create category labels that match the English dimension names
+        category_labels <- c(rep("Personality", 5), 
+                             "Programming Anxiety", "Stress", "Study Skills", "Statistics")
     } else {
         dimension_labels <- names(ordered_scores)
         category_labels <- c(rep("Persönlichkeit", 5), 
@@ -1691,18 +1722,33 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         color <- ifelse(value >= 3.7, "#28a745", ifelse(value >= 2.3, "#ffc107", "#dc3545"))
         
         # Translate dimension names
-        name_display <- switch(name,
-                               "ProgrammingAnxiety" = if (is_english) "Programming Anxiety" else "Programmierangst",
-                               "Extraversion" = "Extraversion",
-                               "Verträglichkeit" = if (is_english) "Agreeableness" else "Verträglichkeit",
-                               "Gewissenhaftigkeit" = if (is_english) "Conscientiousness" else "Gewissenhaftigkeit",
-                               "Neurotizismus" = if (is_english) "Neuroticism" else "Neurotizismus",
-                               "Offenheit" = if (is_english) "Openness" else "Offenheit",
-                               "Stress" = "Stress",
-                               "Studierfähigkeiten" = if (is_english) "Study Skills" else "Studierfähigkeiten",
-                               "Statistik" = if (is_english) "Statistics" else "Statistik",
-                               name  # Default fallback
-        )
+        if (is_english) {
+            name_display <- switch(name,
+                                   "ProgrammingAnxiety" = "Programming Anxiety",
+                                   "Extraversion" = "Extraversion",
+                                   "Agreeableness" = "Agreeableness",
+                                   "Conscientiousness" = "Conscientiousness",
+                                   "Neuroticism" = "Neuroticism",
+                                   "Openness" = "Openness",
+                                   "Stress" = "Stress",
+                                   "StudySkills" = "Study Skills",
+                                   "Statistics" = "Statistics",
+                                   name  # Default fallback
+            )
+        } else {
+            name_display <- switch(name,
+                                   "ProgrammingAnxiety" = "Programmierangst",
+                                   "Extraversion" = "Extraversion",
+                                   "Verträglichkeit" = "Verträglichkeit",
+                                   "Gewissenhaftigkeit" = "Gewissenhaftigkeit",
+                                   "Neurotizismus" = "Neurotizismus",
+                                   "Offenheit" = "Offenheit",
+                                   "Stress" = "Stress",
+                                   "Studierfähigkeiten" = "Studierfähigkeiten",
+                                   "Statistik" = "Statistik",
+                                   name  # Default fallback
+            )
+        }
         
         html <- paste0(html,
                        '<tr>',
