@@ -2662,6 +2662,18 @@ inrep::launch_study(
                 tryCatch({
                     if (exists("complete_data", envir = .GlobalEnv)) {
                         data <- get("complete_data", envir = .GlobalEnv)
+                        cat("DEBUG: PDF download - complete_data columns:", paste(names(data), collapse = ", "), "\n")
+                        
+                        # Extract scores from complete_data
+                        extraversion <- if("BFI_Extraversion" %in% names(data)) data$BFI_Extraversion[1] else "N/A"
+                        agreeableness <- if("BFI_Vertraeglichkeit" %in% names(data)) data$BFI_Vertraeglichkeit[1] else "N/A"
+                        conscientiousness <- if("BFI_Gewissenhaftigkeit" %in% names(data)) data$BFI_Gewissenhaftigkeit[1] else "N/A"
+                        neuroticism <- if("BFI_Neurotizismus" %in% names(data)) data$BFI_Neurotizismus[1] else "N/A"
+                        openness <- if("BFI_Offenheit" %in% names(data)) data$BFI_Offenheit[1] else "N/A"
+                        programming_anxiety <- if("ProgrammingAnxiety" %in% names(data)) data$ProgrammingAnxiety[1] else "N/A"
+                        stress <- if("PSQ_Stress" %in% names(data)) data$PSQ_Stress[1] else "N/A"
+                        study_skills <- if("MWS_Studierfaehigkeiten" %in% names(data)) data$MWS_Studierfaehigkeiten[1] else "N/A"
+                        statistics <- if("Statistik" %in% names(data)) data$Statistik[1] else "N/A"
                         
                         # Create comprehensive PDF content
                         pdf_content <- paste0(
@@ -2672,21 +2684,22 @@ inrep::launch_study(
                             "PERSONALITY PROFILE (Big Five)\n",
                             "=============================\n",
                             "Your personality was assessed using the Big Five dimensions:\n\n",
-                            "• Extraversion: ", ifelse(exists("scores") && !is.null(scores$Extraversion), round(scores$Extraversion, 2), "N/A"), "/5\n",
-                            "• Agreeableness: ", ifelse(exists("scores") && !is.null(scores$Verträglichkeit), round(scores$Verträglichkeit, 2), "N/A"), "/5\n",
-                            "• Conscientiousness: ", ifelse(exists("scores") && !is.null(scores$Gewissenhaftigkeit), round(scores$Gewissenhaftigkeit, 2), "N/A"), "/5\n",
-                            "• Neuroticism: ", ifelse(exists("scores") && !is.null(scores$Neurotizismus), round(scores$Neurotizismus, 2), "N/A"), "/5\n",
-                            "• Openness: ", ifelse(exists("scores") && !is.null(scores$Offenheit), round(scores$Offenheit, 2), "N/A"), "/5\n\n",
+                            "• Extraversion: ", if(is.numeric(extraversion)) round(extraversion, 2) else extraversion, "/5\n",
+                            "• Agreeableness: ", if(is.numeric(agreeableness)) round(agreeableness, 2) else agreeableness, "/5\n",
+                            "• Conscientiousness: ", if(is.numeric(conscientiousness)) round(conscientiousness, 2) else conscientiousness, "/5\n",
+                            "• Neuroticism: ", if(is.numeric(neuroticism)) round(neuroticism, 2) else neuroticism, "/5\n",
+                            "• Openness: ", if(is.numeric(openness)) round(openness, 2) else openness, "/5\n\n",
                             "PROGRAMMING ANXIETY ASSESSMENT\n",
                             "=============================\n",
-                            "Score: ", ifelse(exists("scores") && !is.null(scores$ProgrammingAnxiety), round(scores$ProgrammingAnxiety, 2), "N/A"), "/5\n",
-                            "Interpretation: ", ifelse(exists("scores") && !is.null(scores$ProgrammingAnxiety), 
-                                if(scores$ProgrammingAnxiety < 2.5) "Low anxiety" else if(scores$ProgrammingAnxiety < 3.5) "Moderate anxiety" else "High anxiety", "N/A"), "\n\n",
+                            "Score: ", if(is.numeric(programming_anxiety)) round(programming_anxiety, 2) else programming_anxiety, "/5\n",
+                            "Interpretation: ", if(is.numeric(programming_anxiety)) {
+                                if(programming_anxiety < 2.5) "Low anxiety" else if(programming_anxiety < 3.5) "Moderate anxiety" else "High anxiety"
+                            } else "N/A", "\n\n",
                             "ADDITIONAL MEASURES\n",
                             "===================\n",
-                            "• Stress Level: ", ifelse(exists("scores") && !is.null(scores$Stress), round(scores$Stress, 2), "N/A"), "/5\n",
-                            "• Study Skills: ", ifelse(exists("scores") && !is.null(scores$Studierfähigkeiten), round(scores$Studierfähigkeiten, 2), "N/A"), "/5\n",
-                            "• Statistics Confidence: ", ifelse(exists("scores") && !is.null(scores$Statistik), round(scores$Statistik, 2), "N/A"), "/5\n\n",
+                            "• Stress Level: ", if(is.numeric(stress)) round(stress, 2) else stress, "/5\n",
+                            "• Study Skills: ", if(is.numeric(study_skills)) round(study_skills, 2) else study_skills, "/5\n",
+                            "• Statistics Confidence: ", if(is.numeric(statistics)) round(statistics, 2) else statistics, "/5\n\n",
                             "RECOMMENDATIONS\n",
                             "===============\n",
                             "Based on your results, consider:\n",
@@ -2731,19 +2744,34 @@ inrep::launch_study(
                     if (exists("complete_data", envir = .GlobalEnv)) {
                         data <- get("complete_data", envir = .GlobalEnv)
                         
+                        # Extract scores from complete_data
+                        extraversion <- if("BFI_Extraversion" %in% names(data)) data$BFI_Extraversion[1] else "N/A"
+                        agreeableness <- if("BFI_Vertraeglichkeit" %in% names(data)) data$BFI_Vertraeglichkeit[1] else "N/A"
+                        conscientiousness <- if("BFI_Gewissenhaftigkeit" %in% names(data)) data$BFI_Gewissenhaftigkeit[1] else "N/A"
+                        neuroticism <- if("BFI_Neurotizismus" %in% names(data)) data$BFI_Neurotizismus[1] else "N/A"
+                        openness <- if("BFI_Offenheit" %in% names(data)) data$BFI_Offenheit[1] else "N/A"
+                        programming_anxiety <- if("ProgrammingAnxiety" %in% names(data)) data$ProgrammingAnxiety[1] else "N/A"
+                        stress <- if("PSQ_Stress" %in% names(data)) data$PSQ_Stress[1] else "N/A"
+                        study_skills <- if("MWS_Studierfaehigkeiten" %in% names(data)) data$MWS_Studierfaehigkeiten[1] else "N/A"
+                        statistics <- if("Statistik" %in% names(data)) data$Statistik[1] else "N/A"
+                        
                         # Create comprehensive CSV content with all data
                         # Include all responses, demographics, and calculated scores
                         csv_data <- data.frame(
                             timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
                             participant_id = "HILFO_PARTICIPANT",
                             study_language = ifelse(exists("is_english") && is_english, "en", "de"),
-                            data_type = c("study_completed", "personality_scores", "programming_anxiety", "stress_level", "study_skills", "statistics_confidence"),
+                            data_type = c("study_completed", "extraversion", "agreeableness", "conscientiousness", "neuroticism", "openness", "programming_anxiety", "stress_level", "study_skills", "statistics_confidence"),
                             value = c("true", 
-                                    ifelse(exists("scores") && !is.null(scores$Extraversion), round(scores$Extraversion, 2), "N/A"),
-                                    ifelse(exists("scores") && !is.null(scores$ProgrammingAnxiety), round(scores$ProgrammingAnxiety, 2), "N/A"),
-                                    ifelse(exists("scores") && !is.null(scores$Stress), round(scores$Stress, 2), "N/A"),
-                                    ifelse(exists("scores") && !is.null(scores$Studierfähigkeiten), round(scores$Studierfähigkeiten, 2), "N/A"),
-                                    ifelse(exists("scores") && !is.null(scores$Statistik), round(scores$Statistik, 2), "N/A")
+                                    if(is.numeric(extraversion)) round(extraversion, 2) else extraversion,
+                                    if(is.numeric(agreeableness)) round(agreeableness, 2) else agreeableness,
+                                    if(is.numeric(conscientiousness)) round(conscientiousness, 2) else conscientiousness,
+                                    if(is.numeric(neuroticism)) round(neuroticism, 2) else neuroticism,
+                                    if(is.numeric(openness)) round(openness, 2) else openness,
+                                    if(is.numeric(programming_anxiety)) round(programming_anxiety, 2) else programming_anxiety,
+                                    if(is.numeric(stress)) round(stress, 2) else stress,
+                                    if(is.numeric(study_skills)) round(study_skills, 2) else study_skills,
+                                    if(is.numeric(statistics)) round(statistics, 2) else statistics
                             ),
                             stringsAsFactors = FALSE
                         )
