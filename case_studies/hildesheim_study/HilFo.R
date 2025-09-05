@@ -481,135 +481,129 @@ custom_page_flow <- list(
     id = "page1",
     type = "custom",
     title = "HilFo Studie",
-    content = paste0(
-      '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
-      # Language switcher in top right corner
-      '<div style="position: absolute; top: 10px; right: 10px;">',
-      '<button type="button" id="language-toggle-btn" onclick="toggleLanguage()" style="',
-      'background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">',
-      '<span id="lang_switch_text">English Version</span></button>',
-      '</div>',
+    content = '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">
+      <div style="position: absolute; top: 10px; right: 10px;">
+        <button type="button" id="language-toggle-btn" onclick="toggleLanguage()" style="
+          background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
+          <span id="lang_switch_text">English Version</span></button>
+      </div>
       
-      # German content (default)
-      '<div id="content_de">',
-      '<h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px;">',
-      'Willkommen zur HilFo Studie</h1>',
-      '<h2 style="color: #e8041c;">Liebe Studierende,</h2>',
-      '<p>In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, ',
-      'die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.</p>',
-      '<p>Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene ',
-      'Themenbereiche ab, die voneinander teilweise unabhängig sind.</p>',
-      '<p style="background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;">',
-      '<strong>Ihre Angaben sind dabei selbstverständlich anonym</strong>, es wird keine personenbezogene ',
-      'Auswertung der Daten stattfinden. Die Daten werden von den Erstsemestern Psychologie im ',
-      'Bachelor generiert und in diesem Jahrgang genutzt, möglicherweise auch in späteren Jahrgängen.</p>',
-      '<p>Im Folgenden werden Ihnen dazu Aussagen präsentiert. Wir bitten Sie anzugeben, ',
-      'inwieweit Sie diesen zustimmen. Es gibt keine falschen oder richtigen Antworten. ',
-      'Bitte beantworten Sie die Fragen so, wie es Ihrer Meinung am ehesten entspricht.</p>',
-      '<p style="margin-top: 20px;"><strong>Die Befragung dauert etwa 10-15 Minuten.</strong></p>',
-      '<hr style="margin: 30px 0; border: 1px solid #e8041c;">',
-      '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">',
-      '<h3 style="color: #e8041c; margin-bottom: 15px;">Einverständniserklärung</h3>',
-      '<label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">',
-      '<input type="checkbox" id="consent_check" style="margin-right: 10px; width: 20px; height: 20px;" required>',
-      '<span><strong>Ich bin mit der Teilnahme an der Befragung einverstanden</strong></span>',
-      '</label>',
-      '<div style="margin-top: 15px; padding: 10px; background: #fff3f4; border-left: 4px solid #e8041c;">',
-      '<p style="margin: 0; font-size: 14px; color: #666;">',
-      '<strong>Hinweis:</strong> Die Teilnahme ist nur möglich, wenn Sie der Einverständniserklärung zustimmen.</p>',
-      '</div>',
-      '</div>',
-      '</div>',
+      <div id="content_de">
+        <h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px;">
+          Willkommen zur HilFo Studie</h1>
+        <h2 style="color: #e8041c;">Liebe Studierende,</h2>
+        <p>In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, 
+        die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.</p>
+        <p>Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene 
+        Themenbereiche ab, die voneinander teilweise unabhängig sind.</p>
+        <p style="background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;">
+        <strong>Ihre Angaben sind dabei selbstverständlich anonym</strong>, es wird keine personenbezogene 
+        Auswertung der Daten stattfinden. Die Daten werden von den Erstsemestern Psychologie im 
+        Bachelor generiert und in diesem Jahrgang genutzt, möglicherweise auch in späteren Jahrgängen.</p>
+        <p>Im Folgenden werden Ihnen dazu Aussagen präsentiert. Wir bitten Sie anzugeben, 
+        inwieweit Sie diesen zustimmen. Es gibt keine falschen oder richtigen Antworten. 
+        Bitte beantworten Sie die Fragen so, wie es Ihrer Meinung am ehesten entspricht.</p>
+        <p style="margin-top: 20px;"><strong>Die Befragung dauert etwa 10-15 Minuten.</strong></p>
+        <hr style="margin: 30px 0; border: 1px solid #e8041c;">
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+          <h3 style="color: #e8041c; margin-bottom: 15px;">Einverständniserklärung</h3>
+          <label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">
+            <input type="checkbox" id="consent_check" style="margin-right: 10px; width: 20px; height: 20px;" required>
+            <span><strong>Ich bin mit der Teilnahme an der Befragung einverstanden</strong></span>
+          </label>
+          <div style="margin-top: 15px; padding: 10px; background: #fff3f4; border-left: 4px solid #e8041c;">
+            <p style="margin: 0; font-size: 14px; color: #666;">
+            <strong>Hinweis:</strong> Die Teilnahme ist nur möglich, wenn Sie der Einverständniserklärung zustimmen.</p>
+          </div>
+        </div>
+      </div>
       
-      # English content (hidden by default)
-      '<div id="content_en" style="display: none;">',
-      '<h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px;">',
-      'Welcome to the HilFo Study</h1>',
-      '<h2 style="color: #e8041c;">Dear Students,</h2>',
-      '<p>In the statistics exercises, we want to work with illustrative data ',
-      'that comes from you. Therefore, we would like to learn a few things about you.</p>',
-      '<p>Since we want to enable various analyses, the questionnaire covers different ',
-      'topic areas that are partially independent of each other.</p>',
-      '<p style="background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;">',
-      '<strong>Your information is completely anonymous</strong>, there will be no personal ',
-      'evaluation of the data. The data is generated by first-semester psychology ',
-      'bachelor students and used in this cohort, possibly also in later cohorts.</p>',
-      '<p>In the following, you will be presented with statements. We ask you to indicate ',
-      'to what extent you agree with them. There are no wrong or right answers. ',
-      'Please answer the questions as they best reflect your opinion.</p>',
-      '<p style="margin-top: 20px;"><strong>The survey takes about 10-15 minutes.</strong></p>',
-      '<hr style="margin: 30px 0; border: 1px solid #e8041c;">',
-      '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">',
-      '<h3 style="color: #e8041c; margin-bottom: 15px;">Declaration of Consent</h3>',
-      '<label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">',
-      '<input type="checkbox" id="consent_check_en" style="margin-right: 10px; width: 20px; height: 20px;" required>',
-      '<span><strong>I agree to participate in the survey</strong></span>',
-      '</label>',
-      '<div style="margin-top: 15px; padding: 10px; background: #fff3f4; border-left: 4px solid #e8041c;">',
-      '<p style="margin: 0; font-size: 14px; color: #666;">',
-      '<strong>Note:</strong> Participation is only possible if you agree to the declaration of consent.</p>',
-      '</div>',
-      '</div>',
-      '</div>',
-      '</div>',
+      <div id="content_en" style="display: none;">
+        <h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px;">
+          Welcome to the HilFo Study</h1>
+        <h2 style="color: #e8041c;">Dear Students,</h2>
+        <p>In the statistics exercises, we want to work with illustrative data 
+        that comes from you. Therefore, we would like to learn a few things about you.</p>
+        <p>Since we want to enable various analyses, the questionnaire covers different 
+        topic areas that are partially independent of each other.</p>
+        <p style="background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;">
+        <strong>Your information is completely anonymous</strong>, there will be no personal 
+        evaluation of the data. The data is generated by first-semester psychology 
+        bachelor students and used in this cohort, possibly also in later cohorts.</p>
+        <p>In the following, you will be presented with statements. We ask you to indicate 
+        to what extent you agree with them. There are no wrong or right answers. 
+        Please answer the questions as they best reflect your opinion.</p>
+        <p style="margin-top: 20px;"><strong>The survey takes about 10-15 minutes.</strong></p>
+        <hr style="margin: 30px 0; border: 1px solid #e8041c;">
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+          <h3 style="color: #e8041c; margin-bottom: 15px;">Declaration of Consent</h3>
+          <label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">
+            <input type="checkbox" id="consent_check_en" style="margin-right: 10px; width: 20px; height: 20px;" required>
+            <span><strong>I agree to participate in the survey</strong></span>
+          </label>
+          <div style="margin-top: 15px; padding: 10px; background: #fff3f4; border-left: 4px solid #e8041c;">
+            <p style="margin: 0; font-size: 14px; color: #666;">
+            <strong>Note:</strong> Participation is only possible if you agree to the declaration of consent.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <script>
+    var currentLang = "de";
+    
+    function toggleLanguage() {
+      currentLang = currentLang === "de" ? "en" : "de";
       
-      # JavaScript for language switching and checkbox syncing
-      '<script>
-      var currentLang = "de";
+      var deContent = document.getElementById("content_de");
+      var enContent = document.getElementById("content_en");
+      var btn = document.getElementById("language-toggle-btn");
+      var textSpan = document.getElementById("lang_switch_text");
       
-      function toggleLanguage() {
-        currentLang = currentLang === "de" ? "en" : "de";
-        
-        var deContent = document.getElementById("content_de");
-        var enContent = document.getElementById("content_en");
-        var btn = document.getElementById("language-toggle-btn");
-        var textSpan = document.getElementById("lang_switch_text");
-        
-        if (deContent && enContent) {
-          if (currentLang === "en") {
-            deContent.style.display = "none";
-            enContent.style.display = "block";
-          } else {
-            enContent.style.display = "none";
-            deContent.style.display = "block";
-          }
-        }
-        
-        if (textSpan) {
-          textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
-        }
-        
-        // Sync checkboxes
-        var deCheck = document.getElementById("consent_check");
-        var enCheck = document.getElementById("consent_check_en");
-        if (deCheck && enCheck) {
-          if (currentLang === "en") {
-            enCheck.checked = deCheck.checked;
-          } else {
-            deCheck.checked = enCheck.checked;
-          }
+      if (deContent && enContent) {
+        if (currentLang === "en") {
+          deContent.style.display = "none";
+          enContent.style.display = "block";
+        } else {
+          enContent.style.display = "none";
+          deContent.style.display = "block";
         }
       }
       
-      // Sync checkboxes when they change
-      document.addEventListener("DOMContentLoaded", function() {
-        var deCheck = document.getElementById("consent_check");
-        var enCheck = document.getElementById("consent_check_en");
-        
-        if (deCheck) {
-          deCheck.addEventListener("change", function() {
-            if (enCheck) enCheck.checked = deCheck.checked;
-          });
+      if (textSpan) {
+        textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+      }
+      
+      // Sync checkboxes
+      var deCheck = document.getElementById("consent_check");
+      var enCheck = document.getElementById("consent_check_en");
+      if (deCheck && enCheck) {
+        if (currentLang === "en") {
+          enCheck.checked = deCheck.checked;
+        } else {
+          deCheck.checked = enCheck.checked;
         }
-        
-        if (enCheck) {
-          enCheck.addEventListener("change", function() {
-            if (deCheck) deCheck.checked = enCheck.checked;
-          });
-        }
-      });
-      </script>'
-    ),
+      }
+    }
+    
+    // Sync checkboxes when they change
+    document.addEventListener("DOMContentLoaded", function() {
+      var deCheck = document.getElementById("consent_check");
+      var enCheck = document.getElementById("consent_check_en");
+      
+      if (deCheck) {
+        deCheck.addEventListener("change", function() {
+          if (enCheck) enCheck.checked = deCheck.checked;
+        });
+      }
+      
+      if (enCheck) {
+        enCheck.addEventListener("change", function() {
+          if (deCheck) deCheck.checked = enCheck.checked;
+        });
+      }
+    });
+    </script>',
     validate = "function(inputs) { 
       try {
         var deCheck = document.getElementById('consent_check');
