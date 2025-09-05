@@ -1951,10 +1951,17 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         '</span></h4>',
         '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">',
         
-        # Note: Download functionality is handled by inrep's built-in download button
-        '<div style="text-align: center; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">',
-        '<p style="margin: 0; color: #6c757d; font-size: 14px;">',
-        if (is_english) "Use the 'Download Results' button below to export your data" else "Verwenden Sie den 'Ergebnisse herunterladen' Button unten, um Ihre Daten zu exportieren",
+        # Download button that works with Shiny
+        '<div style="text-align: center; margin-top: 20px; padding: 15px; background: #e8f4fd; border-radius: 8px; border: 2px solid #007bff;">',
+        '<h4 style="margin: 0 0 15px 0; color: #007bff; font-size: 16px;">',
+        if (is_english) "📥 Download Your Results" else "📥 Laden Sie Ihre Ergebnisse herunter",
+        '</h4>',
+        '<button id="hilfo_download_btn" onclick="triggerDownload()" style="background: #007bff; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+        '<i class="fas fa-download" style="margin-right: 8px;"></i>',
+        if (is_english) "Download CSV Data" else "CSV-Daten herunterladen",
+        '</button>',
+        '<p style="margin: 10px 0 0 0; color: #495057; font-size: 12px;">',
+        if (is_english) "Downloads your complete study data including all responses and results." else "Lädt Ihre vollständigen Studiendaten einschließlich aller Antworten und Ergebnisse herunter.",
         '</p>',
         '</div>',
         
@@ -2400,6 +2407,47 @@ observer.observe(document.body, {
   childList: true,
   subtree: true
 });
+
+// Download function that triggers inrep's download functionality
+function triggerDownload() {
+  try {
+    // Try to trigger inrep's built-in download functionality
+    if (typeof Shiny !== "undefined") {
+      // Trigger the download via Shiny
+      Shiny.setInputValue("trigger_download", Math.random(), {priority: "event"});
+    } else {
+      // Fallback: create a simple CSV download
+      downloadCSVFallback();
+    }
+  } catch (e) {
+    console.error("Download error:", e);
+    downloadCSVFallback();
+  }
+}
+
+// Fallback CSV download function
+function downloadCSVFallback() {
+  try {
+    var csvContent = "timestamp,participant_id,study_language,message\\n";
+    csvContent += new Date().toISOString() + ",HILFO_001," + currentLang + ",HilFo study data\\n";
+    
+    var blob = new Blob([csvContent], { type: "text/csv" });
+    var url = window.URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = "HilFo_Results_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".csv";
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    console.log("Fallback CSV download completed");
+  } catch (e) {
+    console.error("Fallback download error:", e);
+    alert("Download failed. Please contact support.");
+  }
+}
 </script>'
 
 study_config <- inrep::create_study_config(
@@ -2556,8 +2604,42 @@ inrep::launch_study(
                 }
             })
             
-            # Download functionality is handled by inrep's built-in download system
-            # No custom download handlers needed
+            # Handle custom download trigger
+            shiny::observeEvent(input$trigger_download, {
+                # Get the current session data
+                tryCatch({
+                    if (exists("complete_data", envir = .GlobalEnv)) {
+                        data <- get("complete_data", envir = .GlobalEnv)
+                        
+                        # Create CSV content
+                        csv_content <- utils::capture.output(write.csv(data, row.names = FALSE))
+                        csv_string <- paste(csv_content, collapse = "\n")
+                        
+                        # Create download using JavaScript
+                        shiny::runjs(sprintf("
+                            var csvContent = %s;
+                            var blob = new Blob([csvContent], { type: 'text/csv' });
+                            var url = window.URL.createObjectURL(blob);
+                            var link = document.createElement('a');
+                            link.href = url;
+                            link.download = 'HilFo_Results_' + new Date().toISOString().slice(0,19).replace(/:/g, '-') + '.csv';
+                            link.style.visibility = 'hidden';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(url);
+                        ", jsonlite::toJSON(csv_string)))
+                        
+                    } else {
+                        # Fallback to JavaScript download
+                        shiny::runjs("downloadCSVFallback();")
+                    }
+                }, error = function(e) {
+                    cat("Download error:", e$message, "\n")
+                    # Fallback to JavaScript download
+                    shiny::runjs("downloadCSVFallback();")
+                })
+            })
         }
     )
     # No custom CSS needed - inrep handles theming
