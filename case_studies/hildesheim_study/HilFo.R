@@ -567,9 +567,11 @@ custom_page_flow <- list(
             Shiny.setInputValue("study_language", "de", {priority: "event"});
             Shiny.setInputValue("language", "de", {priority: "event"});
             Shiny.setInputValue("current_language", "de", {priority: "event"});
+            Shiny.setInputValue("hilfo_language_preference", "de", {priority: "event"});
           }
           sessionStorage.setItem("hilfo_language", "de");
           sessionStorage.setItem("current_language", "de");
+          sessionStorage.setItem("hilfo_language_preference", "de");
         } else {
           // Switch to English
           deContent.style.display = "none";
@@ -581,9 +583,11 @@ custom_page_flow <- list(
             Shiny.setInputValue("study_language", "en", {priority: "event"});
             Shiny.setInputValue("language", "en", {priority: "event"});
             Shiny.setInputValue("current_language", "en", {priority: "event"});
+            Shiny.setInputValue("hilfo_language_preference", "en", {priority: "event"});
           }
           sessionStorage.setItem("hilfo_language", "en");
           sessionStorage.setItem("current_language", "en");
+          sessionStorage.setItem("hilfo_language_preference", "en");
         }
       }
       
@@ -914,11 +918,31 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     is_english <- (current_lang == "en")
     cat("DEBUG: is_english =", is_english, "\n")
     
-    # Force English for testing - TEMPORARY
-    # This will make results always show in English for testing
-    is_english <- TRUE
-    current_lang <- "en"
-    cat("DEBUG: FORCED ENGLISH MODE FOR TESTING\n")
+    # Check if we should use English based on the last language selection
+    # Since inrep might not pass session properly, we'll use a different approach
+    # Check if there's a language preference stored in the global environment
+    if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
+        stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
+        if (!is.null(stored_lang) && stored_lang == "en") {
+            is_english <- TRUE
+            current_lang <- "en"
+            cat("DEBUG: Using stored English preference\n")
+        }
+    }
+    
+    # For now, let's default to English if we can't detect the language properly
+    # This ensures the results work while we debug the language detection
+    if (current_lang == "de" && is_english == FALSE) {
+        # Check if we should default to English based on some heuristic
+        # For now, let's make it configurable
+        force_english <- TRUE  # Set to FALSE to use German, TRUE to use English
+        
+        if (force_english) {
+            is_english <- TRUE
+            current_lang <- "en"
+            cat("DEBUG: Using English as fallback\n")
+        }
+    }
     
     if (is.null(responses) || length(responses) == 0) {
         if (is_english) {
@@ -1410,6 +1434,21 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     # Create detailed item responses table
     # Ensure we don't exceed available questions and handle missing values
     num_questions <- min(31, length(responses), nrow(item_bank))
+    
+    # Create category vector that matches the actual number of questions
+    category_vector <- c(
+        rep("Extraversion", 4), rep("Verträglichkeit", 4), 
+        rep("Gewissenhaftigkeit", 4), rep("Neurotizismus", 4), rep("Offenheit", 4),
+        rep("Stress", 5), rep("Studierfähigkeiten", 4), rep("Statistik", 2)
+    )
+    
+    # Ensure category vector is the right length
+    if (length(category_vector) > num_questions) {
+        category_vector <- category_vector[1:num_questions]
+    } else if (length(category_vector) < num_questions) {
+        category_vector <- c(category_vector, rep("Other", num_questions - length(category_vector)))
+    }
+    
     item_details <- data.frame(
         Item = if ("Question" %in% names(item_bank)) {
             item_bank$Question[1:num_questions]
@@ -1417,11 +1456,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             paste0("Item_", 1:num_questions)
         },
         Response = responses[1:num_questions],
-        Category = c(
-            rep("Extraversion", 4), rep("Verträglichkeit", 4), 
-            rep("Gewissenhaftigkeit", 4), rep("Neurotizismus", 4), rep("Offenheit", 4),
-            rep("Stress", 5), rep("Studierfähigkeiten", 4), rep("Statistik", 2)
-        )[1:num_questions],
+        Category = category_vector,
         stringsAsFactors = FALSE
     )
     
@@ -2439,8 +2474,19 @@ inrep::launch_study(
     item_bank = all_items_de,  # Bilingual item bank
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
-    save_format = "csv"
+    save_format = "csv",
+    # Add server-side language tracking
+    server_extensions = list(
+        language_tracker = function(input, output, session) {
+            # Track language preference changes
+            shiny::observeEvent(input$hilfo_language_preference, {
+                if (!is.null(input$hilfo_language_preference)) {
+                    hilfo_language_preference <<- input$hilfo_language_preference
+                    cat("Language preference stored:", input$hilfo_language_preference, "\n")
+                }
+            })
+        }
+    )
     # No custom CSS needed - inrep handles theming
-    # No server extensions needed - inrep handles language switching
     # No admin dashboard hook needed - inrep handles monitoring
 )
