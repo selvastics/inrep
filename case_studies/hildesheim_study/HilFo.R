@@ -550,46 +550,35 @@ custom_page_flow <- list(
     </div>
     
     <script>
-    // Language toggle that does BOTH: instruction change AND global language switch
     function toggleLanguage() {
-      // 1. TOGGLE WELCOME PAGE CONTENT (instruction change)
       var deContent = document.getElementById("content_de");
       var enContent = document.getElementById("content_en");
       var textSpan = document.getElementById("lang_switch_text");
       
-      // Determine current state and what to switch to
       var isCurrentlyEnglish = deContent.style.display === "none";
       var newLang = isCurrentlyEnglish ? "de" : "en";
       
       if (deContent && enContent) {
         if (isCurrentlyEnglish) {
-          // Switch to German
           deContent.style.display = "block";
           enContent.style.display = "none";
         } else {
-          // Switch to English
           deContent.style.display = "none";
           enContent.style.display = "block";
         }
       }
       
-      // Update button text immediately and correctly
       if (textSpan) {
         textSpan.textContent = newLang === "de" ? "English Version" : "Deutsche Version";
       }
       
-      // 2. TRIGGER GLOBAL LANGUAGE SYSTEM (switch to English mode)
-      // Send to Shiny for global language switching
       if (typeof Shiny !== "undefined") {
-        console.log("Switching global language to:", newLang);
         Shiny.setInputValue("study_language", newLang, {priority: "event"});
         Shiny.setInputValue("language", newLang, {priority: "event"});
       }
       
-      // Store preference for global system
       sessionStorage.setItem("hilfo_language", newLang);
       
-      // Sync checkboxes
       var deCheck = document.getElementById("consent_check");
       var enCheck = document.getElementById("consent_check_en");
       if (deCheck && enCheck) {
@@ -600,21 +589,14 @@ custom_page_flow <- list(
         }
       }
       
-      // Only refresh if we're switching away from page 1 (to apply global changes)
-      // For page 1, just update the content without refresh
       if (window.location.pathname.includes("page") && !window.location.pathname.includes("page1")) {
         setTimeout(function() {
-          console.log("Refreshing page for global language change to:", newLang);
           location.reload();
         }, 300);
-      } else {
-        console.log("Language switched on page 1, no refresh needed");
       }
     }
     
-    // Initialize page 1 language state
     document.addEventListener("DOMContentLoaded", function() {
-      // Check if we should start in English mode
       var storedLang = sessionStorage.getItem("hilfo_language");
       if (storedLang === "en") {
         var deContent = document.getElementById("content_de");
@@ -631,7 +613,6 @@ custom_page_flow <- list(
         }
       }
       
-      // Sync checkboxes
       var deCheck = document.getElementById("consent_check");
       var enCheck = document.getElementById("consent_check_en");
       
