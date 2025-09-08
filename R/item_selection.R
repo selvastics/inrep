@@ -332,6 +332,42 @@ select_next_item <- function(rv, item_bank, config) {
     return(info)
   }
   
+  # Enhanced parallel caching for multiple items
+  if (isTRUE(config$cache_enabled) && isTRUE(config$parallel_computation) && length(available) > 10) {
+    # Pre-compute and cache information for multiple items in parallel
+    parallel_env <- initialize_parallel_env(config, "item_selection")
+    
+    tryCatch({
+      # Check which items need computation
+      cache_keys <- paste(current_theta, available, sep = ":")
+      uncached_items <- available[!sapply(cache_keys, function(key) !is.null(rv$item_info_cache[[key]]))]
+      
+      if (length(uncached_items) > 5) {  # Only parallelize if enough items
+        # Parallel computation for uncached items
+        if (parallel_env$method == "future") {
+          future.apply::future_vapply(uncached_items, function(i) {
+            info_val <- compute_item_info(current_theta, i, item_bank, config)
+            cache_key <- paste(current_theta, i, sep = ":")
+            rv$item_info_cache[[cache_key]] <<- if (is.finite(info_val)) info_val else 0
+            return(info_val)
+          }, numeric(1), future.seed = TRUE)
+        } else if (parallel_env$method == "parallel") {
+          parallel::clusterExport(parallel_env$cluster, 
+                                c("current_theta", "item_bank", "config", "compute_item_info"), 
+                                envir = environment())
+          parallel::parSapply(parallel_env$cluster, uncached_items, function(i) {
+            info_val <- compute_item_info(current_theta, i, item_bank, config)
+            cache_key <- paste(current_theta, i, sep = ":")
+            rv$item_info_cache[[cache_key]] <<- if (is.finite(info_val)) info_val else 0
+            return(info_val)
+          })
+        }
+      }
+    }, finally = {
+      parallel_env$cleanup()
+    })
+  }
+  
   compute_item_info <- function(theta, item_idx, item_bank, config) {
     # Handle unknown (NA) discrimination parameter
     a <- item_bank$a[item_idx]
@@ -432,12 +468,40 @@ select_next_item <- function(rv, item_bank, config) {
       message("Parallel package not available, falling back to sequential computation")
       info <- vapply(available, function(i) item_info(current_theta, i), numeric(1))
     } else {
+      # Enhanced parallel processing with better resource management
       cores <- base::tryCatch(parallel::detectCores(), error = function(e) 2)
-      n_workers <- max(1, min(cores - 1, 2))
-      cl <- parallel::makeCluster(n_workers)
-      on.exit(parallel::stopCluster(cl), add = TRUE)
-      parallel::clusterExport(cl, c("item_bank", "config", "compute_item_info", "current_theta"), envir = environment())
-      info <- parallel::parSapply(cl, available, function(i) compute_item_info(current_theta, i, item_bank, config))
+      n_workers <- max(1, min(cores - 1, min(4, length(available))))  # Limit workers based on available items
+      
+      # Use future package if available for better parallel processing
+      if (requireNamespace("future", quietly = TRUE) && requireNamespace("future.apply", quietly = TRUE)) {
+        # Set up future plan for parallel processing
+        old_plan <- future::plan()
+        future::plan(future::multisession, workers = n_workers)
+        on.exit(future::plan(old_plan), add = TRUE)
+        
+        # Parallel computation using future.apply
+        info <- future.apply::future_vapply(available, function(i) {
+          compute_item_info(current_theta, i, item_bank, config)
+        }, numeric(1), future.seed = TRUE)
+        
+      } else {
+        # Fallback to base parallel processing
+        cl <- parallel::makeCluster(n_workers, type = "PSOCK")
+        on.exit(parallel::stopCluster(cl), add = TRUE)
+        
+        # Export necessary functions and data to workers
+        parallel::clusterExport(cl, c("item_bank", "config", "compute_item_info", "current_theta"), envir = environment())
+        parallel::clusterEvalQ(cl, {
+          # Load required packages on workers
+          if (requireNamespace("TAM", quietly = TRUE)) library(TAM)
+        })
+        
+        info <- parallel::parSapply(cl, available, function(i) {
+          compute_item_info(current_theta, i, item_bank, config)
+        })
+      }
+      
+      # Update cache with parallel results
       if (isTRUE(config$cache_enabled)) {
         for (idx in seq_along(available)) {
           cache_key <- base::paste(current_theta, available[idx], sep = ":")

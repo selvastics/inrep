@@ -165,6 +165,33 @@ export(get_help)
 export(generate_response_categories)
 export(update_item_bank_scale)
 
+# Parallel Processing Functions
+export(initialize_parallel_env)
+export(parallel_item_info)
+export(parallel_batch_process)
+export(parallel_data_export)
+export(monitor_performance)
+export(optimize_parallel_config)
+
+# Batch Processing Functions
+export(process_participants_batch)
+export(batch_item_selection)
+export(batch_data_export)
+export(benchmark_parallel_performance)
+
+# Performance Monitoring Functions
+export(create_performance_monitor)
+export(start_operation_timing)
+export(end_operation_timing)
+export(record_parallel_stats)
+export(record_cache_stats)
+export(get_performance_summary)
+export(print_performance_summary)
+export(optimize_configuration)
+export(benchmark_configurations)
+export(generate_performance_report)
+export(monitor_memory_usage)
+
 import(shiny)
 import(methods)
 import(stats)

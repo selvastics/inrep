@@ -69,6 +69,12 @@
 #'   for performance optimization.
 #' @param parallel_computation Logical indicating whether to enable parallel processing
 #'   for TAM estimation procedures when computationally intensive.
+#' @param parallel_workers Integer specifying number of parallel workers to use.
+#'   If NULL, automatically determined based on system resources.
+#' @param parallel_batch_size Integer specifying batch size for parallel processing
+#'   operations. Larger batches improve efficiency but use more memory.
+#' @param parallel_optimization Logical indicating whether to automatically optimize
+#'   parallel processing settings based on system resources and study size.
 #' @param feedback_enabled Logical indicating whether to provide immediate feedback
 #'   after each item response.
 #' @param theta_grid Numeric vector specifying theta grid for TAM's numerical integration,
@@ -457,6 +463,9 @@ create_study_config <- function(
     max_response_time = 300,
     cache_enabled = TRUE,
     parallel_computation = FALSE,
+    parallel_workers = NULL,
+    parallel_batch_size = 50,
+    parallel_optimization = TRUE,
     feedback_enabled = FALSE,
     theta_grid = seq(-4, 4, length.out = 100),
     # Enhanced study flow features
@@ -741,6 +750,9 @@ create_study_config <- function(
       max_response_time = max_response_time,
       cache_enabled = cache_enabled,
       parallel_computation = parallel_computation,
+      parallel_workers = parallel_workers,
+      parallel_batch_size = parallel_batch_size,
+      parallel_optimization = parallel_optimization,
       feedback_enabled = feedback_enabled,
       theta_grid = theta_grid,
       
@@ -891,6 +903,46 @@ create_study_config <- function(
       if (getOption("inrep.verbose", TRUE)) {
         message("Added ", length(extra_params), " extra parameters to configuration")
       }
+    }
+    
+    # Auto-optimize parallel processing settings if enabled
+    if (isTRUE(config$parallel_optimization)) {
+      tryCatch({
+        if (requireNamespace("parallel", quietly = TRUE)) {
+          cores <- parallel::detectCores()
+          item_bank_size <- if (!is.null(extra_params$item_bank_size)) {
+            extra_params$item_bank_size
+          } else {
+            50  # Default assumption
+          }
+          
+          # Optimize parallel settings based on system resources
+          if (cores >= 4 && item_bank_size > 100) {
+            config$parallel_computation <- TRUE
+            config$parallel_workers <- min(4, cores - 1)
+            config$parallel_batch_size <- 100
+            if (getOption("inrep.verbose", TRUE)) {
+              message("Auto-optimized parallel processing: enabled with ", config$parallel_workers, " workers")
+            }
+          } else if (cores >= 2 && item_bank_size > 50) {
+            config$parallel_computation <- TRUE
+            config$parallel_workers <- min(2, cores - 1)
+            config$parallel_batch_size <- 50
+            if (getOption("inrep.verbose", TRUE)) {
+              message("Auto-optimized parallel processing: enabled with ", config$parallel_workers, " workers")
+            }
+          } else {
+            config$parallel_computation <- FALSE
+            if (getOption("inrep.verbose", TRUE)) {
+              message("Auto-optimized parallel processing: disabled (insufficient resources)")
+            }
+          }
+        }
+      }, error = function(e) {
+        if (getOption("inrep.verbose", TRUE)) {
+          message("Parallel optimization failed: ", e$message)
+        }
+      })
     }
     
 
