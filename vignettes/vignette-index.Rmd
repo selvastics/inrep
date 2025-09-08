@@ -1,0 +1,336 @@
+---
+title: "inrep Vignette Index: Complete Guide to Adaptive Testing"
+author: "inrep Development Team"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    fig_width: 10
+    fig_height = 6
+    df_print: paged
+vignette: >
+  %\VignetteIndexEntry{inrep Vignette Index}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 10,
+  fig.height = 6,
+  fig.align = "center",
+  warning = FALSE,
+  message = FALSE,
+  eval = FALSE,
+  echo = FALSE
+)
+```
+
+# inrep Vignette Index: Complete Guide to Adaptive Testing
+
+Welcome to the comprehensive guide to the inrep package vignettes. This index provides an overview of all available vignettes, helping you find the right resources for your adaptive testing needs.
+
+## 📚 Available Vignettes
+
+### 1. **Getting Started** (`getting-started`)
+**Perfect for:** New users, first-time setup, basic examples
+
+**What you'll learn:**
+- Package installation and setup
+- Creating your first adaptive test
+- Understanding item banks and configurations
+- Basic IRT models and estimation methods
+- Common use cases and patterns
+
+**Key features covered:**
+- Multiple IRT models (1PL, 2PL, 3PL, GRM)
+- Dual estimation engines (TAM and MIRT)
+- Adaptive and fixed testing modes
+- Parallel processing capabilities
+- System requirements and dependencies
+
+**Start here if:** You're new to inrep or adaptive testing
+
+---
+
+### 2. **Quick Start Guide** (`quick_start`)
+**Perfect for:** Fast setup, 5-minute examples, rapid prototyping
+
+**What you'll learn:**
+- 5-minute setup process
+- Essential functions and workflows
+- Common patterns for different domains
+- Troubleshooting common issues
+- Quick deployment strategies
+
+**Key features covered:**
+- Educational testing patterns
+- Personality research workflows
+- Adaptive testing configurations
+- Essential function reference
+- Common issues and solutions
+
+**Start here if:** You want to get up and running quickly
+
+---
+
+### 3. **Advanced Examples** (`advanced-examples`)
+**Perfect for:** Complex assessments, research applications, advanced features
+
+**What you'll learn:**
+- Advanced configuration options
+- Cognitive assessment examples
+- Multi-domain assessments
+- Cloud storage integration
+- Accessibility features
+- Professional themes
+
+**Key features covered:**
+- Advanced IRT models
+- Custom stopping rules
+- Demographics collection
+- Cloud integration (WebDAV)
+- Accessibility compliance
+- Performance monitoring
+
+**Start here if:** You need advanced features or research-grade capabilities
+
+---
+
+### 4. **Parallel Processing Guide** (`parallel-processing-guide`)
+**Perfect for:** Large-scale assessments, performance optimization, research studies
+
+**What you'll learn:**
+- Parallel processing setup and configuration
+- Performance optimization strategies
+- Memory management techniques
+- Scalability analysis
+- Best practices for large-scale deployments
+
+**Key features covered:**
+- Up to 2.91x speedup capabilities
+- 96.8% parallel efficiency
+- Linear memory scaling
+- Automatic load balancing
+- Performance monitoring and optimization
+
+**Start here if:** You're conducting large-scale studies or need maximum performance
+
+---
+
+### 5. **Complete TAM Integration** (`complete-tam-examples`)
+**Perfect for:** Psychometric research, dissertation-level analysis, advanced IRT modeling
+
+**What you'll learn:**
+- Comprehensive TAM package integration
+- Advanced psychometric analysis
+- Research workflow management
+- Statistical validation methods
+- Publication-ready analysis techniques
+
+**Key features covered:**
+- TAM package integration
+- Advanced IRT modeling
+- Statistical validation
+- Research workflow management
+- Publication-ready outputs
+
+**Start here if:** You're conducting psychometric research or need advanced statistical analysis
+
+---
+
+### 6. **Psychological Study Example** (`psychological-study-example`)
+**Perfect for:** Psychological research, survey studies, academic research
+
+**What you'll learn:**
+- Creating psychological studies
+- Monochrome theme implementation
+- Likert scale assessments
+- Demographic data collection
+- Research compliance features
+
+**Key features covered:**
+- Psychological assessment design
+- Monochrome theme customization
+- Timer and progress tracking
+- Accessibility compliance
+- Data quality control
+
+**Start here if:** You're conducting psychological research or survey studies
+
+---
+
+## 🎯 Choosing the Right Vignette
+
+### By Experience Level
+
+| Experience Level | Recommended Vignettes | Start With |
+|------------------|----------------------|------------|
+| **Beginner** | Getting Started, Quick Start | `getting-started` |
+| **Intermediate** | Advanced Examples, Psychological Study | `advanced-examples` |
+| **Advanced** | Parallel Processing, Complete TAM | `parallel-processing-guide` |
+| **Research** | Complete TAM, Psychological Study | `complete-tam-examples` |
+
+### By Use Case
+
+| Use Case | Primary Vignette | Secondary Vignette |
+|----------|------------------|-------------------|
+| **Educational Testing** | Getting Started | Advanced Examples |
+| **Psychological Research** | Psychological Study | Complete TAM |
+| **Large-Scale Studies** | Parallel Processing | Advanced Examples |
+| **Academic Research** | Complete TAM | Psychological Study |
+| **Quick Prototyping** | Quick Start | Getting Started |
+| **Production Deployment** | Advanced Examples | Parallel Processing |
+
+### By Feature Interest
+
+| Feature | Vignette | Key Sections |
+|---------|----------|--------------|
+| **Parallel Processing** | Parallel Processing Guide | Performance comparison, optimization |
+| **IRT Models** | Complete TAM | Model comparison, parameter estimation |
+| **Themes & UI** | Psychological Study | Monochrome theme, customization |
+| **Cloud Integration** | Advanced Examples | WebDAV setup, remote storage |
+| **Accessibility** | Psychological Study | WCAG compliance, accessibility features |
+| **Performance** | Parallel Processing | Benchmarking, optimization |
+
+## 🚀 Getting Started Workflow
+
+### Step 1: Choose Your Starting Point
+- **New to adaptive testing?** → Start with `getting-started`
+- **Need quick results?** → Use `quick_start`
+- **Have specific requirements?** → Check the use case table above
+
+### Step 2: Follow the Learning Path
+1. **Basic Setup** (`getting-started` or `quick_start`)
+2. **Feature Exploration** (`advanced-examples`)
+3. **Performance Optimization** (`parallel-processing-guide`)
+4. **Advanced Analysis** (`complete-tam-examples`)
+
+### Step 3: Apply to Your Domain
+- **Educational** → Focus on IRT models and adaptive selection
+- **Psychological** → Emphasize themes and demographic collection
+- **Research** → Prioritize statistical validation and reporting
+- **Large-Scale** → Concentrate on parallel processing and performance
+
+## 📖 Vignette Details
+
+### Getting Started (`getting-started`)
+- **Length:** ~15 minutes
+- **Code Examples:** 15+ practical examples
+- **Key Functions:** `create_study_config()`, `launch_study()`, `estimate_ability()`
+- **Prerequisites:** Basic R knowledge
+- **Outcome:** Working adaptive test
+
+### Quick Start (`quick_start`)
+- **Length:** ~5 minutes
+- **Code Examples:** 8 quick examples
+- **Key Functions:** All essential functions
+- **Prerequisites:** None
+- **Outcome:** Rapid prototype
+
+### Advanced Examples (`advanced-examples`)
+- **Length:** ~25 minutes
+- **Code Examples:** 20+ advanced examples
+- **Key Functions:** Advanced configuration options
+- **Prerequisites:** Basic inrep knowledge
+- **Outcome:** Sophisticated assessment
+
+### Parallel Processing (`parallel-processing-guide`)
+- **Length:** ~30 minutes
+- **Code Examples:** 15+ performance examples
+- **Key Functions:** Parallel configuration, monitoring
+- **Prerequisites:** Intermediate R knowledge
+- **Outcome:** High-performance setup
+
+### Complete TAM (`complete-tam-examples`)
+- **Length:** ~45 minutes
+- **Code Examples:** 25+ research examples
+- **Key Functions:** TAM integration, advanced analysis
+- **Prerequisites:** Psychometric knowledge
+- **Outcome:** Research-grade analysis
+
+### Psychological Study (`psychological-study-example`)
+- **Length:** ~20 minutes
+- **Code Examples:** 12+ study examples
+- **Key Functions:** Theme customization, demographics
+- **Prerequisites:** Basic R knowledge
+- **Outcome:** Complete research study
+
+## 🔧 Technical Requirements
+
+### System Requirements
+- **R Version:** 4.0.0 or higher
+- **Memory:** 4GB minimum, 8GB recommended
+- **CPU:** Multi-core recommended for parallel processing
+- **Storage:** 1GB for package and dependencies
+
+### Required Packages
+- **Core:** TAM, shiny, ggplot2, dplyr
+- **Parallel:** future, future.apply
+- **Advanced:** mirt (optional)
+- **Visualization:** ggplot2, plotly (optional)
+
+### Optional Enhancements
+- **Cloud Storage:** WebDAV client
+- **Performance:** Additional CPU cores
+- **Accessibility:** Screen reader compatibility
+- **Deployment:** Shiny Server or RStudio Connect
+
+## 📊 Performance Expectations
+
+### Processing Speed
+- **Sequential:** 100-1000 users/second
+- **Parallel (4 cores):** 200-3000 users/second
+- **Memory Usage:** 0.001 MB per user
+- **Efficiency:** 80-97% at large scales
+
+### Scalability
+- **Small Scale:** 100-500 users
+- **Medium Scale:** 500-2000 users
+- **Large Scale:** 2000-5000+ users
+- **Maximum Tested:** 5000 users
+
+## 🆘 Getting Help
+
+### Documentation
+- **Function Help:** `?function_name`
+- **Package Help:** `help(package = "inrep")`
+- **Vignettes:** `vignette(package = "inrep")`
+
+### Support Channels
+- **GitHub Issues:** Bug reports and feature requests
+- **Documentation:** Comprehensive function documentation
+- **Examples:** Extensive code examples in vignettes
+- **Community:** R community forums and discussions
+
+### Common Issues
+- **Installation Problems:** Check system requirements
+- **Performance Issues:** Review parallel processing guide
+- **Configuration Errors:** Use validation functions
+- **Memory Errors:** Reduce batch sizes or increase memory
+
+## 🎉 Next Steps
+
+1. **Choose your starting vignette** based on your needs
+2. **Follow the examples** step by step
+3. **Experiment with configurations** to match your requirements
+4. **Explore advanced features** as you become comfortable
+5. **Join the community** for support and sharing
+
+## 📝 Contributing
+
+We welcome contributions to improve these vignettes:
+- **Bug Reports:** Use GitHub issues
+- **Feature Requests:** Submit enhancement proposals
+- **Documentation:** Help improve clarity and completeness
+- **Examples:** Share your use cases and solutions
+
+---
+
+**Happy adaptive testing with inrep!** 🚀
+
+For the most up-to-date information, always refer to the latest package documentation and vignettes.

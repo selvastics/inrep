@@ -2,7 +2,14 @@
 title: "Getting Started with inrep: Your First Adaptive Test"
 author: "inrep Development Team"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_width: 10
+    fig_height = 6
+    df_print: paged
 vignette: >
   %\VignetteIndexEntry{Getting Started with inrep: Your First Adaptive Test}
   %\VignetteEngine{knitr::rmarkdown}
@@ -13,32 +20,59 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width = 7,
-  fig.height = 5
+  fig.width = 10,
+  fig.height = 6,
+  fig.align = "center",
+  warning = FALSE,
+  message = FALSE,
+  eval = TRUE,
+  echo = TRUE,
+  results = "hold"
 )
+
+# Load required packages
 library(inrep)
+library(ggplot2)
+library(dplyr)
+
+# Set seed for reproducibility
+set.seed(123)
 ```
 
 # Welcome to inrep
 
-The **inrep** package is a framework for creating and administering adaptive assessments using Item Response Theory (IRT) models. Whether you're an educator, researcher, or assessment professional, inrep provides the tools you need to create adaptive tests with minimal effort.
+The **inrep** package is a comprehensive framework for creating and administering adaptive assessments using Item Response Theory (IRT) models. Whether you're an educator, researcher, or assessment professional, inrep provides the tools you need to create sophisticated adaptive tests with minimal effort.
 
 ## What Makes inrep Special?
 
 - **Multiple IRT Models**: Support for 1PL, 2PL, 3PL, and Graded Response Model (GRM)
 - **Dual Estimation Engines**: Choose between TAM and MIRT for ability estimation
 - **Adaptive & Fixed Testing**: Flexible testing modes for different scenarios
+- **Parallel Processing**: High-performance computing for large-scale assessments
 - **Beautiful UI**: Customizable themes and multilingual support
-- **Research Ready**: Logging and data export capabilities
-- **CRAN Quality**: Production-ready code with extensive documentation
+- **Research Ready**: Comprehensive logging and data export capabilities
+- **Production Quality**: CRAN-ready code with extensive documentation and testing
 
 ## Installation
 
 ```{r eval=FALSE}
+# Install from CRAN (when available)
+install.packages("inrep")
 
-# Install development version from GitHub
+# Or install development version from GitHub
 devtools::install_github("your-repo/inrep")
+
+# Load the package
+library(inrep)
 ```
+
+## System Requirements
+
+Before using inrep, ensure you have:
+- R version 4.0.0 or higher
+- Required dependencies: TAM, shiny, ggplot2, dplyr
+- For parallel processing: future, future.apply packages
+- For advanced features: mirt package (optional)
 
 ## Quick Start: Your First Adaptive Test
 
@@ -66,6 +100,15 @@ launch_study(config, bfi_items)
 
 That's it! This code creates a fully functional adaptive test interface.
 
+## Understanding the Output
+
+When you run `launch_study()`, you'll see:
+- A modern, responsive web interface
+- Real-time ability estimation updates
+- Progress indicators and item information
+- Automatic stopping when criteria are met
+- Results summary upon completion
+
 ## Understanding the Components
 
 ### 1. Item Banks
@@ -77,14 +120,22 @@ Item banks contain the questions and their psychometric properties. Let's examin
 head(bfi_items, 3)
 cat("Number of items:", nrow(bfi_items), "\n")
 cat("Available columns:", names(bfi_items), "\n")
+
+# Show item bank summary
+cat("\nItem Bank Summary:\n")
+cat("- Total items:", nrow(bfi_items), "\n")
+cat("- Response format:", "Likert scale (1-5)", "\n")
+cat("- IRT model:", "Graded Response Model (GRM)", "\n")
+cat("- Domains:", length(unique(bfi_items$Trait)), "personality traits\n")
 ```
 
 **Key columns explained:**
 - `Question`: The item text displayed to users
 - `a`: Discrimination parameter (how well the item differentiates)
 - `b`: Difficulty/location parameter 
-- `Option1-Option4`: Response options for the item
-- Additional metadata like `Trait`, `Domain`, etc.
+- `Option1-Option5`: Response options for the item (5-point Likert scale)
+- `Trait`: Personality domain (Openness, Conscientiousness, etc.)
+- `Domain`: Broader category classification
 
 ### 2. Study Configuration
 

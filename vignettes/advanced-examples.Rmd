@@ -1,6 +1,13 @@
 ---
 title: "Advanced Examples - Cognitive Assessment and Features"
-output: rmarkdown::html_vignette
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_width: 12
+    fig_height = 8
+    df_print: paged
 vignette: >
   %\VignetteIndexEntry{Advanced Examples - Cognitive Assessment and Features}
   %\VignetteEngine{knitr::rmarkdown}
@@ -11,18 +18,42 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  eval = FALSE  # Set to FALSE for CRAN to avoid Shiny examples
+  fig.width = 12,
+  fig.height = 8,
+  fig.align = "center",
+  warning = FALSE,
+  message = FALSE,
+  eval = TRUE,
+  echo = TRUE,
+  results = "hold"
 )
 ```
 
 ```{r setup}
 library(inrep)
 library(TAM)
+library(ggplot2)
+library(dplyr)
+
+# Set seed for reproducibility
+set.seed(123)
 ```
 
 # Advanced Cognitive Assessment Examples
 
-This vignette demonstrates advanced features of the `inrep` package using comprehensive cognitive assessment scenarios.
+This vignette demonstrates advanced features of the `inrep` package using comprehensive cognitive assessment scenarios. We'll explore sophisticated configurations, parallel processing capabilities, and research-grade features that make inrep suitable for large-scale assessments and academic research.
+
+## Overview of Advanced Features
+
+The inrep package offers several advanced capabilities:
+
+- **Parallel Processing**: High-performance computing for large-scale assessments
+- **Advanced IRT Models**: Support for complex psychometric models
+- **Custom Stopping Rules**: Flexible termination criteria
+- **Demographics Collection**: Comprehensive participant data gathering
+- **Cloud Integration**: WebDAV support for remote data storage
+- **Accessibility Features**: WCAG-compliant interface options
+- **Performance Monitoring**: Real-time system metrics and optimization
 
 ## Example 1: Basic Personality Assessment (BFI)
 

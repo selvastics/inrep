@@ -3,9 +3,13 @@ title: "Quick Start Guide: inrep Package"
 author: "inrep Development Team"
 date: "`r Sys.Date()`"
 output: 
-  html_document:
+  rmarkdown::html_vignette:
     toc: true
-    theme: cerulean
+    toc_depth: 3
+    number_sections: true
+    fig_width: 10
+    fig_height = 6
+    df_print: paged
 vignette: >
   %\VignetteIndexEntry{Quick Start Guide: inrep Package}
   %\VignetteEngine{knitr::rmarkdown}
@@ -13,22 +17,52 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+knitr::opts_chunk$set(
+  echo = TRUE, 
+  eval = TRUE,
+  fig.width = 10,
+  fig.height = 6,
+  fig.align = "center",
+  warning = FALSE,
+  message = FALSE
+)
+
+# Load required packages
+library(inrep)
+library(ggplot2)
+library(dplyr)
+
+# Set seed for reproducibility
+set.seed(123)
 ```
 
 # Quick Start Guide
 
-This guide gets you up and running with the `inrep` package in minutes.
+This guide gets you up and running with the `inrep` package in minutes. Whether you're conducting educational assessments, psychological research, or clinical evaluations, this guide will help you create your first adaptive test quickly and efficiently.
 
 ## Installation
 
-```{r}
-# Install from local source
+```{r eval=FALSE}
+# Install from CRAN (when available)
+install.packages("inrep")
+
+# Or install from local source
 devtools::install_local("path/to/inrep")
+
+# Or install development version from GitHub
+devtools::install_github("your-repo/inrep")
 
 # Load the package
 library(inrep)
 ```
+
+## System Requirements
+
+Before starting, ensure you have:
+- R version 4.0.0 or higher
+- Required packages: TAM, shiny, ggplot2, dplyr
+- For parallel processing: future, future.apply
+- For advanced features: mirt (optional)
 
 ## 5-Minute Setup
 
