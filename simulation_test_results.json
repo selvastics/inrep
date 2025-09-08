@@ -1,0 +1,72 @@
+{
+  "timestamp": ["2025-09-08 11:47:13"],
+  "system_info": {
+    "r_version": ["R version 4.4.3 (2025-02-28)"],
+    "platform": ["x86_64-pc-linux-gnu"],
+    "cores": [4],
+    "parallel_workers": [3]
+  },
+  "test_results": {
+    "basic_functionality": ["PASS"],
+    "sequential_processing": {
+      "n_users": [50],
+      "time": [0.0452],
+      "throughput": [1105.5797]
+    },
+    "parallel_processing": {
+      "n_users": [50],
+      "time": [0.1352],
+      "throughput": [369.7429],
+      "speedup": [0.3344],
+      "efficiency": [0.1115]
+    },
+    "load_testing": [
+      {
+        "n_users": 10,
+        "seq_time": 0.0095,
+        "par_time": 0.0592,
+        "speedup": 0.1613,
+        "seq_throughput": 1047.921,
+        "par_throughput": 169.0045
+      },
+      {
+        "n_users": 25,
+        "seq_time": 0.019,
+        "par_time": 0.061,
+        "speedup": 0.3113,
+        "seq_throughput": 1317.0749,
+        "par_throughput": 409.9908
+      },
+      {
+        "n_users": 50,
+        "seq_time": 0.0426,
+        "par_time": 0.0753,
+        "speedup": 0.5653,
+        "seq_throughput": 1174.0003,
+        "par_throughput": 663.641
+      },
+      {
+        "n_users": 100,
+        "seq_time": 0.0818,
+        "par_time": 0.0904,
+        "speedup": 0.9048,
+        "seq_throughput": 1222.7293,
+        "par_throughput": 1106.297
+      },
+      {
+        "n_users": 200,
+        "seq_time": 0.1627,
+        "par_time": 0.1174,
+        "speedup": 1.3853,
+        "seq_throughput": 1229.4243,
+        "par_throughput": 1703.1081
+      }
+    ],
+    "performance_analysis": {
+      "mean_ability": [0.1645],
+      "sd_ability": [1.0314],
+      "mean_response_rate": [0.546],
+      "mean_session_time": [604.9558]
+    }
+  }
+}

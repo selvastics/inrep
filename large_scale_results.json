@@ -1,0 +1,92 @@
+{
+  "timestamp": ["2025-09-08 11:48:34"],
+  "system_info": {
+    "r_version": ["R version 4.4.3 (2025-02-28)"],
+    "platform": ["x86_64-pc-linux-gnu"],
+    "cores": [4],
+    "parallel_workers": [3]
+  },
+  "test_configuration": {
+    "config": {
+      "name": ["Large Scale Test"],
+      "model": ["2PL"],
+      "parallel_computation": [true],
+      "parallel_workers": [6],
+      "min_items": [5],
+      "max_items": [25],
+      "min_SEM": [0.3]
+    },
+    "item_bank_size": [200],
+    "test_sizes": [100, 250, 500, 1000, 2000, 5000]
+  },
+  "results": [
+    {
+      "n_users": 100,
+      "seq_time": 0.1864,
+      "par_time": 0.1821,
+      "speedup": 1.0237,
+      "throughput_seq": 536.5969,
+      "throughput_par": 549.2975,
+      "memory_usage": 0.1158,
+      "efficiency": 0.3412
+    },
+    {
+      "n_users": 250,
+      "seq_time": 0.2756,
+      "par_time": 0.1819,
+      "speedup": 1.5148,
+      "throughput_seq": 907.2022,
+      "throughput_par": 1374.2463,
+      "memory_usage": 0.2557,
+      "efficiency": 0.5049
+    },
+    {
+      "n_users": 500,
+      "seq_time": 0.5313,
+      "par_time": 0.286,
+      "speedup": 1.8576,
+      "throughput_seq": 941.1697,
+      "throughput_par": 1748.3041,
+      "memory_usage": 0.5114,
+      "efficiency": 0.6192
+    },
+    {
+      "n_users": 1000,
+      "seq_time": 1.0463,
+      "par_time": 0.4533,
+      "speedup": 2.3085,
+      "throughput_seq": 955.7082,
+      "throughput_par": 2206.265,
+      "memory_usage": 1.0227,
+      "efficiency": 0.7695
+    },
+    {
+      "n_users": 2000,
+      "seq_time": 2.0047,
+      "par_time": 0.8288,
+      "speedup": 2.4189,
+      "throughput_seq": 997.653,
+      "throughput_par": 2413.2664,
+      "memory_usage": 2.0453,
+      "efficiency": 0.8063
+    },
+    {
+      "n_users": 5000,
+      "seq_time": 5.0505,
+      "par_time": 1.7383,
+      "speedup": 2.9054,
+      "throughput_seq": 989.9944,
+      "throughput_par": 2876.3213,
+      "memory_usage": 5.1118,
+      "efficiency": 0.9685
+    }
+  ],
+  "analysis": {
+    "max_throughput_users": [5000],
+    "max_parallel_throughput": [2876.3213],
+    "best_speedup": [2.9054],
+    "best_efficiency": [0.9685],
+    "total_users_tested": [8850],
+    "max_users_successfully_processed": [5000]
+  }
+}
