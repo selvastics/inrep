@@ -1018,14 +1018,14 @@ launch_study(research_config, combined_items)
 
 With inrep, you can:
 
-- ✅ Create professional adaptive assessments in minutes
-- ✅ Support multiple languages and themes
-- ✅ Implement various IRT models
-- ✅ Generate real-time visualizations
-- ✅ Export data in multiple formats
-- ✅ Ensure GDPR compliance
-- ✅ Recover from session interruptions
-- ✅ Scale from research to enterprise
+- Create professional adaptive assessments in minutes
+- Support multiple languages and themes
+- Implement various IRT models
+- Generate real-time visualizations
+- Export data in multiple formats
+- Ensure GDPR compliance
+- Recover from session interruptions
+- Scale from research to enterprise
 
 ## Getting Help
 

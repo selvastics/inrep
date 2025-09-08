@@ -5277,7 +5277,7 @@ quality_standards <- data.frame(
                        "Peer Review", "Replication Studies", "Innovation Assessment")
 )
 
-cat("🏅 QUALITY STANDARDS CERTIFICATION:\n")
+cat("QUALITY STANDARDS CERTIFICATION:\n")
 kable(quality_standards, caption = "Comprehensive Framework Validation")
 
 # Professional endorsements simulation

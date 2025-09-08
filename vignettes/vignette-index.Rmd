@@ -34,7 +34,7 @@ knitr::opts_chunk$set(
 
 Welcome to the comprehensive guide to the inrep package vignettes. This index provides an overview of all available vignettes, helping you find the right resources for your adaptive testing needs.
 
-## 📚 Available Vignettes
+## Available Vignettes
 
 ### 1. **Getting Started** (`getting-started`)
 **Perfect for:** New users, first-time setup, basic examples
@@ -164,7 +164,7 @@ Welcome to the comprehensive guide to the inrep package vignettes. This index pr
 
 ---
 
-## 🎯 Choosing the Right Vignette
+## Choosing the Right Vignette
 
 ### By Experience Level
 
@@ -197,7 +197,7 @@ Welcome to the comprehensive guide to the inrep package vignettes. This index pr
 | **Accessibility** | Psychological Study | WCAG compliance, accessibility features |
 | **Performance** | Parallel Processing | Benchmarking, optimization |
 
-## 🚀 Getting Started Workflow
+## Getting Started Workflow
 
 ### Step 1: Choose Your Starting Point
 - **New to adaptive testing?** → Start with `getting-started`
@@ -216,7 +216,7 @@ Welcome to the comprehensive guide to the inrep package vignettes. This index pr
 - **Research** → Prioritize statistical validation and reporting
 - **Large-Scale** → Concentrate on parallel processing and performance
 
-## 📖 Vignette Details
+## Vignette Details
 
 ### Getting Started (`getting-started`)
 - **Length:** ~15 minutes
@@ -260,7 +260,7 @@ Welcome to the comprehensive guide to the inrep package vignettes. This index pr
 - **Prerequisites:** Basic R knowledge
 - **Outcome:** Complete research study
 
-## 🔧 Technical Requirements
+## Technical Requirements
 
 ### System Requirements
 - **R Version:** 4.0.0 or higher
@@ -280,7 +280,7 @@ Welcome to the comprehensive guide to the inrep package vignettes. This index pr
 - **Accessibility:** Screen reader compatibility
 - **Deployment:** Shiny Server or RStudio Connect
 
-## 📊 Performance Expectations
+## Performance Expectations
 
 ### Processing Speed
 - **Sequential:** 100-1000 users/second
@@ -294,7 +294,7 @@ Welcome to the comprehensive guide to the inrep package vignettes. This index pr
 - **Large Scale:** 2000-5000+ users
 - **Maximum Tested:** 5000 users
 
-## 🆘 Getting Help
+## Getting Help
 
 ### Documentation
 - **Function Help:** `?function_name`
@@ -313,7 +313,7 @@ Welcome to the comprehensive guide to the inrep package vignettes. This index pr
 - **Configuration Errors:** Use validation functions
 - **Memory Errors:** Reduce batch sizes or increase memory
 
-## 🎉 Next Steps
+## Next Steps
 
 1. **Choose your starting vignette** based on your needs
 2. **Follow the examples** step by step
@@ -321,7 +321,7 @@ Welcome to the comprehensive guide to the inrep package vignettes. This index pr
 4. **Explore advanced features** as you become comfortable
 5. **Join the community** for support and sharing
 
-## 📝 Contributing
+## Contributing
 
 We welcome contributions to improve these vignettes:
 - **Bug Reports:** Use GitHub issues
@@ -331,6 +331,6 @@ We welcome contributions to improve these vignettes:
 
 ---
 
-**Happy adaptive testing with inrep!** 🚀
+**Happy adaptive testing with inrep!**
 
 For the most up-to-date information, always refer to the latest package documentation and vignettes.
