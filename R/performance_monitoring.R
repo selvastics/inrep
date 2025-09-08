@@ -321,7 +321,7 @@ benchmark_configurations <- function(participants, item_bank, base_config, test_
     test_config <- test_configs[[i]]
     
     # Create performance monitor
-    monitor <- create_performance_monitor(test_config)
+    monitor <- create_performance_monitor()
     
     # Benchmark the configuration
     start_time <- Sys.time()
