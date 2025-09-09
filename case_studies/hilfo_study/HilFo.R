@@ -1258,6 +1258,13 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     cat("Warning: Could not access language setting:", e$message, "\n")
   })
   
+  # Perform IRT analysis for Programming Anxiety
+  tryCatch({
+    perform_irt_analysis(responses)
+  }, error = function(e) {
+    cat("Warning: IRT analysis failed:", e$message, "\n")
+  })
+  
   # Use the optimized PDF report system with error handling
   tryCatch({
     return(create_hilfo_pdf_report(responses, item_bank, demographics, session))
@@ -1283,6 +1290,9 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
 # =============================================================================
 # ENHANCED DOWNLOAD HANDLER FOR HILDESHEIM
 # =============================================================================
+
+# Function to perform IRT analysis for Programming Anxiety
+perform_irt_analysis <- function(responses) {
   cat("\n================================================================================\n")
   cat("PROGRAMMING ANXIETY - IRT MODEL (2PL)\n")
   cat("================================================================================\n")
@@ -1299,6 +1309,9 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   # Get Programming Anxiety responses (first 10 items) with reverse scoring
   pa_responses <- responses[1:10]
   pa_responses[c(1, 10)] <- 6 - pa_responses[c(1, 10)]  # Reverse items 1 and 10
+  
+  # Calculate classical score
+  pa_score <- mean(pa_responses, na.rm = TRUE)
   
   # Use Maximum Likelihood Estimation for theta
   theta_est <- 0  # Start with prior mean
@@ -1368,7 +1381,11 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   # Convert theta to 1-5 scale: theta of -2 = 1, theta of 2 = 5
   pa_theta_scaled <- 3 + theta_est  # Center at 3, each SD = 1 point
   pa_theta_scaled <- pmax(1, pmin(5, pa_theta_scaled))  # Bound to 1-5
-  pa_theta <- pa_theta_scaled
+  pa_theta <<- pa_theta_scaled  # Assign to global environment
+  theta_est <<- theta_est  # Assign to global environment
+  se_est <<- se_est  # Assign to global environment
+  theta_trace <<- theta_trace  # Assign to global environment
+  se_trace <<- se_trace  # Assign to global environment
   
   # Create trace plot showing theta progression (simulated for semi-adaptive)
   # In a real adaptive test, this would show actual theta estimates after each item
@@ -2030,6 +2047,9 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   )
   
   return(shiny::HTML(html))
+}
+
+# Close the perform_irt_analysis function
 }
 
 # =============================================================================
