@@ -1161,19 +1161,19 @@ launch_study <- function(
       })
       
       # Start periodic backup monitoring (with fallback)
-      if (session_save && exists("start_data_preservation_monitoring") && is.function(start_data_preservation_monitoring)) {
+  if (isTRUE(session_save) && exists("start_data_preservation_monitoring") && is.function(start_data_preservation_monitoring)) {
         tryCatch({
           start_data_preservation_monitoring()
           # logger("Periodic data preservation monitoring started", level = "INFO") # Disabled to reduce spam
         }, error = function(e) {
           logger(sprintf("Failed to start data preservation monitoring: %s", e$message), level = "WARNING")
         })
-      } else if (session_save) {
+      } else if (isTRUE(session_save)) {
         logger("Session saving enabled (basic mode)", level = "INFO")
       }
       
       # Log comprehensive session initialization (with fallback)
-      if (session_save && exists("log_session_event") && is.function(log_session_event)) {
+  if (isTRUE(session_save) && exists("log_session_event") && is.function(log_session_event)) {
         tryCatch({
           log_session_event(
             event_type = "session_initialized",
@@ -2529,7 +2529,7 @@ launch_study <- function(
     # ),
     if (tolower(config$theme %||% "") == "hildesheim") shiny::div(class = "hildesheim-logo"),
     # Session status indicator for session saving
-    if (session_save) {
+  if (isTRUE(session_save)) {
       shiny::uiOutput("session_status_ui")
     },
     shiny::uiOutput("study_ui", style = "position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; margin: 0 auto !important; transform: none !important; width: 100% !important; max-width: 1200px !important; display: block !important; visibility: visible !important; opacity: 1 !important;")
@@ -2915,7 +2915,7 @@ launch_study <- function(
   logger("rv initialized IMMEDIATELY (synchronous) - no observe needed", level = "DEBUG")
     
     # Defer session monitoring until after first page loads
-    if (session_save) {
+  if (isTRUE(session_save)) {
       # Start session monitoring immediately
       # Session timeout monitoring
       shiny::observe({
@@ -2970,7 +2970,7 @@ launch_study <- function(
     
     # Session status monitoring - DISABLED timer-based monitoring
     # Session is still saved but without constant UI updates that cause page jumping
-    if (session_save) {
+  if (isTRUE(session_save)) {
       # Log once that session monitoring is active
       if (exists("get_session_status") && is.function(get_session_status)) {
         # logger("Session monitoring active (event-based)", level = "INFO") # Disabled to reduce spam
@@ -2985,7 +2985,7 @@ launch_study <- function(
     
     # Keep-alive mechanism - DISABLED (already started in initialize_robust_session)
     # This was causing duplicate observers and SESSION_TERMINATED messages
-    # if (session_save && exists("start_keep_alive_monitoring") && is.function(start_keep_alive_monitoring)) {
+  # if (isTRUE(session_save) && exists("start_keep_alive_monitoring") && is.function(start_keep_alive_monitoring)) {
     #   tryCatch({
     #     start_keep_alive_monitoring()
     #     # Log once at startup, then run silently
@@ -2996,7 +2996,7 @@ launch_study <- function(
     # }
     
     # Session status UI (hidden by default - only shows when explicitly enabled)
-    if (session_save && isTRUE(config$show_session_time)) {
+  if (isTRUE(session_save) && isTRUE(config$show_session_time)) {
       output$session_status_ui <- shiny::renderUI({
         if (exists("get_session_status") && is.function(get_session_status)) {
           tryCatch({
@@ -3045,21 +3045,21 @@ launch_study <- function(
     
     # Session cleanup when app stops (with fallback)
     session$onSessionEnded(function() {
-      if (session_save && exists("cleanup_session") && is.function(cleanup_session)) {
+  if (isTRUE(session_save) && exists("cleanup_session") && is.function(cleanup_session)) {
         tryCatch({
           logger("Session ending - cleaning up and preserving final data", level = "INFO")
           cleanup_session(save_final_data = TRUE)
         }, error = function(e) {
           logger(sprintf("Session cleanup failed: %s", e$message), level = "WARNING")
         })
-      } else if (session_save) {
+      } else if (isTRUE(session_save)) {
         logger("Session ending - basic cleanup", level = "INFO")
       }
     })
     
     # Handle browser disconnect (with fallback)
     session$onFlush(function() {
-      if (session_save && exists("update_activity") && is.function(update_activity)) {
+  if (isTRUE(session_save) && exists("update_activity") && is.function(update_activity)) {
         tryCatch({
           update_activity()
         }, error = function(e) {
@@ -4588,7 +4588,7 @@ launch_study <- function(
     
     shiny::observeEvent(input$start_test, {
       # Log demographic submission
-      if (session_save && exists("log_session_event") && is.function(log_session_event)) {
+  if (isTRUE(session_save) && exists("log_session_event") && is.function(log_session_event)) {
         tryCatch({
           log_session_event(
             event_type = "demographics_submitted",
@@ -4679,7 +4679,7 @@ launch_study <- function(
     
     shiny::observeEvent(input$begin_test, {
       # Log test start
-      if (session_save && exists("log_session_event") && is.function(log_session_event)) {
+  if (isTRUE(session_save) && exists("log_session_event") && is.function(log_session_event)) {
         tryCatch({
           log_session_event(
             event_type = "test_started",
@@ -4881,7 +4881,7 @@ launch_study <- function(
         rv$administered <- base::c(rv$administered, item_index)
         
         # LOG RESPONSE SUBMISSION WITH ERROR PROTECTION
-        if (session_save && exists("log_session_event") && is.function(log_session_event)) {
+  if (isTRUE(session_save) && exists("log_session_event") && is.function(log_session_event)) {
           tryCatch({
             log_session_event(
               event_type = "response_submitted",
@@ -4925,7 +4925,7 @@ launch_study <- function(
         logger(sprintf("Critical error in response processing: %s", e$message), level = "ERROR")
         
         # ATTEMPT EMERGENCY DATA PRESERVATION
-        if (session_save && exists("emergency_data_preservation") && is.function(emergency_data_preservation)) {
+  if (isTRUE(session_save) && exists("emergency_data_preservation") && is.function(emergency_data_preservation)) {
           tryCatch({
             emergency_data_preservation()
             logger("Emergency data preservation completed", level = "INFO")
@@ -4987,7 +4987,7 @@ launch_study <- function(
       }
       
       # ROBUST DATA PRESERVATION WITH ERROR RECOVERY
-      if (session_save && exists("preserve_session_data") && is.function(preserve_session_data)) {
+  if (isTRUE(session_save) && exists("preserve_session_data") && is.function(preserve_session_data)) {
         tryCatch({
           preserve_session_data()
           logger("Response data automatically preserved", level = "INFO")
@@ -5023,7 +5023,7 @@ launch_study <- function(
           logger("Test completed, proceeding to results")
         
         # Log test completion
-        if (session_save && exists("log_session_event") && is.function(log_session_event)) {
+  if (isTRUE(session_save) && exists("log_session_event") && is.function(log_session_event)) {
           tryCatch({
             log_session_event(
               event_type = "test_completed",
@@ -5043,7 +5043,7 @@ launch_study <- function(
         }
         
         # Final robust data preservation
-        if (session_save && exists("preserve_session_data") && is.function(preserve_session_data)) {
+  if (isTRUE(session_save) && exists("preserve_session_data") && is.function(preserve_session_data)) {
           tryCatch({
             preserve_session_data(force = TRUE)
             logger("Final assessment data preserved", level = "INFO")
@@ -5110,7 +5110,7 @@ launch_study <- function(
           scroll_to_top_enhanced()
           
           # Log test completion
-          if (session_save && exists("log_session_event") && is.function(log_session_event)) {
+          if (isTRUE(session_save) && exists("log_session_event") && is.function(log_session_event)) {
             tryCatch({
               log_session_event(
                 event_type = "test_completed",
@@ -5130,7 +5130,7 @@ launch_study <- function(
           }
           
           # Final robust data preservation
-          if (session_save && exists("preserve_session_data") && is.function(preserve_session_data)) {
+          if (isTRUE(session_save) && exists("preserve_session_data") && is.function(preserve_session_data)) {
             tryCatch({
               preserve_session_data(force = TRUE)
               logger("Final assessment data preserved", level = "INFO")
@@ -5261,7 +5261,7 @@ launch_study <- function(
     
     # COMPREHENSIVE ERROR RECOVERY SYSTEM - ENSURES ASSESSMENT NEVER STOPS
     shiny::observeEvent(input$retry_continue, {
-      if (session_save && exists("attempt_error_recovery") && is.function(attempt_error_recovery)) {
+  if (isTRUE(session_save) && exists("attempt_error_recovery") && is.function(attempt_error_recovery)) {
         tryCatch({
           recovery_result <- attempt_error_recovery()
           if (recovery_result$success) {
@@ -5328,7 +5328,7 @@ launch_study <- function(
         if (session_duration > 3600) {  # 1 hour
           logger("Long session detected - performing health check", level = "INFO")
           # Force data preservation
-          if (session_save && exists("preserve_session_data") && is.function(preserve_session_data)) {
+          if (isTRUE(session_save) && exists("preserve_session_data") && is.function(preserve_session_data)) {
             tryCatch({
               preserve_session_data(force = TRUE)
               logger("Health check data preservation completed", level = "INFO")
@@ -5351,7 +5351,7 @@ launch_study <- function(
     
     shiny::observeEvent(input$restart_test, {
       # Clean up robust session before restart
-      if (session_save && exists("cleanup_session") && is.function(cleanup_session)) {
+  if (isTRUE(session_save) && exists("cleanup_session") && is.function(cleanup_session)) {
         tryCatch({
           cleanup_session(save_final_data = TRUE)
         }, error = function(e) {
@@ -5380,7 +5380,7 @@ launch_study <- function(
       rv$session_active <- TRUE
       
       # Log test restart
-      if (session_save && exists("log_session_event") && is.function(log_session_event)) {
+  if (isTRUE(session_save) && exists("log_session_event") && is.function(log_session_event)) {
         tryCatch({
           log_session_event(
             event_type = "test_restarted",
@@ -5417,7 +5417,7 @@ launch_study <- function(
   }
   
   # Final session cleanup setup
-  if (session_save) {
+  if (isTRUE(session_save)) {
     # Set up global cleanup on package unload
     .GlobalEnv$.inrep_cleanup_on_exit <- function() {
       if (exists("cleanup_session") && is.function(cleanup_session)) {
