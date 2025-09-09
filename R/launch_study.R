@@ -3575,78 +3575,50 @@ launch_study <- function(
           se_history = if (config$adaptive) rv$se_history else NULL
         ))
         if (save_format == "pdf") {
-          safe_title <- gsub("[_%&#$]", "\\\\\\0", config$name)
-          latex_content <- sprintf('
-            \\documentclass{article}
-            \\usepackage{geometry}
-            \\usepackage{booktabs}
-            \\usepackage[utf8]{inputenc}
-            \\usepackage{amsmath}
-            \\usepackage{fontspec}
-            \\setmainfont{Inter}
-            \\geometry{margin=0.75in}
-            \\begin{document}
-            
-            \\title{%s}
-            \\author{}
-            \\date{%s}
-            \\maketitle
-            
-            \\section{Participant Information}
-            \\begin{tabular}{ll}
-            %s
-            \\end{tabular}
-            
-            \\section{Assessment Results}
-            \\begin{itemize}
-            %s
-                \\item \\textbf{Items Administered}: %d
-            \\end{itemize}
-            
-            \\section{Responses}
-            \\begin{table}[h]
-            \\centering
-            \\small
-            \\begin{tabular}{p{5cm}lp{2cm}}
-            \\toprule
-            \\textbf{Question} & \\textbf{Response} & \\textbf{Time (Sec.)} \\\\
-            \\midrule
-            %s
-            \\bottomrule
-            \\end{tabular}
-            \\caption{Individual Item Results}
-            \\end{table}
-            
-            \\section{Recommendations}
-            \\begin{itemize}
-            %s
-            \\end{itemize}
-            
-            \\end{document}
-            ',
-                                   safe_title,
-                                   format(Sys.time(), "%B %d, %Y"),
-                                   base::paste(base::sapply(base::names(rv$demo_data), function(d) base::sprintf("%s & %s \\\\", d, rv$demo_data[d] %||% "N/A")), collapse = "\n"),
-                                   if (config$adaptive) base::sprintf("\\item \\textbf{Trait Score}: %.2f\n\\item \\textbf{Standard Error}: %.3f", rv$cat_result$theta, rv$cat_result$se) else "",
-                                   base::length(rv$cat_result$administered),
-                                   base::paste(base::sapply(base::seq_along(rv$cat_result$administered), function(i) {
-                                     base::sprintf("%s & %s & %.1f \\\\", 
-                                                   item_bank$Question[rv$cat_result$administered[i]], 
-                                                   rv$cat_result$responses[i],
-                                                   rv$cat_result$response_times[i])
-                                   }), collapse = "\n"),
-                                   base::paste(base::sprintf("\\item %s", report_data$recommendations), collapse = "\n")
-          )
-          temp_dir <- base::tempdir()
-          tex_file <- base::file.path(temp_dir, "report.tex")
-          base::writeLines(latex_content, tex_file)
-          base::tryCatch({
-            tinytex::latexmk(tex_file, "pdflatex")
-            base::file.copy(base::paste0(tools::file_path_sans_ext(tex_file), ".pdf"), file)
-          }, error = function(e) {
-            logger(base::sprintf("PDF generation failed: %s", e$message))
-            jsonlite::write_json(report_data, file, pretty = TRUE, auto_unbox = TRUE)
-          })
+          # Use enhanced PDF reporting if available
+          if (exists("generate_smart_pdf_report")) {
+            tryCatch({
+              # Initialize PDF reporting if not already done
+              if (!exists(".pdf_state") || is.null(.pdf_state$enable_plot_capture)) {
+                initialize_pdf_reporting(
+                  enable_plot_capture = TRUE,
+                  plot_quality = 2,
+                  cache_plots = TRUE
+                )
+              }
+              
+              # Generate smart PDF report
+              pdf_file <- generate_smart_pdf_report(
+                config = config,
+                cat_result = rv$cat_result,
+                item_bank = item_bank,
+                demographics = rv$demo_data,
+                output_file = file,
+                template = "professional",
+                include_plots = TRUE,
+                plot_quality = 2,
+                fast_mode = TRUE  # Use fast mode for minimal processing power
+              )
+              
+              if (!is.null(pdf_file) && file.exists(pdf_file)) {
+                # Copy generated PDF to target location
+                file.copy(pdf_file, file, overwrite = TRUE)
+                logger("Enhanced PDF report generated successfully")
+              } else {
+                # Fallback to JSON if PDF generation fails
+                logger("Enhanced PDF generation failed, falling back to JSON")
+                jsonlite::write_json(report_data, file, pretty = TRUE, auto_unbox = TRUE)
+              }
+              
+            }, error = function(e) {
+              logger(base::sprintf("Enhanced PDF generation failed: %s", e$message))
+              # Fallback to original LaTeX method
+              generate_fallback_pdf(report_data, config, item_bank, rv$cat_result, rv$demo_data, file, logger)
+            })
+          } else {
+            # Fallback to original LaTeX method
+            generate_fallback_pdf(report_data, config, item_bank, rv$cat_result, rv$demo_data, file, logger)
+          }
         } else if (save_format == "rds") {
           base::saveRDS(report_data, file)
         } else if (save_format == "csv") {
@@ -3664,6 +3636,48 @@ launch_study <- function(
         } else if (save_format == "json") {
           jsonlite::write_json(report_data, file, pretty = TRUE, auto_unbox = TRUE)
         }
+      }
+    )
+    
+    # Additional download handlers for enhanced UI
+    output$download_csv <- shiny::downloadHandler(
+      filename = function() {
+        base::paste0(config$study_key %||% "study", "_", base::format(base::Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
+      },
+      content = function(file) {
+        # Create CSV data
+        flat_data <- base::data.frame(
+          Timestamp = base::Sys.time(),
+          Theta = if (config$adaptive) rv$cat_result$theta else NA,
+          SE = if (config$adaptive) rv$cat_result$se else NA,
+          base::t(rv$demo_data),
+          Items = base::paste(rv$cat_result$administered, collapse = ";"),
+          Responses = base::paste(rv$cat_result$responses, collapse = ";"),
+          Response_Times = base::paste(rv$cat_result$response_times, collapse = ";")
+        )
+        utils::write.csv(flat_data, file, row.names = FALSE)
+      }
+    )
+    
+    output$download_json <- shiny::downloadHandler(
+      filename = function() {
+        base::paste0(config$study_key %||% "study", "_", base::format(base::Sys.time(), "%Y%m%d_%H%M%S"), ".json")
+      },
+      content = function(file) {
+        report_data <- base::as.list(base::list(
+          config = config,
+          demographics = base::as.list(rv$demo_data),
+          theta = if (config$adaptive) rv$cat_result$theta else NULL,
+          se = if (config$adaptive) rv$cat_result$se else NULL,
+          administered = item_bank$Question[rv$cat_result$administered],
+          responses = rv$cat_result$responses,
+          response_times = rv$cat_result$response_times,
+          recommendations = config$recommendation_fun(if (config$adaptive) rv$cat_result$theta else base::mean(rv$cat_result$responses, na.rm = TRUE), rv$demo_data),
+          timestamp = base::Sys.time(),
+          theta_history = if (config$adaptive) rv$theta_history else NULL,
+          se_history = if (config$adaptive) rv$se_history else NULL
+        ))
+        jsonlite::write_json(report_data, file, pretty = TRUE, auto_unbox = TRUE)
       }
     )
     

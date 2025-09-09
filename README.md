@@ -34,6 +34,7 @@
 - **Enhanced Security**: Input validation, rate limiting, CSRF protection, encryption, and audit logging
 - **Multilingual Support**: Interface available in English, German, Spanish, and French with complete translations
 - **10+ Beautiful Themes**: Including Light, Professional, Ocean, Forest, Midnight, Sunset, Hildesheim, and more
+- **Enhanced PDF Reporting**: Smart PDF generation with automatic plot capture, professional templates, and minimal processing power
 - **Reporting**: Multiple export formats (CSV, JSON, SPSS, PDF) with detailed analytics and visualizations  
 - **Session Recovery**: Session handling with automatic save and crash recovery capabilities
 - **Smart Argument Validation**: Fuzzy matching for typos, case-insensitive parameters, helpful error messages
@@ -221,6 +222,7 @@ launch_study(
   config = advanced_config,
   item_bank = cognitive_items,
   accessibility = TRUE,
+  save_format = "pdf",  # Enhanced PDF with automatic plot capture
   admin_dashboard_hook = function(session_data) {
     message("Participant ID:", session_data$participant_id)
     message("Progress:", round(session_data$progress, 1), "%")
@@ -228,6 +230,48 @@ launch_study(
     message("Standard error:", round(session_data$se, 3))
   }
 )
+```
+
+### Enhanced PDF Reporting
+
+The package now includes smart PDF report generation with automatic plot capture:
+
+```r
+# Enhanced PDF with automatic plot integration
+launch_study(
+  config = config,
+  item_bank = item_bank,
+  save_format = "pdf"  # Automatically uses enhanced PDF reporting
+)
+
+# The PDF report includes:
+# - Assessment progress visualizations
+# - Ability estimation history plots  
+# - Item difficulty analysis
+# - Response pattern analysis
+# - Professional formatting with plots
+# - Fast generation (optimized for minimal processing power)
+```
+
+### Configuration Templates
+
+Quick setup for common assessment types:
+
+```r
+# Personality Assessment
+config <- get_config_template("personality_assessment")
+launch_study(config, bfi_items)
+
+# Cognitive Ability Assessment  
+config <- get_config_template("cognitive_ability")
+launch_study(config, cognitive_items)
+
+# Educational Diagnostic
+config <- get_config_template("educational_diagnostic")
+launch_study(config, math_items)
+
+# Available templates
+list_config_templates()
 ```
 
 ## Theme Customization 

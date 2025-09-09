@@ -479,6 +479,7 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
       shiny::tags$link(rel = "stylesheet", href = "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"),
       shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
       shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel="stylesheet"),
+      shiny::tags$link(rel = "stylesheet", href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"),
       shiny::tags$style(type = "text/css", get_theme_css(config$theme %||% "Light"))
     ),
     shiny::div(class = "min-h-screen bg-white text-black flex items-center justify-center",
@@ -732,8 +733,48 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
                 config$results_processor(responses, item_bank)
               )
             },
-            shiny::actionButton("download_results", "Download Results", 
-              class = "bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg")
+            
+            # Enhanced Download Section with PDF Button
+            shiny::div(class = "mt-8 p-6 bg-gray-50 rounded-lg",
+              shiny::h3(class = "text-xl font-semibold mb-4 text-gray-800", "Download Your Results"),
+              shiny::p(class = "text-gray-600 mb-4", 
+                "Get a comprehensive report of your assessment results with visualizations and detailed analysis."),
+              
+              shiny::div(class = "flex flex-wrap gap-4 justify-center",
+                # PDF Download Button (Enhanced)
+                shiny::downloadButton("save_report", 
+                  shiny::div(class = "flex items-center space-x-2",
+                    shiny::tags$i(class = "fas fa-file-pdf text-white text-lg"),
+                    shiny::span("Download PDF Report")
+                  ),
+                  class = "bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-lg transition-all duration-200 transform hover:scale-105"
+                ),
+                
+                # CSV Download Button
+                shiny::downloadButton("download_csv", 
+                  shiny::div(class = "flex items-center space-x-2",
+                    shiny::tags$i(class = "fas fa-file-csv text-white text-lg"),
+                    shiny::span("Download CSV Data")
+                  ),
+                  class = "bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-lg transition-all duration-200 transform hover:scale-105"
+                ),
+                
+                # JSON Download Button
+                shiny::downloadButton("download_json", 
+                  shiny::div(class = "flex items-center space-x-2",
+                    shiny::tags$i(class = "fas fa-file-code text-white text-lg"),
+                    shiny::span("Download JSON Data")
+                  ),
+                  class = "bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-lg transition-all duration-200 transform hover:scale-105"
+                )
+              ),
+              
+              # PDF Features Info
+              shiny::div(class = "mt-4 text-sm text-gray-600 text-center",
+                shiny::p("📊 PDF includes: Progress plots, ability estimates, item analysis, and professional formatting"),
+                shiny::p("⚡ Fast generation optimized for minimal processing power")
+              )
+            )
           )
         )
         
