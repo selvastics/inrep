@@ -1,3 +1,4 @@
+ 
 #' Robust Session Management for Sensitive Participant Data
 #' 
 #' This module provides robust session handling with automatic data preservation,
@@ -205,7 +206,7 @@ generate_session_id <- function() {
 #' @param message Event description
 #' @param details Additional event details as list
 log_session_event <- function(event_type, message, details = NULL) {
-  if (!.session_state$enable_logging) return()
+  if (!isTRUE(.session_state$enable_logging)) return()
   
   timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
   session_id <- .session_state$session_id
@@ -255,7 +256,7 @@ log_session_event <- function(event_type, message, details = NULL) {
 update_activity <- function() {
   .session_state$last_activity <- Sys.time()
   # Only log activity to file, not console (reduces spam)
-  if (.session_state$enable_logging) {
+  if (isTRUE(.session_state$enable_logging)) {
     log_session_event("ACTIVITY", "User activity detected")
   }
 }
@@ -268,10 +269,12 @@ is_session_valid <- function() {
   
   elapsed_time <- as.numeric(difftime(Sys.time(), .session_state$session_start_time, units = "secs"))
   max_time <- .session_state$max_session_time
+  # If max_time is not set yet (observer might run early), default to Inf to avoid length-0 comparisons
+  if (is.null(max_time) || length(max_time) == 0) max_time <- Inf
   
   if (elapsed_time > max_time) {
     # Log session expiration to file only for background operations
-    if (.session_state$enable_logging) {
+  if (isTRUE(.session_state$enable_logging)) {
       log_session_event("SESSION_EXPIRED", "Session time limit exceeded", 
                        list(elapsed = elapsed_time, max = max_time))
     }
@@ -284,13 +287,13 @@ is_session_valid <- function() {
 #' Start Keep-Alive Monitoring
 #' 
 start_keep_alive_monitoring <- function() {
-  if (.session_state$keep_alive_active) return()
+  if (isTRUE(.session_state$keep_alive_active)) return()
   
   .session_state$keep_alive_active <- TRUE
   
   # Create keep-alive observer
   .session_state$keep_alive_observer <- observe({
-    if (!.session_state$keep_alive_active) return()
+  if (!isTRUE(.session_state$keep_alive_active)) return()
     
     invalidateLater(.session_state$keep_alive_interval * 1000)
     
@@ -309,14 +312,14 @@ start_keep_alive_monitoring <- function() {
     }
     
       # Log keep-alive ping (minimal console output)
-  if (.session_state$enable_logging) {
+  if (isTRUE(.session_state$enable_logging)) {
     log_session_event("KEEP_ALIVE", "Keep-alive ping", 
                      list(elapsed_time = as.numeric(difftime(Sys.time(), .session_state$session_start_time, units = "secs"))))
   }
   })
   
   # Only log to file for background operations
-  if (.session_state$enable_logging) {
+  if (isTRUE(.session_state$enable_logging)) {
     log_session_event("KEEP_ALIVE_STARTED", "Keep-alive monitoring activated")
   }
 }
@@ -339,7 +342,7 @@ stop_keep_alive_monitoring <- function() {
   }
   
   # Only log to file for background operations
-  if (.session_state$enable_logging) {
+  if (isTRUE(.session_state$enable_logging)) {
     log_session_event("KEEP_ALIVE_STOPPED", "Keep-alive monitoring deactivated")
   }
 }
@@ -359,7 +362,7 @@ start_data_preservation_monitoring <- function() {
   })
   
   # Only log to file, not console for background operations
-  if (.session_state$enable_logging) {
+  if (isTRUE(.session_state$enable_logging)) {
     log_session_event("DATA_PRESERVATION_STARTED", "Automatic data preservation activated")
   }
 }
@@ -371,7 +374,7 @@ start_data_preservation_monitoring <- function() {
 preserve_session_data <- function(force = FALSE) {
   if (!force && !is_session_valid()) {
     # Log data preservation skipped to file only for background operations
-    if (.session_state$enable_logging) {
+  if (isTRUE(.session_state$enable_logging)) {
       log_session_event("DATA_PRESERVATION_SKIPPED", "Session invalid, skipping data preservation")
     }
     return(FALSE)
@@ -386,22 +389,22 @@ preserve_session_data <- function(force = FALSE) {
       temp_file <- file.path(tempdir(), paste0("inrep_data_", .session_state$session_id, ".rds"))
       saveRDS(session_data, temp_file)
       
-      # Log data preservation to file only (minimal console output)
-      if (.session_state$enable_logging) {
+  # Log data preservation to file only (minimal console output)
+  if (isTRUE(.session_state$enable_logging)) {
         log_session_event("DATA_PRESERVED", "Session data automatically preserved", 
                          list(file = temp_file, size = file.size(temp_file)))
       }
       return(TRUE)
     } else {
       # Log to file only for background operations
-      if (.session_state$enable_logging) {
+      if (isTRUE(.session_state$enable_logging)) {
         log_session_event("DATA_PRESERVATION_EMPTY", "No session data to preserve")
       }
       return(FALSE)
     }
   }, error = function(e) {
     # Log errors to file only for background operations
-    if (.session_state$enable_logging) {
+    if (isTRUE(.session_state$enable_logging)) {
       log_session_event("DATA_PRESERVATION_ERROR", "Failed to preserve session data", 
                        list(error = e$message))
     }
@@ -427,7 +430,7 @@ get_session_data <- function() {
       }
     }, error = function(e) {
       # Log data collection errors to file only for background operations
-      if (.session_state$enable_logging) {
+      if (isTRUE(.session_state$enable_logging)) {
         log_session_event("DATA_COLLECTION_ERROR", "Failed to collect reactive values", 
                          list(error = e$message))
       }
@@ -443,7 +446,7 @@ get_session_data <- function() {
         session_data[[obj_name]] <- obj
       }, error = function(e) {
         # Log data collection errors to file only for background operations
-        if (.session_state$enable_logging) {
+        if (isTRUE(.session_state$enable_logging)) {
           log_session_event("DATA_COLLECTION_ERROR", 
                            sprintf("Failed to collect %s", obj_name), 
                            list(error = e$message))
@@ -477,7 +480,7 @@ emergency_data_recovery <- function() {
     
     if (length(data_files) == 0) {
       # Log recovery failures to file only for background operations
-      if (.session_state$enable_logging) {
+      if (isTRUE(.session_state$enable_logging)) {
         log_session_event("RECOVERY_FAILED", "No preserved data files found")
       }
       return(NULL)
@@ -491,7 +494,7 @@ emergency_data_recovery <- function() {
     recovered_data <- readRDS(most_recent)
     
     # Log recovery success to file only for background operations
-    if (.session_state$enable_logging) {
+    if (isTRUE(.session_state$enable_logging)) {
       log_session_event("RECOVERY_SUCCESS", "Data recovered from emergency preservation", 
                        list(file = most_recent, size = file.size(most_recent)))
     }
@@ -499,7 +502,7 @@ emergency_data_recovery <- function() {
     return(recovered_data)
   }, error = function(e) {
     # Log recovery errors to file only for background operations
-    if (.session_state$enable_logging) {
+    if (isTRUE(.session_state$enable_logging)) {
       log_session_event("RECOVERY_ERROR", "Emergency data recovery failed", 
                        list(error = e$message))
     }
@@ -512,7 +515,7 @@ emergency_data_recovery <- function() {
 #' @param save_final_data Whether to save final data before cleanup
 cleanup_session <- function(save_final_data = TRUE) {
   # Log cleanup to file only for background operations
-  if (.session_state$enable_logging) {
+  if (isTRUE(.session_state$enable_logging)) {
     log_session_event("SESSION_CLEANUP", "Starting session cleanup")
   }
   
@@ -578,7 +581,7 @@ get_session_status <- function() {
 extend_session <- function(additional_time) {
   if (is.null(.session_state$max_session_time)) {
     # Log extension failure to file only for background operations
-    if (.session_state$enable_logging) {
+  if (isTRUE(.session_state$enable_logging)) {
       log_session_event("EXTENSION_FAILED", "No active session to extend")
     }
     return(FALSE)

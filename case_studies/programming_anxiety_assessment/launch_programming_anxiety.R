@@ -95,8 +95,8 @@ launch_programming_anxiety_study <- function(
   )
   
   cat("🚀 STUDY LAUNCHED SUCCESSFULLY!\n")
-  cat("📊 Access the study at: http://localhost:", port, "\n")
-  cat("📈 Features available:\n")
+  cat(" Access the study at: http://localhost:", port, "\n")
+  cat(" Features available:\n")
   cat("   • Adaptive testing with IRT item selection\n")
   cat("   • Plausible values generation (5 estimates)\n")
   cat("   • Interactive dashboard with real-time analytics\n")
@@ -137,7 +137,7 @@ demonstrate_plausible_values <- function(responses) {
 
 # Function to demonstrate interactive dashboard
 demonstrate_dashboard <- function(results) {
-  cat("📊 INTERACTIVE DASHBOARD DEMONSTRATION\n")
+  cat(" INTERACTIVE DASHBOARD DEMONSTRATION\n")
   cat("=====================================\n")
   cat("This feature provides real-time analytics and visualizations:\n\n")
   
@@ -191,13 +191,13 @@ cat("4. MULTI-DIMENSIONAL PROFILING - 5 anxiety dimensions with detailed analysi
 cat("5. RISK ASSESSMENT - Personalized recommendations and intervention strategies\n\n")
 cat("🚀 TO LAUNCH THE STUDY:\n")
 cat("   launch_programming_anxiety_study()\n\n")
-cat("📊 TO DEMONSTRATE FEATURES:\n")
+cat(" TO DEMONSTRATE FEATURES:\n")
 cat("   # After completing the assessment:\n")
 cat("   results <- get_study_results()\n")
 cat("   demonstrate_plausible_values(results$responses)\n")
 cat("   demonstrate_dashboard(results)\n")
 cat("   demonstrate_risk_assessment(results)\n\n")
-cat("📈 TO EXPORT REPORTS:\n")
+cat(" TO EXPORT REPORTS:\n")
 cat("   export_report(results, 'PDF')\n")
 cat("   export_report(results, 'HTML')\n")
 cat("   export_report(results, 'CSV')\n\n")

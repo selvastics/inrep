@@ -1774,7 +1774,7 @@ launch_study <- function(
            });
            
                      // DIRECT CONTENT DISPLAY - No loading screens, maximum efficiency
-          console.log('✅ Direct content display - no loading animations');
+          console.log('✔ Direct content display - no loading animations');
         })();
       "))
     ),
@@ -2920,7 +2920,7 @@ launch_study <- function(
       # Session timeout monitoring
       shiny::observe({
           # Check session timeout
-          if (base::difftime(base::Sys.time(), rv$session_start, units = "secs") > max_session_time) {
+      if (!is.null(rv$session_start) && base::difftime(base::Sys.time(), rv$session_start, units = "secs") > max_session_time) {
             rv$session_active <- FALSE
             rv$stage = "timeout"
             logger("Session timed out due to maximum session time", level = "WARNING")
@@ -2947,8 +2947,8 @@ launch_study <- function(
       
       # Automatic data preservation - converted to event-based instead of timer-based
       # This prevents page jumping while still preserving data on important events
-      observe_data_preservation <- function() {
-        if (rv$session_active && exists("preserve_session_data") && is.function(preserve_session_data)) {
+    observe_data_preservation <- function() {
+      if (isTRUE(rv$session_active) && exists("preserve_session_data") && is.function(preserve_session_data)) {
           tryCatch({
             preserve_session_data()
           }, error = function(e) {
@@ -4083,7 +4083,7 @@ launch_study <- function(
     }
     
     shiny::observe({
-      if (config$session_save) {
+      if (isTRUE(config$session_save)) {
         base::tryCatch({
           base::saveRDS(shiny::reactiveValuesToList(rv), session_file)
         }, error = function(e) {
@@ -4094,7 +4094,7 @@ launch_study <- function(
     
     # Custom page flow navigation observers
     shiny::observeEvent(input$next_page, {
-      if (rv$stage == "custom_page_flow" && rv$current_page < rv$total_pages) {
+  if (identical(rv$stage, "custom_page_flow") && isTRUE(rv$current_page < rv$total_pages)) {
         # Validate current page before progression
         validation_passed <- TRUE
         
@@ -4297,7 +4297,7 @@ launch_study <- function(
     })
     
     shiny::observeEvent(input$prev_page, {
-      if (rv$stage == "custom_page_flow" && rv$current_page > 1) {
+  if (identical(rv$stage, "custom_page_flow") && isTRUE(rv$current_page > 1)) {
         # Clear any validation errors when going back
         output$validation_errors <- shiny::renderUI({ NULL })
         
@@ -4343,7 +4343,7 @@ launch_study <- function(
     })
     
     shiny::observeEvent(input$submit_study, {
-      if (rv$stage == "custom_page_flow") {
+  if (identical(rv$stage, "custom_page_flow")) {
         # Validate final page before submission
         validation_passed <- TRUE
         
@@ -4809,7 +4809,7 @@ launch_study <- function(
     # ROBUST SUBMISSION HANDLER - PREVENTS DOUBLE-CLICKS AND NEVER BREAKS
     shiny::observeEvent(input$submit_response, {
       # IMMEDIATE DOUBLE-CLICK PROTECTION
-      if (rv$submission_in_progress) {
+  if (isTRUE(rv$submission_in_progress)) {
         logger("Double-click detected - ignoring duplicate submission", level = "WARNING")
         return()
       }
@@ -4998,7 +4998,7 @@ launch_study <- function(
       }
       
             # FINAL SAFETY NET - ENSURE SUBMISSION LOCK IS ALWAYS RESET
-      if (rv$submission_in_progress) {
+  if (isTRUE(rv$submission_in_progress)) {
         logger("Final safety net: resetting submission lock", level = "INFO")
         rv$submission_in_progress <- FALSE
       }
@@ -5195,7 +5195,7 @@ launch_study <- function(
     
     # SUBMISSION STATUS UI - VISUAL FEEDBACK FOR USER
     output$submission_status <- shiny::renderUI({
-      if (rv$submission_in_progress) {
+  if (isTRUE(rv$submission_in_progress)) {
         shiny::div(
           class = "submission-status",
           style = "color: #007bff; font-weight: bold; margin-top: 10px; padding: 10px; background-color: #f8f9fa; border: 2px solid #007bff; border-radius: 5px;",
@@ -5291,7 +5291,7 @@ launch_study <- function(
     # This prevents page jumping while still handling errors
     check_error_states <- function() {
       # Automatic recovery from submission lock
-      if (rv$submission_in_progress && !is.null(rv$submission_lock_time)) {
+  if (isTRUE(rv$submission_in_progress) && !is.null(rv$submission_lock_time)) {
         lock_duration <- as.numeric(difftime(Sys.time(), rv$submission_lock_time, units = "secs"))
         if (lock_duration > 10) {  # Reset lock after 10 seconds
           logger("Automatic submission lock reset after timeout", level = "WARNING")
@@ -5301,7 +5301,7 @@ launch_study <- function(
       }
       
       # Automatic recovery from error states
-      if (rv$stage == "error" && !is.null(rv$last_submission_time)) {
+  if (identical(rv$stage, "error") && !is.null(rv$last_submission_time)) {
         error_duration <- as.numeric(difftime(Sys.time(), rv$last_submission_time, units = "secs"))
         if (error_duration > 5) {  # Auto-recover after 5 seconds
           logger("Automatic error recovery - continuing assessment", level = "INFO")
@@ -5323,7 +5323,7 @@ launch_study <- function(
       }
       
       # Automatic session health check
-      if (rv$session_active && !is.null(rv$start_time)) {
+  if (isTRUE(rv$session_active) && !is.null(rv$start_time)) {
         session_duration <- as.numeric(difftime(Sys.time(), rv$start_time, units = "secs"))
         if (session_duration > 3600) {  # 1 hour
           logger("Long session detected - performing health check", level = "INFO")

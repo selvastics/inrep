@@ -39,7 +39,7 @@ launch_big_five_study <- function(
   
   cat("👥 BIG FIVE PERSONALITY ASSESSMENT - MULTI-DIMENSIONAL FEATURES\n")
   cat("================================================================\n")
-  cat("🎯 UNIQUE FEATURES DEMONSTRATED:\n")
+  cat(" UNIQUE FEATURES DEMONSTRATED:\n")
   cat("   • Multi-dimensional Personality Model (5 factors)\n")
   cat("   • Cross-cultural Validation & Language Support\n")
   cat("   • Comprehensive Personality Profiling\n")
@@ -105,9 +105,9 @@ launch_big_five_study <- function(
     host = host
   )
   
-  cat("🚀 STUDY LAUNCHED SUCCESSFULLY!\n")
-  cat("📊 Access the study at: http://localhost:", port, "\n")
-  cat("📈 Features available:\n")
+  cat(" STUDY LAUNCHED SUCCESSFULLY!\n")
+  cat(" Access the study at: http://localhost:", port, "\n")
+  cat(" Features available:\n")
   cat("   • Multi-dimensional personality assessment (5 factors)\n")
   cat("   • Cross-cultural validation and language support\n")
   cat("   • Comprehensive personality profiling with visualizations\n")
@@ -169,7 +169,7 @@ demonstrate_cultural_adaptation <- function(results, language = "en") {
 
 # Function to demonstrate normative comparisons
 demonstrate_normative_comparisons <- function(results) {
-  cat("📊 NORMATIVE COMPARISONS DEMONSTRATION\n")
+  cat(" NORMATIVE COMPARISONS DEMONSTRATION\n")
   cat("=====================================\n")
   cat("This feature provides population comparisons:\n\n")
   
@@ -194,7 +194,7 @@ demonstrate_normative_comparisons <- function(results) {
 
 # Function to demonstrate comprehensive profiling
 demonstrate_comprehensive_profiling <- function(results) {
-  cat("📈 COMPREHENSIVE PROFILING DEMONSTRATION\n")
+  cat(" COMPREHENSIVE PROFILING DEMONSTRATION\n")
   cat("=======================================\n")
   cat("This feature provides advanced visualizations:\n\n")
   
@@ -229,24 +229,24 @@ demonstrate_comprehensive_profiling <- function(results) {
 cat("👥 BIG FIVE PERSONALITY ASSESSMENT - MULTI-DIMENSIONAL FEATURES\n")
 cat("================================================================\n")
 cat("This case study demonstrates the multi-dimensional assessment capabilities of inrep:\n\n")
-cat("🎯 UNIQUE FEATURES:\n")
+cat(" UNIQUE FEATURES:\n")
 cat("1. MULTI-DIMENSIONAL MODEL - Five-factor personality model with trait-specific adaptation\n")
 cat("2. CROSS-CULTURAL VALIDATION - Multiple language support and cultural adaptations\n")
 cat("3. COMPREHENSIVE PROFILING - Radar plots, bar charts, and detailed trait analysis\n")
 cat("4. NORMATIVE COMPARISONS - Population norms and percentile rankings\n")
 cat("5. ADAPTIVE TESTING - Trait-specific item selection and stopping criteria\n\n")
-cat("🚀 TO LAUNCH THE STUDY:\n")
+cat(" TO LAUNCH THE STUDY:\n")
 cat("   launch_big_five_study()\n")
 cat("   launch_big_five_study(language = 'de')  # German version\n")
 cat("   launch_big_five_study(language = 'es')  # Spanish version\n\n")
-cat("📊 TO DEMONSTRATE FEATURES:\n")
+cat(" TO DEMONSTRATE FEATURES:\n")
 cat("   # After completing the assessment:\n")
 cat("   results <- get_study_results()\n")
 cat("   demonstrate_multi_dimensional_analysis(results$responses)\n")
 cat("   demonstrate_cultural_adaptation(results, 'en')\n")
 cat("   demonstrate_normative_comparisons(results)\n")
 cat("   demonstrate_comprehensive_profiling(results)\n\n")
-cat("📈 TO EXPORT REPORTS:\n")
+cat(" TO EXPORT REPORTS:\n")
 cat("   export_personality_report(results, 'PDF')\n")
 cat("   export_personality_report(results, 'HTML')\n")
 cat("   export_personality_report(results, 'CSV')\n\n")

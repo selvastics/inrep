@@ -106,8 +106,8 @@ launch_depression_screening_study <- function(
   )
   
   cat("🚀 STUDY LAUNCHED SUCCESSFULLY!\n")
-  cat("📊 Access the study at: http://localhost:", port, "\n")
-  cat("📈 Features available:\n")
+  cat(" Access the study at: http://localhost:", port, "\n")
+  cat(" Features available:\n")
   cat("   • Clinical depression screening with validated instruments\n")
   cat("   • Automatic severity classification and risk assessment\n")
   cat("   • Intervention recommendations and treatment planning\n")
@@ -208,7 +208,7 @@ demonstrate_safety_protocols <- function(results) {
 
 # Function to demonstrate clinical reporting
 demonstrate_clinical_reporting <- function(results) {
-  cat("📋 CLINICAL REPORTING DEMONSTRATION\n")
+  cat(" CLINICAL REPORTING DEMONSTRATION\n")
   cat("==================================\n")
   cat("This feature provides professional clinical documentation:\n\n")
   
@@ -234,7 +234,7 @@ demonstrate_clinical_reporting <- function(results) {
 
 # Function to demonstrate quality assurance
 demonstrate_quality_assurance <- function(results) {
-  cat("✅ QUALITY ASSURANCE DEMONSTRATION\n")
+  cat("✔ QUALITY ASSURANCE DEMONSTRATION\n")
   cat("=================================\n")
   cat("This feature provides reliability and validity monitoring:\n\n")
   
@@ -253,7 +253,7 @@ demonstrate_quality_assurance <- function(results) {
       cat("• ", flag, "\n")
     }
   } else {
-    cat("\n✅ All quality checks passed\n")
+    cat("\n✔ All quality checks passed\n")
   }
   
   return(quality_checks)
@@ -276,7 +276,7 @@ cat("🚀 TO LAUNCH THE STUDY:\n")
 cat("   launch_depression_screening_study()\n")
 cat("   launch_depression_screening_study(clinical_mode = TRUE)\n")
 cat("   launch_depression_screening_study(safety_protocols = TRUE)\n\n")
-cat("📊 TO DEMONSTRATE FEATURES:\n")
+cat(" TO DEMONSTRATE FEATURES:\n")
 cat("   # After completing the assessment:\n")
 cat("   results <- get_study_results()\n")
 cat("   demonstrate_clinical_cutoffs(results$responses)\n")
@@ -284,7 +284,7 @@ cat("   demonstrate_intervention_recommendations(results)\n")
 cat("   demonstrate_safety_protocols(results)\n")
 cat("   demonstrate_clinical_reporting(results)\n")
 cat("   demonstrate_quality_assurance(results)\n\n")
-cat("📈 TO EXPORT REPORTS:\n")
+cat(" TO EXPORT REPORTS:\n")
 cat("   export_clinical_report(results, 'PDF')\n")
 cat("   export_clinical_report(results, 'HTML')\n")
 cat("   export_clinical_report(results, 'DOCX')\n\n")

@@ -6,7 +6,7 @@ This case study demonstrates a sophisticated rater-participant design where mult
 
 ## Key Features
 
-### 🔗 **Advanced Sample Linking System**
+###  **Advanced Sample Linking System**
 - **Bidirectional Linking**: Both participants and raters are linked through multiple assessment dimensions
 - **Multi-Level Connections**: Participants linked to raters, raters linked to assessment contexts, and contexts linked to performance domains
 - **Dynamic Assignment**: Intelligent rater assignment based on expertise, availability, and previous agreement patterns
@@ -29,7 +29,7 @@ This case study demonstrates a sophisticated rater-participant design where mult
 - **Adaptive Testing**: 15-20 items with SEM < 0.25
 - **Contextual Factors**: Environmental and situational variables that influence performance
 
-### 📈 **Advanced Reporting**
+###  **Advanced Reporting**
 - **Multi-Rater Comparison**: Side-by-side analysis of rater assessments with agreement visualization
 - **Agreement Analysis**: Identify areas of consensus and disagreement with statistical significance
 - **Recommendations**: Personalized feedback based on rater consensus and individual rater insights

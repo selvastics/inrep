@@ -410,7 +410,7 @@ create_depression_report <- function(session_data, item_bank, config) {
     
     # Executive Summary
     '<div class="section primary">',
-    '<h2 style="margin-top: 0; color: #1976d2;">📊 Executive Summary</h2>',
+    '<h2 style="margin-top: 0; color: #1976d2;"> Executive Summary</h2>',
     '<div style="text-align: center; margin: 20px 0;">',
     '<div class="severity-indicator" style="background-color: ', severity_color, ';">',
     'Depression Severity: ', severity_level,
@@ -451,7 +451,7 @@ create_depression_report <- function(session_data, item_bank, config) {
     
     # Visualization
     '<div class="section">',
-    '<h2 style="color: #424242;">📈 Depression Symptom Profile</h2>',
+    '<h2 style="color: #424242;"> Depression Symptom Profile</h2>',
     plot_html,
     '<p style="font-style: italic; color: #666; text-align: center; margin-top: 10px;">',
     'This chart shows your symptom levels across different domains of depression. ',
@@ -510,7 +510,7 @@ create_depression_report <- function(session_data, item_bank, config) {
     
     # Assessment Details
     '<div class="section">',
-    '<h2 style="color: #424242;">📋 Assessment Details</h2>',
+    '<h2 style="color: #424242;"> Assessment Details</h2>',
     '<table>',
     '<tr><th>Assessment Information</th><th>Details</th></tr>',
     '<tr><td>Session ID</td><td>', session_id, '</td></tr>',

@@ -246,7 +246,7 @@ select_next_item_basic_internal <- function(rv, item_bank, config) {
   }
   
   # Adaptive mode
-  if (!is.null(config$fixed_items) && rv$item_counter <= length(config$fixed_items)) {
+  if (!is.null(config$fixed_items) && length(config$fixed_items) > 0 && rv$item_counter <= length(config$fixed_items)) {
     item <- config$fixed_items[rv$item_counter]
     message(sprintf("Selecting fixed item %d: %d", rv$item_counter, item))
     return(item)
@@ -259,7 +259,7 @@ select_next_item_basic_internal <- function(rv, item_bank, config) {
     message("No more items available in specified groups")
     return(NULL)
   }
-  if (rv$item_counter <= config$adaptive_start) {
+  if (!is.null(config$adaptive_start) && rv$item_counter <= config$adaptive_start) {
     item <- sample(available, 1)
           message(sprintf("Selecting random item %d: %d", rv$item_counter, item))
     return(item)

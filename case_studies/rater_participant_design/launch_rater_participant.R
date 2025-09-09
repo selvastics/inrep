@@ -4,7 +4,7 @@
 # 
 # This case study demonstrates the MULTI-RATER ASSESSMENT features of inrep:
 # 
-# 🔗 UNIQUE FEATURES HIGHLIGHTED:
+# UNIQUE FEATURES HIGHLIGHTED:
 # 1. MULTI-RATER ASSESSMENT - Multiple raters evaluating participants with reliability analysis
 # 2. INTER-RATER RELIABILITY - ICC calculations and agreement analysis
 # 3. ADVANCED SAMPLE LINKING - Bidirectional linking between participants and raters
@@ -38,9 +38,9 @@ launch_rater_participant_study <- function(
   agreement_threshold = 0.7
 ) {
   
-  cat("🔗 RATER-PARTICIPANT DESIGN ASSESSMENT - MULTI-RATER FEATURES\n")
+  cat(" RATER-PARTICIPANT DESIGN ASSESSMENT - MULTI-RATER FEATURES\n")
   cat("============================================================\n")
-  cat("🎯 UNIQUE FEATURES DEMONSTRATED:\n")
+  cat(" UNIQUE FEATURES DEMONSTRATED:\n")
   cat("   • Multi-Rater Assessment with Reliability Analysis\n")
   cat("   • Inter-Rater Reliability (ICC calculations)\n")
   cat("   • Advanced Sample Linking (Bidirectional)\n")
@@ -108,9 +108,9 @@ launch_rater_participant_study <- function(
     host = host
   )
   
-  cat("🚀 STUDY LAUNCHED SUCCESSFULLY!\n")
-  cat("📊 Access the study at: http://localhost:", port, "\n")
-  cat("📈 Features available:\n")
+  cat(" STUDY LAUNCHED SUCCESSFULLY!\n")
+  cat(" Access the study at: http://localhost:", port, "\n")
+  cat(" Features available:\n")
   cat("   • Multi-rater assessment with 3+ raters per participant\n")
   cat("   • Inter-rater reliability analysis with ICC calculations\n")
   cat("   • Advanced sample linking and rater management\n")
@@ -127,7 +127,7 @@ launch_rater_participant_study <- function(
 
 # Function to demonstrate multi-rater assessment
 demonstrate_multi_rater_assessment <- function(participant_id, rater_responses) {
-  cat("🔗 MULTI-RATER ASSESSMENT DEMONSTRATION\n")
+  cat(" MULTI-RATER ASSESSMENT DEMONSTRATION\n")
   cat("======================================\n")
   cat("This feature provides comprehensive multi-rater evaluation:\n\n")
   
@@ -153,7 +153,7 @@ demonstrate_multi_rater_assessment <- function(participant_id, rater_responses) 
 
 # Function to demonstrate inter-rater reliability
 demonstrate_inter_rater_reliability <- function(rater_data) {
-  cat("📊 INTER-RATER RELIABILITY DEMONSTRATION\n")
+  cat(" INTER-RATER RELIABILITY DEMONSTRATION\n")
   cat("=======================================\n")
   cat("This feature provides ICC calculations and agreement analysis:\n\n")
   
@@ -186,7 +186,7 @@ demonstrate_inter_rater_reliability <- function(rater_data) {
 
 # Function to demonstrate sample linking
 demonstrate_sample_linking <- function(participant_data, rater_data) {
-  cat("🔗 SAMPLE LINKING DEMONSTRATION\n")
+  cat(" SAMPLE LINKING DEMONSTRATION\n")
   cat("==============================\n")
   cat("This feature provides advanced bidirectional linking:\n\n")
   
@@ -212,7 +212,7 @@ demonstrate_sample_linking <- function(participant_data, rater_data) {
 
 # Function to demonstrate quality assurance
 demonstrate_quality_assurance <- function(rater_data) {
-  cat("✅ QUALITY ASSURANCE DEMONSTRATION\n")
+  cat("✔ QUALITY ASSURANCE DEMONSTRATION\n")
   cat("=================================\n")
   cat("This feature provides rater calibration and performance monitoring:\n\n")
   
@@ -241,7 +241,7 @@ demonstrate_quality_assurance <- function(rater_data) {
       cat("• ", flag, "\n")
     }
   } else {
-    cat("\n✅ All quality checks passed\n")
+    cat("\n✔ All quality checks passed\n")
   }
   
   return(quality_checks)
@@ -249,7 +249,7 @@ demonstrate_quality_assurance <- function(rater_data) {
 
 # Function to demonstrate comprehensive reporting
 demonstrate_comprehensive_reporting <- function(multi_rater_results) {
-  cat("📋 COMPREHENSIVE REPORTING DEMONSTRATION\n")
+  cat(" COMPREHENSIVE REPORTING DEMONSTRATION\n")
   cat("=======================================\n")
   cat("This feature provides multi-rater comparisons and consensus analysis:\n\n")
   
@@ -280,20 +280,20 @@ demonstrate_comprehensive_reporting <- function(multi_rater_results) {
 # USAGE INSTRUCTIONS
 # =============================================================================
 
-cat("🔗 RATER-PARTICIPANT DESIGN ASSESSMENT - MULTI-RATER FEATURES\n")
+cat(" RATER-PARTICIPANT DESIGN ASSESSMENT - MULTI-RATER FEATURES\n")
 cat("============================================================\n")
 cat("This case study demonstrates the multi-rater assessment capabilities of inrep:\n\n")
-cat("🎯 UNIQUE FEATURES:\n")
+cat(" UNIQUE FEATURES:\n")
 cat("1. MULTI-RATER ASSESSMENT - Multiple raters evaluating participants with reliability analysis\n")
 cat("2. INTER-RATER RELIABILITY - ICC calculations and agreement analysis\n")
 cat("3. ADVANCED SAMPLE LINKING - Bidirectional linking between participants and raters\n")
 cat("4. QUALITY ASSURANCE - Agreement thresholds and rater calibration\n")
 cat("5. COMPREHENSIVE REPORTING - Multi-rater comparisons and consensus analysis\n\n")
-cat("🚀 TO LAUNCH THE STUDY:\n")
+cat(" TO LAUNCH THE STUDY:\n")
 cat("   launch_rater_participant_study()\n")
 cat("   launch_rater_participant_study(max_raters_per_participant = 5)\n")
 cat("   launch_rater_participant_study(agreement_threshold = 0.8)\n\n")
-cat("📊 TO DEMONSTRATE FEATURES:\n")
+cat(" TO DEMONSTRATE FEATURES:\n")
 cat("   # After completing the assessment:\n")
 cat("   results <- get_study_results()\n")
 cat("   demonstrate_multi_rater_assessment(participant_id, rater_responses)\n")
@@ -301,7 +301,7 @@ cat("   demonstrate_inter_rater_reliability(rater_data)\n")
 cat("   demonstrate_sample_linking(participant_data, rater_data)\n")
 cat("   demonstrate_quality_assurance(rater_data)\n")
 cat("   demonstrate_comprehensive_reporting(multi_rater_results)\n\n")
-cat("📈 TO EXPORT REPORTS:\n")
+cat(" TO EXPORT REPORTS:\n")
 cat("   export_multi_rater_report(results, 'PDF')\n")
 cat("   export_multi_rater_report(results, 'HTML')\n")
 cat("   export_multi_rater_report(results, 'CSV')\n\n")

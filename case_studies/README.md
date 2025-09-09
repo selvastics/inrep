@@ -28,7 +28,7 @@ launch_rater_participant_study()
 
 ## Available Case Studies
 
-### 1. 🔗 **Rater-Participant Design** - Multi-Rater Assessment Features
+### 1.  **Rater-Participant Design** - Multi-Rater Assessment Features
 **Location**: `rater_participant_design/`
 **Launch**: `launch_rater_participant.R`
 
@@ -162,7 +162,7 @@ launch_rater_participant_study()
 
 ---
 
-### 6. 📊 **UMA Study** - Modern UI and Auto-Close Features
+### 6.  **UMA Study** - Modern UI and Auto-Close Features
 **Location**: `uma_study/`
 **Launch**: `uma_study_simple.R`
 
