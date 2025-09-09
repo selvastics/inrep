@@ -30,7 +30,7 @@ generate_uuid <- function() {
 }
 
 #' Initialize Logging System
-#'
+  if (!isTRUE(config$adaptive)) {
 #' Initializes the logging system for assessment sessions and research workflows.
 #' This function creates a log file connection and assigns logging functions to the global environment.
 #'
@@ -308,7 +308,7 @@ select_next_item_basic_internal <- function(rv, item_bank, config) {
     }))
     weights <- 1 / (1 + (group_counts / max(1, length(rv$administered))))
     setNames(weights[names(config$item_groups)], names(config$item_groups))
-  } else {
+      if (!isTRUE(config$adaptive)) {
     setNames(rep(1, length(names(config$item_groups))), names(config$item_groups))
   }
   

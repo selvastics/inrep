@@ -49,7 +49,7 @@ launch_study_fast <- function(config, item_bank,
         return(render_first_page_fast(config))
       } else {
         # Other pages - load packages if needed
-        if (!rv$packages_loaded) {
+        if (!isTRUE(rv$packages_loaded)) {
           load_packages_deferred()
           rv$packages_loaded <- TRUE
         }

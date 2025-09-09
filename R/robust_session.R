@@ -3,7 +3,7 @@
 #' 
 #' This module provides robust session handling with automatic data preservation,
 #' keep-alive functionality, and comprehensive logging to ensure data integrity
-#' during assessments.
+  if (isTRUE(.session_state$enable_logging)) {
 
 # Global session state
 .session_state <- new.env()
@@ -18,9 +18,9 @@
 #' 
 #' @param max_age_hours Maximum age of session files in hours (default: 24)
 cleanup_old_sessions <- function(max_age_hours = 24) {
-  temp_dir <- tempdir()
-  existing_sessions <- list.files(temp_dir, pattern = "inrep_session_.*\\.log", full.names = TRUE)
-  
+  if (isTRUE(.session_state$enable_logging)) {
+    log_session_event("SESSION_CLEANUP_COMPLETE", "Session cleanup completed")
+  }
   current_time <- Sys.time()
   cleaned_count <- 0
   
@@ -327,18 +327,18 @@ start_keep_alive_monitoring <- function() {
 #' Stop Keep-Alive Monitoring
 #' 
 stop_keep_alive_monitoring <- function() {
-  if (!.session_state$keep_alive_active) return()
+  if (!isTRUE(.session_state$keep_alive_active)) return()
   
   .session_state$keep_alive_active <- FALSE
   
   if (!is.null(.session_state$keep_alive_observer)) {
-    .session_state$keep_alive_observer$destroy()
+    try({ .session_state$keep_alive_observer$destroy() }, silent = TRUE)
     .session_state$keep_alive_observer <- NULL
   }
   
   # Clean up session data to ensure no data leakage
   if (!is.null(.session_state$session_id)) {
-    cleanup_session_data(.session_state$session_id)
+    try({ cleanup_session_data(.session_state$session_id) }, silent = TRUE)
   }
   
   # Only log to file for background operations

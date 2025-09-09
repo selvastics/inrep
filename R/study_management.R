@@ -598,7 +598,7 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
           label = NULL,
           placeholder = config$placeholder %||% ""
         ),
-        if (config$allow_skip) shiny::div(
+  if (isTRUE(config$allow_skip)) shiny::div(
           class = "skip-option",
           shiny::checkboxInput(
             inputId = paste0(demo_name, "_skip"),
@@ -619,7 +619,7 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
           min = config$validation_rules$min_value %||% NA,
           max = config$validation_rules$max_value %||% NA
         ),
-        if (config$allow_skip) shiny::div(
+  if (isTRUE(config$allow_skip)) shiny::div(
           class = "skip-option",
           shiny::checkboxInput(
             inputId = paste0(demo_name, "_skip"),
@@ -631,7 +631,7 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
       
     } else if (config$input_type == "select") {
       choices <- options_to_use %||% config$options
-      if (config$allow_skip) {
+  if (isTRUE(config$allow_skip)) {
         choices <- c(choices, "Prefer not to answer" = "skip")
       }
       
@@ -647,7 +647,7 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
           choices = c(setNames("", placeholder_text), choices),
           selected = ""
         ),
-        if (config$allow_other_text) shiny::conditionalPanel(
+  if (isTRUE(config$allow_other_text)) shiny::conditionalPanel(
           condition = paste0("input.", demo_name, " == 'other'"),
           shiny::textInput(
             inputId = paste0(demo_name, "_other"),
@@ -659,7 +659,7 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
       
     } else if (config$input_type == "radio") {
       choices <- options_to_use %||% config$options
-      if (config$allow_skip) {
+  if (isTRUE(config$allow_skip)) {
         choices <- c(choices, "Prefer not to answer" = "skip")
       }
       
@@ -672,7 +672,7 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
           choices = choices,
           selected = character(0)
         ),
-        if (config$allow_other_text) shiny::conditionalPanel(
+  if (isTRUE(config$allow_other_text)) shiny::conditionalPanel(
           condition = paste0("input.", demo_name, " == 'other'"),
           shiny::textInput(
             inputId = paste0(demo_name, "_other"),

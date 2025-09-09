@@ -2865,9 +2865,9 @@ launch_study <- function(
     }
   rv$stage <- if (!is.null(config$custom_page_flow)) {
     "custom_page_flow"
-  } else if (!is.null(config$custom_study_flow) && config$enable_custom_navigation) {
+  } else if (!is.null(config$custom_study_flow) && isTRUE(config$enable_custom_navigation)) {
     config$custom_study_flow$start_with %||% "demographics"
-  } else if (config$show_introduction) {
+  } else if (isTRUE(config$show_introduction)) {
     "instructions"
   } else {
     "demographics"
@@ -2902,7 +2902,7 @@ launch_study <- function(
   rv$initialized <- TRUE  # ALWAYS initialized from start
   
   # Session restoration (immediate, not in observe)
-  if (config$session_save && base::file.exists(session_file)) {
+  if (isTRUE(config$session_save) && base::file.exists(session_file)) {
     base::tryCatch({
       saved_state <- base::readRDS(session_file)
       for (name in base::names(saved_state)) rv[[name]] <- saved_state[[name]]
@@ -3099,7 +3099,7 @@ launch_study <- function(
     }
     
     check_stopping_criteria <- function() {
-      if (!config$adaptive) {
+  if (!isTRUE(config$adaptive)) {
         group_items <- if (!base::is.null(config$fixed_items)) config$fixed_items else base::unlist(config$item_groups)
         if (base::is.null(group_items)) group_items <- base::seq_len(base::nrow(item_bank))
         return(base::length(rv$administered) >= config$max_items || base::length(rv$administered) >= base::length(group_items))
@@ -3558,14 +3558,14 @@ launch_study <- function(
                        shiny::div(class = "results-section",
                                   shiny::h4("Assessment Summary"),
                                   shiny::p(base::paste("Items completed:", base::length(rv$cat_result$administered))),
-                                  if (config$adaptive) shiny::p(base::paste("Estimated ability:", base::round(rv$cat_result$theta, 2))),
-                                  if (config$adaptive) shiny::p(base::paste("Standard error:", base::round(rv$cat_result$se, 3)))
+                                  if (isTRUE(config$adaptive)) shiny::p(base::paste("Estimated ability:", base::round(rv$cat_result$theta, 2))),
+                                  if (isTRUE(config$adaptive)) shiny::p(base::paste("Standard error:", base::round(rv$cat_result$se, 3)))
                        )
                      )
                      
                                            # Participant report controls
                       pr <- config$participant_report %||% list()
-                      if (isTRUE(pr$show_theta_plot) && config$adaptive && base::length(rv$theta_history) > 1 && base::length(rv$se_history) > 1) {
+                      if (isTRUE(pr$show_theta_plot) && isTRUE(config$adaptive) && base::length(rv$theta_history) > 1 && base::length(rv$se_history) > 1) {
                          logger(sprintf("Adding plot to results - theta_history length: %d", base::length(rv$theta_history)))
                          results_content <- base::c(results_content, base::list(
                            shiny::plotOutput("theta_plot", height = "220px")
@@ -3647,7 +3647,7 @@ launch_study <- function(
     output$theta_plot <- shiny::renderPlot({
       logger(sprintf("Plot rendering triggered - adaptive: %s, theta_history length: %d", config$adaptive, base::length(rv$theta_history)))
       
-      if (!config$adaptive || base::length(rv$theta_history) < 2 || base::length(rv$se_history) < 2) {
+  if (!isTRUE(config$adaptive) || base::length(rv$theta_history) < 2 || base::length(rv$se_history) < 2) {
         logger("Plot not rendered - conditions not met")
         return(NULL)
       }
@@ -3835,7 +3835,7 @@ launch_study <- function(
     output$recommendations <- shiny::renderUI({
       shiny::req(rv$cat_result)
       recs <- base::tryCatch(
-        config$recommendation_fun(if (config$adaptive) rv$cat_result$theta else base::mean(rv$cat_result$responses, na.rm = TRUE), rv$demo_data),
+        config$recommendation_fun(if (isTRUE(config$adaptive)) rv$cat_result$theta else base::mean(rv$cat_result$responses, na.rm = TRUE), rv$demo_data),
         error = function(e) {
           logger(base::sprintf("Recommendation function error: %s", e$message))
           NULL
@@ -3856,15 +3856,15 @@ launch_study <- function(
         report_data <- base::as.list(base::list(
           config = config,
           demographics = base::as.list(rv$demo_data),
-          theta = if (config$adaptive) rv$cat_result$theta else NULL,
-          se = if (config$adaptive) rv$cat_result$se else NULL,
+          theta = if (isTRUE(config$adaptive)) rv$cat_result$theta else NULL,
+          se = if (isTRUE(config$adaptive)) rv$cat_result$se else NULL,
           administered = item_bank$Question[rv$cat_result$administered],
           responses = rv$cat_result$responses,
           response_times = rv$cat_result$response_times,
-          recommendations = config$recommendation_fun(if (config$adaptive) rv$cat_result$theta else base::mean(rv$cat_result$responses, na.rm = TRUE), rv$demo_data),
+          recommendations = config$recommendation_fun(if (isTRUE(config$adaptive)) rv$cat_result$theta else base::mean(rv$cat_result$responses, na.rm = TRUE), rv$demo_data),
           timestamp = base::Sys.time(),
-          theta_history = if (config$adaptive) rv$theta_history else NULL,
-          se_history = if (config$adaptive) rv$se_history else NULL
+          theta_history = if (isTRUE(config$adaptive)) rv$theta_history else NULL,
+          se_history = if (isTRUE(config$adaptive)) rv$se_history else NULL
         ))
         if (save_format == "pdf") {
           safe_title <- gsub("[_%&#$]", "\\\\\\0", config$name)
@@ -3954,7 +3954,7 @@ launch_study <- function(
                 # Fall back to original method
               flat_data <- base::data.frame(
                 Timestamp = report_data$timestamp,
-                Theta = if (config$adaptive) report_data$theta else NA,
+                Theta = if (isTRUE(config$adaptive)) report_data$theta else NA,
                 SE = if (config$adaptive) report_data$se else NA,
                 base::t(report_data$demographics),
                 Items = base::paste(report_data$administered, collapse = ";"),
@@ -3970,7 +3970,7 @@ launch_study <- function(
             # Fall back to original method
             flat_data <- base::data.frame(
               Timestamp = report_data$timestamp,
-              Theta = if (config$adaptive) report_data$theta else NA,
+              Theta = if (isTRUE(config$adaptive)) report_data$theta else NA,
               SE = if (config$adaptive) report_data$se else NA,
               base::t(report_data$demographics),
               Items = base::paste(report_data$administered, collapse = ";"),
@@ -4004,8 +4004,8 @@ launch_study <- function(
               study_key = config$study_key %||% "study",
               timestamp = Sys.time(),
               demographics = paste(rv$demo_data, collapse = ";"),
-              theta = if (config$adaptive) rv$cat_result$theta else NA,
-              se = if (config$adaptive) rv$cat_result$se else NA,
+              theta = if (isTRUE(config$adaptive)) rv$cat_result$theta else NA,
+              se = if (isTRUE(config$adaptive)) rv$cat_result$se else NA,
               items_administered = length(rv$cat_result$administered %||% 0),
               responses = paste(rv$cat_result$responses, collapse = ";")
             )
@@ -4702,7 +4702,7 @@ launch_study <- function(
       scroll_to_top_enhanced()
       
       # Initialize item selection for assessment stage
-      if (!config$adaptive) {
+    if (!isTRUE(config$adaptive)) {
         # For non-adaptive mode, start with first item
         if (!base::is.null(config$fixed_items)) {
           rv$current_item <- config$fixed_items[1]
@@ -4891,8 +4891,8 @@ launch_study <- function(
                 response = input$item_response,
                 response_score = response_score,
                 response_time = response_time,
-                current_ability = if (config$adaptive) rv$current_ability else NULL,
-                current_se = if (config$adaptive) rv$current_se else NULL,
+                current_ability = if (isTRUE(config$adaptive)) rv$current_ability else NULL,
+                current_se = if (isTRUE(config$adaptive)) rv$current_se else NULL,
                 items_administered = length(rv$administered),
                 timestamp = Sys.time()
               )
@@ -4949,7 +4949,7 @@ launch_study <- function(
       rv$last_submission_time <- Sys.time()
       
       # ROBUST ABILITY ESTIMATION WITH ERROR RECOVERY
-      if (config$adaptive) {
+  if (isTRUE(config$adaptive)) {
         base::tryCatch({
           ability <- inrep::estimate_ability(rv, item_bank, config)
           rv$current_ability <- ability$theta
@@ -5013,8 +5013,8 @@ launch_study <- function(
           FALSE  # Continue assessment if stopping criteria fails
         })) {
           rv$cat_result <- base::list(
-            theta = if (config$adaptive) rv$current_ability else base::mean(rv$responses, na.rm = TRUE),
-            se = if (config$adaptive) rv$current_se else NULL,
+            theta = if (isTRUE(config$adaptive)) rv$current_ability else base::mean(rv$responses, na.rm = TRUE),
+            se = if (isTRUE(config$adaptive)) rv$current_se else NULL,
             responses = rv$responses,
             administered = rv$administered,
             response_times = rv$response_times
@@ -5029,8 +5029,8 @@ launch_study <- function(
               event_type = "test_completed",
               message = "Assessment test completed",
               details = list(
-                final_theta = if (config$adaptive) rv$current_ability else NULL,
-                final_se = if (config$adaptive) rv$current_se else NULL,
+                final_theta = if (isTRUE(config$adaptive)) rv$current_ability else NULL,
+                final_se = if (isTRUE(config$adaptive)) rv$current_se else NULL,
                 total_items = length(rv$administered),
                 total_time = as.numeric(difftime(Sys.time(), rv$start_time, units = "secs")),
                 completion_reason = "stopping_criteria_met",
@@ -5053,7 +5053,7 @@ launch_study <- function(
         }
         
         # Save session to cloud if enabled
-        if (config$session_save && !base::is.null(webdav_url)) {
+  if (isTRUE(config$session_save) && !base::is.null(webdav_url)) {
           logger("Attempting to save session to cloud...")
           if (exists("save_session_to_cloud", where = asNamespace("inrep"), inherits = FALSE)) {
             inrep:::save_session_to_cloud(rv, config, webdav_url, password)
@@ -5082,8 +5082,8 @@ launch_study <- function(
         
         if (base::is.null(rv$current_item)) {
           rv$cat_result <- base::list(
-            theta = if (config$adaptive) rv$current_ability else base::mean(rv$responses, na.rm = TRUE),
-            se = if (config$adaptive) rv$current_se else NULL,
+            theta = if (isTRUE(config$adaptive)) rv$current_ability else base::mean(rv$responses, na.rm = TRUE),
+            se = if (isTRUE(config$adaptive)) rv$current_se else NULL,
             responses = rv$responses,
             administered = rv$administered,
             response_times = rv$response_times
@@ -5116,8 +5116,8 @@ launch_study <- function(
                 event_type = "test_completed",
                 message = "Assessment test completed (no more items)",
                 details = list(
-                  final_theta = if (config$adaptive) rv$current_ability else NULL,
-                  final_se = if (config$adaptive) rv$current_se else NULL,
+                  final_theta = if (isTRUE(config$adaptive)) rv$current_ability else NULL,
+                  final_se = if (isTRUE(config$adaptive)) rv$current_se else NULL,
                   total_items = length(rv$administered),
                   total_time = as.numeric(difftime(Sys.time(), rv$start_time, units = "secs")),
                   completion_reason = "no_more_items",
@@ -5140,7 +5140,7 @@ launch_study <- function(
           }
           
           # Save session to cloud if enabled
-          if (config$session_save && !base::is.null(webdav_url)) {
+          if (isTRUE(config$session_save) && !base::is.null(webdav_url)) {
             logger("Attempting to save session to cloud...")
             if (exists("save_session_to_cloud", where = asNamespace("inrep"), inherits = FALSE)) {
               inrep:::save_session_to_cloud(rv, config, webdav_url, password)
@@ -5390,7 +5390,7 @@ launch_study <- function(
                               previous_session_data = list(
                   responses = length(rv$responses),
                   administered = length(rv$administered),
-                  final_ability = if (config$adaptive) rv$current_ability else NULL
+                  final_ability = if (isTRUE(config$adaptive)) rv$current_ability else NULL
                 ),
               timestamp = Sys.time()
             )

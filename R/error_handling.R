@@ -166,7 +166,7 @@ validate_study_config <- function(config) {
     config$parallel_computation <- FALSE
   }
   
-  if (config$parallel_computation) {
+  if (isTRUE(config$parallel_computation)) {
     if ("parallel_workers" %in% names(config)) {
       max_workers <- min(parallel::detectCores(), 8)
       config$parallel_workers <- validate_input(config$parallel_workers, "integer", "parallel_workers", 
