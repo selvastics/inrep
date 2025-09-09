@@ -3639,6 +3639,48 @@ launch_study <- function(
       }
     )
     
+    # Additional download handlers for enhanced UI
+    output$download_csv <- shiny::downloadHandler(
+      filename = function() {
+        base::paste0(config$study_key %||% "study", "_", base::format(base::Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
+      },
+      content = function(file) {
+        # Create CSV data
+        flat_data <- base::data.frame(
+          Timestamp = base::Sys.time(),
+          Theta = if (config$adaptive) rv$cat_result$theta else NA,
+          SE = if (config$adaptive) rv$cat_result$se else NA,
+          base::t(rv$demo_data),
+          Items = base::paste(rv$cat_result$administered, collapse = ";"),
+          Responses = base::paste(rv$cat_result$responses, collapse = ";"),
+          Response_Times = base::paste(rv$cat_result$response_times, collapse = ";")
+        )
+        utils::write.csv(flat_data, file, row.names = FALSE)
+      }
+    )
+    
+    output$download_json <- shiny::downloadHandler(
+      filename = function() {
+        base::paste0(config$study_key %||% "study", "_", base::format(base::Sys.time(), "%Y%m%d_%H%M%S"), ".json")
+      },
+      content = function(file) {
+        report_data <- base::as.list(base::list(
+          config = config,
+          demographics = base::as.list(rv$demo_data),
+          theta = if (config$adaptive) rv$cat_result$theta else NULL,
+          se = if (config$adaptive) rv$cat_result$se else NULL,
+          administered = item_bank$Question[rv$cat_result$administered],
+          responses = rv$cat_result$responses,
+          response_times = rv$cat_result$response_times,
+          recommendations = config$recommendation_fun(if (config$adaptive) rv$cat_result$theta else base::mean(rv$cat_result$responses, na.rm = TRUE), rv$demo_data),
+          timestamp = base::Sys.time(),
+          theta_history = if (config$adaptive) rv$theta_history else NULL,
+          se_history = if (config$adaptive) rv$se_history else NULL
+        ))
+        jsonlite::write_json(report_data, file, pretty = TRUE, auto_unbox = TRUE)
+      }
+    )
+    
     shiny::observe({
       if (config$session_save) {
         base::tryCatch({

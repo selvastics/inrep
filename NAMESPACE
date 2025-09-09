@@ -157,6 +157,11 @@ export(generate_smart_pdf_report)
 export(clear_pdf_cache)
 export(get_pdf_status)
 
+# Configuration Templates
+export(get_config_template)
+export(list_config_templates)
+export(quick_study_setup)
+
 import(shiny)
 import(methods)
 import(stats)
