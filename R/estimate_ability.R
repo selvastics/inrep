@@ -386,14 +386,29 @@ estimate_ability <- function(rv, item_bank, config) {
     seq(-4, 4, length.out = 100)
   }
   
-  # Robust TAM branch for dichotomous models
+  # Robust TAM branch for dichotomous models with parallel processing
   if (config$model %in% c("1PL", "2PL", "3PL") && identical(toupper(config$estimation_method), "TAM") && length(responses) >= 5 && requireNamespace("TAM", quietly = TRUE)) {
     # Require variability to avoid degenerate fits
     if (length(unique(na.omit(as.integer(responses)))) > 1) {
       tryCatch({
         dat <- matrix(as.integer(responses), nrow = 1)
         colnames(dat) <- administered
-        ctrl <- list(snodes = 500, progress = FALSE, verbose = FALSE)
+        
+        # Enhanced control parameters for parallel processing
+        ctrl <- list(
+          snodes = if (isTRUE(config$parallel_computation)) 1000 else 500,  # More nodes for parallel
+          progress = FALSE, 
+          verbose = FALSE,
+          maxiter = 1000,
+          conv = 1e-06
+        )
+        
+        # Add parallel processing if enabled
+        if (isTRUE(config$parallel_computation) && requireNamespace("parallel", quietly = TRUE)) {
+          ctrl$parallel <- TRUE
+          ctrl$ncores <- min(4, parallel::detectCores() - 1)
+        }
+        
         if (config$model == "1PL") {
           mod <- suppressMessages(TAM::tam.mml(resp = dat, irtmodel = "1PL", control = ctrl))
         } else if (config$model == "2PL") {
@@ -404,7 +419,14 @@ estimate_ability <- function(rv, item_bank, config) {
           slopes <- if ("a" %in% names(item_bank_subset)) item_bank_subset$a else rep(1, length(administered))
           mod <- suppressMessages(TAM::tam.mml.3pl(resp = dat, gammaslope = slopes, guess = c_params, control = ctrl))
         }
-        est <- suppressMessages(TAM::tam.wle(mod))
+        
+        # Use parallel WLE estimation if available
+        if (isTRUE(config$parallel_computation)) {
+          est <- suppressMessages(TAM::tam.wle(mod, progress = FALSE))
+        } else {
+          est <- suppressMessages(TAM::tam.wle(mod))
+        }
+        
         if (NROW(est) > 0 && is.finite(est$theta[1]) && is.finite(est$error[1])) {
           message(sprintf("TAM estimation: theta=%.2f, se=%.3f", est$theta[1], est$error[1]))
           return(list(theta = est$theta[1], se = est$error[1]))

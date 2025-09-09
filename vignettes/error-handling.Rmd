@@ -1,0 +1,405 @@
+---
+title: "Error Handling and Validation Guide"
+author: "inrep Development Team"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_width: 10
+    fig_height = 6
+    df_print: paged
+vignette: >
+  %\VignetteIndexEntry{Error Handling and Validation Guide}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  eval = TRUE,
+  echo = TRUE,
+  fig.align = "center",
+  warning = FALSE,
+  message = FALSE
+)
+library(inrep)
+library(ggplot2)
+library(dplyr)
+set.seed(123)
+```
+
+# Error Handling and Validation Guide
+
+This vignette provides comprehensive guidance on error handling, input validation, and debugging in the inrep package. Learn how to handle errors gracefully, validate inputs, and troubleshoot issues effectively.
+
+## Overview
+
+The inrep package includes a robust error handling and validation system designed to:
+
+- **Validate Inputs**: Comprehensive input validation with helpful error messages
+- **Handle Errors Gracefully**: Automatic error recovery and fallback mechanisms
+- **Provide User-Friendly Messages**: Clear, actionable error messages
+- **Log Errors**: Detailed error logging for debugging and monitoring
+- **Recover from Failures**: Automatic retry mechanisms and recovery actions
+
+## Input Validation
+
+### Basic Input Validation
+
+```{r basic-validation}
+# Validate character input
+valid_name <- validate_input("Test Study", "character", "name")
+print(paste("Valid name:", valid_name))
+
+# Validate numeric input
+valid_max_items <- validate_input(20, "integer", "max_items", min_val = 1, max_val = 100)
+print(paste("Valid max_items:", valid_max_items))
+
+# Validate logical input
+valid_adaptive <- validate_input(TRUE, "logical", "adaptive")
+print(paste("Valid adaptive:", valid_adaptive))
+```
+
+### Validation with Error Handling
+
+```{r validation-errors}
+# This will throw an error
+tryCatch({
+  invalid_max_items <- validate_input(0, "integer", "max_items", min_val = 1)
+}, error = function(e) {
+  print(paste("Validation error:", e$message))
+})
+
+# This will throw an error
+tryCatch({
+  invalid_model <- validate_input("INVALID", "character", "model", 
+                                 valid_values = c("1PL", "2PL", "3PL", "GRM"))
+}, error = function(e) {
+  print(paste("Validation error:", e$message))
+})
+```
+
+## Study Configuration Validation
+
+### Comprehensive Configuration Validation
+
+```{r config-validation}
+# Create a valid configuration
+valid_config <- create_study_config(
+  name = "Validation Test",
+  model = "2PL",
+  max_items = 20,
+  min_items = 5,
+  min_SEM = 0.3,
+  parallel_computation = TRUE,
+  parallel_workers = 4
+)
+
+# Validate the configuration
+validated_config <- validate_study_config(valid_config)
+print("Configuration validation successful")
+print(paste("Validated name:", validated_config$name))
+print(paste("Validated model:", validated_config$model))
+```
+
+### Handling Invalid Configurations
+
+```{r invalid-config}
+# This will throw an error due to invalid parameters
+tryCatch({
+  invalid_config <- create_study_config(
+    name = "",  # Empty name
+    model = "INVALID",  # Invalid model
+    max_items = 0,  # Invalid max_items
+    min_items = 10,  # min_items > max_items
+    min_SEM = -0.1  # Negative min_SEM
+  )
+}, error = function(e) {
+  print(paste("Configuration error:", e$message))
+})
+```
+
+## Item Bank Validation
+
+### Detailed Item Bank Validation
+
+```{r item-bank-validation}
+# Create a valid 2PL item bank
+valid_item_bank <- data.frame(
+  item_id = 1:5,
+  a = c(1.2, 0.8, 1.5, 1.0, 1.3),
+  b = c(0.0, -0.5, 0.3, -0.2, 0.1),
+  stringsAsFactors = FALSE
+)
+
+# Validate the item bank
+validation_result <- validate_item_bank_detailed(valid_item_bank, "2PL")
+print(paste("Item bank valid:", validation_result$valid))
+if (length(validation_result$warnings) > 0) {
+  print("Warnings:")
+  for (warning in validation_result$warnings) {
+    print(paste("-", warning))
+  }
+}
+```
+
+### Handling Invalid Item Banks
+
+```{r invalid-item-bank}
+# Create an invalid item bank
+invalid_item_bank <- data.frame(
+  item_id = 1:3,
+  b = c(0.0, -0.5, 0.3),
+  # Missing 'a' column for 2PL
+  stringsAsFactors = FALSE
+)
+
+# Validate the item bank
+validation_result <- validate_item_bank_detailed(invalid_item_bank, "2PL")
+print(paste("Item bank valid:", validation_result$valid))
+if (length(validation_result$errors) > 0) {
+  print("Errors:")
+  for (error in validation_result$errors) {
+    print(paste("-", error))
+  }
+}
+```
+
+## Error Handling
+
+### Graceful Error Handling
+
+```{r graceful-error-handling}
+# Define a function that might fail
+risky_function <- function(x) {
+  if (x < 0) {
+    stop("Negative value not allowed")
+  }
+  return(x^2)
+}
+
+# Define a recovery action
+recovery_action <- function() {
+  return(0)  # Return default value
+}
+
+# Handle error gracefully
+result <- handle_error_gracefully(
+  risky_function(-5),
+  error_message = "Function failed, using default value",
+  recovery_action = recovery_action,
+  max_retries = 3
+)
+
+print(paste("Result:", result))
+```
+
+### Retry Mechanism
+
+```{r retry-mechanism}
+# Function that might fail initially
+unreliable_function <- function() {
+  if (runif(1) < 0.7) {  # 70% chance of failure
+    stop("Random failure")
+  }
+  return("Success!")
+}
+
+# Handle with retry
+result <- handle_error_gracefully(
+  unreliable_function(),
+  error_message = "Function failed after retries",
+  max_retries = 5
+)
+
+print(paste("Final result:", result))
+```
+
+## User-Friendly Error Messages
+
+### Creating Custom Error Messages
+
+```{r custom-error-messages}
+# Create user-friendly error messages
+error_messages <- list(
+  "invalid_config" = create_user_friendly_error("invalid_config", "Study configuration validation failed"),
+  "missing_dependencies" = create_user_friendly_error("missing_dependencies", "TAM package not installed"),
+  "memory_error" = create_user_friendly_error("memory_error", "Insufficient memory for operation")
+)
+
+for (error_type in names(error_messages)) {
+  print(paste(error_type, ":", error_messages[[error_type]]))
+}
+```
+
+## Error Logging
+
+### Setting Up Error Logging
+
+```{r error-logging}
+# Set up error handling and logging
+setup_error_handling(debug = TRUE, logging = TRUE, log_file = "inrep_errors.log")
+
+# Log an error
+tryCatch({
+  stop("Test error for logging")
+}, error = function(e) {
+  log_error(e, context = "Test error logging")
+})
+```
+
+### Error Logging in Practice
+
+```{r error-logging-practice}
+# Function with error logging
+safe_divide <- function(a, b) {
+  tryCatch({
+    return(a / b)
+  }, error = function(e) {
+    log_error(e, context = paste("Division error: a =", a, "b =", b))
+    return(NA)
+  })
+}
+
+# Test the function
+result1 <- safe_divide(10, 2)
+result2 <- safe_divide(10, 0)
+
+print(paste("10 / 2 =", result1))
+print(paste("10 / 0 =", result2))
+```
+
+## Debugging
+
+### Debug Mode
+
+```{r debug-mode}
+# Enable debug mode
+setup_error_handling(debug = TRUE)
+
+# This will show debug information
+config <- create_study_config(
+  name = "Debug Test",
+  model = "2PL"
+)
+
+print("Debug mode enabled - check console for debug messages")
+```
+
+### Performance Debugging
+
+```{r performance-debugging}
+# Create performance monitor for debugging
+monitor <- create_performance_monitor()
+
+# Monitor an operation
+monitor$start_operation("debug_operation")
+
+# Simulate some work
+Sys.sleep(0.1)
+
+# End monitoring
+monitor$end_operation("debug_operation")
+
+# Get detailed summary
+summary <- monitor$get_summary()
+print("Performance Summary:")
+print(summary)
+```
+
+## Best Practices
+
+### 1. Input Validation
+
+- Always validate user inputs before processing
+- Use appropriate validation functions for different data types
+- Provide clear error messages for invalid inputs
+- Validate configuration parameters before use
+
+### 2. Error Handling
+
+- Use `handle_error_gracefully()` for critical operations
+- Implement appropriate recovery actions
+- Set reasonable retry limits
+- Log errors for debugging and monitoring
+
+### 3. User Experience
+
+- Provide user-friendly error messages
+- Avoid technical jargon in error messages
+- Include suggestions for fixing errors
+- Use consistent error message formatting
+
+### 4. Debugging
+
+- Enable debug mode during development
+- Use performance monitoring for optimization
+- Log errors with sufficient context
+- Test error scenarios thoroughly
+
+### 5. Logging
+
+- Set up appropriate logging levels
+- Log errors with context information
+- Use structured logging for analysis
+- Rotate log files regularly
+
+## Troubleshooting Common Issues
+
+### 1. Configuration Errors
+
+```{r troubleshooting-config}
+# Common configuration issues
+common_issues <- list(
+  "Empty name" = "Study name cannot be empty",
+  "Invalid model" = "Model must be one of: 1PL, 2PL, 3PL, GRM",
+  "Invalid max_items" = "max_items must be a positive integer",
+  "min_items > max_items" = "min_items cannot be greater than max_items",
+  "Negative min_SEM" = "min_SEM must be positive"
+)
+
+for (issue in names(common_issues)) {
+  print(paste(issue, ":", common_issues[[issue]]))
+}
+```
+
+### 2. Item Bank Issues
+
+```{r troubleshooting-item-bank}
+# Common item bank issues
+item_bank_issues <- list(
+  "Missing item_id" = "Item bank must contain 'item_id' column",
+  "Missing parameters" = "Item bank missing required parameters for model",
+  "Invalid parameters" = "Parameter values must be within valid ranges",
+  "Duplicate item_ids" = "Item bank contains duplicate item_ids",
+  "Empty item bank" = "Item bank cannot be empty"
+)
+
+for (issue in names(item_bank_issues)) {
+  print(paste(issue, ":", item_bank_issues[[issue]]))
+}
+```
+
+### 3. Performance Issues
+
+```{r troubleshooting-performance}
+# Performance troubleshooting
+performance_issues <- list(
+  "High memory usage" = "Use optimize_memory_usage() and clear_cache()",
+  "Slow processing" = "Enable parallel processing and use caching",
+  "Cache issues" = "Check cache size and clear if necessary",
+  "Memory leaks" = "Monitor memory usage and optimize data structures"
+)
+
+for (issue in names(performance_issues)) {
+  print(paste(issue, ":", performance_issues[[issue]]))
+}
+```
+
+## Conclusion
+
+The inrep package provides comprehensive error handling and validation tools to ensure robust and reliable assessments. By following the best practices outlined in this guide and using the provided validation and error handling functions, you can create assessments that handle errors gracefully and provide a better user experience.
+
+For more information about specific error handling features, see the package documentation and other vignettes.

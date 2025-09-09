@@ -1,0 +1,356 @@
+---
+title: "Performance Optimization Guide"
+author: "inrep Development Team"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_width: 10
+    fig_height = 6
+    df_print: paged
+vignette: >
+  %\VignetteIndexEntry{Performance Optimization Guide}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  eval = TRUE,
+  echo = TRUE,
+  fig.align = "center",
+  warning = FALSE,
+  message = FALSE
+)
+library(inrep)
+library(ggplot2)
+library(dplyr)
+set.seed(123)
+```
+
+# Performance Optimization Guide
+
+This vignette provides comprehensive guidance on optimizing the performance of your inrep assessments, including memory management, caching strategies, parallel processing, and monitoring tools.
+
+## Overview
+
+The inrep package includes several performance optimization features designed to handle large-scale assessments efficiently:
+
+- **Memory Management**: Intelligent memory monitoring and optimization
+- **Caching System**: Smart caching for expensive operations
+- **Parallel Processing**: Multi-core processing for computationally intensive tasks
+- **Lazy Loading**: Efficient loading of large datasets
+- **Performance Monitoring**: Real-time performance tracking and optimization suggestions
+
+## Memory Management
+
+### Monitoring Memory Usage
+
+```{r memory-monitoring}
+# Get current memory usage
+memory_stats <- get_memory_usage()
+print(memory_stats)
+
+# Monitor memory usage over time
+memory_data <- monitor_memory_usage(interval = 0.5, duration = 5)
+head(memory_data)
+```
+
+### Memory Optimization
+
+```{r memory-optimization}
+# Optimize memory usage
+optimization_result <- optimize_memory_usage(target_memory = 500)
+print(optimization_result)
+
+# Check memory after optimization
+new_memory <- get_memory_usage()
+print(paste("Current memory usage:", round(new_memory$total_memory / 1024^2, 2), "MB"))
+```
+
+## Caching System
+
+### Basic Caching
+
+```{r basic-caching}
+# Cache a result
+cache_result("test_key", "test_value", ttl = 3600)
+
+# Retrieve cached result
+cached_value <- get_cached_result("test_key")
+print(cached_value)
+
+# Get cache statistics
+cache_stats <- get_cache_stats()
+print(cache_stats)
+```
+
+### Function Memoization
+
+```{r function-memoization}
+# Create a memoized function
+expensive_function <- function(x) {
+  Sys.sleep(0.1)  # Simulate expensive computation
+  return(x^2)
+}
+
+memoized_function <- memoize_function(expensive_function, ttl = 3600)
+
+# First call (will compute)
+system.time(result1 <- memoized_function(5))
+
+# Second call (will use cache)
+system.time(result2 <- memoized_function(5))
+
+print(paste("Results match:", result1 == result2))
+```
+
+## Parallel Processing
+
+### Setting Up Parallel Processing
+
+```{r parallel-setup}
+# Create configuration with parallel processing
+config <- create_study_config(
+  name = "Parallel Performance Test",
+  model = "2PL",
+  parallel_computation = TRUE,
+  parallel_workers = 4,
+  parallel_batch_size = 25
+)
+
+print(paste("Parallel workers:", config$parallel_workers))
+print(paste("Batch size:", config$parallel_batch_size))
+```
+
+### Parallel Item Selection
+
+```{r parallel-item-selection}
+# Create test item bank
+item_bank <- data.frame(
+  item_id = 1:100,
+  a = runif(100, 0.5, 2.0),
+  b = runif(100, -2, 2),
+  stringsAsFactors = FALSE
+)
+
+# Test parallel item selection
+system.time({
+  result <- select_next_item(
+    config = config,
+    administered_items = c(1, 2, 3),
+    responses = c(1, 0, 1),
+    current_ability = 0.5,
+    item_bank = item_bank
+  )
+})
+
+print(paste("Selected item:", result$item_id))
+```
+
+## Lazy Loading
+
+### Lazy Loading Large Datasets
+
+```{r lazy-loading}
+# Create a large dataset for demonstration
+large_data <- data.frame(
+  id = 1:10000,
+  value = rnorm(10000),
+  category = sample(letters[1:5], 10000, replace = TRUE)
+)
+
+# Save dataset
+saveRDS(large_data, "large_dataset.rds")
+
+# Create lazy loading function
+lazy_data <- lazy_load_dataset("large_dataset.rds")
+
+# Data is not loaded until accessed
+print("Dataset created but not loaded")
+
+# Load data when needed
+system.time({
+  loaded_data <- lazy_data()
+})
+
+print(paste("Loaded", nrow(loaded_data), "rows"))
+```
+
+## Performance Monitoring
+
+### Creating a Performance Monitor
+
+```{r performance-monitor}
+# Create performance monitor
+monitor <- create_performance_monitor()
+
+# Start monitoring an operation
+monitor$start_operation("item_selection")
+
+# Simulate some work
+Sys.sleep(0.1)
+
+# End monitoring
+monitor$end_operation("item_selection")
+
+# Get performance summary
+summary <- monitor$get_summary()
+print(summary)
+```
+
+### Performance Profiling
+
+```{r performance-profiling}
+# Profile a function
+profiling_result <- profile_performance({
+  # Simulate some computation
+  result <- sum(rnorm(1000))
+}, memory = TRUE)
+
+print(paste("Duration:", round(profiling_result$duration, 3), "seconds"))
+print(paste("Memory used:", round(profiling_result$memory_used / 1024^2, 2), "MB"))
+```
+
+## Data Structure Optimization
+
+### Optimizing Data Frames
+
+```{r data-optimization}
+# Create a data frame with mixed types
+mixed_data <- data.frame(
+  id = 1:1000,
+  category = sample(c("A", "B", "C"), 1000, replace = TRUE),
+  value = rnorm(1000),
+  flag = sample(c(TRUE, FALSE), 1000, replace = TRUE)
+)
+
+# Optimize data structures
+optimized_data <- optimize_data_structures(mixed_data)
+
+print("Data structure optimization completed")
+print(paste("Original size:", object.size(mixed_data), "bytes"))
+print(paste("Optimized size:", object.size(optimized_data), "bytes"))
+```
+
+## Batch Processing Optimization
+
+### Optimized Batch Processing
+
+```{r batch-processing}
+# Create processing function
+process_item <- function(item_id) {
+  # Simulate item processing
+  Sys.sleep(0.01)
+  return(list(item_id = item_id, processed = TRUE))
+}
+
+# Process items in batches
+items <- 1:100
+batch_results <- optimize_batch_processing(
+  items = items,
+  process_func = process_item,
+  batch_size = 20,
+  parallel = TRUE
+)
+
+print(paste("Processed", length(batch_results), "items"))
+```
+
+## Performance Recommendations
+
+### Getting Optimization Suggestions
+
+```{r performance-recommendations}
+# Get performance recommendations
+recommendations <- get_performance_recommendations(monitor)
+print("Performance Recommendations:")
+for (rec in recommendations) {
+  print(paste("-", rec))
+}
+```
+
+## Best Practices
+
+### 1. Memory Management
+
+- Monitor memory usage regularly
+- Use `optimize_memory_usage()` when memory usage is high
+- Clear cache periodically with `clear_cache()`
+- Use lazy loading for large datasets
+
+### 2. Caching Strategy
+
+- Cache expensive computations with appropriate TTL
+- Use memoization for frequently called functions
+- Monitor cache size and clear unused entries
+- Set appropriate cache expiration times
+
+### 3. Parallel Processing
+
+- Enable parallel processing for large item banks
+- Adjust worker count based on available cores
+- Use appropriate batch sizes for your data
+- Monitor parallel processing performance
+
+### 4. Data Optimization
+
+- Use appropriate data types
+- Convert character columns to factors when appropriate
+- Consider using data.table for large datasets
+- Optimize data structures before processing
+
+### 5. Performance Monitoring
+
+- Use performance monitors for critical operations
+- Profile expensive functions regularly
+- Monitor memory usage over time
+- Get performance recommendations regularly
+
+## Troubleshooting
+
+### Common Performance Issues
+
+1. **High Memory Usage**
+   - Use `optimize_memory_usage()` to reduce memory
+   - Clear cache with `clear_cache()`
+   - Reduce batch sizes
+   - Use lazy loading for large datasets
+
+2. **Slow Processing**
+   - Enable parallel processing
+   - Use caching for repeated operations
+   - Optimize data structures
+   - Profile functions to identify bottlenecks
+
+3. **Cache Issues**
+   - Check cache size with `get_cache_stats()`
+   - Clear cache if it becomes too large
+   - Adjust TTL values for cache entries
+   - Monitor cache hit rates
+
+### Performance Debugging
+
+```{r performance-debugging}
+# Enable debug mode
+setup_error_handling(debug = TRUE, logging = TRUE)
+
+# Monitor performance with detailed logging
+monitor <- create_performance_monitor()
+monitor$start_operation("debug_operation")
+
+# Your code here
+result <- sum(1:1000)
+
+monitor$end_operation("debug_operation")
+summary <- monitor$get_summary()
+print(summary)
+```
+
+## Conclusion
+
+The inrep package provides comprehensive performance optimization tools to handle large-scale assessments efficiently. By following the best practices outlined in this guide and using the provided monitoring and optimization tools, you can ensure optimal performance for your assessments.
+
+For more information about specific performance features, see the package documentation and other vignettes.

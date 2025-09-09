@@ -1589,9 +1589,12 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
       
       # Log response collection status
       if (!is.null(all_responses)) {
-        message("DEBUG: Total responses in rv$responses: ", length(all_responses))
-        message("DEBUG: Non-NA responses: ", sum(!is.na(all_responses)))
-        message("DEBUG: Response indices: ", paste(which(!is.na(all_responses)), collapse=", "))
+        # Log response validation for debugging if enabled
+        if (getOption("inrep.debug", FALSE)) {
+          message("Total responses in rv$responses: ", length(all_responses))
+          message("Non-NA responses: ", sum(!is.na(all_responses)))
+          message("Response indices: ", paste(which(!is.na(all_responses)), collapse=", "))
+        }
       }
       
       # For non-adaptive studies, ensure we have the expected number of responses
@@ -1796,7 +1799,7 @@ render_page_navigation <- function(rv, config, current_page_idx) {
 create_demographic_input <- function(input_id, demo_config, input_type, current_value = NULL, language = "de") {
   # Debug logging for checkbox issues
   if (input_type == "checkbox" && getOption("inrep.debug", FALSE)) {
-    cat("DEBUG: Creating checkbox for", input_id, "\n")
+    message("Creating checkbox for", input_id)
     cat("  Options:", str(demo_config$options), "\n")
     cat("  Current value:", current_value, "\n")
   }
