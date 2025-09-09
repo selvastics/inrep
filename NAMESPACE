@@ -103,7 +103,7 @@ export(install_required_packages)
 export(diagnose_issue)
 
 # Operators
-export(`%||%`)
+## `%||%` operator is intentionally internal; do not export to avoid masking base or other packages
 
 # Package Management Functions
 export(force_detach_inrep)
