@@ -149,6 +149,14 @@ export(test_assessment)
 export(show_examples)
 export(get_help)
 
+# Enhanced PDF Reporting Functions
+export(initialize_pdf_reporting)
+export(capture_plot)
+export(generate_assessment_plots)
+export(generate_smart_pdf_report)
+export(clear_pdf_cache)
+export(get_pdf_status)
+
 import(shiny)
 import(methods)
 import(stats)
