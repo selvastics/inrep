@@ -726,53 +726,20 @@ document.addEventListener("DOMContentLoaded", function() {
 )
 
 # =============================================================================
-# RESULTS PROCESSOR WITH FIXED RADAR PLOT
+# OPTIMIZED PDF REPORT SYSTEM
 # =============================================================================
 
+# Load the optimized PDF system
+source("case_studies/hilfo_study/hilfo_pdf_optimized.R")
+
 create_hilfo_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
-  # Lazy load packages only when actually needed
-  if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    stop("ggplot2 package is required for report generation")
-  }
-  if (!requireNamespace("base64enc", quietly = TRUE)) {
-    stop("base64enc package is required for report generation")
-  }
-  
-  # Get current language from session if available
-  current_lang <- "de"  # Default to German
-  if (!is.null(session) && !is.null(session$userData$current_language)) {
-    current_lang <- session$userData$current_language
-  }
-  
-  if (is.null(responses) || length(responses) == 0) {
-    if (current_lang == "en") {
-      return(shiny::HTML("<p>No responses available for evaluation.</p>"))
-    } else {
-      return(shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>"))
-    }
-  }
-  
-  # Ensure demographics is a list
-  if (is.null(demographics)) {
-    demographics <- list()
-  }
-  
-  # Ensure we have all 51 item responses (20 PA + 31 original)
-  if (length(responses) < 51) {
-    responses <- c(responses, rep(3, 51 - length(responses)))
-  }
-  responses <- as.numeric(responses)
-  
-  # Calculate Programming Anxiety score (first 10 items shown)
-  pa_responses <- responses[1:10]
-  # Reverse score items 1, 10 (and 15 if shown)
-  pa_responses[c(1)] <- 6 - pa_responses[c(1)]
-  pa_responses[c(10)] <- 6 - pa_responses[c(10)]
-  pa_score <- mean(pa_responses, na.rm = TRUE)
-  
-  # Compute IRT-based ability estimate for Programming Anxiety
-  # This is a semi-adaptive assessment: 5 fixed + 5 adaptively selected items
-  pa_theta <- pa_score  # Default to classical score
+  # Use the optimized PDF report system
+  return(create_hilfo_pdf_report(responses, item_bank, demographics, session))
+}
+
+# =============================================================================
+# ENHANCED DOWNLOAD HANDLER FOR HILDESHEIM
+# =============================================================================
   
   # Fit 2PL IRT model for Programming Anxiety
   cat("\n================================================================================\n")
