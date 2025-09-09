@@ -1283,8 +1283,6 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
 # =============================================================================
 # ENHANCED DOWNLOAD HANDLER FOR HILDESHEIM
 # =============================================================================
-  
-  # Fit 2PL IRT model for Programming Anxiety
   cat("\n================================================================================\n")
   cat("PROGRAMMING ANXIETY - IRT MODEL (2PL)\n")
   cat("================================================================================\n")
@@ -1297,6 +1295,10 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   shown_items <- all_items_de[1:10, ]
   a_params <- shown_items$a
   b_params <- shown_items$b
+  
+  # Get Programming Anxiety responses (first 10 items) with reverse scoring
+  pa_responses <- responses[1:10]
+  pa_responses[c(1, 10)] <- 6 - pa_responses[c(1, 10)]  # Reverse items 1 and 10
   
   # Use Maximum Likelihood Estimation for theta
   theta_est <- 0  # Start with prior mean
@@ -1402,6 +1404,12 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   
   # Calculate BFI scores - PROPER GROUPING BY TRAIT (now starting at index 21)
   # Items are ordered: E1, E2, E3, E4, V1, V2, V3, V4, G1, G2, G3, G4, N1, N2, N3, N4, O1, O2, O3, O4
+  
+  # Calculate Programming Anxiety score
+  pa_responses <- responses[1:10]
+  pa_responses[c(1, 10)] <- 6 - pa_responses[c(1, 10)]  # Reverse items 1 and 10
+  pa_score <- mean(pa_responses, na.rm = TRUE)
+  
   scores <- list(
     ProgrammingAnxiety = if (exists("pa_theta")) pa_theta else pa_score,
     Extraversion = mean(c(responses[21], 6-responses[22], 6-responses[23], responses[24]), na.rm=TRUE),
