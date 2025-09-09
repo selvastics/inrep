@@ -261,9 +261,18 @@ launch_study(
 * `bfi_items`
 * `math_items`
 
-## Configuration Options
+## Configuration
+
+### Models (TAM)
 
 * IRT Models: 1PL, 2PL, 3PL, GRM
+
+Please cite the TAM package when using inrep's IRT functionality:
+
+Robitzsch, A., Kiefer, T., & Wu, M. (2024). TAM: Test Analysis Modules. R package version 4.2-21. https://CRAN.R-project.org/package=TAM
+
+### Configuration Options
+
 * Stopping Rules
 * Item Selection Criteria
 * Themes and Languages
@@ -289,12 +298,6 @@ MIT License
 
 * GitHub: [https://github.com/selvastics/inrep/issues](https://github.com/selvastics/inrep/issues)
 * Email: [selva@uni-hildesheim.de](mailto:selva@uni-hildesheim.de)
-
-## Acknowledgments
-
-I thank Alla Sawatzky and Kathrin Schütz for their early endorsement of this project and their insightful guidance during its conceptualization.
-
----
 
 **Author:** Clievins Selva
 **Affiliation:** University of Hildesheim
