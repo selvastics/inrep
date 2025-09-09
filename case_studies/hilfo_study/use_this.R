@@ -741,28 +741,6 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
 # ENHANCED DOWNLOAD HANDLER FOR HILDESHEIM
 # =============================================================================
   
-  # Ensure demographics is a list
-  if (is.null(demographics)) {
-    demographics <- list()
-  }
-  
-  # Ensure we have all 51 item responses (20 PA + 31 original)
-  if (length(responses) < 51) {
-    responses <- c(responses, rep(3, 51 - length(responses)))
-  }
-  responses <- as.numeric(responses)
-  
-  # Calculate Programming Anxiety score (first 10 items shown)
-  pa_responses <- responses[1:10]
-  # Reverse score items 1, 10 (and 15 if shown)
-  pa_responses[c(1)] <- 6 - pa_responses[c(1)]
-  pa_responses[c(10)] <- 6 - pa_responses[c(10)]
-  pa_score <- mean(pa_responses, na.rm = TRUE)
-  
-  # Compute IRT-based ability estimate for Programming Anxiety
-  # This is a semi-adaptive assessment: 5 fixed + 5 adaptively selected items
-  pa_theta <- pa_score  # Default to classical score
-  
   # Fit 2PL IRT model for Programming Anxiety
   cat("\n================================================================================\n")
   cat("PROGRAMMING ANXIETY - IRT MODEL (2PL)\n")
