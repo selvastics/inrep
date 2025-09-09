@@ -2049,9 +2049,6 @@ perform_irt_analysis <- function(responses) {
   return(shiny::HTML(html))
 }
 
-# Close the perform_irt_analysis function
-}
-
 # =============================================================================
 # ENHANCED DOWNLOAD HANDLER FOR HILDESHEIM
 # =============================================================================
