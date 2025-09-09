@@ -3,8 +3,7 @@
 #' 
 #' This module provides robust session handling with automatic data preservation,
 #' keep-alive functionality, and comprehensive logging to ensure data integrity
-  if (isTRUE(.session_state$enable_logging)) {
-
+# (removed stray if to restore balanced braces)
 # Global session state
 .session_state <- new.env()
 .session_state$keep_alive_active <- FALSE
