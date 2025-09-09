@@ -804,52 +804,52 @@ custom_page_flow <- list(
         demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st")
     ),
     
-    # Page 20: Personal Code
-    list(
-        id = "page20",
-        type = "custom",
-        title = "",
-        title_en = "Personal Code",
-        content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
-      <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
-        <span data-lang-de="" data-lang-en="Personal Code">Personal Code</span>
-      </h2>
-      <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
-        <span data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">
-        Please create a personal code:</span>
-      </p>
-      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-        <p style="margin: 0; font-weight: 500;">
-          <span data-lang-de="Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags" data-lang-en="First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday">
-          First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday</span>
-        </p>
-      </div>
-      <div style="text-align: center; margin: 30px 0;">
-        <input type="text" id="personal_code" placeholder="e.g. MAHA15" style="
-          padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
-          text-align: center; width: 200px; text-transform: uppercase;" required>
-      </div>
-      <div style="text-align: center; color: #666; font-size: 14px;">
-        <span data-lang-de="Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15" data-lang-en="Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15">
-        Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</span>
-      </div>
-    </div>
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      var input = document.getElementById("personal_code");
-      if (input) {
-        input.addEventListener("input", function() {
-          this.value = this.value.toUpperCase();
+        # Page 20: Personal Code
+        list(
+                id = "page20",
+                type = "custom",
+                title = "",
+                title_en = "Personal Code",
+                content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
+            <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
+                <span data-lang-de="Persönlicher Code" data-lang-en="Personal Code">Persönlicher Code</span>
+            </h2>
+            <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
+                <span data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">
+                Bitte erstellen Sie einen persönlichen Code:</span>
+            </p>
+            <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+                <p style="margin: 0; font-weight: 500;">
+                    <span data-lang-de="Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags" data-lang-en="First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday">
+                    Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</span>
+                </p>
+            </div>
+            <div style="text-align: center; margin: 30px 0;">
+                <input type="text" id="personal_code" data-placeholder-de="z.B. MAHA15" data-placeholder-en="e.g. MAHA15" placeholder="z.B. MAHA15" style="
+                    padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
+                    text-align: center; width: 200px; text-transform: uppercase;" required>
+            </div>
+            <div style="text-align: center; color: #666; font-size: 14px;">
+                <span data-lang-de="Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15" data-lang-en="Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15">
+                Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</span>
+            </div>
+        </div>
+        <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var input = document.getElementById("personal_code");
+            if (input) {
+                input.addEventListener("input", function() {
+                    this.value = this.value.toUpperCase();
+                });
+                input.addEventListener("blur", function() {
+                    if (this.value.trim() !== "") {
+                        Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
+                    }
+                });
+            }
         });
-        input.addEventListener("blur", function() {
-          if (this.value.trim() !== "") {
-            Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
-          }
-        });
-      }
-    });
-    </script>'
-    ),
+        </script>'
+        ),
     
     # Page 21: Results (now with PA results included)
     list(
@@ -933,19 +933,9 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         }
     }
     
-    # For now, let's default to English if we can't detect the language properly
-    # This ensures the results work while we debug the language detection
-    if (current_lang == "de" && is_english == FALSE) {
-        # Check if we should default to English based on some heuristic
-        # For now, let's make it configurable
-        force_english <- TRUE  # Set to FALSE to use German, TRUE to use English
-        
-        if (force_english) {
-            is_english <- TRUE
-            current_lang <- "en"
-            cat("DEBUG: Using English as fallback\n")
-        }
-    }
+    # Do not force a fallback language. Respect detected language or stored preference.
+    # is_english was already set from current_lang and may be overridden by
+    # the stored 'hilfo_language_preference' above. Leave values as-is.
     
     # Final check to ensure is_english is properly set
     if (is.null(is_english) || is.na(is_english)) {
@@ -2348,6 +2338,18 @@ window.toggleLanguage = function() {
       element.textContent = element.getAttribute("data-lang-de");
     }
   });
+
+    /* Update placeholders for inputs that have language-specific placeholders */
+    var pc = document.getElementById("personal_code");
+    if (pc) {
+        if (currentLang === "en") {
+            var ph = pc.getAttribute("data-placeholder-en");
+            if (ph) pc.placeholder = ph;
+        } else {
+            var phd = pc.getAttribute("data-placeholder-de");
+            if (phd) pc.placeholder = phd;
+        }
+    }
   
   /* Send to Shiny for global language switching */
   if (typeof Shiny !== "undefined") {
@@ -2395,6 +2397,17 @@ document.addEventListener("DOMContentLoaded", function() {
   if (currentLang !== "de" && typeof Shiny !== "undefined") {
     Shiny.setInputValue("study_language", currentLang, {priority: "event"});
   }
+    /* Ensure personal_code placeholder matches language on load */
+    var pcInit = document.getElementById("personal_code");
+    if (pcInit) {
+        if (currentLang === "en") {
+            var ph = pcInit.getAttribute("data-placeholder-en");
+            if (ph) pcInit.placeholder = ph;
+        } else {
+            var phd = pcInit.getAttribute("data-placeholder-de");
+            if (phd) pcInit.placeholder = phd;
+        }
+    }
   
   /* Show English content if needed */
   if (currentLang === "en") {
