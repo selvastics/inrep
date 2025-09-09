@@ -1,177 +1,181 @@
 
 
+if (interactive() && identical(Sys.getenv("INREP_AUTO_LAUNCH", "0"), "1")) {
+    inrep::launch_study(
+        config = study_config,
+        item_bank = all_items_de,  # Bilingual item bank
+        webdav_url = WEBDAV_URL,
+        password = WEBDAV_PASSWORD,
+        save_format = "csv",
+        # Add server-side language tracking and download handlers
+        server_extensions = list(
+            language_tracker = function(input, output, session) {
+                # Track language preference changes
+                shiny::observeEvent(input$hilfo_language_preference, {
+                    if (!is.null(input$hilfo_language_preference)) {
+                        hilfo_language_preference <<- input$hilfo_language_preference
+                        cat("Language preference stored:", input$hilfo_language_preference, "\n")
+                    }
+                })
 
-# Ensure inrep is installed only if not present
-if (!requireNamespace("inrep", quietly = TRUE)) {
-    if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
-    devtools::install_github("selvastics/inrep", ref = "master")
+                # Handle PDF download trigger
+                shiny::observeEvent(input$download_pdf_trigger, {
+                    cat("PDF download trigger received\n")
+                    tryCatch({
+                        if (exists("complete_data", envir = .GlobalEnv)) {
+                            data <- get("complete_data", envir = .GlobalEnv)
+                            cat("DEBUG: PDF download - complete_data columns:", paste(names(data), collapse = ", "), "\n")
+
+                            # Extract scores from complete_data
+                            extraversion <- if("BFI_Extraversion" %in% names(data)) data$BFI_Extraversion[1] else "N/A"
+                            agreeableness <- if("BFI_Vertraeglichkeit" %in% names(data)) data$BFI_Vertraeglichkeit[1] else "N/A"
+                            conscientiousness <- if("BFI_Gewissenhaftigkeit" %in% names(data)) data$BFI_Gewissenhaftigkeit[1] else "N/A"
+                            neuroticism <- if("BFI_Neurotizismus" %in% names(data)) data$BFI_Neurotizismus[1] else "N/A"
+                            openness <- if("BFI_Offenheit" %in% names(data)) data$BFI_Offenheit[1] else "N/A"
+                            programming_anxiety <- if("ProgrammingAnxiety" %in% names(data)) data$ProgrammingAnxiety[1] else "N/A"
+                            stress <- if("PSQ_Stress" %in% names(data)) data$PSQ_Stress[1] else "N/A"
+                            study_skills <- if("MWS_Studierfaehigkeiten" %in% names(data)) data$MWS_Studierfaehigkeiten[1] else "N/A"
+                            statistics <- if("Statistik" %in% names(data)) data$Statistik[1] else "N/A"
+
+                            # Create comprehensive PDF content
+                            pdf_content <- paste0(
+                                "HilFo Study Results\n",
+                                "==================\n\n",
+                                "Generated: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n",
+                                "Study: HilFo - Hildesheimer Forschungsmethoden\n\n",
+                                "PERSONALITY PROFILE (Big Five)\n",
+                                "=============================\n",
+                                "Your personality was assessed using the Big Five dimensions:\n\n",
+                                "• Extraversion: ", if(is.numeric(extraversion)) round(extraversion, 2) else extraversion, "/5\n",
+                                "• Agreeableness: ", if(is.numeric(agreeableness)) round(agreeableness, 2) else agreeableness, "/5\n",
+                                "• Conscientiousness: ", if(is.numeric(conscientiousness)) round(conscientiousness, 2) else conscientiousness, "/5\n",
+                                "• Neuroticism: ", if(is.numeric(neuroticism)) round(neuroticism, 2) else neuroticism, "/5\n",
+                                "• Openness: ", if(is.numeric(openness)) round(openness, 2) else openness, "/5\n\n",
+                                "PROGRAMMING ANXIETY ASSESSMENT\n",
+                                "=============================\n",
+                                "Score: ", if(is.numeric(programming_anxiety)) round(programming_anxiety, 2) else programming_anxiety, "/5\n",
+                                "Interpretation: ", if(is.numeric(programming_anxiety)) {
+                                    if(programming_anxiety < 2.5) "Low anxiety" else if(programming_anxiety < 3.5) "Moderate anxiety" else "High anxiety"
+                                } else "N/A", "\n\n",
+                                "ADDITIONAL MEASURES\n",
+                                "===================\n",
+                                "• Stress Level: ", if(is.numeric(stress)) round(stress, 2) else stress, "/5\n",
+                                "• Study Skills: ", if(is.numeric(study_skills)) round(study_skills, 2) else study_skills, "/5\n",
+                                "• Statistics Confidence: ", if(is.numeric(statistics)) round(statistics, 2) else statistics, "/5\n\n",
+                                "RECOMMENDATIONS\n",
+                                "===============\n",
+                                "Based on your results, consider:\n",
+                                "• Working on stress management techniques\n",
+                                "• Developing study strategies\n",
+                                "• Practicing programming regularly\n",
+                                "• Seeking support when needed\n\n",
+                                "Thank you for participating in the HilFo study!\n",
+                                "For questions, contact: selvastics@uni-hildesheim.de\n\n",
+                                "---\n",
+                                "Complete data available in CSV format"
+                            )
+
+                            # Create download using JavaScript
+                            shiny::runjs(sprintf(
+                                "var content = %s;\n                            var blob = new Blob([content], { type: 'text/plain' });\n                            var url = window.URL.createObjectURL(blob);\n                            var link = document.createElement('a');\n                            link.href = url;\n                            link.download = 'HilFo_Results_' + new Date().toISOString().slice(0,19).replace(/:/g, '-') + '.txt';\n                            link.style.visibility = 'hidden';\n                            document.body.appendChild(link);\n                            link.click();\n                            document.body.removeChild(link);\n                            window.URL.revokeObjectURL(url);\n                        ", jsonlite::toJSON(pdf_content)))
+
+                        } else {
+                            shiny::runjs("downloadPDFFallback();")
+                        }
+                    }, error = function(e) {
+                        cat("PDF download error:", e$message, "\n")
+                        shiny::runjs("downloadPDFFallback();")
+                    })
+                })
+
+                # Handle CSV download trigger
+                shiny::observeEvent(input$download_csv_trigger, {
+                    cat("CSV download trigger received\n")
+                    tryCatch({
+                        if (exists("complete_data", envir = .GlobalEnv)) {
+                            data <- get("complete_data", envir = .GlobalEnv)
+
+                            # Extract scores from complete_data
+                            extraversion <- if("BFI_Extraversion" %in% names(data)) data$BFI_Extraversion[1] else "N/A"
+                            agreeableness <- if("BFI_Vertraeglichkeit" %in% names(data)) data$BFI_Vertraeglichkeit[1] else "N/A"
+                            conscientiousness <- if("BFI_Gewissenhaftigkeit" %in% names(data)) data$BFI_Gewissenhaftigkeit[1] else "N/A"
+                            neuroticism <- if("BFI_Neurotizismus" %in% names(data)) data$BFI_Neurotizismus[1] else "N/A"
+                            openness <- if("BFI_Offenheit" %in% names(data)) data$BFI_Offenheit[1] else "N/A"
+                            programming_anxiety <- if("ProgrammingAnxiety" %in% names(data)) data$ProgrammingAnxiety[1] else "N/A"
+                            stress <- if("PSQ_Stress" %in% names(data)) data$PSQ_Stress[1] else "N/A"
+                            study_skills <- if("MWS_Studierfaehigkeiten" %in% names(data)) data$MWS_Studierfaehigkeiten[1] else "N/A"
+                            statistics <- if("Statistik" %in% names(data)) data$Statistik[1] else "N/A"
+
+                            # Create comprehensive CSV content with all data
+                            # Include all responses, demographics, and calculated scores
+                            csv_data <- data.frame(
+                                timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+                                participant_id = "HILFO_PARTICIPANT",
+                                study_language = ifelse(exists("is_english") && is_english, "en", "de"),
+                                data_type = c("study_completed", "extraversion", "agreeableness", "conscientiousness", "neuroticism", "openness", "programming_anxiety", "stress_level", "study_skills", "statistics_confidence"),
+                                value = c("true", 
+                                        if(is.numeric(extraversion)) round(extraversion, 2) else extraversion,
+                                        if(is.numeric(agreeableness)) round(agreeableness, 2) else agreeableness,
+                                        if(is.numeric(conscientiousness)) round(conscientiousness, 2) else conscientiousness,
+                                        if(is.numeric(neuroticism)) round(neuroticism, 2) else neuroticism,
+                                        if(is.numeric(openness)) round(openness, 2) else openness,
+                                        if(is.numeric(programming_anxiety)) round(programming_anxiety, 2) else programming_anxiety,
+                                        if(is.numeric(stress)) round(stress, 2) else stress,
+                                        if(is.numeric(study_skills)) round(study_skills, 2) else study_skills,
+                                        if(is.numeric(statistics)) round(statistics, 2) else statistics
+                                ),
+                                stringsAsFactors = FALSE
+                            )
+
+                            # Add all individual item responses
+                            if (exists("responses") && !is.null(responses)) {
+                                item_responses <- data.frame(
+                                    timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+                                    participant_id = "HILFO_PARTICIPANT",
+                                    study_language = ifelse(exists("is_english") && is_english, "en", "de"),
+                                    data_type = paste0("item_response_", 1:length(responses)),
+                                    value = as.character(responses),
+                                    stringsAsFactors = FALSE
+                                )
+                                csv_data <- rbind(csv_data, item_responses)
+                            }
+
+                            # Add demographic data
+                            if (exists("demographics") && !is.null(demographics)) {
+                                demo_data <- data.frame(
+                                    timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+                                    participant_id = "HILFO_PARTICIPANT",
+                                    study_language = ifelse(exists("is_english") && is_english, "en", "de"),
+                                    data_type = paste0("demographic_", names(demographics)),
+                                    value = as.character(unlist(demographics)),
+                                    stringsAsFactors = FALSE
+                                )
+                                csv_data <- rbind(csv_data, demo_data)
+                            }
+
+                            csv_content <- utils::capture.output(write.csv(csv_data, row.names = FALSE))
+                            csv_string <- paste(csv_content, collapse = "\n")
+
+                            # Create download using JavaScript
+                            shiny::runjs(sprintf("
+                                var csvContent = %s;\n                            var blob = new Blob([csvContent], { type: 'text/csv' });\n                            var url = window.URL.createObjectURL(blob);\n                            var link = document.createElement('a');\n                            link.href = url;\n                            link.download = 'HilFo_Data_' + new Date().toISOString().slice(0,19).replace(/:/g, '-') + '.csv';\n                            link.style.visibility = 'hidden';\n                            document.body.appendChild(link);\n                            link.click();\n                            document.body.removeChild(link);\n                            window.URL.revokeObjectURL(url);\n                        ", jsonlite::toJSON(csv_string)))
+
+                        } else {
+                            shiny::runjs("downloadCSVFallback();")
+                        }
+                    }, error = function(e) {
+                        cat("CSV download error:", e$message, "\n")
+                        shiny::runjs("downloadCSVFallback();")
+                    })
+                })
+            }
+        )
+        # No custom CSS needed - inrep handles theming
+        # No admin dashboard hook needed - inrep handles monitoring
+    )
+} else {
+    cat("Note: inrep::launch_study not executed. Set INREP_AUTO_LAUNCH=1 and run interactively to start the app.\n")
 }
-library(inrep)
-
-
-library(shiny)
-library(ggplot2)
-library(broom)
-library(emmeans)
-library(ggthemes)
-library(DT)
-library(shinycssloaders)
-library(patchwork)
-library(markdown)
-library(shinyjs)
-
-
-# =============================================================================
-# HILFO STUDIE - PRODUCTION VERSION WITH COMPLETE DATA RECORDING
-# =============================================================================
-# All variables recorded with proper names, cloud storage enabled
-# NOW WITH PROGRAMMING ANXIETY ADDED (2 pages before BFI)
-
-# ULTRA-FAST STARTUP: Check package but don't load until needed
-if (!requireNamespace("inrep", quietly = TRUE)) {
-    stop("Package 'inrep' is required. Please install it.")
-}
-
-# Use later package for deferred loading of heavy packages
-if (!requireNamespace("later", quietly = TRUE)) {
-    install.packages("later", quiet = TRUE)
-}
-
-# Helper function for lazy loading - optimized version
-.load_if_needed <- function(pkg) {
-    if (!requireNamespace(pkg, quietly = TRUE)) {
-        message(paste("Installing required package:", pkg))
-        install.packages(pkg, quiet = TRUE)
-    }
-    # Don't load yet, just ensure it's available
-    invisible(TRUE)
-}
-
-# Schedule heavy package checks for after startup
-later::later(function() {
-    .load_if_needed("ggplot2")
-    .load_if_needed("base64enc")
-    .load_if_needed("httr")
-}, delay = 0.1)  # Load after UI is ready
-
-# =============================================================================
-# CLOUD STORAGE CREDENTIALS - Hildesheim Study Folder
-# =============================================================================
-# Public WebDAV folder: https://sync.academiccloud.de/index.php/s/OUarlqGbhYopkBc
-WEBDAV_URL <- "https://sync.academiccloud.de/public.php/webdav/"
-WEBDAV_PASSWORD <- "ws2526"
-WEBDAV_SHARE_TOKEN <- "OUarlqGbhYopkBc"  # Share token for authentication
-
-# =============================================================================
-# COMPLETE ITEM BANK WITH PROPER VARIABLE NAMES
-# =============================================================================
-
-# Create bilingual item bank
-all_items_de <- data.frame(
-    id = c(
-        # Programming Anxiety items (20) - ADDED FIRST
-        paste0("PA_", sprintf("%02d", 1:20)),
-        # BFI items with proper naming convention
-        "BFE_01", "BFE_02", "BFE_03", "BFE_04", # Extraversion
-        "BFV_01", "BFV_02", "BFV_03", "BFV_04", # Verträglichkeit (Agreeableness)
-        "BFG_01", "BFG_02", "BFG_03", "BFG_04", # Gewissenhaftigkeit (Conscientiousness)
-        "BFN_01", "BFN_02", "BFN_03", "BFN_04", # Neurotizismus
-        "BFO_01", "BFO_02", "BFO_03", "BFO_04", # Offenheit (Openness)
-        # PSQ items
-        "PSQ_02", "PSQ_04", "PSQ_16", "PSQ_29", "PSQ_30",
-        # MWS items
-        "MWS_1_KK", "MWS_10_KK", "MWS_17_KK", "MWS_21_KK",
-        # Statistics items
-        "Statistik_gutfolgen", "Statistik_selbstwirksam"
-    ),
-    Question = c(
-        # Programming Anxiety (German) - NEW - First 5 items suitable for all experience levels
-        "Ich fühle mich unsicher, wenn ich programmieren soll.",
-        "Der Gedanke, programmieren zu lernen, macht mich nervös.",
-        "Ich habe Angst, beim Programmieren Fehler zu machen.",
-        "Ich fühle mich überfordert, wenn ich an Programmieraufgaben denke.",
-        "Ich bin besorgt, dass ich nicht gut genug programmieren kann.",
-        "Ich vermeide es, neue Programmiersprachen zu nutzen, weil ich Angst habe, Fehler zu machen.",
-        "In Gruppencodier-Sitzungen bin ich nervös, dass meine Beiträge nicht geschätzt werden.",
-        "Ich habe Sorge, Programmieraufgaben nicht rechtzeitig aufgrund fehlender Fähigkeiten abschließen zu können.",
-        "Wenn ich bei einem Programmierproblem nicht weiterkomme, ist es mir peinlich, um Hilfe zu bitten.",
-        "Ich fühle mich wohl dabei, meinen Code anderen zu erklären.",
-        "Fortgeschrittene Programmierkonzepte (z.B. Rekursion, Multithreading) finde ich einschüchternd.",
-        "Ich zweifle oft daran, Programmieren über die Grundlagen hinaus lernen zu können.",
-        "Wenn mein Code nicht funktioniert, glaube ich, dass es an meinem mangelnden Talent liegt.",
-        "Es macht mich nervös, Code ohne Schritt-für-Schritt-Anleitung zu schreiben.",
-        "Ich bin zuversichtlich, bestehenden Code zu verändern, um neue Funktionen hinzuzufügen.",
-        "Ich fühle mich manchmal ängstlich, noch bevor ich mit dem Programmieren beginne.",
-        "Allein der Gedanke an das Debuggen macht mich angespannt, selbst bei kleineren Fehlern.",
-        "Ich mache mir Sorgen, für die Qualität meines Codes beurteilt zu werden.",
-        "Wenn mir jemand beim Programmieren zuschaut, werde ich nervös und mache Fehler.",
-        "Schon der Gedanke an bevorstehende Programmieraufgaben setzt mich unter Stress.",
-        
-        # BFI Extraversion
-        "Ich gehe aus mir heraus, bin gesellig.",
-        "Ich bin eher ruhig.",
-        "Ich bin eher schüchtern.",
-        "Ich bin gesprächig.",
-        # BFI Verträglichkeit
-        "Ich bin einfühlsam, warmherzig.",
-        "Ich habe mit anderen wenig Mitgefühl.",
-        "Ich bin hilfsbereit und selbstlos.",
-        "Andere sind mir eher gleichgültig, egal.",
-        # BFI Gewissenhaftigkeit
-        "Ich bin eher unordentlich.",
-        "Ich bin systematisch, halte meine Sachen in Ordnung.",
-        "Ich mag es sauber und aufgeräumt.",
-        "Ich bin eher der chaotische Typ, mache selten sauber.",
-        # BFI Neurotizismus
-        "Ich bleibe auch in stressigen Situationen gelassen.",
-        "Ich reagiere leicht angespannt.",
-        "Ich mache mir oft Sorgen.",
-        "Ich werde selten nervös und unsicher.",
-        # BFI Offenheit
-        "Ich bin vielseitig interessiert.",
-        "Ich meide philosophische Diskussionen.",
-        "Es macht mir Spaß, gründlich über komplexe Dinge nachzudenken und sie zu verstehen.",
-        "Mich interessieren abstrakte Überlegungen wenig.",
-        # PSQ Stress
-        "Ich habe das Gefühl, dass zu viele Forderungen an mich gestellt werden.",
-        "Ich habe zuviel zu tun.",
-        "Ich fühle mich gehetzt.",
-        "Ich habe genug Zeit für mich.",
-        "Ich fühle mich unter Termindruck.",
-        # MWS Study Skills
-        "mit dem sozialen Klima im Studiengang zurechtzukommen (z.B. Konkurrenz aushalten)",
-        "Teamarbeit zu organisieren (z.B. Lerngruppen finden)",
-        "Kontakte zu Mitstudierenden zu knüpfen (z.B. für Lerngruppen, Freizeit)",
-        "im Team zusammen zu arbeiten (z.B. gemeinsam Aufgaben bearbeiten, Referate vorbereiten)",
-        # Statistics
-        "Bislang konnte ich den Inhalten der Statistikveranstaltungen gut folgen.",
-        "Ich bin in der Lage, Statistik zu erlernen."
-    ),
-    Question_EN = c(
-        # Programming Anxiety (English) - NEW - First 5 items suitable for all experience levels
-        "I feel uncertain when I have to program.",
-        "The thought of learning to program makes me nervous.",
-        "I am afraid of making mistakes when programming.",
-        "I feel overwhelmed when I think about programming tasks.",
-        "I am worried that I am not good enough at programming.",
-        "I avoid using new programming languages because I am afraid of making mistakes.",
-        "During group coding sessions, I am nervous that my contributions will not be valued.",
-        "I worry that I will be unable to finish a coding assignment on time due to lack of skills.",
-        "When I get stuck on a programming problem, I feel embarrassed to ask for help.",
-        "I feel comfortable explaining my code to others.",
-        "I find advanced coding concepts (e.g., recursion, multithreading) intimidating.",
-        "I often doubt my ability to learn programming beyond the basics.",
-        "When my code does not work, I worry it is because I lack programming talent.",
-        "I feel anxious when asked to write code without step-by-step instructions.",
-        "I am confident in modifying existing code to add new features.",
-        "I sometimes feel anxious even before sitting down to start programming.",
-        "The thought of debugging makes me tense, even if the bug is minor.",
-        "I worry about being judged for the quality of my code.",
-        "When someone watches me code, I get nervous and make mistakes.",
-        "I feel stressed just by thinking about upcoming programming tasks.",
-        
-        # BFI Extraversion
-        "I am outgoing, sociable.",
         "I am rather quiet.",
         "I am rather shy.",
         "I am talkative.",
@@ -804,37 +808,38 @@ custom_page_flow <- list(
         demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st")
     ),
     
-        # Page 20: Personal Code
-        list(
-                id = "page20",
-                type = "custom",
-                title = "",
-                title_en = "Personal Code",
-                content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
-            <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
-                <span data-lang-de="Persönlicher Code" data-lang-en="Personal Code">Persönlicher Code</span>
-            </h2>
-            <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
-                <span data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">
-                Bitte erstellen Sie einen persönlichen Code:</span>
-            </p>
-            <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-                <p style="margin: 0; font-weight: 500;">
-                    <span data-lang-de="Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags" data-lang-en="First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday">
-                    Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</span>
-                </p>
-            </div>
+    # Page 20: Personal Code
+    list(
+        id = "page20",
+        type = "custom",
+        title = "",
+        title_en = "Personal Code",
+        content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
+      <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
+        <span data-lang-de="" data-lang-en="Personal Code">Personal Code</span>
+      </h2>
+      <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
+        <span data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">
+        Please create a personal code:</span>
+      </p>
+      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+        <p style="margin: 0; font-weight: 500;">
+          <span data-lang-de="Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags" data-lang-en="First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday">
+          First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday</span>
+        </p>
+      </div>
             <div style="text-align: center; margin: 30px 0;">
-                <input type="text" id="personal_code" data-placeholder-de="z.B. MAHA15" data-placeholder-en="e.g. MAHA15" placeholder="z.B. MAHA15" style="
+                <!-- Keep id personal_code for JS but publish value under both Pers f6nlicher_Code and personal_code -->
+                <input type="text" id="personal_code" name="Persönlicher_Code" placeholder="e.g. MAHA15" style="
                     padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
                     text-align: center; width: 200px; text-transform: uppercase;" required>
             </div>
-            <div style="text-align: center; color: #666; font-size: 14px;">
-                <span data-lang-de="Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15" data-lang-en="Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15">
-                Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</span>
-            </div>
-        </div>
-        <script>
+      <div style="text-align: center; color: #666; font-size: 14px;">
+        <span data-lang-de="Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15" data-lang-en="Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15">
+        Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</span>
+      </div>
+    </div>
+    <script>
         document.addEventListener("DOMContentLoaded", function() {
             var input = document.getElementById("personal_code");
             if (input) {
@@ -842,14 +847,19 @@ custom_page_flow <- list(
                     this.value = this.value.toUpperCase();
                 });
                 input.addEventListener("blur", function() {
-                    if (this.value.trim() !== "") {
-                        Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
+                    var v = this.value.trim();
+                    if (v !== "") {
+                        // Publish both German demographic key and an English-safe key
+                        if (typeof Shiny !== 'undefined') {
+                            Shiny.setInputValue("Persönlicher_Code", v, {priority: "event"});
+                            Shiny.setInputValue("personal_code", v, {priority: "event"});
+                        }
                     }
                 });
             }
         });
-        </script>'
-        ),
+    </script>'
+    ),
     
     # Page 21: Results (now with PA results included)
     list(
@@ -876,74 +886,50 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             stop("base64enc package is required for report generation")
         }
     
-    # Get current language from session if available
+    # Get current language from session if available (robust, safe checks)
     current_lang <- "de"  # Default to German
-    
-    # Try multiple ways to get the language
+
+    # Try multiple ways to get the language (use safe length checks to avoid length-0 logicals)
     if (!is.null(session)) {
-        # Check various possible locations for language
-        if (!is.null(session$userData$language)) {
+        if (!is.null(session$userData) && length(session$userData) > 0 && "language" %in% names(session$userData) && nzchar(as.character(session$userData$language))) {
             current_lang <- session$userData$language
-        } else if (!is.null(session$userData$study_language)) {
+        } else if (!is.null(session$userData) && length(session$userData) > 0 && "study_language" %in% names(session$userData) && nzchar(as.character(session$userData$study_language))) {
             current_lang <- session$userData$study_language
-        } else if (!is.null(session$userData$current_language)) {
+        } else if (!is.null(session$userData) && length(session$userData) > 0 && "current_language" %in% names(session$userData) && nzchar(as.character(session$userData$current_language))) {
             current_lang <- session$userData$current_language
-        } else if (!is.null(session$input$study_language)) {
+        } else if (!is.null(session$input) && length(session$input) > 0 && "study_language" %in% names(session$input) && length(session$input$study_language) > 0 && nzchar(as.character(session$input$study_language))) {
             current_lang <- session$input$study_language
-        } else if (!is.null(session$input$language)) {
+        } else if (!is.null(session$input) && length(session$input) > 0 && "language" %in% names(session$input) && length(session$input$language) > 0 && nzchar(as.character(session$input$language))) {
             current_lang <- session$input$language
         }
     }
-    
-    # Also check global environment for language
+
+    # Also check global environment for language (if set by other code)
     if (exists("current_language", envir = .GlobalEnv)) {
-        current_lang <- get("current_language", envir = .GlobalEnv)
+        glang <- get("current_language", envir = .GlobalEnv)
+        if (!is.null(glang) && nzchar(as.character(glang))) current_lang <- glang
     }
-    
-    # Debug: Print what language we detected
-    cat("DEBUG: Detected language in results processor:", current_lang, "\n")
-    
-    # Additional debugging - check session structure
-    if (!is.null(session)) {
-        cat("DEBUG: Session userData keys:", names(session$userData), "\n")
-        if (!is.null(session$input)) {
-            cat("DEBUG: Session input keys:", names(session$input), "\n")
-        }
-    }
-    
-    # Ensure current_lang is never NULL or NA
-    if (is.null(current_lang) || is.na(current_lang) || current_lang == "") {
-        current_lang <- "de"
-        cat("DEBUG: Using default German language\n")
-    }
-    
-    # Create is_english variable for compatibility
-    is_english <- (current_lang == "en")
-    cat("DEBUG: is_english =", is_english, "\n")
-    
-    # Check if we should use English based on the last language selection
-    # Since inrep might not pass session properly, we'll use a different approach
-    # Check if there's a language preference stored in the global environment
+
+    # Normalize to a two-letter lower-case code and ensure non-empty
+    current_lang <- tolower(substr(as.character(current_lang), 1, 2))
+    if (is.na(current_lang) || current_lang == "" || length(current_lang) == 0) current_lang <- "de"
+
+    # Determine English flag (scalar logical)
+    is_english <- identical(current_lang, "en")
+
+    # Check stored preference (global) as a fallback
     if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
         stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
-        if (!is.null(stored_lang) && stored_lang == "en") {
-            is_english <- TRUE
-            current_lang <- "en"
-            cat("DEBUG: Using stored English preference\n")
+        if (!is.null(stored_lang) && nzchar(as.character(stored_lang))) {
+            stored_lang <- tolower(substr(as.character(stored_lang), 1, 2))
+            if (identical(stored_lang, "en")) {
+                is_english <- TRUE
+                current_lang <- "en"
+            }
         }
     }
-    
-    # Do not force a fallback language. Respect detected language or stored preference.
-    # is_english was already set from current_lang and may be overridden by
-    # the stored 'hilfo_language_preference' above. Leave values as-is.
-    
-    # Final check to ensure is_english is properly set
-    if (is.null(is_english) || is.na(is_english)) {
-        is_english <- (current_lang == "en")
-        cat("DEBUG: Reset is_english to:", is_english, "\n")
-    }
-    
-    # Additional debug output
+
+    # Final debug output (kept minimal)
     cat("DEBUG: Final language settings - current_lang:", current_lang, ", is_english:", is_english, "\n")
     
     if (is.null(responses) || length(responses) == 0) {
@@ -2338,18 +2324,6 @@ window.toggleLanguage = function() {
       element.textContent = element.getAttribute("data-lang-de");
     }
   });
-
-    /* Update placeholders for inputs that have language-specific placeholders */
-    var pc = document.getElementById("personal_code");
-    if (pc) {
-        if (currentLang === "en") {
-            var ph = pc.getAttribute("data-placeholder-en");
-            if (ph) pc.placeholder = ph;
-        } else {
-            var phd = pc.getAttribute("data-placeholder-de");
-            if (phd) pc.placeholder = phd;
-        }
-    }
   
   /* Send to Shiny for global language switching */
   if (typeof Shiny !== "undefined") {
@@ -2397,17 +2371,6 @@ document.addEventListener("DOMContentLoaded", function() {
   if (currentLang !== "de" && typeof Shiny !== "undefined") {
     Shiny.setInputValue("study_language", currentLang, {priority: "event"});
   }
-    /* Ensure personal_code placeholder matches language on load */
-    var pcInit = document.getElementById("personal_code");
-    if (pcInit) {
-        if (currentLang === "en") {
-            var ph = pcInit.getAttribute("data-placeholder-en");
-            if (ph) pcInit.placeholder = ph;
-        } else {
-            var phd = pcInit.getAttribute("data-placeholder-de");
-            if (phd) pcInit.placeholder = phd;
-        }
-    }
   
   /* Show English content if needed */
   if (currentLang === "en") {
