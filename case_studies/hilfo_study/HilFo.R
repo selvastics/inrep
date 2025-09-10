@@ -2619,7 +2619,7 @@ document.addEventListener("DOMContentLoaded", function() {
 function downloadPDF() {
   // Try to trigger the Shiny download handler
   if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
-    // Trigger the save_report download
+    // Trigger the save_report download with PDF format
     Shiny.setInputValue("save_report", Math.random(), {priority: "event"});
   } else {
     // Fallback: try to find and click the download button
@@ -2627,7 +2627,13 @@ function downloadPDF() {
     if (downloadBtn) {
       downloadBtn.click();
     } else {
-      alert("Download functionality not available. Please try refreshing the page.");
+      // Try alternative download button selectors
+      var altBtn = document.querySelector("a[href*=\\"download\\"]");
+      if (altBtn) {
+        altBtn.click();
+      } else {
+        alert("Download functionality not available. Please try refreshing the page.");
+      }
     }
   }
 }
