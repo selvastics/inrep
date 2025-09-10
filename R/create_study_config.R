@@ -69,6 +69,8 @@
 #'   for performance optimization.
 #' @param parallel_computation Logical indicating whether to enable parallel processing
 #'   for TAM estimation procedures when computationally intensive.
+#' @param fast_item_selection Logical indicating whether to use fast item selection
+#'   algorithm for improved performance in large item banks.
 #' @param feedback_enabled Logical indicating whether to provide immediate feedback
 #'   after each item response.
 #' @param theta_grid Numeric vector specifying theta grid for TAM's numerical integration,
@@ -456,7 +458,8 @@ create_study_config <- function(
     max_session_duration = 60,
     max_response_time = 300,
     cache_enabled = TRUE,
-    parallel_computation = FALSE,
+    parallel_computation = TRUE,
+    fast_item_selection = TRUE,
     feedback_enabled = FALSE,
     theta_grid = seq(-4, 4, length.out = 100),
     # Enhanced study flow features

@@ -4719,7 +4719,11 @@ launch_study <- function(
           current_ability = config$theta_prior[1] %||% 0,
           current_se = config$theta_prior[2] %||% 1
         )
-        first_item <- inrep::select_next_item(temp_rv, item_bank, config)
+        first_item <- if (isTRUE(config$fast_item_selection)) {
+          inrep::fast_select_next_item(temp_rv, item_bank, config)
+        } else {
+          inrep::select_next_item(temp_rv, item_bank, config)
+        }
         rv$current_item <- first_item
         logger(sprintf("Adaptive mode: Starting with item %s", first_item))
       }
@@ -4754,7 +4758,11 @@ launch_study <- function(
       logger(sprintf("config$model: %s", config$model))
       logger(sprintf("Item bank columns: %s", paste(names(item_bank), collapse = ", ")))
       
-      rv$current_item <- inrep::select_next_item(rv, item_bank, config)
+      rv$current_item <- if (isTRUE(config$fast_item_selection)) {
+        inrep::fast_select_next_item(rv, item_bank, config)
+      } else {
+        inrep::select_next_item(rv, item_bank, config)
+      }
       if (!is.null(config$admin_dashboard_hook) && is.function(config$admin_dashboard_hook)) {
         base::tryCatch({
           config$admin_dashboard_hook(list(
@@ -5066,7 +5074,11 @@ launch_study <- function(
       } else {
         # ROBUST NEXT ITEM SELECTION WITH ERROR RECOVERY
         next_item_result <- base::tryCatch({
-          inrep::select_next_item(rv, item_bank, config)
+          if (isTRUE(config$fast_item_selection)) {
+            inrep::fast_select_next_item(rv, item_bank, config)
+          } else {
+            inrep::select_next_item(rv, item_bank, config)
+          }
         }, error = function(e) {
           logger(sprintf("Next item selection failed, using fallback: %s", e$message), level = "WARNING")
           # Fallback: select next available item
