@@ -260,6 +260,8 @@ launch_study(
 
 * `bfi_items`
 * `math_items`
+* `cognitive_items`
+* `RCQ_items` ([Resilient-Coping Questionnaire](https://rc-fragebogen.vercel.app/), in progress)
 
 ## Configuration
 
@@ -298,9 +300,6 @@ See `CONTRIBUTING.md` on GitHub.
 MIT License
 
 ## Support
-
-* GitHub: [https://github.com/selvastics/inrep/issues](https://github.com/selvastics/inrep/issues)
-* Email: [selva@uni-hildesheim.de](mailto:selva@uni-hildesheim.de)
 
 **Author:** Clievins Selva
 **Affiliation:** University of Hildesheim
