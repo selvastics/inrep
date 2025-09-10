@@ -489,7 +489,7 @@ custom_page_flow <- list(
       '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
       # Language switcher in top right corner (uses global toggle function)
       '<div style="position: absolute; top: 10px; right: 10px;">',
-      '<button type="button" id="lang_switch" onclick="window.toggleLanguage()" style="',
+      '<button type="button" id="language-toggle-btn" onclick="window.toggleLanguage()" style="',
       'background: white; border: 2px solid #e8041c; color: #e8041c; ',
       'padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">',
       '<span id="lang_switch_text">English Version</span></button>',
@@ -2962,9 +2962,12 @@ window.toggleLanguage = function() {
   }
   
   // Also update the welcome page button if it exists
-  var welcomeBtn = document.getElementById("lang_switch");
+  var welcomeBtn = document.getElementById("language-toggle-btn");
   if (welcomeBtn) {
-    welcomeBtn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    var welcomeTextSpan = welcomeBtn.querySelector("#lang_switch_text");
+    if (welcomeTextSpan) {
+      welcomeTextSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    }
   }
   
   // Toggle welcome page content if on page 1
