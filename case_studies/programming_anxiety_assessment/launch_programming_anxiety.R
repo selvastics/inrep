@@ -4,7 +4,7 @@
 # 
 # This case study demonstrates the ADVANCED IRT FEATURES of inrep:
 # 
-# 🧠 UNIQUE FEATURES HIGHLIGHTED:
+#  UNIQUE FEATURES HIGHLIGHTED:
 # 1. PLAUSIBLE VALUES GENERATION - Multiple estimates for robust statistical inference
 # 2. ADVANCED IRT MODELS - Graded Response Model (GRM) with confidence intervals
 # 3. INTERACTIVE DASHBOARD - Real-time analytics and visualizations

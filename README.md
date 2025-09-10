@@ -30,14 +30,14 @@
 - **Adaptive & Non-Adaptive Testing**: Support for multiple IRT models (1PL, 2PL, 3PL, GRM) with item selection algorithms, plus fixed-order questionnaires
 - **Web-based Interface**: Modern Shiny applications for test administration and data collection  
 - **TAM Integration**: All psychometric computations performed using the validated TAM package  
-- **Survey Features**: 30+ question types, branching logic, randomization, piping, quota control, and participant management
-- **Security**: Input validation, rate limiting, CSRF protection, encryption, and audit logging
+- **Professional Survey Features**: 30+ question types, branching logic, randomization, piping, quota control, and participant management
+- **Enhanced Security**: Input validation, rate limiting, CSRF protection, encryption, and audit logging
 - **Multilingual Support**: Interface available in English, German, Spanish, and French with complete translations
 - **10+ Beautiful Themes**: Including Light, Professional, Ocean, Forest, Midnight, Sunset, Hildesheim, and more
 - **Reporting**: Multiple export formats (CSV, JSON, SPSS, PDF) with detailed analytics and visualizations  
 - **Session Recovery**: Session handling with automatic save and crash recovery capabilities
 - **Smart Argument Validation**: Fuzzy matching for typos, case-insensitive parameters, helpful error messages
-- **Performance**: Caching, parallel processing, memory management for large-scale deployments
+- **Performance Optimized**: Caching, parallel processing, memory management for large-scale deployments
 - **Accessibility Options**: WCAG-compliant with colorblind-safe palettes, large text, dyslexia-friendly fonts, and high-contrast modes
 - **CRAN-Ready**: Clean code, documentation, full test coverage
 
@@ -47,7 +47,7 @@
 
 ```r
 # Install from GitHub (clean installation with dependency management)
-devtools::install_github("selvastics/inrep", ref = "master", force = TRUE)
+devtools::install_github("selvastics/inrep", ref = "main", force = TRUE)
 
 # Load the package
 library(inrep)
@@ -112,10 +112,6 @@ The package requires R ≥ 4.1.0 and integrates with the following packages:
 library(inrep)
 data(bfi_items)
 
-# Store data on a cloud sever (replace with one only you have access to)
-webdav_url <- "https://sync.academiccloud.de/index.php/s/Y51QPXzJVLWSAcb"
-password <- "inreptest"  # Password for the public share
-
 # Adaptive assessment with item selection based on ability
 config <- create_study_config(
   name = "Adaptive Personality Assessment",
@@ -128,9 +124,7 @@ config <- create_study_config(
   theme = "professional"
 )
 
-launch_study(config, bfi_items,
-             webdav_url = webdav_url,
-             password = password)
+launch_study(config, bfi_items)
 ```
 
 ### Non-Adaptive Testing (Fixed questionnaire)
@@ -148,7 +142,7 @@ config_fixed <- create_study_config(
 launch_study(config_fixed, bfi_items)
 ```
 
-### Cognitive Ability Study (2PL) — Fully Specified
+### Advanced Cognitive Ability Study (2PL) — Fully Specified
 
 ```r
 # Fully specified cognitive ability study (2PL) with custom item bank
@@ -190,7 +184,7 @@ if (length(spatial_rows) > 0) {
 }
 
 # Create a detailed configuration
-config <- create_study_config(
+advanced_config <- create_study_config(
   name = "Cognitive Ability Assessment",
   model = "2PL",
   estimation_method = "TAM",
@@ -211,19 +205,20 @@ config <- create_study_config(
   session_save = TRUE,
   parallel_computation = TRUE,
   cache_enabled = TRUE,
-  accessibility = TRUE,
+  accessibility_enhanced = TRUE,
   participant_report = list(
     show_theta_plot = TRUE,
     show_response_table = TRUE,
     show_recommendations = TRUE,
-    use_detailed_report = TRUE,
+    use_enhanced_report = TRUE,
     show_item_difficulty_trend = TRUE,
     show_domain_breakdown = TRUE
   )
 )
 
+# Launch the study (opens a Shiny app)
 launch_study(
-  config = config,
+  config = advanced_config,
   item_bank = cognitive_items,
   accessibility = TRUE,
   admin_dashboard_hook = function(session_data) {
@@ -235,60 +230,15 @@ launch_study(
 )
 ```
 
-## Hosting Your Study Online with Shiny
+## Theme Customization 
 
-You can host `inrep` studies on [shinyapps.io](https://www.shinyapps.io), the cloud platform by Posit (RStudio). This allows participants to access your study online without installing R or RStudio.
+![inrep themes](man/figures/inrep_themes.png)
 
-### Step 1: Create Accounts
-
-* Register a [GitHub account](https://github.com) (optional but recommended).
-* Register a [shinyapps.io account](https://www.shinyapps.io). You can sign up with GitHub or email.
-
-### Step 2: Install Deployment Tools
-
-Install the **rsconnect** package:
-
-```r
-install.packages("rsconnect")
-```
-
-### Step 3: Link RStudio to Shinyapps.io
-
-1. Log in to [shinyapps.io](https://www.shinyapps.io).
-2. Go to **Account → Tokens**.
-3. Click **Show Token** and copy the code snippet, which looks like this:
-
-```r
-rsconnect::setAccountInfo(
-  name = "yourname",
-  token = "XXXXXXXXXXXXXXXXXXXXXXXX",
-  secret = "YYYYYYYYYYYYYYYYYYYYYYYY"
-)
-```
-
-4. Paste and run this snippet in your R console. This links your local R session with your shinyapps.io account.
-
-### Step 4: Deploy Your Study
-
-If your study is stored in a folder (for example, `~/Documents/inrep_study`), run:
-
-```r
-rsconnect::deployApp("~/Documents/inrep_study")
-```
-
-After uploading, you will receive a URL such as:
-
-```
-https://yourname.shinyapps.io/inrep_study
-```
-
-You can share this link with participants.
-
-### Step 5: Manage and Update
-
-* Run `deployApp()` again to update your app.
-* Manage apps from the shinyapps.io dashboard (pause, delete, view logs).
-* Free accounts allow up to 25 active hours per month and 5 deployed apps.
+> **Themes:** `inrep` supports multiple default UI themes for customizing assessment components.  
+> In addition to built-in options, users can extract CSS styles from institutional websites  
+> or define fully custom themes through direct CSS editing.  
+>  
+> New themes are added incrementally. Contributions are welcome to share themes that can be made available to other users.
 
 ## Documentation
 
@@ -311,26 +261,23 @@ You can share this link with participants.
 * `bfi_items`
 * `math_items`
 
-## Configuration Options
+## Configuration
+
+### Models (TAM)
 
 * IRT Models: 1PL, 2PL, 3PL, GRM
+
+Please cite the TAM package when using inrep's IRT functionality:
+
+Robitzsch, A., Kiefer, T., & Wu, M. (2024). TAM: Test Analysis Modules. R package version 4.2-21. https://CRAN.R-project.org/package=TAM
+
+### Configuration Options
+
 * Stopping Rules
 * Item Selection Criteria
 * Themes and Languages
 * Session Management
 * LLM Integration
-
-
-## Theme Customization 
-
-![inrep themes](man/figures/inrep_themes.png)
-
-> **Themes:** `inrep` supports multiple default UI themes for customizing assessment components.  
-> In addition to built-in options, users can extract CSS styles from institutional websites  
-> or define fully custom themes through direct CSS editing.  
->  
-> New themes are added incrementally. Contributions are welcome to share themes that can be made available to other users.
-
 
 ## Citation
 
@@ -351,12 +298,6 @@ MIT License
 
 * GitHub: [https://github.com/selvastics/inrep/issues](https://github.com/selvastics/inrep/issues)
 * Email: [selva@uni-hildesheim.de](mailto:selva@uni-hildesheim.de)
-
-## Acknowledgments
-
-I thank Alla Sawatzky and Kathrin Schütz for their early endorsement of this project and their insightful guidance during its conceptualization.
-
----
 
 **Author:** Clievins Selva
 **Affiliation:** University of Hildesheim
