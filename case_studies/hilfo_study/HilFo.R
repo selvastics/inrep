@@ -2483,6 +2483,23 @@ server_extensions <- function(input, output, session) {
     # Send message to update UI
     session$sendCustomMessage("update_language", new_lang)
   })
+  
+  # Also handle the 'language' input (for compatibility)
+  observeEvent(input$language, {
+    new_lang <- input$language
+    session$userData$current_language(new_lang)
+    
+    # Update item bank language
+    if (new_lang == "en") {
+      session$userData$item_bank <- all_items_de
+      session$userData$item_bank$Question <- all_items_de$Question_EN
+    } else {
+      session$userData$item_bank <- all_items_de
+    }
+    
+    # Send message to update UI
+    session$sendCustomMessage("update_language", new_lang)
+  })
 }
 
 study_config <- inrep::create_study_config(
