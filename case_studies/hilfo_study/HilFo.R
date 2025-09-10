@@ -3084,45 +3084,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   });
   
-  // Scroll to top on any Shiny page navigation
-  if (typeof Shiny !== \"undefined\") {
-    Shiny.addCustomMessageHandler(\"scroll_to_top\", function(message) {
-      if (window.scrollTo) {
-        window.scrollTo({ top: 0, behavior: \"smooth\" });
-      } else {
-        window.scrollTo(0, 0);
-      }
-    });
-  }
-  
-  // Also scroll to top on any button clicks that might trigger page changes
-  document.addEventListener(\"click\", function(e) {
-    if (e.target && (e.target.tagName === \"BUTTON\" || e.target.classList.contains(\"btn\"))) {
-      // Immediate scroll for page navigation buttons
-      window.scrollTo(0, 0);
-      // Also try smooth scroll after a delay
-      setTimeout(function() {
-        if (window.scrollTo) {
-          window.scrollTo({ top: 0, behavior: \"smooth\" });
-        }
-      }, 50);
-    }
-  });
-  
-  // Force scroll to top on any form submission or page navigation
-  document.addEventListener(\"submit\", function(e) {
-    window.scrollTo(0, 0);
-  });
-  
-  // Also listen for Shiny input changes that might trigger page changes
-  if (typeof Shiny !== \"undefined\") {
-    $(document).on('shiny:inputchanged', function(event) {
-      // Scroll to top on any input change that might trigger page navigation
-      setTimeout(function() {
-        window.scrollTo(0, 0);
-      }, 10);
-    });
-  }
 });
 
 // Handle Shiny messages
