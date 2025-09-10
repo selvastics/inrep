@@ -487,7 +487,7 @@ custom_page_flow <- list(
       '</div>',
       # German content (default)
       '<div id="content_de">',
-      '<h2 style="color: #e8041c;">Liebe Studierende,</h2>',
+      '<h2 style="color: #e8041c;" data-lang-de="Liebe Studierende," data-lang-en="Dear Students,">Liebe Studierende,</h2>',
       '<p>In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, ',
       'die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.</p>',
       '<p>Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene ',
@@ -502,10 +502,10 @@ custom_page_flow <- list(
       '<p style="margin-top: 20px;"><strong>Die Befragung dauert etwa 10-15 Minuten.</strong></p>',
       '<hr style="margin: 30px 0; border: 1px solid #e8041c;">',
       '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">',
-      '<h3 style="color: #e8041c; margin-bottom: 15px;">Einverständniserklärung</h3>',
+      '<h3 style="color: #e8041c; margin-bottom: 15px;" data-lang-de="Einverständniserklärung" data-lang-en="Declaration of Consent">Einverständniserklärung</h3>',
       '<label style="display: flex; align-items: center; cursor: pointer; font-size: 16px;">',
       '<input type="checkbox" id="consent_check" style="margin-right: 10px; width: 20px; height: 20px;" required>',
-      '<span><strong>Ich bin mit der Teilnahme an der Befragung einverstanden</strong></span>',
+      '<span><strong data-lang-de="Ich bin mit der Teilnahme an der Befragung einverstanden" data-lang-en="I agree to participate in the survey">Ich bin mit der Teilnahme an der Befragung einverstanden</strong></span>',
       '</label>',
       '</div>',
       '</div>',
@@ -555,7 +555,11 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 </script>'
     ),
-    validate = "function(inputs) { return document.getElementById('consent_check').checked || document.getElementById('consent_check_en').checked; }",
+    validate = "function(inputs) { 
+      var deCheck = document.getElementById('consent_check');
+      var enCheck = document.getElementById('consent_check_en');
+      return (deCheck && deCheck.checked) || (enCheck && enCheck.checked);
+    }",
     required = TRUE
   ),
   
@@ -2515,6 +2519,57 @@ custom_item_selection <- function(rv, item_bank, config) {
   return(NULL)
 }
 
+# =============================================================================
+# CUSTOM JAVASCRIPT FOR LANGUAGE SWITCHING
+# =============================================================================
+
+custom_js_enhanced <- '
+<script>
+var currentLang = "de";
+
+window.toggleLanguage = function() {
+  currentLang = currentLang === "de" ? "en" : "de";
+  
+  // Update button text
+  var btn = document.getElementById("lang_switch");
+  if (btn) {
+    var textSpan = btn.querySelector("#lang_switch_text");
+    if (textSpan) {
+      textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    }
+  }
+  
+  // Toggle language elements
+  var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+  langElements.forEach(function(element) {
+    if (currentLang === "en") {
+      element.textContent = element.getAttribute("data-lang-en");
+    } else {
+      element.textContent = element.getAttribute("data-lang-de");
+    }
+  });
+  
+  // Send to Shiny for global language switching
+  if (typeof Shiny !== "undefined") {
+    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+  }
+  
+  // Store preference
+  sessionStorage.setItem("hilfo_language", currentLang);
+}
+
+// Initialize on page load
+document.addEventListener("DOMContentLoaded", function() {
+  // Check stored language preference
+  var storedLang = sessionStorage.getItem("hilfo_language");
+  if (storedLang) {
+    currentLang = storedLang;
+    // Apply stored language
+    window.toggleLanguage();
+  }
+});
+</script>'
+
 study_config <- inrep::create_study_config(
   name = "HilFo Studie",
   study_key = session_uuid,
@@ -2557,7 +2612,8 @@ study_config <- inrep::create_study_config(
   # Adaptive settings for PA items
   fixed_items = c(1:5, 21:51),  # First 5 PA are fixed, then all BFI+ are fixed
   adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
-  # Let inrep handle scroll-to-top and language switching
+  # Add custom JavaScript for language switching
+  custom_js = custom_js_enhanced,
   allow_deselect = TRUE,  # Allow response deselection
   server_extensions = server_extensions  # Language handling only
 )
