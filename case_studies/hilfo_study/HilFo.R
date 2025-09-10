@@ -329,7 +329,7 @@ demographic_configs <- list(
     ),
     options_en = c(
       "Dog"="1", "Cat"="2", "Fish"="3", "Bird"="4",
-      "Rodent"="5", "Reptile"="6", "I don't want a pet"="7", "Other"="8"
+      "Rodent"="5", "Reptile"="6", "I don\\'t want a pet"="7", "Other"="8"
     ),
     required = FALSE
   ),
@@ -2713,13 +2713,13 @@ custom_js_enhanced <- '
 // Comprehensive translation dictionary for ENTIRE APP
 var translations = {
   // Page titles
-  \"Wohnsituation\": \"Living Situation\",
-  \"Soziodemographische Angaben\": \"Sociodemographic Information\",
-  \"Lebensstil\": \"Lifestyle\",
-  \"Bildung\": \"Education\",
-  \"Persönlichkeit\": \"Personality\",
-  \"Studienzufriedenheit\": \"Study Satisfaction\",
-  \"Ihre Ergebnisse\": \"Your Results\",
+  \\"Wohnsituation\\": \\"Living Situation\\",
+  \\"Soziodemographische Angaben\\": \\"Sociodemographic Information\\",
+  \\"Lebensstil\\": \\"Lifestyle\\",
+  \\"Bildung\\": \\"Education\\",
+  \\"Persönlichkeit\\": \\"Personality\\",
+  \\"Studienzufriedenheit\\": \\"Study Satisfaction\\",
+  \\"Ihre Ergebnisse\\": \\"Your Results\\",
   
   // Questions
   "Wie wohnen Sie?": "How do you live?",
@@ -2748,7 +2748,7 @@ var translations = {
   "Vogel": "Bird",
   "Nager": "Rodent",
   "Reptil": "Reptile",
-  "Ich möchte kein Haustier": "I don\'t want a pet",
+  "Ich möchte kein Haustier": "I don\\'t want a pet",
   "Sonstiges": "Other",
   "Vegan": "Vegan",
   "Vegetarisch": "Vegetarian",
@@ -3083,7 +3083,7 @@ if (typeof Shiny !== \"undefined\") {
     }
   });
 }
-</script>")
+</script>'
 
 # Server extensions for language handling only
 # (Moved to before study_config definition)
