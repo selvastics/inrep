@@ -726,23 +726,7 @@ cat("Plausible Values: Enabled (5 estimates)\n")
 cat("Language: English\n")
 cat("=============================================================================\n")
 
-# LAUNCH THE APP - This WILL show ALL demographics and provide comprehensive anxiety report!
-launch_study(
-    config = programming_anxiety_config,
-    item_bank = programming_anxiety_items,
-    webdav_url = webdav_url,
-    password = password,
-    save_format = "csv",
-    study_key = session_uuid,
-    fresh_session = TRUE,  # Force fresh session
-    clear_cache = TRUE,     # Clear any cached data
-    language = "en",        # Force English language
-    force_custom_ui = TRUE, # Force custom demographic UI
-    enable_plots = TRUE,    # Enable plot generation
-    enable_plausible_values = TRUE,  # Enable plausible values
-    port = 3838,
-    host = "0.0.0.0"
-)
+# NOTE: Study setup complete. Use launch_programming_anxiety_study() to run the assessment.
 
 cat("=============================================================================\n")
 cat("Open your browser to: http://localhost:3838\n")

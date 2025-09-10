@@ -1,0 +1,16 @@
+citHeader("To cite the inrep package in publications, please use:")
+
+citEntry(
+  entry = "Manual",
+  title = "inrep: Instant Reports for Adaptive Assessments",
+  author = person("Clievins", "Selva", email = "selva@uni-hildesheim.de"),
+  year = "2025",
+  note = "R package version 1.0.0",
+  url = "https://github.com/selvastics/inrep",
+  textVersion = paste("Selva, C. (2025).",
+                     "inrep: Instant Reports for Adaptive Assessments.",
+                     "R package version 1.0.0.",
+                     "https://github.com/selvastics/inrep")
+)
+
+citFooter("This package integrates with the TAM package for all psychometric computations. Please also cite: Robitzsch, A., Kiefer, T., & Wu, M. (2024). TAM: Test Analysis Modules. R package version 4.2-21. https://CRAN.R-project.org/package=TAM")

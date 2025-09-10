@@ -93,12 +93,102 @@ launch_study_fast <- function(config, item_bank,
         return()
       }
       rv$current_page <- 2
+      
+      # Initialize comprehensive dataset for fast patch
+      tryCatch({
+        if (exists("initialize_comprehensive_dataset", mode = "function")) {
+          comprehensive_dataset <- initialize_comprehensive_dataset(config, item_bank, config$study_key %||% "fast_patch")
+        }
+        rv$comprehensive_dataset <- comprehensive_dataset
+        logger("Comprehensive dataset initialized for fast patch", level = "INFO")
+      }, error = function(e) {
+        logger(sprintf("Failed to initialize comprehensive dataset for fast patch: %s", e$message), level = "WARNING")
+      })
+      
+      # Scroll to top of page when starting the study (enhanced for all platforms)
+      scroll_js <- "
+      (function() {
+        if (window.scrollTo) {
+          window.scrollTo(0, 0);
+        }
+        if (document.documentElement) {
+          document.documentElement.scrollTop = 0;
+        }
+        if (document.body) {
+          document.body.scrollTop = 0;
+        }
+      })();
+      "
+      
+      if (requireNamespace("shinyjs", quietly = TRUE)) {
+        tryCatch({
+          shinyjs::runjs(scroll_js)
+        }, error = function(e) {
+          shiny::runjs(scroll_js)
+        })
+      } else {
+        shiny::runjs(scroll_js)
+      }
     })
+    
+    # Save current page data function
+    save_current_page_data <- function(rv, input) {
+      # Collect demographic data
+      if (!is.null(config$demographics)) {
+        page_data <- list()
+        for (i in seq_along(config$demographics)) {
+          dem <- config$demographics[i]
+          input_id <- paste0("demo_", i)
+          value <- input[[input_id]]
+          if (!is.null(value) && value != "") {
+            rv$demo_data[[dem]] <- value
+            page_data[[dem]] <- value
+          }
+        }
+        
+        # Update comprehensive dataset
+        if (length(page_data) > 0) {
+          tryCatch({
+            if (exists("update_comprehensive_dataset", mode = "function")) {
+              update_comprehensive_dataset("demographics", page_data, stage = "fast_patch", current_page = rv$current_page)
+            }
+            logger("Updated comprehensive dataset with fast patch demographic data", level = "DEBUG")
+          }, error = function(e) {
+            logger(sprintf("Failed to update comprehensive dataset with fast patch demographics: %s", e$message), level = "WARNING")
+          })
+        }
+      }
+    }
     
     # Handle navigation
     observeEvent(input$next_page, {
       save_current_page_data(rv, input)
       rv$current_page <- rv$current_page + 1
+      
+      # Scroll to top of page when navigating to next page (enhanced for all platforms)
+      scroll_js <- "
+      (function() {
+        if (window.scrollTo) {
+          window.scrollTo(0, 0);
+        }
+        if (document.documentElement) {
+          document.documentElement.scrollTop = 0;
+        }
+        if (document.body) {
+          document.body.scrollTop = 0;
+        }
+      })();
+      "
+      
+      if (requireNamespace("shinyjs", quietly = TRUE)) {
+        tryCatch({
+          shinyjs::runjs(scroll_js)
+        }, error = function(e) {
+          shiny::runjs(scroll_js)
+        })
+      } else {
+        shiny::runjs(scroll_js)
+      }
     })
     
     # Results page with downloads

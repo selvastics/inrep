@@ -1,45 +1,72 @@
-# inrep Case Studies
+# inrep Case Studies - Enhanced Edition
 
 ## Overview
 
-This directory contains comprehensive case studies demonstrating the capabilities of the `inrep` package for interactive assessment and reporting. Each case study showcases different aspects of the package, from basic functionality to advanced features like rater designs, plausible values, and interactive dashboards.
+This directory contains **enhanced case studies** demonstrating the advanced capabilities of the `inrep` package for interactive assessment and reporting. Each case study has been carefully designed to highlight unique features and use cases, from basic functionality to cutting-edge features like plausible values, multi-rater designs, clinical assessments, and interactive dashboards.
+
+## 🎯 **Quick Start**
+
+Each case study now includes a dedicated launch script with demonstration functions:
+
+```r
+# Programming Anxiety - Advanced IRT Features
+source("case_studies/programming_anxiety_assessment/launch_programming_anxiety.R")
+launch_programming_anxiety_study()
+
+# Big Five Personality - Multi-Dimensional Features  
+source("case_studies/big_five_personality/launch_big_five.R")
+launch_big_five_study()
+
+# Depression Screening - Clinical Features
+source("case_studies/depression_screening/launch_depression_screening.R")
+launch_depression_screening_study()
+
+# Rater-Participant Design - Multi-Rater Features
+source("case_studies/rater_participant_design/launch_rater_participant.R")
+launch_rater_participant_study()
+```
 
 ## Available Case Studies
 
-### 1. **Rater-Participant Design**
+### 1. 🔗 **Rater-Participant Design** - Multi-Rater Assessment Features
 **Location**: `rater_participant_design/`
+**Launch**: `launch_rater_participant.R`
 
-A sophisticated assessment system where multiple raters evaluate participants, featuring:
-- **Inter-rater reliability analysis** with ICC calculations
-- **Rater management system** with quality monitoring
-- **Comprehensive reporting** with multi-rater comparisons
-- **Quality assurance** with agreement thresholds and calibration
+**🎯 UNIQUE FEATURES HIGHLIGHTED:**
+- **Multi-Rater Assessment** - Multiple raters evaluating participants with reliability analysis
+- **Inter-Rater Reliability** - ICC calculations and agreement analysis
+- **Advanced Sample Linking** - Bidirectional linking between participants and raters
+- **Quality Assurance** - Agreement thresholds and rater calibration
+- **Comprehensive Reporting** - Multi-rater comparisons and consensus analysis
 
-**Key Features**:
+**Key Capabilities**:
 - 5 performance dimensions (Communication, Problem-Solving, Technical, Professional, Overall)
-- 25 carefully calibrated evaluation items
-- 5 trained raters with different expertise levels
+- 25 carefully calibrated evaluation items with IRT parameters
+- 3+ raters per participant with intelligent assignment
 - Automated participant-rater assignment system
-- Advanced agreement analysis and recommendations
+- Advanced agreement analysis and consensus building
 
 **Use Cases**:
 - Performance evaluation studies
 - Inter-rater reliability research
 - Quality assurance systems
 - Educational assessment programs
+- Multi-rater consensus building
 
 ---
 
-### 2. **Programming Anxiety Assessment** 
+### 2. 🧠 **Programming Anxiety Assessment** - Advanced IRT Features
 **Location**: `programming_anxiety_assessment/`
+**Launch**: `launch_programming_anxiety.R`
 
-A comprehensive assessment focused on Programming Anxiety with advanced analytics:
-- **Plausible values generation** for robust statistical inference
-- **Interactive dashboard** with real-time analytics
-- **Multi-dimensional analysis** across 5 anxiety types
-- **Export capabilities** in multiple formats
+**🎯 UNIQUE FEATURES HIGHLIGHTED:**
+- **Plausible Values Generation** - Multiple estimates for robust statistical inference
+- **Advanced IRT Models** - Graded Response Model (GRM) with confidence intervals
+- **Interactive Dashboard** - Real-time analytics and visualizations
+- **Multi-dimensional Profiling** - 5 anxiety dimensions with detailed analysis
+- **Risk Assessment** - Personalized recommendations and intervention strategies
 
-**Key Features**:
+**Key Capabilities**:
 - 35 anxiety assessment items across 5 dimensions
 - Plausible values with confidence intervals
 - Interactive visualizations and dashboards
@@ -54,49 +81,111 @@ A comprehensive assessment focused on Programming Anxiety with advanced analytic
 
 ---
 
-### 3. **Basic Assessment** 
-**Location**: `basic_assessment/`
+### 3. 👥 **Big Five Personality Assessment** - Multi-Dimensional Features
+**Location**: `big_five_personality/`
+**Launch**: `launch_big_five.R`
 
-A foundational case study demonstrating core `inrep` functionality:
-- **Basic adaptive testing** with IRT models
-- **Standard reporting** and result analysis
-- **Item bank management** and validation
-- **Study configuration** and administration
+**🎯 UNIQUE FEATURES HIGHLIGHTED:**
+- **Multi-dimensional Personality Model** - Five-factor model with trait-specific adaptation
+- **Cross-cultural Validation** - Multiple language support and cultural adaptations
+- **Comprehensive Profiling** - Radar plots, bar charts, and detailed trait analysis
+- **Normative Comparisons** - Population norms and percentile rankings
+- **Adaptive Testing** - Trait-specific item selection and stopping criteria
 
-**Key Features**:
-- Simple adaptive testing setup
-- Basic result reporting
-- Item bank validation
-- Study administration tools
+**Key Capabilities**:
+- 20 personality items across 5 factors
+- Cross-cultural validation and language support
+- Comprehensive personality profiling with visualizations
+- Normative comparisons and percentile rankings
+- Adaptive testing with trait-specific item selection
 
 **Use Cases**:
-- Learning the basics of inrep
-- Simple assessment needs
-- Educational testing
-- Research studies
+- Personality research
+- Cross-cultural studies
+- Educational assessment
+- Clinical psychology
+- Organizational psychology
 
 ---
 
-### 4. **Advanced Analytics** 
-**Location**: `advanced_analytics/`
+### 4. 🏥 **Depression Screening Assessment** - Clinical Features
+**Location**: `depression_screening/`
+**Launch**: `launch_depression_screening.R`
 
-Advanced statistical analysis and reporting capabilities:
-- **Complex IRT models** and parameter estimation
-- **Advanced visualization** and charting
-- **Statistical testing** and hypothesis testing
-- **Data export** and integration tools
+**🎯 UNIQUE FEATURES HIGHLIGHTED:**
+- **Clinical Cutoffs & Severity Classification** - Automatic severity assessment
+- **Risk Assessment & Intervention Recommendations** - Actionable clinical insights
+- **Multiple Validated Instruments** - PHQ-9, CES-D, BDI-II, DASS-21 integration
+- **Clinical Reporting** - Professional reports with actionable recommendations
+- **Safety Protocols** - Crisis intervention and referral systems
 
-**Key Features**:
-- Multiple IRT model support
-- Advanced statistical analysis
-- Comprehensive visualization options
-- Data integration capabilities
+**Key Capabilities**:
+- Multiple validated depression instruments
+- Clinical cutoffs and severity classification
+- Risk assessment and intervention recommendations
+- Safety protocols and crisis intervention
+- Professional clinical reporting
 
 **Use Cases**:
-- Advanced research studies
-- Complex statistical analysis
-- Data science applications
-- Academic research
+- Clinical psychology research
+- Primary care screening
+- Mental health assessment
+- Crisis intervention
+- Treatment planning
+
+---
+
+### 5. 🎓 **HILFO Study** - Production-Ready Assessment
+**Location**: `hildesheim_study/`
+**Launch**: `HilFo.R`
+
+**🎯 UNIQUE FEATURES HIGHLIGHTED:**
+- **Production-Ready Implementation** - Real-world academic assessment
+- **Bilingual Support** - German/English with seamless switching
+- **Comprehensive Demographics** - Extensive demographic data collection
+- **Advanced Analytics** - Multi-dimensional personality and anxiety profiling
+- **Cloud Storage Integration** - Automatic data backup and management
+
+**Key Capabilities**:
+- Programming anxiety assessment (20 items)
+- Big Five personality assessment (20 items)
+- Stress and study skills assessment
+- Comprehensive results reporting
+- Cloud storage integration
+
+**Use Cases**:
+- Academic research studies
+- Student assessment programs
+- Longitudinal studies
+- Cross-cultural research
+- Production assessment systems
+
+---
+
+### 6. 📊 **UMA Study** - Modern UI and Auto-Close Features
+**Location**: `uma_study/`
+**Launch**: `uma_study_simple.R`
+
+**🎯 UNIQUE FEATURES HIGHLIGHTED:**
+- **Modern UI Design** - Hover effects and responsive design
+- **Auto-Close Functionality** - Configurable timer with universal compatibility
+- **Scroll-to-Top** - Enhanced navigation across all platforms
+- **Session Isolation** - Complete data isolation and security
+- **Simplified Assessment** - 30-item non-adaptive assessment
+
+**Key Capabilities**:
+- Modern UI with hover effects
+- Auto-close timer (15 seconds)
+- Universal scroll-to-top
+- Complete session isolation
+- 30-item assessment
+
+**Use Cases**:
+- Quick assessments
+- Mobile-friendly studies
+- Time-limited studies
+- Modern UI demonstrations
+- Cross-platform compatibility
 
 ## Getting Started
 

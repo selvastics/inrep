@@ -1281,7 +1281,7 @@ create_custom_page_flow <- function(pages) {
 
 #' Process custom page flow for UI rendering
 #' @export
-process_page_flow <- function(config, rv, input, output, session, item_bank, ui_labels, logger) {
+process_page_flow <- function(config, rv, input, output, session, item_bank, ui_labels, logger, auto_close_time = 300, auto_close_time_unit = "seconds", disable_auto_close = FALSE) {
   
   # Check if custom page flow is defined
   if (is.null(config$custom_page_flow)) {
@@ -1308,7 +1308,7 @@ process_page_flow <- function(config, rv, input, output, session, item_bank, ui_
     
     "custom" = render_custom_page(current_page, config, rv, ui_labels, input),
     
-    "results" = render_results_page(current_page, config, rv, item_bank, ui_labels),
+    "results" = render_results_page(current_page, config, rv, item_bank, ui_labels, auto_close_time, auto_close_time_unit, disable_auto_close),
     
     # Default fallback
     shiny::div(
@@ -1490,10 +1490,34 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
     style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
     shiny::h3(page_title, class = "card-header"),
     if (!is.null(page_instructions)) {
-      shiny::p(page_instructions, class = "instructions-text")
+      # Convert markdown formatting to HTML
+      formatted_instructions <- convert_markdown_to_html(page_instructions)
+      shiny::HTML(formatted_instructions)
     },
     item_elements
   )
+}
+
+#' Convert markdown formatting to HTML for instructions
+convert_markdown_to_html <- function(text) {
+  if (is.null(text) || text == "") {
+    return("")
+  }
+  
+  # Convert line breaks to HTML
+  text <- gsub("\n\n", "</p><p>", text)
+  text <- paste0("<p>", text, "</p>")
+  
+  # Convert bold and underline: _text_ to <strong><u>text</u></strong>
+  text <- gsub("_([^_]+)_", "<strong><u>\\1</u></strong>", text)
+  
+  # Convert bold: **text** to <strong>text</strong>
+  text <- gsub("\\*\\*([^*]+)\\*\\*", "<strong>\\1</strong>", text)
+  
+  # Convert italic: *text* to <em>text</em>
+  text <- gsub("\\*([^*]+)\\*", "<em>\\1</em>", text)
+  
+  return(text)
 }
 
 #' Render custom page
@@ -1515,7 +1539,21 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
   
   # Default rendering
   if (!is.null(page$render_function) && is.function(page$render_function)) {
-    page$render_function(page, config, rv, ui_labels)
+    # Call render function and return the result
+    tryCatch({
+      page$render_function(input, NULL, NULL, rv)
+    }, error = function(e) {
+      # Fallback to content if render function fails
+      shiny::div(
+        class = "assessment-card",
+        style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
+        shiny::h3(page$title, class = "card-header"),
+        shiny::p("Error rendering custom page"),
+        if (!is.null(page$content)) {
+          shiny::HTML(page$content)
+        }
+      )
+    })
   } else {
     shiny::div(
       class = "assessment-card",
@@ -1531,7 +1569,7 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
 }
 
 #' Render results page
-render_results_page <- function(page, config, rv, item_bank, ui_labels) {
+render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_close_time = 300, auto_close_time_unit = "seconds", disable_auto_close = FALSE) {
   # Use custom results processor if available
   if (!is.null(config$results_processor) && is.function(config$results_processor)) {
     # Check if function accepts demographics parameter
@@ -1540,18 +1578,37 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels) {
     # Use cat_result if available (contains cleaned responses), otherwise use raw responses
     if (!is.null(rv$cat_result) && !is.null(rv$cat_result$responses)) {
       if ("demographics" %in% processor_args) {
-        results_content <- config$results_processor(rv$cat_result$responses, item_bank, rv$demographics)
+        results_content <- config$results_processor(rv$cat_result$responses, item_bank, rv$demo_data)
       } else {
         results_content <- config$results_processor(rv$cat_result$responses, item_bank)
       }
     } else {
-      # Clean responses before passing to processor
-      clean_responses <- rv$responses[!is.na(rv$responses)]
-      if (length(clean_responses) > 0) {
+      # ROBUST: Ensure all responses are collected before processing
+      # Don't remove NA values - they might be valid missing responses
+      all_responses <- rv$responses
+      
+      # Log response collection status
+      if (!is.null(all_responses)) {
+        message("DEBUG: Total responses in rv$responses: ", length(all_responses))
+        message("DEBUG: Non-NA responses: ", sum(!is.na(all_responses)))
+        message("DEBUG: Response indices: ", paste(which(!is.na(all_responses)), collapse=", "))
+      }
+      
+      # For non-adaptive studies, ensure we have the expected number of responses
+      if (!is.null(config$fixed_items) && length(config$fixed_items) > 0) {
+        expected_items <- length(config$fixed_items)
+        if (length(all_responses) < expected_items) {
+          message("WARNING: Only ", length(all_responses), " responses collected, expected ", expected_items)
+          # Pad with NA to maintain proper indexing
+          all_responses <- c(all_responses, rep(NA, expected_items - length(all_responses)))
+        }
+      }
+      
+      if (length(all_responses) > 0) {
         if ("demographics" %in% processor_args) {
-          results_content <- config$results_processor(clean_responses, item_bank, rv$demographics)
+          results_content <- config$results_processor(all_responses, item_bank, rv$demo_data)
         } else {
-          results_content <- config$results_processor(clean_responses, item_bank)
+          results_content <- config$results_processor(all_responses, item_bank)
         }
       } else {
         results_content <- shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>")
@@ -1561,10 +1618,86 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels) {
     results_content <- shiny::HTML("<p>Assessment completed. Thank you!</p>")
   }
   
+  # Convert time to seconds if needed
+  if (auto_close_time_unit == "minutes") {
+    auto_close_seconds <- auto_close_time * 60
+  } else {
+    auto_close_seconds <- auto_close_time
+  }
+  
+  # Create auto-close timer UI if not disabled
+  auto_close_ui <- NULL
+  if (!disable_auto_close && auto_close_seconds > 0) {
+    # Get current language for auto-close messages
+    current_lang <- rv$language %||% config$language %||% "de"
+    
+    # Set language-dependent messages
+    auto_close_title <- if (current_lang == "en") "Session will close automatically" else "Die Sitzung wird automatisch geschlossen"
+    
+    auto_close_ui <- shiny::div(
+      id = "auto-close-timer",
+      class = "auto-close-timer",
+      style = "text-align: center; margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; border: 2px solid #007bff;",
+      shiny::h4(auto_close_title, style = "color: #007bff; margin-bottom: 10px;"),
+      shiny::div(
+        id = "countdown-display",
+        style = "font-size: 24px; font-weight: bold; color: #dc3545; margin-bottom: 10px;",
+        shiny::textOutput("countdown_timer", inline = TRUE)
+      ),
+      # Add JavaScript-based auto-close as backup
+      shiny::tags$script(HTML(sprintf("
+        (function() {
+          var timeLeft = %d;
+          var countdownElement = document.getElementById('countdown-display');
+          
+          function updateCountdown() {
+            if (countdownElement) {
+              countdownElement.textContent = timeLeft;
+            }
+            
+            if (timeLeft <= 0) {
+              // Auto-close with multiple methods
+              try {
+                window.close();
+              } catch(e) {
+                try {
+                  if (window.opener) {
+                    window.opener = null;
+                    window.close();
+                  } else {
+                    window.location.href = 'about:blank';
+                  }
+                } catch(e2) {
+                  try {
+                    alert('Session completed. Please close this tab.');
+                    window.location.href = 'about:blank';
+                  } catch(e3) {
+                    document.body.innerHTML = '<div style=\"text-align: center; padding: 50px; font-size: 18px;\">Session completed. Please close this tab.</div>';
+                  }
+                }
+              }
+            } else {
+              timeLeft--;
+              setTimeout(updateCountdown, 1000);
+            }
+          }
+          
+          // Start countdown
+          setTimeout(updateCountdown, 1000);
+        })();
+      ", auto_close_seconds))),
+      # Add meta refresh as additional fallback for mobile
+      shiny::tags$meta(HTML(sprintf("
+        <meta http-equiv='refresh' content='%d;url=about:blank'>
+      ", auto_close_seconds + 1)))
+    )
+  }
+  
   shiny::div(
     class = "assessment-card results-container",
     shiny::h3(page$title %||% "Results", class = "card-header"),
-    results_content
+    results_content,
+    auto_close_ui
   )
 }
 
@@ -1799,34 +1932,272 @@ create_demographic_input <- function(input_id, demo_config, input_type, current_
 }
 
 #' Get response labels for different scale types
-get_response_labels <- function(scale_type, choices, language = "de") {
+#' 
+#' This function generates appropriate labels for any number of response options
+#' and supports various scale types including Likert scales of any length.
+#' 
+#' @param scale_type Type of scale ("likert", "difficulty", "frequency", "numeric", "custom")
+#' @param choices Numeric vector of response options (e.g., 1:7 for 7-point scale)
+#' @param language Language code ("de", "en", "es", etc.)
+#' @param custom_labels Optional custom labels (overrides automatic generation)
+#' @return Character vector of labels
+#' @export
+get_response_labels <- function(scale_type, choices, language = "de", custom_labels = NULL) {
   n_choices <- length(choices)
   
+  # If custom labels provided, use them (but ensure correct length)
+  if (!is.null(custom_labels)) {
+    if (length(custom_labels) >= n_choices) {
+      return(custom_labels[1:n_choices])
+    } else {
+      # Extend custom labels if needed
+      extended_labels <- c(custom_labels, rep("", n_choices - length(custom_labels)))
+      return(extended_labels[1:n_choices])
+    }
+  }
+  
+  # Generate labels based on scale type and number of choices
   labels <- switch(scale_type,
-    "likert" = switch(language,
-      "de" = c("Stimme überhaupt nicht zu", "Stimme eher nicht zu", 
-               "Teils, teils", "Stimme eher zu", "Stimme voll und ganz zu")[1:n_choices],
-      "en" = c("Strongly Disagree", "Disagree", "Neutral", 
-               "Agree", "Strongly Agree")[1:n_choices]
-    ),
-    
-    "difficulty" = switch(language,
-      "de" = c("sehr schwer", "eher schwer", "teils-teils", 
-               "eher leicht", "sehr leicht")[1:n_choices],
-      "en" = c("Very Difficult", "Difficult", "Neutral", 
-               "Easy", "Very Easy")[1:n_choices]
-    ),
-    
-    "frequency" = switch(language,
-      "de" = c("Nie", "Selten", "Manchmal", "Oft", "Immer")[1:n_choices],
-      "en" = c("Never", "Rarely", "Sometimes", "Often", "Always")[1:n_choices]
-    ),
-    
-    # Default
+    "likert" = generate_likert_labels(n_choices, language),
+    "difficulty" = generate_difficulty_labels(n_choices, language),
+    "frequency" = generate_frequency_labels(n_choices, language),
+    "numeric" = as.character(choices),
+    "custom" = as.character(choices),
+    # Default fallback
     as.character(choices)
   )
   
-  labels
+  return(labels)
+}
+
+#' Generate Likert scale labels for any number of points
+#' 
+#' @param n_choices Number of response options
+#' @param language Language code
+#' @return Character vector of labels
+#' @keywords internal
+generate_likert_labels <- function(n_choices, language = "de") {
+  switch(language,
+    "de" = {
+      if (n_choices == 2) {
+        c("Nein", "Ja")
+      } else if (n_choices == 3) {
+        c("Stimme nicht zu", "Neutral", "Stimme zu")
+      } else if (n_choices == 4) {
+        c("Stimme nicht zu", "Stimme eher nicht zu", "Stimme eher zu", "Stimme zu")
+      } else if (n_choices == 5) {
+        c("Stimme überhaupt nicht zu", "Stimme eher nicht zu", "Teils, teils", 
+          "Stimme eher zu", "Stimme voll und ganz zu")
+      } else if (n_choices == 6) {
+        c("Stimme überhaupt nicht zu", "Stimme nicht zu", "Stimme eher nicht zu",
+          "Stimme eher zu", "Stimme zu", "Stimme voll und ganz zu")
+      } else if (n_choices == 7) {
+        c("Stimme überhaupt nicht zu", "Stimme nicht zu", "Stimme eher nicht zu", 
+          "Weder noch", "Stimme eher zu", "Stimme zu", "Stimme voll und ganz zu")
+      } else if (n_choices == 10) {
+        c("1 - Stimme überhaupt nicht zu", "2", "3", "4", "5 - Neutral", 
+          "6", "7", "8", "9", "10 - Stimme voll und ganz zu")
+      } else if (n_choices == 20) {
+        c("1 - Stimme überhaupt nicht zu", "2", "3", "4", "5", "6", "7", "8", "9", "10 - Neutral",
+          "11", "12", "13", "14", "15", "16", "17", "18", "19", "20 - Stimme voll und ganz zu")
+      } else {
+        # Generic labels for any number of choices
+        if (n_choices %% 2 == 1) {
+          # Odd number of choices - include neutral middle
+          middle <- ceiling(n_choices / 2)
+          labels <- paste0(1:n_choices)
+          labels[middle] <- paste0(middle, " - Neutral")
+          labels[1] <- paste0("1 - Stimme überhaupt nicht zu")
+          labels[n_choices] <- paste0(n_choices, " - Stimme voll und ganz zu")
+          labels
+        } else {
+          # Even number of choices - no neutral middle
+          labels <- paste0(1:n_choices)
+          labels[1] <- paste0("1 - Stimme überhaupt nicht zu")
+          labels[n_choices] <- paste0(n_choices, " - Stimme voll und ganz zu")
+          labels
+        }
+      }
+    },
+    "en" = {
+      if (n_choices == 2) {
+        c("No", "Yes")
+      } else if (n_choices == 3) {
+        c("Disagree", "Neutral", "Agree")
+      } else if (n_choices == 4) {
+        c("Disagree", "Somewhat Disagree", "Somewhat Agree", "Agree")
+      } else if (n_choices == 5) {
+        c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")
+      } else if (n_choices == 6) {
+        c("Strongly Disagree", "Disagree", "Somewhat Disagree",
+          "Somewhat Agree", "Agree", "Strongly Agree")
+      } else if (n_choices == 7) {
+        c("Strongly Disagree", "Disagree", "Somewhat Disagree", 
+          "Neither Agree nor Disagree", "Somewhat Agree", "Agree", "Strongly Agree")
+      } else if (n_choices == 10) {
+        c("1 - Strongly Disagree", "2", "3", "4", "5 - Neutral", 
+          "6", "7", "8", "9", "10 - Strongly Agree")
+      } else if (n_choices == 20) {
+        c("1 - Strongly Disagree", "2", "3", "4", "5", "6", "7", "8", "9", "10 - Neutral",
+          "11", "12", "13", "14", "15", "16", "17", "18", "19", "20 - Strongly Agree")
+      } else {
+        # Generic labels for any number of choices
+        if (n_choices %% 2 == 1) {
+          # Odd number of choices - include neutral middle
+          middle <- ceiling(n_choices / 2)
+          labels <- paste0(1:n_choices)
+          labels[middle] <- paste0(middle, " - Neutral")
+          labels[1] <- paste0("1 - Strongly Disagree")
+          labels[n_choices] <- paste0(n_choices, " - Strongly Agree")
+          labels
+        } else {
+          # Even number of choices - no neutral middle
+          labels <- paste0(1:n_choices)
+          labels[1] <- paste0("1 - Strongly Disagree")
+          labels[n_choices] <- paste0(n_choices, " - Strongly Agree")
+          labels
+        }
+      }
+    },
+    # Default to English if language not supported
+    generate_likert_labels(n_choices, "en")
+  )
+}
+
+#' Generate difficulty scale labels for any number of points
+#' 
+#' @param n_choices Number of response options
+#' @param language Language code
+#' @return Character vector of labels
+#' @keywords internal
+generate_difficulty_labels <- function(n_choices, language = "de") {
+  switch(language,
+    "de" = {
+      if (n_choices <= 5) {
+        c("sehr schwer", "eher schwer", "teils-teils", "eher leicht", "sehr leicht")[1:n_choices]
+      } else {
+        # Generic labels for more choices
+        labels <- paste0(1:n_choices)
+        labels[1] <- paste0("1 - sehr schwer")
+        labels[n_choices] <- paste0(n_choices, " - sehr leicht")
+        if (n_choices %% 2 == 1) {
+          middle <- ceiling(n_choices / 2)
+          labels[middle] <- paste0(middle, " - teils-teils")
+        }
+        labels
+      }
+    },
+    "en" = {
+      if (n_choices <= 5) {
+        c("Very Difficult", "Difficult", "Neutral", "Easy", "Very Easy")[1:n_choices]
+      } else {
+        # Generic labels for more choices
+        labels <- paste0(1:n_choices)
+        labels[1] <- paste0("1 - Very Difficult")
+        labels[n_choices] <- paste0(n_choices, " - Very Easy")
+        if (n_choices %% 2 == 1) {
+          middle <- ceiling(n_choices / 2)
+          labels[middle] <- paste0(middle, " - Neutral")
+        }
+        labels
+      }
+    },
+    # Default to English
+    generate_difficulty_labels(n_choices, "en")
+  )
+}
+
+#' Generate frequency scale labels for any number of points
+#' 
+#' @param n_choices Number of response options
+#' @param language Language code
+#' @return Character vector of labels
+#' @keywords internal
+generate_frequency_labels <- function(n_choices, language = "de") {
+  switch(language,
+    "de" = {
+      if (n_choices <= 5) {
+        c("Nie", "Selten", "Manchmal", "Oft", "Immer")[1:n_choices]
+      } else {
+        # Generic labels for more choices
+        labels <- paste0(1:n_choices)
+        labels[1] <- paste0("1 - Nie")
+        labels[n_choices] <- paste0(n_choices, " - Immer")
+        labels
+      }
+    },
+    "en" = {
+      if (n_choices <= 5) {
+        c("Never", "Rarely", "Sometimes", "Often", "Always")[1:n_choices]
+      } else {
+        # Generic labels for more choices
+        labels <- paste0(1:n_choices)
+        labels[1] <- paste0("1 - Never")
+        labels[n_choices] <- paste0(n_choices, " - Always")
+        labels
+      }
+    },
+    # Default to English
+    generate_frequency_labels(n_choices, "en")
+  )
+}
+
+#' Generate ResponseCategories string for any scale
+#' 
+#' This helper function creates the ResponseCategories string needed for item banks
+#' with any number of response options.
+#' 
+#' @param n_points Number of response points (e.g., 7 for 7-point scale)
+#' @param start_value Starting value (default: 1)
+#' @return Character string of comma-separated values
+#' @export
+#' @examples
+#' # 7-point scale
+#' generate_response_categories(7)  # "1,2,3,4,5,6,7"
+#' 
+#' # 10-point scale starting from 0
+#' generate_response_categories(10, 0)  # "0,1,2,3,4,5,6,7,8,9"
+#' 
+#' # 20-point scale
+#' generate_response_categories(20)  # "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20"
+generate_response_categories <- function(n_points, start_value = 1) {
+  if (n_points < 2) {
+    stop("Number of response points must be at least 2")
+  }
+  
+  end_value <- start_value + n_points - 1
+  values <- start_value:end_value
+  paste(values, collapse = ",")
+}
+
+#' Update item bank ResponseCategories for any scale
+#' 
+#' This function updates all items in an item bank to use the specified
+#' number of response points.
+#' 
+#' @param item_bank Data frame with item bank
+#' @param n_points Number of response points
+#' @param start_value Starting value (default: 1)
+#' @return Updated item bank with ResponseCategories column
+#' @export
+#' @examples
+#' # Update all items to use 7-point scale
+#' updated_bank <- update_item_bank_scale(bfi_items, 7)
+#' 
+#' # Update all items to use 10-point scale starting from 0
+#' updated_bank <- update_item_bank_scale(bfi_items, 10, 0)
+update_item_bank_scale <- function(item_bank, n_points, start_value = 1) {
+  if (!is.data.frame(item_bank)) {
+    stop("item_bank must be a data frame")
+  }
+  
+  # Generate the ResponseCategories string
+  response_categories <- generate_response_categories(n_points, start_value)
+  
+  # Update the item bank
+  item_bank$ResponseCategories <- response_categories
+  
+  return(item_bank)
 }
 
 # ============================================================================
@@ -1906,6 +2277,56 @@ validate_page_progression <- function(current_page, input, config) {
             }
           }
         }
+      }
+    }
+  } else if (page$type == "custom" && isTRUE(page$required)) {
+    # Handle custom pages with required fields
+    # Check for specific required fields if defined
+    if (!is.null(page$required_fields)) {
+      for (field in page$required_fields) {
+        value <- input[[field]]
+        if (is.null(value) || value == "" || (is.character(value) && nchar(trimws(value)) == 0)) {
+          # Get language
+          current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
+          error_msg <- if (current_lang == "en") {
+            "Please complete all required fields on this page."
+          } else {
+            "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
+          }
+          errors <- c(errors, error_msg)
+          missing_fields <- c(missing_fields, field)
+        }
+      }
+    } else {
+      # For custom pages without specific required_fields, check common input patterns
+      # This handles cases like page2 with demo_Teilnahme_Code
+      page_id <- page$id %||% paste0("page_", current_page)
+      
+      # Check for demographic-style inputs (demo_ prefix)
+      if (page_id == "page2") {
+        # Special case for page2 - check for code input
+        code_value <- input$demo_Teilnahme_Code
+        if (is.null(code_value) || trimws(code_value) == "") {
+          current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
+          error_msg <- if (current_lang == "en") {
+            "Please complete all required fields on this page."
+          } else {
+            "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
+          }
+          errors <- c(errors, error_msg)
+          missing_fields <- c(missing_fields, "demo_Teilnahme_Code")
+        }
+      } else {
+        # Generic check for other custom pages - look for any input fields
+        # This is a fallback for custom pages that don't specify required_fields
+        # but still need validation
+        current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
+        error_msg <- if (current_lang == "en") {
+          "Please complete all required fields on this page."
+        } else {
+          "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
+        }
+        errors <- c(errors, error_msg)
       }
     }
   }
