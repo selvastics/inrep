@@ -3052,11 +3052,11 @@ document.addEventListener("DOMContentLoaded", function() {
   var observer = new MutationObserver(function(mutations) {
     // Always jump to top smoothly on significant DOM updates
     if (window.scrollTo) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: \"smooth\" });
     } else {
       window.scrollTo(0, 0);
     }
-    if (currentLang === "en") {
+    if (currentLang === \"en\") {
       setTimeout(translatePage, 50);
     }
   });
@@ -3088,10 +3088,10 @@ document.addEventListener("DOMContentLoaded", function() {
   });
   
   // Scroll to top on any Shiny page navigation
-  if (typeof Shiny !== "undefined") {
-    Shiny.addCustomMessageHandler("scroll_to_top", function(message) {
+  if (typeof Shiny !== \"undefined\") {
+    Shiny.addCustomMessageHandler(\"scroll_to_top\", function(message) {
       if (window.scrollTo) {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: \"smooth\" });
       } else {
         window.scrollTo(0, 0);
       }
@@ -3099,11 +3099,11 @@ document.addEventListener("DOMContentLoaded", function() {
   }
   
   // Also scroll to top on any button clicks that might trigger page changes
-  document.addEventListener("click", function(e) {
-    if (e.target && (e.target.tagName === "BUTTON" || e.target.classList.contains("btn"))) {
+  document.addEventListener(\"click\", function(e) {
+    if (e.target && (e.target.tagName === \"BUTTON\" || e.target.classList.contains(\"btn\"))) {
       setTimeout(function() {
         if (window.scrollTo) {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          window.scrollTo({ top: 0, behavior: \"smooth\" });
         } else {
           window.scrollTo(0, 0);
         }
@@ -3113,10 +3113,10 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 // Handle Shiny messages
-if (typeof Shiny !== "undefined") {
-  Shiny.addCustomMessageHandler("update_language", function(lang) {
+if (typeof Shiny !== \"undefined\") {
+  Shiny.addCustomMessageHandler(\"update_language\", function(lang) {
     currentLang = lang;
-    if (lang === "en") {
+    if (lang === \"en\") {
       translatePage();
     } else {
       location.reload(); // Reload for German
