@@ -3005,7 +3005,10 @@ document.addEventListener("DOMContentLoaded", function() {
   }
   
   // Create language toggle button if it doesn\'t exist
-  if (!document.getElementById("language-toggle-btn")) {
+  // Only create language button on first page (welcome page)
+  // Check if we're on the first page by looking for welcome content
+  var isFirstPage = document.querySelector('#content_de, #content_en, .welcome-page, .intro-page') !== null;
+  if (!document.getElementById("language-toggle-btn") && isFirstPage) {
     var btn = document.createElement("button");
     btn.id = "language-toggle-btn";
     btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
@@ -3048,14 +3051,31 @@ document.addEventListener("DOMContentLoaded", function() {
     setTimeout(translatePage, 100);
   }
   
-  // Watch for page changes
+  // Watch for page changes - more targeted approach
   var observer = new MutationObserver(function(mutations) {
-    // Always jump to top smoothly on significant DOM updates
-    if (window.scrollTo) {
-      window.scrollTo({ top: 0, behavior: \"smooth\" });
-    } else {
+    var shouldScroll = false;
+    mutations.forEach(function(mutation) {
+      // Only scroll on significant content changes, not every small DOM update
+      if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+        for (var i = 0; i < mutation.addedNodes.length; i++) {
+          var node = mutation.addedNodes[i];
+          if (node.nodeType === 1) { // Element node
+            if (node.classList && (node.classList.contains('shiny-page') || 
+                node.classList.contains('page-content') || 
+                node.querySelector && node.querySelector('.shiny-page'))) {
+              shouldScroll = true;
+              break;
+            }
+          }
+        }
+      }
+    });
+    
+    if (shouldScroll) {
+      // Use immediate scroll without smooth behavior for page changes
       window.scrollTo(0, 0);
     }
+    
     if (currentLang === \"en\") {
       setTimeout(translatePage, 50);
     }
@@ -3101,15 +3121,31 @@ document.addEventListener("DOMContentLoaded", function() {
   // Also scroll to top on any button clicks that might trigger page changes
   document.addEventListener(\"click\", function(e) {
     if (e.target && (e.target.tagName === \"BUTTON\" || e.target.classList.contains(\"btn\"))) {
+      // Immediate scroll for page navigation buttons
+      window.scrollTo(0, 0);
+      // Also try smooth scroll after a delay
       setTimeout(function() {
         if (window.scrollTo) {
           window.scrollTo({ top: 0, behavior: \"smooth\" });
-        } else {
-          window.scrollTo(0, 0);
         }
-      }, 100);
+      }, 50);
     }
   });
+  
+  // Force scroll to top on any form submission or page navigation
+  document.addEventListener(\"submit\", function(e) {
+    window.scrollTo(0, 0);
+  });
+  
+  // Also listen for Shiny input changes that might trigger page changes
+  if (typeof Shiny !== \"undefined\") {
+    $(document).on('shiny:inputchanged', function(event) {
+      // Scroll to top on any input change that might trigger page navigation
+      setTimeout(function() {
+        window.scrollTo(0, 0);
+      }, 10);
+    });
+  }
 });
 
 // Handle Shiny messages
