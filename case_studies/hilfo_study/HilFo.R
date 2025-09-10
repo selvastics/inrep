@@ -487,13 +487,7 @@ custom_page_flow <- list(
     title_en = "Welcome to the HilFo Study",
     content = paste0(
       '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
-      # Language switcher in top right corner (uses global toggle function)
-      '<div style="position: absolute; top: 10px; right: 10px;">',
-      '<button type="button" id="language-toggle-btn" onclick="window.toggleLanguage()" style="',
-      'background: #e8041c; color: white; border: 2px solid #e8041c; ',
-      'padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">',
-      '<span id="lang_switch_text">English Version</span></button>',
-      '</div>',
+      # Language button will be created by JavaScript
       # German content (default)
       '<div id="content_de">',
       '<h2 style="color: #e8041c;" data-lang-de="Liebe Studierende," data-lang-en="Dear Students,">Liebe Studierende,</h2>',
@@ -2455,9 +2449,118 @@ custom_item_selection <- function(rv, item_bank, config) {
 }
 
 # =============================================================================
-# CUSTOM JAVASCRIPT FOR LANGUAGE SWITCHING
+# SIMPLE JAVASCRIPT FOR LANGUAGE SWITCHING (WORKING VERSION)
 # =============================================================================
-# (Definition moved to complete version below)
+
+# Simple JavaScript for language switching and downloads
+custom_js <- '<script>
+var currentLang = "de";
+
+window.toggleLanguage = function() {
+  currentLang = currentLang === "de" ? "en" : "de";
+  
+  /* Update button text */
+  var btn = document.getElementById("language-toggle-btn");
+  if (btn) {
+    var textSpan = btn.querySelector("#lang_switch_text");
+    if (textSpan) {
+      textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    }
+  }
+  
+  /* Toggle language elements */
+  var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+  langElements.forEach(function(element) {
+    if (currentLang === "en") {
+      element.textContent = element.getAttribute("data-lang-en");
+    } else {
+      element.textContent = element.getAttribute("data-lang-de");
+    }
+  });
+  
+  /* Send to Shiny for global language switching */
+  if (typeof Shiny !== "undefined") {
+    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+    Shiny.setInputValue("language", currentLang, {priority: "event"});
+  }
+  
+  /* Store preference */
+  sessionStorage.setItem("hilfo_language", currentLang);
+  
+  /* Only refresh if not on page 1 (page 1 handles its own switching) */
+  if (!window.location.pathname.includes("page1")) {
+    setTimeout(function() {
+      location.reload();
+    }, 300);
+  }
+};
+
+/* Create language button */
+function createLanguageButton() {
+  if (document.getElementById("language-toggle-btn")) {
+    return;
+  }
+  
+  var btn = document.createElement("button");
+  btn.id = "language-toggle-btn";
+  btn.type = "button";
+  btn.onclick = toggleLanguage;
+  btn.style.cssText = "position: fixed !important; top: 10px !important; right: 10px !important; z-index: 9999 !important; background: #e8041c !important; color: white !important; border: 2px solid #e8041c !important; padding: 8px 16px !important; border-radius: 4px !important; cursor: pointer !important; font-size: 14px !important; font-weight: bold !important;";
+  btn.innerHTML = "<span id=\"lang_switch_text\">" + (currentLang === "de" ? "English Version" : "Deutsche Version") + "</span>";
+  
+  document.body.appendChild(btn);
+}
+
+/* Initialize */
+document.addEventListener("DOMContentLoaded", function() {
+  var storedLang = sessionStorage.getItem("hilfo_language");
+  if (storedLang) {
+    currentLang = storedLang;
+  }
+  
+  createLanguageButton();
+  
+  /* Send initial language to Shiny */
+  if (currentLang !== "de" && typeof Shiny !== "undefined") {
+    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+  }
+  
+  /* Apply initial translations if English */
+  if (currentLang === "en") {
+    var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+    langElements.forEach(function(element) {
+      element.textContent = element.getAttribute("data-lang-en");
+    });
+  }
+});
+
+/* Download functions */
+function downloadPDF() {
+  if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
+    Shiny.setInputValue("save_report", Math.random(), {priority: "event"});
+  } else {
+    var downloadBtn = document.querySelector("a[href*=\"save_report\"]");
+    if (downloadBtn) {
+      downloadBtn.click();
+    } else {
+      alert("Download functionality not available. Please try refreshing the page.");
+    }
+  }
+}
+
+function downloadCSV() {
+  if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
+    Shiny.setInputValue("save_csv", Math.random(), {priority: "event"});
+  } else {
+    var downloadBtn = document.querySelector("a[href*=\"save_csv\"]");
+    if (downloadBtn) {
+      downloadBtn.click();
+    } else {
+      alert("Download functionality not available. Please try refreshing the page.");
+    }
+  }
+}
+</script>'
 
 # =============================================================================
 # SERVER EXTENSIONS FOR LANGUAGE HANDLING
@@ -2545,7 +2648,7 @@ study_config <- inrep::create_study_config(
   fixed_items = c(1:5, 21:51),  # First 5 PA are fixed, then all BFI+ are fixed
   adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
   # Add custom JavaScript for language switching
-  custom_js = custom_js_enhanced,
+  custom_js = custom_js,
   allow_deselect = TRUE,  # Allow response deselection
   server_extensions = server_extensions  # Language handling only
 )
