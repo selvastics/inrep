@@ -440,7 +440,10 @@ get_session_data <- function() {
     if (exists(obj_name, envir = .GlobalEnv)) {
       tryCatch({
         obj <- get(obj_name, envir = .GlobalEnv)
-        session_data[[obj_name]] <- obj
+        # Only add non-empty objects
+        if (length(obj) > 0) {
+          session_data[[obj_name]] <- obj
+        }
       }, error = function(e) {
         # Log data collection errors to file only for background operations
         if (.session_state$enable_logging) {

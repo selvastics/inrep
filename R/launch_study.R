@@ -2532,7 +2532,42 @@ launch_study <- function(
     if (session_save) {
       shiny::uiOutput("session_status_ui")
     },
-    shiny::uiOutput("study_ui", style = "position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; margin: 0 auto !important; transform: none !important; width: 100% !important; max-width: 1200px !important; display: block !important; visibility: visible !important; opacity: 1 !important;")
+    shiny::uiOutput("study_ui", style = "position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; margin: 0 auto !important; transform: none !important; width: 100% !important; max-width: 1200px !important; display: block !important; visibility: visible !important; opacity: 1 !important;"),
+    
+    # Custom JavaScript support
+    if (!is.null(config$custom_js)) {
+      shiny::tags$script(shiny::HTML(config$custom_js))
+    },
+    
+    # Radio button deselection support
+    if (isTRUE(config$allow_deselect)) {
+      shiny::tags$script(shiny::HTML('
+        <script>
+        document.addEventListener("DOMContentLoaded", function() {
+          document.addEventListener("click", function(e) {
+            if (e.target && e.target.type === "radio") {
+              var wasChecked = e.target.getAttribute("data-was-checked") === "true";
+              
+              // Clear all radios in group
+              var radios = document.querySelectorAll("input[name=\\"" + e.target.name + "\\"]");
+              for (var i = 0; i < radios.length; i++) {
+                radios[i].setAttribute("data-was-checked", "false");
+              }
+              
+              if (wasChecked) {
+                e.target.checked = false;
+                if (typeof Shiny !== "undefined") {
+                  Shiny.setInputValue(e.target.name, null, {priority: "event"});
+                }
+              } else {
+                e.target.setAttribute("data-was-checked", "true");
+              }
+            }
+          });
+        });
+        </script>
+      '))
+    }
   )
   
   server <- function(input, output, session) {
@@ -5402,6 +5437,16 @@ launch_study <- function(
       
       logger("Test restarted")
     })
+    
+    # Call custom server extensions if provided
+    if (!is.null(config$server_extensions) && is.function(config$server_extensions)) {
+      tryCatch({
+        config$server_extensions(input, output, session)
+        logger("Custom server extensions loaded successfully", level = "INFO")
+      }, error = function(e) {
+        logger(sprintf("Failed to load server extensions: %s", e$message), level = "WARNING")
+      })
+    }
   } # End of server function
   
   # Generate LLM assistance prompt if enabled
