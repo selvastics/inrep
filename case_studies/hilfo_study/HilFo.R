@@ -1241,63 +1241,8 @@ create_pdf_content_optimized <- function(scores, images, current_lang) {
 }
 
 create_hilfo_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
-  # Input validation and sanitization
-  if (is.null(responses) || length(responses) == 0) {
-    return(shiny::HTML('<p>No responses available for report generation.</p>'))
-  }
-  
-  # Ensure we have all responses and they are numeric
-  if (length(responses) < 51) {
-    responses <- c(responses, rep(3, 51 - length(responses)))
-  }
-  responses <- as.numeric(responses)
-  if (any(is.na(responses))) {
-    responses[is.na(responses)] <- 3  # Default to neutral
-  }
-  if (any(responses < 1 | responses > 5)) {
-    responses[responses < 1] <- 1
-    responses[responses > 5] <- 5
-  }
-  
-  # Get current language securely
-  current_lang <- "de"
-  tryCatch({
-    if (exists("current_language", envir = .GlobalEnv)) {
-      current_lang <- get("current_language", envir = .GlobalEnv)
-    } else if (!is.null(session) && !is.null(session$userData$current_language)) {
-      current_lang <- session$userData$current_language
-    }
-  }, error = function(e) {
-    cat("Warning: Could not access language setting:", e$message, "\n")
-  })
-  
-  # Perform IRT analysis for Programming Anxiety
-  tryCatch({
-    perform_irt_analysis(responses)
-  }, error = function(e) {
-    cat("Warning: IRT analysis failed:", e$message, "\n")
-  })
-  
-  # Use the optimized PDF report system with error handling
-  tryCatch({
-    return(create_hilfo_pdf_report(responses, item_bank, demographics, session))
-  }, error = function(e) {
-    error_msg <- paste0("ERROR in create_hilfo_report: ", e$message)
-    cat(error_msg, "\n")
-    
-    # Sanitize HTML output to prevent XSS
-    sanitize_html <- function(text) {
-      text <- gsub("&", "&amp;", text)
-      text <- gsub("<", "&lt;", text)
-      text <- gsub(">", "&gt;", text)
-      text <- gsub('"', "&quot;", text)
-      text <- gsub("'", "&#x27;", text)
-      return(text)
-    }
-    
-    error_html <- paste0('<p>Fehler: ', sanitize_html(e$message), '</p>')
-    return(shiny::HTML(error_html))
-  })
+  # Use the optimized PDF report system
+  return(create_hilfo_pdf_report(responses, item_bank, demographics, session))
 }
 
 # =============================================================================
