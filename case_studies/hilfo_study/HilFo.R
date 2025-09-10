@@ -565,15 +565,7 @@ custom_page_flow <- list(
     });
     </script>'
     ),
-    validate = "function(inputs) { 
-      try {
-        var deCheck = document.getElementById('consent_check');
-        var enCheck = document.getElementById('consent_check_en');
-        return Boolean((deCheck && deCheck.checked) || (enCheck && enCheck.checked));
-      } catch(e) {
-        return false;
-      }
-    }",
+    validate = "function(inputs) { try { var deCheck = document.getElementById('consent_check'); var enCheck = document.getElementById('consent_check_en'); return Boolean((deCheck && deCheck.checked) || (enCheck && enCheck.checked)); } catch(e) { return false; } }",
     required = FALSE
   ),
   
