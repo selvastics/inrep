@@ -2993,7 +2993,7 @@ document.addEventListener("DOMContentLoaded", function() {
     currentLang = storedLang;
   }
   
-  // Create language toggle button if it doesn't exist
+  // Create language toggle button if it doesn\\'t exist
   if (!document.getElementById("language-toggle-btn")) {
     var btn = document.createElement("button");
     btn.id = "language-toggle-btn";
