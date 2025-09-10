@@ -27,19 +27,11 @@
 
 ### Key features
 
-**Testing**
+
 - Adaptive and fixed testing; IRT models (1PL, 2PL, 3PL, GRM); stopping rules and item-selection criteria.
-
-**Interface**
 - Shiny-based administration; theme system; multilingual labels (EN, DE, ES, FR).
-
-**Analysis**
 - TAM integration for estimation; reporting and validation tools; export to CSV/JSON/SPSS/PDF.
-
-**Survey features**
 - Branching, randomization, piping, quotas, and participant management.
-
-**System**
 - Session recovery and logging; input validation and basic rate limiting; caching and parallel compute options; accessibility support.
 
 ## Installation
