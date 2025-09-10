@@ -2665,55 +2665,7 @@ cat("Fixed radar plot with proper connections\n")
 cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
 
-# JavaScript for radio button deselection and PDF download
-custom_js <- '<script>
-document.addEventListener("DOMContentLoaded", function() {
-  // Enable radio button deselection
-  document.addEventListener("click", function(e) {
-    if (e.target && e.target.type === "radio") {
-      var wasChecked = e.target.getAttribute("data-was-checked") === "true";
-      
-      // Clear all radios in group
-      var radios = document.querySelectorAll("input[name=\\"" + e.target.name + "\\"]");
-      for (var i = 0; i < radios.length; i++) {
-        radios[i].setAttribute("data-was-checked", "false");
-      }
-      
-      if (wasChecked) {
-        e.target.checked = false;
-        if (typeof Shiny !== "undefined") {
-          Shiny.setInputValue(e.target.name, null, {priority: "event"});
-        }
-      } else {
-        e.target.setAttribute("data-was-checked", "true");
-      }
-    }
-  });
-});
-
-// PDF Download function
-function downloadPDF() {
-  // Try to trigger the Shiny download handler
-  if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
-    // Trigger the save_report download with PDF format
-    Shiny.setInputValue("save_report", Math.random(), {priority: "event"});
-  } else {
-    // Fallback: try to find and click the download button
-    var downloadBtn = document.querySelector("a[href*=\\"save_report\\"]");
-    if (downloadBtn) {
-      downloadBtn.click();
-    } else {
-      // Try alternative download button selectors
-      var altBtn = document.querySelector("a[href*=\\"download\\"]");
-      if (altBtn) {
-        altBtn.click();
-      } else {
-        alert("Download functionality not available. Please try refreshing the page.");
-      }
-    }
-  }
-}
-</script>'
+# Radio button deselection is handled by INREP package
 
 monitor_adaptive <- function(session_data) {
   # Enhanced adaptive monitoring with full output
@@ -2813,8 +2765,7 @@ monitor_adaptive <- function(session_data) {
   }
 }
 
-# Complete JavaScript solution for FULL APP translation and radio deselection
-custom_js_enhanced <- '
+# Custom JavaScript is now handled by the simple custom_js above
 <style>
 /* Fixed language button on all pages */
 #language-toggle-btn {
@@ -3217,7 +3168,7 @@ inrep::launch_study(
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
   save_format = "csv",
-  custom_css = custom_js_enhanced,  # Enhanced JavaScript
+  custom_js = custom_js,  # Language switching and downloads
   admin_dashboard_hook = monitor_adaptive  # Monitor adaptive selection
 )
 
