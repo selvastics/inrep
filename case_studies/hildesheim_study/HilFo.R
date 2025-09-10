@@ -2325,41 +2325,41 @@ custom_item_selection <- function(rv, item_bank, config) {
 
 # Simple JavaScript for language switching and downloads
 custom_js <- '<script>
-var currentLang = "de";
+var currentLang = \\"de\\";
 
 window.toggleLanguage = function() {
-  currentLang = currentLang === "de" ? "en" : "de";
+  currentLang = currentLang === \\"de\\" ? \\"en\\" : \\"de\\";
   
   /* Update button text */
-  var btn = document.getElementById("language-toggle-btn");
+  var btn = document.getElementById(\\"language-toggle-btn\\");
   if (btn) {
-    var textSpan = btn.querySelector("#lang_switch_text");
+    var textSpan = btn.querySelector(\\"#lang_switch_text\\");
     if (textSpan) {
-      textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+      textSpan.textContent = currentLang === \\"de\\" ? \\"English Version\\" : \\"Deutsche Version\\";
     }
   }
   
   /* Toggle language elements */
-  var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+  var langElements = document.querySelectorAll(\\"[data-lang-de][data-lang-en]\\");
   langElements.forEach(function(element) {
-    if (currentLang === "en") {
-      element.textContent = element.getAttribute("data-lang-en");
+    if (currentLang === \\"en\\") {
+      element.textContent = element.getAttribute(\\"data-lang-en\\");
     } else {
-      element.textContent = element.getAttribute("data-lang-de");
+      element.textContent = element.getAttribute(\\"data-lang-de\\");
     }
   });
   
   /* Send to Shiny for global language switching */
-  if (typeof Shiny !== "undefined") {
-    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
-    Shiny.setInputValue("language", currentLang, {priority: "event"});
+  if (typeof Shiny !== \\"undefined\\") {
+    Shiny.setInputValue(\\"study_language\\", currentLang, {priority: \\"event\\"});
+    Shiny.setInputValue(\\"language\\", currentLang, {priority: \\"event\\"});
   }
   
   /* Store preference */
-  sessionStorage.setItem("hilfo_language", currentLang);
+  sessionStorage.setItem(\\"hilfo_language\\", currentLang);
   
   /* Only refresh if not on page 1 (page 1 handles its own switching) */
-  if (!window.location.pathname.includes("page1")) {
+  if (!window.location.pathname.includes(\\"page1\\")) {
     setTimeout(function() {
       location.reload();
     }, 300);
@@ -2368,23 +2368,23 @@ window.toggleLanguage = function() {
 
 /* Create language button */
 function createLanguageButton() {
-  if (document.getElementById("language-toggle-btn")) {
+  if (document.getElementById(\\"language-toggle-btn\\")) {
     return;
   }
   
-  var btn = document.createElement("button");
-  btn.id = "language-toggle-btn";
-  btn.type = "button";
+  var btn = document.createElement(\\"button\\");
+  btn.id = \\"language-toggle-btn\\";
+  btn.type = \\"button\\";
   btn.onclick = toggleLanguage;
-  btn.style.cssText = "position: fixed !important; top: 10px !important; right: 10px !important; z-index: 9999 !important; background: #e8041c !important; color: white !important; border: 2px solid #e8041c !important; padding: 8px 16px !important; border-radius: 4px !important; cursor: pointer !important; font-size: 14px !important; font-weight: bold !important;";
-  btn.innerHTML = "<span id=\"lang_switch_text\">" + (currentLang === "de" ? "English Version" : "Deutsche Version") + "</span>";
+  btn.style.cssText = \\"position: fixed !important; top: 10px !important; right: 10px !important; z-index: 9999 !important; background: #e8041c !important; color: white !important; border: 2px solid #e8041c !important; padding: 8px 16px !important; border-radius: 4px !important; cursor: pointer !important; font-size: 14px !important; font-weight: bold !important;\\";
+  btn.innerHTML = \\"<span id=\\\\\\\"lang_switch_text\\\\\\\">\\" + (currentLang === \\"de\\" ? \\"English Version\\" : \\"Deutsche Version\\") + \\"</span>\\";
   
   document.body.appendChild(btn);
 }
 
 /* Initialize */
-document.addEventListener("DOMContentLoaded", function() {
-  var storedLang = sessionStorage.getItem("hilfo_language");
+document.addEventListener(\\"DOMContentLoaded\\", function() {
+  var storedLang = sessionStorage.getItem(\\"hilfo_language\\");
   if (storedLang) {
     currentLang = storedLang;
   }
@@ -2392,17 +2392,17 @@ document.addEventListener("DOMContentLoaded", function() {
   createLanguageButton();
   
   /* Send initial language to Shiny */
-  if (currentLang !== "de" && typeof Shiny !== "undefined") {
-    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+  if (currentLang !== \\"de\\" && typeof Shiny !== \\"undefined\\") {
+    Shiny.setInputValue(\\"study_language\\", currentLang, {priority: \\"event\\"});
   }
   
   /* Show English content if needed */
-  if (currentLang === "en") {
-    var deContent = document.getElementById("content_de");
-    var enContent = document.getElementById("content_en");
+  if (currentLang === \\"en\\") {
+    var deContent = document.getElementById(\\"content_de\\");
+    var enContent = document.getElementById(\\"content_en\\");
     if (deContent && enContent) {
-      deContent.style.display = "none";
-      enContent.style.display = "block";
+      deContent.style.display = \\"none\\";
+      enContent.style.display = \\"block\\";
     }
   }
 });
@@ -2416,33 +2416,33 @@ observer.observe(document.body, {
 });
 
 window.downloadPDF = function() {
-  console.log("downloadPDF function called");
+  console.log(\\"downloadPDF function called\\");
   try {
-    if (typeof Shiny !== "undefined") {
-      console.log("Shiny available, triggering download_pdf_trigger");
-      Shiny.setInputValue("download_pdf_trigger", Math.random(), {priority: "event"});
+    if (typeof Shiny !== \\"undefined\\") {
+      console.log(\\"Shiny available, triggering download_pdf_trigger\\");
+      Shiny.setInputValue(\\"download_pdf_trigger\\", Math.random(), {priority: \\"event\\"});
     } else {
-      console.log("Shiny not available, using fallback");
+      console.log(\\"Shiny not available, using fallback\\");
       downloadPDFFallback();
     }
   } catch (e) {
-    console.error("PDF download error:", e);
+    console.error(\\"PDF download error:\\", e);
     downloadPDFFallback();
   }
 };
 
 window.downloadCSV = function() {
-  console.log("downloadCSV function called");
+  console.log(\\"downloadCSV function called\\");
   try {
-    if (typeof Shiny !== "undefined") {
-      console.log("Shiny available, triggering download_csv_trigger");
-      Shiny.setInputValue("download_csv_trigger", Math.random(), {priority: "event"});
+    if (typeof Shiny !== \\"undefined\\") {
+      console.log(\\"Shiny available, triggering download_csv_trigger\\");
+      Shiny.setInputValue(\\"download_csv_trigger\\", Math.random(), {priority: \\"event\\"});
     } else {
-      console.log("Shiny not available, using fallback");
+      console.log(\\"Shiny not available, using fallback\\");
       downloadCSVFallback();
     }
   } catch (e) {
-    console.error("CSV download error:", e);
+    console.error(\\"CSV download error:\\", e);
     downloadCSVFallback();
   }
 };
