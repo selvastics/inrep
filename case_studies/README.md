@@ -4,7 +4,7 @@
 
 This directory contains **enhanced case studies** demonstrating the advanced capabilities of the `inrep` package for interactive assessment and reporting. Each case study has been carefully designed to highlight unique features and use cases, from basic functionality to cutting-edge features like plausible values, multi-rater designs, clinical assessments, and interactive dashboards.
 
-## 🎯 **Quick Start**
+## **Quick Start**
 
 Each case study now includes a dedicated launch script with demonstration functions:
 
@@ -28,11 +28,11 @@ launch_rater_participant_study()
 
 ## Available Case Studies
 
-### 1. 🔗 **Rater-Participant Design** - Multi-Rater Assessment Features
+### 1. **Rater-Participant Design** - Multi-Rater Assessment Features
 **Location**: `rater_participant_design/`
 **Launch**: `launch_rater_participant.R`
 
-**🎯 UNIQUE FEATURES HIGHLIGHTED:**
+** UNIQUE FEATURES HIGHLIGHTED:**
 - **Multi-Rater Assessment** - Multiple raters evaluating participants with reliability analysis
 - **Inter-Rater Reliability** - ICC calculations and agreement analysis
 - **Advanced Sample Linking** - Bidirectional linking between participants and raters
@@ -55,11 +55,11 @@ launch_rater_participant_study()
 
 ---
 
-### 2. 🧠 **Programming Anxiety Assessment** - Advanced IRT Features
+### 2.  **Programming Anxiety Assessment** - Advanced IRT Features
 **Location**: `programming_anxiety_assessment/`
 **Launch**: `launch_programming_anxiety.R`
 
-**🎯 UNIQUE FEATURES HIGHLIGHTED:**
+** UNIQUE FEATURES HIGHLIGHTED:**
 - **Plausible Values Generation** - Multiple estimates for robust statistical inference
 - **Advanced IRT Models** - Graded Response Model (GRM) with confidence intervals
 - **Interactive Dashboard** - Real-time analytics and visualizations
@@ -81,11 +81,11 @@ launch_rater_participant_study()
 
 ---
 
-### 3. 👥 **Big Five Personality Assessment** - Multi-Dimensional Features
+### 3.  **Big Five Personality Assessment** - Multi-Dimensional Features
 **Location**: `big_five_personality/`
 **Launch**: `launch_big_five.R`
 
-**🎯 UNIQUE FEATURES HIGHLIGHTED:**
+** UNIQUE FEATURES HIGHLIGHTED:**
 - **Multi-dimensional Personality Model** - Five-factor model with trait-specific adaptation
 - **Cross-cultural Validation** - Multiple language support and cultural adaptations
 - **Comprehensive Profiling** - Radar plots, bar charts, and detailed trait analysis
@@ -108,11 +108,11 @@ launch_rater_participant_study()
 
 ---
 
-### 4. 🏥 **Depression Screening Assessment** - Clinical Features
+### 4.  **Depression Screening Assessment** - Clinical Features
 **Location**: `depression_screening/`
 **Launch**: `launch_depression_screening.R`
 
-**🎯 UNIQUE FEATURES HIGHLIGHTED:**
+** UNIQUE FEATURES HIGHLIGHTED:**
 - **Clinical Cutoffs & Severity Classification** - Automatic severity assessment
 - **Risk Assessment & Intervention Recommendations** - Actionable clinical insights
 - **Multiple Validated Instruments** - PHQ-9, CES-D, BDI-II, DASS-21 integration
@@ -135,11 +135,11 @@ launch_rater_participant_study()
 
 ---
 
-### 5. 🎓 **HILFO Study** - Production-Ready Assessment
+### 5.  **HILFO Study** - Production-Ready Assessment
 **Location**: `hildesheim_study/`
 **Launch**: `HilFo.R`
 
-**🎯 UNIQUE FEATURES HIGHLIGHTED:**
+** UNIQUE FEATURES HIGHLIGHTED:**
 - **Production-Ready Implementation** - Real-world academic assessment
 - **Bilingual Support** - German/English with seamless switching
 - **Comprehensive Demographics** - Extensive demographic data collection
@@ -162,11 +162,11 @@ launch_rater_participant_study()
 
 ---
 
-### 6. 📊 **UMA Study** - Modern UI and Auto-Close Features
+### 6.  **UMA Study** - Modern UI and Auto-Close Features
 **Location**: `uma_study/`
 **Launch**: `uma_study_simple.R`
 
-**🎯 UNIQUE FEATURES HIGHLIGHTED:**
+** UNIQUE FEATURES HIGHLIGHTED:**
 - **Modern UI Design** - Hover effects and responsive design
 - **Auto-Close Functionality** - Configurable timer with universal compatibility
 - **Scroll-to-Top** - Enhanced navigation across all platforms
