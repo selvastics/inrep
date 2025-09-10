@@ -286,8 +286,7 @@ Robitzsch, A., Kiefer, T., & Wu, M. (2024). TAM: Test Analysis Modules. R packag
 ## Citation
 
 ```
-Selva, C. (2025). inrep: Instant Reports for Adaptive Assessments.  
-R package version 1.0.0. https://github.com/selvastics/inrep
+Selva, C. (2025). inrep: Instant Reports for Adaptive Assessments. R package version 1.0.0. https://github.com/selvastics/inrep
 ```
 
 ## Contributing
