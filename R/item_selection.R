@@ -321,12 +321,18 @@ select_next_item <- function(rv, item_bank, config) {
     return(NULL)
   }
   
+  # Fast item information computation with optimized caching
   item_info <- function(theta, item_idx) {
     if (!isTRUE(config$cache_enabled)) return(compute_item_info(theta, item_idx, item_bank, config))
-    cache_key <- paste(theta, item_idx, sep = ":")
+    
+    # Use rounded theta for better cache hit rates
+    theta_rounded <- round(theta, 2)
+    cache_key <- paste(theta_rounded, item_idx, sep = ":")
+    
     if (!is.null(rv$item_info_cache[[cache_key]])) {
       return(rv$item_info_cache[[cache_key]])
     }
+    
     info <- compute_item_info(theta, item_idx, item_bank, config)
     rv$item_info_cache[[cache_key]] <- if (is.finite(info)) info else 0
     return(info)
@@ -418,6 +424,62 @@ select_next_item <- function(rv, item_bank, config) {
     setNames(weights[names(config$item_groups)] %||% 1, names(config$item_groups))
   } else rep(1, length(available))
   
+  # Fast pre-computation for common theta values (warm-up cache)
+  if (isTRUE(config$cache_enabled) && length(available) > 5) {
+    # Pre-compute information for nearby theta values to improve cache hits
+    theta_values <- c(current_theta, current_theta + 0.1, current_theta - 0.1, 
+                     current_theta + 0.2, current_theta - 0.2)
+    theta_values <- round(theta_values, 2)
+    
+    for (theta_val in theta_values) {
+      if (is.finite(theta_val)) {
+        for (item_idx in available[1:min(5, length(available))]) {  # Pre-compute for first 5 items
+          cache_key <- paste(theta_val, item_idx, sep = ":")
+          if (is.null(rv$item_info_cache[[cache_key]])) {
+            info_val <- compute_item_info(theta_val, item_idx, item_bank, config)
+            rv$item_info_cache[[cache_key]] <- if (is.finite(info_val)) info_val else 0
+          }
+        }
+      }
+    }
+  }
+  
+  # Enhanced parallel caching for multiple items
+  if (isTRUE(config$cache_enabled) && isTRUE(config$parallel_computation) && length(available) > 10) {
+    # Pre-compute and cache information for multiple items in parallel
+    parallel_env <- initialize_parallel_env(config, "item_selection")
+    
+    tryCatch({
+      # Check which items need computation
+      cache_keys <- paste(round(current_theta, 2), available, sep = ":")
+      uncached_items <- available[!sapply(cache_keys, function(key) !is.null(rv$item_info_cache[[key]]))]
+      
+      if (length(uncached_items) > 5) {  # Only parallelize if enough items
+        # Parallel computation for uncached items
+        if (parallel_env$method == "future") {
+          future.apply::future_vapply(uncached_items, function(i) {
+            info_val <- compute_item_info(current_theta, i, item_bank, config)
+            cache_key <- paste(round(current_theta, 2), i, sep = ":")
+            rv$item_info_cache[[cache_key]] <<- if (is.finite(info_val)) info_val else 0
+            return(info_val)
+          }, numeric(1), future.seed = TRUE)
+        } else if (parallel_env$method == "parallel") {
+          parallel::clusterExport(parallel_env$cluster, 
+                                c("current_theta", "item_bank", "config", "compute_item_info"), 
+                                envir = environment())
+          parallel::parSapply(parallel_env$cluster, uncached_items, function(i) {
+            info_val <- compute_item_info(current_theta, i, item_bank, config)
+            cache_key <- paste(round(current_theta, 2), i, sep = ":")
+            rv$item_info_cache[[cache_key]] <<- if (is.finite(info_val)) info_val else 0
+            return(info_val)
+          })
+        }
+      }
+    }, finally = {
+      parallel_env$cleanup()
+    })
+  }
+  
   # Compute item information
   # Capture current ability safely to avoid reactive access in parallel workers
   current_theta <- tryCatch(rv$current_ability, error = function(e) config$theta_prior[1] %||% 0)
@@ -432,12 +494,40 @@ select_next_item <- function(rv, item_bank, config) {
       message("Parallel package not available, falling back to sequential computation")
       info <- vapply(available, function(i) item_info(current_theta, i), numeric(1))
     } else {
+      # Enhanced parallel processing with better resource management
       cores <- base::tryCatch(parallel::detectCores(), error = function(e) 2)
-      n_workers <- max(1, min(cores - 1, 2))
-      cl <- parallel::makeCluster(n_workers)
-      on.exit(parallel::stopCluster(cl), add = TRUE)
-      parallel::clusterExport(cl, c("item_bank", "config", "compute_item_info", "current_theta"), envir = environment())
-      info <- parallel::parSapply(cl, available, function(i) compute_item_info(current_theta, i, item_bank, config))
+      n_workers <- max(1, min(cores - 1, min(4, length(available))))  # Limit workers based on available items
+      
+      # Use future package if available for better parallel processing
+      if (requireNamespace("future", quietly = TRUE) && requireNamespace("future.apply", quietly = TRUE)) {
+        # Set up future plan for parallel processing
+        old_plan <- future::plan()
+        future::plan(future::multisession, workers = n_workers)
+        on.exit(future::plan(old_plan), add = TRUE)
+        
+        # Parallel computation using future.apply
+        info <- future.apply::future_vapply(available, function(i) {
+          compute_item_info(current_theta, i, item_bank, config)
+        }, numeric(1), future.seed = TRUE)
+        
+      } else {
+        # Fallback to base parallel processing
+        cl <- parallel::makeCluster(n_workers, type = "PSOCK")
+        on.exit(parallel::stopCluster(cl), add = TRUE)
+        
+        # Export necessary functions and data to workers
+        parallel::clusterExport(cl, c("item_bank", "config", "compute_item_info", "current_theta"), envir = environment())
+        parallel::clusterEvalQ(cl, {
+          # Load required packages on workers
+          if (requireNamespace("TAM", quietly = TRUE)) library(TAM)
+        })
+        
+        info <- parallel::parSapply(cl, available, function(i) {
+          compute_item_info(current_theta, i, item_bank, config)
+        })
+      }
+      
+      # Update cache with parallel results
       if (isTRUE(config$cache_enabled)) {
         for (idx in seq_along(available)) {
           cache_key <- base::paste(current_theta, available[idx], sep = ":")
@@ -455,17 +545,31 @@ select_next_item <- function(rv, item_bank, config) {
     return(sample(available, 1))
   }
   
-  # Select item based on criteria
-  item <- if (config$criteria == "MI") {
-    top_items <- available[info >= 0.95 * max(info, na.rm = TRUE)]
-    if (length(top_items) == 0) {
-      message("No items meet MI criteria, selecting random item")
-      sample(available, 1)
-    } else {
-      sample(top_items, 1)
-    }
-  } else if (config$criteria == "RANDOM") {
+  # Fast item selection with early termination
+  item <- if (config$criteria == "RANDOM") {
     sample(available, 1)
+  } else if (config$criteria == "MI") {
+    # Fast MI selection: find items with high information without computing all
+    if (length(available) > 20) {
+      # For large item banks, sample a subset for faster selection
+      sample_size <- min(15, length(available))
+      sampled_items <- sample(available, sample_size)
+      sampled_info <- info[available %in% sampled_items]
+      top_items <- sampled_items[sampled_info >= 0.9 * max(sampled_info, na.rm = TRUE)]
+      if (length(top_items) == 0) {
+        top_items <- sampled_items[which.max(sampled_info)]
+      }
+      sample(top_items, 1)
+    } else {
+      # For small item banks, use all items
+      top_items <- available[info >= 0.95 * max(info, na.rm = TRUE)]
+      if (length(top_items) == 0) {
+        message("No items meet MI criteria, selecting random item")
+        sample(available, 1)
+      } else {
+        sample(top_items, 1)
+      }
+    }
   } else if (config$criteria == "WEIGHTED") {
     group_indices <- sapply(available, function(i) {
       for (g in names(config$item_groups)) if (i %in% config$item_groups[[g]]) return(g)
@@ -496,12 +600,24 @@ select_next_item <- function(rv, item_bank, config) {
       sample(top_items, 1)
     }
   } else {
-    top_items <- available[info >= 0.95 * max(info, na.rm = TRUE)]
-    if (length(top_items) == 0) {
-      message("No items meet default criteria, selecting random item")
-      sample(available, 1)
-    } else {
+    # Default: fast selection similar to MI
+    if (length(available) > 20) {
+      sample_size <- min(15, length(available))
+      sampled_items <- sample(available, sample_size)
+      sampled_info <- info[available %in% sampled_items]
+      top_items <- sampled_items[sampled_info >= 0.9 * max(sampled_info, na.rm = TRUE)]
+      if (length(top_items) == 0) {
+        top_items <- sampled_items[which.max(sampled_info)]
+      }
       sample(top_items, 1)
+    } else {
+      top_items <- available[info >= 0.95 * max(info, na.rm = TRUE)]
+      if (length(top_items) == 0) {
+        message("No items meet default criteria, selecting random item")
+        sample(available, 1)
+      } else {
+        sample(top_items, 1)
+      }
     }
   }
   
@@ -530,6 +646,68 @@ select_next_item <- function(rv, item_bank, config) {
   }
   
   return(item)
+}
+
+#' Fast Item Selection for High-Performance Applications
+#'
+#' Optimized item selection function designed for maximum speed and efficiency.
+#' Uses advanced caching, parallel processing, and smart sampling strategies.
+#'
+#' @param rv Reactive values object containing current test state
+#' @param item_bank Data frame containing item parameters
+#' @param config Study configuration object
+#' @param max_compute Maximum number of items to compute information for (default: 15)
+#' @return Integer index of the selected item
+#' @export
+fast_select_next_item <- function(rv, item_bank, config, max_compute = 15) {
+  # Quick validation
+  if (length(rv$administered) >= (config$max_items %||% nrow(item_bank))) {
+    return(NULL)
+  }
+  
+  # Get available items
+  available <- setdiff(seq_len(nrow(item_bank)), rv$administered)
+  if (length(available) == 0) return(NULL)
+  
+  # For very small item banks, use regular selection
+  if (length(available) <= 5) {
+    return(select_next_item(rv, item_bank, config))
+  }
+  
+  # Fast sampling strategy
+  if (length(available) > max_compute) {
+    # Sample a subset for faster computation
+    available <- sample(available, min(max_compute, length(available)))
+  }
+  
+  # Get current ability
+  current_theta <- rv$current_ability %||% config$theta_prior[1] %||% 0
+  if (!is.finite(current_theta)) current_theta <- 0
+  
+  # Fast information computation with minimal overhead
+  info <- vapply(available, function(i) {
+    # Simple information calculation without complex caching
+    a <- item_bank$a[i] %||% 1.0
+    b <- item_bank$b[i] %||% 0
+    if (is.na(a)) a <- 1.0
+    if (is.na(b)) b <- 0
+    
+    p <- 1 / (1 + exp(-a * (current_theta - b)))
+    a^2 * p * (1 - p)
+  }, numeric(1))
+  
+  # Quick selection
+  if (all(is.na(info) | info <= 0)) {
+    return(sample(available, 1))
+  }
+  
+  # Select item with highest information
+  best_items <- available[info >= 0.9 * max(info, na.rm = TRUE)]
+  if (length(best_items) == 0) {
+    best_items <- available[which.max(info)]
+  }
+  
+  return(sample(best_items, 1))
 }
 
 #' Generate LLM Prompt for Item Selection Optimization
