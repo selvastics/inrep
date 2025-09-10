@@ -18,28 +18,29 @@
 
 ## Overview
 
-**inrep** provides a framework for adaptive testing using Item Response Theory (IRT) models. The package offers web-based interfaces for test administration via Shiny, supports multiple IRT models through TAM integration, implements adaptive item selection algorithms, and includes reporting capabilities. It is designed for psychological assessments, educational testing, and survey research with large item pools.
+**inrep** provides Shiny-based test administration, adaptive item selection, and reporting, with TAM integration for psychometric estimation. It supports adaptive and fixed questionnaires, session recovery, and export to common formats (CSV, JSON, SPSS, PDF). Themes and multilingual labels allow UI customization for different deployments.
 
 <!-- Demo: See the package in action! -->
 ![inrep demo](man/figures/inrep_previewer.gif)
 
-> **Demo:** The above video showcases the main functionalities of the inrep package, including adaptive test setup, Shiny-based administration, theme customization, LLM-powered assistance, and professional reporting. Watch to see how easy it is to configure, deploy, and analyze adaptive assessments with inrep.
+> **Demo:** The video shows adaptive setup, Shiny administration, UI customization, and reporting.
 
-### Key Features
+### Key features
 
-- **Adaptive & Non-Adaptive Testing**: Support for multiple IRT models (1PL, 2PL, 3PL, GRM) with item selection algorithms, plus fixed-order questionnaires
-- **Web-based Interface**: Modern Shiny applications for test administration and data collection  
-- **TAM Integration**: All psychometric computations performed using the validated TAM package  
-- **Professional Survey Features**: 30+ question types, branching logic, randomization, piping, quota control, and participant management
-- **Enhanced Security**: Input validation, rate limiting, CSRF protection, encryption, and audit logging
-- **Multilingual Support**: Interface available in English, German, Spanish, and French with complete translations
-- **10+ Beautiful Themes**: Including Light, Professional, Ocean, Forest, Midnight, Sunset, Hildesheim, and more
-- **Reporting**: Multiple export formats (CSV, JSON, SPSS, PDF) with detailed analytics and visualizations  
-- **Session Recovery**: Session handling with automatic save and crash recovery capabilities
-- **Smart Argument Validation**: Fuzzy matching for typos, case-insensitive parameters, helpful error messages
-- **Performance Optimized**: Caching, parallel processing, memory management for large-scale deployments
-- **Accessibility Options**: WCAG-compliant with colorblind-safe palettes, large text, dyslexia-friendly fonts, and high-contrast modes
-- **CRAN-Ready**: Clean code, documentation, full test coverage
+**Testing**
+- Adaptive and fixed testing; IRT models (1PL, 2PL, 3PL, GRM); stopping rules and item-selection criteria.
+
+**Interface**
+- Shiny-based administration; theme system; multilingual labels (EN, DE, ES, FR).
+
+**Analysis**
+- TAM integration for estimation; reporting and validation tools; export to CSV/JSON/SPSS/PDF.
+
+**Survey features**
+- Branching, randomization, piping, quotas, and participant management.
+
+**System**
+- Session recovery and logging; input validation and basic rate limiting; caching and parallel compute options; accessibility support.
 
 ## Installation
 
@@ -248,13 +249,9 @@ launch_study(
 
 ## Main Functions
 
-* `launch_study()`
-* `create_study_config()`
-* `estimate_ability()`
-* `select_next_item()`
-* `validate_item_bank()`
-* `scrape_website_ui()`
-* `enable_llm_assistance()`
+* **Study management:** `launch_study()`, `create_study_config()`
+* **IRT analysis:** `estimate_ability()`, `select_next_item()`, `validate_item_bank()`
+* **Extensions:** `scrape_website_ui()`, `enable_llm_assistance()`
 
 ## Example Datasets
 
