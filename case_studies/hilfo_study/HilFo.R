@@ -41,6 +41,8 @@ later::later(function() {
   .load_if_needed("ggplot2")
   .load_if_needed("base64enc")
   .load_if_needed("httr")
+  .load_if_needed("rmarkdown")
+  .load_if_needed("knitr")
 }, delay = 0.1)  # Load after UI is ready
 
 # =============================================================================
@@ -1973,34 +1975,11 @@ perform_irt_analysis <- function(responses) {
     '</span></h4>',
     '<div style="display: flex; gap: 10px;">',
     
-    # PDF Download Button - Direct download, not print
+    # PDF Download Button - Trigger download via JavaScript
     '<button style="background: #e8041c; color: white; ',
     'padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; ',
     'font-size: 14px;" onclick="',
-    "(function(){",
-    # Create a simplified text version for PDF
-    "var content = 'HILFO STUDY RESULTS\\n\\n';",
-    "content += '", date_label, format(Sys.Date(), "%d.%m.%Y"), "\\n\\n';",
-    "content += '", profile_label, "\\n';",
-    "content += '==================\\n';",
-    "content += '", pa_label, sprintf("%.2f", scores$ProgrammingAnxiety), "\\n';",
-    "content += 'Extraversion: ", sprintf("%.2f", scores$Extraversion), "\\n';",
-    "content += '", agree_label, sprintf("%.2f", scores$Verträglichkeit), "\\n';",
-    "content += '", consc_label, sprintf("%.2f", scores$Gewissenhaftigkeit), "\\n';",
-    "content += '", neuro_label, sprintf("%.2f", scores$Neurotizismus), "\\n';",
-    "content += '", open_label, sprintf("%.2f", scores$Offenheit), "\\n';",
-    "content += '\\n", stress_label, sprintf("%.2f", scores$Stress), "\\n';",
-    "content += '", study_label, sprintf("%.2f", scores$Studierfähigkeiten), "\\n';",
-    "content += '", stat_label, sprintf("%.2f", scores$Statistik), "\\n';",
-    # Create blob and download
-    "var blob = new Blob([content], {type: 'text/plain;charset=utf-8'});",
-    "var link = document.createElement('a');",
-    "link.href = URL.createObjectURL(blob);",
-    "link.download = '", pdf_filename, ".txt';",  # Save as .txt for simplicity
-    "document.body.appendChild(link);",
-    "link.click();",
-    "document.body.removeChild(link);",
-    "})();",
+    "downloadPDF();",
     '">',
     if (current_lang == "en") 'Save as PDF' else 'Als PDF speichern',
     '</button>',
@@ -2627,7 +2606,7 @@ cat("Fixed radar plot with proper connections\n")
 cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
 
-# Simple JavaScript for radio button deselection ONLY
+# JavaScript for radio button deselection and PDF download
 custom_js <- '<script>
 document.addEventListener("DOMContentLoaded", function() {
   // Enable radio button deselection
@@ -2652,6 +2631,23 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   });
 });
+
+// PDF Download function
+function downloadPDF() {
+  // Try to trigger the Shiny download handler
+  if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
+    // Trigger the save_report download
+    Shiny.setInputValue("save_report", Math.random(), {priority: "event"});
+  } else {
+    // Fallback: try to find and click the download button
+    var downloadBtn = document.querySelector("a[href*=\\"save_report\\"]");
+    if (downloadBtn) {
+      downloadBtn.click();
+    } else {
+      alert("Download functionality not available. Please try refreshing the page.");
+    }
+  }
+}
 </script>'
 
 monitor_adaptive <- function(session_data) {
