@@ -502,6 +502,12 @@ create_study_config <- function(
     # NEW: Participant report controls and demographic requirement
     participant_report = NULL,
     min_required_non_age_demographics = 1,
+    
+    # Custom JavaScript and server extensions support
+    custom_js = NULL,
+    server_extensions = NULL,
+    allow_deselect = FALSE,
+    custom_css = NULL,
     ...
 ) {
   # Set default options to avoid inrep package reference issues
@@ -860,6 +866,12 @@ create_study_config <- function(
     if (!is.null(analytics_config)) config$analytics_config <- analytics_config
     if (!is.null(integration_config)) config$integration_config <- integration_config
     if (!is.null(custom_functions)) config$custom_functions <- custom_functions
+    
+    # Add custom JavaScript and server extensions
+    if (!is.null(custom_js)) config$custom_js <- custom_js
+    if (!is.null(server_extensions)) config$server_extensions <- server_extensions
+    if (!is.null(allow_deselect)) config$allow_deselect <- allow_deselect
+    if (!is.null(custom_css)) config$custom_css <- custom_css
     
     # Add study metadata
     if (!is.null(study_metadata)) {

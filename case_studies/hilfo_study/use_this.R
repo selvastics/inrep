@@ -1875,7 +1875,11 @@ study_config <- inrep::create_study_config(
   ),
   # Adaptive settings for PA items
   fixed_items = c(1:5, 21:51),  # First 5 PA are fixed, then all BFI+ are fixed
-  adaptive_items = 6:20  # PA items 6-20 are in adaptive pool
+  adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
+  # Add custom JavaScript for language switching
+  custom_js = custom_js_enhanced,
+  allow_deselect = TRUE,  # Allow response deselection
+  server_extensions = server_extensions  # Language handling only
 )
 
 cat("\n================================================================================\n")
