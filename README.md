@@ -260,13 +260,10 @@ launch_study(
 
 Please cite the TAM package when using inrep's IRT functionality:
 
-Robitzsch, A., Kiefer, T., & Wu, M. (2024). TAM: Test Analysis Modules. R package version 4.2-21. https://CRAN.R-project.org/package=TAM
-
 ```
 Robitzsch, A., Kiefer, T., & Wu, M. (2024). TAM: Test Analysis Modules. R package version 4.2-21. https://CRAN.R-project.org/package=TAM
 ```
 
->>>>>>> cursor/optimize-inrep-item-selection-and-merge-branches-c772
 ### Configuration Options
 
 * Stopping Rules
