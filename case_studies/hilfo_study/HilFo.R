@@ -573,7 +573,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return false;
       }
     }",
-    required = TRUE
+    required = FALSE
   ),
   
   # Page 2: Basic demographics
