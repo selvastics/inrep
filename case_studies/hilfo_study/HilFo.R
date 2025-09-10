@@ -2557,9 +2557,10 @@ study_config <- inrep::create_study_config(
   # Adaptive settings for PA items
   fixed_items = c(1:5, 21:51),  # First 5 PA are fixed, then all BFI+ are fixed
   adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
-  # Don't override the built-in Hildesheim theme
-  custom_css = NULL,
-  allow_deselect = TRUE  # Allow response deselection
+  # Use enhanced JavaScript for scroll-to-top and language switching
+  custom_css = custom_js_enhanced,
+  allow_deselect = TRUE,  # Allow response deselection
+  server_extensions = server_extensions  # Add server extensions for scroll-to-top
 )
 
 cat("\n================================================================================\n")
@@ -3050,9 +3051,9 @@ document.addEventListener("DOMContentLoaded", function() {
   // Watch for page changes
   var observer = new MutationObserver(function(mutations) {
     // Always jump to top smoothly on significant DOM updates
-    try {
+    if (window.scrollTo) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (e) {
+    } else {
       window.scrollTo(0, 0);
     }
     if (currentLang === "en") {
@@ -3085,6 +3086,30 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     }
   });
+  
+  // Scroll to top on any Shiny page navigation
+  if (typeof Shiny !== "undefined") {
+    Shiny.addCustomMessageHandler("scroll_to_top", function(message) {
+      if (window.scrollTo) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        window.scrollTo(0, 0);
+      }
+    });
+  }
+  
+  // Also scroll to top on any button clicks that might trigger page changes
+  document.addEventListener("click", function(e) {
+    if (e.target && (e.target.tagName === "BUTTON" || e.target.classList.contains("btn"))) {
+      setTimeout(function() {
+        if (window.scrollTo) {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          window.scrollTo(0, 0);
+        }
+      }, 100);
+    }
+  });
 });
 
 // Handle Shiny messages
@@ -3100,7 +3125,7 @@ if (typeof Shiny !== "undefined") {
 }
 </script>'
 
-# Server extensions for language handling
+# Server extensions for language handling and scroll-to-top
 server_extensions <- function(input, output, session) {
   # Track current language
   session$userData$current_language <- reactiveVal("de")
@@ -3120,6 +3145,16 @@ server_extensions <- function(input, output, session) {
     
     # Send message to update UI
     session$sendCustomMessage("update_language", new_lang)
+  })
+  
+  # Send scroll-to-top message on page changes
+  observeEvent(input$current_page, {
+    session$sendCustomMessage("scroll_to_top", "page_change")
+  })
+  
+  # Also send scroll-to-top on any input changes that might trigger page changes
+  observeEvent(input$study_language, {
+    session$sendCustomMessage("scroll_to_top", "language_change")
   })
 }
 
