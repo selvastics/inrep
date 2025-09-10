@@ -565,9 +565,13 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>'
     ),
     validate = "function(inputs) { 
-      var deCheck = document.getElementById('consent_check');
-      var enCheck = document.getElementById('consent_check_en');
-      return (deCheck && deCheck.checked) || (enCheck && enCheck.checked);
+      try {
+        var deCheck = document.getElementById('consent_check');
+        var enCheck = document.getElementById('consent_check_en');
+        return Boolean((deCheck && deCheck.checked) || (enCheck && enCheck.checked));
+      } catch(e) {
+        return false;
+      }
     }",
     required = TRUE
   ),
@@ -2951,7 +2955,10 @@ window.toggleLanguage = function() {
   // Update button text
   var btn = document.getElementById("language-toggle-btn");
   if (btn) {
-    btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    var textSpan = btn.querySelector("#lang_switch_text");
+    if (textSpan) {
+      textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    }
   }
   
   // Also update the welcome page button if it exists
@@ -2997,8 +3004,10 @@ document.addEventListener("DOMContentLoaded", function() {
   if (!document.getElementById("language-toggle-btn")) {
     var btn = document.createElement("button");
     btn.id = "language-toggle-btn";
-    btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    btn.type = "button";
     btn.onclick = toggleLanguage;
+    btn.style.cssText = "position: fixed !important; top: 10px !important; right: 10px !important; z-index: 9999 !important; background: #e8041c !important; color: white !important; border: 2px solid #e8041c !important; padding: 8px 16px !important; border-radius: 4px !important; cursor: pointer !important; font-size: 14px !important; font-weight: bold !important;";
+    btn.innerHTML = "<span id=\"lang_switch_text\">" + (currentLang === "de" ? "English Version" : "Deutsche Version") + "</span>";
     document.body.appendChild(btn);
   }
   
