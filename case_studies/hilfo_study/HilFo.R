@@ -490,8 +490,8 @@ custom_page_flow <- list(
       # Language switcher in top right corner (uses global toggle function)
       '<div style="position: absolute; top: 10px; right: 10px;">',
       '<button type="button" id="language-toggle-btn" onclick="window.toggleLanguage()" style="',
-      'background: white; border: 2px solid #e8041c; color: #e8041c; ',
-      'padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">',
+      'background: #e8041c; color: white; border: 2px solid #e8041c; ',
+      'padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">',
       '<span id="lang_switch_text">English Version</span></button>',
       '</div>',
       # German content (default)
@@ -3016,7 +3016,7 @@ document.addEventListener("DOMContentLoaded", function() {
     currentLang = storedLang;
   }
   
-  createLanguageButton();
+  // Button already exists in HTML, no need to create
   
   // Apply initial translation if English
   if (currentLang === "en") {
