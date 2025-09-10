@@ -43,7 +43,14 @@ later::later(function() {
   .load_if_needed("httr")
   .load_if_needed("rmarkdown")
   .load_if_needed("knitr")
+  .load_if_needed("shiny")
 }, delay = 0.1)  # Load after UI is ready
+
+# Load shiny immediately for server_extensions function
+if (!requireNamespace("shiny", quietly = TRUE)) {
+  install.packages("shiny", quiet = TRUE)
+}
+library(shiny)
 
 # =============================================================================
 # CLOUD STORAGE CREDENTIALS - Hildesheim Study Folder (SECURE)
