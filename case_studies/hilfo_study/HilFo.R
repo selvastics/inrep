@@ -485,17 +485,14 @@ custom_page_flow <- list(
     type = "custom",
     title = "Willkommen zur HilFo Studie",
     title_en = "Welcome to the HilFo Study",
-    content = paste0(
-      '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">',
-      # Language switcher in top right corner (uses global toggle function)
-      '<div style="position: absolute; top: 10px; right: 10px;">',
-      '<button type="button" id="language-toggle-btn" onclick="toggleLanguage()" style="',
-      'background: #e8041c; color: white; border: 2px solid #e8041c; ',
-      'padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">',
-      '<span id="lang_switch_text">English Version</span></button>',
-      '</div>',
-      # German content (default)
-      '<div id="content_de">',
+    content = '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">
+      <div style="position: absolute; top: 10px; right: 10px;">
+        <button type="button" id="language-toggle-btn" onclick="toggleLanguage()" style="
+          background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
+          <span id="lang_switch_text">English Version</span></button>
+      </div>
+      
+      <div id="content_de">
       '<h2 style="color: #e8041c;" data-lang-de="Liebe Studierende," data-lang-en="Dear Students,">Liebe Studierende,</h2>',
       '<p>In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, ',
       'die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.</p>',
