@@ -288,7 +288,7 @@ R package version 1.0.0. https://github.com/selvastics/inrep
 
 ## Contributing
 
-See `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md` on GitHub.
+See `CONTRIBUTING.md` on GitHub.
 
 ## License
 
