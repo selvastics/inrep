@@ -2501,53 +2501,33 @@ custom_item_selection <- function(rv, item_bank, config) {
 # =============================================================================
 # CUSTOM JAVASCRIPT FOR LANGUAGE SWITCHING
 # =============================================================================
+# (Definition moved to complete version below)
 
-custom_js_enhanced <- '
-<script>
-var currentLang = "de";
+# =============================================================================
+# SERVER EXTENSIONS FOR LANGUAGE HANDLING
+# =============================================================================
 
-window.toggleLanguage = function() {
-  currentLang = currentLang === "de" ? "en" : "de";
+server_extensions <- function(input, output, session) {
+  # Track current language
+  session$userData$current_language <- reactiveVal("de")
   
-  // Update button text
-  var btn = document.getElementById("lang_switch");
-  if (btn) {
-    var textSpan = btn.querySelector("#lang_switch_text");
-    if (textSpan) {
-      textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
-    }
-  }
-  
-  // Toggle language elements
-  var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
-  langElements.forEach(function(element) {
-    if (currentLang === "en") {
-      element.textContent = element.getAttribute("data-lang-en");
+  # Handle language switching
+  observeEvent(input$study_language, {
+    new_lang <- input$study_language
+    session$userData$current_language(new_lang)
+    
+    # Update item bank language
+    if (new_lang == "en") {
+      session$userData$item_bank <- all_items_de
+      session$userData$item_bank$Question <- all_items_de$Question_EN
     } else {
-      element.textContent = element.getAttribute("data-lang-de");
+      session$userData$item_bank <- all_items_de
     }
-  });
-  
-  // Send to Shiny for global language switching
-  if (typeof Shiny !== "undefined") {
-    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
-  }
-  
-  // Store preference
-  sessionStorage.setItem("hilfo_language", currentLang);
+    
+    # Send message to update UI
+    session$sendCustomMessage("update_language", new_lang)
+  })
 }
-
-// Initialize on page load
-document.addEventListener("DOMContentLoaded", function() {
-  // Check stored language preference
-  var storedLang = sessionStorage.getItem("hilfo_language");
-  if (storedLang) {
-    currentLang = storedLang;
-    // Apply stored language
-    window.toggleLanguage();
-  }
-});
-</script>'
 
 study_config <- inrep::create_study_config(
   name = "HilFo Studie",
@@ -3140,27 +3120,7 @@ if (typeof Shiny !== \"undefined\") {
 </script>'
 
 # Server extensions for language handling only
-server_extensions <- function(input, output, session) {
-  # Track current language
-  session$userData$current_language <- reactiveVal("de")
-  
-  # Handle language switching
-  observeEvent(input$study_language, {
-    new_lang <- input$study_language
-    session$userData$current_language(new_lang)
-    
-    # Update item bank language
-    if (new_lang == "en") {
-      session$userData$item_bank <- all_items_de
-      session$userData$item_bank$Question <- all_items_de$Question_EN
-    } else {
-      session$userData$item_bank <- all_items_de
-    }
-    
-    # Send message to update UI
-    session$sendCustomMessage("update_language", new_lang)
-  })
-}
+# (Moved to before study_config definition)
 
 # Launch with cloud storage, adaptive testing, and enhanced features
 inrep::launch_study(

@@ -1801,6 +1801,32 @@ custom_item_selection <- function(rv, item_bank, config) {
   return(NULL)
 }
 
+# =============================================================================
+# SERVER EXTENSIONS FOR LANGUAGE HANDLING
+# =============================================================================
+
+server_extensions <- function(input, output, session) {
+  # Track current language
+  session$userData$current_language <- reactiveVal("de")
+  
+  # Handle language switching
+  observeEvent(input$study_language, {
+    new_lang <- input$study_language
+    session$userData$current_language(new_lang)
+    
+    # Update item bank language
+    if (new_lang == "en") {
+      session$userData$item_bank <- all_items_de
+      session$userData$item_bank$Question <- all_items_de$Question_EN
+    } else {
+      session$userData$item_bank <- all_items_de
+    }
+    
+    # Send message to update UI
+    session$sendCustomMessage("update_language", new_lang)
+  })
+}
+
 study_config <- inrep::create_study_config(
   name = "HilFo Studie",
   study_key = session_uuid,
@@ -2381,27 +2407,7 @@ if (typeof Shiny !== "undefined") {
 </script>'
 
 # Server extensions for language handling
-server_extensions <- function(input, output, session) {
-  # Track current language
-  session$userData$current_language <- reactiveVal("de")
-  
-  # Handle language switching
-  observeEvent(input$study_language, {
-    new_lang <- input$study_language
-    session$userData$current_language(new_lang)
-    
-    # Update item bank language
-    if (new_lang == "en") {
-      session$userData$item_bank <- all_items_de
-      session$userData$item_bank$Question <- all_items_de$Question_EN
-    } else {
-      session$userData$item_bank <- all_items_de
-    }
-    
-    # Send message to update UI
-    session$sendCustomMessage("update_language", new_lang)
-  })
-}
+# (Moved to before study_config definition)
 
 # Launch with cloud storage, adaptive testing, and enhanced features
 inrep::launch_study(
