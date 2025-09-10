@@ -261,7 +261,7 @@ launch_study(
 * `bfi_items`
 * `math_items`
 * `cognitive_items`
-* `RCQ_items` ([Resilient-Coping Questionnaire](https://rc-fragebogen.vercel.app/), in progress)
+* `RCQ_items` (<a href="https://rc-fragebogen.vercel.app/" target="_blank">Resilient-Coping Questionnaire</a>, in progress)
 
 ## Configuration
 
