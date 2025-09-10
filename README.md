@@ -267,7 +267,7 @@ launch_study(
 
 * IRT Models: 1PL, 2PL, 3PL, GRM
 
-Please cite the TAM package when using inrep's IRT functionality:
+Please cite the TAM package when using IRT functionalities:
 
 Robitzsch, A., Kiefer, T., & Wu, M. (2024). TAM: Test Analysis Modules. R package version 4.2-21. https://CRAN.R-project.org/package=TAM
 
