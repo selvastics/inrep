@@ -1875,10 +1875,7 @@ study_config <- inrep::create_study_config(
   ),
   # Adaptive settings for PA items
   fixed_items = c(1:5, 21:51),  # First 5 PA are fixed, then all BFI+ are fixed
-  adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
-  # Don't override the built-in Hildesheim theme
-  custom_css = NULL,
-  allow_deselect = TRUE  # Allow response deselection
+  adaptive_items = 6:20  # PA items 6-20 are in adaptive pool
 )
 
 cat("\n================================================================================\n")
