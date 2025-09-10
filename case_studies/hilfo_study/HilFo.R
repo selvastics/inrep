@@ -329,7 +329,7 @@ demographic_configs <- list(
     ),
     options_en = c(
       "Dog"="1", "Cat"="2", "Fish"="3", "Bird"="4",
-      "Rodent"="5", "Reptile"="6", "I don\\'t want a pet"="7", "Other"="8"
+      "Rodent"="5", "Reptile"="6", "I don\'t want a pet"="7", "Other"="8"
     ),
     required = FALSE
   ),
@@ -448,7 +448,7 @@ demographic_configs <- list(
   ),
   Persönlicher_Code = list(
     question = "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags):",
-    question_en = "Please create a personal code (first 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday):",
+    question_en = "Please create a personal code (first 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday):",
     type = "text",
     required = FALSE
   )
@@ -2748,7 +2748,7 @@ var translations = {
   "Vogel": "Bird",
   "Nager": "Rodent",
   "Reptil": "Reptile",
-  "Ich möchte kein Haustier": "I don\\'t want a pet",
+  "Ich möchte kein Haustier": "I don\'t want a pet",
   "Sonstiges": "Other",
   "Vegan": "Vegan",
   "Vegetarisch": "Vegetarian",
@@ -2993,7 +2993,7 @@ document.addEventListener("DOMContentLoaded", function() {
     currentLang = storedLang;
   }
   
-  // Create language toggle button if it doesn\\'t exist
+  // Create language toggle button if it doesn\'t exist
   if (!document.getElementById("language-toggle-btn")) {
     var btn = document.createElement("button");
     btn.id = "language-toggle-btn";
