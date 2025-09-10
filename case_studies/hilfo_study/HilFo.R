@@ -2942,17 +2942,27 @@ function translatePage() {
   }
 }
 
-// Global language toggle function with debouncing
-var toggleInProgress = false;
-window.toggleLanguage = function() {
-  // Prevent multiple rapid clicks
-  if (toggleInProgress) return;
-  toggleInProgress = true;
-  setTimeout(function() { toggleInProgress = false; }, 500); // 500ms debounce
+/* Create language button */
+function createLanguageButton() {
+  if (document.getElementById("language-toggle-btn")) {
+    return;
+  }
   
+  var btn = document.createElement("button");
+  btn.id = "language-toggle-btn";
+  btn.type = "button";
+  btn.onclick = toggleLanguage;
+  btn.style.cssText = "position: fixed !important; top: 10px !important; right: 10px !important; z-index: 9999 !important; background: #e8041c !important; color: white !important; border: 2px solid #e8041c !important; padding: 8px 16px !important; border-radius: 4px !important; cursor: pointer !important; font-size: 14px !important; font-weight: bold !important;";
+  btn.innerHTML = "<span id=\"lang_switch_text\">" + (currentLang === "de" ? "English Version" : "Deutsche Version") + "</span>";
+  
+  document.body.appendChild(btn);
+}
+
+// Global language toggle function - SIMPLE VERSION
+window.toggleLanguage = function() {
   currentLang = currentLang === "de" ? "en" : "de";
   
-  // Update button text
+  /* Update button text */
   var btn = document.getElementById("language-toggle-btn");
   if (btn) {
     var textSpan = btn.querySelector("#lang_switch_text");
@@ -2961,38 +2971,24 @@ window.toggleLanguage = function() {
     }
   }
   
-  // Also update the welcome page button if it exists
-  var welcomeBtn = document.getElementById("language-toggle-btn");
-  if (welcomeBtn) {
-    var welcomeTextSpan = welcomeBtn.querySelector("#lang_switch_text");
-    if (welcomeTextSpan) {
-      welcomeTextSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
-    }
-  }
-  
-  // Toggle welcome page content if on page 1
-  var deContent = document.getElementById("content_de");
-  var enContent = document.getElementById("content_en");
-  if (deContent && enContent) {
+  /* Toggle language elements */
+  var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+  langElements.forEach(function(element) {
     if (currentLang === "en") {
-      deContent.style.display = "none";
-      enContent.style.display = "block";
+      element.textContent = element.getAttribute("data-lang-en");
     } else {
-      deContent.style.display = "block";
-      enContent.style.display = "none";
+      element.textContent = element.getAttribute("data-lang-de");
     }
-  }
+  });
   
-  // Send to Shiny
+  /* Send to Shiny for global language switching */
   if (typeof Shiny !== "undefined") {
     Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+    Shiny.setInputValue("language", currentLang, {priority: "event"});
   }
   
-  // Store preference
+  /* Store preference */
   sessionStorage.setItem("hilfo_language", currentLang);
-  
-  // Apply translations to current page without reload
-  translatePage();
 };
 
 // Apply translations on page load
@@ -3003,16 +2999,7 @@ document.addEventListener("DOMContentLoaded", function() {
     currentLang = storedLang;
   }
   
-  // Create language toggle button if it doesn\'t exist
-  if (!document.getElementById("language-toggle-btn")) {
-    var btn = document.createElement("button");
-    btn.id = "language-toggle-btn";
-    btn.type = "button";
-    btn.onclick = toggleLanguage;
-    btn.style.cssText = "position: fixed !important; top: 10px !important; right: 10px !important; z-index: 9999 !important; background: #e8041c !important; color: white !important; border: 2px solid #e8041c !important; padding: 8px 16px !important; border-radius: 4px !important; cursor: pointer !important; font-size: 14px !important; font-weight: bold !important;";
-    btn.innerHTML = "<span id=\"lang_switch_text\">" + (currentLang === "de" ? "English Version" : "Deutsche Version") + "</span>";
-    document.body.appendChild(btn);
-  }
+  createLanguageButton();
   
   // Apply initial translation if English
   if (currentLang === "en") {
