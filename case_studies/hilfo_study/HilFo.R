@@ -940,7 +940,7 @@ create_bar_chart_optimized <- function(scores, current_lang) {
       plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5, color = "#e8041c", margin = ggplot2::margin(b = 20)),
       panel.grid.major.x = ggplot2::element_blank(),
       panel.grid.minor = ggplot2::element_blank(),
-      panel.grid.major.y = ggplot2::element_line(color = "gray90", size = 0.3),
+      panel.grid.major.y = ggplot2::element_line(color = "gray90", linewidth = 0.3),
       legend.position = "bottom",
       legend.title = ggplot2::element_blank(),
       legend.text = ggplot2::element_text(size = 12),
@@ -1381,11 +1381,6 @@ perform_irt_analysis <- function(responses) {
   # Convert theta to 1-5 scale: theta of -2 = 1, theta of 2 = 5
   pa_theta_scaled <- 3 + theta_est  # Center at 3, each SD = 1 point
   pa_theta_scaled <- pmax(1, pmin(5, pa_theta_scaled))  # Bound to 1-5
-  pa_theta <<- pa_theta_scaled  # Assign to global environment
-  theta_est <<- theta_est  # Assign to global environment
-  se_est <<- se_est  # Assign to global environment
-  theta_trace <<- theta_trace  # Assign to global environment
-  se_trace <<- se_trace  # Assign to global environment
   
   # Create trace plot showing theta progression (simulated for semi-adaptive)
   # In a real adaptive test, this would show actual theta estimates after each item
@@ -1418,6 +1413,13 @@ perform_irt_analysis <- function(responses) {
     theta_trace[i] <- theta_temp
     se_trace[i] <- se_temp
   }
+  
+  # Assign computed values to global environment only after they exist
+  pa_theta <<- pa_theta_scaled
+  theta_est <<- theta_est
+  se_est <<- se_est
+  theta_trace <<- theta_trace
+  se_trace <<- se_trace
   
   # Calculate BFI scores - PROPER GROUPING BY TRAIT (now starting at index 21)
   # Items are ordered: E1, E2, E3, E4, V1, V2, V3, V4, G1, G2, G3, G4, N1, N2, N3, N4, O1, O2, O3, O4
@@ -1605,7 +1607,7 @@ perform_irt_analysis <- function(responses) {
       plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5, color = "#e8041c", margin = ggplot2::margin(b = 20)),
       panel.grid.major.x = ggplot2::element_blank(),
       panel.grid.minor = ggplot2::element_blank(),
-      panel.grid.major.y = ggplot2::element_line(color = "gray90", size = 0.3),
+      panel.grid.major.y = ggplot2::element_line(color = "gray90", linewidth = 0.3),
       legend.position = "bottom",
       legend.title = ggplot2::element_blank(),
       legend.text = ggplot2::element_text(size = 12),
@@ -3047,6 +3049,12 @@ document.addEventListener("DOMContentLoaded", function() {
   
   // Watch for page changes
   var observer = new MutationObserver(function(mutations) {
+    // Always jump to top smoothly on significant DOM updates
+    try {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e) {
+      window.scrollTo(0, 0);
+    }
     if (currentLang === "en") {
       setTimeout(translatePage, 50);
     }
