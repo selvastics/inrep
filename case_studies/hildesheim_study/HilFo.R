@@ -2447,29 +2447,6 @@ window.downloadCSV = function() {
   }
 };
 
-function downloadCSVFallback() {
-  try {
-    var csvContent = "timestamp,participant_id,study_language,message\\n";
-    csvContent += new Date().toISOString() + ",HILFO_001," + currentLang + ",Sample data from HilFo study\\n";
-    csvContent += new Date().toISOString() + ",HILFO_002," + currentLang + ",Programming anxiety assessment\\n";
-    csvContent += new Date().toISOString() + ",HILFO_003," + currentLang + ",Personality profile completed\\n";
-    
-    var blob = new Blob([csvContent], { type: "text/csv" });
-    var url = window.URL.createObjectURL(blob);
-    var link = document.createElement("a");
-    link.href = url;
-    link.download = "HilFo_Data_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-    
-    console.log("CSV download initiated");
-  } catch (e) {
-    console.error("CSV download error:", e);
-    alert("Error downloading CSV. Please try again.");
-  }
-}
 
 function downloadPDFFallback() {
   try {
@@ -2542,6 +2519,30 @@ function downloadPDFFallback() {
   } catch (e) {
     console.error("PDF download error:", e);
     alert("Error downloading PDF. Please try again.");
+  }
+}
+
+function downloadCSVFallback() {
+  try {
+    var csvContent = "timestamp,participant_id,study_language,message\\n";
+    csvContent += new Date().toISOString() + ",HILFO_001," + currentLang + ",Sample data from HilFo study\\n";
+    csvContent += new Date().toISOString() + ",HILFO_002," + currentLang + ",Programming anxiety assessment\\n";
+    csvContent += new Date().toISOString() + ",HILFO_003," + currentLang + ",Personality profile completed\\n";
+    
+    var blob = new Blob([csvContent], { type: "text/csv" });
+    var url = window.URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = "HilFo_Data_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    console.log("CSV download initiated");
+  } catch (e) {
+    console.error("CSV download error:", e);
+    alert("Error downloading CSV. Please try again.");
   }
 }
 </script>'
