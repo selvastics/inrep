@@ -2447,7 +2447,6 @@ window.downloadCSV = function() {
   }
 };
 
-
 function downloadPDFFallback() {
   try {
     // Create a proper PDF using jsPDF
