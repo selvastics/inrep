@@ -3051,31 +3051,8 @@ document.addEventListener("DOMContentLoaded", function() {
     setTimeout(translatePage, 100);
   }
   
-  // Watch for page changes - more targeted approach
+  // Watch for page changes - only for translation
   var observer = new MutationObserver(function(mutations) {
-    var shouldScroll = false;
-    mutations.forEach(function(mutation) {
-      // Only scroll on significant content changes, not every small DOM update
-      if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-        for (var i = 0; i < mutation.addedNodes.length; i++) {
-          var node = mutation.addedNodes[i];
-          if (node.nodeType === 1) { // Element node
-            if (node.classList && (node.classList.contains('shiny-page') || 
-                node.classList.contains('page-content') || 
-                node.querySelector && node.querySelector('.shiny-page'))) {
-              shouldScroll = true;
-              break;
-            }
-          }
-        }
-      }
-    });
-    
-    if (shouldScroll) {
-      // Use immediate scroll without smooth behavior for page changes
-      window.scrollTo(0, 0);
-    }
-    
     if (currentLang === \"en\") {
       setTimeout(translatePage, 50);
     }
