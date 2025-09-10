@@ -565,9 +565,16 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>'
     ),
     validate = "function(inputs) { 
-      var deCheck = document.getElementById('consent_check');
-      var enCheck = document.getElementById('consent_check_en');
-      return (deCheck && deCheck.checked) || (enCheck && enCheck.checked);
+      try {
+        var deCheck = document.getElementById('consent_check');
+        var enCheck = document.getElementById('consent_check_en');
+        var result = (deCheck && deCheck.checked) || (enCheck && enCheck.checked);
+        console.log('Consent validation:', result, 'deCheck:', deCheck ? deCheck.checked : 'null', 'enCheck:', enCheck ? enCheck.checked : 'null');
+        return result;
+      } catch(e) {
+        console.error('Consent validation error:', e);
+        return false;
+      }
     }",
     required = TRUE
   ),
@@ -3012,7 +3019,12 @@ window.toggleLanguage = function() {
   // Also update the welcome page button if it exists
   var welcomeBtn = document.getElementById("lang_switch");
   if (welcomeBtn) {
-    welcomeBtn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    var textSpan = welcomeBtn.querySelector("#lang_switch_text");
+    if (textSpan) {
+      textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    } else {
+      welcomeBtn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    }
   }
   
   // Toggle welcome page content if on page 1
@@ -3062,7 +3074,12 @@ document.addEventListener("DOMContentLoaded", function() {
     // Update welcome button if present
     var welcomeBtn = document.getElementById("lang_switch");
     if (welcomeBtn) {
-      welcomeBtn.textContent = "Deutsche Version";
+      var textSpan = welcomeBtn.querySelector("#lang_switch_text");
+      if (textSpan) {
+        textSpan.textContent = "Deutsche Version";
+      } else {
+        welcomeBtn.textContent = "Deutsche Version";
+      }
     }
     
     // Apply translations
