@@ -2557,10 +2557,9 @@ study_config <- inrep::create_study_config(
   # Adaptive settings for PA items
   fixed_items = c(1:5, 21:51),  # First 5 PA are fixed, then all BFI+ are fixed
   adaptive_items = 6:20,  # PA items 6-20 are in adaptive pool
-  # Use enhanced JavaScript for scroll-to-top and language switching
-  custom_css = custom_js_enhanced,
+  # Let inrep handle scroll-to-top and language switching
   allow_deselect = TRUE,  # Allow response deselection
-  server_extensions = server_extensions  # Add server extensions for scroll-to-top
+  server_extensions = server_extensions  # Language handling only
 )
 
 cat("\n================================================================================\n")
@@ -3004,17 +3003,6 @@ document.addEventListener("DOMContentLoaded", function() {
     currentLang = storedLang;
   }
   
-  // Create language toggle button if it doesn\'t exist
-  // Only create language button on first page (welcome page)
-  // Check if we're on the first page by looking for welcome content
-  var isFirstPage = document.querySelector('#content_de, #content_en, .welcome-page, .intro-page') !== null;
-  if (!document.getElementById("language-toggle-btn") && isFirstPage) {
-    var btn = document.createElement("button");
-    btn.id = "language-toggle-btn";
-    btn.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
-    btn.onclick = toggleLanguage;
-    document.body.appendChild(btn);
-  }
   
   // Apply initial translation if English
   if (currentLang === "en") {
@@ -3099,7 +3087,7 @@ if (typeof Shiny !== \"undefined\") {
 }
 </script>'
 
-# Server extensions for language handling and scroll-to-top
+# Server extensions for language handling only
 server_extensions <- function(input, output, session) {
   # Track current language
   session$userData$current_language <- reactiveVal("de")
@@ -3120,16 +3108,6 @@ server_extensions <- function(input, output, session) {
     # Send message to update UI
     session$sendCustomMessage("update_language", new_lang)
   })
-  
-  # Send scroll-to-top message on page changes
-  observeEvent(input$current_page, {
-    session$sendCustomMessage("scroll_to_top", "page_change")
-  })
-  
-  # Also send scroll-to-top on any input changes that might trigger page changes
-  observeEvent(input$study_language, {
-    session$sendCustomMessage("scroll_to_top", "language_change")
-  })
 }
 
 # Launch with cloud storage, adaptive testing, and enhanced features
@@ -3139,7 +3117,6 @@ inrep::launch_study(
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
   save_format = "csv",
-  custom_css = custom_js_enhanced,  # Enhanced JavaScript
   admin_dashboard_hook = monitor_adaptive  # Monitor adaptive selection
 )
 
