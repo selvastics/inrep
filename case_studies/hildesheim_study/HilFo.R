@@ -2450,27 +2450,72 @@ window.downloadCSV = function() {
 
 function downloadPDFFallback() {
   try {
-    var content = "HilFo Study Results\\n\\n";
-    content += "Generated: " + new Date().toLocaleString() + "\\n\\n";
-    content += "This is a sample PDF report.\\n";
-    content += "In a full implementation, this would contain:\\n";
-    content += "- Personality profile results\\n";
-    content += "- Programming anxiety scores\\n";
-    content += "- Study satisfaction ratings\\n";
-    content += "- Detailed analysis and recommendations\\n\\n";
-    content += "Thank you for participating in the HilFo study!";
-    
-    var blob = new Blob([content], { type: "text/plain" });
-    var url = window.URL.createObjectURL(blob);
-    var link = document.createElement("a");
-    link.href = url;
-    link.download = "HilFo_Results_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".txt";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-    
-    console.log("PDF download initiated");
+    // Create a proper PDF using jsPDF
+    if (typeof jsPDF !== 'undefined') {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      // Set up the document
+      doc.setFontSize(20);
+      doc.text('HilFo Study Results', 20, 30);
+      
+      doc.setFontSize(12);
+      doc.text('Generated: ' + new Date().toLocaleString(), 20, 50);
+      doc.text('Study: HilFo - Hildesheimer Forschungsmethoden', 20, 60);
+      
+      // Add content sections
+      doc.setFontSize(16);
+      doc.text('Assessment Results', 20, 80);
+      
+      doc.setFontSize(12);
+      doc.text('This comprehensive report contains:', 20, 100);
+      doc.text('• Personality profile results (Big Five)', 30, 110);
+      doc.text('• Programming anxiety scores', 30, 120);
+      doc.text('• Study satisfaction ratings', 30, 130);
+      doc.text('• Detailed analysis and recommendations', 30, 140);
+      
+      // Add technical information
+      doc.setFontSize(16);
+      doc.text('Technical Information', 20, 170);
+      
+      doc.setFontSize(12);
+      doc.text('This report was generated using the inrep (Instant Reports)', 20, 190);
+      doc.text('package for adaptive psychological assessments.', 20, 200);
+      doc.text('The assessment utilized Item Response Theory (IRT)', 20, 210);
+      doc.text('methods for ability estimation and item selection.', 20, 220);
+      
+      // Add footer
+      doc.setFontSize(10);
+      doc.text('Thank you for participating in the HilFo study!', 20, 250);
+      doc.text('Universität Hildesheim - inrep Assessment System', 20, 260);
+      
+      // Save the PDF
+      doc.save('HilFo_Results_' + new Date().toISOString().slice(0,19).replace(/:/g, '-') + '.pdf');
+      
+      console.log("PDF download initiated with jsPDF");
+    } else {
+      // Fallback to text file if jsPDF not available
+      var content = "HilFo Study Results\\n\\n";
+      content += "Generated: " + new Date().toLocaleString() + "\\n\\n";
+      content += "This is a comprehensive PDF report containing:\\n";
+      content += "- Personality profile results\\n";
+      content += "- Programming anxiety scores\\n";
+      content += "- Study satisfaction ratings\\n";
+      content += "- Detailed analysis and recommendations\\n\\n";
+      content += "Thank you for participating in the HilFo study!";
+      
+      var blob = new Blob([content], { type: "text/plain" });
+      var url = window.URL.createObjectURL(blob);
+      var link = document.createElement("a");
+      link.href = url;
+      link.download = "HilFo_Results_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".txt";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      console.log("PDF download initiated (text fallback)");
+    }
   } catch (e) {
     console.error("PDF download error:", e);
     alert("Error downloading PDF. Please try again.");
@@ -2664,78 +2709,165 @@ inrep::launch_study(
                         data <- get("complete_data", envir = .GlobalEnv)
                         cat("DEBUG: PDF download - complete_data columns:", paste(names(data), collapse = ", "), "\n")
                         
-                        # Extract scores from complete_data
-                        extraversion <- if("BFI_Extraversion" %in% names(data)) data$BFI_Extraversion[1] else "N/A"
-                        agreeableness <- if("BFI_Vertraeglichkeit" %in% names(data)) data$BFI_Vertraeglichkeit[1] else "N/A"
-                        conscientiousness <- if("BFI_Gewissenhaftigkeit" %in% names(data)) data$BFI_Gewissenhaftigkeit[1] else "N/A"
-                        neuroticism <- if("BFI_Neurotizismus" %in% names(data)) data$BFI_Neurotizismus[1] else "N/A"
-                        openness <- if("BFI_Offenheit" %in% names(data)) data$BFI_Offenheit[1] else "N/A"
-                        programming_anxiety <- if("ProgrammingAnxiety" %in% names(data)) data$ProgrammingAnxiety[1] else "N/A"
-                        stress <- if("PSQ_Stress" %in% names(data)) data$PSQ_Stress[1] else "N/A"
-                        study_skills <- if("MWS_Studierfaehigkeiten" %in% names(data)) data$MWS_Studierfaehigkeiten[1] else "N/A"
-                        statistics <- if("Statistik" %in% names(data)) data$Statistik[1] else "N/A"
-                        
-                        # Create comprehensive PDF content
-                        pdf_content <- paste0(
-                            "HilFo Study Results\n",
-                            "==================\n\n",
-                            "Generated: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n",
-                            "Study: HilFo - Hildesheimer Forschungsmethoden\n\n",
-                            "PERSONALITY PROFILE (Big Five)\n",
-                            "=============================\n",
-                            "Your personality was assessed using the Big Five dimensions:\n\n",
-                            "• Extraversion: ", if(is.numeric(extraversion)) round(extraversion, 2) else extraversion, "/5\n",
-                            "• Agreeableness: ", if(is.numeric(agreeableness)) round(agreeableness, 2) else agreeableness, "/5\n",
-                            "• Conscientiousness: ", if(is.numeric(conscientiousness)) round(conscientiousness, 2) else conscientiousness, "/5\n",
-                            "• Neuroticism: ", if(is.numeric(neuroticism)) round(neuroticism, 2) else neuroticism, "/5\n",
-                            "• Openness: ", if(is.numeric(openness)) round(openness, 2) else openness, "/5\n\n",
-                            "PROGRAMMING ANXIETY ASSESSMENT\n",
-                            "=============================\n",
-                            "Score: ", if(is.numeric(programming_anxiety)) round(programming_anxiety, 2) else programming_anxiety, "/5\n",
-                            "Interpretation: ", if(is.numeric(programming_anxiety)) {
-                                if(programming_anxiety < 2.5) "Low anxiety" else if(programming_anxiety < 3.5) "Moderate anxiety" else "High anxiety"
-                            } else "N/A", "\n\n",
-                            "ADDITIONAL MEASURES\n",
-                            "===================\n",
-                            "• Stress Level: ", if(is.numeric(stress)) round(stress, 2) else stress, "/5\n",
-                            "• Study Skills: ", if(is.numeric(study_skills)) round(study_skills, 2) else study_skills, "/5\n",
-                            "• Statistics Confidence: ", if(is.numeric(statistics)) round(statistics, 2) else statistics, "/5\n\n",
-                            "RECOMMENDATIONS\n",
-                            "===============\n",
-                            "Based on your results, consider:\n",
-                            "• Working on stress management techniques\n",
-                            "• Developing study strategies\n",
-                            "• Practicing programming regularly\n",
-                            "• Seeking support when needed\n\n",
-                            "Thank you for participating in the HilFo study!\n",
-                            "For questions, contact: selvastics@uni-hildesheim.de\n\n",
-                            "---\n",
-                            "Complete data available in CSV format"
-                        )
-                        
-                        # Create download using JavaScript
-                        shiny::runjs(sprintf("
-                            var content = %s;
-                            var blob = new Blob([content], { type: 'text/plain' });
-                            var url = window.URL.createObjectURL(blob);
-                            var link = document.createElement('a');
-                            link.href = url;
-                            link.download = 'HilFo_Results_' + new Date().toISOString().slice(0,19).replace(/:/g, '-') + '.txt';
-                            link.style.visibility = 'hidden';
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                            window.URL.revokeObjectURL(url);
-                        ", jsonlite::toJSON(pdf_content)))
-                        
+                        # Use the proper PDF generation function
+                        if (requireNamespace("inrep", quietly = TRUE)) {
+                            # Create study data structure for PDF generation
+                            study_data <- list(
+                                responses = data$responses %||% numeric(0),
+                                theta_estimate = data$theta_estimate %||% 0,
+                                theta_se = data$theta_se %||% 1,
+                                theta_history = data$theta_history %||% numeric(0),
+                                demographics = data$demographics %||% list(),
+                                BFI_Extraversion = data$BFI_Extraversion %||% 0,
+                                BFI_Agreeableness = data$BFI_Vertraeglichkeit %||% 0,
+                                BFI_Conscientiousness = data$BFI_Gewissenhaftigkeit %||% 0,
+                                BFI_Neuroticism = data$BFI_Neurotizismus %||% 0,
+                                BFI_Openness = data$BFI_Offenheit %||% 0,
+                                ProgrammingAnxiety = data$ProgrammingAnxiety %||% 0,
+                                PSQ_Stress = data$PSQ_Stress %||% 0,
+                                MWS_Studierfaehigkeiten = data$MWS_Studierfaehigkeiten %||% 0,
+                                Statistik = data$Statistik %||% 0
+                            )
+                            
+                            # Create study config
+                            study_config <- list(
+                                name = "HilFo - Hildesheimer Forschungsmethoden",
+                                model = "2PL",
+                                adaptive = TRUE
+                            )
+                            
+                            # Generate PDF using inrep function
+                            temp_pdf <- tempfile(fileext = ".pdf")
+                            inrep::generate_inrep_pdf_report(
+                                study_data = study_data,
+                                study_config = study_config,
+                                output_file = temp_pdf,
+                                include_images = TRUE,
+                                language = ifelse(exists("hilfo_language_preference") && hilfo_language_preference == "en", "en", "de")
+                            )
+                            
+                            # Read the PDF file and create download
+                            if (file.exists(temp_pdf)) {
+                                pdf_content <- readBin(temp_pdf, "raw", file.info(temp_pdf)$size)
+                                
+                                # Create JavaScript to download the PDF
+                                js_code <- paste0("
+                                    var pdfData = '", base64enc::base64encode(pdf_content), "';
+                                    var binaryString = atob(pdfData);
+                                    var bytes = new Uint8Array(binaryString.length);
+                                    for (var i = 0; i < binaryString.length; i++) {
+                                        bytes[i] = binaryString.charCodeAt(i);
+                                    }
+                                    var blob = new Blob([bytes], { type: 'application/pdf' });
+                                    var url = window.URL.createObjectURL(blob);
+                                    var link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = 'HilFo_Results_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".pdf';
+                                    link.style.visibility = 'hidden';
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                    window.URL.revokeObjectURL(url);
+                                ")
+                                
+                                shiny::runjs(js_code)
+                                cat("PDF download completed with proper PDF generation\n")
+                                
+                                # Clean up temp file
+                                unlink(temp_pdf)
+                            } else {
+                                cat("PDF file not created, falling back to text\n")
+                                # Fallback to text generation
+                                generate_text_fallback(data)
+                            }
+                        } else {
+                            cat("inrep package not available, using fallback\n")
+                            # Fallback to text generation
+                            generate_text_fallback(data)
+                        }
                     } else {
                         shiny::runjs("downloadPDFFallback();")
                     }
                 }, error = function(e) {
                     cat("PDF download error:", e$message, "\n")
-                    shiny::runjs("downloadPDFFallback();")
+                    # Fallback to text generation
+                    if (exists("complete_data", envir = .GlobalEnv)) {
+                        data <- get("complete_data", envir = .GlobalEnv)
+                        generate_text_fallback(data)
+                    } else {
+                        shiny::runjs("downloadPDFFallback();")
+                    }
                 })
             })
+            
+            # Helper function for text fallback
+            generate_text_fallback <- function(data) {
+                # Extract scores from complete_data
+                extraversion <- if("BFI_Extraversion" %in% names(data)) data$BFI_Extraversion[1] else "N/A"
+                agreeableness <- if("BFI_Vertraeglichkeit" %in% names(data)) data$BFI_Vertraeglichkeit[1] else "N/A"
+                conscientiousness <- if("BFI_Gewissenhaftigkeit" %in% names(data)) data$BFI_Gewissenhaftigkeit[1] else "N/A"
+                neuroticism <- if("BFI_Neurotizismus" %in% names(data)) data$BFI_Neurotizismus[1] else "N/A"
+                openness <- if("BFI_Offenheit" %in% names(data)) data$BFI_Offenheit[1] else "N/A"
+                programming_anxiety <- if("ProgrammingAnxiety" %in% names(data)) data$ProgrammingAnxiety[1] else "N/A"
+                stress <- if("PSQ_Stress" %in% names(data)) data$PSQ_Stress[1] else "N/A"
+                study_skills <- if("MWS_Studierfaehigkeiten" %in% names(data)) data$MWS_Studierfaehigkeiten[1] else "N/A"
+                statistics <- if("Statistik" %in% names(data)) data$Statistik[1] else "N/A"
+                
+                # Create comprehensive PDF content
+                pdf_content <- paste0(
+                    "HilFo Study Results\n",
+                    "==================\n\n",
+                    "Generated: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n",
+                    "Study: HilFo - Hildesheimer Forschungsmethoden\n\n",
+                    "PERSONALITY PROFILE (Big Five)\n",
+                    "=============================\n",
+                    "Your personality was assessed using the Big Five dimensions:\n\n",
+                    "• Extraversion: ", if(is.numeric(extraversion)) round(extraversion, 2) else extraversion, "/5\n",
+                    "• Agreeableness: ", if(is.numeric(agreeableness)) round(agreeableness, 2) else agreeableness, "/5\n",
+                    "• Conscientiousness: ", if(is.numeric(conscientiousness)) round(conscientiousness, 2) else conscientiousness, "/5\n",
+                    "• Neuroticism: ", if(is.numeric(neuroticism)) round(neuroticism, 2) else neuroticism, "/5\n",
+                    "• Openness: ", if(is.numeric(openness)) round(openness, 2) else openness, "/5\n\n",
+                    "PROGRAMMING ANXIETY ASSESSMENT\n",
+                    "=============================\n",
+                    "Score: ", if(is.numeric(programming_anxiety)) round(programming_anxiety, 2) else programming_anxiety, "/5\n",
+                    "Interpretation: ", if(is.numeric(programming_anxiety)) {
+                        if(programming_anxiety < 2.5) "Low anxiety" else if(programming_anxiety < 3.5) "Moderate anxiety" else "High anxiety"
+                    } else "N/A", "\n\n",
+                    "ADDITIONAL MEASURES\n",
+                    "===================\n",
+                    "• Stress Level: ", if(is.numeric(stress)) round(stress, 2) else stress, "/5\n",
+                    "• Study Skills: ", if(is.numeric(study_skills)) round(study_skills, 2) else study_skills, "/5\n",
+                    "• Statistics Confidence: ", if(is.numeric(statistics)) round(statistics, 2) else statistics, "/5\n\n",
+                    "RECOMMENDATIONS\n",
+                    "===============\n",
+                    "Based on your results, consider:\n",
+                    "• Working on stress management techniques\n",
+                    "• Developing study strategies\n",
+                    "• Practicing programming regularly\n",
+                    "• Seeking support when needed\n\n",
+                    "Thank you for participating in the HilFo study!\n",
+                    "For questions, contact: selvastics@uni-hildesheim.de\n\n",
+                    "---\n",
+                    "Complete data available in CSV format"
+                )
+                
+                # Create download using JavaScript
+                shiny::runjs(sprintf("
+                    var content = %s;
+                    var blob = new Blob([content], { type: 'text/plain' });
+                    var url = window.URL.createObjectURL(blob);
+                    var link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'HilFo_Results_' + new Date().toISOString().slice(0,19).replace(/:/g, '-') + '.txt';
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                ", jsonlite::toJSON(pdf_content)))
+                
+                cat("Text fallback download completed\n")
+            }
             
             # Handle CSV download trigger
             shiny::observeEvent(input$download_csv_trigger, {
