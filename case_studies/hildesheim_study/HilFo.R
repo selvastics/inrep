@@ -2584,7 +2584,22 @@ window.downloadPDF = function() {
   try {
     if (typeof Shiny !== "undefined") {
       console.log("Shiny available, triggering download_pdf_trigger");
-      Shiny.setInputValue("download_pdf_trigger", Math.random(), {priority: "event"});
+      // Use a unique timestamp to ensure the trigger fires
+      Shiny.setInputValue("download_pdf_trigger", Date.now(), {priority: "event"});
+      
+      // Show user feedback
+      var button = event.target;
+      if (button) {
+        var originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Generating PDF...';
+        button.disabled = true;
+        
+        // Reset button after 5 seconds (PDF generation takes time)
+        setTimeout(function() {
+          button.innerHTML = originalText;
+          button.disabled = false;
+        }, 5000);
+      }
     } else {
       console.log("Shiny not available, using fallback");
       downloadPDFFallback();
@@ -2600,7 +2615,22 @@ window.downloadCSV = function() {
   try {
     if (typeof Shiny !== "undefined") {
       console.log("Shiny available, triggering download_csv_trigger");
-      Shiny.setInputValue("download_csv_trigger", Math.random(), {priority: "event"});
+      // Use a unique timestamp to ensure the trigger fires
+      Shiny.setInputValue("download_csv_trigger", Date.now(), {priority: "event"});
+      
+      // Show user feedback
+      var button = event.target;
+      if (button) {
+        var originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Generating CSV...';
+        button.disabled = true;
+        
+        // Reset button after 3 seconds (CSV generation is faster)
+        setTimeout(function() {
+          button.innerHTML = originalText;
+          button.disabled = false;
+        }, 3000);
+      }
     } else {
       console.log("Shiny not available, using fallback");
       downloadCSVFallback();
