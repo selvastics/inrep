@@ -835,7 +835,85 @@ custom_page_flow <- list(
       </div>
     </div>
     <script>
+    // BULLETPROOF LANGUAGE SWITCHING FOR PERSONAL CODE PAGE
+    function BULLETPROOF_applyLanguageToPersonalCodePage() {
+      console.log("BULLETPROOF: Starting language application for personal code page");
+      
+      // Check ALL possible language sources
+      var currentLang = "de"; // Default
+      
+      // 1. Check sessionStorage
+      if (sessionStorage.getItem("hilfo_language")) {
+        currentLang = sessionStorage.getItem("hilfo_language");
+        console.log("BULLETPROOF: Found language in sessionStorage:", currentLang);
+      } else if (sessionStorage.getItem("current_language")) {
+        currentLang = sessionStorage.getItem("current_language");
+        console.log("BULLETPROOF: Found language in sessionStorage (current_language):", currentLang);
+      }
+      
+      // 2. Check localStorage
+      if (currentLang === "de") {
+        if (localStorage.getItem("hilfo_language")) {
+          currentLang = localStorage.getItem("hilfo_language");
+          console.log("BULLETPROOF: Found language in localStorage:", currentLang);
+        } else if (localStorage.getItem("current_language")) {
+          currentLang = localStorage.getItem("current_language");
+          console.log("BULLETPROOF: Found language in localStorage (current_language):", currentLang);
+        }
+      }
+      
+      // 3. Check global variables
+      if (currentLang === "de" && typeof window.currentLang !== "undefined") {
+        currentLang = window.currentLang;
+        console.log("BULLETPROOF: Found language in window.currentLang:", currentLang);
+      }
+      
+      console.log("BULLETPROOF: Final language for personal code page:", currentLang);
+      
+      // Apply language to all elements
+      var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+      console.log("BULLETPROOF: Found", langElements.length, "language elements");
+      
+      langElements.forEach(function(element) {
+        if (currentLang === "en") {
+          var enText = element.getAttribute("data-lang-en");
+          if (enText) {
+            element.textContent = enText;
+            console.log("BULLETPROOF: Set element to English:", enText);
+          }
+        } else {
+          var deText = element.getAttribute("data-lang-de");
+          if (deText) {
+            element.textContent = deText;
+            console.log("BULLETPROOF: Set element to German:", deText);
+          }
+        }
+      });
+      
+      // Update placeholder text
+      var input = document.getElementById("personal_code");
+      if (input) {
+        if (currentLang === "en") {
+          input.placeholder = "e.g. MAHA15";
+          console.log("BULLETPROOF: Set placeholder to English");
+        } else {
+          input.placeholder = "z.B. MAHA15";
+          console.log("BULLETPROOF: Set placeholder to German");
+        }
+      }
+      
+      // Send language to Shiny
+      if (typeof Shiny !== "undefined") {
+        Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
+        Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+        Shiny.setInputValue("language", currentLang, {priority: "event"});
+        console.log("BULLETPROOF: Sent language to Shiny:", currentLang);
+      }
+    }
+    
     document.addEventListener("DOMContentLoaded", function() {
+      console.log("BULLETPROOF: DOM loaded for personal code page");
+      
       var input = document.getElementById("personal_code");
       if (input) {
         input.addEventListener("input", function() {
@@ -848,50 +926,26 @@ custom_page_flow <- list(
         });
       }
       
-      // Apply language switching to this page
-      function applyLanguageToPersonalCodePage() {
-        var currentLang = sessionStorage.getItem("hilfo_language") || "de";
-        console.log("Personal code page - applying language:", currentLang);
-        
-        var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
-        console.log("Personal code page - found", langElements.length, "language elements");
-        
-        langElements.forEach(function(element) {
-          if (currentLang === "en") {
-            var enText = element.getAttribute("data-lang-en");
-            if (enText) {
-              element.textContent = enText;
-              console.log("Personal code page - set to English:", enText);
-            }
-          } else {
-            var deText = element.getAttribute("data-lang-de");
-            if (deText) {
-              element.textContent = deText;
-              console.log("Personal code page - set to German:", deText);
-            }
-          }
-        });
-        
-        // Update placeholder text
-        if (input) {
-          if (currentLang === "en") {
-            input.placeholder = "e.g. MAHA15";
-          } else {
-            input.placeholder = "z.B. MAHA15";
-          }
-        }
-      }
+      // Apply language multiple times to ensure it works
+      BULLETPROOF_applyLanguageToPersonalCodePage();
+      setTimeout(BULLETPROOF_applyLanguageToPersonalCodePage, 50);
+      setTimeout(BULLETPROOF_applyLanguageToPersonalCodePage, 100);
+      setTimeout(BULLETPROOF_applyLanguageToPersonalCodePage, 200);
+      setTimeout(BULLETPROOF_applyLanguageToPersonalCodePage, 500);
+      setTimeout(BULLETPROOF_applyLanguageToPersonalCodePage, 1000);
       
-      // Apply immediately and also on a delay
-      applyLanguageToPersonalCodePage();
-      setTimeout(applyLanguageToPersonalCodePage, 100);
-      setTimeout(applyLanguageToPersonalCodePage, 500);
-      
-      // Also listen for language changes
+      // Listen for language changes
       window.addEventListener("storage", function(e) {
-        if (e.key === "hilfo_language") {
-          applyLanguageToPersonalCodePage();
+        if (e.key === "hilfo_language" || e.key === "current_language") {
+          console.log("BULLETPROOF: Language change detected:", e.key, "=", e.newValue);
+          BULLETPROOF_applyLanguageToPersonalCodePage();
         }
+      });
+      
+      // Also listen for custom language change events
+      window.addEventListener("languageChanged", function(e) {
+        console.log("BULLETPROOF: Custom language change event:", e.detail);
+        BULLETPROOF_applyLanguageToPersonalCodePage();
       });
     });
     </script>'
@@ -922,50 +976,80 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             stop("base64enc package is required for report generation")
         }
     
-    # Get current language from session if available
+    # BULLETPROOF LANGUAGE DETECTION - Check ALL possible sources
     current_lang <- "de"  # Default to German
     
-    # Try multiple ways to get the language - prioritize input over userData
-    if (!is.null(session)) {
-        # First check session input (most recent)
-        if (!is.null(session$input$hilfo_language_preference)) {
-            current_lang <- session$input$hilfo_language_preference
-            cat("DEBUG: Found language in session$input$hilfo_language_preference:", current_lang, "\n")
-        } else if (!is.null(session$input$study_language)) {
-            current_lang <- session$input$study_language
-            cat("DEBUG: Found language in session$input$study_language:", current_lang, "\n")
-        } else if (!is.null(session$input$language)) {
-            current_lang <- session$input$language
-            cat("DEBUG: Found language in session$input$language:", current_lang, "\n")
-        } else if (!is.null(session$input$current_language)) {
-            current_lang <- session$input$current_language
-            cat("DEBUG: Found language in session$input$current_language:", current_lang, "\n")
-        }
-        # Then check userData (older)
-        else if (!is.null(session$userData$language)) {
-            current_lang <- session$userData$language
-            cat("DEBUG: Found language in session$userData$language:", current_lang, "\n")
-        } else if (!is.null(session$userData$study_language)) {
-            current_lang <- session$userData$study_language
-            cat("DEBUG: Found language in session$userData$study_language:", current_lang, "\n")
-        } else if (!is.null(session$userData$current_language)) {
-            current_lang <- session$userData$current_language
-            cat("DEBUG: Found language in session$userData$current_language:", current_lang, "\n")
+    cat("DEBUG: Starting BULLETPROOF language detection\n")
+    
+    # 1. Check session input first (most recent)
+    if (!is.null(session) && !is.null(session$input)) {
+        cat("DEBUG: Checking session input...\n")
+        input_keys <- names(session$input)
+        cat("DEBUG: Available input keys:", paste(input_keys, collapse = ", "), "\n")
+        
+        # Check all possible language input keys
+        lang_keys <- c("hilfo_language_preference", "study_language", "language", "current_language", "hilfo_language")
+        for (key in lang_keys) {
+            if (key %in% input_keys && !is.null(session$input[[key]])) {
+                current_lang <- session$input[[key]]
+                cat("DEBUG: Found language in session$input$", key, ":", current_lang, "\n")
+                break
+            }
         }
     }
     
-    # Also check global environment for language
-    if (exists("current_language", envir = .GlobalEnv)) {
-        current_lang <- get("current_language", envir = .GlobalEnv)
+    # 2. Check session userData
+    if (!is.null(session) && !is.null(session$userData)) {
+        cat("DEBUG: Checking session userData...\n")
+        userdata_keys <- names(session$userData)
+        cat("DEBUG: Available userData keys:", paste(userdata_keys, collapse = ", "), "\n")
+        
+        if (current_lang == "de") {  # Only if we haven't found it yet
+            lang_keys <- c("language", "study_language", "current_language", "hilfo_language_preference")
+            for (key in lang_keys) {
+                if (key %in% userdata_keys && !is.null(session$userData[[key]])) {
+                    current_lang <- session$userData[[key]]
+                    cat("DEBUG: Found language in session$userData$", key, ":", current_lang, "\n")
+                    break
+                }
+            }
+        }
     }
     
-    # Check for hilfo_language_preference in global environment
-    if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
-        stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
-        if (!is.null(stored_lang) && (stored_lang == "en" || stored_lang == "de")) {
-            current_lang <- stored_lang
-            cat("DEBUG: Using stored language preference:", current_lang, "\n")
+    # 3. Check global environment
+    if (current_lang == "de") {  # Only if we haven't found it yet
+        cat("DEBUG: Checking global environment...\n")
+        global_keys <- c("current_language", "hilfo_language_preference", "study_language", "language")
+        for (key in global_keys) {
+            if (exists(key, envir = .GlobalEnv)) {
+                stored_lang <- get(key, envir = .GlobalEnv)
+                if (!is.null(stored_lang) && (stored_lang == "en" || stored_lang == "de")) {
+                    current_lang <- stored_lang
+                    cat("DEBUG: Found language in global environment $", key, ":", current_lang, "\n")
+                    break
+                }
+            }
         }
+    }
+    
+    # 4. Check reactive values if available
+    if (current_lang == "de" && exists("rv", envir = .GlobalEnv)) {
+        cat("DEBUG: Checking reactive values...\n")
+        tryCatch({
+            rv <- get("rv", envir = .GlobalEnv)
+            if (is.reactivevalues(rv)) {
+                rv_list <- reactiveValuesToList(rv)
+                if ("language" %in% names(rv_list) && !is.null(rv_list$language)) {
+                    current_lang <- rv_list$language
+                    cat("DEBUG: Found language in reactive values:", current_lang, "\n")
+                } else if ("study_language" %in% names(rv_list) && !is.null(rv_list$study_language)) {
+                    current_lang <- rv_list$study_language
+                    cat("DEBUG: Found language in reactive values (study_language):", current_lang, "\n")
+                }
+            }
+        }, error = function(e) {
+            cat("DEBUG: Error checking reactive values:", e$message, "\n")
+        })
     }
     
     # Debug: Print what language we detected
@@ -2458,7 +2542,9 @@ if (typeof sessionStorage !== "undefined") {
 console.log("Initial language set to:", currentLang);
 
 window.toggleLanguage = function() {
+  console.log("BULLETPROOF: Language toggle clicked, current:", currentLang);
   currentLang = currentLang === "de" ? "en" : "de";
+  console.log("BULLETPROOF: Language switched to:", currentLang);
   
   /* Update button text */
   var btn = document.getElementById("language-toggle-btn");
@@ -2466,41 +2552,63 @@ window.toggleLanguage = function() {
     var textSpan = btn.querySelector("#lang_switch_text");
     if (textSpan) {
       textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+      console.log("BULLETPROOF: Updated button text to:", textSpan.textContent);
     }
   }
   
   /* Toggle language elements */
   var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
-  console.log("Found", langElements.length, "language elements to update");
+  console.log("BULLETPROOF: Found", langElements.length, "language elements to update");
   langElements.forEach(function(element) {
     if (currentLang === "en") {
       var enText = element.getAttribute("data-lang-en");
       if (enText) {
         element.textContent = enText;
-        console.log("Updated element to English:", enText);
+        console.log("BULLETPROOF: Updated element to English:", enText);
       }
     } else {
       var deText = element.getAttribute("data-lang-de");
       if (deText) {
         element.textContent = deText;
-        console.log("Updated element to German:", deText);
+        console.log("BULLETPROOF: Updated element to German:", deText);
       }
     }
   });
   
-  /* Send to Shiny for global language switching */
+  /* Send to Shiny for global language switching - MULTIPLE TIMES */
   if (typeof Shiny !== "undefined") {
     Shiny.setInputValue("study_language", currentLang, {priority: "event"});
     Shiny.setInputValue("language", currentLang, {priority: "event"});
     Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
-    console.log("Sent language to Shiny:", currentLang);
+    Shiny.setInputValue("current_language", currentLang, {priority: "event"});
+    Shiny.setInputValue("hilfo_language", currentLang, {priority: "event"});
+    console.log("BULLETPROOF: Sent language to Shiny:", currentLang);
+    
+    // Send multiple times to ensure it's received
+    setTimeout(function() {
+      Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+      Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
+    }, 100);
+    
+    setTimeout(function() {
+      Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+      Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
+    }, 500);
   }
   
-  /* Store preference in multiple places for persistence */
+  /* Store in ALL storage locations */
   sessionStorage.setItem("hilfo_language", currentLang);
+  sessionStorage.setItem("current_language", currentLang);
   localStorage.setItem("hilfo_language", currentLang);
+  localStorage.setItem("current_language", currentLang);
   
-  console.log("Language switched to:", currentLang);
+  /* Store in global variable */
+  window.currentLang = currentLang;
+  
+  /* Trigger custom event for personal code page */
+  window.dispatchEvent(new CustomEvent("languageChanged", {detail: currentLang}));
+  
+  console.log("BULLETPROOF: Language switching complete:", currentLang);
   
   /* Only refresh if not on page 1 (page 1 handles its own switching) */
   if (!window.location.pathname.includes("page1")) {
