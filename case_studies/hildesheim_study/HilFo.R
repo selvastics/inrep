@@ -2325,7 +2325,16 @@ custom_item_selection <- function(rv, item_bank, config) {
 
 # Simple JavaScript for language switching and downloads
 custom_js <- '<script>
-var currentLang = "de";
+// Detect initial language from URL or session storage
+var currentLang = "de"; // Default to German
+if (typeof sessionStorage !== "undefined" && sessionStorage.getItem("hilfo_language")) {
+    currentLang = sessionStorage.getItem("hilfo_language");
+} else if (window.location.search.includes("lang=en") || window.location.search.includes("language=en")) {
+    currentLang = "en";
+} else if (typeof Shiny !== "undefined" && Shiny.inputBindings && Shiny.inputBindings.bindingNames && Shiny.inputBindings.bindingNames.includes("language")) {
+    // Check if Shiny has language input
+    currentLang = "en"; // Assume English if Shiny language input exists
+}
 
 window.toggleLanguage = function() {
   currentLang = currentLang === "de" ? "en" : "de";
@@ -2365,6 +2374,35 @@ window.toggleLanguage = function() {
     }, 300);
   }
 };
+
+// Initialize language on page load
+function initializeLanguage() {
+  // Apply language to all elements on page load
+  var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+  langElements.forEach(function(element) {
+    if (currentLang === "en") {
+      element.textContent = element.getAttribute("data-lang-en");
+    } else {
+      element.textContent = element.getAttribute("data-lang-de");
+    }
+  });
+  
+  // Update button text
+  var btn = document.getElementById("language-toggle-btn");
+  if (btn) {
+    var textSpan = btn.querySelector("#lang_switch_text");
+    if (textSpan) {
+      textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+    }
+  }
+}
+
+// Run initialization when DOM is ready
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initializeLanguage);
+} else {
+  initializeLanguage();
+}
 
 /* Create language button */
 function createLanguageButton() {
@@ -3058,8 +3096,36 @@ output: pdf_document
             shiny::observeEvent(input$download_csv_trigger, {
                 cat("CSV download trigger received\n")
                 tryCatch({
+                    # Try to get data from multiple sources
+                    data <- NULL
+                    
+                    # First try to get from global environment
                     if (exists("complete_data", envir = .GlobalEnv)) {
                         data <- get("complete_data", envir = .GlobalEnv)
+                        cat("DEBUG: Got data from global environment\n")
+                    } else if (exists("rv", envir = .GlobalEnv)) {
+                        # Try to get from reactive values
+                        rv <- get("rv", envir = .GlobalEnv)
+                        if (!is.null(rv$responses) && !is.null(rv$demographics)) {
+                            # Create data structure from reactive values
+                            data <- list(
+                                responses = rv$responses,
+                                demographics = rv$demographics,
+                                BFI_Extraversion = if(!is.null(rv$BFI_Extraversion)) rv$BFI_Extraversion else 0,
+                                BFI_Vertraeglichkeit = if(!is.null(rv$BFI_Vertraeglichkeit)) rv$BFI_Vertraeglichkeit else 0,
+                                BFI_Gewissenhaftigkeit = if(!is.null(rv$BFI_Gewissenhaftigkeit)) rv$BFI_Gewissenhaftigkeit else 0,
+                                BFI_Neurotizismus = if(!is.null(rv$BFI_Neurotizismus)) rv$BFI_Neurotizismus else 0,
+                                BFI_Offenheit = if(!is.null(rv$BFI_Offenheit)) rv$BFI_Offenheit else 0,
+                                ProgrammingAnxiety = if(!is.null(rv$ProgrammingAnxiety)) rv$ProgrammingAnxiety else 0,
+                                PSQ_Stress = if(!is.null(rv$PSQ_Stress)) rv$PSQ_Stress else 0,
+                                MWS_Studierfaehigkeiten = if(!is.null(rv$MWS_Studierfaehigkeiten)) rv$MWS_Studierfaehigkeiten else 0,
+                                Statistik = if(!is.null(rv$Statistik)) rv$Statistik else 0
+                            )
+                            cat("DEBUG: Created data from reactive values\n")
+                        }
+                    }
+                    
+                    if (!is.null(data)) {
                         
                         # Extract scores from complete_data
                         extraversion <- if("BFI_Extraversion" %in% names(data)) data$BFI_Extraversion[1] else "N/A"
@@ -3138,7 +3204,65 @@ output: pdf_document
                         ", jsonlite::toJSON(csv_string)))
                         
                     } else {
-                        shiny::runjs("downloadCSVFallback();")
+                        cat("DEBUG: No data available, creating CSV from session data\n")
+                        # Create CSV from session data if available
+                        if (exists("session") && !is.null(session)) {
+                            # Try to get data from session
+                            session_data <- list()
+                            if (!is.null(session$userData$responses)) {
+                                session_data$responses <- session$userData$responses
+                            }
+                            if (!is.null(session$userData$demographics)) {
+                                session_data$demographics <- session$userData$demographics
+                            }
+                            
+                            if (length(session_data) > 0) {
+                                # Create CSV from session data
+                                csv_rows <- c("timestamp,participant_id,study_language,data_type,value")
+                                
+                                # Add study completion
+                                csv_rows <- c(csv_rows, paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), ",HILFO_PARTICIPANT,en,study_completed,true"))
+                                
+                                # Add responses if available
+                                if (!is.null(session_data$responses)) {
+                                    for (i in 1:length(session_data$responses)) {
+                                        if (!is.na(session_data$responses[i])) {
+                                            csv_rows <- c(csv_rows, paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), ",HILFO_PARTICIPANT,en,item_response_", i, ",", session_data$responses[i]))
+                                        }
+                                    }
+                                }
+                                
+                                # Add demographics if available
+                                if (!is.null(session_data$demographics)) {
+                                    for (name in names(session_data$demographics)) {
+                                        csv_rows <- c(csv_rows, paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), ",HILFO_PARTICIPANT,en,demographic_", name, ",", session_data$demographics[[name]]))
+                                    }
+                                }
+                                
+                                csv_content <- paste(csv_rows, collapse = "\n")
+                                
+                                # Create download using JavaScript
+                                shiny::runjs(sprintf("
+                                    var csvContent = %s;
+                                    var blob = new Blob([csvContent], { type: 'text/csv' });
+                                    var url = window.URL.createObjectURL(blob);
+                                    var link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = 'HilFo_Data_' + new Date().toISOString().slice(0,19).replace(/:/g, '-') + '.csv';
+                                    link.style.visibility = 'hidden';
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                    window.URL.revokeObjectURL(url);
+                                ", jsonlite::toJSON(csv_content)))
+                                
+                                cat("CSV created from session data\n")
+                            } else {
+                                shiny::runjs("downloadCSVFallback();")
+                            }
+                        } else {
+                            shiny::runjs("downloadCSVFallback();")
+                        }
                     }
                 }, error = function(e) {
                     cat("CSV download error:", e$message, "\n")
