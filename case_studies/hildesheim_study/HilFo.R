@@ -1234,20 +1234,8 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             legend.position = "none"
         )
         
-        # Add title separately using ggplot2 if possible
-        tryCatch({
-            radar_plot <- radar_plot + 
-                ggplot2::theme(
-                    plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5, 
-                                                       color = "#e8041c", margin = ggplot2::margin(b = 20)),
-                    plot.background = ggplot2::element_rect(fill = "white", color = NA),
-                    plot.margin = ggplot2::margin(20, 20, 20, 20)
-                ) +
-                ggplot2::labs(title = if (is_english) "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
-        }, error = function(e) {
-            cat("Warning: Could not add theme to ggradar plot:", e$message, "\n")
-            # Use the plot as-is without theme modifications
-        })
+        # Don't try to modify ggradar plots - they don't support + operations
+        # Just use the plot as-is
     } else {
         # Fallback to simple ggplot2 approach if ggradar not available
         # Use namespace to avoid loading issues
@@ -2346,33 +2334,18 @@ custom_js <- '<script>
 /* Detect initial language from URL, session storage, or Shiny input */
 var currentLang = "de"; /* Default to German */
 
-/* Check if we're in English mode by looking at the page content */
-/* If the language toggle button shows "Deutsche Version", we're in English mode */
-var isEnglishMode = false;
-if (document.getElementById("language-toggle-btn")) {
-    var btn = document.getElementById("language-toggle-btn");
-    var textSpan = btn.querySelector("#lang_switch_text");
-    if (textSpan && textSpan.textContent === "Deutsche Version") {
-        isEnglishMode = true;
-        currentLang = "en";
-        console.log("Detected English mode from button text");
-    }
-}
-
-/* Priority order: 1) Button detection, 2) Session storage, 3) URL parameters, 4) Default */
-if (!isEnglishMode) {
-    if (typeof sessionStorage !== "undefined" && sessionStorage.getItem("hilfo_language")) {
-        currentLang = sessionStorage.getItem("hilfo_language");
-        console.log("Language from session storage:", currentLang);
-    } else if (window.location.search.includes("lang=en") || window.location.search.includes("language=en")) {
-        currentLang = "en";
-        console.log("Language from URL parameter: en");
-    } else if (window.location.search.includes("lang=de") || window.location.search.includes("language=de")) {
-        currentLang = "de";
-        console.log("Language from URL parameter: de");
-    } else {
-        console.log("Using default language: de");
-    }
+/* Check session storage first */
+if (typeof sessionStorage !== "undefined" && sessionStorage.getItem("hilfo_language")) {
+    currentLang = sessionStorage.getItem("hilfo_language");
+    console.log("Language from session storage:", currentLang);
+} else if (window.location.search.includes("lang=en") || window.location.search.includes("language=en")) {
+    currentLang = "en";
+    console.log("Language from URL parameter: en");
+} else if (window.location.search.includes("lang=de") || window.location.search.includes("language=de")) {
+    currentLang = "de";
+    console.log("Language from URL parameter: de");
+} else {
+    console.log("Using default language: de");
 }
 
 /* Store the initial language in session storage */
@@ -2380,7 +2353,6 @@ if (typeof sessionStorage !== "undefined") {
     sessionStorage.setItem("hilfo_language", currentLang);
 }
 
-/* Force language detection on page load */
 console.log("Initial language set to:", currentLang);
 
 window.toggleLanguage = function() {
