@@ -1232,14 +1232,22 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             plot.extent.x.sf = 1.3,
             plot.extent.y.sf = 1.2,
             legend.position = "none"
-        ) +
-            ggplot2::theme(
-                plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5, 
-                                                   color = "#e8041c", margin = ggplot2::margin(b = 20)),
-                plot.background = ggplot2::element_rect(fill = "white", color = NA),
-                plot.margin = ggplot2::margin(20, 20, 20, 20)
-            ) +
-            ggplot2::labs(title = if (is_english) "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
+        )
+        
+        # Add title separately using ggplot2 if possible
+        tryCatch({
+            radar_plot <- radar_plot + 
+                ggplot2::theme(
+                    plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5, 
+                                                       color = "#e8041c", margin = ggplot2::margin(b = 20)),
+                    plot.background = ggplot2::element_rect(fill = "white", color = NA),
+                    plot.margin = ggplot2::margin(20, 20, 20, 20)
+                ) +
+                ggplot2::labs(title = if (is_english) "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
+        }, error = function(e) {
+            cat("Warning: Could not add theme to ggradar plot:", e$message, "\n")
+            # Use the plot as-is without theme modifications
+        })
     } else {
         # Fallback to simple ggplot2 approach if ggradar not available
         # Use namespace to avoid loading issues
@@ -2338,28 +2346,42 @@ custom_js <- '<script>
 // Detect initial language from URL, session storage, or Shiny input
 var currentLang = "de"; // Default to German
 
-// Priority order: 1) Session storage, 2) URL parameters, 3) Shiny input, 4) Default
-if (typeof sessionStorage !== "undefined" && sessionStorage.getItem("hilfo_language")) {
-    currentLang = sessionStorage.getItem("hilfo_language");
-    console.log("Language from session storage:", currentLang);
-} else if (window.location.search.includes("lang=en") || window.location.search.includes("language=en")) {
-    currentLang = "en";
-    console.log("Language from URL parameter: en");
-} else if (window.location.search.includes("lang=de") || window.location.search.includes("language=de")) {
-    currentLang = "de";
-    console.log("Language from URL parameter: de");
-} else if (typeof Shiny !== "undefined" && Shiny.inputBindings && Shiny.inputBindings.bindingNames && Shiny.inputBindings.bindingNames.includes("language")) {
-    // Check if Shiny has language input
-    currentLang = "en"; // Assume English if Shiny language input exists
-    console.log("Language from Shiny input: en");
-} else {
-    console.log("Using default language: de");
+// Check if we're in English mode by looking at the page content
+// If the language toggle button shows "Deutsche Version", we're in English mode
+var isEnglishMode = false;
+if (document.getElementById("language-toggle-btn")) {
+    var btn = document.getElementById("language-toggle-btn");
+    var textSpan = btn.querySelector("#lang_switch_text");
+    if (textSpan && textSpan.textContent === "Deutsche Version") {
+        isEnglishMode = true;
+        currentLang = "en";
+        console.log("Detected English mode from button text");
+    }
+}
+
+// Priority order: 1) Button detection, 2) Session storage, 3) URL parameters, 4) Default
+if (!isEnglishMode) {
+    if (typeof sessionStorage !== "undefined" && sessionStorage.getItem("hilfo_language")) {
+        currentLang = sessionStorage.getItem("hilfo_language");
+        console.log("Language from session storage:", currentLang);
+    } else if (window.location.search.includes("lang=en") || window.location.search.includes("language=en")) {
+        currentLang = "en";
+        console.log("Language from URL parameter: en");
+    } else if (window.location.search.includes("lang=de") || window.location.search.includes("language=de")) {
+        currentLang = "de";
+        console.log("Language from URL parameter: de");
+    } else {
+        console.log("Using default language: de");
+    }
 }
 
 // Store the initial language in session storage
 if (typeof sessionStorage !== "undefined") {
     sessionStorage.setItem("hilfo_language", currentLang);
 }
+
+// Force language detection on page load
+console.log("Initial language set to:", currentLang);
 
 window.toggleLanguage = function() {
   currentLang = currentLang === "de" ? "en" : "de";
@@ -2407,13 +2429,25 @@ window.toggleLanguage = function() {
 
 // Initialize language on page load
 function initializeLanguage() {
+  console.log("Initializing language with currentLang:", currentLang);
+  
   // Apply language to all elements on page load
   var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+  console.log("Found", langElements.length, "language elements");
+  
   langElements.forEach(function(element) {
     if (currentLang === "en") {
-      element.textContent = element.getAttribute("data-lang-en");
+      var enText = element.getAttribute("data-lang-en");
+      if (enText) {
+        element.textContent = enText;
+        console.log("Set element to English:", enText);
+      }
     } else {
-      element.textContent = element.getAttribute("data-lang-de");
+      var deText = element.getAttribute("data-lang-de");
+      if (deText) {
+        element.textContent = deText;
+        console.log("Set element to German:", deText);
+      }
     }
   });
   
@@ -2423,7 +2457,19 @@ function initializeLanguage() {
     var textSpan = btn.querySelector("#lang_switch_text");
     if (textSpan) {
       textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+      console.log("Updated button text to:", textSpan.textContent);
     }
+  }
+  
+  // Also update placeholder text
+  var personalCodeInput = document.getElementById("personal_code");
+  if (personalCodeInput) {
+    if (currentLang === "en") {
+      personalCodeInput.placeholder = "e.g. MAHA15";
+    } else {
+      personalCodeInput.placeholder = "z.B. MAHA15";
+    }
+    console.log("Updated placeholder to:", personalCodeInput.placeholder);
   }
 }
 
