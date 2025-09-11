@@ -900,6 +900,15 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         current_lang <- get("current_language", envir = .GlobalEnv)
     }
     
+    # Check for hilfo_language_preference in global environment
+    if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
+        stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
+        if (!is.null(stored_lang) && (stored_lang == "en" || stored_lang == "de")) {
+            current_lang <- stored_lang
+            cat("DEBUG: Using stored language preference:", current_lang, "\n")
+        }
+    }
+    
     # Debug: Print what language we detected
     cat("DEBUG: Detected language in results processor:", current_lang, "\n")
     
@@ -938,12 +947,13 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     if (current_lang == "de" && is_english == FALSE) {
         # Check if we should default to English based on some heuristic
         # For now, let's make it configurable
-        force_english <- TRUE  # Set to FALSE to use German, TRUE to use English
-        
-        if (force_english) {
+        # Respect the detected language instead of forcing English
+        if (current_lang == "en") {
             is_english <- TRUE
-            current_lang <- "en"
-            cat("DEBUG: Using English as fallback\n")
+            cat("DEBUG: Using English based on language detection\n")
+        } else {
+            is_english <- FALSE
+            cat("DEBUG: Using German based on language detection\n")
         }
     }
     
@@ -2325,15 +2335,30 @@ custom_item_selection <- function(rv, item_bank, config) {
 
 # Simple JavaScript for language switching and downloads
 custom_js <- '<script>
-// Detect initial language from URL or session storage
+// Detect initial language from URL, session storage, or Shiny input
 var currentLang = "de"; // Default to German
+
+// Priority order: 1) Session storage, 2) URL parameters, 3) Shiny input, 4) Default
 if (typeof sessionStorage !== "undefined" && sessionStorage.getItem("hilfo_language")) {
     currentLang = sessionStorage.getItem("hilfo_language");
+    console.log("Language from session storage:", currentLang);
 } else if (window.location.search.includes("lang=en") || window.location.search.includes("language=en")) {
     currentLang = "en";
+    console.log("Language from URL parameter: en");
+} else if (window.location.search.includes("lang=de") || window.location.search.includes("language=de")) {
+    currentLang = "de";
+    console.log("Language from URL parameter: de");
 } else if (typeof Shiny !== "undefined" && Shiny.inputBindings && Shiny.inputBindings.bindingNames && Shiny.inputBindings.bindingNames.includes("language")) {
     // Check if Shiny has language input
     currentLang = "en"; // Assume English if Shiny language input exists
+    console.log("Language from Shiny input: en");
+} else {
+    console.log("Using default language: de");
+}
+
+// Store the initial language in session storage
+if (typeof sessionStorage !== "undefined") {
+    sessionStorage.setItem("hilfo_language", currentLang);
 }
 
 window.toggleLanguage = function() {
@@ -2362,10 +2387,15 @@ window.toggleLanguage = function() {
   if (typeof Shiny !== "undefined") {
     Shiny.setInputValue("study_language", currentLang, {priority: "event"});
     Shiny.setInputValue("language", currentLang, {priority: "event"});
+    Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
+    console.log("Sent language to Shiny:", currentLang);
   }
   
-  /* Store preference */
+  /* Store preference in multiple places for persistence */
   sessionStorage.setItem("hilfo_language", currentLang);
+  localStorage.setItem("hilfo_language", currentLang);
+  
+  console.log("Language switched to:", currentLang);
   
   /* Only refresh if not on page 1 (page 1 handles its own switching) */
   if (!window.location.pathname.includes("page1")) {
@@ -2717,11 +2747,30 @@ inrep::launch_study(
     # Add server-side language tracking and download handlers
     server_extensions = list(
         language_tracker = function(input, output, session) {
-            # Track language preference changes
+            # Track language preference changes from multiple sources
             shiny::observeEvent(input$hilfo_language_preference, {
                 if (!is.null(input$hilfo_language_preference)) {
                     hilfo_language_preference <<- input$hilfo_language_preference
+                    current_language <<- input$hilfo_language_preference
                     cat("Language preference stored:", input$hilfo_language_preference, "\n")
+                }
+            })
+            
+            # Also track study_language input
+            shiny::observeEvent(input$study_language, {
+                if (!is.null(input$study_language)) {
+                    hilfo_language_preference <<- input$study_language
+                    current_language <<- input$study_language
+                    cat("Study language stored:", input$study_language, "\n")
+                }
+            })
+            
+            # Also track general language input
+            shiny::observeEvent(input$language, {
+                if (!is.null(input$language)) {
+                    hilfo_language_preference <<- input$language
+                    current_language <<- input$language
+                    cat("Language stored:", input$language, "\n")
                 }
             })
             
