@@ -812,26 +812,26 @@ custom_page_flow <- list(
         title_en = "Personal Code",
         content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
       <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
-        <span data-lang-de="" data-lang-en="Personal Code">Personal Code</span>
+        <span data-lang-de="Persönlicher Code" data-lang-en="Personal Code">Persönlicher Code</span>
       </h2>
       <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
         <span data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">
-        Please create a personal code:</span>
+        Bitte erstellen Sie einen persönlichen Code:</span>
       </p>
       <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
         <p style="margin: 0; font-weight: 500;">
           <span data-lang-de="Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags" data-lang-en="First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday">
-          First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday</span>
+          Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</span>
         </p>
       </div>
       <div style="text-align: center; margin: 30px 0;">
-        <input type="text" id="personal_code" placeholder="e.g. MAHA15" style="
+        <input type="text" id="personal_code" placeholder="z.B. MAHA15" style="
           padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
           text-align: center; width: 200px; text-transform: uppercase;" required>
       </div>
       <div style="text-align: center; color: #666; font-size: 14px;">
         <span data-lang-de="Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15" data-lang-en="Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15">
-        Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</span>
+        Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</span>
       </div>
     </div>
     <script>
@@ -2724,9 +2724,128 @@ inrep::launch_study(
                             
                             # Generate PDF using proper PDF generation
                             temp_pdf <- tempfile(fileext = ".pdf")
+                            cat("DEBUG: PDF generation starting, temp file:", temp_pdf, "\n")
                             
-                            # Create a comprehensive PDF report
-                            if (requireNamespace("rmarkdown", quietly = TRUE)) {
+                            # Create a comprehensive PDF report using base R graphics
+                            tryCatch({
+                                # Generate PDF using base R graphics
+                                pdf(temp_pdf, width = 8.5, height = 11, paper = "letter")
+                                par(mar = c(2, 2, 2, 2), family = "serif")
+                                
+                                # Title
+                                plot(0, 0, type = "n", xlim = c(0, 1), ylim = c(0, 1), 
+                                     axes = FALSE, xlab = "", ylab = "")
+                                
+                                # Main title
+                                text(0.5, 0.95, "HilFo Study Results", 
+                                     cex = 2, font = 2, col = "#e8041c")
+                                
+                                # Subtitle
+                                text(0.5, 0.9, "Hildesheimer Forschungsmethoden", 
+                                     cex = 1.2, col = "#666")
+                                
+                                # Date
+                                text(0.5, 0.85, format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+                                     cex = 1, col = "#999")
+                                
+                                # Personality Profile Section
+                                text(0.1, 0.75, "PERSONALITY PROFILE (Big Five)", 
+                                     cex = 1.4, font = 2, col = "#333")
+                                
+                                # Personality scores
+                                personality_scores <- c(
+                                    paste("Extraversion:", round(data$BFI_Extraversion[1], 2)),
+                                    paste("Agreeableness:", round(data$BFI_Vertraeglichkeit[1], 2)),
+                                    paste("Conscientiousness:", round(data$BFI_Gewissenhaftigkeit[1], 2)),
+                                    paste("Neuroticism:", round(data$BFI_Neurotizismus[1], 2)),
+                                    paste("Openness:", round(data$BFI_Offenheit[1], 2))
+                                )
+                                
+                                for (i in 1:length(personality_scores)) {
+                                    text(0.1, 0.7 - (i-1)*0.05, personality_scores[i], 
+                                         cex = 1.1, col = "#333")
+                                }
+                                
+                                # Programming Anxiety Section
+                                text(0.1, 0.4, "PROGRAMMING ANXIETY ASSESSMENT", 
+                                     cex = 1.4, font = 2, col = "#333")
+                                
+                                pa_scores <- c(
+                                    paste("Classical Score:", round(data$ProgrammingAnxiety[1], 2), "(range 1-5)"),
+                                    paste("IRT Theta:", round(data$theta_estimate[1], 3)),
+                                    paste("Standard Error:", round(data$theta_se[1], 3))
+                                )
+                                
+                                for (i in 1:length(pa_scores)) {
+                                    text(0.1, 0.35 - (i-1)*0.05, pa_scores[i], 
+                                         cex = 1.1, col = "#333")
+                                }
+                                
+                                # Additional Assessments
+                                text(0.1, 0.2, "ADDITIONAL ASSESSMENTS", 
+                                     cex = 1.4, font = 2, col = "#333")
+                                
+                                additional_scores <- c(
+                                    paste("Stress Level:", round(data$PSQ_Stress[1], 2)),
+                                    paste("Study Skills:", round(data$MWS_Studierfaehigkeiten[1], 2)),
+                                    paste("Statistics:", round(data$Statistik[1], 2))
+                                )
+                                
+                                for (i in 1:length(additional_scores)) {
+                                    text(0.1, 0.15 - (i-1)*0.05, additional_scores[i], 
+                                         cex = 1.1, col = "#333")
+                                }
+                                
+                                # Footer
+                                text(0.5, 0.05, "Generated by HilFo Study System", 
+                                     cex = 0.8, col = "#999")
+                                
+                                dev.off()
+                                cat("DEBUG: PDF file created successfully\n")
+                                
+                            }, error = function(e) {
+                                cat("DEBUG: PDF generation failed:", e$message, "\n")
+                                # Close any open graphics device
+                                if (dev.cur() != 1) dev.off()
+                            })
+                            
+                            # Check if PDF was created and send to client
+                            if (file.exists(temp_pdf) && file.info(temp_pdf)$size > 0) {
+                                cat("DEBUG: PDF file exists and has content, sending to client\n")
+                                pdf_data <- readBin(temp_pdf, "raw", file.info(temp_pdf)$size)
+                                pdf_base64 <- base64enc::base64encode(pdf_data)
+                                
+                                # Send PDF to client
+                                shiny::runjs(sprintf("
+                                    var pdfData = '%s';
+                                    var byteCharacters = atob(pdfData);
+                                    var byteNumbers = new Array(byteCharacters.length);
+                                    for (var i = 0; i < byteCharacters.length; i++) {
+                                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                    }
+                                    var byteArray = new Uint8Array(byteNumbers);
+                                    var blob = new Blob([byteArray], {type: 'application/pdf'});
+                                    var url = window.URL.createObjectURL(blob);
+                                    var link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = 'HilFo_Results_' + new Date().toISOString().slice(0,19).replace(/:/g, '-') + '.pdf';
+                                    link.style.visibility = 'hidden';
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                    window.URL.revokeObjectURL(url);
+                                ", pdf_base64))
+                                
+                                cat("PDF download completed successfully\n")
+                                unlink(temp_pdf)
+                            } else {
+                                cat("DEBUG: PDF file not created or empty, falling back to text\n")
+                                generate_text_fallback(data)
+                            }
+                            
+                            # Remove the old rmarkdown approach
+                            if (FALSE) {
+                                cat("DEBUG: Using rmarkdown for PDF generation\n")
                                 # Use R Markdown to generate PDF
                                 rmd_content <- paste0("
 ---
