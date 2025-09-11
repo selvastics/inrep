@@ -423,7 +423,11 @@ get_session_data <- function() {
     tryCatch({
       rv <- get("rv", envir = .GlobalEnv)
       if (is.reactivevalues(rv)) {
-        session_data$reactive_values <- reactiveValuesToList(rv)
+        rv_list <- reactiveValuesToList(rv)
+        # Only add if we have actual data
+        if (length(rv_list) > 0) {
+          session_data$reactive_values <- rv_list
+        }
       }
     }, error = function(e) {
       # Log data collection errors to file only for background operations
@@ -440,7 +444,10 @@ get_session_data <- function() {
     if (exists(obj_name, envir = .GlobalEnv)) {
       tryCatch({
         obj <- get(obj_name, envir = .GlobalEnv)
-        session_data[[obj_name]] <- obj
+        # Only add if object has content
+        if (!is.null(obj) && length(obj) > 0) {
+          session_data[[obj_name]] <- obj
+        }
       }, error = function(e) {
         # Log data collection errors to file only for background operations
         if (.session_state$enable_logging) {

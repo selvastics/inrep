@@ -1975,7 +1975,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         '<div class="download-section" style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">',
         '<h4 style="color: #333; margin-bottom: 15px;">',
         if (is_english) "Export Results" else "Ergebnisse exportieren",
-        '</span></h4>',
+        '</h4>',
         '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">',
         
         # PDF Download Button
