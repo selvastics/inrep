@@ -1319,7 +1319,8 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                                ggplot2::aes(x = x * 1.1, y = y * 1.1, label = sprintf("%.1f", score)),
                                size = 4, color = "#e8041c") +
             ggplot2::coord_equal() +
-            ggplot2::xlim(-6, 6) + ggplot2::ylim(-6, 6) +
+            ggplot2::xlim(-6, 6) +
+            ggplot2::ylim(-6, 6) +
             ggplot2::theme_void() +
             ggplot2::theme(
                 plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5,

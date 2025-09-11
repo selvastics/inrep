@@ -205,10 +205,10 @@ generate_session_id <- function() {
 #' @param message Event description
 #' @param details Additional event details as list
 log_session_event <- function(event_type, message, details = NULL) {
-  if (!.session_state$enable_logging) return()
+  if (is.null(.session_state$enable_logging) || !.session_state$enable_logging) return()
   
   timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
-  session_id <- .session_state$session_id
+  session_id <- if (!is.null(.session_state$session_id)) .session_state$session_id else "unknown"
   
   log_entry <- list(
     timestamp = timestamp,
@@ -253,9 +253,15 @@ log_session_event <- function(event_type, message, details = NULL) {
 #' Update Last Activity Time
 #' 
 update_activity <- function() {
-  .session_state$last_activity <- Sys.time()
+  # Safety check - ensure session state is initialized
+  if (is.null(.session_state$last_activity)) {
+    .session_state$last_activity <- Sys.time()
+  } else {
+    .session_state$last_activity <- Sys.time()
+  }
+  
   # Only log activity to file, not console (reduces spam)
-  if (.session_state$enable_logging) {
+  if (!is.null(.session_state$enable_logging) && .session_state$enable_logging) {
     log_session_event("ACTIVITY", "User activity detected")
   }
 }
@@ -381,9 +387,11 @@ preserve_session_data <- function(force = FALSE) {
     # Get current session data from global environment
     session_data <- get_session_data()
     
-    if (length(session_data) > 0) {
+    # More robust length check
+    if (!is.null(session_data) && length(session_data) > 0) {
       # Save to temporary file
-      temp_file <- file.path(tempdir(), paste0("inrep_data_", .session_state$session_id, ".rds"))
+      session_id_safe <- if (!is.null(.session_state$session_id)) .session_state$session_id else "unknown"
+      temp_file <- file.path(tempdir(), paste0("inrep_data_", session_id_safe, ".rds"))
       saveRDS(session_data, temp_file)
       
       # Log data preservation to file only (minimal console output)
@@ -422,12 +430,20 @@ get_session_data <- function() {
   if (exists("rv", envir = .GlobalEnv)) {
     tryCatch({
       rv <- get("rv", envir = .GlobalEnv)
-      if (is.reactivevalues(rv)) {
-        rv_list <- reactiveValuesToList(rv)
-        # Only add if we have actual data
-        if (length(rv_list) > 0) {
-          session_data$reactive_values <- rv_list
-        }
+      if (!is.null(rv) && is.reactivevalues(rv)) {
+        tryCatch({
+          rv_list <- reactiveValuesToList(rv)
+          # Only add if we have actual data
+          if (!is.null(rv_list) && length(rv_list) > 0) {
+            session_data$reactive_values <- rv_list
+          }
+        }, error = function(e2) {
+          # If reactiveValuesToList fails, skip this data collection
+          if (.session_state$enable_logging) {
+            log_session_event("DATA_COLLECTION_ERROR", "Failed to convert reactive values to list", 
+                             list(error = e2$message))
+          }
+        })
       }
     }, error = function(e) {
       # Log data collection errors to file only for background operations
