@@ -825,7 +825,7 @@ custom_page_flow <- list(
         </p>
       </div>
       <div style="text-align: center; margin: 30px 0;">
-        <input type="text" id="personal_code" placeholder="z.B. MAHA15" style="
+        <input type="text" id="personal_code" placeholder="e.g. MAHA15" style="
           padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
           text-align: center; width: 200px; text-transform: uppercase;" required>
       </div>
@@ -847,6 +847,40 @@ custom_page_flow <- list(
           }
         });
       }
+      
+      // Apply language switching to this page
+      setTimeout(function() {
+        var currentLang = sessionStorage.getItem("hilfo_language") || "de";
+        console.log("Personal code page - applying language:", currentLang);
+        
+        var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+        console.log("Personal code page - found", langElements.length, "language elements");
+        
+        langElements.forEach(function(element) {
+          if (currentLang === "en") {
+            var enText = element.getAttribute("data-lang-en");
+            if (enText) {
+              element.textContent = enText;
+              console.log("Personal code page - set to English:", enText);
+            }
+          } else {
+            var deText = element.getAttribute("data-lang-de");
+            if (deText) {
+              element.textContent = deText;
+              console.log("Personal code page - set to German:", deText);
+            }
+          }
+        });
+        
+        // Update placeholder text
+        if (input) {
+          if (currentLang === "en") {
+            input.placeholder = "e.g. MAHA15";
+          } else {
+            input.placeholder = "z.B. MAHA15";
+          }
+        }
+      }, 100);
     });
     </script>'
     ),
@@ -1438,29 +1472,34 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         )
     })
     
+    # Create base plot
     bar_plot <- ggplot2::ggplot(all_data, ggplot2::aes(x = dimension, y = score, fill = category)) +
         ggplot2::geom_bar(stat = "identity", width = 0.7) +
         # Add value labels with better formatting
         ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", score)), 
-                           vjust = -0.5, size = 6, fontface = "bold", color = "#333") +
-        # Custom color scheme - handle both German and English
-        if (is_english) {
-            ggplot2::scale_fill_manual(values = c(
-                "Programming Anxiety" = "#9b59b6",
-                "Personality" = "#e8041c",
-                "Stress" = "#ff6b6b",
-                "Study Skills" = "#4ecdc4",
-                "Statistics" = "#45b7d1"
-            ))
-        } else {
-            ggplot2::scale_fill_manual(values = c(
-                "Programmierangst" = "#9b59b6",
-                "Persönlichkeit" = "#e8041c",
-                "Stress" = "#ff6b6b",
-                "Studierfähigkeiten" = "#4ecdc4",
-                "Statistik" = "#45b7d1"
-            ))
-        } +
+                           vjust = -0.5, size = 6, fontface = "bold", color = "#333")
+    
+    # Add color scheme based on language
+    if (is_english) {
+        bar_plot <- bar_plot + ggplot2::scale_fill_manual(values = c(
+            "Programming Anxiety" = "#9b59b6",
+            "Personality" = "#e8041c",
+            "Stress" = "#ff6b6b",
+            "Study Skills" = "#4ecdc4",
+            "Statistics" = "#45b7d1"
+        ))
+    } else {
+        bar_plot <- bar_plot + ggplot2::scale_fill_manual(values = c(
+            "Programmierangst" = "#9b59b6",
+            "Persönlichkeit" = "#e8041c",
+            "Stress" = "#ff6b6b",
+            "Studierfähigkeiten" = "#4ecdc4",
+            "Statistik" = "#45b7d1"
+        ))
+    }
+    
+    # Add remaining elements
+    bar_plot <- bar_plot +
         # Y-axis customization
         ggplot2::scale_y_continuous(limits = c(0, 5.5), breaks = 0:5) +
         # Theme with larger text
