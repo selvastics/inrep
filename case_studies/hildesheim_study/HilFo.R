@@ -849,7 +849,7 @@ custom_page_flow <- list(
       }
       
       // Apply language switching to this page
-      setTimeout(function() {
+      function applyLanguageToPersonalCodePage() {
         var currentLang = sessionStorage.getItem("hilfo_language") || "de";
         console.log("Personal code page - applying language:", currentLang);
         
@@ -880,7 +880,19 @@ custom_page_flow <- list(
             input.placeholder = "z.B. MAHA15";
           }
         }
-      }, 100);
+      }
+      
+      // Apply immediately and also on a delay
+      applyLanguageToPersonalCodePage();
+      setTimeout(applyLanguageToPersonalCodePage, 100);
+      setTimeout(applyLanguageToPersonalCodePage, 500);
+      
+      // Also listen for language changes
+      window.addEventListener("storage", function(e) {
+        if (e.key === "hilfo_language") {
+          applyLanguageToPersonalCodePage();
+        }
+      });
     });
     </script>'
     ),
@@ -913,19 +925,32 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     # Get current language from session if available
     current_lang <- "de"  # Default to German
     
-    # Try multiple ways to get the language
+    # Try multiple ways to get the language - prioritize input over userData
     if (!is.null(session)) {
-        # Check various possible locations for language
-        if (!is.null(session$userData$language)) {
-            current_lang <- session$userData$language
-        } else if (!is.null(session$userData$study_language)) {
-            current_lang <- session$userData$study_language
-        } else if (!is.null(session$userData$current_language)) {
-            current_lang <- session$userData$current_language
+        # First check session input (most recent)
+        if (!is.null(session$input$hilfo_language_preference)) {
+            current_lang <- session$input$hilfo_language_preference
+            cat("DEBUG: Found language in session$input$hilfo_language_preference:", current_lang, "\n")
         } else if (!is.null(session$input$study_language)) {
             current_lang <- session$input$study_language
+            cat("DEBUG: Found language in session$input$study_language:", current_lang, "\n")
         } else if (!is.null(session$input$language)) {
             current_lang <- session$input$language
+            cat("DEBUG: Found language in session$input$language:", current_lang, "\n")
+        } else if (!is.null(session$input$current_language)) {
+            current_lang <- session$input$current_language
+            cat("DEBUG: Found language in session$input$current_language:", current_lang, "\n")
+        }
+        # Then check userData (older)
+        else if (!is.null(session$userData$language)) {
+            current_lang <- session$userData$language
+            cat("DEBUG: Found language in session$userData$language:", current_lang, "\n")
+        } else if (!is.null(session$userData$study_language)) {
+            current_lang <- session$userData$study_language
+            cat("DEBUG: Found language in session$userData$study_language:", current_lang, "\n")
+        } else if (!is.null(session$userData$current_language)) {
+            current_lang <- session$userData$current_language
+            cat("DEBUG: Found language in session$userData$current_language:", current_lang, "\n")
         }
     }
     
@@ -951,6 +976,15 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         cat("DEBUG: Session userData keys:", names(session$userData), "\n")
         if (!is.null(session$input)) {
             cat("DEBUG: Session input keys:", names(session$input), "\n")
+            if (!is.null(session$input$study_language)) {
+                cat("DEBUG: session$input$study_language =", session$input$study_language, "\n")
+            }
+            if (!is.null(session$input$language)) {
+                cat("DEBUG: session$input$language =", session$input$language, "\n")
+            }
+            if (!is.null(session$input$hilfo_language_preference)) {
+                cat("DEBUG: session$input$hilfo_language_preference =", session$input$hilfo_language_preference, "\n")
+            }
         }
     }
     
