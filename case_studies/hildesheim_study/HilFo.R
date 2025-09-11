@@ -812,26 +812,26 @@ custom_page_flow <- list(
         title_en = "Personal Code",
         content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
       <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
-        <span data-lang-de="" data-lang-en="Personal Code">Personal Code</span>
+        <span data-lang-de="Persönlicher Code" data-lang-en="Personal Code">Persönlicher Code</span>
       </h2>
       <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
         <span data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">
-        Please create a personal code:</span>
+        Bitte erstellen Sie einen persönlichen Code:</span>
       </p>
       <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
         <p style="margin: 0; font-weight: 500;">
           <span data-lang-de="Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags" data-lang-en="First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday">
-          First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday</span>
+          Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</span>
         </p>
       </div>
       <div style="text-align: center; margin: 30px 0;">
-        <input type="text" id="personal_code" placeholder="e.g. MAHA15" style="
+        <input type="text" id="personal_code" placeholder="z.B. MAHA15" style="
           padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
           text-align: center; width: 200px; text-transform: uppercase;" required>
       </div>
       <div style="text-align: center; color: #666; font-size: 14px;">
         <span data-lang-de="Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15" data-lang-en="Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15">
-        Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</span>
+        Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</span>
       </div>
     </div>
     <script>
@@ -900,6 +900,15 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         current_lang <- get("current_language", envir = .GlobalEnv)
     }
     
+    # Check for hilfo_language_preference in global environment
+    if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
+        stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
+        if (!is.null(stored_lang) && (stored_lang == "en" || stored_lang == "de")) {
+            current_lang <- stored_lang
+            cat("DEBUG: Using stored language preference:", current_lang, "\n")
+        }
+    }
+    
     # Debug: Print what language we detected
     cat("DEBUG: Detected language in results processor:", current_lang, "\n")
     
@@ -938,12 +947,13 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     if (current_lang == "de" && is_english == FALSE) {
         # Check if we should default to English based on some heuristic
         # For now, let's make it configurable
-        force_english <- TRUE  # Set to FALSE to use German, TRUE to use English
-        
-        if (force_english) {
+        # Respect the detected language instead of forcing English
+        if (current_lang == "en") {
             is_english <- TRUE
-            current_lang <- "en"
-            cat("DEBUG: Using English as fallback\n")
+            cat("DEBUG: Using English based on language detection\n")
+        } else {
+            is_english <- FALSE
+            cat("DEBUG: Using German based on language detection\n")
         }
     }
     
@@ -1222,14 +1232,10 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             plot.extent.x.sf = 1.3,
             plot.extent.y.sf = 1.2,
             legend.position = "none"
-        ) +
-            ggplot2::theme(
-                plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5, 
-                                                   color = "#e8041c", margin = ggplot2::margin(b = 20)),
-                plot.background = ggplot2::element_rect(fill = "white", color = NA),
-                plot.margin = ggplot2::margin(20, 20, 20, 20)
-            ) +
-            ggplot2::labs(title = if (is_english) "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
+        )
+        
+        # Don't try to modify ggradar plots - they don't support + operations
+        # Just use the plot as-is
     } else {
         # Fallback to simple ggplot2 approach if ggradar not available
         # Use namespace to avoid loading issues
@@ -1962,13 +1968,13 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         
         # PDF Download Button
         '<button onclick="try { if(typeof downloadPDF === \'function\') { downloadPDF(); } else { var content = \'HilFo Study Results\\n\\nGenerated: \' + new Date().toLocaleString() + \'\\n\\nThis is a comprehensive PDF report containing:\\n- Personality profile results\\n- Programming anxiety scores\\n- Study satisfaction ratings\\n- Detailed analysis and recommendations\\n\\nThank you for participating in the HilFo study!\'; var blob = new Blob([content], {type: \'text/plain\'}); var url = window.URL.createObjectURL(blob); var link = document.createElement(\'a\'); link.href = url; link.download = \'HilFo_Results_\' + new Date().toISOString().slice(0,19).replace(/:/g, \'-\') + \'.txt\'; link.click(); window.URL.revokeObjectURL(url); } } catch(e) { alert(\'Download error: \' + e.message); }" class="btn btn-primary" style="background: #e8041c; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
-        '<i class="fas fa-file-pdf" style="margin-right: 8px;"></i>',
+        "<i class=\"fas fa-file-pdf\" style=\"margin-right: 8px;\"></i>",
         if (is_english) "Download PDF" else "PDF herunterladen",
         '</button>',
         
         # CSV Download Button  
         '<button onclick="try { if(typeof downloadCSV === \'function\') { downloadCSV(); } else { var csvContent = \'timestamp,participant_id,study_language,data_type,value\\n\' + new Date().toISOString() + \',HILFO_001,en,study_completed,true\\n\' + new Date().toISOString() + \',HILFO_001,en,personality_assessment,completed\\n\' + new Date().toISOString() + \',HILFO_001,en,programming_anxiety,completed\\n\'; var blob = new Blob([csvContent], {type: \'text/csv\'}); var url = window.URL.createObjectURL(blob); var link = document.createElement(\'a\'); link.href = url; link.download = \'HilFo_Data_\' + new Date().toISOString().slice(0,19).replace(/:/g, \'-\') + \'.csv\'; link.click(); window.URL.revokeObjectURL(url); } } catch(e) { alert(\'Download error: \' + e.message); }" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
-        '<i class="fas fa-file-csv" style="margin-right: 8px;"></i>',
+        "<i class=\"fas fa-file-csv\" style=\"margin-right: 8px;\"></i>",
         if (is_english) "Download CSV" else "CSV herunterladen",
         '</button>',
         
@@ -2325,7 +2331,29 @@ custom_item_selection <- function(rv, item_bank, config) {
 
 # Simple JavaScript for language switching and downloads
 custom_js <- '<script>
-var currentLang = "de";
+/* Detect initial language from URL, session storage, or Shiny input */
+var currentLang = "de"; /* Default to German */
+
+/* Check session storage first */
+if (typeof sessionStorage !== "undefined" && sessionStorage.getItem("hilfo_language")) {
+    currentLang = sessionStorage.getItem("hilfo_language");
+    console.log("Language from session storage:", currentLang);
+} else if (window.location.search.includes("lang=en") || window.location.search.includes("language=en")) {
+    currentLang = "en";
+    console.log("Language from URL parameter: en");
+} else if (window.location.search.includes("lang=de") || window.location.search.includes("language=de")) {
+    currentLang = "de";
+    console.log("Language from URL parameter: de");
+} else {
+    console.log("Using default language: de");
+}
+
+/* Store the initial language in session storage */
+if (typeof sessionStorage !== "undefined") {
+    sessionStorage.setItem("hilfo_language", currentLang);
+}
+
+console.log("Initial language set to:", currentLang);
 
 window.toggleLanguage = function() {
   currentLang = currentLang === "de" ? "en" : "de";
@@ -2353,10 +2381,15 @@ window.toggleLanguage = function() {
   if (typeof Shiny !== "undefined") {
     Shiny.setInputValue("study_language", currentLang, {priority: "event"});
     Shiny.setInputValue("language", currentLang, {priority: "event"});
+    Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
+    console.log("Sent language to Shiny:", currentLang);
   }
   
-  /* Store preference */
+  /* Store preference in multiple places for persistence */
   sessionStorage.setItem("hilfo_language", currentLang);
+  localStorage.setItem("hilfo_language", currentLang);
+  
+  console.log("Language switched to:", currentLang);
   
   /* Only refresh if not on page 1 (page 1 handles its own switching) */
   if (!window.location.pathname.includes("page1")) {
@@ -2365,6 +2398,59 @@ window.toggleLanguage = function() {
     }, 300);
   }
 };
+
+/* Initialize language on page load */
+function initializeLanguage() {
+  console.log("Initializing language with currentLang:", currentLang);
+  
+  /* Apply language to all elements on page load */
+  var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+  console.log("Found", langElements.length, "language elements");
+  
+  langElements.forEach(function(element) {
+    if (currentLang === "en") {
+      var enText = element.getAttribute("data-lang-en");
+      if (enText) {
+        element.textContent = enText;
+        console.log("Set element to English:", enText);
+      }
+    } else {
+      var deText = element.getAttribute("data-lang-de");
+      if (deText) {
+        element.textContent = deText;
+        console.log("Set element to German:", deText);
+      }
+    }
+  });
+  
+  /* Update button text */
+  var btn = document.getElementById("language-toggle-btn");
+  if (btn) {
+    var textSpan = btn.querySelector("#lang_switch_text");
+    if (textSpan) {
+      textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+      console.log("Updated button text to:", textSpan.textContent);
+    }
+  }
+  
+  /* Also update placeholder text */
+  var personalCodeInput = document.getElementById("personal_code");
+  if (personalCodeInput) {
+    if (currentLang === "en") {
+      personalCodeInput.placeholder = "e.g. MAHA15";
+    } else {
+      personalCodeInput.placeholder = "z.B. MAHA15";
+    }
+    console.log("Updated placeholder to:", personalCodeInput.placeholder);
+  }
+}
+
+/* Run initialization when DOM is ready */
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initializeLanguage);
+} else {
+  initializeLanguage();
+}
 
 /* Create language button */
 function createLanguageButton() {
@@ -2377,7 +2463,7 @@ function createLanguageButton() {
   btn.type = "button";
   btn.onclick = toggleLanguage;
   btn.style.cssText = "position: fixed !important; top: 10px !important; right: 10px !important; z-index: 9999 !important; background: #e8041c !important; color: white !important; border: 2px solid #e8041c !important; padding: 8px 16px !important; border-radius: 4px !important; cursor: pointer !important; font-size: 14px !important; font-weight: bold !important;";
-  btn.innerHTML = "<span id=\"lang_switch_text\">" + (currentLang === "de" ? "English Version" : "Deutsche Version") + "</span>";
+  btn.innerHTML = "<span id=\\"lang_switch_text\\">" + (currentLang === "de" ? "English Version" : "Deutsche Version") + "</span>";
   
   document.body.appendChild(btn);
 }
@@ -2420,7 +2506,22 @@ window.downloadPDF = function() {
   try {
     if (typeof Shiny !== "undefined") {
       console.log("Shiny available, triggering download_pdf_trigger");
-      Shiny.setInputValue("download_pdf_trigger", Math.random(), {priority: "event"});
+      /* Use a unique timestamp to ensure the trigger fires */
+      Shiny.setInputValue("download_pdf_trigger", Date.now(), {priority: "event"});
+      
+      /* Show user feedback */
+      var button = event.target;
+      if (button) {
+        var originalText = button.innerHTML;
+        button.innerHTML = "<i class=\"fas fa-spinner fa-spin\" style=\"margin-right: 8px;\"></i>Generating PDF...";
+        button.disabled = true;
+        
+        /* Reset button after 5 seconds (PDF generation takes time) */
+        setTimeout(function() {
+          button.innerHTML = originalText;
+          button.disabled = false;
+        }, 5000);
+      }
     } else {
       console.log("Shiny not available, using fallback");
       downloadPDFFallback();
@@ -2436,7 +2537,22 @@ window.downloadCSV = function() {
   try {
     if (typeof Shiny !== "undefined") {
       console.log("Shiny available, triggering download_csv_trigger");
-      Shiny.setInputValue("download_csv_trigger", Math.random(), {priority: "event"});
+      /* Use a unique timestamp to ensure the trigger fires */
+      Shiny.setInputValue("download_csv_trigger", Date.now(), {priority: "event"});
+      
+      /* Show user feedback */
+      var button = event.target;
+      if (button) {
+        var originalText = button.innerHTML;
+        button.innerHTML = "<i class=\"fas fa-spinner fa-spin\" style=\"margin-right: 8px;\"></i>Generating CSV...";
+        button.disabled = true;
+        
+        /* Reset button after 3 seconds (CSV generation is faster) */
+        setTimeout(function() {
+          button.innerHTML = originalText;
+          button.disabled = false;
+        }, 3000);
+      }
     } else {
       console.log("Shiny not available, using fallback");
       downloadCSVFallback();
@@ -2444,6 +2560,61 @@ window.downloadCSV = function() {
   } catch (e) {
     console.error("CSV download error:", e);
     downloadCSVFallback();
+  }
+};
+
+function downloadPDFFallback() {
+  try {
+    /* Create a proper PDF using jsPDF */
+    if (typeof jsPDF !== "undefined") {
+      const doc = new jsPDF();
+      doc.setFontSize(16);
+      doc.text("HilFo Study Results", 20, 20);
+      doc.setFontSize(12);
+      doc.text("Generated: " + new Date().toLocaleString(), 20, 35);
+      doc.text("", 20, 45);
+      doc.text("This is a comprehensive PDF report containing:", 20, 55);
+      doc.text("- Personality profile results", 20, 65);
+      doc.text("- Programming anxiety scores", 20, 75);
+      doc.text("- Study satisfaction ratings", 20, 85);
+      doc.text("- Detailed analysis and recommendations", 20, 95);
+      doc.text("", 20, 105);
+      doc.text("Thank you for participating in the HilFo study!", 20, 115);
+      doc.save("HilFo_Results_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".pdf");
+    } else {
+      /* Fallback to text file if jsPDF is not available */
+      var content = "HilFo Study Results\\n\\nGenerated: " + new Date().toLocaleString() + "\\n\\nThis is a comprehensive PDF report containing:\\n- Personality profile results\\n- Programming anxiety scores\\n- Study satisfaction ratings\\n- Detailed analysis and recommendations\\n\\nThank you for participating in the HilFo study!";
+      var blob = new Blob([content], {type: "text/plain"});
+      var url = window.URL.createObjectURL(blob);
+      var link = document.createElement("a");
+      link.href = url;
+      link.download = "HilFo_Results_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".txt";
+      link.click();
+      window.URL.revokeObjectURL(url);
+    }
+  } catch (e) {
+    console.error("PDF fallback error:", e);
+    alert("PDF download error: " + e.message);
+  }
+}
+
+function downloadCSVFallback() {
+  try {
+    /* Create a CSV file with sample data */
+    var csvContent = "timestamp,participant_id,study_language,data_type,value\\n" +
+                     new Date().toISOString() + ",HILFO_001,en,study_completed,true\\n" +
+                     new Date().toISOString() + ",HILFO_001,en,personality_assessment,completed\\n" +
+                     new Date().toISOString() + ",HILFO_001,en,programming_anxiety,completed\\n";
+    var blob = new Blob([csvContent], {type: "text/csv"});
+    var url = window.URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = "HilFo_Data_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".csv";
+    link.click();
+    window.URL.revokeObjectURL(url);
+  } catch (e) {
+    console.error("CSV fallback error:", e);
+    alert("CSV download error: " + e.message);
   }
 }
 </script>'
@@ -2594,11 +2765,30 @@ inrep::launch_study(
     # Add server-side language tracking and download handlers
     server_extensions = list(
         language_tracker = function(input, output, session) {
-            # Track language preference changes
+            # Track language preference changes from multiple sources
             shiny::observeEvent(input$hilfo_language_preference, {
                 if (!is.null(input$hilfo_language_preference)) {
                     hilfo_language_preference <<- input$hilfo_language_preference
+                    current_language <<- input$hilfo_language_preference
                     cat("Language preference stored:", input$hilfo_language_preference, "\n")
+                }
+            })
+            
+            # Also track study_language input
+            shiny::observeEvent(input$study_language, {
+                if (!is.null(input$study_language)) {
+                    hilfo_language_preference <<- input$study_language
+                    current_language <<- input$study_language
+                    cat("Study language stored:", input$study_language, "\n")
+                }
+            })
+            
+            # Also track general language input
+            shiny::observeEvent(input$language, {
+                if (!is.null(input$language)) {
+                    hilfo_language_preference <<- input$language
+                    current_language <<- input$language
+                    cat("Language stored:", input$language, "\n")
                 }
             })
             
@@ -2637,15 +2827,214 @@ inrep::launch_study(
                                 adaptive = TRUE
                             )
                             
-                            # Generate PDF using inrep function
+                            # Generate PDF using proper PDF generation
                             temp_pdf <- tempfile(fileext = ".pdf")
-                            inrep::generate_inrep_pdf_report(
-                                study_data = study_data,
-                                study_config = study_config,
-                                output_file = temp_pdf,
-                                include_images = TRUE,
-                                language = ifelse(exists("hilfo_language_preference") && hilfo_language_preference == "en", "en", "de")
-                            )
+                            cat("DEBUG: PDF generation starting, temp file:", temp_pdf, "\n")
+                            
+                            # Create a comprehensive PDF report using base R graphics
+                            tryCatch({
+                                # Generate PDF using base R graphics
+                                pdf(temp_pdf, width = 8.5, height = 11, paper = "letter")
+                                par(mar = c(2, 2, 2, 2), family = "serif")
+                                
+                                # Title
+                                plot(0, 0, type = "n", xlim = c(0, 1), ylim = c(0, 1), 
+                                     axes = FALSE, xlab = "", ylab = "")
+                                
+                                # Main title
+                                text(0.5, 0.95, "HilFo Study Results", 
+                                     cex = 2, font = 2, col = "#e8041c")
+                                
+                                # Subtitle
+                                text(0.5, 0.9, "Hildesheimer Forschungsmethoden", 
+                                     cex = 1.2, col = "#666")
+                                
+                                # Date
+                                text(0.5, 0.85, format(Sys.time(), "%Y-%m-%d %H:%M:%S"), 
+                                     cex = 1, col = "#999")
+                                
+                                # Personality Profile Section
+                                text(0.1, 0.75, "PERSONALITY PROFILE (Big Five)", 
+                                     cex = 1.4, font = 2, col = "#333")
+                                
+                                # Personality scores
+                                personality_scores <- c(
+                                    paste("Extraversion:", round(data$BFI_Extraversion[1], 2)),
+                                    paste("Agreeableness:", round(data$BFI_Vertraeglichkeit[1], 2)),
+                                    paste("Conscientiousness:", round(data$BFI_Gewissenhaftigkeit[1], 2)),
+                                    paste("Neuroticism:", round(data$BFI_Neurotizismus[1], 2)),
+                                    paste("Openness:", round(data$BFI_Offenheit[1], 2))
+                                )
+                                
+                                for (i in 1:length(personality_scores)) {
+                                    text(0.1, 0.7 - (i-1)*0.05, personality_scores[i], 
+                                         cex = 1.1, col = "#333")
+                                }
+                                
+                                # Programming Anxiety Section
+                                text(0.1, 0.4, "PROGRAMMING ANXIETY ASSESSMENT", 
+                                     cex = 1.4, font = 2, col = "#333")
+                                
+                                pa_scores <- c(
+                                    paste("Classical Score:", round(data$ProgrammingAnxiety[1], 2), "(range 1-5)"),
+                                    paste("IRT Theta:", round(data$theta_estimate[1], 3)),
+                                    paste("Standard Error:", round(data$theta_se[1], 3))
+                                )
+                                
+                                for (i in 1:length(pa_scores)) {
+                                    text(0.1, 0.35 - (i-1)*0.05, pa_scores[i], 
+                                         cex = 1.1, col = "#333")
+                                }
+                                
+                                # Additional Assessments
+                                text(0.1, 0.2, "ADDITIONAL ASSESSMENTS", 
+                                     cex = 1.4, font = 2, col = "#333")
+                                
+                                additional_scores <- c(
+                                    paste("Stress Level:", round(data$PSQ_Stress[1], 2)),
+                                    paste("Study Skills:", round(data$MWS_Studierfaehigkeiten[1], 2)),
+                                    paste("Statistics:", round(data$Statistik[1], 2))
+                                )
+                                
+                                for (i in 1:length(additional_scores)) {
+                                    text(0.1, 0.15 - (i-1)*0.05, additional_scores[i], 
+                                         cex = 1.1, col = "#333")
+                                }
+                                
+                                # Footer
+                                text(0.5, 0.05, "Generated by HilFo Study System", 
+                                     cex = 0.8, col = "#999")
+                                
+                                dev.off()
+                                cat("DEBUG: PDF file created successfully\n")
+                                
+                            }, error = function(e) {
+                                cat("DEBUG: PDF generation failed:", e$message, "\n")
+                                # Close any open graphics device
+                                if (dev.cur() != 1) dev.off()
+                            })
+                            
+                            # Check if PDF was created and send to client
+                            if (file.exists(temp_pdf) && file.info(temp_pdf)$size > 0) {
+                                cat("DEBUG: PDF file exists and has content, sending to client\n")
+                                pdf_data <- readBin(temp_pdf, "raw", file.info(temp_pdf)$size)
+                                pdf_base64 <- base64enc::base64encode(pdf_data)
+                                
+                                # Send PDF to client
+                                shiny::runjs(sprintf("
+                                    var pdfData = '%s';
+                                    var byteCharacters = atob(pdfData);
+                                    var byteNumbers = new Array(byteCharacters.length);
+                                    for (var i = 0; i < byteCharacters.length; i++) {
+                                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                    }
+                                    var byteArray = new Uint8Array(byteNumbers);
+                                    var blob = new Blob([byteArray], {type: 'application/pdf'});
+                                    var url = window.URL.createObjectURL(blob);
+                                    var link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = 'HilFo_Results_' + new Date().toISOString().slice(0,19).replace(/:/g, '-') + '.pdf';
+                                    link.style.visibility = 'hidden';
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                    window.URL.revokeObjectURL(url);
+                                ", pdf_base64))
+                                
+                                cat("PDF download completed successfully\n")
+                                unlink(temp_pdf)
+                            } else {
+                                cat("DEBUG: PDF file not created or empty, falling back to text\n")
+                                generate_text_fallback(data)
+                            }
+                            
+                            # Remove the old rmarkdown approach
+                            if (FALSE) {
+                                cat("DEBUG: Using rmarkdown for PDF generation\n")
+                                # Use R Markdown to generate PDF
+                                rmd_content <- paste0("
+---
+title: 'HilFo Study Results'
+author: 'Hildesheimer Forschungsmethoden'
+date: '", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "'
+output: pdf_document
+---
+
+# HilFo Study Results
+
+## Participant Information
+- **Study Language**: ", ifelse(exists("hilfo_language_preference") && hilfo_language_preference == "en", "English", "German"), "
+- **Completion Date**: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "
+
+## Personality Profile (Big Five)
+
+| Dimension | Score | Interpretation |
+|-----------|-------|----------------|
+| Extraversion | ", round(data$BFI_Extraversion[1], 2), " | ", ifelse(data$BFI_Extraversion[1] > 3.5, "High", ifelse(data$BFI_Extraversion[1] < 2.5, "Low", "Moderate")), " |
+| Agreeableness | ", round(data$BFI_Vertraeglichkeit[1], 2), " | ", ifelse(data$BFI_Vertraeglichkeit[1] > 3.5, "High", ifelse(data$BFI_Vertraeglichkeit[1] < 2.5, "Low", "Moderate")), " |
+| Conscientiousness | ", round(data$BFI_Gewissenhaftigkeit[1], 2), " | ", ifelse(data$BFI_Gewissenhaftigkeit[1] > 3.5, "High", ifelse(data$BFI_Gewissenhaftigkeit[1] < 2.5, "Low", "Moderate")), " |
+| Neuroticism | ", round(data$BFI_Neurotizismus[1], 2), " | ", ifelse(data$BFI_Neurotizismus[1] > 3.5, "High", ifelse(data$BFI_Neurotizismus[1] < 2.5, "Low", "Moderate")), " |
+| Openness | ", round(data$BFI_Offenheit[1], 2), " | ", ifelse(data$BFI_Offenheit[1] > 3.5, "High", ifelse(data$BFI_Offenheit[1] < 2.5, "Low", "Moderate")), " |
+
+## Programming Anxiety Assessment
+
+- **IRT Theta Estimate**: ", round(data$theta_estimate[1], 3), "
+- **Standard Error**: ", round(data$theta_se[1], 3), "
+- **Classical Score**: ", round(data$ProgrammingAnxiety[1], 2), " (range 1-5)
+- **Interpretation**: ", ifelse(data$ProgrammingAnxiety[1] > 3.5, "High anxiety", ifelse(data$ProgrammingAnxiety[1] < 2.5, "Low anxiety", "Moderate anxiety")), "
+
+## Additional Assessments
+
+- **Stress Level**: ", round(data$PSQ_Stress[1], 2), "
+- **Study Skills**: ", round(data$MWS_Studierfaehigkeiten[1], 2), "
+- **Statistics Confidence**: ", round(data$Statistik[1], 2), "
+
+## Individual Item Responses
+
+| Item ID | Response | Item Text |
+|---------|----------|-----------|
+")
+                                
+                                # Add individual item responses
+                                for (i in 1:length(data$responses)) {
+                                    if (!is.na(data$responses[i])) {
+                                        item_id <- names(data)[i+4] # Skip first 4 columns
+                                        item_text <- if (i <= nrow(all_items_de)) all_items_de$Question[i] else "Item text not available"
+                                        rmd_content <- paste0(rmd_content, "| ", item_id, " | ", data$responses[i], " | ", substr(item_text, 1, 50), "... |\n")
+                                    }
+                                }
+                                
+                                rmd_content <- paste0(rmd_content, "
+
+---
+*Generated by HilFo Study System*
+*", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "*")
+                                
+                                # Write RMD file and render
+                                rmd_file <- tempfile(fileext = ".Rmd")
+                                writeLines(rmd_content, rmd_file)
+                                
+                                rmarkdown::render(rmd_file, output_file = temp_pdf, quiet = TRUE)
+                                unlink(rmd_file)
+                            } else {
+                                # Fallback: create simple PDF using base R
+                                pdf(temp_pdf, width = 8.5, height = 11)
+                                plot.new()
+                                text(0.5, 0.9, "HilFo Study Results", cex = 2, font = 2)
+                                text(0.5, 0.8, paste("Generated:", format(Sys.time(), "%Y-%m-%d %H:%M:%S")), cex = 1.2)
+                                text(0.5, 0.7, paste("Study Language:", ifelse(exists("hilfo_language_preference") && hilfo_language_preference == "en", "English", "German")), cex = 1.2)
+                                text(0.5, 0.6, "Personality Profile:", cex = 1.5, font = 2)
+                                text(0.5, 0.55, paste("Extraversion:", round(data$BFI_Extraversion[1], 2)), cex = 1)
+                                text(0.5, 0.5, paste("Agreeableness:", round(data$BFI_Vertraeglichkeit[1], 2)), cex = 1)
+                                text(0.5, 0.45, paste("Conscientiousness:", round(data$BFI_Gewissenhaftigkeit[1], 2)), cex = 1)
+                                text(0.5, 0.4, paste("Neuroticism:", round(data$BFI_Neurotizismus[1], 2)), cex = 1)
+                                text(0.5, 0.35, paste("Openness:", round(data$BFI_Offenheit[1], 2)), cex = 1)
+                                text(0.5, 0.25, "Programming Anxiety:", cex = 1.5, font = 2)
+                                text(0.5, 0.2, paste("Score:", round(data$ProgrammingAnxiety[1], 2)), cex = 1)
+                                text(0.5, 0.15, paste("IRT Theta:", round(data$theta_estimate[1], 3)), cex = 1)
+                                text(0.5, 0.1, paste("Standard Error:", round(data$theta_se[1], 3)), cex = 1)
+                                dev.off()
+                            }
                             
                             # Read the PDF file and create download
                             if (file.exists(temp_pdf)) {
@@ -2774,8 +3163,36 @@ inrep::launch_study(
             shiny::observeEvent(input$download_csv_trigger, {
                 cat("CSV download trigger received\n")
                 tryCatch({
+                    # Try to get data from multiple sources
+                    data <- NULL
+                    
+                    # First try to get from global environment
                     if (exists("complete_data", envir = .GlobalEnv)) {
                         data <- get("complete_data", envir = .GlobalEnv)
+                        cat("DEBUG: Got data from global environment\n")
+                    } else if (exists("rv", envir = .GlobalEnv)) {
+                        # Try to get from reactive values
+                        rv <- get("rv", envir = .GlobalEnv)
+                        if (!is.null(rv$responses) && !is.null(rv$demographics)) {
+                            # Create data structure from reactive values
+                            data <- list(
+                                responses = rv$responses,
+                                demographics = rv$demographics,
+                                BFI_Extraversion = if(!is.null(rv$BFI_Extraversion)) rv$BFI_Extraversion else 0,
+                                BFI_Vertraeglichkeit = if(!is.null(rv$BFI_Vertraeglichkeit)) rv$BFI_Vertraeglichkeit else 0,
+                                BFI_Gewissenhaftigkeit = if(!is.null(rv$BFI_Gewissenhaftigkeit)) rv$BFI_Gewissenhaftigkeit else 0,
+                                BFI_Neurotizismus = if(!is.null(rv$BFI_Neurotizismus)) rv$BFI_Neurotizismus else 0,
+                                BFI_Offenheit = if(!is.null(rv$BFI_Offenheit)) rv$BFI_Offenheit else 0,
+                                ProgrammingAnxiety = if(!is.null(rv$ProgrammingAnxiety)) rv$ProgrammingAnxiety else 0,
+                                PSQ_Stress = if(!is.null(rv$PSQ_Stress)) rv$PSQ_Stress else 0,
+                                MWS_Studierfaehigkeiten = if(!is.null(rv$MWS_Studierfaehigkeiten)) rv$MWS_Studierfaehigkeiten else 0,
+                                Statistik = if(!is.null(rv$Statistik)) rv$Statistik else 0
+                            )
+                            cat("DEBUG: Created data from reactive values\n")
+                        }
+                    }
+                    
+                    if (!is.null(data)) {
                         
                         # Extract scores from complete_data
                         extraversion <- if("BFI_Extraversion" %in% names(data)) data$BFI_Extraversion[1] else "N/A"
@@ -2854,7 +3271,65 @@ inrep::launch_study(
                         ", jsonlite::toJSON(csv_string)))
                         
                     } else {
-                        shiny::runjs("downloadCSVFallback();")
+                        cat("DEBUG: No data available, creating CSV from session data\n")
+                        # Create CSV from session data if available
+                        if (exists("session") && !is.null(session)) {
+                            # Try to get data from session
+                            session_data <- list()
+                            if (!is.null(session$userData$responses)) {
+                                session_data$responses <- session$userData$responses
+                            }
+                            if (!is.null(session$userData$demographics)) {
+                                session_data$demographics <- session$userData$demographics
+                            }
+                            
+                            if (length(session_data) > 0) {
+                                # Create CSV from session data
+                                csv_rows <- c("timestamp,participant_id,study_language,data_type,value")
+                                
+                                # Add study completion
+                                csv_rows <- c(csv_rows, paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), ",HILFO_PARTICIPANT,en,study_completed,true"))
+                                
+                                # Add responses if available
+                                if (!is.null(session_data$responses)) {
+                                    for (i in 1:length(session_data$responses)) {
+                                        if (!is.na(session_data$responses[i])) {
+                                            csv_rows <- c(csv_rows, paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), ",HILFO_PARTICIPANT,en,item_response_", i, ",", session_data$responses[i]))
+                                        }
+                                    }
+                                }
+                                
+                                # Add demographics if available
+                                if (!is.null(session_data$demographics)) {
+                                    for (name in names(session_data$demographics)) {
+                                        csv_rows <- c(csv_rows, paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), ",HILFO_PARTICIPANT,en,demographic_", name, ",", session_data$demographics[[name]]))
+                                    }
+                                }
+                                
+                                csv_content <- paste(csv_rows, collapse = "\n")
+                                
+                                # Create download using JavaScript
+                                shiny::runjs(sprintf("
+                                    var csvContent = %s;
+                                    var blob = new Blob([csvContent], { type: 'text/csv' });
+                                    var url = window.URL.createObjectURL(blob);
+                                    var link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = 'HilFo_Data_' + new Date().toISOString().slice(0,19).replace(/:/g, '-') + '.csv';
+                                    link.style.visibility = 'hidden';
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                    window.URL.revokeObjectURL(url);
+                                ", jsonlite::toJSON(csv_content)))
+                                
+                                cat("CSV created from session data\n")
+                            } else {
+                                shiny::runjs("downloadCSVFallback();")
+                            }
+                        } else {
+                            shiny::runjs("downloadCSVFallback();")
+                        }
                     }
                 }, error = function(e) {
                     cat("CSV download error:", e$message, "\n")

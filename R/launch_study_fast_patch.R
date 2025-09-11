@@ -69,7 +69,8 @@ launch_study_fast <- function(config, item_bank,
             checkboxInput("consent", "Ich bin mit der Teilnahme einverstanden"),
             br(),
             actionButton("start", "Studie beginnen", 
-                        style = "background: #007bff; color: white; padding: 10px 20px; border: none;")
+                        style = "background: #007bff; color: white; padding: 10px 20px; border: none;",
+                        onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
           )
         )
       )
@@ -203,10 +204,12 @@ launch_study_fast <- function(config, item_bank,
         
         # Download buttons
         downloadButton("download_csv", "CSV herunterladen",
-                      style = "background: #28a745; color: white; margin-right: 10px;"),
+                      style = "background: #28a745; color: white; margin-right: 10px;",
+                      onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1000);"),
         
         actionButton("download_pdf", "PDF herunterladen",
-                    style = "background: #dc3545; color: white;"),
+                    style = "background: #dc3545; color: white;",
+                    onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);"),
         
         # JavaScript for PDF generation
         tags$script(HTML(sprintf("

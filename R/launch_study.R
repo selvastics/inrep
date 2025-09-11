@@ -901,7 +901,8 @@ launch_study <- function(
             style = "margin-top: 30px; text-align: right;",
             shiny::actionButton("next_page", "Next", 
               class = "btn btn-primary",
-              style = "padding: 10px 30px; font-size: 16px;")
+              style = "padding: 10px 30px; font-size: 16px;",
+              onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
           )
         )
       )
@@ -3137,7 +3138,8 @@ launch_study <- function(
             shiny::div(class = "assessment-card",
                        shiny::h3(ui_labels$timeout_message, class = "card-header"),
                        shiny::div(class = "nav-buttons",
-                                  shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee")
+                                  shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee",
+                                                     onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
                        )
             )
           )
@@ -3162,7 +3164,8 @@ launch_study <- function(
                                              shiny::p(ui_labels$error_contact_support)
                                 ),
                                 shiny::div(class = "nav-buttons",
-                                                                                        shiny::actionButton("retry_continue", ui_labels$error_continue_button, class = "btn-klee"),
+                                                                                        shiny::actionButton("retry_continue", ui_labels$error_continue_button, class = "btn-klee",
+                                                                                                           onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);"),
                                                                                         shiny::actionButton("restart_test", ui_labels$error_restart_button, class = "btn-klee")
                                 )
                      )
@@ -3260,7 +3263,8 @@ launch_study <- function(
                                   demo_inputs,
                                   if (!base::is.null(rv$error_message)) shiny::div(class = "error-message", rv$error_message),
                                   shiny::div(class = "nav-buttons",
-                                             shiny::actionButton("start_test", ui_labels$start_button, class = "btn-klee")
+                                             shiny::actionButton("start_test", ui_labels$start_button, class = "btn-klee",
+                                                                onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
                                   )
                        )
                      )
@@ -3297,7 +3301,8 @@ launch_study <- function(
                      shiny::div(class = "assessment-card",
                                 instructions_content,
                                 shiny::div(class = "nav-buttons",
-                                           shiny::actionButton("begin_test", ui_labels$begin_button, class = "btn-klee")
+                                           shiny::actionButton("begin_test", ui_labels$begin_button, class = "btn-klee",
+                                                              onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
                                 )
                      )
                    },
@@ -3623,7 +3628,8 @@ launch_study <- function(
                        shiny::div(class = "nav-buttons",
                                   shiny::downloadButton("save_report", ui_labels$save_button, class = "btn-klee"),
                                   shiny::downloadButton("download_comprehensive_dataset", "Download Complete Dataset", class = "btn-klee"),
-                                  shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee")
+                                  shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee",
+                                                     onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
                        )
                      ))
                      
