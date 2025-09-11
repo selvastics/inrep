@@ -2343,11 +2343,11 @@ custom_item_selection <- function(rv, item_bank, config) {
 
 # Simple JavaScript for language switching and downloads
 custom_js <- '<script>
-// Detect initial language from URL, session storage, or Shiny input
-var currentLang = "de"; // Default to German
+/* Detect initial language from URL, session storage, or Shiny input */
+var currentLang = "de"; /* Default to German */
 
-// Check if we're in English mode by looking at the page content
-// If the language toggle button shows "Deutsche Version", we're in English mode
+/* Check if we're in English mode by looking at the page content */
+/* If the language toggle button shows "Deutsche Version", we're in English mode */
 var isEnglishMode = false;
 if (document.getElementById("language-toggle-btn")) {
     var btn = document.getElementById("language-toggle-btn");
@@ -2359,7 +2359,7 @@ if (document.getElementById("language-toggle-btn")) {
     }
 }
 
-// Priority order: 1) Button detection, 2) Session storage, 3) URL parameters, 4) Default
+/* Priority order: 1) Button detection, 2) Session storage, 3) URL parameters, 4) Default */
 if (!isEnglishMode) {
     if (typeof sessionStorage !== "undefined" && sessionStorage.getItem("hilfo_language")) {
         currentLang = sessionStorage.getItem("hilfo_language");
@@ -2375,12 +2375,12 @@ if (!isEnglishMode) {
     }
 }
 
-// Store the initial language in session storage
+/* Store the initial language in session storage */
 if (typeof sessionStorage !== "undefined") {
     sessionStorage.setItem("hilfo_language", currentLang);
 }
 
-// Force language detection on page load
+/* Force language detection on page load */
 console.log("Initial language set to:", currentLang);
 
 window.toggleLanguage = function() {
@@ -2427,11 +2427,11 @@ window.toggleLanguage = function() {
   }
 };
 
-// Initialize language on page load
+/* Initialize language on page load */
 function initializeLanguage() {
   console.log("Initializing language with currentLang:", currentLang);
   
-  // Apply language to all elements on page load
+  /* Apply language to all elements on page load */
   var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
   console.log("Found", langElements.length, "language elements");
   
@@ -2451,7 +2451,7 @@ function initializeLanguage() {
     }
   });
   
-  // Update button text
+  /* Update button text */
   var btn = document.getElementById("language-toggle-btn");
   if (btn) {
     var textSpan = btn.querySelector("#lang_switch_text");
@@ -2461,7 +2461,7 @@ function initializeLanguage() {
     }
   }
   
-  // Also update placeholder text
+  /* Also update placeholder text */
   var personalCodeInput = document.getElementById("personal_code");
   if (personalCodeInput) {
     if (currentLang === "en") {
@@ -2473,7 +2473,7 @@ function initializeLanguage() {
   }
 }
 
-// Run initialization when DOM is ready
+/* Run initialization when DOM is ready */
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", initializeLanguage);
 } else {
@@ -2534,17 +2534,17 @@ window.downloadPDF = function() {
   try {
     if (typeof Shiny !== "undefined") {
       console.log("Shiny available, triggering download_pdf_trigger");
-      // Use a unique timestamp to ensure the trigger fires
+      /* Use a unique timestamp to ensure the trigger fires */
       Shiny.setInputValue("download_pdf_trigger", Date.now(), {priority: "event"});
       
-      // Show user feedback
+      /* Show user feedback */
       var button = event.target;
       if (button) {
         var originalText = button.innerHTML;
         button.innerHTML = "<i class=\"fas fa-spinner fa-spin\" style=\"margin-right: 8px;\"></i>Generating PDF...";
         button.disabled = true;
         
-        // Reset button after 5 seconds (PDF generation takes time)
+        /* Reset button after 5 seconds (PDF generation takes time) */
         setTimeout(function() {
           button.innerHTML = originalText;
           button.disabled = false;
@@ -2565,17 +2565,17 @@ window.downloadCSV = function() {
   try {
     if (typeof Shiny !== "undefined") {
       console.log("Shiny available, triggering download_csv_trigger");
-      // Use a unique timestamp to ensure the trigger fires
+      /* Use a unique timestamp to ensure the trigger fires */
       Shiny.setInputValue("download_csv_trigger", Date.now(), {priority: "event"});
       
-      // Show user feedback
+      /* Show user feedback */
       var button = event.target;
       if (button) {
         var originalText = button.innerHTML;
         button.innerHTML = "<i class=\"fas fa-spinner fa-spin\" style=\"margin-right: 8px;\"></i>Generating CSV...";
         button.disabled = true;
         
-        // Reset button after 3 seconds (CSV generation is faster)
+        /* Reset button after 3 seconds (CSV generation is faster) */
         setTimeout(function() {
           button.innerHTML = originalText;
           button.disabled = false;
@@ -2593,7 +2593,7 @@ window.downloadCSV = function() {
 
 function downloadPDFFallback() {
   try {
-    // Create a proper PDF using jsPDF
+    /* Create a proper PDF using jsPDF */
     if (typeof jsPDF !== "undefined") {
       const doc = new jsPDF();
       doc.setFontSize(16);
@@ -2610,7 +2610,7 @@ function downloadPDFFallback() {
       doc.text("Thank you for participating in the HilFo study!", 20, 115);
       doc.save("HilFo_Results_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".pdf");
     } else {
-      // Fallback to text file if jsPDF is not available
+      /* Fallback to text file if jsPDF is not available */
       var content = "HilFo Study Results\\n\\nGenerated: " + new Date().toLocaleString() + "\\n\\nThis is a comprehensive PDF report containing:\\n- Personality profile results\\n- Programming anxiety scores\\n- Study satisfaction ratings\\n- Detailed analysis and recommendations\\n\\nThank you for participating in the HilFo study!";
       var blob = new Blob([content], {type: "text/plain"});
       var url = window.URL.createObjectURL(blob);
@@ -2628,7 +2628,7 @@ function downloadPDFFallback() {
 
 function downloadCSVFallback() {
   try {
-    // Create a CSV file with sample data
+    /* Create a CSV file with sample data */
     var csvContent = "timestamp,participant_id,study_language,data_type,value\\n" +
                      new Date().toISOString() + ",HILFO_001,en,study_completed,true\\n" +
                      new Date().toISOString() + ",HILFO_001,en,personality_assessment,completed\\n" +
