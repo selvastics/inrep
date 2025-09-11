@@ -2398,11 +2398,20 @@ window.toggleLanguage = function() {
   
   /* Toggle language elements */
   var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+  console.log("Found", langElements.length, "language elements to update");
   langElements.forEach(function(element) {
     if (currentLang === "en") {
-      element.textContent = element.getAttribute("data-lang-en");
+      var enText = element.getAttribute("data-lang-en");
+      if (enText) {
+        element.textContent = enText;
+        console.log("Updated element to English:", enText);
+      }
     } else {
-      element.textContent = element.getAttribute("data-lang-de");
+      var deText = element.getAttribute("data-lang-de");
+      if (deText) {
+        element.textContent = deText;
+        console.log("Updated element to German:", deText);
+      }
     }
   });
   
