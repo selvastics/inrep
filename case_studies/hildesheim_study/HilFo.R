@@ -2427,7 +2427,7 @@ window.downloadPDF = function() {
       var button = event.target;
       if (button) {
         var originalText = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Generating PDF...';
+        button.innerHTML = "<i class=\"fas fa-spinner fa-spin\" style=\"margin-right: 8px;\"></i>Generating PDF...";
         button.disabled = true;
         
         // Reset button after 5 seconds (PDF generation takes time)
@@ -2458,7 +2458,7 @@ window.downloadCSV = function() {
       var button = event.target;
       if (button) {
         var originalText = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Generating CSV...';
+        button.innerHTML = "<i class=\"fas fa-spinner fa-spin\" style=\"margin-right: 8px;\"></i>Generating CSV...";
         button.disabled = true;
         
         // Reset button after 3 seconds (CSV generation is faster)
