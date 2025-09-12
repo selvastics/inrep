@@ -2739,11 +2739,41 @@ launch_study <- function(
         # Store in session
         session$userData$language <- new_lang
         
+        # Store in rv for access by render functions
+        rv$language <- new_lang
+        
         # Update config language
         config$language <<- new_lang
         
         # Log the change
         cat("Language switched to:", new_lang, "\n")
+        
+        # Force UI refresh for language change
+        shiny::invalidateLater(50, session)
+      }
+    })
+    
+    # Also observe hilfo_language_preference from JavaScript
+    shiny::observeEvent(input$hilfo_language_preference, {
+      if (!is.null(input$hilfo_language_preference)) {
+        new_lang <- input$hilfo_language_preference
+        current_language(new_lang)
+        
+        # Update UI labels
+        new_labels <- get_language_labels(new_lang)
+        reactive_ui_labels(new_labels)
+        
+        # Store in session
+        session$userData$language <- new_lang
+        
+        # Store in rv for access by render functions
+        rv$language <- new_lang
+        
+        # Update config language
+        config$language <<- new_lang
+        
+        # Log the change
+        cat("Language switched via JavaScript to:", new_lang, "\n")
         
         # Force UI refresh for language change
         shiny::invalidateLater(50, session)
@@ -2841,6 +2871,7 @@ launch_study <- function(
   # POPULATE rv IMMEDIATELY - No observe, no async, no delays
   rv$demo_data <- stats::setNames(base::rep(NA, base::length(config$demographics)), config$demographics)
   rv$config <- config  # Store config in rv for access by validation functions
+  rv$language <- config$language %||% "de"  # Initialize language in rv
   
       # Initialize comprehensive dataset system (if functions are available)
     if (exists("initialize_comprehensive_dataset", mode = "function")) {
