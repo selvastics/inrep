@@ -933,6 +933,8 @@ custom_page_flow <- list(
       setTimeout(BULLETPROOF_applyLanguageToPersonalCodePage, 200);
       setTimeout(BULLETPROOF_applyLanguageToPersonalCodePage, 500);
       setTimeout(BULLETPROOF_applyLanguageToPersonalCodePage, 1000);
+      setTimeout(BULLETPROOF_applyLanguageToPersonalCodePage, 2000);
+      setTimeout(BULLETPROOF_applyLanguageToPersonalCodePage, 3000);
       
       // Listen for language changes
       window.addEventListener("storage", function(e) {
@@ -1050,6 +1052,38 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         }, error = function(e) {
             cat("DEBUG: Error checking reactive values:", e$message, "\n")
         })
+    }
+    
+    # 5. FORCE CHECK: If we still have German, try to detect from any available source
+    if (current_lang == "de") {
+        cat("DEBUG: FORCE CHECK - Still German, trying to detect from any source\n")
+        
+        # Check if there's a language preference stored anywhere
+        if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
+            stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
+            if (!is.null(stored_lang) && stored_lang == "en") {
+                current_lang <- "en"
+                cat("DEBUG: FORCE CHECK - Found English in global hilfo_language_preference\n")
+            }
+        }
+        
+        # Check if there's a study_language stored anywhere
+        if (exists("study_language", envir = .GlobalEnv)) {
+            stored_lang <- get("study_language", envir = .GlobalEnv)
+            if (!is.null(stored_lang) && stored_lang == "en") {
+                current_lang <- "en"
+                cat("DEBUG: FORCE CHECK - Found English in global study_language\n")
+            }
+        }
+        
+        # Check if there's a current_language stored anywhere
+        if (exists("current_language", envir = .GlobalEnv)) {
+            stored_lang <- get("current_language", envir = .GlobalEnv)
+            if (!is.null(stored_lang) && stored_lang == "en") {
+                current_lang <- "en"
+                cat("DEBUG: FORCE CHECK - Found English in global current_language\n")
+            }
+        }
     }
     
     # Debug: Print what language we detected
@@ -2143,7 +2177,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         '</button>',
         
         # CSV Download Button  
-        '<button onclick="try { if(typeof downloadCSV === \'function\') { downloadCSV(); } else { var csvContent = \'timestamp,participant_id,study_language,data_type,value\\n\' + new Date().toISOString() + \',HILFO_001,en,study_completed,true\\n\' + new Date().toISOString() + \',HILFO_001,en,personality_assessment,completed\\n\' + new Date().toISOString() + \',HILFO_001,en,programming_anxiety,completed\\n\'; var blob = new Blob([csvContent], {type: \'text/csv\'}); var url = window.URL.createObjectURL(blob); var link = document.createElement(\'a\'); link.href = url; link.download = \'HilFo_Data_\' + new Date().toISOString().slice(0,19).replace(/:/g, \'-\') + \'.csv\'; link.click(); window.URL.revokeObjectURL(url); } } catch(e) { alert(\'Download error: \' + e.message); }" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+        '<button onclick="try { if(typeof downloadCSV === \'function\') { downloadCSV(); } else { alert(\'CSV download function not available. Please try again.\'); } } catch(e) { alert(\'Download error: \' + e.message); }" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
         "<i class=\"fas fa-file-csv\" style=\"margin-right: 8px;\"></i>",
         if (is_english) "Download CSV" else "CSV herunterladen",
         '</button>',
@@ -3412,65 +3446,85 @@ output: pdf_document
                     }
                     
                     if (!is.null(data)) {
+                        cat("DEBUG: Creating CSV with same format as cloud upload\n")
                         
-                        # Extract scores from complete_data
-                        extraversion <- if("BFI_Extraversion" %in% names(data)) data$BFI_Extraversion[1] else "N/A"
-                        agreeableness <- if("BFI_Vertraeglichkeit" %in% names(data)) data$BFI_Vertraeglichkeit[1] else "N/A"
-                        conscientiousness <- if("BFI_Gewissenhaftigkeit" %in% names(data)) data$BFI_Gewissenhaftigkeit[1] else "N/A"
-                        neuroticism <- if("BFI_Neurotizismus" %in% names(data)) data$BFI_Neurotizismus[1] else "N/A"
-                        openness <- if("BFI_Offenheit" %in% names(data)) data$BFI_Offenheit[1] else "N/A"
-                        programming_anxiety <- if("ProgrammingAnxiety" %in% names(data)) data$ProgrammingAnxiety[1] else "N/A"
-                        stress <- if("PSQ_Stress" %in% names(data)) data$PSQ_Stress[1] else "N/A"
-                        study_skills <- if("MWS_Studierfaehigkeiten" %in% names(data)) data$MWS_Studierfaehigkeiten[1] else "N/A"
-                        statistics <- if("Statistik" %in% names(data)) data$Statistik[1] else "N/A"
+                        # Use the SAME format as the cloud upload - create a data frame with all individual responses
+                        # This matches exactly what's uploaded to the cloud
                         
-                        # Create comprehensive CSV content with all data
-                        # Include all responses, demographics, and calculated scores
+                        # Get the actual responses from the data
+                        responses <- if("responses" %in% names(data)) data$responses else numeric(51)
+                        demographics <- if("demographics" %in% names(data)) data$demographics else list()
+                        
+                        # Create the exact same format as cloud upload
                         csv_data <- data.frame(
                             timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
-                            participant_id = "HILFO_PARTICIPANT",
-                            study_language = ifelse(exists("is_english") && is_english, "en", "de"),
-                            data_type = c("study_completed", "extraversion", "agreeableness", "conscientiousness", "neuroticism", "openness", "programming_anxiety", "stress_level", "study_skills", "statistics_confidence"),
-                            value = c("true", 
-                                    if(is.numeric(extraversion)) round(extraversion, 2) else extraversion,
-                                    if(is.numeric(agreeableness)) round(agreeableness, 2) else agreeableness,
-                                    if(is.numeric(conscientiousness)) round(conscientiousness, 2) else conscientiousness,
-                                    if(is.numeric(neuroticism)) round(neuroticism, 2) else neuroticism,
-                                    if(is.numeric(openness)) round(openness, 2) else openness,
-                                    if(is.numeric(programming_anxiety)) round(programming_anxiety, 2) else programming_anxiety,
-                                    if(is.numeric(stress)) round(stress, 2) else stress,
-                                    if(is.numeric(study_skills)) round(study_skills, 2) else study_skills,
-                                    if(is.numeric(statistics)) round(statistics, 2) else statistics
-                            ),
+                            session_id = if("session_id" %in% names(data)) data$session_id else paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S")),
+                            study_language = if("study_language" %in% names(data)) data$study_language else "de",
+                            # All individual item responses (PA_01 through Statistik_selbstwirksam)
+                            PA_01 = if(length(responses) >= 1) responses[1] else NA,
+                            PA_02 = if(length(responses) >= 2) responses[2] else NA,
+                            PA_03 = if(length(responses) >= 3) responses[3] else NA,
+                            PA_04 = if(length(responses) >= 4) responses[4] else NA,
+                            PA_05 = if(length(responses) >= 5) responses[5] else NA,
+                            PA_06 = if(length(responses) >= 6) responses[6] else NA,
+                            PA_07 = if(length(responses) >= 7) responses[7] else NA,
+                            PA_08 = if(length(responses) >= 8) responses[8] else NA,
+                            PA_09 = if(length(responses) >= 9) responses[9] else NA,
+                            PA_10 = if(length(responses) >= 10) responses[10] else NA,
+                            PA_11 = if(length(responses) >= 11) responses[11] else NA,
+                            PA_12 = if(length(responses) >= 12) responses[12] else NA,
+                            PA_13 = if(length(responses) >= 13) responses[13] else NA,
+                            PA_14 = if(length(responses) >= 14) responses[14] else NA,
+                            PA_15 = if(length(responses) >= 15) responses[15] else NA,
+                            PA_16 = if(length(responses) >= 16) responses[16] else NA,
+                            PA_17 = if(length(responses) >= 17) responses[17] else NA,
+                            PA_18 = if(length(responses) >= 18) responses[18] else NA,
+                            PA_19 = if(length(responses) >= 19) responses[19] else NA,
+                            PA_20 = if(length(responses) >= 20) responses[20] else NA,
+                            BFE_01 = if(length(responses) >= 21) responses[21] else NA,
+                            BFE_02 = if(length(responses) >= 22) responses[22] else NA,
+                            BFE_03 = if(length(responses) >= 23) responses[23] else NA,
+                            BFE_04 = if(length(responses) >= 24) responses[24] else NA,
+                            BFV_01 = if(length(responses) >= 25) responses[25] else NA,
+                            BFV_02 = if(length(responses) >= 26) responses[26] else NA,
+                            BFV_03 = if(length(responses) >= 27) responses[27] else NA,
+                            BFV_04 = if(length(responses) >= 28) responses[28] else NA,
+                            BFG_01 = if(length(responses) >= 29) responses[29] else NA,
+                            BFG_02 = if(length(responses) >= 30) responses[30] else NA,
+                            BFG_03 = if(length(responses) >= 31) responses[31] else NA,
+                            BFG_04 = if(length(responses) >= 32) responses[32] else NA,
+                            BFN_01 = if(length(responses) >= 33) responses[33] else NA,
+                            BFN_02 = if(length(responses) >= 34) responses[34] else NA,
+                            BFN_03 = if(length(responses) >= 35) responses[35] else NA,
+                            BFN_04 = if(length(responses) >= 36) responses[36] else NA,
+                            BFO_01 = if(length(responses) >= 37) responses[37] else NA,
+                            BFO_02 = if(length(responses) >= 38) responses[38] else NA,
+                            BFO_03 = if(length(responses) >= 39) responses[39] else NA,
+                            BFO_04 = if(length(responses) >= 40) responses[40] else NA,
+                            PSQ_02 = if(length(responses) >= 41) responses[41] else NA,
+                            PSQ_04 = if(length(responses) >= 42) responses[42] else NA,
+                            PSQ_16 = if(length(responses) >= 43) responses[43] else NA,
+                            PSQ_29 = if(length(responses) >= 44) responses[44] else NA,
+                            PSQ_30 = if(length(responses) >= 45) responses[45] else NA,
+                            MWS_1_KK = if(length(responses) >= 46) responses[46] else NA,
+                            MWS_10_KK = if(length(responses) >= 47) responses[47] else NA,
+                            MWS_17_KK = if(length(responses) >= 48) responses[48] else NA,
+                            MWS_21_KK = if(length(responses) >= 49) responses[49] else NA,
+                            Statistik_gutfolgen = if(length(responses) >= 50) responses[50] else NA,
+                            Statistik_selbstwirksam = if(length(responses) >= 51) responses[51] else NA,
+                            # Calculated scores
+                            BFI_Extraversion = if("BFI_Extraversion" %in% names(data)) data$BFI_Extraversion[1] else NA,
+                            BFI_Vertraeglichkeit = if("BFI_Vertraeglichkeit" %in% names(data)) data$BFI_Vertraeglichkeit[1] else NA,
+                            BFI_Gewissenhaftigkeit = if("BFI_Gewissenhaftigkeit" %in% names(data)) data$BFI_Gewissenhaftigkeit[1] else NA,
+                            BFI_Neurotizismus = if("BFI_Neurotizismus" %in% names(data)) data$BFI_Neurotizismus[1] else NA,
+                            BFI_Offenheit = if("BFI_Offenheit" %in% names(data)) data$BFI_Offenheit[1] else NA,
+                            PSQ_Stress = if("PSQ_Stress" %in% names(data)) data$PSQ_Stress[1] else NA,
+                            MWS_Studierfaehigkeiten = if("MWS_Studierfaehigkeiten" %in% names(data)) data$MWS_Studierfaehigkeiten[1] else NA,
+                            Statistik = if("Statistik" %in% names(data)) data$Statistik[1] else NA,
                             stringsAsFactors = FALSE
                         )
                         
-                        # Add all individual item responses
-                        if (exists("responses") && !is.null(responses)) {
-                            item_responses <- data.frame(
-                                timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
-                                participant_id = "HILFO_PARTICIPANT",
-                                study_language = ifelse(exists("is_english") && is_english, "en", "de"),
-                                data_type = paste0("item_response_", 1:length(responses)),
-                                value = as.character(responses),
-                                stringsAsFactors = FALSE
-                            )
-                            csv_data <- rbind(csv_data, item_responses)
-                        }
-                        
-                        # Add demographic data
-                        if (exists("demographics") && !is.null(demographics)) {
-                            demo_data <- data.frame(
-                                timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
-                                participant_id = "HILFO_PARTICIPANT",
-                                study_language = ifelse(exists("is_english") && is_english, "en", "de"),
-                                data_type = paste0("demographic_", names(demographics)),
-                                value = as.character(unlist(demographics)),
-                                stringsAsFactors = FALSE
-                            )
-                            csv_data <- rbind(csv_data, demo_data)
-                        }
-                        
+                        # Write CSV content
                         csv_content <- utils::capture.output(write.csv(csv_data, row.names = FALSE))
                         csv_string <- paste(csv_content, collapse = "\n")
                         
