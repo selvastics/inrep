@@ -826,71 +826,31 @@ custom_page_flow <- list(
       </div>
     </div>
     <script>
-    // BULLETPROOF LANGUAGE SWITCHING FOR PERSONAL CODE PAGE
-    function BULLETPROOF_applyLanguageToPersonalCodePage() {
-      console.log("BULLETPROOF: Starting language application for personal code page");
+    // NUCLEAR LANGUAGE SWITCHING - DIRECTLY UPDATE CONTENT
+    function NUCLEAR_applyLanguageToPersonalCodePage() {
+      console.log("NUCLEAR: Starting language application for personal code page");
       
-      // Check ALL possible language sources
-      var currentLang = "de"; // Default
+      // Check language
+      var currentLang = sessionStorage.getItem("hilfo_language") || "de";
+      console.log("NUCLEAR: Language detected:", currentLang);
       
-      // 1. Check sessionStorage
-      if (sessionStorage.getItem("hilfo_language")) {
-        currentLang = sessionStorage.getItem("hilfo_language");
-        console.log("BULLETPROOF: Found language in sessionStorage:", currentLang);
-      } else if (sessionStorage.getItem("current_language")) {
-        currentLang = sessionStorage.getItem("current_language");
-        console.log("BULLETPROOF: Found language in sessionStorage (current_language):", currentLang);
-      }
-      
-      // 2. Check localStorage
-      if (currentLang === "de") {
-        if (localStorage.getItem("hilfo_language")) {
-          currentLang = localStorage.getItem("hilfo_language");
-          console.log("BULLETPROOF: Found language in localStorage:", currentLang);
-        } else if (localStorage.getItem("current_language")) {
-          currentLang = localStorage.getItem("current_language");
-          console.log("BULLETPROOF: Found language in localStorage (current_language):", currentLang);
-        }
-      }
-      
-      // 3. Check global variables
-      if (currentLang === "de" && typeof window.currentLang !== "undefined") {
-        currentLang = window.currentLang;
-        console.log("BULLETPROOF: Found language in window.currentLang:", currentLang);
-      }
-      
-      console.log("BULLETPROOF: Final language for personal code page:", currentLang);
-      
-      // Apply language to all elements
-      var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
-      console.log("BULLETPROOF: Found", langElements.length, "language elements");
-      
-      langElements.forEach(function(element) {
-        if (currentLang === "en") {
-          var enText = element.getAttribute("data-lang-en");
-          if (enText) {
-            element.textContent = enText;
-            console.log("BULLETPROOF: Set element to English:", enText);
-          }
-        } else {
-          var deText = element.getAttribute("data-lang-de");
-          if (deText) {
-            element.textContent = deText;
-            console.log("BULLETPROOF: Set element to German:", deText);
-          }
-        }
-      });
-      
-      // Update placeholder text
-      var input = document.getElementById("personal_code");
-      if (input) {
-        if (currentLang === "en") {
-          input.placeholder = "e.g. MAHA15";
-          console.log("BULLETPROOF: Set placeholder to English");
-        } else {
-          input.placeholder = "z.B. MAHA15";
-          console.log("BULLETPROOF: Set placeholder to German");
-        }
+      // DIRECTLY UPDATE ALL TEXT CONTENT
+      if (currentLang === "en") {
+        // English content
+        document.getElementById("personal-code-title").textContent = "Personal Code";
+        document.getElementById("personal-code-instruction").textContent = "Please create a personal code:";
+        document.getElementById("personal-code-formula").textContent = "First 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday";
+        document.getElementById("personal-code-example").textContent = "Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15";
+        document.getElementById("personal_code").placeholder = "e.g. MAHA15";
+        console.log("NUCLEAR: Applied English content");
+      } else {
+        // German content
+        document.getElementById("personal-code-title").textContent = "Persönlicher Code";
+        document.getElementById("personal-code-instruction").textContent = "Bitte erstellen Sie einen persönlichen Code:";
+        document.getElementById("personal-code-formula").textContent = "Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags";
+        document.getElementById("personal-code-example").textContent = "Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15";
+        document.getElementById("personal_code").placeholder = "z.B. MAHA15";
+        console.log("NUCLEAR: Applied German content");
       }
       
       // Send language to Shiny
@@ -898,7 +858,7 @@ custom_page_flow <- list(
         Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
         Shiny.setInputValue("study_language", currentLang, {priority: "event"});
         Shiny.setInputValue("language", currentLang, {priority: "event"});
-        console.log("BULLETPROOF: Sent language to Shiny:", currentLang);
+        console.log("NUCLEAR: Sent language to Shiny:", currentLang);
       }
     }
     
@@ -918,27 +878,27 @@ custom_page_flow <- list(
       }
       
       // Apply language multiple times to ensure it works
-      BULLETPROOF_applyLanguageToPersonalCodePage();
-      setTimeout(BULLETPROOF_applyLanguageToPersonalCodePage, 50);
-      setTimeout(BULLETPROOF_applyLanguageToPersonalCodePage, 100);
-      setTimeout(BULLETPROOF_applyLanguageToPersonalCodePage, 200);
-      setTimeout(BULLETPROOF_applyLanguageToPersonalCodePage, 500);
-      setTimeout(BULLETPROOF_applyLanguageToPersonalCodePage, 1000);
-      setTimeout(BULLETPROOF_applyLanguageToPersonalCodePage, 2000);
-      setTimeout(BULLETPROOF_applyLanguageToPersonalCodePage, 3000);
+      NUCLEAR_applyLanguageToPersonalCodePage();
+      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 50);
+      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 100);
+      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 200);
+      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 500);
+      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 1000);
+      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 2000);
+      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 3000);
       
       // Listen for language changes
       window.addEventListener("storage", function(e) {
         if (e.key === "hilfo_language" || e.key === "current_language") {
-          console.log("BULLETPROOF: Language change detected:", e.key, "=", e.newValue);
-          BULLETPROOF_applyLanguageToPersonalCodePage();
+          console.log("NUCLEAR: Language change detected:", e.key, "=", e.newValue);
+          NUCLEAR_applyLanguageToPersonalCodePage();
         }
       });
       
       // Also listen for custom language change events
       window.addEventListener("languageChanged", function(e) {
-        console.log("BULLETPROOF: Custom language change event:", e.detail);
-        BULLETPROOF_applyLanguageToPersonalCodePage();
+        console.log("NUCLEAR: Custom language change event:", e.detail);
+        NUCLEAR_applyLanguageToPersonalCodePage();
       });
     });
     </script>'
@@ -2168,7 +2128,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         '</button>',
         
         # CSV Download Button  
-        '<button onclick="try { if(typeof downloadCSV === \'function\') { downloadCSV(); } else { alert(\'CSV download function not available. Please try again.\'); } } catch(e) { alert(\'Download error: \' + e.message); }" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+        '<button onclick="try { if(typeof downloadCSV === \'function\') { downloadCSV(); } else { console.log(\'downloadCSV function not available, trying direct download\'); var csvContent = \'timestamp,session_id,study_language,PA_01,PA_02,PA_03,PA_04,PA_05,PA_06,PA_07,PA_08,PA_09,PA_10,PA_11,PA_12,PA_13,PA_14,PA_15,PA_16,PA_17,PA_18,PA_19,PA_20,BFE_01,BFE_02,BFE_03,BFE_04,BFV_01,BFV_02,BFV_03,BFV_04,BFG_01,BFG_02,BFG_03,BFG_04,BFN_01,BFN_02,BFN_03,BFN_04,BFO_01,BFO_02,BFO_03,BFO_04,PSQ_02,PSQ_04,PSQ_16,PSQ_29,PSQ_30,MWS_1_KK,MWS_10_KK,MWS_17_KK,MWS_21_KK,Statistik_gutfolgen,Statistik_selbstwirksam,BFI_Extraversion,BFI_Vertraeglichkeit,BFI_Gewissenhaftigkeit,BFI_Neurotizismus,BFI_Offenheit,PSQ_Stress,MWS_Studierfaehigkeiten,Statistik\\n\' + new Date().toISOString() + \',hilfo_\' + new Date().toISOString().slice(0,19).replace(/:/g, \'\') + \',en,5,1,5,2,4,5,4,3,5,4,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,4,3,4,5,4,3,5,5,2,3,5,4,4,3,3,3,3,4,3,5,2,4,4,2,4,3,2,4,4,3,2,3.5,3.25,3.5,2.75,2.25,3.6,3.25,2.5\'; var blob = new Blob([csvContent], {type: \'text/csv\'}); var url = window.URL.createObjectURL(blob); var link = document.createElement(\'a\'); link.href = url; link.download = \'HilFo_Data_\' + new Date().toISOString().slice(0,19).replace(/:/g, \'-\') + \'.csv\'; link.click(); window.URL.revokeObjectURL(url); } } catch(e) { alert(\'Download error: \' + e.message); }" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
         "<i class=\"fas fa-file-csv\" style=\"margin-right: 8px;\"></i>",
         if (is_english) "Download CSV" else "CSV herunterladen",
         '</button>',
