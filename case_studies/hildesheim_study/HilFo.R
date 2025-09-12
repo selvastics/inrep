@@ -826,65 +826,131 @@ custom_page_flow <- list(
         type = "custom",
         title = "",
         title_en = "Personal Code",
-        content = '<div id="personal-code-content" style="padding: 20px; font-size: 16px; line-height: 1.8;">
-      <h2 id="personal-code-title" style="color: #e8041c; text-align: center; margin-bottom: 25px;">Persönlicher Code</h2>
-      <p id="personal-code-instruction" style="text-align: center; margin-bottom: 30px; font-size: 18px;">Bitte erstellen Sie einen persönlichen Code:</p>
-      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-        <p id="personal-code-formula" style="margin: 0; font-weight: 500;">Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</p>
-      </div>
-      <div style="text-align: center; margin: 30px 0;">
-        <input type="text" id="personal_code" placeholder="z.B. MAHA15" style="
-          padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
-          text-align: center; width: 200px; text-transform: uppercase;" required>
-      </div>
-      <div style="text-align: center; color: #666; font-size: 14px;">
-        <span id="personal-code-example">Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</span>
-      </div>
-    </div>',
-        content_en = '<div id="personal-code-content" style="padding: 20px; font-size: 16px; line-height: 1.8;">
-      <h2 id="personal-code-title" style="color: #e8041c; text-align: center; margin-bottom: 25px;">Personal Code</h2>
-      <p id="personal-code-instruction" style="text-align: center; margin-bottom: 30px; font-size: 18px;">Please create a personal code:</p>
-      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-        <p id="personal-code-formula" style="margin: 0; font-weight: 500;">First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday</p>
-      </div>
-      <div style="text-align: center; margin: 30px 0;">
-        <input type="text" id="personal_code" placeholder="e.g. MAHA15" style="
-          padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
-          text-align: center; width: 200px; text-transform: uppercase;" required>
-      </div>
-      <div style="text-align: center; color: #666; font-size: 14px;">
-        <span id="personal-code-example">Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</span>
-      </div>
-    </div>
-    <script>
-    // NUCLEAR LANGUAGE SWITCHING - DIRECTLY UPDATE CONTENT
-    function NUCLEAR_applyLanguageToPersonalCodePage() {
-      console.log("NUCLEAR: Starting language application for personal code page");
-      
-      // Check language
-      var currentLang = sessionStorage.getItem("hilfo_language") || "de";
-      console.log("NUCLEAR: Language detected:", currentLang);
-      
-      // DIRECTLY UPDATE ALL TEXT CONTENT
-      if (currentLang === "en") {
-        // English content
-        document.getElementById("personal-code-title").textContent = "Personal Code";
-        document.getElementById("personal-code-instruction").textContent = "Please create a personal code:";
-        document.getElementById("personal-code-formula").textContent = "First 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday";
-        document.getElementById("personal-code-example").textContent = "Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15";
-        document.getElementById("personal_code").placeholder = "e.g. MAHA15";
-        console.log("NUCLEAR: Applied English content");
-      } else {
-        // German content
-        document.getElementById("personal-code-title").textContent = "Persönlicher Code";
-        document.getElementById("personal-code-instruction").textContent = "Bitte erstellen Sie einen persönlichen Code:";
-        document.getElementById("personal-code-formula").textContent = "Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags";
-        document.getElementById("personal-code-example").textContent = "Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15";
-        document.getElementById("personal_code").placeholder = "z.B. MAHA15";
-        console.log("NUCLEAR: Applied German content");
+        render_function = function(input, output, session, rv) {
+            # Get current language from rv
+            current_lang <- rv$language %||% "de"
+            
+            # Generate content based on language
+            if (current_lang == "en") {
+                content <- '<div id="personal-code-content" style="padding: 20px; font-size: 16px; line-height: 1.8;">
+                  <h2 id="personal-code-title" style="color: #e8041c; text-align: center; margin-bottom: 25px;">Personal Code</h2>
+                  <p id="personal-code-instruction" style="text-align: center; margin-bottom: 30px; font-size: 18px;">Please create a personal code:</p>
+                  <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+                    <p id="personal-code-formula" style="margin: 0; font-weight: 500;">First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday</p>
+                  </div>
+                  <div style="text-align: center; margin: 30px 0;">
+                    <input type="text" id="personal_code" placeholder="e.g. MAHA15" style="
+                      padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
+                      text-align: center; width: 200px; text-transform: uppercase;" required>
+                  </div>
+                  <div style="text-align: center; color: #666; font-size: 14px;">
+                    <span id="personal-code-example">Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</span>
+                  </div>
+                </div>'
+            } else {
+                content <- '<div id="personal-code-content" style="padding: 20px; font-size: 16px; line-height: 1.8;">
+                  <h2 id="personal-code-title" style="color: #e8041c; text-align: center; margin-bottom: 25px;">Persönlicher Code</h2>
+                  <p id="personal-code-instruction" style="text-align: center; margin-bottom: 30px; font-size: 18px;">Bitte erstellen Sie einen persönlichen Code:</p>
+                  <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+                    <p id="personal-code-formula" style="margin: 0; font-weight: 500;">Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</p>
+                  </div>
+                  <div style="text-align: center; margin: 30px 0;">
+                    <input type="text" id="personal_code" placeholder="z.B. MAHA15" style="
+                      padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
+                      text-align: center; width: 200px; text-transform: uppercase;" required>
+                  </div>
+                  <div style="text-align: center; color: #666; font-size: 14px;">
+                    <span id="personal-code-example">Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</span>
+                  </div>
+                </div>'
+            }
+            
+            # Return the content wrapped in a div
+            shiny::div(
+                class = "assessment-card",
+                style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
+                shiny::HTML(content)
+            )
+        }
+    ),
+    
+    # Page 21: Results (now with PA results included)
+    list(
+        id = "page21",
+        type = "results",
+        title = "Ihre Ergebnisse",
+        title_en = "Your Results",
+        results_processor = "create_hilfo_report"
+    )
+)
+
+# =============================================================================
+# RESULTS PROCESSOR WITH FIXED RADAR PLOT  
+# =============================================================================
+
+create_hilfo_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
+    # Global error handling for the entire function
+    tryCatch({
+        # Lazy load packages only when actually needed
+        if (!requireNamespace("ggplot2", quietly = TRUE)) {
+            stop("ggplot2 package is required for report generation")
+        }
+        if (!requireNamespace("base64enc", quietly = TRUE)) {
+            stop("base64enc package is required for report generation")
+        }
+    
+    # SIMPLE LANGUAGE DETECTION - Check global environment FIRST
+    current_lang <- "de"  # Default to German
+    
+    cat("DEBUG: Starting SIMPLE language detection\n")
+    
+    # Check global environment FIRST - this is where toggleLanguage stores it
+    if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
+      stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
+      if (!is.null(stored_lang) && (stored_lang == "en" || stored_lang == "de")) {
+        current_lang <- stored_lang
+        cat("DEBUG: Found language in global hilfo_language_preference:", current_lang, "\n")
+        # Use this and skip all other checks
+        is_english <- (current_lang == "en")
+        cat("DEBUG: Using global language:", current_lang, "- is_english:", is_english, "\n")
       }
-      
-      // Send language to Shiny - MULTIPLE TIMES AND PRIORITIES
+    }
+    
+    # If not found in global environment, check session as fallback
+    if (current_lang == "de" && !is.null(session) && !is.null(session$input)) {
+        # Check session input as fallback
+        lang_keys <- c("hilfo_language_preference", "study_language", "language", "current_language")
+        for (key in lang_keys) {
+            if (key %in% names(session$input) && !is.null(session$input[[key]])) {
+                current_lang <- session$input[[key]]
+                cat("DEBUG: Found language in session$input$", key, ":", current_lang, "\n")
+                break
+            }
+        }
+    }
+    
+    # Final fallback to German
+    if (is.null(current_lang) || current_lang == "") {
+        current_lang <- "de"
+        cat("DEBUG: Using default German language\n")
+    }
+    
+    # Set is_english based on current_lang
+    is_english <- (current_lang == "en")
+    cat("DEBUG: Final language settings - current_lang:", current_lang, ", is_english:", is_english, "\n")
+    
+    if (is.null(responses) || length(responses) == 0) {
+        if (is_english) {
+            return(shiny::HTML("<p>No responses available for evaluation.</p>"))
+        } else {
+            return(shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>"))
+        }
+    }
+    
+    # Ensure demographics is a list
+    if (is.null(demographics)) {
+        demographics <- list()
+    }
       if (typeof Shiny !== "undefined") {
         // Send with immediate priority first
         Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "immediate"});
