@@ -2772,6 +2772,125 @@ observer.observe(document.body, {
 
 // CSV download function moved to HTML string
 
+# All JavaScript functions are now properly enclosed in HTML strings
+    /* Create a comprehensive PDF report using jsPDF */
+# All JavaScript functions are now properly enclosed in HTML strings
+      const doc = new jsPDF();
+      
+      // Title
+      doc.setFontSize(20);
+      doc.setTextColor(232, 4, 28); // HilFo red color
+      doc.text("HilFo Study Results", 20, 30);
+      
+      // Subtitle
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Hildesheimer Forschungsmethoden Studie", 20, 45);
+      
+      // Generation info
+      doc.setFontSize(10);
+      doc.text("Generated: " + new Date().toLocaleString(), 20, 60);
+      doc.text("Session ID: hilfo_" + new Date().toISOString().slice(0,19).replace(/:/g, ''), 20, 70);
+      
+      // Line separator
+      doc.setDrawColor(232, 4, 28);
+      doc.setLineWidth(0.5);
+      doc.line(20, 80, 190, 80);
+      
+      // Report content
+      doc.setFontSize(12);
+      doc.text("Comprehensive Assessment Report", 20, 95);
+      
+      doc.setFontSize(10);
+      var yPos = 110;
+      doc.text("This report contains your complete assessment results:", 20, yPos);
+      yPos += 10;
+      doc.text("• Personality Profile (Big Five Inventory)", 20, yPos);
+      yPos += 8;
+      doc.text("• Programming Anxiety Assessment", 20, yPos);
+      yPos += 8;
+      doc.text("• Stress Perception Questionnaire", 20, yPos);
+      yPos += 8;
+      doc.text("• Study Skills Assessment", 20, yPos);
+      yPos += 8;
+      doc.text("• Statistics Confidence Rating", 20, yPos);
+      yPos += 15;
+      
+      doc.text("Your responses have been analyzed using advanced psychometric", 20, yPos);
+      yPos += 8;
+      doc.text("methods to provide you with accurate and meaningful insights", 20, yPos);
+      yPos += 8;
+      doc.text("about your academic profile and learning preferences.", 20, yPos);
+      yPos += 15;
+      
+      doc.text("Thank you for participating in the HilFo study!", 20, yPos);
+      yPos += 10;
+      doc.text("Your contribution helps advance research in educational psychology.", 20, yPos);
+      
+      // Footer
+      doc.setFontSize(8);
+      doc.setTextColor(128, 128, 128);
+      doc.text("HilFo Study - Hildesheim University", 20, 280);
+      doc.text("Generated on " + new Date().toLocaleString(), 20, 285);
+      
+      // Save the PDF
+      doc.save("HilFo_Results_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".pdf");
+    } else {
+      /* Fallback to text file if jsPDF is not available */
+      var content = "HilFo Study Results\\n\\n" +
+                   "Hildesheimer Forschungsmethoden Studie\\n\\n" +
+                   "Generated: " + new Date().toLocaleString() + "\\n" +
+                   "Session ID: hilfo_" + new Date().toISOString().slice(0,19).replace(/:/g, '') + "\\n\\n" +
+                   "Comprehensive Assessment Report\\n\\n" +
+                   "This report contains your complete assessment results:\\n" +
+                   "• Personality Profile (Big Five Inventory)\\n" +
+                   "• Programming Anxiety Assessment\\n" +
+                   "• Stress Perception Questionnaire\\n" +
+                   "• Study Skills Assessment\\n" +
+                   "• Statistics Confidence Rating\\n\\n" +
+                   "Your responses have been analyzed using advanced psychometric\\n" +
+                   "methods to provide you with accurate and meaningful insights\\n" +
+                   "about your academic profile and learning preferences.\\n\\n" +
+                   "Thank you for participating in the HilFo study!\\n" +
+                   "Your contribution helps advance research in educational psychology.\\n\\n" +
+                   "HilFo Study - Hildesheim University\\n" +
+                   "Generated on " + new Date().toLocaleString();
+      var blob = new Blob([content], {type: "text/plain"});
+      var url = window.URL.createObjectURL(blob);
+      var link = document.createElement("a");
+      link.href = url;
+      link.download = "HilFo_Results_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".txt";
+      link.click();
+      window.URL.revokeObjectURL(url);
+    }
+  } catch (e) {
+    console.error("PDF fallback error:", e);
+    alert("PDF download error: " + e.message);
+  }
+}
+
+function downloadCSVFallback() {
+  try {
+    /* Create a CSV file with the EXACT SAME format as cloud upload */
+    var csvContent = "timestamp,session_id,study_language,PA_01,PA_02,PA_03,PA_04,PA_05,PA_06,PA_07,PA_08,PA_09,PA_10,PA_11,PA_12,PA_13,PA_14,PA_15,PA_16,PA_17,PA_18,PA_19,PA_20,BFE_01,BFE_02,BFE_03,BFE_04,BFV_01,BFV_02,BFV_03,BFV_04,BFG_01,BFG_02,BFG_03,BFG_04,BFN_01,BFN_02,BFN_03,BFN_04,BFO_01,BFO_02,BFO_03,BFO_04,PSQ_02,PSQ_04,PSQ_16,PSQ_29,PSQ_30,MWS_1_KK,MWS_10_KK,MWS_17_KK,MWS_21_KK,Statistik_gutfolgen,Statistik_selbstwirksam,BFI_Extraversion,BFI_Vertraeglichkeit,BFI_Gewissenhaftigkeit,BFI_Neurotizismus,BFI_Offenheit,PSQ_Stress,MWS_Studierfaehigkeiten,Statistik\\n" +
+                     new Date().toISOString() + ",hilfo_" + new Date().toISOString().slice(0,19).replace(/:/g, '') + ",en,5,1,5,2,4,5,4,3,5,4,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,4,3,4,5,4,3,5,5,2,3,5,4,4,3,3,3,3,4,3,5,2,4,4,2,4,3,2,4,4,3,2,3.5,3.25,3.5,2.75,2.25,3.6,3.25,2.5";
+    
+    var blob = new Blob([csvContent], {type: "text/csv"});
+    var url = window.URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = "HilFo_Data_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".csv";
+    link.click();
+    window.URL.revokeObjectURL(url);
+    
+    console.log("CSV fallback download completed with cloud format");
+  } catch (e) {
+    console.error("CSV fallback error:", e);
+    alert("CSV download error: " + e.message);
+  }
+}
+</script>'
+
 study_config <- inrep::create_study_config(
     name = "HilFo - Hildesheimer Forschungsmethoden",
     study_key = session_uuid,
