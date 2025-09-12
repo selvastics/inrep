@@ -445,7 +445,7 @@ demographic_configs <- list(
     ),
     Persönlicher_Code = list(
         question = "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags):",
-        question_en = "Please create a personal code (first 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday):",
+        question_en = "Please create a personal code (first 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday):",
         type = "text",
         required = FALSE
     )
@@ -891,91 +891,6 @@ custom_page_flow <- list(
     )
 )
 
-# =============================================================================
-# RESULTS PROCESSOR WITH FIXED RADAR PLOT  
-# =============================================================================
-
-create_hilfo_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
-    # Global error handling for the entire function
-    tryCatch({
-        # Lazy load packages only when actually needed
-        if (!requireNamespace("ggplot2", quietly = TRUE)) {
-            stop("ggplot2 package is required for report generation")
-        }
-        if (!requireNamespace("base64enc", quietly = TRUE)) {
-            stop("base64enc package is required for report generation")
-        }
-    
-    # SIMPLE LANGUAGE DETECTION - Check global environment FIRST
-    current_lang <- "de"  # Default to German
-    
-    cat("DEBUG: Starting SIMPLE language detection\n")
-    
-    # Check global environment FIRST - this is where toggleLanguage stores it
-    if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
-      stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
-      if (!is.null(stored_lang) && (stored_lang == "en" || stored_lang == "de")) {
-        current_lang <- stored_lang
-        cat("DEBUG: Found language in global hilfo_language_preference:", current_lang, "\n")
-        # Use this and skip all other checks
-        is_english <- (current_lang == "en")
-        cat("DEBUG: Using global language:", current_lang, "- is_english:", is_english, "\n")
-      }
-    }
-    
-    # If not found in global environment, check session as fallback
-    if (current_lang == "de" && !is.null(session) && !is.null(session$input)) {
-        # Check session input as fallback
-        lang_keys <- c("hilfo_language_preference", "study_language", "language", "current_language")
-        for (key in lang_keys) {
-            if (key %in% names(session$input) && !is.null(session$input[[key]])) {
-                current_lang <- session$input[[key]]
-                cat("DEBUG: Found language in session$input$", key, ":", current_lang, "\n")
-                break
-            }
-        }
-    }
-    
-    # Final fallback to German
-    if (is.null(current_lang) || current_lang == "") {
-        current_lang <- "de"
-        cat("DEBUG: Using default German language\n")
-    }
-    
-    # Set is_english based on current_lang
-    is_english <- (current_lang == "en")
-    cat("DEBUG: Final language settings - current_lang:", current_lang, ", is_english:", is_english, "\n")
-    
-    if (is.null(responses) || length(responses) == 0) {
-        if (is_english) {
-            return(shiny::HTML("<p>No responses available for evaluation.</p>"))
-        } else {
-            return(shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>"))
-        }
-    }
-    
-    # Ensure demographics is a list
-    if (is.null(demographics)) {
-        demographics <- list()
-    }
-    
-    
-    # This function is incomplete - the real implementation is below
-    return(shiny::HTML("<p>Loading report...</p>"))
-}
-
-# The duplicate/incomplete function above should be removed in production
-# The real create_hilfo_report function is defined below
-    
-    # Page 21: Results (now with PA results included)
-    list(
-        id = "page21",
-        type = "results",
-        title = "Ihre Ergebnisse",
-        title_en = "Your Results",
-        results_processor = "create_hilfo_report"
-    )
-)
 
 # =============================================================================
 # RESULTS PROCESSOR WITH FIXED RADAR PLOT
