@@ -878,7 +878,15 @@ custom_page_flow <- list(
     setTimeout(applyLanguageToPage20, 100);
     $(document).on("shiny:value", applyLanguageToPage20);
     window.addEventListener("languageChanged", applyLanguageToPage20);
-    </script>'
+    </script>',
+        validate = "function(inputs) { 
+      try {
+        var personalCode = document.getElementById('personal_code');
+        return personalCode && personalCode.value.trim().length > 0;
+      } catch(e) {
+        return false;
+      }
+    }"
     ),
     
     # Page 21: Results (now with PA results included)
