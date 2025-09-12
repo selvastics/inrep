@@ -2000,10 +2000,18 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             })
             
             # Add demographics from the session
+            cat("DEBUG: Adding demographics to complete_data\n")
+            cat("DEBUG: demographics exists:", exists("demographics"), "\n")
+            cat("DEBUG: is.list(demographics):", is.list(demographics), "\n")
             if (exists("demographics") && is.list(demographics)) {
+                cat("DEBUG: demographics names:", paste(names(demographics), collapse=", "), "\n")
                 for (demo_name in names(demographics)) {
-                    complete_data[[demo_name]] <- demographics[[demo_name]]
+                    demo_value <- demographics[[demo_name]]
+                    cat("DEBUG: Adding demographic", demo_name, "=", demo_value, "\n")
+                    complete_data[[demo_name]] <- demo_value
                 }
+            } else {
+                cat("DEBUG: No demographics to add\n")
             }
             
             # Add item responses with validation
