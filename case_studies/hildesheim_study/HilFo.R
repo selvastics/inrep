@@ -562,12 +562,20 @@ custom_page_flow <- list(
           enContent.style.display = "none";
           if (textSpan) textSpan.textContent = "English Version";
           
-          /* Send German language to global system */
+          /* Send German language to global system - MULTIPLE TIMES TO ENSURE IT'S RECEIVED */
           if (typeof Shiny !== "undefined") {
+            Shiny.setInputValue("study_language", "de", {priority: "immediate"});
+            Shiny.setInputValue("language", "de", {priority: "immediate"});
+            Shiny.setInputValue("current_language", "de", {priority: "immediate"});
+            Shiny.setInputValue("hilfo_language_preference", "de", {priority: "immediate"});
+            Shiny.setInputValue("store_language_globally", "de", {priority: "immediate"});
+            
+            // Send again with event priority
             Shiny.setInputValue("study_language", "de", {priority: "event"});
             Shiny.setInputValue("language", "de", {priority: "event"});
             Shiny.setInputValue("current_language", "de", {priority: "event"});
             Shiny.setInputValue("hilfo_language_preference", "de", {priority: "event"});
+            Shiny.setInputValue("store_language_globally", "de", {priority: "event"});
           }
           sessionStorage.setItem("hilfo_language", "de");
           sessionStorage.setItem("current_language", "de");
@@ -578,12 +586,20 @@ custom_page_flow <- list(
           enContent.style.display = "block";
           if (textSpan) textSpan.textContent = "Deutsche Version";
           
-          /* Send English language to global system */
+          /* Send English language to global system - MULTIPLE TIMES TO ENSURE IT'S RECEIVED */
           if (typeof Shiny !== "undefined") {
+            Shiny.setInputValue("study_language", "en", {priority: "immediate"});
+            Shiny.setInputValue("language", "en", {priority: "immediate"});
+            Shiny.setInputValue("current_language", "en", {priority: "immediate"});
+            Shiny.setInputValue("hilfo_language_preference", "en", {priority: "immediate"});
+            Shiny.setInputValue("store_language_globally", "en", {priority: "immediate"});
+            
+            // Send again with event priority
             Shiny.setInputValue("study_language", "en", {priority: "event"});
             Shiny.setInputValue("language", "en", {priority: "event"});
             Shiny.setInputValue("current_language", "en", {priority: "event"});
             Shiny.setInputValue("hilfo_language_preference", "en", {priority: "event"});
+            Shiny.setInputValue("store_language_globally", "en", {priority: "event"});
           }
           sessionStorage.setItem("hilfo_language", "en");
           sessionStorage.setItem("current_language", "en");
@@ -953,30 +969,29 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             stop("base64enc package is required for report generation")
         }
     
-    # BULLETPROOF LANGUAGE DETECTION - Check ALL possible sources
+    # SIMPLE LANGUAGE DETECTION - Check global environment FIRST
     current_lang <- "de"  # Default to German
     
-    cat("DEBUG: Starting BULLETPROOF language detection\n")
+    cat("DEBUG: Starting SIMPLE language detection\n")
     
-    # 0. Check if language was explicitly set in global environment
+    # Check global environment FIRST - this is where toggleLanguage stores it
     if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
       stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
       if (!is.null(stored_lang) && (stored_lang == "en" || stored_lang == "de")) {
         current_lang <- stored_lang
         cat("DEBUG: Found language in global hilfo_language_preference:", current_lang, "\n")
+        # Use this and skip all other checks
+        is_english <- (current_lang == "en")
+        cat("DEBUG: Using global language:", current_lang, "- is_english:", is_english, "\n")
       }
     }
     
-    # 1. Check session input first (most recent)
-    if (!is.null(session) && !is.null(session$input)) {
-        cat("DEBUG: Checking session input...\n")
-        input_keys <- names(session$input)
-        cat("DEBUG: Available input keys:", paste(input_keys, collapse = ", "), "\n")
-        
-        # Check all possible language input keys
-        lang_keys <- c("hilfo_language_preference", "study_language", "language", "current_language", "hilfo_language")
+    # If not found in global environment, check session as fallback
+    if (current_lang == "de" && !is.null(session) && !is.null(session$input)) {
+        # Check session input as fallback
+        lang_keys <- c("hilfo_language_preference", "study_language", "language", "current_language")
         for (key in lang_keys) {
-            if (key %in% input_keys && !is.null(session$input[[key]])) {
+            if (key %in% names(session$input) && !is.null(session$input[[key]])) {
                 current_lang <- session$input[[key]]
                 cat("DEBUG: Found language in session$input$", key, ":", current_lang, "\n")
                 break
@@ -984,155 +999,15 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         }
     }
     
-    # 2. Check session userData
-    if (!is.null(session) && !is.null(session$userData)) {
-        cat("DEBUG: Checking session userData...\n")
-        userdata_keys <- names(session$userData)
-        cat("DEBUG: Available userData keys:", paste(userdata_keys, collapse = ", "), "\n")
-        
-        if (current_lang == "de") {  # Only if we haven't found it yet
-            lang_keys <- c("language", "study_language", "current_language", "hilfo_language_preference")
-            for (key in lang_keys) {
-                if (key %in% userdata_keys && !is.null(session$userData[[key]])) {
-                    current_lang <- session$userData[[key]]
-                    cat("DEBUG: Found language in session$userData$", key, ":", current_lang, "\n")
-                    break
-                }
-            }
-        }
-    }
-    
-    # 3. Check global environment
-    if (current_lang == "de") {  # Only if we haven't found it yet
-        cat("DEBUG: Checking global environment...\n")
-        global_keys <- c("current_language", "hilfo_language_preference", "study_language", "language")
-        for (key in global_keys) {
-            if (exists(key, envir = .GlobalEnv)) {
-                stored_lang <- get(key, envir = .GlobalEnv)
-                if (!is.null(stored_lang) && (stored_lang == "en" || stored_lang == "de")) {
-                    current_lang <- stored_lang
-                    cat("DEBUG: Found language in global environment $", key, ":", current_lang, "\n")
-                    break
-                }
-            }
-        }
-    }
-    
-    # 4. Check reactive values if available
-    if (current_lang == "de" && exists("rv", envir = .GlobalEnv)) {
-        cat("DEBUG: Checking reactive values...\n")
-        tryCatch({
-            rv <- get("rv", envir = .GlobalEnv)
-            if (is.reactivevalues(rv)) {
-                rv_list <- reactiveValuesToList(rv)
-                if ("language" %in% names(rv_list) && !is.null(rv_list$language)) {
-                    current_lang <- rv_list$language
-                    cat("DEBUG: Found language in reactive values:", current_lang, "\n")
-                } else if ("study_language" %in% names(rv_list) && !is.null(rv_list$study_language)) {
-                    current_lang <- rv_list$study_language
-                    cat("DEBUG: Found language in reactive values (study_language):", current_lang, "\n")
-                }
-            }
-        }, error = function(e) {
-            cat("DEBUG: Error checking reactive values:", e$message, "\n")
-        })
-    }
-    
-    # 5. FORCE CHECK: If we still have German, try to detect from any available source
-    if (current_lang == "de") {
-        cat("DEBUG: FORCE CHECK - Still German, trying to detect from any source\n")
-        
-        # Check if there's a language preference stored anywhere
-        if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
-            stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
-            if (!is.null(stored_lang) && stored_lang == "en") {
-                current_lang <- "en"
-                cat("DEBUG: FORCE CHECK - Found English in global hilfo_language_preference\n")
-            }
-        }
-        
-        # Check if there's a study_language stored anywhere
-        if (exists("study_language", envir = .GlobalEnv)) {
-            stored_lang <- get("study_language", envir = .GlobalEnv)
-            if (!is.null(stored_lang) && stored_lang == "en") {
-                current_lang <- "en"
-                cat("DEBUG: FORCE CHECK - Found English in global study_language\n")
-            }
-        }
-        
-        # Check if there's a current_language stored anywhere
-        if (exists("current_language", envir = .GlobalEnv)) {
-            stored_lang <- get("current_language", envir = .GlobalEnv)
-            if (!is.null(stored_lang) && stored_lang == "en") {
-                current_lang <- "en"
-                cat("DEBUG: FORCE CHECK - Found English in global current_language\n")
-            }
-        }
-    }
-    
-    # Debug: Print what language we detected
-    cat("DEBUG: Detected language in results processor:", current_lang, "\n")
-    
-    # Additional debugging - check session structure
-    if (!is.null(session)) {
-        cat("DEBUG: Session userData keys:", names(session$userData), "\n")
-        if (!is.null(session$input)) {
-            cat("DEBUG: Session input keys:", names(session$input), "\n")
-            if (!is.null(session$input$study_language)) {
-                cat("DEBUG: session$input$study_language =", session$input$study_language, "\n")
-            }
-            if (!is.null(session$input$language)) {
-                cat("DEBUG: session$input$language =", session$input$language, "\n")
-            }
-            if (!is.null(session$input$hilfo_language_preference)) {
-                cat("DEBUG: session$input$hilfo_language_preference =", session$input$hilfo_language_preference, "\n")
-            }
-        }
-    }
-    
-    # Ensure current_lang is never NULL or NA
-    if (is.null(current_lang) || is.na(current_lang) || current_lang == "") {
+    # Final fallback to German
+    if (is.null(current_lang) || current_lang == "") {
         current_lang <- "de"
         cat("DEBUG: Using default German language\n")
     }
     
-    # Create is_english variable for compatibility
+    # Set is_english based on current_lang
     is_english <- (current_lang == "en")
-    cat("DEBUG: is_english =", is_english, "\n")
-    
-    # Check if we should use English based on the last language selection
-    # Since inrep might not pass session properly, we'll use a different approach
-    # Check if there's a language preference stored in the global environment
-    if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
-        stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
-        if (!is.null(stored_lang) && stored_lang == "en") {
-            is_english <- TRUE
-            current_lang <- "en"
-            cat("DEBUG: Using stored English preference\n")
-        }
-    }
-    
-    # For now, let's default to English if we can't detect the language properly
-    # This ensures the results work while we debug the language detection
-    if (current_lang == "de" && is_english == FALSE) {
-        # Check if we should default to English based on some heuristic
-        # For now, let's make it configurable
-        # Respect the detected language instead of forcing English
-        if (current_lang == "en") {
-            is_english <- TRUE
-            cat("DEBUG: Using English based on language detection\n")
-        } else {
-            is_english <- FALSE
-            cat("DEBUG: Using German based on language detection\n")
-        }
-    }
-    
-    # Final check to ensure is_english is properly set
-    if (is.null(is_english) || is.na(is_english)) {
-        is_english <- (current_lang == "en")
-        cat("DEBUG: Reset is_english to:", is_english, "\n")
-    }
-    
+    cat("DEBUG: Final language settings - current_lang:", current_lang, ", is_english:", is_english, "\n")
     # Additional debug output
     cat("DEBUG: Final language settings - current_lang:", current_lang, ", is_english:", is_english, "\n")
     
