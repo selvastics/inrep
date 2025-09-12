@@ -2772,11 +2772,23 @@ launch_study <- function(
         # Update config language
         config$language <<- new_lang
         
+        # Store globally for HilFo report access
+        assign("hilfo_language_preference", new_lang, envir = .GlobalEnv)
+        
         # Log the change
         cat("Language switched via JavaScript to:", new_lang, "\n")
         
         # Force UI refresh for language change
         shiny::invalidateLater(50, session)
+      }
+    })
+    
+    # Also observe store_language_globally for HilFo
+    shiny::observeEvent(input$store_language_globally, {
+      if (!is.null(input$store_language_globally)) {
+        # Store globally for HilFo report access
+        assign("hilfo_language_preference", input$store_language_globally, envir = .GlobalEnv)
+        cat("Stored language globally for HilFo:", input$store_language_globally, "\n")
       }
     })
     

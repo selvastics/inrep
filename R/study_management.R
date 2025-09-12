@@ -1587,7 +1587,20 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
     
     # Use cat_result if available (contains cleaned responses), otherwise use raw responses
     if (!is.null(rv$cat_result) && !is.null(rv$cat_result$responses)) {
-      if ("demographics" %in% processor_args) {
+      # Check if processor accepts session parameter for language detection
+      if ("session" %in% processor_args) {
+        # Create a mock session object with language info
+        mock_session <- list(input = list(
+          hilfo_language_preference = rv$language,
+          study_language = rv$language,
+          language = rv$language
+        ))
+        if ("demographics" %in% processor_args) {
+          results_content <- config$results_processor(rv$cat_result$responses, item_bank, rv$demo_data, mock_session)
+        } else {
+          results_content <- config$results_processor(rv$cat_result$responses, item_bank, session = mock_session)
+        }
+      } else if ("demographics" %in% processor_args) {
         results_content <- config$results_processor(rv$cat_result$responses, item_bank, rv$demo_data)
       } else {
         results_content <- config$results_processor(rv$cat_result$responses, item_bank)
@@ -1615,7 +1628,20 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
       }
       
       if (length(all_responses) > 0) {
-        if ("demographics" %in% processor_args) {
+        # Check if processor accepts session parameter for language detection
+        if ("session" %in% processor_args) {
+          # Create a mock session object with language info
+          mock_session <- list(input = list(
+            hilfo_language_preference = rv$language,
+            study_language = rv$language,
+            language = rv$language
+          ))
+          if ("demographics" %in% processor_args) {
+            results_content <- config$results_processor(all_responses, item_bank, rv$demo_data, mock_session)
+          } else {
+            results_content <- config$results_processor(all_responses, item_bank, session = mock_session)
+          }
+        } else if ("demographics" %in% processor_args) {
           results_content <- config$results_processor(all_responses, item_bank, rv$demo_data)
         } else {
           results_content <- config$results_processor(all_responses, item_bank)
