@@ -823,7 +823,7 @@ custom_page_flow <- list(
         </p>
       </div>
       <div style="text-align: center; margin: 30px 0;">
-        <input type="text" id="personal_code" placeholder="z.B. MAHA15" style="
+        <input type="text" id="personal_code" placeholder="e.g. MAHA15" style="
           padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
           text-align: center; width: 200px; text-transform: uppercase;" required>
       </div>
@@ -835,6 +835,10 @@ custom_page_flow <- list(
     document.addEventListener("DOMContentLoaded", function() {
       var input = document.getElementById("personal_code");
       if (input) {
+        // Update placeholder based on language
+        var currentLang = sessionStorage.getItem("hilfo_language") || "de";
+        input.placeholder = currentLang === "en" ? "e.g. MAHA15" : "z.B. MAHA15";
+        
         input.addEventListener("input", function() {
           this.value = this.value.toUpperCase();
         });
@@ -844,6 +848,17 @@ custom_page_flow <- list(
           }
         });
       }
+      
+      // Apply language to all bilingual elements on this page
+      var langElements = document.querySelectorAll(".bilingual-text span[data-lang-de][data-lang-en]");
+      langElements.forEach(function(element) {
+        var currentLang = sessionStorage.getItem("hilfo_language") || "de";
+        if (currentLang === "en") {
+          element.textContent = element.getAttribute("data-lang-en");
+        } else {
+          element.textContent = element.getAttribute("data-lang-de");
+        }
+      });
     });
     </script>'
     ),
@@ -1981,13 +1996,13 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">',
         
         # PDF Download Button
-        '<button onclick="try { if(typeof downloadPDF === \'function\') { downloadPDF(); } else { var content = \'HilFo Study Results\\n\\nGenerated: \' + new Date().toLocaleString() + \'\\n\\nThis is a comprehensive PDF report containing:\\n- Personality profile results\\n- Programming anxiety scores\\n- Study satisfaction ratings\\n- Detailed analysis and recommendations\\n\\nThank you for participating in the HilFo study!\'; var blob = new Blob([content], {type: \'text/plain\'}); var url = window.URL.createObjectURL(blob); var link = document.createElement(\'a\'); link.href = url; link.download = \'HilFo_Results_\' + new Date().toISOString().slice(0,19).replace(/:/g, \'-\') + \'.txt\'; link.click(); window.URL.revokeObjectURL(url); } } catch(e) { alert(\'Download error: \' + e.message); }" class="btn btn-primary" style="background: #e8041c; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+        '<button onclick="downloadPDF();" class="btn btn-primary" style="background: #e8041c; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
         "<i class=\"fas fa-file-pdf\" style=\"margin-right: 8px;\"></i>",
         if (is_english) "Download PDF" else "PDF herunterladen",
         '</button>',
         
         # CSV Download Button  
-        '<button onclick="try { if(typeof downloadCSV === \'function\') { downloadCSV(); } else { var csvContent = \'timestamp,participant_id,study_language,data_type,value\\n\' + new Date().toISOString() + \',HILFO_001,en,study_completed,true\\n\' + new Date().toISOString() + \',HILFO_001,en,personality_assessment,completed\\n\' + new Date().toISOString() + \',HILFO_001,en,programming_anxiety,completed\\n\'; var blob = new Blob([csvContent], {type: \'text/csv\'}); var url = window.URL.createObjectURL(blob); var link = document.createElement(\'a\'); link.href = url; link.download = \'HilFo_Data_\' + new Date().toISOString().slice(0,19).replace(/:/g, \'-\') + \'.csv\'; link.click(); window.URL.revokeObjectURL(url); } } catch(e) { alert(\'Download error: \' + e.message); }" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+        '<button onclick="downloadCSV();" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
         "<i class=\"fas fa-file-csv\" style=\"margin-right: 8px;\"></i>",
         if (is_english) "Download CSV" else "CSV herunterladen",
         '</button>',
@@ -2010,7 +2025,35 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     html <- paste0(
         html,
         download_section_html,
-        '</div>'  # Close main report-content div
+        '</div>',  # Close main report-content div
+        
+        # Add JavaScript to update language on page load
+        '<script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Get current language from session storage
+            var currentLang = sessionStorage.getItem("hilfo_language") || "de";
+            console.log("Report page - current language:", currentLang);
+            
+            // Update all bilingual elements
+            var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+            langElements.forEach(function(element) {
+                if (currentLang === "en") {
+                    element.textContent = element.getAttribute("data-lang-en");
+                } else {
+                    element.textContent = element.getAttribute("data-lang-de");
+                }
+            });
+            
+            // Update language button if it exists
+            var btn = document.getElementById("language-toggle-btn");
+            if (btn) {
+                var textSpan = btn.querySelector("#lang_switch_text");
+                if (textSpan) {
+                    textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
+                }
+            }
+        });
+        </script>'
     )
     
     return(shiny::HTML(html))
@@ -2442,13 +2485,29 @@ function initializeLanguage() {
       var enText = element.getAttribute("data-lang-en");
       if (enText) {
         element.textContent = enText;
-        console.log("Set element to English:", enText);
       }
     } else {
       var deText = element.getAttribute("data-lang-de");
       if (deText) {
         element.textContent = deText;
-        console.log("Set element to German:", deText);
+      }
+    }
+  });
+  
+  /* Also check for bilingual-text class elements */
+  var bilingualElements = document.querySelectorAll(".bilingual-text span[data-lang-de][data-lang-en]");
+  console.log("Found", bilingualElements.length, "bilingual-text elements");
+  
+  bilingualElements.forEach(function(element) {
+    if (currentLang === "en") {
+      var enText = element.getAttribute("data-lang-en");
+      if (enText) {
+        element.textContent = enText;
+      }
+    } else {
+      var deText = element.getAttribute("data-lang-de");
+      if (deText) {
+        element.textContent = deText;
       }
     }
   });
