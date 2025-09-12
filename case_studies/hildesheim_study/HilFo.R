@@ -830,6 +830,9 @@ custom_page_flow <- list(
             # Get current language from rv
             current_lang <- rv$language %||% "de"
             
+            # Debug logging
+            cat("Page 20 render - rv$language:", rv$language, "current_lang:", current_lang, "\n")
+            
             # Generate content based on language
             if (current_lang == "en") {
                 content <- '<div id="personal-code-content" style="padding: 20px; font-size: 16px; line-height: 1.8;">
@@ -2121,6 +2124,29 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         
         '</div>',
         '</div>',
+        
+        # JavaScript for download functions
+        '<script>',
+        'function downloadPDF() {',
+        '  console.log("PDF download requested");',
+        '  // Use Shiny to trigger the download',
+        '  if (typeof Shiny !== "undefined") {',
+        '    Shiny.setInputValue("download_pdf_trigger", Math.random());',
+        '  } else {',
+        '    alert("PDF download is not available. Please try again.");',
+        '  }',
+        '}',
+        '',
+        'function downloadCSV() {',
+        '  console.log("CSV download requested");',
+        '  // Use Shiny to trigger the download',
+        '  if (typeof Shiny !== "undefined") {',
+        '    Shiny.setInputValue("download_csv_trigger", Math.random());',
+        '  } else {',
+        '    alert("CSV download is not available. Please try again.");',
+        '  }',
+        '}',
+        '</script>',
         
         # Print styles
         '<style>',

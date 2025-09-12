@@ -2730,6 +2730,12 @@ launch_study <- function(
     shiny::observeEvent(input$study_language, {
       if (!is.null(input$study_language)) {
         new_lang <- input$study_language
+        
+        # Only update if actually different to prevent toggle loops
+        if (!is.null(rv$language) && rv$language == new_lang) {
+          return()
+        }
+        
         current_language(new_lang)
         
         # Update UI labels
@@ -2757,6 +2763,12 @@ launch_study <- function(
     shiny::observeEvent(input$hilfo_language_preference, {
       if (!is.null(input$hilfo_language_preference)) {
         new_lang <- input$hilfo_language_preference
+        
+        # Only update if actually different to prevent toggle loops
+        if (!is.null(rv$language) && rv$language == new_lang) {
+          return()
+        }
+        
         current_language(new_lang)
         
         # Update UI labels
@@ -2790,6 +2802,87 @@ launch_study <- function(
         assign("hilfo_language_preference", input$store_language_globally, envir = .GlobalEnv)
         cat("Stored language globally for HilFo:", input$store_language_globally, "\n")
       }
+    })
+    
+    # Observe PDF download trigger from HilFo
+    shiny::observeEvent(input$download_pdf_trigger, {
+      cat("PDF download triggered\n")
+      # Generate PDF content
+      tryCatch({
+        # Get the current report content
+        if (!is.null(rv$cat_result)) {
+          responses <- rv$cat_result$responses
+        } else {
+          responses <- rv$responses
+        }
+        
+        # Generate report HTML
+        report_html <- if (!is.null(config$results_processor) && is.function(config$results_processor)) {
+          config$results_processor(responses, item_bank, rv$demo_data, list(input = list(language = rv$language)))
+        } else {
+          shiny::HTML("<p>No report available</p>")
+        }
+        
+        # Create a temporary HTML file
+        temp_html <- tempfile(fileext = ".html")
+        writeLines(as.character(report_html), temp_html)
+        
+        # Convert to PDF using browser print dialog
+        shiny::runjs("window.print();")
+        
+      }, error = function(e) {
+        cat("Error generating PDF:", e$message, "\n")
+        shiny::showNotification("Error generating PDF. Please try again.", type = "error")
+      })
+    })
+    
+    # Observe CSV download trigger from HilFo
+    shiny::observeEvent(input$download_csv_trigger, {
+      cat("CSV download triggered\n")
+      # Generate CSV content
+      tryCatch({
+        # Collect all data
+        csv_data <- data.frame(
+          timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+          session_id = rv$unique_session_id %||% "",
+          language = rv$language %||% "de"
+        )
+        
+        # Add demographics
+        if (!is.null(rv$demo_data)) {
+          for (name in names(rv$demo_data)) {
+            csv_data[[name]] <- rv$demo_data[[name]]
+          }
+        }
+        
+        # Add responses
+        if (!is.null(rv$responses)) {
+          for (i in seq_along(rv$responses)) {
+            csv_data[[paste0("item_", i)]] <- rv$responses[i]
+          }
+        }
+        
+        # Convert to CSV string
+        csv_content <- paste(capture.output(write.csv(csv_data, row.names = FALSE)), collapse = "\n")
+        
+        # Trigger download via JavaScript
+        shiny::runjs(sprintf("
+          var csv = %s;
+          var blob = new Blob([csv], {type: 'text/csv'});
+          var url = window.URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'hilfo_results_%s.csv';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+        ", jsonlite::toJSON(csv_content), format(Sys.time(), "%Y%m%d_%H%M%S")))
+        
+      }, error = function(e) {
+        cat("Error generating CSV:", e$message, "\n")
+        shiny::showNotification("Error generating CSV. Please try again.", type = "error")
+      })
     })
     
     # IMMEDIATE UI DISPLAY - Show first page before package loading using later package
