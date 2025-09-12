@@ -1537,78 +1537,10 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
     }
   }
   
-  # Special handling for page 20 (Personal Code page) - language-aware rendering
-  if (page$id == "page20") {
-    # Get current language
-    current_lang <- rv$language %||% config$language %||% "de"
-    
-    # Define language-specific content
-    if (current_lang == "en") {
-      title_text <- "Personal Code"
-      instruction_text <- "Please create a personal code:"
-      formula_text <- "First 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday"
-      example_text <- "Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15"
-      placeholder_text <- "e.g. MAHA15"
-    } else {
-      title_text <- "Persönlicher Code"
-      instruction_text <- "Bitte erstellen Sie einen persönlichen Code:"
-      formula_text <- "Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags"
-      example_text <- "Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15"
-      placeholder_text <- "z.B. MAHA15"
-    }
-    
-    # Generate the HTML content dynamically based on language
-    content_html <- paste0(
-      '<div id="personal-code-content" style="padding: 20px; font-size: 16px; line-height: 1.8;">',
-      '<h2 id="personal-code-title" style="color: #e8041c; text-align: center; margin-bottom: 25px;">', title_text, '</h2>',
-      '<p id="personal-code-instruction" style="text-align: center; margin-bottom: 30px; font-size: 18px;">', instruction_text, '</p>',
-      '<div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">',
-      '<p id="personal-code-formula" style="margin: 0; font-weight: 500;">', formula_text, '</p>',
-      '</div>',
-      '<div style="text-align: center; margin: 30px 0;">',
-      '<input type="text" id="personal_code" placeholder="', placeholder_text, '" style="',
-      'padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; ',
-      'text-align: center; width: 200px; text-transform: uppercase;" required>',
-      '</div>',
-      '<div style="text-align: center; color: #666; font-size: 14px;">',
-      '<span id="personal-code-example">', example_text, '</span>',
-      '</div>',
-      '</div>'
-    )
-    
-    # Add the JavaScript for language switching (as backup)
-    js_script <- '
-    <script>
-    // Backup language switching for personal code page
-    function applyLanguageToPersonalCodePage() {
-      var currentLang = sessionStorage.getItem("hilfo_language") || "de";
-      if (currentLang === "en") {
-        if (document.getElementById("personal-code-title")) {
-          document.getElementById("personal-code-title").textContent = "Personal Code";
-          document.getElementById("personal-code-instruction").textContent = "Please create a personal code:";
-          document.getElementById("personal-code-formula").textContent = "First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday";
-          document.getElementById("personal-code-example").textContent = "Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15";
-          var input = document.getElementById("personal_code");
-          if (input) input.placeholder = "e.g. MAHA15";
-        }
-      }
-    }
-    // Apply immediately and on Shiny recalculation
-    setTimeout(applyLanguageToPersonalCodePage, 100);
-    $(document).on("shiny:recalculated", applyLanguageToPersonalCodePage);
-    </script>'
-    
-    return(shiny::div(
-      class = "assessment-card",
-      style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
-      shiny::HTML(content_html),
-      shiny::HTML(js_script)
-    ))
-  }
-  
-  # Default rendering
+  # GENERIC approach: Check if page has a render_function that handles language
   if (!is.null(page$render_function) && is.function(page$render_function)) {
-    # Call render function and return the result
+    # Pass rv (which contains language) to the render function
+    # The study-specific render function should handle language switching
     tryCatch({
       page$render_function(input, NULL, NULL, rv)
     }, error = function(e) {
@@ -1623,7 +1555,16 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
         }
       )
     })
+  } else if (!is.null(page$content_en) && !is.null(rv$language) && rv$language == "en") {
+    # GENERIC: If page provides content_en and we're in English mode, use it
+    shiny::div(
+      class = "assessment-card",
+      style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
+      shiny::h3(page$title_en %||% page$title %||% "Page", class = "card-header"),
+      shiny::HTML(page$content_en)
+    )
   } else {
+    # Default rendering with original content
     shiny::div(
       class = "assessment-card",
       style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",

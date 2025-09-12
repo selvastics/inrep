@@ -840,6 +840,21 @@ custom_page_flow <- list(
       <div style="text-align: center; color: #666; font-size: 14px;">
         <span id="personal-code-example">Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</span>
       </div>
+    </div>',
+        content_en = '<div id="personal-code-content" style="padding: 20px; font-size: 16px; line-height: 1.8;">
+      <h2 id="personal-code-title" style="color: #e8041c; text-align: center; margin-bottom: 25px;">Personal Code</h2>
+      <p id="personal-code-instruction" style="text-align: center; margin-bottom: 30px; font-size: 18px;">Please create a personal code:</p>
+      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+        <p id="personal-code-formula" style="margin: 0; font-weight: 500;">First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday</p>
+      </div>
+      <div style="text-align: center; margin: 30px 0;">
+        <input type="text" id="personal_code" placeholder="e.g. MAHA15" style="
+          padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
+          text-align: center; width: 200px; text-transform: uppercase;" required>
+      </div>
+      <div style="text-align: center; color: #666; font-size: 14px;">
+        <span id="personal-code-example">Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</span>
+      </div>
     </div>
     <script>
     // NUCLEAR LANGUAGE SWITCHING - DIRECTLY UPDATE CONTENT
