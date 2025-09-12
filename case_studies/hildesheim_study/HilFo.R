@@ -580,6 +580,9 @@ custom_page_flow <- list(
           sessionStorage.setItem("hilfo_language", "de");
           sessionStorage.setItem("current_language", "de");
           sessionStorage.setItem("hilfo_language_preference", "de");
+          
+          // Trigger language change event for page 20
+          window.dispatchEvent(new CustomEvent("languageChanged", {detail: "de"}));
         } else {
           /* Switch to English */
           deContent.style.display = "none";
@@ -604,6 +607,9 @@ custom_page_flow <- list(
           sessionStorage.setItem("hilfo_language", "en");
           sessionStorage.setItem("current_language", "en");
           sessionStorage.setItem("hilfo_language_preference", "en");
+          
+          // Trigger language change event for page 20
+          window.dispatchEvent(new CustomEvent("languageChanged", {detail: "en"}));
         }
       }
       
@@ -826,55 +832,53 @@ custom_page_flow <- list(
         type = "custom",
         title = "",
         title_en = "Personal Code",
-        render_function = function(input, output, session, rv) {
-            # Get current language from rv
-            current_lang <- rv$language %||% "de"
-            
-            # Debug logging
-            cat("Page 20 render - rv$language:", rv$language, "current_lang:", current_lang, "\n")
-            
-            # Generate content based on language
-            if (current_lang == "en") {
-                content <- '<div id="personal-code-content" style="padding: 20px; font-size: 16px; line-height: 1.8;">
-                  <h2 id="personal-code-title" style="color: #e8041c; text-align: center; margin-bottom: 25px;">Personal Code</h2>
-                  <p id="personal-code-instruction" style="text-align: center; margin-bottom: 30px; font-size: 18px;">Please create a personal code:</p>
-                  <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-                    <p id="personal-code-formula" style="margin: 0; font-weight: 500;">First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday</p>
-                  </div>
-                  <div style="text-align: center; margin: 30px 0;">
-                    <input type="text" id="personal_code" placeholder="e.g. MAHA15" style="
-                      padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
-                      text-align: center; width: 200px; text-transform: uppercase;" required>
-                  </div>
-                  <div style="text-align: center; color: #666; font-size: 14px;">
-                    <span id="personal-code-example">Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</span>
-                  </div>
-                </div>'
-            } else {
-                content <- '<div id="personal-code-content" style="padding: 20px; font-size: 16px; line-height: 1.8;">
-                  <h2 id="personal-code-title" style="color: #e8041c; text-align: center; margin-bottom: 25px;">Persönlicher Code</h2>
-                  <p id="personal-code-instruction" style="text-align: center; margin-bottom: 30px; font-size: 18px;">Bitte erstellen Sie einen persönlichen Code:</p>
-                  <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-                    <p id="personal-code-formula" style="margin: 0; font-weight: 500;">Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</p>
-                  </div>
-                  <div style="text-align: center; margin: 30px 0;">
-                    <input type="text" id="personal_code" placeholder="z.B. MAHA15" style="
-                      padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
-                      text-align: center; width: 200px; text-transform: uppercase;" required>
-                  </div>
-                  <div style="text-align: center; color: #666; font-size: 14px;">
-                    <span id="personal-code-example">Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</span>
-                  </div>
-                </div>'
-            }
-            
-            # Return the content wrapped in a div
-            shiny::div(
-                class = "assessment-card",
-                style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
-                shiny::HTML(content)
-            )
+        content = '<div id="personal-code-content" style="padding: 20px; font-size: 16px; line-height: 1.8;">
+      <h2 id="personal-code-title" style="color: #e8041c; text-align: center; margin-bottom: 25px;" data-lang-de="Persönlicher Code" data-lang-en="Personal Code">Persönlicher Code</h2>
+      <p id="personal-code-instruction" style="text-align: center; margin-bottom: 30px; font-size: 18px;" data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">Bitte erstellen Sie einen persönlichen Code:</p>
+      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+        <p id="personal-code-formula" style="margin: 0; font-weight: 500;" data-lang-de="Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags" data-lang-en="First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday">Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</p>
+      </div>
+      <div style="text-align: center; margin: 30px 0;">
+        <input type="text" id="personal_code" placeholder="z.B. MAHA15" data-placeholder-de="z.B. MAHA15" data-placeholder-en="e.g. MAHA15" style="
+          padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
+          text-align: center; width: 200px; text-transform: uppercase;" required>
+      </div>
+      <div style="text-align: center; color: #666; font-size: 14px;">
+        <span id="personal-code-example" data-lang-de="Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15" data-lang-en="Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15">Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</span>
+      </div>
+    </div>
+    <script>
+    // Apply language to personal code page
+    function applyLanguageToPage20() {
+      var currentLang = sessionStorage.getItem("hilfo_language") || "de";
+      console.log("Applying language to page 20:", currentLang);
+      
+      // Update all elements with data-lang attributes
+      var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+      elements.forEach(function(el) {
+        if (currentLang === "en") {
+          el.textContent = el.getAttribute("data-lang-en");
+        } else {
+          el.textContent = el.getAttribute("data-lang-de");
         }
+      });
+      
+      // Update input placeholder
+      var input = document.getElementById("personal_code");
+      if (input) {
+        if (currentLang === "en") {
+          input.placeholder = input.getAttribute("data-placeholder-en") || "e.g. MAHA15";
+        } else {
+          input.placeholder = input.getAttribute("data-placeholder-de") || "z.B. MAHA15";
+        }
+      }
+    }
+    
+    // Apply immediately and on language changes
+    setTimeout(applyLanguageToPage20, 100);
+    $(document).on("shiny:value", applyLanguageToPage20);
+    window.addEventListener("languageChanged", applyLanguageToPage20);
+    </script>'
     ),
     
     # Page 21: Results (now with PA results included)

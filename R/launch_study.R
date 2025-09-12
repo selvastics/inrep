@@ -2754,8 +2754,8 @@ launch_study <- function(
         # Log the change
         cat("Language switched to:", new_lang, "\n")
         
-        # Force UI refresh for language change
-        shiny::invalidateLater(50, session)
+        # DO NOT force UI refresh - let JavaScript handle the switching
+        # shiny::invalidateLater(50, session)  # REMOVED to prevent re-rendering loop
       }
     })
     
@@ -2790,8 +2790,8 @@ launch_study <- function(
         # Log the change
         cat("Language switched via JavaScript to:", new_lang, "\n")
         
-        # Force UI refresh for language change
-        shiny::invalidateLater(50, session)
+        # DO NOT force UI refresh - let JavaScript handle the switching
+        # shiny::invalidateLater(50, session)  # REMOVED to prevent re-rendering loop
       }
     })
     
