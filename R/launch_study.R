@@ -2726,44 +2726,19 @@ launch_study <- function(
       }, delay = 0)  # ZERO delay - immediate execution
     }
     
-    # Observe language changes from Hildesheim study
-    shiny::observeEvent(input$study_language, {
+    # Consolidated language observer - handles all language inputs
+    shiny::observe({
+      # Check all possible language inputs
+      new_lang <- NULL
       if (!is.null(input$study_language)) {
         new_lang <- input$study_language
-        
-        # Only update if actually different to prevent toggle loops
-        if (!is.null(rv$language) && rv$language == new_lang) {
-          return()
-        }
-        
-        current_language(new_lang)
-        
-        # Update UI labels
-        new_labels <- get_language_labels(new_lang)
-        reactive_ui_labels(new_labels)
-        
-        # Store in session
-        session$userData$language <- new_lang
-        
-        # Store in rv for access by render functions
-        rv$language <- new_lang
-        
-        # Update config language
-        config$language <<- new_lang
-        
-        # Log the change
-        cat("Language switched to:", new_lang, "\n")
-        
-        # DO NOT force UI refresh - let JavaScript handle the switching
-        # shiny::invalidateLater(50, session)  # REMOVED to prevent re-rendering loop
-      }
-    })
-    
-    # Also observe hilfo_language_preference from JavaScript
-    shiny::observeEvent(input$hilfo_language_preference, {
-      if (!is.null(input$hilfo_language_preference)) {
+      } else if (!is.null(input$hilfo_language_preference)) {
         new_lang <- input$hilfo_language_preference
-        
+      } else if (!is.null(input$language)) {
+        new_lang <- input$language
+      }
+      
+      if (!is.null(new_lang)) {
         # Only update if actually different to prevent toggle loops
         if (!is.null(rv$language) && rv$language == new_lang) {
           return()
@@ -2788,10 +2763,10 @@ launch_study <- function(
         assign("hilfo_language_preference", new_lang, envir = .GlobalEnv)
         
         # Log the change
-        cat("Language switched via JavaScript to:", new_lang, "\n")
+        cat("Language switched to:", new_lang, "\n")
         
         # DO NOT force UI refresh - let JavaScript handle the switching
-        # shiny::invalidateLater(50, session)  # REMOVED to prevent re-rendering loop
+        # This prevents the page_content rendering loop
       }
     })
     
