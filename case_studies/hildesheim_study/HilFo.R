@@ -966,68 +966,6 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
 
 # The duplicate/incomplete function above should be removed in production
 # The real create_hilfo_report function is defined below
-        Shiny.setInputValue("current_language", currentLang, {priority: "event"});
-        
-        console.log("NUCLEAR: Sent language to Shiny:", currentLang);
-        
-        // Send multiple times to ensure it's received
-        setTimeout(function() {
-          Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
-          Shiny.setInputValue("study_language", currentLang, {priority: "event"});
-          Shiny.setInputValue("language", currentLang, {priority: "event"});
-          Shiny.setInputValue("store_language_globally", currentLang, {priority: "immediate"});
-        }, 100);
-        
-        setTimeout(function() {
-          Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
-          Shiny.setInputValue("study_language", currentLang, {priority: "event"});
-          Shiny.setInputValue("language", currentLang, {priority: "event"});
-          Shiny.setInputValue("store_language_globally", currentLang, {priority: "immediate"});
-        }, 500);
-      }
-    }
-    
-    document.addEventListener("DOMContentLoaded", function() {
-      console.log("BULLETPROOF: DOM loaded for personal code page");
-      
-      var input = document.getElementById("personal_code");
-      if (input) {
-        input.addEventListener("input", function() {
-          this.value = this.value.toUpperCase();
-        });
-        input.addEventListener("blur", function() {
-          if (this.value.trim() !== "") {
-            Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
-          }
-        });
-      }
-      
-      // Apply language multiple times to ensure it works
-      NUCLEAR_applyLanguageToPersonalCodePage();
-      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 50);
-      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 100);
-      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 200);
-      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 500);
-      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 1000);
-      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 2000);
-      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 3000);
-      
-      // Listen for language changes
-      window.addEventListener("storage", function(e) {
-        if (e.key === "hilfo_language" || e.key === "current_language") {
-          console.log("NUCLEAR: Language change detected:", e.key, "=", e.newValue);
-          NUCLEAR_applyLanguageToPersonalCodePage();
-        }
-      });
-      
-      // Also listen for custom language change events
-      window.addEventListener("languageChanged", function(e) {
-        console.log("NUCLEAR: Custom language change event:", e.detail);
-        NUCLEAR_applyLanguageToPersonalCodePage();
-      });
-    });
-    </script>'
-    ),
     
     # Page 21: Results (now with PA results included)
     list(
@@ -2758,10 +2696,10 @@ observer.observe(document.body, {
   childList: true,
   subtree: true
 });
+</script>'
 
-// Download functions moved to HTML string
-
-// CSV download function moved to HTML string
+# Download functions moved to HTML string
+# CSV download function moved to HTML string
 
 study_config <- inrep::create_study_config(
     name = "HilFo - Hildesheimer Forschungsmethoden",
