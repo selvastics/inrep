@@ -1094,18 +1094,18 @@ launch_study <- function(
   # CRITICAL: Force new session for each user to prevent session sharing
   .force_new_session <- TRUE
   
-  if (FALSE) {  # Skip for now - will be done in server
-      logger("Initializing robust session management", level = "INFO")
-      
-      # Initialize robust session management
-      session_config <- tryCatch({
-        if (exists("initialize_robust_session") && is.function(initialize_robust_session)) {
-          initialize_robust_session(
-            max_session_time = max_session_time,
-            data_preservation_interval = data_preservation_interval,
-            keep_alive_interval = keep_alive_interval,
-            enable_logging = TRUE
-          )
+  # Initialize robust session management
+  logger("Initializing robust session management", level = "INFO")
+  
+  # Initialize robust session management
+  session_config <- tryCatch({
+    if (exists("initialize_robust_session") && is.function(initialize_robust_session)) {
+      initialize_robust_session(
+        max_session_time = max_session_time,
+        data_preservation_interval = data_preservation_interval,
+        keep_alive_interval = keep_alive_interval,
+        enable_logging = TRUE
+      )
         } else {
           # Fallback to basic session management
           list(
@@ -1196,7 +1196,6 @@ launch_study <- function(
       
       logger(sprintf("Session initialized: %s (max time: %d seconds)", 
                      session_config$session_id, session_config$max_time), level = "INFO")
-    }
   
   # Normalize common alternative column names before validation
   if ("content" %in% names(item_bank) && !"Question" %in% names(item_bank)) item_bank$Question <- item_bank$content
