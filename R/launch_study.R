@@ -2726,8 +2726,41 @@ launch_study <- function(
       }, delay = 0)  # ZERO delay - immediate execution
     }
     
-    # Language switching is now handled by inrep's built-in bilingual system
-    # No custom language observers needed
+    # Single language observer - handles language switching efficiently
+    shiny::observeEvent(input$study_language, {
+      if (!is.null(input$study_language)) {
+        new_lang <- input$study_language
+        
+        # Only update if actually different to prevent toggle loops
+        if (!is.null(rv$language) && rv$language == new_lang) {
+          return()
+        }
+        
+        current_language(new_lang)
+        
+        # Update UI labels
+        new_labels <- get_language_labels(new_lang)
+        reactive_ui_labels(new_labels)
+        
+        # Store in session
+        session$userData$language <- new_lang
+        
+        # Store in rv for access by render functions
+        rv$language <- new_lang
+        
+        # Update config language
+        config$language <<- new_lang
+        
+        # Store globally for HilFo report access
+        assign("hilfo_language_preference", new_lang, envir = .GlobalEnv)
+        
+        # Log the change
+        cat("Language switched to:", new_lang, "\n")
+        
+        # DO NOT force UI refresh - let JavaScript handle the switching
+        # This prevents the page_content rendering loop
+      }
+    })
     
     # Also observe store_language_globally for HilFo
     shiny::observeEvent(input$store_language_globally, {
