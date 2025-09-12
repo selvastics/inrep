@@ -580,6 +580,9 @@ custom_page_flow <- list(
           sessionStorage.setItem("hilfo_language", "de");
           sessionStorage.setItem("current_language", "de");
           sessionStorage.setItem("hilfo_language_preference", "de");
+          
+          // Trigger language change event for page 20
+          window.dispatchEvent(new CustomEvent("languageChanged", {detail: "de"}));
         } else {
           /* Switch to English */
           deContent.style.display = "none";
@@ -604,6 +607,9 @@ custom_page_flow <- list(
           sessionStorage.setItem("hilfo_language", "en");
           sessionStorage.setItem("current_language", "en");
           sessionStorage.setItem("hilfo_language_preference", "en");
+          
+          // Trigger language change event for page 20
+          window.dispatchEvent(new CustomEvent("languageChanged", {detail: "en"}));
         }
       }
       
@@ -827,122 +833,139 @@ custom_page_flow <- list(
         title = "",
         title_en = "Personal Code",
         content = '<div id="personal-code-content" style="padding: 20px; font-size: 16px; line-height: 1.8;">
-      <h2 id="personal-code-title" style="color: #e8041c; text-align: center; margin-bottom: 25px;">Persönlicher Code</h2>
-      <p id="personal-code-instruction" style="text-align: center; margin-bottom: 30px; font-size: 18px;">Bitte erstellen Sie einen persönlichen Code:</p>
+      <h2 id="personal-code-title" style="color: #e8041c; text-align: center; margin-bottom: 25px;" data-lang-de="Persönlicher Code" data-lang-en="Personal Code">Persönlicher Code</h2>
+      <p id="personal-code-instruction" style="text-align: center; margin-bottom: 30px; font-size: 18px;" data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">Bitte erstellen Sie einen persönlichen Code:</p>
       <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-        <p id="personal-code-formula" style="margin: 0; font-weight: 500;">Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</p>
+        <p id="personal-code-formula" style="margin: 0; font-weight: 500;" data-lang-de="Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags" data-lang-en="First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday">Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</p>
       </div>
       <div style="text-align: center; margin: 30px 0;">
-        <input type="text" id="personal_code" placeholder="z.B. MAHA15" style="
+        <input type="text" id="personal_code" placeholder="z.B. MAHA15" data-placeholder-de="z.B. MAHA15" data-placeholder-en="e.g. MAHA15" style="
           padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
           text-align: center; width: 200px; text-transform: uppercase;" required>
       </div>
       <div style="text-align: center; color: #666; font-size: 14px;">
-        <span id="personal-code-example">Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</span>
+        <span id="personal-code-example" data-lang-de="Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15" data-lang-en="Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15">Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</span>
       </div>
     </div>
     <script>
-    // NUCLEAR LANGUAGE SWITCHING - DIRECTLY UPDATE CONTENT
-    function NUCLEAR_applyLanguageToPersonalCodePage() {
-      console.log("NUCLEAR: Starting language application for personal code page");
-      
-      // Check language
+    // Apply language to personal code page
+    function applyLanguageToPage20() {
       var currentLang = sessionStorage.getItem("hilfo_language") || "de";
-      console.log("NUCLEAR: Language detected:", currentLang);
+      console.log("Applying language to page 20:", currentLang);
       
-      // DIRECTLY UPDATE ALL TEXT CONTENT
-      if (currentLang === "en") {
-        // English content
-        document.getElementById("personal-code-title").textContent = "Personal Code";
-        document.getElementById("personal-code-instruction").textContent = "Please create a personal code:";
-        document.getElementById("personal-code-formula").textContent = "First 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday";
-        document.getElementById("personal-code-example").textContent = "Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15";
-        document.getElementById("personal_code").placeholder = "e.g. MAHA15";
-        console.log("NUCLEAR: Applied English content");
-      } else {
-        // German content
-        document.getElementById("personal-code-title").textContent = "Persönlicher Code";
-        document.getElementById("personal-code-instruction").textContent = "Bitte erstellen Sie einen persönlichen Code:";
-        document.getElementById("personal-code-formula").textContent = "Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags";
-        document.getElementById("personal-code-example").textContent = "Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15";
-        document.getElementById("personal_code").placeholder = "z.B. MAHA15";
-        console.log("NUCLEAR: Applied German content");
-      }
-      
-      // Send language to Shiny - MULTIPLE TIMES AND PRIORITIES
-      if (typeof Shiny !== "undefined") {
-        // Send with immediate priority first
-        Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "immediate"});
-        Shiny.setInputValue("study_language", currentLang, {priority: "immediate"});
-        Shiny.setInputValue("language", currentLang, {priority: "immediate"});
-        Shiny.setInputValue("current_language", currentLang, {priority: "immediate"});
-        
-        // Then send with event priority
-        Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
-        Shiny.setInputValue("study_language", currentLang, {priority: "event"});
-        Shiny.setInputValue("language", currentLang, {priority: "event"});
-        Shiny.setInputValue("current_language", currentLang, {priority: "event"});
-        
-        console.log("NUCLEAR: Sent language to Shiny:", currentLang);
-        
-        // Send multiple times to ensure it's received
-        setTimeout(function() {
-          Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
-          Shiny.setInputValue("study_language", currentLang, {priority: "event"});
-          Shiny.setInputValue("language", currentLang, {priority: "event"});
-          Shiny.setInputValue("store_language_globally", currentLang, {priority: "immediate"});
-        }, 100);
-        
-        setTimeout(function() {
-          Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
-          Shiny.setInputValue("study_language", currentLang, {priority: "event"});
-          Shiny.setInputValue("language", currentLang, {priority: "event"});
-          Shiny.setInputValue("store_language_globally", currentLang, {priority: "immediate"});
-        }, 500);
-      }
-    }
-    
-    document.addEventListener("DOMContentLoaded", function() {
-      console.log("BULLETPROOF: DOM loaded for personal code page");
-      
-      var input = document.getElementById("personal_code");
-      if (input) {
-        input.addEventListener("input", function() {
-          this.value = this.value.toUpperCase();
-        });
-        input.addEventListener("blur", function() {
-          if (this.value.trim() !== "") {
-            Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
-          }
-        });
-      }
-      
-      // Apply language multiple times to ensure it works
-      NUCLEAR_applyLanguageToPersonalCodePage();
-      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 50);
-      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 100);
-      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 200);
-      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 500);
-      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 1000);
-      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 2000);
-      setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 3000);
-      
-      // Listen for language changes
-      window.addEventListener("storage", function(e) {
-        if (e.key === "hilfo_language" || e.key === "current_language") {
-          console.log("NUCLEAR: Language change detected:", e.key, "=", e.newValue);
-          NUCLEAR_applyLanguageToPersonalCodePage();
+      // Update all elements with data-lang attributes
+      var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+      elements.forEach(function(el) {
+        if (currentLang === "en") {
+          el.textContent = el.getAttribute("data-lang-en");
+        } else {
+          el.textContent = el.getAttribute("data-lang-de");
         }
       });
       
-      // Also listen for custom language change events
-      window.addEventListener("languageChanged", function(e) {
-        console.log("NUCLEAR: Custom language change event:", e.detail);
-        NUCLEAR_applyLanguageToPersonalCodePage();
-      });
-    });
+      // Update input placeholder
+      var input = document.getElementById("personal_code");
+      if (input) {
+        if (currentLang === "en") {
+          input.placeholder = input.getAttribute("data-placeholder-en") || "e.g. MAHA15";
+        } else {
+          input.placeholder = input.getAttribute("data-placeholder-de") || "z.B. MAHA15";
+        }
+      }
+    }
+    
+    // Apply immediately and on language changes
+    setTimeout(applyLanguageToPage20, 100);
+    $(document).on("shiny:value", applyLanguageToPage20);
+    window.addEventListener("languageChanged", applyLanguageToPage20);
     </script>'
     ),
+    
+    # Page 21: Results (now with PA results included)
+    list(
+        id = "page21",
+        type = "results",
+        title = "Ihre Ergebnisse",
+        title_en = "Your Results",
+        results_processor = "create_hilfo_report"
+    )
+)
+
+# =============================================================================
+# RESULTS PROCESSOR WITH FIXED RADAR PLOT  
+# =============================================================================
+
+create_hilfo_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
+    # Global error handling for the entire function
+    tryCatch({
+        # Lazy load packages only when actually needed
+        if (!requireNamespace("ggplot2", quietly = TRUE)) {
+            stop("ggplot2 package is required for report generation")
+        }
+        if (!requireNamespace("base64enc", quietly = TRUE)) {
+            stop("base64enc package is required for report generation")
+        }
+    
+    # SIMPLE LANGUAGE DETECTION - Check global environment FIRST
+    current_lang <- "de"  # Default to German
+    
+    cat("DEBUG: Starting SIMPLE language detection\n")
+    
+    # Check global environment FIRST - this is where toggleLanguage stores it
+    if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
+      stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
+      if (!is.null(stored_lang) && (stored_lang == "en" || stored_lang == "de")) {
+        current_lang <- stored_lang
+        cat("DEBUG: Found language in global hilfo_language_preference:", current_lang, "\n")
+        # Use this and skip all other checks
+        is_english <- (current_lang == "en")
+        cat("DEBUG: Using global language:", current_lang, "- is_english:", is_english, "\n")
+      }
+    }
+    
+    # If not found in global environment, check session as fallback
+    if (current_lang == "de" && !is.null(session) && !is.null(session$input)) {
+        # Check session input as fallback
+        lang_keys <- c("hilfo_language_preference", "study_language", "language", "current_language")
+        for (key in lang_keys) {
+            if (key %in% names(session$input) && !is.null(session$input[[key]])) {
+                current_lang <- session$input[[key]]
+                cat("DEBUG: Found language in session$input$", key, ":", current_lang, "\n")
+                break
+            }
+        }
+    }
+    
+    # Final fallback to German
+    if (is.null(current_lang) || current_lang == "") {
+        current_lang <- "de"
+        cat("DEBUG: Using default German language\n")
+    }
+    
+    # Set is_english based on current_lang
+    is_english <- (current_lang == "en")
+    cat("DEBUG: Final language settings - current_lang:", current_lang, ", is_english:", is_english, "\n")
+    
+    if (is.null(responses) || length(responses) == 0) {
+        if (is_english) {
+            return(shiny::HTML("<p>No responses available for evaluation.</p>"))
+        } else {
+            return(shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>"))
+        }
+    }
+    
+    # Ensure demographics is a list
+    if (is.null(demographics)) {
+        demographics <- list()
+    }
+    
+    
+    # This function is incomplete - the real implementation is below
+    return(shiny::HTML("<p>Loading report...</p>"))
+}
+
+# The duplicate/incomplete function above should be removed in production
+# The real create_hilfo_report function is defined below
     
     # Page 21: Results (now with PA results included)
     list(
@@ -1915,10 +1938,18 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             })
             
             # Add demographics from the session
+            cat("DEBUG: Adding demographics to complete_data\n")
+            cat("DEBUG: demographics exists:", exists("demographics"), "\n")
+            cat("DEBUG: is.list(demographics):", is.list(demographics), "\n")
             if (exists("demographics") && is.list(demographics)) {
+                cat("DEBUG: demographics names:", paste(names(demographics), collapse=", "), "\n")
                 for (demo_name in names(demographics)) {
-                    complete_data[[demo_name]] <- demographics[[demo_name]]
+                    demo_value <- demographics[[demo_name]]
+                    cat("DEBUG: Adding demographic", demo_name, "=", demo_value, "\n")
+                    complete_data[[demo_name]] <- demo_value
                 }
+            } else {
+                cat("DEBUG: No demographics to add\n")
             }
             
             # Add item responses with validation
@@ -2043,6 +2074,29 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         
         '</div>',
         '</div>',
+        
+        # JavaScript for download functions
+        '<script>',
+        'function downloadPDF() {',
+        '  console.log("PDF download requested");',
+        '  // Use Shiny to trigger the download',
+        '  if (typeof Shiny !== "undefined") {',
+        '    Shiny.setInputValue("download_pdf_trigger", Math.random());',
+        '  } else {',
+        '    alert("PDF download is not available. Please try again.");',
+        '  }',
+        '}',
+        '',
+        'function downloadCSV() {',
+        '  console.log("CSV download requested");',
+        '  // Use Shiny to trigger the download',
+        '  if (typeof Shiny !== "undefined") {',
+        '    Shiny.setInputValue("download_csv_trigger", Math.random());',
+        '  } else {',
+        '    alert("CSV download is not available. Please try again.");',
+        '  }',
+        '}',
+        '</script>',
         
         # Print styles
         '<style>',
@@ -2642,10 +2696,10 @@ observer.observe(document.body, {
   childList: true,
   subtree: true
 });
+</script>'
 
-// Download functions moved to HTML string
-
-// CSV download function moved to HTML string
+# Download functions moved to HTML string
+# CSV download function moved to HTML string
 
 study_config <- inrep::create_study_config(
     name = "HilFo - Hildesheimer Forschungsmethoden",
