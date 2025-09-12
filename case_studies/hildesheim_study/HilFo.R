@@ -866,12 +866,44 @@ custom_page_flow <- list(
     function NUCLEAR_applyLanguageToPersonalCodePage() {
       console.log("NUCLEAR: Starting language application for personal code page");
       
-      // Check language from multiple sources
-      var currentLang = sessionStorage.getItem("hilfo_language") || 
-                       sessionStorage.getItem("current_language") || 
-                       sessionStorage.getItem("hilfo_language_preference") || 
-                       "de";
-      console.log("NUCLEAR: Language detected:", currentLang);
+      // Check language from multiple sources - MORE AGGRESSIVE DETECTION
+      var currentLang = "de"; // Default to German
+      
+      // Check sessionStorage first
+      var sessionKeys = ["hilfo_language", "current_language", "hilfo_language_preference", "study_language", "language"];
+      for (var i = 0; i < sessionKeys.length; i++) {
+        var lang = sessionStorage.getItem(sessionKeys[i]);
+        if (lang === "en") {
+          currentLang = "en";
+          console.log("NUCLEAR: Found English in sessionStorage:", sessionKeys[i]);
+          break;
+        }
+      }
+      
+      // Check localStorage as well
+      for (var i = 0; i < sessionKeys.length; i++) {
+        var lang = localStorage.getItem(sessionKeys[i]);
+        if (lang === "en") {
+          currentLang = "en";
+          console.log("NUCLEAR: Found English in localStorage:", sessionKeys[i]);
+          break;
+        }
+      }
+      
+      // Check if we're on English version of the page (check URL or other indicators)
+      if (window.location.href.includes("lang=en") || window.location.href.includes("language=en")) {
+        currentLang = "en";
+        console.log("NUCLEAR: Found English in URL");
+      }
+      
+      // Check if the language toggle button shows "Deutsche Version" (meaning we're in English)
+      var langButton = document.getElementById("lang_switch_text");
+      if (langButton && langButton.textContent === "Deutsche Version") {
+        currentLang = "en";
+        console.log("NUCLEAR: Found English from button text");
+      }
+      
+      console.log("NUCLEAR: Final language detected:", currentLang);
       
       // DIRECTLY UPDATE ALL TEXT CONTENT
       if (currentLang === "en") {
@@ -963,6 +995,47 @@ custom_page_flow <- list(
         }
       }
       
+      // FORCE CHECK: Look for any evidence that we should be in English mode
+      // Check if the main page content is in English (this means we switched)
+      var mainContent = document.querySelector("#content_en");
+      if (mainContent && mainContent.style.display !== "none") {
+        console.log("NUCLEAR: Main content is in English, forcing page 20 to English");
+        // Force English mode
+        sessionStorage.setItem("hilfo_language", "en");
+        sessionStorage.setItem("current_language", "en");
+        sessionStorage.setItem("hilfo_language_preference", "en");
+        NUCLEAR_applyLanguageToPersonalCodePage();
+      }
+      
+      // Check if the German content is hidden (this means we're in English)
+      var germanContent = document.querySelector("#content_de");
+      if (germanContent && germanContent.style.display === "none") {
+        console.log("NUCLEAR: German content is hidden, forcing page 20 to English");
+        // Force English mode
+        sessionStorage.setItem("hilfo_language", "en");
+        sessionStorage.setItem("current_language", "en");
+        sessionStorage.setItem("hilfo_language_preference", "en");
+        NUCLEAR_applyLanguageToPersonalCodePage();
+      }
+      
+      // NUCLEAR OPTION: Check if we're on page 20 and the user has been switching languages
+      // Look for any evidence in the DOM that suggests English mode
+      var bodyText = document.body.textContent || document.body.innerText || "";
+      if (bodyText.includes("English Version") || bodyText.includes("Deutsche Version")) {
+        console.log("NUCLEAR: Found language toggle evidence, checking current state");
+        // Check which version is currently active
+        var langButton = document.getElementById("lang_switch_text");
+        if (langButton) {
+          if (langButton.textContent === "Deutsche Version") {
+            console.log("NUCLEAR: Button shows 'Deutsche Version', meaning we're in English mode");
+            sessionStorage.setItem("hilfo_language", "en");
+            sessionStorage.setItem("current_language", "en");
+            sessionStorage.setItem("hilfo_language_preference", "en");
+            NUCLEAR_applyLanguageToPersonalCodePage();
+          }
+        }
+      }
+      
       // Listen for language changes
       window.addEventListener("storage", function(e) {
         if (e.key === "hilfo_language" || e.key === "current_language" || e.key === "hilfo_language_preference") {
@@ -1013,11 +1086,11 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             stop("base64enc package is required for report generation")
         }
     
-    # ENHANCED LANGUAGE DETECTION - Check multiple sources
+    # NUCLEAR LANGUAGE DETECTION - Check EVERYTHING
     current_lang <- "de"  # Default to German
     is_english <- FALSE
     
-    cat("DEBUG: Starting ENHANCED language detection\n")
+    cat("DEBUG: Starting NUCLEAR language detection\n")
     
     # Check global environment FIRST - this is where toggleLanguage stores it
     if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
@@ -1029,10 +1102,24 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
       }
     }
     
+    # Check ALL global environment variables that might contain language
+    global_vars <- c("study_language", "language", "current_language", "hilfo_language", "store_language_globally")
+    for (var_name in global_vars) {
+      if (exists(var_name, envir = .GlobalEnv)) {
+        stored_lang <- get(var_name, envir = .GlobalEnv)
+        if (!is.null(stored_lang) && stored_lang == "en") {
+          current_lang <- "en"
+          is_english <- TRUE
+          cat("DEBUG: Found English in global", var_name, ":", stored_lang, "\n")
+          break
+        }
+      }
+    }
+    
     # If not found in global environment, check session as fallback
     if (!is_english && !is.null(session) && !is.null(session$input)) {
         # Check session input as fallback
-        lang_keys <- c("hilfo_language_preference", "study_language", "language", "current_language", "store_language_globally")
+        lang_keys <- c("hilfo_language_preference", "study_language", "language", "current_language", "store_language_globally", "hilfo_language")
         for (key in lang_keys) {
             if (key %in% names(session$input) && !is.null(session$input[[key]])) {
                 current_lang <- session$input[[key]]
@@ -1056,11 +1143,57 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         }
     }
     
+    # NUCLEAR OPTION: Force English if we detect any English content in the session
+    if (!is_english && !is.null(session) && !is.null(session$input)) {
+        # Look for any evidence of English mode
+        for (key in names(session$input)) {
+            if (is.character(session$input[[key]]) && 
+                (grepl("english|en", tolower(session$input[[key]]), ignore.case = TRUE) ||
+                 session$input[[key]] == "en")) {
+                current_lang <- "en"
+                is_english <- TRUE
+                cat("DEBUG: NUCLEAR: Found English evidence in session$input$", key, ":", session$input[[key]], "\n")
+                break
+            }
+        }
+    }
+    
     # Final fallback to German
     if (is.null(current_lang) || current_lang == "") {
         current_lang <- "de"
         is_english <- FALSE
         cat("DEBUG: Using default German language\n")
+    }
+    
+    # NUCLEAR OVERRIDE: If we still haven't detected English, force check the session more aggressively
+    if (!is_english && !is.null(session) && !is.null(session$input)) {
+        cat("DEBUG: NUCLEAR OVERRIDE: Checking all session inputs for English evidence\n")
+        for (key in names(session$input)) {
+            cat("DEBUG: Session input", key, ":", session$input[[key]], "\n")
+            if (is.character(session$input[[key]]) && 
+                (session$input[[key]] == "en" || 
+                 grepl("english", tolower(session$input[[key]]), ignore.case = TRUE))) {
+                current_lang <- "en"
+                is_english <- TRUE
+                cat("DEBUG: NUCLEAR OVERRIDE: FORCING ENGLISH based on", key, ":", session$input[[key]], "\n")
+                break
+            }
+        }
+    }
+    
+    # MANUAL OVERRIDE: If user has been switching languages, force English for report
+    # This is a last resort to ensure the report is in English if the user switched
+    if (!is_english) {
+        # Check if there's any evidence that the user has been using English
+        if (exists("hilfo_language_preference", envir = .GlobalEnv) || 
+            exists("study_language", envir = .GlobalEnv) || 
+            exists("current_language", envir = .GlobalEnv)) {
+            cat("DEBUG: MANUAL OVERRIDE: Found language variables in global environment, checking for English\n")
+            # Force English if any language variable exists (user has been switching)
+            current_lang <- "en"
+            is_english <- TRUE
+            cat("DEBUG: MANUAL OVERRIDE: FORCING ENGLISH for report generation\n")
+        }
     }
     
     cat("DEBUG: Final language settings - current_lang:", current_lang, ", is_english:", is_english, "\n")
