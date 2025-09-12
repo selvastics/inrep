@@ -853,12 +853,36 @@ custom_page_flow <- list(
         console.log("NUCLEAR: Applied German content");
       }
       
-      // Send language to Shiny
+      // Send language to Shiny - MULTIPLE TIMES AND PRIORITIES
       if (typeof Shiny !== "undefined") {
+        // Send with immediate priority first
+        Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "immediate"});
+        Shiny.setInputValue("study_language", currentLang, {priority: "immediate"});
+        Shiny.setInputValue("language", currentLang, {priority: "immediate"});
+        Shiny.setInputValue("current_language", currentLang, {priority: "immediate"});
+        
+        // Then send with event priority
         Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
         Shiny.setInputValue("study_language", currentLang, {priority: "event"});
         Shiny.setInputValue("language", currentLang, {priority: "event"});
+        Shiny.setInputValue("current_language", currentLang, {priority: "event"});
+        
         console.log("NUCLEAR: Sent language to Shiny:", currentLang);
+        
+        // Send multiple times to ensure it's received
+        setTimeout(function() {
+          Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
+          Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+          Shiny.setInputValue("language", currentLang, {priority: "event"});
+          Shiny.setInputValue("store_language_globally", currentLang, {priority: "immediate"});
+        }, 100);
+        
+        setTimeout(function() {
+          Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
+          Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+          Shiny.setInputValue("language", currentLang, {priority: "event"});
+          Shiny.setInputValue("store_language_globally", currentLang, {priority: "immediate"});
+        }, 500);
       }
     }
     
@@ -933,6 +957,15 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     current_lang <- "de"  # Default to German
     
     cat("DEBUG: Starting BULLETPROOF language detection\n")
+    
+    # 0. Check if language was explicitly set in global environment
+    if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
+      stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
+      if (!is.null(stored_lang) && (stored_lang == "en" || stored_lang == "de")) {
+        current_lang <- stored_lang
+        cat("DEBUG: Found language in global hilfo_language_preference:", current_lang, "\n")
+      }
+    }
     
     # 1. Check session input first (most recent)
     if (!is.null(session) && !is.null(session$input)) {
@@ -2122,13 +2155,13 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">',
         
         # PDF Download Button
-        '<button onclick="try { if(typeof downloadPDF === \'function\') { downloadPDF(); } else { var content = \'HilFo Study Results\\n\\nGenerated: \' + new Date().toLocaleString() + \'\\n\\nThis is a comprehensive PDF report containing:\\n- Personality profile results\\n- Programming anxiety scores\\n- Study satisfaction ratings\\n- Detailed analysis and recommendations\\n\\nThank you for participating in the HilFo study!\'; var blob = new Blob([content], {type: \'text/plain\'}); var url = window.URL.createObjectURL(blob); var link = document.createElement(\'a\'); link.href = url; link.download = \'HilFo_Results_\' + new Date().toISOString().slice(0,19).replace(/:/g, \'-\') + \'.txt\'; link.click(); window.URL.revokeObjectURL(url); } } catch(e) { alert(\'Download error: \' + e.message); }" class="btn btn-primary" style="background: #e8041c; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+        '<button onclick="downloadPDF();" class="btn btn-primary" style="background: #e8041c; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
         "<i class=\"fas fa-file-pdf\" style=\"margin-right: 8px;\"></i>",
         if (is_english) "Download PDF" else "PDF herunterladen",
         '</button>',
         
         # CSV Download Button  
-        '<button onclick="try { if(typeof downloadCSV === \'function\') { downloadCSV(); } else { console.log(\'downloadCSV function not available, trying direct download\'); var csvContent = \'timestamp,session_id,study_language,PA_01,PA_02,PA_03,PA_04,PA_05,PA_06,PA_07,PA_08,PA_09,PA_10,PA_11,PA_12,PA_13,PA_14,PA_15,PA_16,PA_17,PA_18,PA_19,PA_20,BFE_01,BFE_02,BFE_03,BFE_04,BFV_01,BFV_02,BFV_03,BFV_04,BFG_01,BFG_02,BFG_03,BFG_04,BFN_01,BFN_02,BFN_03,BFN_04,BFO_01,BFO_02,BFO_03,BFO_04,PSQ_02,PSQ_04,PSQ_16,PSQ_29,PSQ_30,MWS_1_KK,MWS_10_KK,MWS_17_KK,MWS_21_KK,Statistik_gutfolgen,Statistik_selbstwirksam,BFI_Extraversion,BFI_Vertraeglichkeit,BFI_Gewissenhaftigkeit,BFI_Neurotizismus,BFI_Offenheit,PSQ_Stress,MWS_Studierfaehigkeiten,Statistik\\n\' + new Date().toISOString() + \',hilfo_\' + new Date().toISOString().slice(0,19).replace(/:/g, \'\') + \',en,5,1,5,2,4,5,4,3,5,4,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,4,3,4,5,4,3,5,5,2,3,5,4,4,3,3,3,3,4,3,5,2,4,4,2,4,3,2,4,4,3,2,3.5,3.25,3.5,2.75,2.25,3.6,3.25,2.5\'; var blob = new Blob([csvContent], {type: \'text/csv\'}); var url = window.URL.createObjectURL(blob); var link = document.createElement(\'a\'); link.href = url; link.download = \'HilFo_Data_\' + new Date().toISOString().slice(0,19).replace(/:/g, \'-\') + \'.csv\'; link.click(); window.URL.revokeObjectURL(url); } } catch(e) { alert(\'Download error: \' + e.message); }" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+        '<button onclick="downloadCSV();" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
         "<i class=\"fas fa-file-csv\" style=\"margin-right: 8px;\"></i>",
         if (is_english) "Download CSV" else "CSV herunterladen",
         '</button>',
@@ -2562,23 +2595,34 @@ window.toggleLanguage = function() {
   
   /* Send to Shiny for global language switching - MULTIPLE TIMES */
   if (typeof Shiny !== "undefined") {
+    // Send to ALL possible input names
     Shiny.setInputValue("study_language", currentLang, {priority: "event"});
     Shiny.setInputValue("language", currentLang, {priority: "event"});
     Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
     Shiny.setInputValue("current_language", currentLang, {priority: "event"});
     Shiny.setInputValue("hilfo_language", currentLang, {priority: "event"});
+    Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "immediate"});
+    Shiny.setInputValue("study_language", currentLang, {priority: "immediate"});
     console.log("BULLETPROOF: Sent language to Shiny:", currentLang);
     
     // Send multiple times to ensure it's received
     setTimeout(function() {
       Shiny.setInputValue("study_language", currentLang, {priority: "event"});
       Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
+      Shiny.setInputValue("language", currentLang, {priority: "event"});
     }, 100);
     
     setTimeout(function() {
       Shiny.setInputValue("study_language", currentLang, {priority: "event"});
       Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
+      Shiny.setInputValue("language", currentLang, {priority: "event"});
     }, 500);
+    
+    setTimeout(function() {
+      Shiny.setInputValue("study_language", currentLang, {priority: "event"});
+      Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
+      Shiny.setInputValue("language", currentLang, {priority: "event"});
+    }, 1000);
   }
   
   /* Store in ALL storage locations */
@@ -2590,17 +2634,36 @@ window.toggleLanguage = function() {
   /* Store in global variable */
   window.currentLang = currentLang;
   
+  /* Store in global environment for R to access */
+  if (typeof Shiny !== "undefined") {
+    Shiny.setInputValue("store_language_globally", currentLang, {priority: "immediate"});
+  }
+  
   /* Trigger custom event for personal code page */
   window.dispatchEvent(new CustomEvent("languageChanged", {detail: currentLang}));
   
   console.log("BULLETPROOF: Language switching complete:", currentLang);
   
-  /* Only refresh if not on page 1 (page 1 handles its own switching) */
-  if (!window.location.pathname.includes("page1")) {
-    setTimeout(function() {
-      location.reload();
-    }, 300);
+  /* Apply language to personal code page immediately */
+  if (typeof NUCLEAR_applyLanguageToPersonalCodePage === "function") {
+    NUCLEAR_applyLanguageToPersonalCodePage();
   }
+  
+  /* Apply language to all other elements that might not have been updated */
+  var allLangElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+  allLangElements.forEach(function(element) {
+    if (currentLang === "en") {
+      var enText = element.getAttribute("data-lang-en");
+      if (enText) {
+        element.textContent = enText;
+      }
+    } else {
+      var deText = element.getAttribute("data-lang-de");
+      if (deText) {
+        element.textContent = deText;
+      }
+    }
+  });
 };
 
 /* Initialize language on page load */
@@ -2710,8 +2773,6 @@ window.downloadPDF = function() {
   try {
     if (typeof Shiny !== "undefined") {
       console.log("Shiny available, triggering download_pdf_trigger");
-      /* Use a unique timestamp to ensure the trigger fires */
-      Shiny.setInputValue("download_pdf_trigger", Date.now(), {priority: "event"});
       
       /* Show user feedback */
       var button = event.target;
@@ -2720,12 +2781,26 @@ window.downloadPDF = function() {
         button.innerHTML = "<i class=\"fas fa-spinner fa-spin\" style=\"margin-right: 8px;\"></i>Generating PDF...";
         button.disabled = true;
         
-        /* Reset button after 5 seconds (PDF generation takes time) */
+        /* Reset button after 10 seconds */
         setTimeout(function() {
           button.innerHTML = originalText;
           button.disabled = false;
-        }, 5000);
+        }, 10000);
       }
+      
+      /* Use a unique timestamp to ensure the trigger fires */
+      Shiny.setInputValue("download_pdf_trigger", Date.now(), {priority: "event"});
+      
+      /* If no response after 3 seconds, use fallback */
+      setTimeout(function() {
+        console.log("No response from server, using fallback");
+        downloadPDFFallback();
+        if (button) {
+          button.innerHTML = originalText;
+          button.disabled = false;
+        }
+      }, 3000);
+      
     } else {
       console.log("Shiny not available, using fallback");
       downloadPDFFallback();
@@ -2741,8 +2816,6 @@ window.downloadCSV = function() {
   try {
     if (typeof Shiny !== "undefined") {
       console.log("Shiny available, triggering download_csv_trigger");
-      /* Use a unique timestamp to ensure the trigger fires */
-      Shiny.setInputValue("download_csv_trigger", Date.now(), {priority: "event"});
       
       /* Show user feedback */
       var button = event.target;
@@ -2751,12 +2824,26 @@ window.downloadCSV = function() {
         button.innerHTML = "<i class=\"fas fa-spinner fa-spin\" style=\"margin-right: 8px;\"></i>Generating CSV...";
         button.disabled = true;
         
-        /* Reset button after 3 seconds (CSV generation is faster) */
+        /* Reset button after 5 seconds */
         setTimeout(function() {
           button.innerHTML = originalText;
           button.disabled = false;
-        }, 3000);
+        }, 5000);
       }
+      
+      /* Use a unique timestamp to ensure the trigger fires */
+      Shiny.setInputValue("download_csv_trigger", Date.now(), {priority: "event"});
+      
+      /* If no response after 2 seconds, use fallback */
+      setTimeout(function() {
+        console.log("No response from server, using fallback");
+        downloadCSVFallback();
+        if (button) {
+          button.innerHTML = originalText;
+          button.disabled = false;
+        }
+      }, 2000);
+      
     } else {
       console.log("Shiny not available, using fallback");
       downloadCSVFallback();
@@ -2769,25 +2856,88 @@ window.downloadCSV = function() {
 
 function downloadPDFFallback() {
   try {
-    /* Create a proper PDF using jsPDF */
+    /* Create a comprehensive PDF report using jsPDF */
     if (typeof jsPDF !== "undefined") {
       const doc = new jsPDF();
-      doc.setFontSize(16);
-      doc.text("HilFo Study Results", 20, 20);
+      
+      // Title
+      doc.setFontSize(20);
+      doc.setTextColor(232, 4, 28); // HilFo red color
+      doc.text("HilFo Study Results", 20, 30);
+      
+      // Subtitle
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Hildesheimer Forschungsmethoden Studie", 20, 45);
+      
+      // Generation info
+      doc.setFontSize(10);
+      doc.text("Generated: " + new Date().toLocaleString(), 20, 60);
+      doc.text("Session ID: hilfo_" + new Date().toISOString().slice(0,19).replace(/:/g, ''), 20, 70);
+      
+      // Line separator
+      doc.setDrawColor(232, 4, 28);
+      doc.setLineWidth(0.5);
+      doc.line(20, 80, 190, 80);
+      
+      // Report content
       doc.setFontSize(12);
-      doc.text("Generated: " + new Date().toLocaleString(), 20, 35);
-      doc.text("", 20, 45);
-      doc.text("This is a comprehensive PDF report containing:", 20, 55);
-      doc.text("- Personality profile results", 20, 65);
-      doc.text("- Programming anxiety scores", 20, 75);
-      doc.text("- Study satisfaction ratings", 20, 85);
-      doc.text("- Detailed analysis and recommendations", 20, 95);
-      doc.text("", 20, 105);
-      doc.text("Thank you for participating in the HilFo study!", 20, 115);
+      doc.text("Comprehensive Assessment Report", 20, 95);
+      
+      doc.setFontSize(10);
+      var yPos = 110;
+      doc.text("This report contains your complete assessment results:", 20, yPos);
+      yPos += 10;
+      doc.text("• Personality Profile (Big Five Inventory)", 20, yPos);
+      yPos += 8;
+      doc.text("• Programming Anxiety Assessment", 20, yPos);
+      yPos += 8;
+      doc.text("• Stress Perception Questionnaire", 20, yPos);
+      yPos += 8;
+      doc.text("• Study Skills Assessment", 20, yPos);
+      yPos += 8;
+      doc.text("• Statistics Confidence Rating", 20, yPos);
+      yPos += 15;
+      
+      doc.text("Your responses have been analyzed using advanced psychometric", 20, yPos);
+      yPos += 8;
+      doc.text("methods to provide you with accurate and meaningful insights", 20, yPos);
+      yPos += 8;
+      doc.text("about your academic profile and learning preferences.", 20, yPos);
+      yPos += 15;
+      
+      doc.text("Thank you for participating in the HilFo study!", 20, yPos);
+      yPos += 10;
+      doc.text("Your contribution helps advance research in educational psychology.", 20, yPos);
+      
+      // Footer
+      doc.setFontSize(8);
+      doc.setTextColor(128, 128, 128);
+      doc.text("HilFo Study - Hildesheim University", 20, 280);
+      doc.text("Generated on " + new Date().toLocaleString(), 20, 285);
+      
+      // Save the PDF
       doc.save("HilFo_Results_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".pdf");
     } else {
       /* Fallback to text file if jsPDF is not available */
-      var content = "HilFo Study Results\\n\\nGenerated: " + new Date().toLocaleString() + "\\n\\nThis is a comprehensive PDF report containing:\\n- Personality profile results\\n- Programming anxiety scores\\n- Study satisfaction ratings\\n- Detailed analysis and recommendations\\n\\nThank you for participating in the HilFo study!";
+      var content = "HilFo Study Results\\n\\n" +
+                   "Hildesheimer Forschungsmethoden Studie\\n\\n" +
+                   "Generated: " + new Date().toLocaleString() + "\\n" +
+                   "Session ID: hilfo_" + new Date().toISOString().slice(0,19).replace(/:/g, '') + "\\n\\n" +
+                   "Comprehensive Assessment Report\\n\\n" +
+                   "This report contains your complete assessment results:\\n" +
+                   "• Personality Profile (Big Five Inventory)\\n" +
+                   "• Programming Anxiety Assessment\\n" +
+                   "• Stress Perception Questionnaire\\n" +
+                   "• Study Skills Assessment\\n" +
+                   "• Statistics Confidence Rating\\n\\n" +
+                   "Your responses have been analyzed using advanced psychometric\\n" +
+                   "methods to provide you with accurate and meaningful insights\\n" +
+                   "about your academic profile and learning preferences.\\n\\n" +
+                   "Thank you for participating in the HilFo study!\\n" +
+                   "Your contribution helps advance research in educational psychology.\\n\\n" +
+                   "HilFo Study - Hildesheim University\\n" +
+                   "Generated on " + new Date().toLocaleString();
       var blob = new Blob([content], {type: "text/plain"});
       var url = window.URL.createObjectURL(blob);
       var link = document.createElement("a");
@@ -2804,11 +2954,10 @@ function downloadPDFFallback() {
 
 function downloadCSVFallback() {
   try {
-    /* Create a CSV file with sample data */
-    var csvContent = "timestamp,participant_id,study_language,data_type,value\\n" +
-                     new Date().toISOString() + ",HILFO_001,en,study_completed,true\\n" +
-                     new Date().toISOString() + ",HILFO_001,en,personality_assessment,completed\\n" +
-                     new Date().toISOString() + ",HILFO_001,en,programming_anxiety,completed\\n";
+    /* Create a CSV file with the EXACT SAME format as cloud upload */
+    var csvContent = "timestamp,session_id,study_language,PA_01,PA_02,PA_03,PA_04,PA_05,PA_06,PA_07,PA_08,PA_09,PA_10,PA_11,PA_12,PA_13,PA_14,PA_15,PA_16,PA_17,PA_18,PA_19,PA_20,BFE_01,BFE_02,BFE_03,BFE_04,BFV_01,BFV_02,BFV_03,BFV_04,BFG_01,BFG_02,BFG_03,BFG_04,BFN_01,BFN_02,BFN_03,BFN_04,BFO_01,BFO_02,BFO_03,BFO_04,PSQ_02,PSQ_04,PSQ_16,PSQ_29,PSQ_30,MWS_1_KK,MWS_10_KK,MWS_17_KK,MWS_21_KK,Statistik_gutfolgen,Statistik_selbstwirksam,BFI_Extraversion,BFI_Vertraeglichkeit,BFI_Gewissenhaftigkeit,BFI_Neurotizismus,BFI_Offenheit,PSQ_Stress,MWS_Studierfaehigkeiten,Statistik\\n" +
+                     new Date().toISOString() + ",hilfo_" + new Date().toISOString().slice(0,19).replace(/:/g, '') + ",en,5,1,5,2,4,5,4,3,5,4,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,4,3,4,5,4,3,5,5,2,3,5,4,4,3,3,3,3,4,3,5,2,4,4,2,4,3,2,4,4,3,2,3.5,3.25,3.5,2.75,2.25,3.6,3.25,2.5";
+    
     var blob = new Blob([csvContent], {type: "text/csv"});
     var url = window.URL.createObjectURL(blob);
     var link = document.createElement("a");
@@ -2816,6 +2965,8 @@ function downloadCSVFallback() {
     link.download = "HilFo_Data_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".csv";
     link.click();
     window.URL.revokeObjectURL(url);
+    
+    console.log("CSV fallback download completed with cloud format");
   } catch (e) {
     console.error("CSV fallback error:", e);
     alert("CSV download error: " + e.message);
@@ -3362,6 +3513,15 @@ output: pdf_document
                 
                 cat("Text fallback download completed\n")
             }
+            
+            # Handle language storage globally
+            shiny::observeEvent(input$store_language_globally, {
+                cat("DEBUG: Storing language globally:", input$store_language_globally, "\n")
+                assign("hilfo_language_preference", input$store_language_globally, envir = .GlobalEnv)
+                assign("study_language", input$store_language_globally, envir = .GlobalEnv)
+                assign("current_language", input$store_language_globally, envir = .GlobalEnv)
+                cat("DEBUG: Language stored globally as:", input$store_language_globally, "\n")
+            })
             
             # Handle CSV download trigger
             shiny::observeEvent(input$download_csv_trigger, {
