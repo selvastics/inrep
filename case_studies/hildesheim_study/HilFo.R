@@ -562,7 +562,7 @@ custom_page_flow <- list(
           enContent.style.display = "none";
           if (textSpan) textSpan.textContent = "English Version";
           
-          /* Send German language to global system - MULTIPLE TIMES TO ENSURE IT'S RECEIVED */
+          /* Send German language to global system - MULTIPLE TIMES TO ENSURE IT\'S RECEIVED */
           if (typeof Shiny !== "undefined") {
             Shiny.setInputValue("study_language", "de", {priority: "immediate"});
             Shiny.setInputValue("language", "de", {priority: "immediate"});
@@ -589,7 +589,7 @@ custom_page_flow <- list(
           enContent.style.display = "block";
           if (textSpan) textSpan.textContent = "Deutsche Version";
           
-          /* Send English language to global system - MULTIPLE TIMES TO ENSURE IT'S RECEIVED */
+          /* Send English language to global system - MULTIPLE TIMES TO ENSURE IT\'S RECEIVED */
           if (typeof Shiny !== "undefined") {
             Shiny.setInputValue("study_language", "en", {priority: "immediate"});
             Shiny.setInputValue("language", "en", {priority: "immediate"});
