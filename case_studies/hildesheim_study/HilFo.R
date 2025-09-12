@@ -951,17 +951,14 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     if (is.null(demographics)) {
         demographics <- list()
     }
-      if (typeof Shiny !== "undefined") {
-        // Send with immediate priority first
-        Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "immediate"});
-        Shiny.setInputValue("study_language", currentLang, {priority: "immediate"});
-        Shiny.setInputValue("language", currentLang, {priority: "immediate"});
-        Shiny.setInputValue("current_language", currentLang, {priority: "immediate"});
-        
-        // Then send with event priority
-        Shiny.setInputValue("hilfo_language_preference", currentLang, {priority: "event"});
-        Shiny.setInputValue("study_language", currentLang, {priority: "event"});
-        Shiny.setInputValue("language", currentLang, {priority: "event"});
+    
+    
+    # This function is incomplete - the real implementation is below
+    return(shiny::HTML("<p>Loading report...</p>"))
+}
+
+# The duplicate/incomplete function above should be removed in production
+# The real create_hilfo_report function is defined below
         Shiny.setInputValue("current_language", currentLang, {priority: "event"});
         
         console.log("NUCLEAR: Sent language to Shiny:", currentLang);
