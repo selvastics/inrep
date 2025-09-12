@@ -576,6 +576,16 @@ custom_page_flow <- list(
             Shiny.setInputValue("current_language", "de", {priority: "event"});
             Shiny.setInputValue("hilfo_language_preference", "de", {priority: "event"});
             Shiny.setInputValue("store_language_globally", "de", {priority: "event"});
+            
+            // Send multiple times to ensure it's received
+            setTimeout(function() {
+              Shiny.setInputValue("hilfo_language_preference", "de", {priority: "event"});
+              Shiny.setInputValue("store_language_globally", "de", {priority: "immediate"});
+              // Send message to all pages about language change
+              if (typeof Shiny !== "undefined") {
+                Shiny.setInputValue("languageUpdate", "de", {priority: "event"});
+              }
+            }, 100);
           }
           sessionStorage.setItem("hilfo_language", "de");
           sessionStorage.setItem("current_language", "de");
@@ -600,6 +610,16 @@ custom_page_flow <- list(
             Shiny.setInputValue("current_language", "en", {priority: "event"});
             Shiny.setInputValue("hilfo_language_preference", "en", {priority: "event"});
             Shiny.setInputValue("store_language_globally", "en", {priority: "event"});
+            
+            // Send multiple times to ensure it's received
+            setTimeout(function() {
+              Shiny.setInputValue("hilfo_language_preference", "en", {priority: "event"});
+              Shiny.setInputValue("store_language_globally", "en", {priority: "immediate"});
+              // Send message to all pages about language change
+              if (typeof Shiny !== "undefined") {
+                Shiny.setInputValue("languageUpdate", "en", {priority: "event"});
+              }
+            }, 100);
           }
           sessionStorage.setItem("hilfo_language", "en");
           sessionStorage.setItem("current_language", "en");
@@ -846,8 +866,11 @@ custom_page_flow <- list(
     function NUCLEAR_applyLanguageToPersonalCodePage() {
       console.log("NUCLEAR: Starting language application for personal code page");
       
-      // Check language
-      var currentLang = sessionStorage.getItem("hilfo_language") || "de";
+      // Check language from multiple sources
+      var currentLang = sessionStorage.getItem("hilfo_language") || 
+                       sessionStorage.getItem("current_language") || 
+                       sessionStorage.getItem("hilfo_language_preference") || 
+                       "de";
       console.log("NUCLEAR: Language detected:", currentLang);
       
       // DIRECTLY UPDATE ALL TEXT CONTENT
@@ -927,9 +950,22 @@ custom_page_flow <- list(
       setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 2000);
       setTimeout(NUCLEAR_applyLanguageToPersonalCodePage, 3000);
       
+      // Also check if we need to apply English immediately based on global state
+      if (typeof Shiny !== "undefined" && Shiny.input) {
+        // Check if any Shiny input suggests English
+        var shinyInputs = Shiny.input;
+        for (var key in shinyInputs) {
+          if (key.includes("language") && shinyInputs[key] === "en") {
+            console.log("NUCLEAR: Found English in Shiny input:", key);
+            NUCLEAR_applyLanguageToPersonalCodePage();
+            break;
+          }
+        }
+      }
+      
       // Listen for language changes
       window.addEventListener("storage", function(e) {
-        if (e.key === "hilfo_language" || e.key === "current_language") {
+        if (e.key === "hilfo_language" || e.key === "current_language" || e.key === "hilfo_language_preference") {
           console.log("NUCLEAR: Language change detected:", e.key, "=", e.newValue);
           NUCLEAR_applyLanguageToPersonalCodePage();
         }
@@ -940,6 +976,14 @@ custom_page_flow <- list(
         console.log("NUCLEAR: Custom language change event:", e.detail);
         NUCLEAR_applyLanguageToPersonalCodePage();
       });
+      
+      // Listen for Shiny input changes that might indicate language switch
+      if (typeof Shiny !== "undefined") {
+        Shiny.addCustomMessageHandler("languageUpdate", function(message) {
+          console.log("NUCLEAR: Received language update from Shiny:", message);
+          NUCLEAR_applyLanguageToPersonalCodePage();
+        });
+      }
     });
     </script>'
     ),
@@ -969,31 +1013,44 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             stop("base64enc package is required for report generation")
         }
     
-    # SIMPLE LANGUAGE DETECTION - Check global environment FIRST
+    # ENHANCED LANGUAGE DETECTION - Check multiple sources
     current_lang <- "de"  # Default to German
+    is_english <- FALSE
     
-    cat("DEBUG: Starting SIMPLE language detection\n")
+    cat("DEBUG: Starting ENHANCED language detection\n")
     
     # Check global environment FIRST - this is where toggleLanguage stores it
     if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
       stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
       if (!is.null(stored_lang) && (stored_lang == "en" || stored_lang == "de")) {
         current_lang <- stored_lang
-        cat("DEBUG: Found language in global hilfo_language_preference:", current_lang, "\n")
-        # Use this and skip all other checks
         is_english <- (current_lang == "en")
-        cat("DEBUG: Using global language:", current_lang, "- is_english:", is_english, "\n")
+        cat("DEBUG: Found language in global hilfo_language_preference:", current_lang, "- is_english:", is_english, "\n")
       }
     }
     
     # If not found in global environment, check session as fallback
-    if (current_lang == "de" && !is.null(session) && !is.null(session$input)) {
+    if (!is_english && !is.null(session) && !is.null(session$input)) {
         # Check session input as fallback
-        lang_keys <- c("hilfo_language_preference", "study_language", "language", "current_language")
+        lang_keys <- c("hilfo_language_preference", "study_language", "language", "current_language", "store_language_globally")
         for (key in lang_keys) {
             if (key %in% names(session$input) && !is.null(session$input[[key]])) {
                 current_lang <- session$input[[key]]
-                cat("DEBUG: Found language in session$input$", key, ":", current_lang, "\n")
+                is_english <- (current_lang == "en")
+                cat("DEBUG: Found language in session$input$", key, ":", current_lang, "- is_english:", is_english, "\n")
+                break
+            }
+        }
+    }
+    
+    # Additional check: Look for any English indicators in the session
+    if (!is_english && !is.null(session) && !is.null(session$input)) {
+        # Check if any input suggests English
+        for (key in names(session$input)) {
+            if (grepl("language|lang", key, ignore.case = TRUE) && session$input[[key]] == "en") {
+                current_lang <- "en"
+                is_english <- TRUE
+                cat("DEBUG: Found English language in session$input$", key, "\n")
                 break
             }
         }
@@ -1002,11 +1059,10 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     # Final fallback to German
     if (is.null(current_lang) || current_lang == "") {
         current_lang <- "de"
+        is_english <- FALSE
         cat("DEBUG: Using default German language\n")
     }
     
-    # Set is_english based on current_lang
-    is_english <- (current_lang == "en")
     cat("DEBUG: Final language settings - current_lang:", current_lang, ", is_english:", is_english, "\n")
     # Additional debug output
     cat("DEBUG: Final language settings - current_lang:", current_lang, ", is_english:", is_english, "\n")
