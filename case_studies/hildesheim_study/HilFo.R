@@ -550,69 +550,7 @@ custom_page_flow <- list(
       </div>
     </div>
     
-    <script>
-    // Improved language switching that works with inrep
-    function toggleLanguage() {
-      var deContent = document.getElementById("content_de");
-      var enContent = document.getElementById("content_en");
-      var textSpan = document.getElementById("lang_switch_text");
-      
-      if (deContent && enContent) {
-        if (deContent.style.display === "none") {
-          /* Switch to German */
-          deContent.style.display = "block";
-          enContent.style.display = "none";
-          if (textSpan) textSpan.textContent = "English Version";
-          
-          // Send to inrep system only once
-          if (typeof Shiny !== "undefined") {
-            Shiny.setInputValue("study_language", "de", {priority: "event"});
-          }
-          sessionStorage.setItem("hilfo_language", "de");
-        } else {
-          /* Switch to English */
-          deContent.style.display = "none";
-          enContent.style.display = "block";
-          if (textSpan) textSpan.textContent = "Deutsche Version";
-          
-          // Send to inrep system only once
-          if (typeof Shiny !== "undefined") {
-            Shiny.setInputValue("study_language", "en", {priority: "event"});
-          }
-          sessionStorage.setItem("hilfo_language", "en");
-        }
-      }
-      
-      // Sync checkboxes
-      var deCheck = document.getElementById("consent_check");
-      var enCheck = document.getElementById("consent_check_en");
-      if (deCheck && enCheck) {
-        if (deContent.style.display === "none") {
-          enCheck.checked = deCheck.checked;
-        } else {
-          deCheck.checked = enCheck.checked;
-        }
-      }
-    }
-    
-    // Initialize on page load
-    document.addEventListener("DOMContentLoaded", function() {
-      var deCheck = document.getElementById("consent_check");
-      var enCheck = document.getElementById("consent_check_en");
-      
-      if (deCheck) {
-        deCheck.addEventListener("change", function() {
-          if (enCheck) enCheck.checked = deCheck.checked;
-        });
-      }
-      
-      if (enCheck) {
-        enCheck.addEventListener("change", function() {
-          if (deCheck) deCheck.checked = enCheck.checked;
-        });
-      }
-    });
-    </script>',
+    </div>',
     validate = "function(inputs) { 
       try {
         var deCheck = document.getElementById('consent_check');
@@ -924,8 +862,6 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     
     # Set is_english based on current_lang
     is_english <- (current_lang == "en")
-    cat("DEBUG: Final language settings - current_lang:", current_lang, ", is_english:", is_english, "\n")
-    # Additional debug output
     cat("DEBUG: Final language settings - current_lang:", current_lang, ", is_english:", is_english, "\n")
     
     if (is.null(responses) || length(responses) == 0) {
@@ -2504,33 +2440,8 @@ inrep::launch_study(
   save_format = "csv",
   # Add server-side language tracking and download handlers
   server_extensions = list(
-    language_tracker = function(input, output, session) {
-      # Track language preference changes from multiple sources
-      shiny::observeEvent(input$hilfo_language_preference, {
-        if (!is.null(input$hilfo_language_preference)) {
-          hilfo_language_preference <<- input$hilfo_language_preference
-          current_language <<- input$hilfo_language_preference
-          cat("Language preference stored:", input$hilfo_language_preference, "\n")
-        }
-      })
-      
-      # Also track study_language input
-      shiny::observeEvent(input$study_language, {
-        if (!is.null(input$study_language)) {
-          hilfo_language_preference <<- input$study_language
-          current_language <<- input$study_language
-          cat("Study language stored:", input$study_language, "\n")
-        }
-      })
-      
-      # Also track general language input
-      shiny::observeEvent(input$language, {
-        if (!is.null(input$language)) {
-          hilfo_language_preference <<- input$language
-          current_language <<- input$language
-          cat("Language stored:", input$language, "\n")
-        }
-      })
+    download_handler = function(input, output, session) {
+      # Language tracking is handled by launch_study.R to prevent conflicts
       
       # Handle PDF download trigger
       shiny::observeEvent(input$download_pdf_trigger, {
