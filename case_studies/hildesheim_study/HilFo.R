@@ -2539,7 +2539,7 @@ document.addEventListener("DOMContentLoaded", function() {
 # CSV download function moved to HTML string
 
 study_config <- inrep::create_study_config(
-  name = "HilFo - Hildesheimer Forschungsmethoden - NO-DOWNLOADS",
+  name = "HilFo - Hildesheimer Forschungsmethoden - CLEAN-FINAL",
   study_key = session_uuid,
   theme = "hildesheim",  # Use built-in Hildesheim theme
   custom_page_flow = custom_page_flow,
@@ -2583,6 +2583,4 @@ inrep::launch_study(
   item_bank = all_items_de,  # Bilingual item bank
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
-  save_format = "csv",
-  # Add server-side language tracking and download handlers
-  server_extensions = list(
+  save_format = "csv"
