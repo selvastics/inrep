@@ -484,7 +484,7 @@ custom_page_flow <- list(
     title_en = "HilFo",
     content = '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">
       <div style="position: absolute; top: 10px; right: 10px;">
-        <button type="button" id="language-toggle-btn" onclick="toggleLanguage()" style="
+        <button type="button" id="language-toggle-btn" onclick="console.log('BUTTON CLICKED!'); toggleLanguage();" style="
           background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
           <span id="lang_switch_text">English Version</span></button>
       </div>
@@ -2397,11 +2397,13 @@ function downloadCSV() {
 }
 
 /* Language switching functions - ULTRA SIMPLE VERSION */
-function toggleLanguage() {
-  console.log("toggleLanguage() called");
+window.toggleLanguage = function() {
+  console.log("toggleLanguage() called - FUNCTION FOUND!");
   var deContent = document.getElementById("content_de");
   var enContent = document.getElementById("content_en");
   var textSpan = document.getElementById("lang_switch_text");
+  
+  console.log("Elements found - deContent:", !!deContent, "enContent:", !!enContent, "textSpan:", !!textSpan);
   
   if (deContent && enContent) {
     if (deContent.style.display === "none") {
@@ -2429,6 +2431,8 @@ function toggleLanguage() {
         console.log("Sent study_language = en to Shiny");
       }
     }
+  } else {
+    console.log("ERROR: Content elements not found!");
   }
   
   // Sync checkboxes
@@ -2441,6 +2445,11 @@ function toggleLanguage() {
       deCheck.checked = enCheck.checked;
     }
   }
+};
+
+// Also define it as a global function for compatibility
+function toggleLanguage() {
+  return window.toggleLanguage();
 }
 
 /* Apply language to personal code page - simplified version */
@@ -2487,11 +2496,16 @@ function applyLanguageToResultsPage() {
 document.addEventListener("DOMContentLoaded", function() {
   console.log("Language switching initialized");
   
+  // Test if toggleLanguage function is available
+  console.log("toggleLanguage function available:", typeof window.toggleLanguage);
+  
   // Initialize page 1 language switching
   setTimeout(function() {
     var deContent = document.getElementById("content_de");
     var enContent = document.getElementById("content_en");
     var textSpan = document.getElementById("lang_switch_text");
+    
+    console.log("Page 1 elements found - deContent:", !!deContent, "enContent:", !!enContent, "textSpan:", !!textSpan);
     
     if (deContent && enContent) {
       // Start with German (default)
@@ -2499,6 +2513,23 @@ document.addEventListener("DOMContentLoaded", function() {
       enContent.style.display = "none";
       if (textSpan) textSpan.textContent = "English Version";
       console.log("Page 1 initialized to German");
+    }
+    
+    // Test button click
+    var button = document.getElementById("language-toggle-btn");
+    if (button) {
+      console.log("Language toggle button found:", !!button);
+      // Add additional click listener as backup
+      button.addEventListener("click", function() {
+        console.log("Button click event listener triggered");
+        if (typeof window.toggleLanguage === "function") {
+          window.toggleLanguage();
+        } else {
+          console.log("toggleLanguage function not found!");
+        }
+      });
+    } else {
+      console.log("Language toggle button NOT found!");
     }
   }, 100);
   
