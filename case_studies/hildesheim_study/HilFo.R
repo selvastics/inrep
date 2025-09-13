@@ -552,7 +552,7 @@ custom_page_flow <- list(
     
     <script>
     // SIMPLE AND ROBUST LANGUAGE SYSTEM
-    window.hilfoLanguage = \"de\"; // Default to German
+    window.hilfoLanguage = localStorage.getItem(\"hilfo_language\") || \"de\"; // Load from localStorage or default to German
     window.languageLocked = false; // Prevent rapid clicking
     
     // Simple language toggle function
@@ -567,18 +567,53 @@ custom_page_flow <- list(
       var newLang = (window.hilfoLanguage === \"de\") ? \"en\" : \"de\";
       window.hilfoLanguage = newLang;
       
+      // Store in localStorage for persistence
+      localStorage.setItem(\"hilfo_language\", newLang);
+      
       // Update UI immediately
       updateAllLanguageElements(newLang);
       
-      // Send to Shiny only once
+      // Visual feedback - disable button temporarily
+      var buttons = document.querySelectorAll(\"button[onclick=\\\"toggleLanguage()\\\"]\");
+      buttons.forEach(function(btn) {
+        btn.disabled = true;
+        btn.style.opacity = \"0.6\";
+        btn.textContent = \"Switching...\";
+        setTimeout(function() {
+          btn.disabled = false;
+          btn.style.opacity = \"1\";
+          // Restore button text
+          var isEnglish = (newLang === \"en\");
+          btn.innerHTML = \"<span id=\\\"lang_switch_text\\\">\" + (isEnglish ? \"Deutsche Version\" : \"English Version\") + \"</span>\";
+        }, 1000);
+      });
+      
+      // Send to Shiny with multiple methods to ensure it gets through
       if (typeof Shiny !== \"undefined\") {
+        // Method 1: Direct input
         Shiny.setInputValue(\"study_language\", newLang, {priority: \"event\"});
+        
+        // Method 2: Force update after delays
+        setTimeout(function() {
+          Shiny.setInputValue(\"study_language\", newLang, {priority: \"event\"});
+        }, 50);
+        
+        setTimeout(function() {
+          Shiny.setInputValue(\"study_language\", newLang, {priority: \"event\"});
+        }, 200);
+        
+        setTimeout(function() {
+          Shiny.setInputValue(\"study_language\", newLang, {priority: \"event\"});
+        }, 500);
+        
+        // Method 3: Store globally for inrep
+        Shiny.setInputValue(\"store_language_globally\", newLang, {priority: \"event\"});
       }
       
       // Unlock after delay
       setTimeout(function() {
         window.languageLocked = false;
-      }, 1000);
+      }, 2000); // Increased to 2 seconds
     }
     
     // Update all language elements immediately
@@ -631,7 +666,13 @@ custom_page_flow <- list(
     
     // Initialize language on page load
     document.addEventListener(\"DOMContentLoaded\", function() {
+      // Force language state on page load
       updateAllLanguageElements(window.hilfoLanguage);
+      
+      // Send initial language to Shiny to ensure synchronization
+      if (typeof Shiny !== \"undefined\") {
+        Shiny.setInputValue(\"study_language\", window.hilfoLanguage, {priority: \"event\"});
+      }
       
       // Checkbox synchronization for consent
       var deCheck = document.getElementById(\"consent_check\");
@@ -647,6 +688,15 @@ custom_page_flow <- list(
         enCheck.addEventListener(\"change\", function() {
           if (deCheck) deCheck.checked = enCheck.checked;
         });
+      }
+    });
+    
+    // Also listen for Shiny events to ensure language stays in sync
+    $(document).on(\"shiny:connected\", function() {
+      // Force language state when Shiny connects
+      updateAllLanguageElements(window.hilfoLanguage);
+      if (typeof Shiny !== \"undefined\") {
+        Shiny.setInputValue(\"study_language\", window.hilfoLanguage, {priority: \"event\"});
       }
     });
     </script>'),
@@ -2637,7 +2687,7 @@ document.addEventListener("DOMContentLoaded", function() {
 # CSV download function moved to HTML string
 
 study_config <- inrep::create_study_config(
-  name = "HilFo - Hildesheimer Forschungsmethoden - SIMPLIFIED",
+  name = "HilFo - Hildesheimer Forschungsmethoden - ONE-CLICK-FIXED",
   study_key = session_uuid,
   theme = "hildesheim",  # Use built-in Hildesheim theme
   custom_page_flow = custom_page_flow,
