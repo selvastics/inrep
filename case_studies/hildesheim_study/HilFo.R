@@ -475,6 +475,15 @@ input_types <- list(
 # CUSTOM PAGE FLOW
 # =============================================================================
 
+# Helper function to create language switch button for any page
+create_language_button <- function(page_id) {
+  paste0('<div style="position: absolute; top: 10px; right: 10px; z-index: 1000;">
+        <button type="button" onclick="toggleLanguage()" style="
+          background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
+          <span id="lang_switch_text_', page_id, '">English Version</span></button>
+      </div>')
+}
+
 custom_page_flow <- list(
   # Page 1: Einleitungstext with mandatory consent and language switcher
   list(
@@ -597,15 +606,23 @@ custom_page_flow <- list(
         enContent.style.display = isEnglish ? \"block\" : \"none\";
       }
       
-      // Update button text
-      var textSpan = document.getElementById(\"lang_switch_text\");
-      var resultsTextSpan = document.getElementById(\"lang_switch_text_results\");
-      if (textSpan) {
-        textSpan.textContent = isEnglish ? \"Deutsche Version\" : \"English Version\";
-      }
-      if (resultsTextSpan) {
-        resultsTextSpan.textContent = isEnglish ? \"Deutsche Version\" : \"English Version\";
-      }
+      // Update button text for ALL pages
+      var buttonIds = [
+        \"lang_switch_text\", \"lang_switch_text_results\", \"lang_switch_text_page2\",
+        \"lang_switch_text_page3\", \"lang_switch_text_page4\", \"lang_switch_text_page5\",
+        \"lang_switch_text_page6\", \"lang_switch_text_page7\", \"lang_switch_text_page8\",
+        \"lang_switch_text_page9\", \"lang_switch_text_page10\", \"lang_switch_text_page11\",
+        \"lang_switch_text_page12\", \"lang_switch_text_page13\", \"lang_switch_text_page14\",
+        \"lang_switch_text_page15\", \"lang_switch_text_page16\", \"lang_switch_text_page17\",
+        \"lang_switch_text_page18\", \"lang_switch_text_page19\", \"lang_switch_text_page20\"
+      ];
+      
+      buttonIds.forEach(function(buttonId) {
+        var buttonSpan = document.getElementById(buttonId);
+        if (buttonSpan) {
+          buttonSpan.textContent = isEnglish ? \"Deutsche Version\" : \"English Version\";
+        }
+      });
       
       // Update data-lang elements
       var elements = document.querySelectorAll(\"[data-lang-de][data-lang-en]\");
@@ -678,7 +695,12 @@ custom_page_flow <- list(
     type = "demographics",
     title = "Soziodemographische Angaben",
     title_en = "Sociodemographic Information",
-    demographics = c("Alter_VPN", "Studiengang", "Geschlecht")
+    demographics = c("Alter_VPN", "Studiengang", "Geschlecht"),
+    content = '<div style="position: absolute; top: 10px; right: 10px;">
+        <button type="button" onclick="toggleLanguage()" style="
+          background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
+          <span id="lang_switch_text_page2">English Version</span></button>
+      </div>'
   ),
   
   # Page 3: Living situation
@@ -687,7 +709,12 @@ custom_page_flow <- list(
     type = "demographics",
     title = "Wohnsituation",
     title_en = "Living Situation",
-    demographics = c("Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz")
+    demographics = c("Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz"),
+    content = '<div style="position: absolute; top: 10px; right: 10px;">
+        <button type="button" onclick="toggleLanguage()" style="
+          background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
+          <span id="lang_switch_text_page3">English Version</span></button>
+      </div>'
   ),
   
   # Page 4: Lifestyle
@@ -696,7 +723,8 @@ custom_page_flow <- list(
     type = "demographics",
     title = "Lebensstil",
     title_en = "Lifestyle",
-    demographics = c("Rauchen", "Ernährung", "Ernährung_Zusatz")
+    demographics = c("Rauchen", "Ernährung", "Ernährung_Zusatz"),
+    content = create_language_button("page4")
   ),
   
   # Page 5: Education
@@ -705,7 +733,8 @@ custom_page_flow <- list(
     type = "demographics",
     title = "Bildung",
     title_en = "Education",
-    demographics = c("Note_Englisch", "Note_Mathe")
+    demographics = c("Note_Englisch", "Note_Mathe"),
+    content = create_language_button("page5")
   ),
   
   # Page 6: Programming Anxiety Part 1 - FIXED (first 5 items together)
@@ -717,7 +746,8 @@ custom_page_flow <- list(
     instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
     instructions_en = "Please indicate to what extent the following statements apply to you.",
     item_indices = 1:5,  # First 5 PA items (fixed, all on one page)
-    scale_type = "likert"
+    scale_type = "likert",
+    content = create_language_button("page6")
   ),
   
   # Pages 7-11: Programming Anxiety Part 2 - Adaptive (5 items, one per page)
@@ -731,7 +761,8 @@ custom_page_flow <- list(
     instructions = "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.",
     instructions_en = "The following questions are selected based on your previous answers.",
     item_indices = 6:6,
-    scale_type = "likert"
+    scale_type = "likert",
+    content = create_language_button("page7")
   ),
   list(
     id = "page8_pa3",
@@ -739,7 +770,8 @@ custom_page_flow <- list(
     title = "Programmierangst - Teil 2",
     title_en = "Programming Anxiety - Part 2",
     item_indices = 7:7,
-    scale_type = "likert"
+    scale_type = "likert",
+    content = create_language_button("page8")
   ),
   list(
     id = "page9_pa4",
@@ -747,7 +779,8 @@ custom_page_flow <- list(
     title = "Programmierangst - Teil 2",
     title_en = "Programming Anxiety - Part 2",
     item_indices = 8:8,
-    scale_type = "likert"
+    scale_type = "likert",
+    content = create_language_button("page9")
   ),
   list(
     id = "page10_pa5",
@@ -755,7 +788,8 @@ custom_page_flow <- list(
     title = "Programmierangst - Teil 2",
     title_en = "Programming Anxiety - Part 2",
     item_indices = 9:9,
-    scale_type = "likert"
+    scale_type = "likert",
+    content = create_language_button("page10")
   ),
   list(
     id = "page11_pa6",
@@ -763,7 +797,8 @@ custom_page_flow <- list(
     title = "Programmierangst - Teil 2",
     title_en = "Programming Anxiety - Part 2",
     item_indices = 10:10,
-    scale_type = "likert"
+    scale_type = "likert",
+    content = create_language_button("page11")
   ),
   
   # Pages 12-15: BFI items (grouped by trait)
@@ -775,7 +810,8 @@ custom_page_flow <- list(
     instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
     instructions_en = "Please indicate to what extent the following statements apply to you.",
     item_indices = 21:25,  # BFI items (after 20 PA items)
-    scale_type = "likert"
+    scale_type = "likert",
+    content = create_language_button("page12")
   ),
   list(
     id = "page13",
@@ -783,7 +819,8 @@ custom_page_flow <- list(
     title = "",
     title_en = "",
     item_indices = 26:30,  # BFI items continued
-    scale_type = "likert"
+    scale_type = "likert",
+    content = create_language_button("page13")
   ),
   list(
     id = "page14",
@@ -791,7 +828,8 @@ custom_page_flow <- list(
     title = "",
     title_en = "",
     item_indices = 31:35,  # BFI items continued
-    scale_type = "likert"
+    scale_type = "likert",
+    content = create_language_button("page14")
   ),
   list(
     id = "page15",
@@ -799,7 +837,8 @@ custom_page_flow <- list(
     title = "",
     title_en = "",
     item_indices = 36:40,  # BFI items final
-    scale_type = "likert"
+    scale_type = "likert",
+    content = create_language_button("page15")
   ),
   
   # Page 16: PSQ Stress
@@ -811,7 +850,8 @@ custom_page_flow <- list(
     instructions = "Wie sehr treffen die folgenden Aussagen auf Sie zu?",
     instructions_en = "How much do the following statements apply to you?",
     item_indices = 41:45,  # PSQ items (after 20 PA + 20 BFI)
-    scale_type = "likert"
+    scale_type = "likert",
+    content = create_language_button("page16")
   ),
   
   # Page 17: MWS Study Skills
@@ -823,7 +863,8 @@ custom_page_flow <- list(
     instructions = "Wie leicht oder schwer fällt es Ihnen...",
     instructions_en = "How easy or difficult is it for you...",
     item_indices = 46:49,  # MWS items
-    scale_type = "difficulty"
+    scale_type = "difficulty",
+    content = create_language_button("page17")
   ),
   
   # Page 18: Statistics
@@ -833,7 +874,8 @@ custom_page_flow <- list(
     title = "Statistik",
     title_en = "Statistics",
     item_indices = 50:51,  # Statistics items
-    scale_type = "likert"
+    scale_type = "likert",
+    content = create_language_button("page18")
   ),
   
   # Page 19: Study satisfaction
@@ -842,7 +884,8 @@ custom_page_flow <- list(
     type = "demographics",
     title = "Studienzufriedenheit",
     title_en = "Study Satisfaction",
-    demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st")
+    demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st"),
+    content = create_language_button("page19")
   ),
   
   # Page 20: Personal Code
@@ -2564,6 +2607,96 @@ study_config <- inrep::create_study_config(
   custom_js = '
     // Global HILFO Language System Integration
     // This script runs on ALL pages to handle language switching
+    
+    // Ensure language variables are globally available
+    if (typeof window.hilfoLanguage === "undefined") {
+      window.hilfoLanguage = "de";
+    }
+    if (typeof window.languageLocked === "undefined") {
+      window.languageLocked = false;
+    }
+    
+    // Define toggleLanguage function globally for all pages
+    if (typeof window.toggleLanguage === "undefined") {
+      window.toggleLanguage = function() {
+        if (window.languageLocked) return;
+        
+        window.languageLocked = true;
+        
+        // Toggle language
+        window.hilfoLanguage = (window.hilfoLanguage === "de") ? "en" : "de";
+        
+        // Update UI
+        updateLanguageUI();
+        
+        // Synchronize with inrep system
+        if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
+          Shiny.setInputValue("study_language", window.hilfoLanguage, {priority: "event"});
+          Shiny.setInputValue("store_language_globally", window.hilfoLanguage, {priority: "event"});
+          // Force refresh of current page content to reload questions in new language
+          Shiny.setInputValue("force_language_refresh", Math.random(), {priority: "event"});
+          // Also trigger a navigation refresh to reload current page
+          setTimeout(function() {
+            Shiny.setInputValue("force_page_reload", Math.random(), {priority: "event"});
+          }, 200);
+        }
+        
+        // Unlock after 500ms
+        setTimeout(function() {
+          window.languageLocked = false;
+        }, 500);
+      };
+    }
+    
+    // Define updateLanguageUI function globally
+    if (typeof window.updateLanguageUI === "undefined") {
+      window.updateLanguageUI = function() {
+        var isEnglish = (window.hilfoLanguage === "en");
+        
+        // Update content divs
+        var deContent = document.getElementById("content_de");
+        var enContent = document.getElementById("content_en");
+        if (deContent && enContent) {
+          deContent.style.display = isEnglish ? "none" : "block";
+          enContent.style.display = isEnglish ? "block" : "none";
+        }
+        
+        // Update button text for ALL pages
+        var buttonIds = [
+          "lang_switch_text", "lang_switch_text_results", "lang_switch_text_page2",
+          "lang_switch_text_page3", "lang_switch_text_page4", "lang_switch_text_page5",
+          "lang_switch_text_page6", "lang_switch_text_page7", "lang_switch_text_page8",
+          "lang_switch_text_page9", "lang_switch_text_page10", "lang_switch_text_page11",
+          "lang_switch_text_page12", "lang_switch_text_page13", "lang_switch_text_page14",
+          "lang_switch_text_page15", "lang_switch_text_page16", "lang_switch_text_page17",
+          "lang_switch_text_page18", "lang_switch_text_page19", "lang_switch_text_page20"
+        ];
+        
+        buttonIds.forEach(function(buttonId) {
+          var buttonSpan = document.getElementById(buttonId);
+          if (buttonSpan) {
+            buttonSpan.textContent = isEnglish ? "Deutsche Version" : "English Version";
+          }
+        });
+        
+        // Update data-lang elements
+        var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+        elements.forEach(function(el) {
+          el.textContent = isEnglish ? el.getAttribute("data-lang-en") : el.getAttribute("data-lang-de");
+        });
+        
+        // Update input placeholders
+        var inputs = document.querySelectorAll("[data-placeholder-de][data-placeholder-en]");
+        inputs.forEach(function(input) {
+          input.placeholder = isEnglish ? input.getAttribute("data-placeholder-en") : input.getAttribute("data-placeholder-de");
+        });
+        
+        // Dispatch language change event
+        document.dispatchEvent(new CustomEvent("languageChanged", { 
+          detail: { language: window.hilfoLanguage } 
+        }));
+      };
+    }
     
     // Listen for language changes from page 1
     document.addEventListener("languageChanged", function(event) {
