@@ -2608,7 +2608,7 @@ study_config <- inrep::create_study_config(
   language = "de",  # Start with German
   bilingual = TRUE,  # Enable inrep's built-in bilingual support
   custom_js = "
-    // Global HILFO Language System Integration
+    // Global HILFO Language System Integration with COMPLETE Question Translation
     console.log('HILFO Language System Loading...');
     
     // Ensure language variables are globally available
@@ -2619,20 +2619,169 @@ study_config <- inrep::create_study_config(
       window.languageLocked = false;
     }
     
+    // COMPLETE German to English question mappings
+    window.questionMappings = {
+      // Programming Anxiety questions
+      'Ich fühle mich unsicher, wenn ich programmieren soll.': 'I feel uncertain when I have to program.',
+      'Der Gedanke, programmieren zu lernen, macht mich nervös.': 'The thought of learning to program makes me nervous.',
+      'Ich habe Angst, beim Programmieren Fehler zu machen.': 'I am afraid of making mistakes when programming.',
+      'Ich fühle mich überfordert, wenn ich an Programmieraufgaben denke.': 'I feel overwhelmed when I think about programming tasks.',
+      'Ich bin besorgt, dass ich nicht gut genug programmieren kann.': 'I am worried that I am not good enough at programming.',
+      'Ich vermeide es, neue Programmiersprachen zu nutzen, weil ich Angst habe, Fehler zu machen.': 'I avoid using new programming languages because I am afraid of making mistakes.',
+      'In Gruppencodier-Sitzungen bin ich nervös, dass meine Beiträge nicht geschätzt werden.': 'During group coding sessions, I am nervous that my contributions will not be valued.',
+      'Ich habe Sorge, Programmieraufgaben nicht rechtzeitig aufgrund fehlender Fähigkeiten abschließen zu können.': 'I worry that I will be unable to finish a coding assignment on time due to lack of skills.',
+      'Wenn ich bei einem Programmierproblem nicht weiterkomme, ist es mir peinlich, um Hilfe zu bitten.': 'When I get stuck on a programming problem, I feel embarrassed to ask for help.',
+      'Ich fühle mich wohl dabei, meinen Code anderen zu erklären.': 'I feel comfortable explaining my code to others.',
+      
+      // BFI Extraversion
+      'Ich gehe aus mir heraus, bin gesellig.': 'I am outgoing, sociable.',
+      'Ich bin eher ruhig.': 'I am rather quiet.',
+      'Ich bin eher schüchtern.': 'I am rather shy.',
+      'Ich bin gesprächig.': 'I am talkative.',
+      
+      // BFI Agreeableness  
+      'Ich bin einfühlsam, warmherzig.': 'I am empathetic, warm-hearted.',
+      'Ich habe mit anderen wenig Mitgefühl.': 'I have little sympathy for others.',
+      'Ich bin hilfsbereit und selbstlos.': 'I am helpful and selfless.',
+      'Andere sind mir eher gleichgültig, egal.': 'Others are rather indifferent to me.',
+      
+      // BFI Conscientiousness
+      'Ich bin eher unordentlich.': 'I am rather disorganized.',
+      'Ich bin systematisch, halte meine Sachen in Ordnung.': 'I am systematic, keep my things in order.',
+      'Ich mag es sauber und aufgeräumt.': 'I like it clean and tidy.',
+      'Ich bin eher der chaotische Typ, mache selten sauber.': 'I am rather the chaotic type, rarely clean up.',
+      
+      // BFI Neuroticism
+      'Ich bleibe auch in stressigen Situationen gelassen.': 'I remain calm even in stressful situations.',
+      'Ich reagiere leicht angespannt.': 'I react easily tensed.',
+      'Ich mache mir oft Sorgen.': 'I often worry.',
+      'Ich werde selten nervös und unsicher.': 'I rarely become nervous and insecure.',
+      
+      // BFI Openness
+      'Ich bin vielseitig interessiert.': 'I have diverse interests.',
+      'Ich meide philosophische Diskussionen.': 'I avoid philosophical discussions.',
+      'Es macht mir Spaß, gründlich über komplexe Dinge nachzudenken und sie zu verstehen.': 'I enjoy thinking thoroughly about complex things and understanding them.',
+      'Mich interessieren abstrakte Überlegungen wenig.': 'Abstract considerations interest me little.',
+      
+      // PSQ Stress
+      'Ich habe das Gefühl, dass zu viele Forderungen an mich gestellt werden.': 'I feel that too many demands are placed on me.',
+      'Ich habe zuviel zu tun.': 'I have too much to do.',
+      'Ich fühle mich gehetzt.': 'I feel rushed.',
+      'Ich habe genug Zeit für mich.': 'I have enough time for myself.',
+      'Ich fühle mich unter Termindruck.': 'I feel under time pressure.',
+      
+      // MWS Study Skills
+      'mit dem sozialen Klima im Studiengang zurechtzukommen (z.B. Konkurrenz aushalten)': 'to cope with the social climate in the study program (e.g., endure competition)',
+      'Teamarbeit zu organisieren (z.B. Lerngruppen finden)': 'to organize teamwork (e.g., find study groups)',
+      'Kontakte zu Mitstudierenden zu knüpfen (z.B. für Lerngruppen, Freizeit)': 'to make contacts with fellow students (e.g., for study groups, leisure)',
+      'im Team zusammen zu arbeiten (z.B. gemeinsam Aufgaben bearbeiten, Referate vorbereiten)': 'to work together in a team (e.g., work on tasks together, prepare presentations)',
+      
+      // Statistics
+      'Bislang konnte ich den Inhalten der Statistikveranstaltungen gut folgen.': 'So far I have been able to follow the content of the statistics courses well.',
+      'Ich bin in der Lage, Statistik zu erlernen.': 'I am able to learn statistics.',
+      
+      // Demographic questions
+      'Wie alt sind Sie?': 'How old are you?',
+      'In welchem Studiengang befinden Sie sich?': 'Which study program are you in?',
+      'Welches Geschlecht haben Sie?': 'What is your gender?',
+      'Wie wohnen Sie?': 'How do you live?',
+      'Haben Sie Haustiere?': 'Do you have pets?',
+      'Rauchen Sie?': 'Do you smoke?',
+      'Wie ernähren Sie sich?': 'How do you eat?',
+      
+      // Page titles
+      'Soziodemographische Angaben': 'Sociodemographic Information',
+      'Wohnsituation': 'Living Situation',
+      'Lebensstil': 'Lifestyle',
+      'Bildung': 'Education',
+      'Programmierangst - Teil 1': 'Programming Anxiety - Part 1',
+      'Programmierangst - Teil 2': 'Programming Anxiety - Part 2',
+      'Studierfähigkeiten': 'Study Skills',
+      'Statistik': 'Statistics',
+      'Studienzufriedenheit': 'Study Satisfaction',
+      'Persönlicher Code': 'Personal Code',
+      'Ihre Ergebnisse': 'Your Results',
+      
+      // Options
+      'Bachelor Psychologie': 'Bachelor Psychology',
+      'Master Psychologie': 'Master Psychology',
+      'weiblich oder divers': 'female or diverse',
+      'männlich': 'male',
+      'Bitte wählen...': 'Please select...',
+      
+      // Response scales
+      'Stimme überhaupt nicht zu': 'Strongly disagree',
+      'Stimme nicht zu': 'Disagree',
+      'Weder noch': 'Neither agree nor disagree',
+      'Stimme zu': 'Agree',
+      'Stimme voll zu': 'Strongly agree',
+      'Trifft überhaupt nicht zu': 'Does not apply at all',
+      'Trifft nicht zu': 'Does not apply',
+      'Trifft eher nicht zu': 'Does not really apply',
+      'Trifft eher zu': 'Applies somewhat',
+      'Trifft zu': 'Applies',
+      'Trifft voll zu': 'Fully applies'
+    };
+    
+    // Function to translate all text on the page
+    window.translatePageContent = function(targetLanguage) {
+      console.log('Translating page content to:', targetLanguage);
+      var isEnglish = (targetLanguage === 'en');
+      
+      // Get all text-containing elements
+      var selectors = [
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'div', 'label',
+        '.question-text', '.item-question', '.question-content', '.item-content',
+        '.form-group label', '.control-label', '.question-label',
+        '.shiny-input-container label', '.radio label', '.checkbox label',
+        'select option', '.selectize-option', '.selectize-item'
+      ];
+      
+      selectors.forEach(function(selector) {
+        var elements = document.querySelectorAll(selector);
+        elements.forEach(function(element) {
+          var currentText = element.textContent.trim();
+          if (currentText && currentText.length > 0) {
+            if (isEnglish) {
+              // German to English
+              if (window.questionMappings[currentText]) {
+                element.textContent = window.questionMappings[currentText];
+                console.log('Translated to EN:', window.questionMappings[currentText]);
+              }
+            } else {
+              // English to German (reverse lookup)
+              for (var germanText in window.questionMappings) {
+                if (window.questionMappings[germanText] === currentText) {
+                  element.textContent = germanText;
+                  console.log('Translated to DE:', germanText);
+                  break;
+                }
+              }
+            }
+          }
+        });
+      });
+    };
+    
     // Define toggleLanguage function globally for all pages
     if (typeof window.toggleLanguage === 'undefined') {
       window.toggleLanguage = function() {
         if (window.languageLocked) return;
         
         window.languageLocked = true;
+        console.log('Language toggle clicked, current:', window.hilfoLanguage);
         
         // Toggle language
         window.hilfoLanguage = (window.hilfoLanguage === 'de') ? 'en' : 'de';
+        console.log('Language switched to:', window.hilfoLanguage);
         
-        // Update UI
+        // Update UI elements
         if (typeof window.updateLanguageUI === 'function') {
           window.updateLanguageUI();
         }
+        
+        // CRITICAL: Translate all content on the page
+        window.translatePageContent(window.hilfoLanguage);
         
         // Synchronize with inrep system
         if (typeof Shiny !== 'undefined' && Shiny.setInputValue) {
@@ -2640,10 +2789,10 @@ study_config <- inrep::create_study_config(
           Shiny.setInputValue('store_language_globally', window.hilfoLanguage, {priority: 'event'});
         }
         
-        // Unlock after 500ms
+        // Unlock after 1 second to allow translations to complete
         setTimeout(function() {
           window.languageLocked = false;
-        }, 500);
+        }, 1000);
       };
     }
     
@@ -2696,9 +2845,16 @@ study_config <- inrep::create_study_config(
           document.body.appendChild(langButton);
         }
       }, 100);
+      
+      // Also trigger translation on page load if language is already set to English
+      setTimeout(function() {
+        if (window.hilfoLanguage === 'en') {
+          window.translatePageContent('en');
+        }
+      }, 500);
     });
     
-    console.log('HILFO Language System Loaded Successfully');
+    console.log('HILFO Language System with Complete Translation Loaded Successfully');
   ",
   session_save = TRUE,
   session_timeout = 7200,  # 2 hours timeout
