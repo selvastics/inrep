@@ -551,231 +551,102 @@ custom_page_flow <- list(
     </div>
     
     <script>
-    // ULTRA-ROBUST LANGUAGE SYSTEM - Single source of truth
-    window.hilfoLanguage = "de"; // Default to German
-    window.languageLocked = false; // Prevent race conditions
-    window.lastShinyLanguage = null; // Track what we sent to Shiny
-    window.languageChangeTimeout = null; // Debounce timer
-    window.lastToggleTime = 0; // Prevent rapid clicking
+    // SIMPLE AND ROBUST LANGUAGE SYSTEM
+    window.hilfoLanguage = \"de\"; // Default to German
+    window.languageLocked = false; // Prevent rapid clicking
     
-    // FORCE language state - this is the single source of truth
-    function forceLanguageState(lang) {
+    // Simple language toggle function
+    function toggleLanguage() {
       if (window.languageLocked) {
-        console.log("Language change blocked - already in progress");
-        return;
-      }
-      
-      // Clear any pending debounced changes
-      if (window.languageChangeTimeout) {
-        clearTimeout(window.languageChangeTimeout);
-        window.languageChangeTimeout = null;
+        return; // Block rapid clicking
       }
       
       window.languageLocked = true;
-      window.hilfoLanguage = lang;
       
-      console.log("FORCING language to:", lang);
+      // Toggle language
+      var newLang = (window.hilfoLanguage === \"de\") ? \"en\" : \"de\";
+      window.hilfoLanguage = newLang;
       
-      // Update all UI elements immediately
-      updateAllLanguageElements(lang);
+      // Update UI immediately
+      updateAllLanguageElements(newLang);
       
-      // Only send to Shiny if it's different from what we last sent
-      if (window.lastShinyLanguage !== lang) {
-        if (typeof Shiny !== "undefined") {
-          Shiny.setInputValue("study_language", lang, {priority: "event"});
-          window.lastShinyLanguage = lang;
-          console.log("✅ Sent study_language =", lang, "to Shiny (NEW)");
-        }
-      } else {
-        console.log("⏭️ Skipped sending to Shiny - same as last sent:", lang);
+      // Send to Shiny only once
+      if (typeof Shiny !== \"undefined\") {
+        Shiny.setInputValue(\"study_language\", newLang, {priority: \"event\"});
       }
       
-      // Unlock after a short delay
+      // Unlock after delay
       setTimeout(function() {
         window.languageLocked = false;
-      }, 300);
-      
-      // Trigger global language change event
-      window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: lang } }));
+      }, 1000);
     }
     
     // Update all language elements immediately
     function updateAllLanguageElements(lang) {
-      var isEnglish = (lang === "en");
+      var isEnglish = (lang === \"en\");
       
       // Update content divs
-      var deContent = document.getElementById("content_de");
-      var enContent = document.getElementById("content_en");
+      var deContent = document.getElementById(\"content_de\");
+      var enContent = document.getElementById(\"content_en\");
       if (deContent && enContent) {
         if (isEnglish) {
-          deContent.style.display = "none";
-          enContent.style.display = "block";
+          deContent.style.display = \"none\";
+          enContent.style.display = \"block\";
         } else {
-          deContent.style.display = "block";
-          enContent.style.display = "none";
+          deContent.style.display = \"block\";
+          enContent.style.display = \"none\";
         }
       }
       
       // Update button texts
-      var textSpan = document.getElementById("lang_switch_text");
-      var resultsTextSpan = document.getElementById("lang_switch_text_results");
+      var textSpan = document.getElementById(\"lang_switch_text\");
+      var resultsTextSpan = document.getElementById(\"lang_switch_text_results\");
       if (textSpan) {
-        textSpan.textContent = isEnglish ? "Deutsche Version" : "English Version";
+        textSpan.textContent = isEnglish ? \"Deutsche Version\" : \"English Version\";
       }
       if (resultsTextSpan) {
-        resultsTextSpan.textContent = isEnglish ? "Deutsche Version" : "English Version";
+        resultsTextSpan.textContent = isEnglish ? \"Deutsche Version\" : \"English Version\";
       }
       
       // Update all data-lang elements
-      var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+      var elements = document.querySelectorAll(\"[data-lang-de][data-lang-en]\");
       elements.forEach(function(el) {
         if (isEnglish) {
-          el.textContent = el.getAttribute("data-lang-en");
+          el.textContent = el.getAttribute(\"data-lang-en\");
         } else {
-          el.textContent = el.getAttribute("data-lang-de");
+          el.textContent = el.getAttribute(\"data-lang-de\");
         }
       });
       
       // Update input placeholders
-      var inputs = document.querySelectorAll("[data-placeholder-de][data-placeholder-en]");
+      var inputs = document.querySelectorAll(\"[data-placeholder-de][data-placeholder-en]\");
       inputs.forEach(function(input) {
         if (isEnglish) {
-          input.placeholder = input.getAttribute("data-placeholder-en");
+          input.placeholder = input.getAttribute(\"data-placeholder-en\");
         } else {
-          input.placeholder = input.getAttribute("data-placeholder-de");
+          input.placeholder = input.getAttribute(\"data-placeholder-de\");
         }
       });
     }
     
-    // ULTRA-SIMPLE language toggle function with debouncing and cooldown
-    function toggleLanguage() {
-      var now = Date.now();
-      
-      // Prevent rapid clicking (cooldown period)
-      if (now - window.lastToggleTime < 500) {
-        console.log("Language toggle blocked - cooldown period");
-        return;
-      }
-      
-      if (window.languageLocked) {
-        console.log("Language toggle blocked - already in progress");
-        return;
-      }
-      
-      // Clear any pending toggle
-      if (window.languageChangeTimeout) {
-        clearTimeout(window.languageChangeTimeout);
-      }
-      
-      // Set cooldown
-      window.lastToggleTime = now;
-      
-      // Visual feedback - disable button temporarily
-      var buttons = document.querySelectorAll('button[onclick="toggleLanguage()"]');
-      buttons.forEach(function(btn) {
-        btn.disabled = true;
-        btn.style.opacity = '0.6';
-        setTimeout(function() {
-          btn.disabled = false;
-          btn.style.opacity = '1';
-        }, 500);
-      });
-      
-      // Debounce rapid clicks
-      window.languageChangeTimeout = setTimeout(function() {
-        var newLang = (window.hilfoLanguage === "de") ? "en" : "de";
-        console.log("Toggling language from", window.hilfoLanguage, "to", newLang);
-        
-        forceLanguageState(newLang);
-      }, 150); // 150ms debounce
-    }
-    
-    // Apply language to all elements with data-lang attributes (legacy function)
-    function applyLanguageToAllPages() {
-      var currentLang = window.hilfoLanguage || "de";
-      console.log("Applying language to all pages (legacy):", currentLang);
-      updateAllLanguageElements(currentLang);
-    }
-    
-    // ULTRA-ROBUST event handling
-    document.addEventListener("DOMContentLoaded", function() {
-      console.log("DOM loaded - initializing language system");
+    // Initialize language on page load
+    document.addEventListener(\"DOMContentLoaded\", function() {
+      updateAllLanguageElements(window.hilfoLanguage);
       
       // Checkbox synchronization for consent
-      var deCheck = document.getElementById("consent_check");
-      var enCheck = document.getElementById("consent_check_en");
+      var deCheck = document.getElementById(\"consent_check\");
+      var enCheck = document.getElementById(\"consent_check_en\");
       
       if (deCheck) {
-        deCheck.addEventListener("change", function() {
+        deCheck.addEventListener(\"change\", function() {
           if (enCheck) enCheck.checked = deCheck.checked;
         });
       }
       
       if (enCheck) {
-        enCheck.addEventListener("change", function() {
+        enCheck.addEventListener(\"change\", function() {
           if (deCheck) deCheck.checked = enCheck.checked;
         });
-      }
-      
-      // FORCE language state on page load
-      console.log("Forcing initial language state:", window.hilfoLanguage);
-      forceLanguageState(window.hilfoLanguage);
-    });
-    
-    // ROBUST event listeners with ANTI-FEEDBACK protection
-    var languageTimeout;
-    var lastShinyEvent = 0;
-    
-    function debouncedLanguageUpdate() {
-      clearTimeout(languageTimeout);
-      languageTimeout = setTimeout(function() {
-        if (!window.languageLocked) {
-          console.log("Debounced language update triggered");
-          updateAllLanguageElements(window.hilfoLanguage);
-        }
-      }, 200);
-    }
-    
-    // Listen for page changes to apply language - BUT prevent feedback loops
-    $(document).on("shiny:value", function() {
-      var now = Date.now();
-      if (now - lastShinyEvent > 500) { // Only if not recent
-        console.log("Shiny value event - applying language");
-        debouncedLanguageUpdate();
-      } else {
-        console.log("Shiny value event - IGNORED (too recent)");
-      }
-      lastShinyEvent = now;
-    });
-    
-    // Listen for Shiny events
-    $(document).on("shiny:connected", function() {
-      console.log("Shiny connected - forcing language state");
-      forceLanguageState(window.hilfoLanguage);
-    });
-    
-    // Listen for custom page changes - BUT prevent feedback loops
-    $(document).on("shiny:inputchanged", function(event) {
-      // Only respond to non-language input changes
-      if (event.originalEvent && event.originalEvent.name !== 'study_language') {
-        console.log("Non-language input changed - applying language");
-        debouncedLanguageUpdate();
-      } else {
-        console.log("Language input changed - IGNORED to prevent feedback");
-      }
-    });
-    
-    // Listen for Shiny session events
-    $(document).on("shiny:sessioninitialized", function() {
-      console.log("Shiny session initialized - forcing language state");
-      forceLanguageState(window.hilfoLanguage);
-    });
-    
-    // Global language change listener - ensures all pages stay in sync
-    window.addEventListener('languageChanged', function(event) {
-      console.log("Global language change event received:", event.detail.language);
-      if (!window.languageLocked) {
-        updateAllLanguageElements(event.detail.language);
       }
     });
     </script>'),
@@ -1017,13 +888,8 @@ custom_page_flow <- list(
       }
     }
     
-    // Apply immediately and on language changes with debouncing
+    // Apply immediately
     setTimeout(applyLanguageToPage20, 100);
-    setTimeout(applyLanguageToPage20, 500);
-    $(document).on("shiny:value", function() {
-      setTimeout(applyLanguageToPage20, 100);
-    });
-    window.addEventListener("languageChanged", applyLanguageToPage20);
     </script>'),
     validate = "function(inputs) { 
       try {
@@ -2225,9 +2091,9 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
       # JavaScript for download functions
       '<script>',
       'function downloadPDF() {',
-      '  console.log("PDF download requested");',
+      '  console.log(\"PDF download requested\");',
       '  // Use Shiny to trigger the download',
-      '  if (typeof Shiny !== "undefined") {',
+      '  if (typeof Shiny !== \"undefined\") {',
       '    Shiny.setInputValue("download_pdf_trigger", Math.random());',
       '  } else {',
       '    alert("PDF download is not available. Please try again.");',
@@ -2235,9 +2101,9 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
       '}',
       '',
       'function downloadCSV() {',
-      '  console.log("CSV download requested");',
+      '  console.log(\"CSV download requested\");',
       '  // Use Shiny to trigger the download',
-      '  if (typeof Shiny !== "undefined") {',
+      '  if (typeof Shiny !== \"undefined\") {',
       '    Shiny.setInputValue("download_csv_trigger", Math.random());',
       '  } else {',
       '    alert("CSV download is not available. Please try again.");',
@@ -2597,7 +2463,7 @@ custom_item_selection <- function(rv, item_bank, config) {
 custom_js <- '<script>
 /* Download functions for PDF and CSV */
 function downloadPDF() {
-  if (typeof Shiny !== "undefined") {
+  if (typeof Shiny !== \"undefined\") {
     Shiny.setInputValue("download_pdf_trigger", Math.random());
   } else {
     alert("PDF download is not available. Please try again.");
@@ -2605,7 +2471,7 @@ function downloadPDF() {
 }
 
 function downloadCSV() {
-  if (typeof Shiny !== "undefined") {
+  if (typeof Shiny !== \"undefined\") {
     Shiny.setInputValue("download_csv_trigger", Math.random());
   } else {
     alert("CSV download is not available. Please try again.");
@@ -2614,41 +2480,41 @@ function downloadCSV() {
 
 /* Language switching functions - ULTRA SIMPLE VERSION */
 window.toggleLanguage = function() {
-  console.log("toggleLanguage() called - FUNCTION FOUND!");
+  console.log(\"toggleLanguage() called - FUNCTION FOUND!\");
   var deContent = document.getElementById("content_de");
   var enContent = document.getElementById("content_en");
   var textSpan = document.getElementById("lang_switch_text");
   
-  console.log("Elements found - deContent:", !!deContent, "enContent:", !!enContent, "textSpan:", !!textSpan);
+  console.log(\"Elements found - deContent:\", !!deContent, "enContent:", !!enContent, "textSpan:", !!textSpan);
   
   if (deContent && enContent) {
     if (deContent.style.display === "none") {
       /* Switch to German */
-      console.log("Switching to German");
+      console.log(\"Switching to German\");
       deContent.style.display = "block";
       enContent.style.display = "none";
       if (textSpan) textSpan.textContent = "English Version";
       
       // Send to inrep system - this should trigger the en, de, en, de console output
-      if (typeof Shiny !== "undefined") {
-        Shiny.setInputValue("study_language", "de", {priority: "event"});
-        console.log("Sent study_language = de to Shiny");
+      if (typeof Shiny !== \"undefined\") {
+        Shiny.setInputValue(\"study_language\", "de", {priority: \"event\"});
+        console.log(\"Sent study_language = de to Shiny\");
       }
     } else {
       /* Switch to English */
-      console.log("Switching to English");
+      console.log(\"Switching to English\");
       deContent.style.display = "none";
       enContent.style.display = "block";
       if (textSpan) textSpan.textContent = "Deutsche Version";
       
       // Send to inrep system - this should trigger the en, de, en, de console output
-      if (typeof Shiny !== "undefined") {
-        Shiny.setInputValue("study_language", "en", {priority: "event"});
-        console.log("Sent study_language = en to Shiny");
+      if (typeof Shiny !== \"undefined\") {
+        Shiny.setInputValue(\"study_language\", "en", {priority: \"event\"});
+        console.log(\"Sent study_language = en to Shiny\");
       }
     }
   } else {
-    console.log("ERROR: Content elements not found!");
+    console.log(\"ERROR: Content elements not found!\");
   }
   
   // Sync checkboxes
@@ -2710,10 +2576,10 @@ function applyLanguageToResultsPage() {
 
 /* Initialize language switching - SIMPLE VERSION */
 document.addEventListener("DOMContentLoaded", function() {
-  console.log("Language switching initialized");
+  console.log(\"Language switching initialized\");
   
   // Test if toggleLanguage function is available
-  console.log("toggleLanguage function available:", typeof window.toggleLanguage);
+  console.log(\"toggleLanguage function available:\", typeof window.toggleLanguage);
   
   // Initialize page 1 language switching
   setTimeout(function() {
@@ -2721,31 +2587,31 @@ document.addEventListener("DOMContentLoaded", function() {
     var enContent = document.getElementById("content_en");
     var textSpan = document.getElementById("lang_switch_text");
     
-    console.log("Page 1 elements found - deContent:", !!deContent, "enContent:", !!enContent, "textSpan:", !!textSpan);
+    console.log(\"Page 1 elements found - deContent:\", !!deContent, "enContent:", !!enContent, "textSpan:", !!textSpan);
     
     if (deContent && enContent) {
       // Start with German (default)
       deContent.style.display = "block";
       enContent.style.display = "none";
       if (textSpan) textSpan.textContent = "English Version";
-      console.log("Page 1 initialized to German");
+      console.log(\"Page 1 initialized to German\");
     }
     
     // Test button click
     var button = document.getElementById("language-toggle-btn");
     if (button) {
-      console.log("Language toggle button found:", !!button);
+      console.log(\"Language toggle button found:\", !!button);
       // Add additional click listener as backup
       button.addEventListener("click", function() {
-        console.log("Button click event listener triggered");
+        console.log(\"Button click event listener triggered\");
         if (typeof window.toggleLanguage === "function") {
           window.toggleLanguage();
         } else {
-          console.log("toggleLanguage function not found!");
+          console.log(\"toggleLanguage function not found!\");
         }
       });
     } else {
-      console.log("Language toggle button NOT found!");
+      console.log(\"Language toggle button NOT found!\");
     }
   }, 100);
   
@@ -2771,7 +2637,7 @@ document.addEventListener("DOMContentLoaded", function() {
 # CSV download function moved to HTML string
 
 study_config <- inrep::create_study_config(
-  name = "HilFo - Hildesheimer Forschungsmethoden - FIXED",
+  name = "HilFo - Hildesheimer Forschungsmethoden - SIMPLIFIED",
   study_key = session_uuid,
   theme = "hildesheim",  # Use built-in Hildesheim theme
   custom_page_flow = custom_page_flow,
