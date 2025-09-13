@@ -252,8 +252,8 @@ get_items_for_language <- function(lang = "de") {
   return(items)
 }
 
-# Use German item bank
-all_items <- all_items_de
+# Use language-aware item bank - start with German but can be switched
+all_items <- get_items_for_language("de")
 
 # =============================================================================
 # COMPLETE DEMOGRAPHICS (ALL VARIABLES FROM SPSS) - BILINGUAL
@@ -571,6 +571,12 @@ custom_page_flow <- list(
       if (typeof Shiny !== \"undefined\" && Shiny.setInputValue) {
         Shiny.setInputValue(\"study_language\", window.hilfoLanguage, {priority: \"event\"});
         Shiny.setInputValue(\"store_language_globally\", window.hilfoLanguage, {priority: \"event\"});
+        // Force refresh of current page content to reload questions in new language
+        Shiny.setInputValue(\"force_language_refresh\", Math.random(), {priority: \"event\"});
+        // Also trigger a navigation refresh to reload current page
+        setTimeout(function() {
+          Shiny.setInputValue(\"force_page_reload\", Math.random(), {priority: \"event\"});
+        }, 200);
       }
       
       // Unlock after 500ms
@@ -622,6 +628,14 @@ custom_page_flow <- list(
       if (typeof Shiny !== \"undefined\" && Shiny.setInputValue) {
         // Force update of all page content through inrep system
         setTimeout(function() {
+          // Trigger page refresh to reload questions in new language
+          var currentPageElement = document.querySelector('[id^="page"]');
+          if (currentPageElement) {
+            // Force re-render of current page content
+            Shiny.setInputValue(\"refresh_current_page\", Math.random(), {priority: \"event\"});
+            // Also try to update question content directly via Shiny
+            Shiny.setInputValue(\"update_question_language\", window.hilfoLanguage, {priority: \"event\"});
+          }
           var event = new Event('resize');
           window.dispatchEvent(event);
         }, 100);
@@ -933,6 +947,12 @@ custom_page_flow <- list(
         if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
           Shiny.setInputValue("study_language", window.hilfoLanguage, {priority: "event"});
           Shiny.setInputValue("store_language_globally", window.hilfoLanguage, {priority: "event"});
+          // Force refresh of current page content to reload questions in new language
+          Shiny.setInputValue("force_language_refresh", Math.random(), {priority: "event"});
+          // Also trigger a navigation refresh to reload current page
+          setTimeout(function() {
+            Shiny.setInputValue("force_page_reload", Math.random(), {priority: "event"});
+          }, 200);
         }
         
         // Unlock after 500ms
@@ -2578,6 +2598,31 @@ study_config <- inrep::create_study_config(
           instruction.textContent = isEnglish ? instruction.getAttribute("data-lang-en") : instruction.getAttribute("data-lang-de");
         }
       });
+      
+      // CRITICAL: Update question text elements directly
+      var questionElements = document.querySelectorAll(".question-text, .item-question, .question-content, h3, h4, .item-content");
+      questionElements.forEach(function(question) {
+        if (question.hasAttribute("data-lang-de") && question.hasAttribute("data-lang-en")) {
+          question.textContent = isEnglish ? question.getAttribute("data-lang-en") : question.getAttribute("data-lang-de");
+        }
+      });
+      
+      // Update response scale labels if they exist
+      var scaleElements = document.querySelectorAll(".scale-label, .response-label, .likert-label");
+      scaleElements.forEach(function(scale) {
+        if (scale.hasAttribute("data-lang-de") && scale.hasAttribute("data-lang-en")) {
+          scale.textContent = isEnglish ? scale.getAttribute("data-lang-en") : scale.getAttribute("data-lang-de");
+        }
+      });
+      
+      // CRITICAL: Force update of assessment question content via Shiny
+      if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
+        // Send language change to server to update current question
+        Shiny.setInputValue("hilfo_question_language_update", {
+          language: event.detail.language,
+          timestamp: Date.now()
+        }, {priority: "event"});
+      }
     });
     
     // Initialize language state from global variable if available
@@ -2587,6 +2632,167 @@ study_config <- inrep::create_study_config(
         document.dispatchEvent(new CustomEvent("languageChanged", { 
           detail: { language: window.hilfoLanguage } 
         }));
+      }
+    });
+  
+    // HILFO Question Language Switching - Direct Question Update
+    // This function updates question text directly when language changes
+    window.hilfoUpdateQuestionLanguage = function(newLanguage) {
+      console.log("Updating questions to language:", newLanguage);
+      
+      // Define the question mappings (German to English)
+      var questionMappings = {
+        // Programming Anxiety questions
+        "Ich fühle mich unsicher, wenn ich programmieren soll.": "I feel uncertain when I have to program.",
+        "Der Gedanke, programmieren zu lernen, macht mich nervös.": "The thought of learning to program makes me nervous.",
+        "Ich habe Angst, beim Programmieren Fehler zu machen.": "I am afraid of making mistakes when programming.",
+        "Ich fühle mich überfordert, wenn ich an Programmieraufgaben denke.": "I feel overwhelmed when I think about programming tasks.",
+        "Ich bin besorgt, dass ich nicht gut genug programmieren kann.": "I am worried that I am not good enough at programming.",
+        
+        // More Programming Anxiety questions
+        "Ich vermeide es, neue Programmiersprachen zu nutzen, weil ich Angst habe, Fehler zu machen.": "I avoid using new programming languages because I am afraid of making mistakes.",
+        "In Gruppencodier-Sitzungen bin ich nervös, dass meine Beiträge nicht geschätzt werden.": "During group coding sessions, I am nervous that my contributions will not be valued.",
+        "Ich habe Sorge, Programmieraufgaben nicht rechtzeitig aufgrund fehlender Fähigkeiten abschließen zu können.": "I worry that I will be unable to finish a coding assignment on time due to lack of skills.",
+        "Wenn ich bei einem Programmierproblem nicht weiterkomme, ist es mir peinlich, um Hilfe zu bitten.": "When I get stuck on a programming problem, I feel embarrassed to ask for help.",
+        "Ich fühle mich wohl dabei, meinen Code anderen zu erklären.": "I feel comfortable explaining my code to others.",
+        
+        // BFI Extraversion
+        "Ich gehe aus mir heraus, bin gesellig.": "I am outgoing, sociable.",
+        "Ich bin eher ruhig.": "I am rather quiet.",
+        "Ich bin eher schüchtern.": "I am rather shy.",
+        "Ich bin gesprächig.": "I am talkative.",
+        
+        // BFI Agreeableness
+        "Ich bin einfühlsam, warmherzig.": "I am empathetic, warm-hearted.",
+        "Ich habe mit anderen wenig Mitgefühl.": "I have little sympathy for others.",
+        "Ich bin hilfsbereit und selbstlos.": "I am helpful and selfless.",
+        "Andere sind mir eher gleichgültig, egal.": "Others are rather indifferent to me.",
+        
+        // BFI Conscientiousness
+        "Ich bin eher unordentlich.": "I am rather disorganized.",
+        "Ich bin systematisch, halte meine Sachen in Ordnung.": "I am systematic, keep my things in order.",
+        "Ich mag es sauber und aufgeräumt.": "I like it clean and tidy.",
+        "Ich bin eher der chaotische Typ, mache selten sauber.": "I am rather the chaotic type, rarely clean up.",
+        
+        // BFI Neuroticism
+        "Ich bleibe auch in stressigen Situationen gelassen.": "I remain calm even in stressful situations.",
+        "Ich reagiere leicht angespannt.": "I react easily tensed.",
+        "Ich mache mir oft Sorgen.": "I often worry.",
+        "Ich werde selten nervös und unsicher.": "I rarely become nervous and insecure.",
+        
+        // BFI Openness
+        "Ich bin vielseitig interessiert.": "I have diverse interests.",
+        "Ich meide philosophische Diskussionen.": "I avoid philosophical discussions.",
+        "Es macht mir Spaß, gründlich über komplexe Dinge nachzudenken und sie zu verstehen.": "I enjoy thinking thoroughly about complex things and understanding them.",
+        "Mich interessieren abstrakte Überlegungen wenig.": "Abstract considerations interest me little.",
+        
+        // PSQ Stress
+        "Ich habe das Gefühl, dass zu viele Forderungen an mich gestellt werden.": "I feel that too many demands are placed on me.",
+        "Ich habe zuviel zu tun.": "I have too much to do.",
+        "Ich fühle mich gehetzt.": "I feel rushed.",
+        "Ich habe genug Zeit für mich.": "I have enough time for myself.",
+        "Ich fühle mich unter Termindruck.": "I feel under time pressure.",
+        
+        // MWS Study Skills
+        "mit dem sozialen Klima im Studiengang zurechtzukommen (z.B. Konkurrenz aushalten)": "to cope with the social climate in the study program (e.g., endure competition)",
+        "Teamarbeit zu organisieren (z.B. Lerngruppen finden)": "to organize teamwork (e.g., find study groups)",
+        "Kontakte zu Mitstudierenden zu knüpfen (z.B. für Lerngruppen, Freizeit)": "to make contacts with fellow students (e.g., for study groups, leisure)",
+        "im Team zusammen zu arbeiten (z.B. gemeinsam Aufgaben bearbeiten, Referate vorbereiten)": "to work together in a team (e.g., work on tasks together, prepare presentations)",
+        
+        // Statistics
+        "Bislang konnte ich den Inhalten der Statistikveranstaltungen gut folgen.": "So far I have been able to follow the content of the statistics courses well.",
+        "Ich bin in der Lage, Statistik zu erlernen.": "I am able to learn statistics.",
+        
+        // Response scale labels
+        "Stimme überhaupt nicht zu": "Strongly disagree",
+        "Stimme nicht zu": "Disagree", 
+        "Weder noch": "Neither agree nor disagree",
+        "Stimme zu": "Agree",
+        "Stimme voll zu": "Strongly agree",
+        "Trifft überhaupt nicht zu": "Does not apply at all",
+        "Trifft nicht zu": "Does not apply",
+        "Trifft eher nicht zu": "Does not really apply",
+        "Trifft eher zu": "Applies somewhat",
+        "Trifft zu": "Applies",
+        "Trifft voll zu": "Fully applies",
+        "Sehr schwer": "Very difficult",
+        "Schwer": "Difficult",
+        "Mittel": "Medium",
+        "Leicht": "Easy",
+        "Sehr leicht": "Very easy"
+      };
+      
+      // Find and update question elements
+      var questionSelectors = [
+        ".question-text", ".item-question", ".question-content", 
+        "h3", "h4", ".item-content", ".question", ".item-text",
+        ".form-group label", ".control-label", ".question-label",
+        ".assessment-question", ".survey-question", "p strong",
+        ".shiny-input-container label", "[data-question]"
+      ];
+      
+      // Also update response option labels
+      var responseSelectors = [
+        ".radio label", ".checkbox label", ".btn-group label",
+        ".scale-option", ".response-option", ".likert-option",
+        ".form-check-label", ".btn-outline-primary"
+      ];
+      
+      // Update questions
+      questionSelectors.forEach(function(selector) {
+        var elements = document.querySelectorAll(selector);
+        elements.forEach(function(element) {
+          var currentText = element.textContent.trim();
+          
+          if (newLanguage === "en") {
+            // Switch to English
+            if (questionMappings[currentText]) {
+              element.textContent = questionMappings[currentText];
+              console.log("Updated question to English:", questionMappings[currentText]);
+            }
+          } else {
+            // Switch to German - reverse lookup
+            for (var germanText in questionMappings) {
+              if (questionMappings[germanText] === currentText) {
+                element.textContent = germanText;
+                console.log("Updated question to German:", germanText);
+                break;
+              }
+            }
+          }
+        });
+      });
+      
+      // Update response options
+      responseSelectors.forEach(function(selector) {
+        var elements = document.querySelectorAll(selector);
+        elements.forEach(function(element) {
+          var currentText = element.textContent.trim();
+          
+          if (newLanguage === "en") {
+            // Switch to English
+            if (questionMappings[currentText]) {
+              element.textContent = questionMappings[currentText];
+            }
+          } else {
+            // Switch to German - reverse lookup
+            for (var germanText in questionMappings) {
+              if (questionMappings[germanText] === currentText) {
+                element.textContent = germanText;
+                break;
+              }
+            }
+          }
+        });
+      });
+    };
+    
+    // Hook into the existing language change system
+    document.addEventListener("languageChanged", function(event) {
+      if (typeof window.hilfoUpdateQuestionLanguage === "function") {
+        setTimeout(function() {
+          window.hilfoUpdateQuestionLanguage(event.detail.language);
+        }, 150);
       }
     });
   ',
@@ -2615,7 +2821,7 @@ cat("===========================================================================
 # Launch with inrep's built-in capabilities
 inrep::launch_study(
   config = study_config,
-  item_bank = all_items_de,  # Bilingual item bank
+  item_bank = all_items_de,  # Base bilingual item bank (will be dynamically updated)
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
   save_format = "csv"
