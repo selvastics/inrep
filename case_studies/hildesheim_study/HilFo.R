@@ -922,7 +922,7 @@ custom_page_flow <- list(
   # Page 21: Results (now with PA results included)
   list(
     id = "page21",
-    type = "custom",
+    type = "results",
     title = "Ihre Ergebnisse",
     title_en = "Your Results",
     content = paste0('<div style="position: relative; text-align: center; padding: 40px;">
@@ -949,14 +949,6 @@ custom_page_flow <- list(
     </div>'),
     validate = "function(inputs) { return true; }",
     required = FALSE
-  ),
-  
-  # Page 22: Dummy page to prevent indexing error in render_page_navigation
-  list(
-    id = "page22",
-    type = "results",
-    title = "Study Complete",
-    title_en = "Study Complete"
   )
 )
 
