@@ -551,11 +551,15 @@ custom_page_flow <- list(
     </div>
     
     <script>
+    // Global language state
+    window.hilfoLanguage = "de"; // Default to German
+    
     // Language toggle function
     function toggleLanguage() {
       var deContent = document.getElementById("content_de");
       var enContent = document.getElementById("content_en");
       var textSpan = document.getElementById("lang_switch_text");
+      var resultsTextSpan = document.getElementById("lang_switch_text_results");
       
       if (deContent && enContent) {
         if (deContent.style.display === "none") {
@@ -563,6 +567,8 @@ custom_page_flow <- list(
           deContent.style.display = "block";
           enContent.style.display = "none";
           if (textSpan) textSpan.textContent = "English Version";
+          if (resultsTextSpan) resultsTextSpan.textContent = "English Version";
+          window.hilfoLanguage = "de";
           if (typeof Shiny !== "undefined") {
             Shiny.setInputValue("study_language", "de", {priority: "event"});
           }
@@ -571,11 +577,57 @@ custom_page_flow <- list(
           deContent.style.display = "none";
           enContent.style.display = "block";
           if (textSpan) textSpan.textContent = "Deutsche Version";
+          if (resultsTextSpan) resultsTextSpan.textContent = "Deutsche Version";
+          window.hilfoLanguage = "en";
           if (typeof Shiny !== "undefined") {
             Shiny.setInputValue("study_language", "en", {priority: "event"});
           }
         }
+      } else {
+        // For pages without content_de/content_en (like results page)
+        // Just toggle the global language state
+        if (window.hilfoLanguage === "de") {
+          window.hilfoLanguage = "en";
+          if (resultsTextSpan) resultsTextSpan.textContent = "Deutsche Version";
+          if (typeof Shiny !== "undefined") {
+            Shiny.setInputValue("study_language", "en", {priority: "event"});
+          }
+        } else {
+          window.hilfoLanguage = "de";
+          if (resultsTextSpan) resultsTextSpan.textContent = "English Version";
+          if (typeof Shiny !== "undefined") {
+            Shiny.setInputValue("study_language", "de", {priority: "event"});
+          }
+        }
       }
+      
+      // Apply language to all pages
+      applyLanguageToAllPages();
+    }
+    
+    // Apply language to all elements with data-lang attributes
+    function applyLanguageToAllPages() {
+      var currentLang = window.hilfoLanguage || "de";
+      
+      // Update all elements with data-lang attributes
+      var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+      elements.forEach(function(el) {
+        if (currentLang === "en") {
+          el.textContent = el.getAttribute("data-lang-en");
+        } else {
+          el.textContent = el.getAttribute("data-lang-de");
+        }
+      });
+      
+      // Update input placeholders
+      var inputs = document.querySelectorAll("[data-placeholder-de][data-placeholder-en]");
+      inputs.forEach(function(input) {
+        if (currentLang === "en") {
+          input.placeholder = input.getAttribute("data-placeholder-en");
+        } else {
+          input.placeholder = input.getAttribute("data-placeholder-de");
+        }
+      });
     }
     
     // Checkbox synchronization for consent
@@ -594,6 +646,14 @@ custom_page_flow <- list(
           if (deCheck) deCheck.checked = enCheck.checked;
         });
       }
+      
+      // Apply language on page load
+      applyLanguageToAllPages();
+    });
+    
+    // Listen for page changes to apply language
+    $(document).on("shiny:value", function() {
+      setTimeout(applyLanguageToAllPages, 100);
     });
     </script>'),
     validate = "function(inputs) { 
@@ -803,9 +863,9 @@ custom_page_flow <- list(
       </div>
     </div>
     <script>
-    // Apply language to personal code page - simplified version
+    // Apply language to personal code page - uses global language system
     function applyLanguageToPage20() {
-      var currentLang = sessionStorage.getItem("hilfo_language") || "de";
+      var currentLang = window.hilfoLanguage || "de";
       
       // Update all elements with data-lang attributes
       var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
@@ -849,7 +909,13 @@ custom_page_flow <- list(
     type = "custom",
     title = "Ihre Ergebnisse",
     title_en = "Your Results",
-    content = paste0('<div style="text-align: center; padding: 40px;">
+    content = paste0('<div style="position: relative; text-align: center; padding: 40px;">
+      <div style="position: absolute; top: 10px; right: 10px;">
+        <button type="button" onclick="toggleLanguage()" style="
+          background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
+          <span id="lang_switch_text_results">English Version</span></button>
+      </div>
+      
       <h2 data-lang-de="Ihre Ergebnisse" data-lang-en="Your Results">Ihre Ergebnisse</h2>
       <p data-lang-de="Ihre Ergebnisse wurden erfolgreich verarbeitet und gespeichert." data-lang-en="Your results have been successfully processed and saved.">Ihre Ergebnisse wurden erfolgreich verarbeitet und gespeichert.</p>
       
@@ -864,7 +930,9 @@ custom_page_flow <- list(
       </div>
       
       <p style="font-size: 14px; color: #666; margin-top: 20px;" data-lang-de="Die Daten wurden auch automatisch in der Cloud gespeichert." data-lang-en="The data has also been automatically saved to the cloud.">Die Daten wurden auch automatisch in der Cloud gespeichert.</p>
-    </div>')
+    </div>'),
+    validate = "function(inputs) { return true; }",
+    required = FALSE
   )
 )
 
