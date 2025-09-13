@@ -819,10 +819,41 @@ custom_page_flow <- list(
   # Page 21: Results (now with PA results included)
   list(
     id = "page21",
-    type = "results",
+    type = "custom",
     title = "Ihre Ergebnisse",
     title_en = "Your Results",
-    results_processor = "create_hilfo_report"
+    content = '<div style="text-align: center; padding: 40px;">
+      <h2 data-lang-de="Ihre Ergebnisse" data-lang-en="Your Results">Ihre Ergebnisse</h2>
+      <p data-lang-de="Ihre Ergebnisse wurden erfolgreich verarbeitet und gespeichert." data-lang-en="Your results have been successfully processed and saved.">Ihre Ergebnisse wurden erfolgreich verarbeitet und gespeichert.</p>
+      
+      <div style="margin: 30px 0;">
+        <button onclick="downloadPDF()" style="background: #e8041c; color: white; border: none; padding: 12px 24px; margin: 10px; border-radius: 4px; cursor: pointer; font-size: 16px;">
+          <span data-lang-de="PDF herunterladen" data-lang-en="Download PDF">PDF herunterladen</span>
+        </button>
+        
+        <button onclick="downloadCSV()" style="background: #e8041c; color: white; border: none; padding: 12px 24px; margin: 10px; border-radius: 4px; cursor: pointer; font-size: 16px;">
+          <span data-lang-de="CSV herunterladen" data-lang-en="Download CSV">CSV herunterladen</span>
+        </button>
+      </div>
+      
+      <p style="font-size: 14px; color: #666; margin-top: 20px;" data-lang-de="Die Daten wurden auch automatisch in der Cloud gespeichert." data-lang-en="The data has also been automatically saved to the cloud.">Die Daten wurden auch automatisch in der Cloud gespeichert.</p>
+    </div>',
+    content_en = '<div style="text-align: center; padding: 40px;">
+      <h2>Your Results</h2>
+      <p>Your results have been successfully processed and saved.</p>
+      
+      <div style="margin: 30px 0;">
+        <button onclick="downloadPDF()" style="background: #e8041c; color: white; border: none; padding: 12px 24px; margin: 10px; border-radius: 4px; cursor: pointer; font-size: 16px;">
+          Download PDF
+        </button>
+        
+        <button onclick="downloadCSV()" style="background: #e8041c; color: white; border: none; padding: 12px 24px; margin: 10px; border-radius: 4px; cursor: pointer; font-size: 16px;">
+          Download CSV
+        </button>
+      </div>
+      
+      <p style="font-size: 14px; color: #666; margin-top: 20px;">The data has also been automatically saved to the cloud.</p>
+    </div>'
   )
 )
 
@@ -2382,12 +2413,32 @@ function applyLanguageToPage20() {
   }
 }
 
+/* Apply language to results page */
+function applyLanguageToResultsPage() {
+  var currentLang = sessionStorage.getItem("hilfo_language") || "de";
+  
+  // Update all elements with data-lang attributes
+  var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+  elements.forEach(function(el) {
+    if (currentLang === "en") {
+      el.textContent = el.getAttribute("data-lang-en");
+    } else {
+      el.textContent = el.getAttribute("data-lang-de");
+    }
+  });
+}
+
 /* Initialize language switching */
 document.addEventListener("DOMContentLoaded", function() {
   // Apply language to personal code page
   setTimeout(applyLanguageToPage20, 100);
   $(document).on("shiny:value", applyLanguageToPage20);
   window.addEventListener("languageChanged", applyLanguageToPage20);
+  
+  // Apply language to results page
+  setTimeout(applyLanguageToResultsPage, 100);
+  $(document).on("shiny:value", applyLanguageToResultsPage);
+  window.addEventListener("languageChanged", applyLanguageToResultsPage);
   
   // Initialize checkbox synchronization
   var deCheck = document.getElementById("consent_check");
