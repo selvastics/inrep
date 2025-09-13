@@ -551,174 +551,80 @@ custom_page_flow <- list(
     </div>
     
     <script>
-    // SIMPLE AND ROBUST LANGUAGE SYSTEM
-    window.hilfoLanguage = localStorage.getItem(\"hilfo_language\") || \"de\"; // Load from localStorage or default to German
-    window.languageLocked = false; // Prevent rapid clicking
+    // PURE AND SIMPLE LANGUAGE SYSTEM
+    window.hilfoLanguage = \"de\"; // Default to German
+    window.languageLocked = false;
     
-    // ULTRA-EFFICIENT language toggle function
+    // Simple toggle function - NO Shiny communication
     function toggleLanguage() {
-      if (window.languageLocked) {
-        return; // Block rapid clicking
-      }
+      if (window.languageLocked) return;
       
       window.languageLocked = true;
       
       // Toggle language
-      var newLang = (window.hilfoLanguage === \"de\") ? \"en\" : \"de\";
-      window.hilfoLanguage = newLang;
+      window.hilfoLanguage = (window.hilfoLanguage === \"de\") ? \"en\" : \"de\";
       
-      // Store in localStorage for persistence
-      localStorage.setItem(\"hilfo_language\", newLang);
+      // Update UI only
+      updateLanguageUI();
       
-      // Update UI immediately and FORCE it to stay
-      updateAllLanguageElements(newLang);
-      
-      // Send to Shiny ONCE with high priority
-      if (typeof Shiny !== \"undefined\") {
-        Shiny.setInputValue(\"study_language\", newLang, {priority: \"immediate\"});
-      }
-      
-      // Re-apply language after any potential Shiny re-renders
-      setTimeout(function() {
-        updateAllLanguageElements(newLang);
-      }, 100);
-      
-      setTimeout(function() {
-        updateAllLanguageElements(newLang);
-      }, 300);
-      
-      setTimeout(function() {
-        updateAllLanguageElements(newLang);
-      }, 600);
-      
-      // Unlock after delay
+      // Unlock after 500ms
       setTimeout(function() {
         window.languageLocked = false;
-      }, 1500);
+      }, 500);
     }
     
-    // ULTRA-ROBUST language element updater
-    function updateAllLanguageElements(lang) {
-      var isEnglish = (lang === \"en\");
+    // Simple UI update function
+    function updateLanguageUI() {
+      var isEnglish = (window.hilfoLanguage === \"en\");
       
-      // Update content divs with FORCE
+      // Update content divs
       var deContent = document.getElementById(\"content_de\");
       var enContent = document.getElementById(\"content_en\");
       if (deContent && enContent) {
-        if (isEnglish) {
-          deContent.style.display = \"none\";
-          deContent.style.visibility = \"hidden\";
-          enContent.style.display = \"block\";
-          enContent.style.visibility = \"visible\";
-        } else {
-          deContent.style.display = \"block\";
-          deContent.style.visibility = \"visible\";
-          enContent.style.display = \"none\";
-          enContent.style.visibility = \"hidden\";
-        }
+        deContent.style.display = isEnglish ? \"none\" : \"block\";
+        enContent.style.display = isEnglish ? \"block\" : \"none\";
       }
       
-      // Update button texts with FORCE
+      // Update button text
       var textSpan = document.getElementById(\"lang_switch_text\");
       var resultsTextSpan = document.getElementById(\"lang_switch_text_results\");
       if (textSpan) {
         textSpan.textContent = isEnglish ? \"Deutsche Version\" : \"English Version\";
-        textSpan.innerHTML = isEnglish ? \"Deutsche Version\" : \"English Version\";
       }
       if (resultsTextSpan) {
         resultsTextSpan.textContent = isEnglish ? \"Deutsche Version\" : \"English Version\";
-        resultsTextSpan.innerHTML = isEnglish ? \"Deutsche Version\" : \"English Version\";
       }
       
-      // Update all data-lang elements with FORCE
+      // Update data-lang elements
       var elements = document.querySelectorAll(\"[data-lang-de][data-lang-en]\");
       elements.forEach(function(el) {
-        if (isEnglish) {
-          el.textContent = el.getAttribute(\"data-lang-en\");
-          el.innerHTML = el.getAttribute(\"data-lang-en\");
-        } else {
-          el.textContent = el.getAttribute(\"data-lang-de\");
-          el.innerHTML = el.getAttribute(\"data-lang-de\");
-        }
+        el.textContent = isEnglish ? el.getAttribute(\"data-lang-en\") : el.getAttribute(\"data-lang-de\");
       });
       
-      // Update input placeholders with FORCE
+      // Update placeholders
       var inputs = document.querySelectorAll(\"[data-placeholder-de][data-placeholder-en]\");
       inputs.forEach(function(input) {
-        if (isEnglish) {
-          input.placeholder = input.getAttribute(\"data-placeholder-en\");
-        } else {
-          input.placeholder = input.getAttribute(\"data-placeholder-de\");
-        }
-      });
-      
-      // FORCE update button text in case it was reset
-      var buttons = document.querySelectorAll(\"button[onclick=\\\"toggleLanguage()\\\"]\");
-      buttons.forEach(function(btn) {
-        var span = btn.querySelector(\"span\");
-        if (span) {
-          span.textContent = isEnglish ? \"Deutsche Version\" : \"English Version\";
-          span.innerHTML = isEnglish ? \"Deutsche Version\" : \"English Version\";
-        }
+        input.placeholder = isEnglish ? input.getAttribute(\"data-placeholder-en\") : input.getAttribute(\"data-placeholder-de\");
       });
     }
     
-    // Initialize language on page load
+    // Initialize on page load
     document.addEventListener(\"DOMContentLoaded\", function() {
-      // Force language state on page load
-      updateAllLanguageElements(window.hilfoLanguage);
+      updateLanguageUI();
       
-      // Send initial language to Shiny to ensure synchronization
-      if (typeof Shiny !== \"undefined\") {
-        Shiny.setInputValue(\"study_language\", window.hilfoLanguage, {priority: \"event\"});
-      }
-      
-      // Checkbox synchronization for consent
+      // Checkbox sync
       var deCheck = document.getElementById(\"consent_check\");
       var enCheck = document.getElementById(\"consent_check_en\");
       
-      if (deCheck) {
+      if (deCheck && enCheck) {
         deCheck.addEventListener(\"change\", function() {
-          if (enCheck) enCheck.checked = deCheck.checked;
+          enCheck.checked = deCheck.checked;
         });
-      }
-      
-      if (enCheck) {
         enCheck.addEventListener(\"change\", function() {
-          if (deCheck) deCheck.checked = enCheck.checked;
+          deCheck.checked = enCheck.checked;
         });
       }
     });
-    
-    // AGGRESSIVE language persistence - prevent Shiny from overriding
-    $(document).on(\"shiny:connected\", function() {
-      // Force language state when Shiny connects
-      updateAllLanguageElements(window.hilfoLanguage);
-      if (typeof Shiny !== \"undefined\") {
-        Shiny.setInputValue(\"study_language\", window.hilfoLanguage, {priority: \"immediate\"});
-      }
-    });
-    
-    // Listen for ANY Shiny updates and re-apply language
-    $(document).on(\"shiny:value\", function() {
-      setTimeout(function() {
-        updateAllLanguageElements(window.hilfoLanguage);
-      }, 50);
-    });
-    
-    // Listen for Shiny input changes and re-apply language
-    $(document).on(\"shiny:inputchanged\", function() {
-      setTimeout(function() {
-        updateAllLanguageElements(window.hilfoLanguage);
-      }, 50);
-    });
-    
-    // Continuously monitor and fix language state
-    setInterval(function() {
-      if (!window.languageLocked) {
-        updateAllLanguageElements(window.hilfoLanguage);
-      }
-    }, 2000);
     </script>'),
     validate = "function(inputs) { 
       try {
@@ -928,7 +834,7 @@ custom_page_flow <- list(
     </div>
     <script>
     // Apply language to personal code page - uses ULTRA-ROBUST system
-    function applyLanguageToPage20() {
+    function updatePage20Language() {
       // Use the global language system if available
       if (typeof updateAllLanguageElements === "function") {
         updateAllLanguageElements(window.hilfoLanguage || "de");
@@ -959,7 +865,7 @@ custom_page_flow <- list(
     }
     
     // Apply immediately
-    setTimeout(applyLanguageToPage20, 100);
+    setTimeout(updatePage20Language, 100);
     </script>'),
     validate = "function(inputs) { 
       try {
@@ -2605,7 +2511,7 @@ function toggleLanguage() {
 }
 
 /* Apply language to personal code page - simplified version */
-function applyLanguageToPage20() {
+function updatePage20Language() {
   var currentLang = sessionStorage.getItem("hilfo_language") || "de";
   
   // Update all elements with data-lang attributes
@@ -2707,7 +2613,7 @@ document.addEventListener("DOMContentLoaded", function() {
 # CSV download function moved to HTML string
 
 study_config <- inrep::create_study_config(
-  name = "HilFo - Hildesheimer Forschungsmethoden - ULTRA-EFFICIENT",
+  name = "HilFo - Hildesheimer Forschungsmethoden - PURE-SIMPLE",
   study_key = session_uuid,
   theme = "hildesheim",  # Use built-in Hildesheim theme
   custom_page_flow = custom_page_flow,
