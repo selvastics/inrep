@@ -2584,3 +2584,4 @@ inrep::launch_study(
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
   save_format = "csv"
+)
