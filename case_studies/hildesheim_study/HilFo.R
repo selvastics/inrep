@@ -853,7 +853,11 @@ custom_page_flow <- list(
       </div>
       
       <p style="font-size: 14px; color: #666; margin-top: 20px;">The data has also been automatically saved to the cloud.</p>
-    </div>'
+    </div>',
+    # Add required fields for inrep compatibility
+    next_button_text = "Fertig",
+    next_button_text_en = "Finish",
+    show_next_button = TRUE
   )
 )
 
@@ -871,6 +875,25 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     }
     if (!requireNamespace("base64enc", quietly = TRUE)) {
       stop("base64enc package is required for report generation")
+    }
+    
+    # Debug demographics parameter
+    cat("DEBUG: create_hilfo_report called with demographics:", !is.null(demographics), "\n")
+    if (!is.null(demographics)) {
+      cat("DEBUG: demographics type:", class(demographics), "\n")
+      cat("DEBUG: demographics length:", length(demographics), "\n")
+      if (is.list(demographics)) {
+        cat("DEBUG: demographics names:", paste(names(demographics), collapse=", "), "\n")
+      }
+    }
+    
+    # Debug session parameter
+    cat("DEBUG: session parameter:", !is.null(session), "\n")
+    if (!is.null(session)) {
+      cat("DEBUG: session class:", class(session), "\n")
+      if (is.list(session)) {
+        cat("DEBUG: session names:", paste(names(session), collapse=", "), "\n")
+      }
     }
     
     # SIMPLE LANGUAGE DETECTION - Check global environment FIRST
@@ -1818,14 +1841,39 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         
         # Add demographics from the session
         cat("DEBUG: Adding demographics to complete_data\n")
-        cat("DEBUG: demographics exists:", exists("demographics"), "\n")
-        cat("DEBUG: is.list(demographics):", is.list(demographics), "\n")
-        if (exists("demographics") && is.list(demographics)) {
+        cat("DEBUG: demographics parameter:", !is.null(demographics), "\n")
+        cat("DEBUG: demographics is.list:", is.list(demographics), "\n")
+        
+        # Try to get demographics from the parameter first
+        if (!is.null(demographics) && is.list(demographics)) {
+          cat("DEBUG: Using demographics parameter\n")
           cat("DEBUG: demographics names:", paste(names(demographics), collapse=", "), "\n")
           for (demo_name in names(demographics)) {
             demo_value <- demographics[[demo_name]]
             cat("DEBUG: Adding demographic", demo_name, "=", demo_value, "\n")
             complete_data[[demo_name]] <- demo_value
+          }
+        } else if (exists("demographics") && is.list(demographics)) {
+          cat("DEBUG: Using global demographics variable\n")
+          cat("DEBUG: demographics names:", paste(names(demographics), collapse=", "), "\n")
+          for (demo_name in names(demographics)) {
+            demo_value <- demographics[[demo_name]]
+            cat("DEBUG: Adding demographic", demo_name, "=", demo_value, "\n")
+            complete_data[[demo_name]] <- demo_value
+          }
+        } else if (!is.null(session) && is.list(session) && "userData" %in% names(session)) {
+          cat("DEBUG: Trying to get demographics from session$userData\n")
+          if ("demographics" %in% names(session$userData)) {
+            session_demos <- session$userData$demographics
+            cat("DEBUG: Found demographics in session$userData\n")
+            if (is.list(session_demos)) {
+              cat("DEBUG: session demographics names:", paste(names(session_demos), collapse=", "), "\n")
+              for (demo_name in names(session_demos)) {
+                demo_value <- session_demos[[demo_name]]
+                cat("DEBUG: Adding session demographic", demo_name, "=", demo_value, "\n")
+                complete_data[[demo_name]] <- demo_value
+              }
+            }
           }
         } else {
           cat("DEBUG: No demographics to add\n")
