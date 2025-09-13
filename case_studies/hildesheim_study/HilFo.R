@@ -551,11 +551,11 @@ custom_page_flow <- list(
     </div>
     
     <script>
-    // PURE AND SIMPLE LANGUAGE SYSTEM
+    // PURE AND SIMPLE LANGUAGE SYSTEM WITH INREP SYNCHRONIZATION
     window.hilfoLanguage = \"de\"; // Default to German
     window.languageLocked = false;
     
-    // Simple toggle function - NO Shiny communication
+    // Simple toggle function - WITH Shiny communication for inrep synchronization
     function toggleLanguage() {
       if (window.languageLocked) return;
       
@@ -566,6 +566,12 @@ custom_page_flow <- list(
       
       // Update UI only
       updateLanguageUI();
+      
+      // Synchronize with inrep system via Shiny
+      if (typeof Shiny !== \"undefined\" && Shiny.setInputValue) {
+        Shiny.setInputValue(\"study_language\", window.hilfoLanguage, {priority: \"event\"});
+        Shiny.setInputValue(\"store_language_globally\", window.hilfoLanguage, {priority: \"event\"});
+      }
       
       // Unlock after 500ms
       setTimeout(function() {
@@ -611,6 +617,15 @@ custom_page_flow <- list(
       document.dispatchEvent(new CustomEvent(\"languageChanged\", { 
         detail: { language: window.hilfoLanguage } 
       }));
+      
+      // Also trigger global inrep language update for assessment pages
+      if (typeof Shiny !== \"undefined\" && Shiny.setInputValue) {
+        // Force update of all page content through inrep system
+        setTimeout(function() {
+          var event = new Event('resize');
+          window.dispatchEvent(event);
+        }, 100);
+      }
     }
     
     // Initialize on page load
@@ -895,7 +910,66 @@ custom_page_flow <- list(
       <p data-lang-de="Ihre Ergebnisse wurden erfolgreich verarbeitet und gespeichert." data-lang-en="Your results have been successfully processed and saved.">Ihre Ergebnisse wurden erfolgreich verarbeitet und gespeichert.</p>
       
       <p style="font-size: 14px; color: #666; margin-top: 20px;" data-lang-de="Die Daten wurden automatisch in der Cloud gespeichert." data-lang-en="The data has been automatically saved to the cloud.">Die Daten wurden automatisch in der Cloud gespeichert.</p>
-    </div>'),
+    </div>
+    
+    <script>
+    // Language switching for results page - ensure functions are available
+    if (typeof window.hilfoLanguage === "undefined") {
+      window.hilfoLanguage = "de";
+    }
+    
+    if (typeof toggleLanguage === "undefined") {
+      function toggleLanguage() {
+        if (window.languageLocked) return;
+        window.languageLocked = true;
+        
+        // Toggle language
+        window.hilfoLanguage = (window.hilfoLanguage === "de") ? "en" : "de";
+        
+        // Update UI
+        updateLanguageUI();
+        
+        // Synchronize with inrep system
+        if (typeof Shiny !== "undefined" && Shiny.setInputValue) {
+          Shiny.setInputValue("study_language", window.hilfoLanguage, {priority: "event"});
+          Shiny.setInputValue("store_language_globally", window.hilfoLanguage, {priority: "event"});
+        }
+        
+        // Unlock after 500ms
+        setTimeout(function() {
+          window.languageLocked = false;
+        }, 500);
+      }
+    }
+    
+    if (typeof updateLanguageUI === "undefined") {
+      function updateLanguageUI() {
+        var isEnglish = (window.hilfoLanguage === "en");
+        
+        // Update all elements with data-lang attributes
+        var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+        elements.forEach(function(el) {
+          el.textContent = isEnglish ? el.getAttribute("data-lang-en") : el.getAttribute("data-lang-de");
+        });
+        
+        // Update language switch button text
+        var resultsTextSpan = document.getElementById("lang_switch_text_results");
+        if (resultsTextSpan) {
+          resultsTextSpan.textContent = isEnglish ? "Deutsche Version" : "English Version";
+        }
+        
+        // Dispatch language change event
+        document.dispatchEvent(new CustomEvent("languageChanged", { 
+          detail: { language: window.hilfoLanguage } 
+        }));
+      }
+    }
+    
+    // Initialize language on page load
+    document.addEventListener("DOMContentLoaded", function() {
+      updateLanguageUI();
+    });
+    </script>'),
     validate = "function(inputs) { return true; }",
     required = FALSE
   ),
@@ -917,6 +991,56 @@ custom_page_flow <- list(
 # =============================================================================
 
 create_hilfo_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
+  # Get current language preference
+  current_lang <- "de"  # default
+  if (!is.null(session) && !is.null(session$input) && !is.null(session$input$language)) {
+    current_lang <- session$input$language
+  } else if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
+    current_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
+  } else if (typeof(window) != "undefined" && typeof(window$hilfoLanguage) != "undefined") {
+    current_lang <- window$hilfoLanguage
+  }
+  
+  # Get language-appropriate labels
+  labels <- if (current_lang == "en") {
+    list(
+      title = "HilFo Study - Personal Report",
+      personality_title = "Big Five Personality Profile",
+      extraversion = "Extraversion",
+      agreeableness = "Agreeableness", 
+      conscientiousness = "Conscientiousness",
+      neuroticism = "Neuroticism",
+      openness = "Openness",
+      stress_title = "Stress Level",
+      study_skills_title = "Study Skills",
+      statistics_title = "Statistics Self-Efficacy",
+      programming_anxiety_title = "Programming Anxiety",
+      score_interpretation = "Score Interpretation",
+      low = "Low",
+      moderate = "Moderate", 
+      high = "High",
+      generated_on = "Generated on"
+    )
+  } else {
+    list(
+      title = "HilFo Studie - Persönlicher Bericht",
+      personality_title = "Big Five Persönlichkeitsprofil",
+      extraversion = "Extraversion",
+      agreeableness = "Verträglichkeit",
+      conscientiousness = "Gewissenhaftigkeit", 
+      neuroticism = "Neurotizismus",
+      openness = "Offenheit",
+      stress_title = "Stresslevel",
+      study_skills_title = "Studierfähigkeiten",
+      statistics_title = "Statistik-Selbstwirksamkeit",
+      programming_anxiety_title = "Programmierangst",
+      score_interpretation = "Werte-Interpretation",
+      low = "Niedrig",
+      moderate = "Mittel",
+      high = "Hoch", 
+      generated_on = "Erstellt am"
+    )
+  }
   # Global error handling for the entire function
   tryCatch({
     # Lazy load packages only when actually needed
@@ -2071,9 +2195,18 @@ create_hilfo_download_handler <- function() {
             # Create temporary R Markdown file
             temp_rmd <- tempfile(fileext = ".Rmd")
             
-            rmd_content <- '---
-title: "HilFo Studie - Persönlicher Bericht"
-author: "Universität Hildesheim"
+            # Get current language for PDF report
+            pdf_lang <- "de"  # default
+            if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
+              pdf_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
+            }
+            
+            pdf_title <- if (pdf_lang == "en") "HilFo Study - Personal Report" else "HilFo Studie - Persönlicher Bericht"
+            pdf_author <- if (pdf_lang == "en") "University of Hildesheim" else "Universität Hildesheim"
+            
+            rmd_content <- paste0('---
+title: "', pdf_title, '"
+author: "', pdf_author, '"
 date: "`r format(Sys.Date(), \"%d. %B %Y\")`"
 output: 
   pdf_document:
@@ -2408,6 +2541,55 @@ study_config <- inrep::create_study_config(
   progress_style = "bar",
   language = "de",  # Start with German
   bilingual = TRUE,  # Enable inrep's built-in bilingual support
+  custom_js = '
+    // Global HILFO Language System Integration
+    // This script runs on ALL pages to handle language switching
+    
+    // Listen for language changes from page 1
+    document.addEventListener("languageChanged", function(event) {
+      console.log("Language changed to:", event.detail.language);
+      
+      // Update all data-lang elements on current page
+      var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+      var isEnglish = (event.detail.language === "en");
+      
+      elements.forEach(function(el) {
+        el.textContent = isEnglish ? el.getAttribute("data-lang-en") : el.getAttribute("data-lang-de");
+      });
+      
+      // Update input placeholders
+      var inputs = document.querySelectorAll("[data-placeholder-de][data-placeholder-en]");
+      inputs.forEach(function(input) {
+        input.placeholder = isEnglish ? input.getAttribute("data-placeholder-en") : input.getAttribute("data-placeholder-de");
+      });
+      
+      // Update page titles if they exist
+      var titleElements = document.querySelectorAll(".page-title, h1, h2");
+      titleElements.forEach(function(title) {
+        if (title.hasAttribute("data-lang-de") && title.hasAttribute("data-lang-en")) {
+          title.textContent = isEnglish ? title.getAttribute("data-lang-en") : title.getAttribute("data-lang-de");
+        }
+      });
+      
+      // Update instruction text
+      var instructionElements = document.querySelectorAll(".instructions, .instruction-text, .page-instructions");
+      instructionElements.forEach(function(instruction) {
+        if (instruction.hasAttribute("data-lang-de") && instruction.hasAttribute("data-lang-en")) {
+          instruction.textContent = isEnglish ? instruction.getAttribute("data-lang-en") : instruction.getAttribute("data-lang-de");
+        }
+      });
+    });
+    
+    // Initialize language state from global variable if available
+    document.addEventListener("DOMContentLoaded", function() {
+      if (typeof window.hilfoLanguage !== "undefined") {
+        // Trigger language change event to update current page
+        document.dispatchEvent(new CustomEvent("languageChanged", { 
+          detail: { language: window.hilfoLanguage } 
+        }));
+      }
+    });
+  ',
   session_save = TRUE,
   session_timeout = 7200,  # 2 hours timeout
   results_processor = create_hilfo_report,  # Add custom results processor
