@@ -241,6 +241,111 @@ study_config <- inrep::create_study_config(
   progress_style = "bar",
   language = "de",
   bilingual = TRUE,  # This is the key - enables inrep's built-in bilingual support
+  custom_js = "
+    // HILFO Assessment-Only Language System
+    // Page 1 is left completely alone - only translate assessment pages
+    console.log('HILFO Assessment Language System Loading...');
+    
+    // Question mappings for assessment pages only
+    window.assessmentMappings = {
+      'Ich fühle mich unsicher, wenn ich programmieren soll.': 'I feel uncertain when I have to program.',
+      'Der Gedanke, programmieren zu lernen, macht mich nervös.': 'The thought of learning to program makes me nervous.',
+      'Ich habe Angst, beim Programmieren Fehler zu machen.': 'I am afraid of making mistakes when programming.',
+      'Ich fühle mich überfordert, wenn ich an Programmieraufgaben denke.': 'I feel overwhelmed when I think about programming tasks.',
+      'Ich bin besorgt, dass ich nicht gut genug programmieren kann.': 'I am worried that I am not good enough at programming.',
+      'Ich gehe aus mir heraus, bin gesellig.': 'I am outgoing, sociable.',
+      'Ich bin eher ruhig.': 'I am rather quiet.',
+      'Ich bin eher schüchtern.': 'I am rather shy.',
+      'Ich bin gesprächig.': 'I am talkative.',
+      'Ich bin kontaktfreudig.': 'I am sociable.',
+      'Wie alt sind Sie?': 'How old are you?',
+      'In welchem Studiengang befinden Sie sich?': 'Which study program are you in?',
+      'Bachelor Psychologie': 'Bachelor Psychology',
+      'Master Psychologie': 'Master Psychology',
+      'Bitte wählen...': 'Please select...',
+      'Stimme überhaupt nicht zu': 'Strongly disagree',
+      'Stimme nicht zu': 'Disagree',
+      'Weder noch': 'Neither agree nor disagree',
+      'Stimme zu': 'Agree',
+      'Stimme voll zu': 'Strongly agree',
+      'Soziodemographische Angaben': 'Sociodemographic Information',
+      'Programmierangst': 'Programming Anxiety',
+      'Persönlichkeit': 'Personality',
+      'Ihre Ergebnisse': 'Your Results'
+    };
+    
+    // Track current language (starts with German)
+    window.currentAssessmentLanguage = 'de';
+    
+    // Listen for language changes from page 1 ONLY
+    document.addEventListener('DOMContentLoaded', function() {
+      // Add language button to assessment pages only (not page 1)
+      setTimeout(function() {
+        var isPage1 = document.getElementById('content_de') && document.getElementById('content_en');
+        if (!isPage1 && !document.querySelector('.assessment-lang-button')) {
+          var btn = document.createElement('div');
+          btn.className = 'assessment-lang-button';
+          btn.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 9999;';
+          btn.innerHTML = '<button onclick=\"toggleAssessmentLanguage()\" style=\"background: #e8041c; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;\"><span class=\"assessment-lang-text\">English Version</span></button>';
+          document.body.appendChild(btn);
+        }
+      }, 200);
+    });
+    
+    // Assessment language toggle (separate from page 1)
+    window.toggleAssessmentLanguage = function() {
+      // Only work on assessment pages, never on page 1
+      var isPage1 = document.getElementById('content_de') && document.getElementById('content_en');
+      if (isPage1) {
+        console.log('Page 1 detected - assessment language toggle disabled');
+        return;
+      }
+      
+      // Toggle assessment language
+      window.currentAssessmentLanguage = (window.currentAssessmentLanguage === 'de') ? 'en' : 'de';
+      console.log('Assessment language switched to:', window.currentAssessmentLanguage);
+      
+      var isEnglish = (window.currentAssessmentLanguage === 'en');
+      
+      // Update button text
+      var btn = document.querySelector('.assessment-lang-text');
+      if (btn) {
+        btn.textContent = isEnglish ? 'Deutsche Version' : 'English Version';
+      }
+      
+      // Translate assessment content
+      var selectors = ['h1', 'h2', 'h3', 'h4', 'label', 'span', 'p', 'option', 'div'];
+      selectors.forEach(function(selector) {
+        var elements = document.querySelectorAll(selector);
+        elements.forEach(function(el) {
+          var text = el.textContent.trim();
+          if (text && window.assessmentMappings[text]) {
+            if (isEnglish) {
+              el.textContent = window.assessmentMappings[text];
+              console.log('Assessment translated:', text, '->', window.assessmentMappings[text]);
+            } else {
+              // Reverse lookup for German
+              for (var german in window.assessmentMappings) {
+                if (window.assessmentMappings[german] === text) {
+                  el.textContent = german;
+                  console.log('Assessment translated back:', text, '->', german);
+                  break;
+                }
+              }
+            }
+          }
+        });
+      });
+      
+      // Notify inrep system about language change
+      if (typeof Shiny !== 'undefined' && Shiny.setInputValue) {
+        Shiny.setInputValue('study_language', window.currentAssessmentLanguage, {priority: 'event'});
+        Shiny.setInputValue('store_language_globally', window.currentAssessmentLanguage, {priority: 'event'});
+      }
+    };
+    
+    console.log('HILFO Assessment Language System Ready (Page 1 untouched)');
+  ",
   session_save = TRUE,
   session_timeout = 7200
 )
