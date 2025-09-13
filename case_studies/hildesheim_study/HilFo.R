@@ -484,42 +484,7 @@ custom_page_flow <- list(
     title_en = "HilFo",
     content = paste0('<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">
       <div style="position: absolute; top: 10px; right: 10px;">
-        <button type="button" id="language-toggle-btn" onclick="
-          console.log(\'BUTTON CLICKED!\');
-          var deContent = document.getElementById(\'content_de\');
-          var enContent = document.getElementById(\'content_en\');
-          var textSpan = document.getElementById(\'lang_switch_text\');
-          console.log(\'Elements found:\', !!deContent, !!enContent, !!textSpan);
-          if (deContent && enContent) {
-            if (deContent.style.display === \'none\') {
-              console.log(\'Switching to German\');
-              deContent.style.display = \'block\';
-              enContent.style.display = \'none\';
-              if (textSpan) textSpan.textContent = \'English Version\';
-              console.log(\'Sending study_language = de to Shiny\');
-              if (typeof Shiny !== \'undefined\') {
-                Shiny.setInputValue(\'study_language\', \'de\', {priority: \'event\'});
-                console.log(\'Sent study_language = de\');
-              } else {
-                console.log(\'Shiny not available\');
-              }
-            } else {
-              console.log(\'Switching to English\');
-              deContent.style.display = \'none\';
-              enContent.style.display = \'block\';
-              if (textSpan) textSpan.textContent = \'Deutsche Version\';
-              console.log(\'Sending study_language = en to Shiny\');
-              if (typeof Shiny !== \'undefined\') {
-                Shiny.setInputValue(\'study_language\', \'en\', {priority: \'event\'});
-                console.log(\'Sent study_language = en\');
-              } else {
-                console.log(\'Shiny not available\');
-              }
-            }
-          } else {
-            console.log(\'ERROR: Content elements not found\');
-          }
-        " style="
+        <button type="button" id="language-toggle-btn" onclick="toggleLanguage()" style="
           background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
           <span id="lang_switch_text">English Version</span></button>
       </div>
@@ -586,6 +551,33 @@ custom_page_flow <- list(
     </div>
     
     <script>
+    // Language toggle function
+    function toggleLanguage() {
+      var deContent = document.getElementById("content_de");
+      var enContent = document.getElementById("content_en");
+      var textSpan = document.getElementById("lang_switch_text");
+      
+      if (deContent && enContent) {
+        if (deContent.style.display === "none") {
+          // Switch to German
+          deContent.style.display = "block";
+          enContent.style.display = "none";
+          if (textSpan) textSpan.textContent = "English Version";
+          if (typeof Shiny !== "undefined") {
+            Shiny.setInputValue("study_language", "de", {priority: "event"});
+          }
+        } else {
+          // Switch to English
+          deContent.style.display = "none";
+          enContent.style.display = "block";
+          if (textSpan) textSpan.textContent = "Deutsche Version";
+          if (typeof Shiny !== "undefined") {
+            Shiny.setInputValue("study_language", "en", {priority: "event"});
+          }
+        }
+      }
+    }
+    
     // Checkbox synchronization for consent
     document.addEventListener("DOMContentLoaded", function() {
       var deCheck = document.getElementById("consent_check");
@@ -857,7 +849,7 @@ custom_page_flow <- list(
     type = "custom",
     title = "Ihre Ergebnisse",
     title_en = "Your Results",
-    content = '<div style="text-align: center; padding: 40px;">
+    content = paste0('<div style="text-align: center; padding: 40px;">
       <h2 data-lang-de="Ihre Ergebnisse" data-lang-en="Your Results">Ihre Ergebnisse</h2>
       <p data-lang-de="Ihre Ergebnisse wurden erfolgreich verarbeitet und gespeichert." data-lang-en="Your results have been successfully processed and saved.">Ihre Ergebnisse wurden erfolgreich verarbeitet und gespeichert.</p>
       
@@ -872,23 +864,7 @@ custom_page_flow <- list(
       </div>
       
       <p style="font-size: 14px; color: #666; margin-top: 20px;" data-lang-de="Die Daten wurden auch automatisch in der Cloud gespeichert." data-lang-en="The data has also been automatically saved to the cloud.">Die Daten wurden auch automatisch in der Cloud gespeichert.</p>
-    </div>',
-    content_en = '<div style="text-align: center; padding: 40px;">
-      <h2>Your Results</h2>
-      <p>Your results have been successfully processed and saved.</p>
-      
-      <div style="margin: 30px 0;">
-        <button onclick="downloadPDF()" style="background: #e8041c; color: white; border: none; padding: 12px 24px; margin: 10px; border-radius: 4px; cursor: pointer; font-size: 16px;">
-          Download PDF
-        </button>
-        
-        <button onclick="downloadCSV()" style="background: #e8041c; color: white; border: none; padding: 12px 24px; margin: 10px; border-radius: 4px; cursor: pointer; font-size: 16px;">
-          Download CSV
-        </button>
-      </div>
-      
-      <p style="font-size: 14px; color: #666; margin-top: 20px;">The data has also been automatically saved to the cloud.</p>
-    </div>'
+    </div>')
   )
 )
 
