@@ -2323,8 +2323,7 @@ custom_item_selection <- function(rv, item_bank, config) {
     return(NULL)
 }
 
-# Simple JavaScript for language switching and downloads
-custom_js <- '<script>
+# Custom JavaScript removed to prevent syntax conflicts
 var currentLang = "de";
 
 window.toggleLanguage = function() {
