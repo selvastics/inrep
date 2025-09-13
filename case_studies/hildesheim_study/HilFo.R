@@ -482,42 +482,42 @@ custom_page_flow <- list(
     type = "custom",
     title = "HilFo",
     title_en = "HilFo",
-    content = '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">
+    content = paste0('<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">
       <div style="position: absolute; top: 10px; right: 10px;">
         <button type="button" id="language-toggle-btn" onclick="
-          console.log('BUTTON CLICKED!');
-          var deContent = document.getElementById('content_de');
-          var enContent = document.getElementById('content_en');
-          var textSpan = document.getElementById('lang_switch_text');
-          console.log('Elements found:', !!deContent, !!enContent, !!textSpan);
+          console.log(\'BUTTON CLICKED!\');
+          var deContent = document.getElementById(\'content_de\');
+          var enContent = document.getElementById(\'content_en\');
+          var textSpan = document.getElementById(\'lang_switch_text\');
+          console.log(\'Elements found:\', !!deContent, !!enContent, !!textSpan);
           if (deContent && enContent) {
-            if (deContent.style.display === 'none') {
-              console.log('Switching to German');
-              deContent.style.display = 'block';
-              enContent.style.display = 'none';
-              if (textSpan) textSpan.textContent = 'English Version';
-              console.log('Sending study_language = de to Shiny');
-              if (typeof Shiny !== 'undefined') {
-                Shiny.setInputValue('study_language', 'de', {priority: 'event'});
-                console.log('Sent study_language = de');
+            if (deContent.style.display === \'none\') {
+              console.log(\'Switching to German\');
+              deContent.style.display = \'block\';
+              enContent.style.display = \'none\';
+              if (textSpan) textSpan.textContent = \'English Version\';
+              console.log(\'Sending study_language = de to Shiny\');
+              if (typeof Shiny !== \'undefined\') {
+                Shiny.setInputValue(\'study_language\', \'de\', {priority: \'event\'});
+                console.log(\'Sent study_language = de\');
               } else {
-                console.log('Shiny not available');
+                console.log(\'Shiny not available\');
               }
             } else {
-              console.log('Switching to English');
-              deContent.style.display = 'none';
-              enContent.style.display = 'block';
-              if (textSpan) textSpan.textContent = 'Deutsche Version';
-              console.log('Sending study_language = en to Shiny');
-              if (typeof Shiny !== 'undefined') {
-                Shiny.setInputValue('study_language', 'en', {priority: 'event'});
-                console.log('Sent study_language = en');
+              console.log(\'Switching to English\');
+              deContent.style.display = \'none\';
+              enContent.style.display = \'block\';
+              if (textSpan) textSpan.textContent = \'Deutsche Version\';
+              console.log(\'Sending study_language = en to Shiny\');
+              if (typeof Shiny !== \'undefined\') {
+                Shiny.setInputValue(\'study_language\', \'en\', {priority: \'event\'});
+                console.log(\'Sent study_language = en\');
               } else {
-                console.log('Shiny not available');
+                console.log(\'Shiny not available\');
               }
             }
           } else {
-            console.log('ERROR: Content elements not found');
+            console.log(\'ERROR: Content elements not found\');
           }
         " style="
           background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
@@ -603,11 +603,11 @@ custom_page_flow <- list(
         });
       }
     });
-    </script>',
+    </script>'),
     validate = "function(inputs) { 
       try {
-        var deCheck = document.getElementById('consent_check');
-        var enCheck = document.getElementById('consent_check_en');
+        var deCheck = document.getElementById(\'consent_check\');
+        var enCheck = document.getElementById(\'consent_check_en\');
         return Boolean((deCheck && deCheck.checked) || (enCheck && enCheck.checked));
       } catch(e) {
         return false;
@@ -795,7 +795,7 @@ custom_page_flow <- list(
     type = "custom",
     title = "Persönlicher Code",
     title_en = "Personal Code",
-    content = '<div id="personal-code-content" style="padding: 20px; font-size: 16px; line-height: 1.8;">
+    content = paste0('<div id="personal-code-content" style="padding: 20px; font-size: 16px; line-height: 1.8;">
       <h2 id="personal-code-title" style="color: #e8041c; text-align: center; margin-bottom: 25px;" data-lang-de="Persönlicher Code" data-lang-en="Personal Code">Persönlicher Code</h2>
       <p id="personal-code-instruction" style="text-align: center; margin-bottom: 30px; font-size: 18px;" data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">Bitte erstellen Sie einen persönlichen Code:</p>
       <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
@@ -840,10 +840,10 @@ custom_page_flow <- list(
     setTimeout(applyLanguageToPage20, 100);
     $(document).on("shiny:value", applyLanguageToPage20);
     window.addEventListener("languageChanged", applyLanguageToPage20);
-    </script>',
+    </script>'),
     validate = "function(inputs) { 
       try {
-        var personalCode = document.getElementById('personal_code');
+        var personalCode = document.getElementById(\'personal_code\');
         return personalCode && personalCode.value.trim().length > 0;
       } catch(e) {
         return false;
