@@ -857,7 +857,11 @@ custom_page_flow <- list(
     # Add required fields for inrep compatibility
     next_button_text = "Fertig",
     next_button_text_en = "Finish",
-    show_next_button = TRUE
+    show_next_button = TRUE,
+    # Add validation function to prevent navigation errors
+    validation_function = "function() { return true; }",
+    # Add required field for inrep navigation
+    required = FALSE
   )
 )
 
@@ -2392,16 +2396,12 @@ function downloadCSV() {
   }
 }
 
-/* Language switching functions - work with inrep's bilingual system */
-window.toggleLanguage = function() {
+/* Language switching functions - ULTRA SIMPLE VERSION */
+function toggleLanguage() {
   console.log("toggleLanguage() called");
   var deContent = document.getElementById("content_de");
   var enContent = document.getElementById("content_en");
   var textSpan = document.getElementById("lang_switch_text");
-  
-  console.log("deContent found:", !!deContent);
-  console.log("enContent found:", !!enContent);
-  console.log("textSpan found:", !!textSpan);
   
   if (deContent && enContent) {
     if (deContent.style.display === "none") {
@@ -2411,7 +2411,7 @@ window.toggleLanguage = function() {
       enContent.style.display = "none";
       if (textSpan) textSpan.textContent = "English Version";
       
-      // Send to inrep system - let inrep handle the language state
+      // Send to inrep system - this should trigger the en, de, en, de console output
       if (typeof Shiny !== "undefined") {
         Shiny.setInputValue("study_language", "de", {priority: "event"});
         console.log("Sent study_language = de to Shiny");
@@ -2423,14 +2423,12 @@ window.toggleLanguage = function() {
       enContent.style.display = "block";
       if (textSpan) textSpan.textContent = "Deutsche Version";
       
-      // Send to inrep system - let inrep handle the language state
+      // Send to inrep system - this should trigger the en, de, en, de console output
       if (typeof Shiny !== "undefined") {
         Shiny.setInputValue("study_language", "en", {priority: "event"});
         console.log("Sent study_language = en to Shiny");
       }
     }
-  } else {
-    console.log("Error: content elements not found");
   }
   
   // Sync checkboxes
@@ -2443,7 +2441,7 @@ window.toggleLanguage = function() {
       deCheck.checked = enCheck.checked;
     }
   }
-};
+}
 
 /* Apply language to personal code page - simplified version */
 function applyLanguageToPage20() {
@@ -2485,39 +2483,24 @@ function applyLanguageToResultsPage() {
   });
 }
 
-/* Initialize language switching */
+/* Initialize language switching - SIMPLE VERSION */
 document.addEventListener("DOMContentLoaded", function() {
   console.log("Language switching initialized");
   
-  // Apply language to personal code page
-  setTimeout(applyLanguageToPage20, 100);
-  $(document).on("shiny:value", applyLanguageToPage20);
-  window.addEventListener("languageChanged", applyLanguageToPage20);
-  
-  // Apply language to results page
-  setTimeout(applyLanguageToResultsPage, 100);
-  $(document).on("shiny:value", applyLanguageToResultsPage);
-  window.addEventListener("languageChanged", applyLanguageToResultsPage);
-  
-  // Initialize language on page 1 - let inrep handle the language state
+  // Initialize page 1 language switching
   setTimeout(function() {
     var deContent = document.getElementById("content_de");
     var enContent = document.getElementById("content_en");
     var textSpan = document.getElementById("lang_switch_text");
     
-    console.log("Page 1 language initialization:");
-    console.log("deContent found:", !!deContent);
-    console.log("enContent found:", !!enContent);
-    console.log("textSpan found:", !!textSpan);
-    
     if (deContent && enContent) {
-      // Start with German (default) - inrep will handle the language state
+      // Start with German (default)
       deContent.style.display = "block";
       enContent.style.display = "none";
       if (textSpan) textSpan.textContent = "English Version";
       console.log("Page 1 initialized to German");
     }
-  }, 200);
+  }, 100);
   
   // Initialize checkbox synchronization
   var deCheck = document.getElementById("consent_check");
@@ -2534,31 +2517,6 @@ document.addEventListener("DOMContentLoaded", function() {
       if (deCheck) deCheck.checked = enCheck.checked;
     });
   }
-  
-  // Listen for inrep's language changes
-  $(document).on("shiny:value", function(event) {
-    if (event.target.id === "study_language" || event.target.id === "language") {
-      console.log("Language changed via inrep:", event.value);
-      // Update UI elements when inrep changes language
-      setTimeout(function() {
-        var deContent = document.getElementById("content_de");
-        var enContent = document.getElementById("content_en");
-        var textSpan = document.getElementById("lang_switch_text");
-        
-        if (deContent && enContent) {
-          if (event.value === "en") {
-            deContent.style.display = "none";
-            enContent.style.display = "block";
-            if (textSpan) textSpan.textContent = "Deutsche Version";
-          } else {
-            deContent.style.display = "block";
-            enContent.style.display = "none";
-            if (textSpan) textSpan.textContent = "English Version";
-          }
-        }
-      }, 100);
-    }
-  });
 });
 </script>'
 
