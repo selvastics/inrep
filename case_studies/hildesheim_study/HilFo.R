@@ -949,6 +949,16 @@ custom_page_flow <- list(
     </div>'),
     validate = "function(inputs) { return true; }",
     required = FALSE
+  ),
+  
+  # Page 22: Invisible dummy page to prevent indexing error
+  # This page will never be reached because page 21 is type "results"
+  # But it prevents the indexing error in render_page_navigation
+  list(
+    id = "page22_dummy",
+    type = "results", 
+    title = "End",
+    title_en = "End"
   )
 )
 
@@ -2642,7 +2652,7 @@ document.addEventListener("DOMContentLoaded", function() {
 # CSV download function moved to HTML string
 
 study_config <- inrep::create_study_config(
-  name = "HilFo - Hildesheimer Forschungsmethoden",
+  name = "HilFo - Hildesheimer Forschungsmethoden - FIXED",
   study_key = session_uuid,
   theme = "hildesheim",  # Use built-in Hildesheim theme
   custom_page_flow = custom_page_flow,
