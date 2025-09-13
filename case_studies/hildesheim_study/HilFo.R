@@ -606,6 +606,11 @@ custom_page_flow <- list(
       inputs.forEach(function(input) {
         input.placeholder = isEnglish ? input.getAttribute(\"data-placeholder-en\") : input.getAttribute(\"data-placeholder-de\");
       });
+      
+      // Dispatch language change event for other pages
+      document.dispatchEvent(new CustomEvent(\"languageChanged\", { 
+        detail: { language: window.hilfoLanguage } 
+      }));
     }
     
     // Initialize on page load
@@ -833,39 +838,35 @@ custom_page_flow <- list(
       </div>
     </div>
     <script>
-    // Apply language to personal code page - uses ULTRA-ROBUST system
-    function updatePage20Language() {
-      // Use the global language system if available
-      if (typeof updateAllLanguageElements === "function") {
-        updateAllLanguageElements(window.hilfoLanguage || "de");
+    // Apply language to personal code page - use global system
+    function applyLanguageToPage20() {
+      // Use the global updateLanguageUI function if available
+      if (typeof updateLanguageUI === "function") {
+        updateLanguageUI();
       } else {
         // Fallback to local implementation
         var currentLang = window.hilfoLanguage || "de";
+        var isEnglish = (currentLang === "en");
         
         // Update all elements with data-lang attributes
         var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
         elements.forEach(function(el) {
-          if (currentLang === "en") {
-            el.textContent = el.getAttribute("data-lang-en");
-          } else {
-            el.textContent = el.getAttribute("data-lang-de");
-          }
+          el.textContent = isEnglish ? el.getAttribute("data-lang-en") : el.getAttribute("data-lang-de");
         });
         
         // Update input placeholder
         var input = document.getElementById("personal_code");
         if (input) {
-          if (currentLang === "en") {
-            input.placeholder = input.getAttribute("data-placeholder-en") || "e.g. MAHA15";
-          } else {
-            input.placeholder = input.getAttribute("data-placeholder-de") || "z.B. MAHA15";
-          }
+          input.placeholder = isEnglish ? input.getAttribute("data-placeholder-en") : input.getAttribute("data-placeholder-de");
         }
       }
     }
     
-    // Apply immediately
-    setTimeout(updatePage20Language, 100);
+    // Apply immediately and on language changes
+    setTimeout(applyLanguageToPage20, 100);
+    
+    // Listen for language changes
+    document.addEventListener("languageChanged", applyLanguageToPage20);
     </script>'),
     validate = "function(inputs) { 
       try {
@@ -2539,7 +2540,7 @@ document.addEventListener("DOMContentLoaded", function() {
 # CSV download function moved to HTML string
 
 study_config <- inrep::create_study_config(
-  name = "HilFo - Hildesheimer Forschungsmethoden - CLEAN-FINAL",
+  name = "HilFo - Hildesheimer Forschungsmethoden - GLOBAL-LANG",
   study_key = session_uuid,
   theme = "hildesheim",  # Use built-in Hildesheim theme
   custom_page_flow = custom_page_flow,
