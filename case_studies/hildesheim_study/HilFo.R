@@ -562,12 +562,16 @@ custom_page_flow <- list(
           enContent.style.display = "none";
           if (textSpan) textSpan.textContent = "English Version";
           
-          /* Send German language to global system */
+          /* Send German language to global system - IMMEDIATE UPDATE */
           if (typeof Shiny !== "undefined") {
             Shiny.setInputValue("study_language", "de", {priority: "event"});
             Shiny.setInputValue("language", "de", {priority: "event"});
             Shiny.setInputValue("current_language", "de", {priority: "event"});
             Shiny.setInputValue("hilfo_language_preference", "de", {priority: "event"});
+            // Force immediate page refresh for non-page-1 pages
+            setTimeout(function() {
+              Shiny.setInputValue("force_language_update", Math.random(), {priority: "event"});
+            }, 100);
           }
           sessionStorage.setItem("hilfo_language", "de");
           sessionStorage.setItem("current_language", "de");
@@ -578,12 +582,16 @@ custom_page_flow <- list(
           enContent.style.display = "block";
           if (textSpan) textSpan.textContent = "Deutsche Version";
           
-          /* Send English language to global system */
+          /* Send English language to global system - IMMEDIATE UPDATE */
           if (typeof Shiny !== "undefined") {
             Shiny.setInputValue("study_language", "en", {priority: "event"});
             Shiny.setInputValue("language", "en", {priority: "event"});
             Shiny.setInputValue("current_language", "en", {priority: "event"});
             Shiny.setInputValue("hilfo_language_preference", "en", {priority: "event"});
+            // Force immediate page refresh for non-page-1 pages
+            setTimeout(function() {
+              Shiny.setInputValue("force_language_update", Math.random(), {priority: "event"});
+            }, 100);
           }
           sessionStorage.setItem("hilfo_language", "en");
           sessionStorage.setItem("current_language", "en");
@@ -812,16 +820,16 @@ custom_page_flow <- list(
         title_en = "Personal Code",
         content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
       <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
-        <span data-lang-de="" data-lang-en="Personal Code">Personal Code</span>
+        <span data-lang-de="Persönlicher Code" data-lang-en="Personal Code">Persönlicher Code</span>
       </h2>
       <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
         <span data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">
-        Please create a personal code:</span>
+        Bitte erstellen Sie einen persönlichen Code:</span>
       </p>
       <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
         <p style="margin: 0; font-weight: 500;">
           <span data-lang-de="Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags" data-lang-en="First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday">
-          First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday</span>
+          Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</span>
         </p>
       </div>
       <div style="text-align: center; margin: 30px 0;">
