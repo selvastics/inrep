@@ -551,12 +551,16 @@ custom_page_flow <- list(
     </div>
     
     <script>
-    // PURE AND SIMPLE LANGUAGE SYSTEM
-    window.hilfoLanguage = \"de\"; // Default to German
-    window.languageLocked = false;
+    // GLOBAL LANGUAGE SYSTEM - Available on ALL pages
+    if (typeof window.hilfoLanguage === 'undefined') {
+      window.hilfoLanguage = \"de\"; // Default to German
+    }
+    if (typeof window.languageLocked === 'undefined') {
+      window.languageLocked = false;
+    }
     
-    // Simple toggle function - NO Shiny communication
-    function toggleLanguage() {
+    // Global toggle function - Available on ALL pages
+    window.toggleLanguage = function() {
       if (window.languageLocked) return;
       
       window.languageLocked = true;
@@ -565,16 +569,16 @@ custom_page_flow <- list(
       window.hilfoLanguage = (window.hilfoLanguage === \"de\") ? \"en\" : \"de\";
       
       // Update UI only
-      updateLanguageUI();
+      window.updateLanguageUI();
       
       // Unlock after 500ms
       setTimeout(function() {
         window.languageLocked = false;
       }, 500);
-    }
+    };
     
-    // Simple UI update function
-    function updateLanguageUI() {
+    // Global UI update function - Available on ALL pages
+    window.updateLanguageUI = function() {
       var isEnglish = (window.hilfoLanguage === \"en\");
       
       // Update content divs
@@ -595,13 +599,13 @@ custom_page_flow <- list(
         resultsTextSpan.textContent = isEnglish ? \"Deutsche Version\" : \"English Version\";
       }
       
-      // Update data-lang elements
+      // Update data-lang elements - GLOBAL SEARCH
       var elements = document.querySelectorAll(\"[data-lang-de][data-lang-en]\");
       elements.forEach(function(el) {
         el.textContent = isEnglish ? el.getAttribute(\"data-lang-en\") : el.getAttribute(\"data-lang-de\");
       });
       
-      // Update placeholders
+      // Update placeholders - GLOBAL SEARCH
       var inputs = document.querySelectorAll(\"[data-placeholder-de][data-placeholder-en]\");
       inputs.forEach(function(input) {
         input.placeholder = isEnglish ? input.getAttribute(\"data-placeholder-en\") : input.getAttribute(\"data-placeholder-de\");
@@ -611,7 +615,12 @@ custom_page_flow <- list(
       document.dispatchEvent(new CustomEvent(\"languageChanged\", { 
         detail: { language: window.hilfoLanguage } 
       }));
-    }
+      
+      // Store language preference for report generation
+      if (typeof Storage !== \"undefined\") {
+        localStorage.setItem(\"hilfo_language\", window.hilfoLanguage);
+      }
+    };
     
     // Initialize on page load
     document.addEventListener(\"DOMContentLoaded\", function() {
@@ -841,8 +850,8 @@ custom_page_flow <- list(
     // Apply language to personal code page - use global system
     function applyLanguageToPage20() {
       // Use the global updateLanguageUI function if available
-      if (typeof updateLanguageUI === "function") {
-        updateLanguageUI();
+      if (typeof window.updateLanguageUI === "function") {
+        window.updateLanguageUI();
       } else {
         // Fallback to local implementation
         var currentLang = window.hilfoLanguage || "de";
@@ -867,6 +876,11 @@ custom_page_flow <- list(
     
     // Listen for language changes
     document.addEventListener("languageChanged", applyLanguageToPage20);
+    
+    // Also apply on page load
+    document.addEventListener("DOMContentLoaded", function() {
+      applyLanguageToPage20();
+    });
     </script>'),
     validate = "function(inputs) { 
       try {
@@ -886,7 +900,7 @@ custom_page_flow <- list(
     title_en = "Your Results",
     content = paste0('<div style="position: relative; text-align: center; padding: 40px;">
       <div style="position: absolute; top: 10px; right: 10px;">
-        <button type="button" onclick="toggleLanguage()" style="
+        <button type="button" onclick="window.toggleLanguage()" style="
           background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
           <span id="lang_switch_text_results">English Version</span></button>
       </div>
@@ -895,7 +909,36 @@ custom_page_flow <- list(
       <p data-lang-de="Ihre Ergebnisse wurden erfolgreich verarbeitet und gespeichert." data-lang-en="Your results have been successfully processed and saved.">Ihre Ergebnisse wurden erfolgreich verarbeitet und gespeichert.</p>
       
       <p style="font-size: 14px; color: #666; margin-top: 20px;" data-lang-de="Die Daten wurden automatisch in der Cloud gespeichert." data-lang-en="The data has been automatically saved to the cloud.">Die Daten wurden automatisch in der Cloud gespeichert.</p>
-    </div>'),
+    </div>
+    <script>
+    // Apply language to results page - use global system
+    function applyLanguageToResultsPage() {
+      if (typeof window.updateLanguageUI === "function") {
+        window.updateLanguageUI();
+      } else {
+        // Fallback to local implementation
+        var currentLang = window.hilfoLanguage || "de";
+        var isEnglish = (currentLang === "en");
+        
+        // Update all elements with data-lang attributes
+        var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+        elements.forEach(function(el) {
+          el.textContent = isEnglish ? el.getAttribute("data-lang-en") : el.getAttribute("data-lang-de");
+        });
+      }
+    }
+    
+    // Apply immediately and on language changes
+    setTimeout(applyLanguageToResultsPage, 100);
+    
+    // Listen for language changes
+    document.addEventListener("languageChanged", applyLanguageToResultsPage);
+    
+    // Also apply on page load
+    document.addEventListener("DOMContentLoaded", function() {
+      applyLanguageToResultsPage();
+    });
+    </script>'),
     validate = "function(inputs) { return true; }",
     required = FALSE
   ),
@@ -951,7 +994,16 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     
     cat("DEBUG: Starting ENHANCED language detection\n")
     
-    # Check global environment FIRST - this is where inrep stores it
+    # Check localStorage FIRST - this is where the client-side language switching stores it
+    if (exists("hilfo_language", envir = .GlobalEnv)) {
+      stored_lang <- get("hilfo_language", envir = .GlobalEnv)
+      if (!is.null(stored_lang) && (stored_lang == "en" || stored_lang == "de")) {
+        current_lang <- stored_lang
+        cat("DEBUG: Found language in global hilfo_language:", current_lang, "\n")
+      }
+    }
+    
+    # Check global environment - this is where inrep stores it
     if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
       stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
       if (!is.null(stored_lang) && (stored_lang == "en" || stored_lang == "de")) {
@@ -962,7 +1014,10 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     
     # Check session input for language (sent by inrep)
     if (!is.null(session) && !is.null(session$input)) {
-      if ("language" %in% names(session$input) && !is.null(session$input$language)) {
+      if ("hilfo_language" %in% names(session$input) && !is.null(session$input$hilfo_language)) {
+        current_lang <- session$input$hilfo_language
+        cat("DEBUG: Found language in session$input$hilfo_language:", current_lang, "\n")
+      } else if ("language" %in% names(session$input) && !is.null(session$input$language)) {
         current_lang <- session$input$language
         cat("DEBUG: Found language in session$input$language:", current_lang, "\n")
       } else if ("study_language" %in% names(session$input) && !is.null(session$input$study_language)) {
@@ -2392,7 +2447,7 @@ function downloadCSV() {
 # CSV download function moved to HTML string
 
 study_config <- inrep::create_study_config(
-  name = "HilFo - Hildesheimer Forschungsmethoden - ULTRA-CLEAN",
+  name = "HilFo - Hildesheimer Forschungsmethoden - GLOBAL-FIXED",
   study_key = session_uuid,
   theme = "hildesheim",  # Use built-in Hildesheim theme
   custom_page_flow = custom_page_flow,
@@ -2411,7 +2466,116 @@ study_config <- inrep::create_study_config(
   session_save = TRUE,
   session_timeout = 7200,  # 2 hours timeout
   results_processor = create_hilfo_report,  # Add custom results processor
-  # No custom JavaScript needed - language switching handled in individual pages
+  custom_js = '<script>
+  // GLOBAL LANGUAGE INITIALIZATION - Available on ALL pages
+  if (typeof window.hilfoLanguage === "undefined") {
+    window.hilfoLanguage = "de"; // Default to German
+  }
+  if (typeof window.languageLocked === "undefined") {
+    window.languageLocked = false;
+  }
+  
+  // Global toggle function - Available on ALL pages
+  window.toggleLanguage = function() {
+    if (window.languageLocked) return;
+    
+    window.languageLocked = true;
+    
+    // Toggle language
+    window.hilfoLanguage = (window.hilfoLanguage === "de") ? "en" : "de";
+    
+    // Update UI only
+    window.updateLanguageUI();
+    
+    // Unlock after 500ms
+    setTimeout(function() {
+      window.languageLocked = false;
+    }, 500);
+  };
+  
+  // Global UI update function - Available on ALL pages
+  window.updateLanguageUI = function() {
+    var isEnglish = (window.hilfoLanguage === "en");
+    
+    // Update content divs
+    var deContent = document.getElementById("content_de");
+    var enContent = document.getElementById("content_en");
+    if (deContent && enContent) {
+      deContent.style.display = isEnglish ? "none" : "block";
+      enContent.style.display = isEnglish ? "block" : "none";
+    }
+    
+    // Update button text
+    var textSpan = document.getElementById("lang_switch_text");
+    var resultsTextSpan = document.getElementById("lang_switch_text_results");
+    if (textSpan) {
+      textSpan.textContent = isEnglish ? "Deutsche Version" : "English Version";
+    }
+    if (resultsTextSpan) {
+      resultsTextSpan.textContent = isEnglish ? "Deutsche Version" : "English Version";
+    }
+    
+    // Update data-lang elements - GLOBAL SEARCH
+    var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+    elements.forEach(function(el) {
+      el.textContent = isEnglish ? el.getAttribute("data-lang-en") : el.getAttribute("data-lang-de");
+    });
+    
+    // Update placeholders - GLOBAL SEARCH
+    var inputs = document.querySelectorAll("[data-placeholder-de][data-placeholder-en]");
+    inputs.forEach(function(input) {
+      input.placeholder = isEnglish ? input.getAttribute("data-placeholder-en") : input.getAttribute("data-placeholder-de");
+    });
+    
+    // Dispatch language change event for other pages
+    document.dispatchEvent(new CustomEvent("languageChanged", { 
+      detail: { language: window.hilfoLanguage } 
+    }));
+    
+    // Store language preference for report generation
+    if (typeof Storage !== "undefined") {
+      localStorage.setItem("hilfo_language", window.hilfoLanguage);
+    }
+    
+    // Send language to Shiny for report generation
+    if (typeof Shiny !== "undefined") {
+      Shiny.setInputValue("hilfo_language", window.hilfoLanguage, {priority: "event"});
+    }
+  };
+  
+  // Initialize language on page load
+  document.addEventListener("DOMContentLoaded", function() {
+    // Load language from localStorage if available
+    if (typeof Storage !== "undefined") {
+      var storedLang = localStorage.getItem("hilfo_language");
+      if (storedLang && (storedLang === "en" || storedLang === "de")) {
+        window.hilfoLanguage = storedLang;
+      }
+    }
+    
+    // Apply language to current page
+    if (typeof window.updateLanguageUI === "function") {
+      window.updateLanguageUI();
+    }
+  });
+  
+  // Also initialize immediately if DOM is already loaded
+  if (document.readyState === "loading") {
+    // DOM is still loading, wait for DOMContentLoaded
+  } else {
+    // DOM is already loaded, initialize immediately
+    if (typeof Storage !== "undefined") {
+      var storedLang = localStorage.getItem("hilfo_language");
+      if (storedLang && (storedLang === "en" || storedLang === "de")) {
+        window.hilfoLanguage = storedLang;
+      }
+    }
+    
+    if (typeof window.updateLanguageUI === "function") {
+      window.updateLanguageUI();
+    }
+  }
+  </script>'
 )
 
 cat("\n================================================================================\n")

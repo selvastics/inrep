@@ -1,0 +1,6 @@
+{"type": "entity", "id": "hilfo_study", "name": "HilFo Study", "description": "Hildesheimer Forschungsmethoden adaptive assessment study", "properties": {"language": "bilingual", "framework": "inrep", "status": "production"}}
+{"type": "entity", "id": "language_switching", "name": "Language Switching System", "description": "Client-side language switching between German and English", "properties": {"type": "pure_client_side", "method": "event_driven", "status": "implemented"}}
+{"type": "relation", "source": "hilfo_study", "target": "language_switching", "type": "uses", "description": "HilFo study uses language switching system"}
+{"type": "observation", "entity": "language_switching", "observation": "Successfully implemented pure client-side language switching with event-driven updates across all pages", "timestamp": "2025-09-13T15:30:00Z"}
+{"type": "observation", "entity": "hilfo_study", "observation": "Removed download functionality from results page as requested by user", "timestamp": "2025-09-13T15:30:00Z"}
+{"type": "observation", "entity": "hilfo_study", "observation": "Fixed page 21 index out of bounds error by changing type from custom to results", "timestamp": "2025-09-13T15:30:00Z"}
