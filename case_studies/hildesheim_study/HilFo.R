@@ -1205,9 +1205,23 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     
     # Get item parameters for the 10 PA items that were shown
     # Note: In real adaptive testing, items 6-10 would be selected based on responses
-    shown_items <- all_items_de[1:10, ]
-    a_params <- shown_items$a
-    b_params <- shown_items$b
+    # Use the item_bank parameter that was passed to the function
+    if (!is.null(item_bank) && nrow(item_bank) >= 10) {
+      shown_items <- item_bank[1:10, ]
+      # Check if a and b parameters exist
+      if ("a" %in% names(shown_items) && "b" %in% names(shown_items)) {
+        a_params <- shown_items$a
+        b_params <- shown_items$b
+      } else {
+        # Use default parameters if not available
+        a_params <- rep(1.2, 10)  # Default discrimination
+        b_params <- seq(-1, 1, length.out = 10)  # Default difficulties
+      }
+    } else {
+      # Fallback if item_bank is not available
+      a_params <- rep(1.2, 10)
+      b_params <- seq(-1, 1, length.out = 10)
+    }
     
     # Use Maximum Likelihood Estimation for theta
     theta_est <- 0  # Start with prior mean
