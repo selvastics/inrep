@@ -489,18 +489,35 @@ custom_page_flow <- list(
           var deContent = document.getElementById('content_de');
           var enContent = document.getElementById('content_en');
           var textSpan = document.getElementById('lang_switch_text');
+          console.log('Elements found:', !!deContent, !!enContent, !!textSpan);
           if (deContent && enContent) {
             if (deContent.style.display === 'none') {
+              console.log('Switching to German');
               deContent.style.display = 'block';
               enContent.style.display = 'none';
               if (textSpan) textSpan.textContent = 'English Version';
-              if (typeof Shiny !== 'undefined') Shiny.setInputValue('study_language', 'de', {priority: 'event'});
+              console.log('Sending study_language = de to Shiny');
+              if (typeof Shiny !== 'undefined') {
+                Shiny.setInputValue('study_language', 'de', {priority: 'event'});
+                console.log('Sent study_language = de');
+              } else {
+                console.log('Shiny not available');
+              }
             } else {
+              console.log('Switching to English');
               deContent.style.display = 'none';
               enContent.style.display = 'block';
               if (textSpan) textSpan.textContent = 'Deutsche Version';
-              if (typeof Shiny !== 'undefined') Shiny.setInputValue('study_language', 'en', {priority: 'event'});
+              console.log('Sending study_language = en to Shiny');
+              if (typeof Shiny !== 'undefined') {
+                Shiny.setInputValue('study_language', 'en', {priority: 'event'});
+                console.log('Sent study_language = en');
+              } else {
+                console.log('Shiny not available');
+              }
             }
+          } else {
+            console.log('ERROR: Content elements not found');
           }
         " style="
           background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
