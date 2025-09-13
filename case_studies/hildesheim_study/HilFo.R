@@ -2566,7 +2566,8 @@ study_config <- inrep::create_study_config(
     bilingual = TRUE,  # Enable inrep's built-in bilingual support
     session_save = TRUE,
     session_timeout = 7200,  # 2 hours timeout
-    results_processor = create_hilfo_report  # Add custom results processor
+    results_processor = create_hilfo_report,  # Add custom results processor
+    custom_js = custom_js  # Add custom JavaScript for language switching and downloads
 )
 
 cat("\n================================================================================\n")
