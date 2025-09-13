@@ -2726,43 +2726,10 @@ launch_study <- function(
       }, delay = 0)  # ZERO delay - immediate execution
     }
     
-    # Observe language changes from Hildesheim study
+    # Single language observer - handles language switching efficiently
     shiny::observeEvent(input$study_language, {
       if (!is.null(input$study_language)) {
         new_lang <- input$study_language
-        
-        # Only update if actually different to prevent toggle loops
-        if (!is.null(rv$language) && rv$language == new_lang) {
-          return()
-        }
-        
-        current_language(new_lang)
-        
-        # Update UI labels
-        new_labels <- get_language_labels(new_lang)
-        reactive_ui_labels(new_labels)
-        
-        # Store in session
-        session$userData$language <- new_lang
-        
-        # Store in rv for access by render functions
-        rv$language <- new_lang
-        
-        # Update config language
-        config$language <<- new_lang
-        
-        # Log the change
-        cat("Language switched to:", new_lang, "\n")
-        
-        # DO NOT force UI refresh - let JavaScript handle the switching
-        # shiny::invalidateLater(50, session)  # REMOVED to prevent re-rendering loop
-      }
-    })
-    
-    # Also observe hilfo_language_preference from JavaScript
-    shiny::observeEvent(input$hilfo_language_preference, {
-      if (!is.null(input$hilfo_language_preference)) {
-        new_lang <- input$hilfo_language_preference
         
         # Only update if actually different to prevent toggle loops
         if (!is.null(rv$language) && rv$language == new_lang) {
@@ -2788,10 +2755,10 @@ launch_study <- function(
         assign("hilfo_language_preference", new_lang, envir = .GlobalEnv)
         
         # Log the change
-        cat("Language switched via JavaScript to:", new_lang, "\n")
+        cat("Language switched to:", new_lang, "\n")
         
         # DO NOT force UI refresh - let JavaScript handle the switching
-        # shiny::invalidateLater(50, session)  # REMOVED to prevent re-rendering loop
+        # This prevents the page_content rendering loop
       }
     })
     
@@ -2839,45 +2806,97 @@ launch_study <- function(
     # Observe CSV download trigger from HilFo
     shiny::observeEvent(input$download_csv_trigger, {
       cat("CSV download triggered\n")
-      # Generate CSV content
+      # Try to find the most recent CSV file created by create_hilfo_report
       tryCatch({
-        # Collect all data
-        csv_data <- data.frame(
-          timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
-          session_id = rv$unique_session_id %||% "",
-          language = rv$language %||% "de"
-        )
-        
-        # Add demographics
-        if (!is.null(rv$demo_data)) {
-          for (name in names(rv$demo_data)) {
-            csv_data[[name]] <- rv$demo_data[[name]]
+        # Look for the most recent hilfo_results CSV file
+        csv_files <- list.files(pattern = "hilfo_results_.*\\.csv$", full.names = TRUE)
+        if (length(csv_files) > 0) {
+          # Get the most recent file
+          most_recent <- csv_files[which.max(file.mtime(csv_files))]
+          cat("Found CSV file:", most_recent, "\n")
+          
+          # Read the file content
+          csv_content <- readLines(most_recent, warn = FALSE)
+          
+          # Trigger download via JavaScript
+          shiny::runjs(sprintf("
+            var csv = %s;
+            var blob = new Blob([csv], {type: 'text/csv'});
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'hilfo_results_%s.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+          ", jsonlite::toJSON(paste(csv_content, collapse = "\n")), format(Sys.time(), "%Y%m%d_%H%M%S")))
+          
+        } else {
+          # Fallback: generate CSV from current data
+          cat("No CSV file found, generating from current data\n")
+          
+          # Collect all data - use same format as cloud storage
+          csv_data <- data.frame(
+            timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S.%6N"),
+            session_id = rv$unique_session_id %||% "",
+            study_language = rv$language %||% "de"
+          )
+          
+          # Add demographics
+          if (!is.null(rv$demo_data)) {
+            for (name in names(rv$demo_data)) {
+              csv_data[[name]] <- rv$demo_data[[name]]
+            }
           }
-        }
-        
-        # Add responses
-        if (!is.null(rv$responses)) {
-          for (i in seq_along(rv$responses)) {
-            csv_data[[paste0("item_", i)]] <- rv$responses[i]
+          
+          # Add responses using proper item names (same as cloud storage)
+          if (!is.null(rv$responses)) {
+            # Get item bank to get proper column names
+            if (exists("all_items_de") && !is.null(all_items_de)) {
+              for (i in seq_along(rv$responses)) {
+                if (i <= nrow(all_items_de)) {
+                  col_name <- all_items_de$id[i]  # Use 'id' column, not 'ID'
+                  csv_data[[col_name]] <- rv$responses[i]
+                }
+              }
+            } else {
+              # Fallback to generic names if item bank not available
+              for (i in seq_along(rv$responses)) {
+                csv_data[[paste0("item_", i)]] <- rv$responses[i]
+              }
+            }
           }
+          
+          # Add calculated scores (same as cloud storage)
+          # These would need to be calculated from the responses, but for now we'll add placeholders
+          # In a real implementation, you'd calculate these from the responses
+          csv_data$BFI_Extraversion <- NA
+          csv_data$BFI_Vertraeglichkeit <- NA
+          csv_data$BFI_Gewissenhaftigkeit <- NA
+          csv_data$BFI_Neurotizismus <- NA
+          csv_data$BFI_Offenheit <- NA
+          csv_data$PSQ_Stress <- NA
+          csv_data$MWS_Studierfaehigkeiten <- NA
+          csv_data$Statistik <- NA
+          
+          # Convert to CSV string
+          csv_content <- paste(capture.output(write.csv(csv_data, row.names = FALSE)), collapse = "\n")
+          
+          # Trigger download via JavaScript
+          shiny::runjs(sprintf("
+            var csv = %s;
+            var blob = new Blob([csv], {type: 'text/csv'});
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'hilfo_results_%s.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+          ", jsonlite::toJSON(csv_content), format(Sys.time(), "%Y%m%d_%H%M%S")))
         }
-        
-        # Convert to CSV string
-        csv_content <- paste(capture.output(write.csv(csv_data, row.names = FALSE)), collapse = "\n")
-        
-        # Trigger download via JavaScript
-        shiny::runjs(sprintf("
-          var csv = %s;
-          var blob = new Blob([csv], {type: 'text/csv'});
-          var url = window.URL.createObjectURL(blob);
-          var a = document.createElement('a');
-          a.href = url;
-          a.download = 'hilfo_results_%s.csv';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          window.URL.revokeObjectURL(url);
-        ", jsonlite::toJSON(csv_content), format(Sys.time(), "%Y%m%d_%H%M%S")))
         
       }, error = function(e) {
         cat("Error generating CSV:", e$message, "\n")

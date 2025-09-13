@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "knowledge-graph": {
+      "command": "node",
+      "args": [
+        "/workspace/update_knowledge_graph.js"
+      ],
+      "autoapprove": [
+        "create-entity",
+        "add-observation", 
+        "create-relation",
+        "search",
+        "show"
+      ]
+    }
+  }
+}
