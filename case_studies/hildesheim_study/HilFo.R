@@ -2381,166 +2381,18 @@ function downloadCSV() {
   }
 }
 
-/* Language switching functions - ULTRA SIMPLE VERSION */
-window.toggleLanguage = function() {
-  console.log(\"toggleLanguage() called - FUNCTION FOUND!\");
-  var deContent = document.getElementById("content_de");
-  var enContent = document.getElementById("content_en");
-  var textSpan = document.getElementById("lang_switch_text");
-  
-  console.log(\"Elements found - deContent:\", !!deContent, "enContent:", !!enContent, "textSpan:", !!textSpan);
-  
-  if (deContent && enContent) {
-    if (deContent.style.display === "none") {
-      /* Switch to German */
-      console.log(\"Switching to German\");
-      deContent.style.display = "block";
-      enContent.style.display = "none";
-      if (textSpan) textSpan.textContent = "English Version";
-      
-      // Send to inrep system - this should trigger the en, de, en, de console output
-      if (typeof Shiny !== \"undefined\") {
-        Shiny.setInputValue(\"study_language\", "de", {priority: \"event\"});
-        console.log(\"Sent study_language = de to Shiny\");
-      }
-    } else {
-      /* Switch to English */
-      console.log(\"Switching to English\");
-      deContent.style.display = "none";
-      enContent.style.display = "block";
-      if (textSpan) textSpan.textContent = "Deutsche Version";
-      
-      // Send to inrep system - this should trigger the en, de, en, de console output
-      if (typeof Shiny !== \"undefined\") {
-        Shiny.setInputValue(\"study_language\", "en", {priority: \"event\"});
-        console.log(\"Sent study_language = en to Shiny\");
-      }
-    }
-  } else {
-    console.log(\"ERROR: Content elements not found!\");
-  }
-  
-  // Sync checkboxes
-  var deCheck = document.getElementById("consent_check");
-  var enCheck = document.getElementById("consent_check_en");
-  if (deCheck && enCheck) {
-    if (deContent.style.display === "none") {
-      enCheck.checked = deCheck.checked;
-    } else {
-      deCheck.checked = enCheck.checked;
-    }
-  }
-};
+/* Language switching functions - REMOVED OLD CONFLICTING FUNCTIONS */
+/* All language switching is now handled by the PURE AND SIMPLE system in Page 1 */
 
-// Also define it as a global function for compatibility
-function toggleLanguage() {
-  return window.toggleLanguage();
-}
-
-/* Apply language to personal code page - simplified version */
-function updatePage20Language() {
-  var currentLang = sessionStorage.getItem("hilfo_language") || "de";
-  
-  // Update all elements with data-lang attributes
-  var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
-  elements.forEach(function(el) {
-    if (currentLang === "en") {
-      el.textContent = el.getAttribute("data-lang-en");
-    } else {
-      el.textContent = el.getAttribute("data-lang-de");
-    }
-  });
-  
-  // Update input placeholder
-  var input = document.getElementById("personal_code");
-  if (input) {
-    if (currentLang === "en") {
-      input.placeholder = input.getAttribute("data-placeholder-en") || "e.g. MAHA15";
-    } else {
-      input.placeholder = input.getAttribute("data-placeholder-de") || "z.B. MAHA15";
-    }
-  }
-}
-
-/* Apply language to results page */
-function applyLanguageToResultsPage() {
-  var currentLang = sessionStorage.getItem("hilfo_language") || "de";
-  
-  // Update all elements with data-lang attributes
-  var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
-  elements.forEach(function(el) {
-    if (currentLang === "en") {
-      el.textContent = el.getAttribute("data-lang-en");
-    } else {
-      el.textContent = el.getAttribute("data-lang-de");
-    }
-  });
-}
-
-/* Initialize language switching - SIMPLE VERSION */
-document.addEventListener("DOMContentLoaded", function() {
-  console.log(\"Language switching initialized\");
-  
-  // Test if toggleLanguage function is available
-  console.log(\"toggleLanguage function available:\", typeof window.toggleLanguage);
-  
-  // Initialize page 1 language switching
-  setTimeout(function() {
-    var deContent = document.getElementById("content_de");
-    var enContent = document.getElementById("content_en");
-    var textSpan = document.getElementById("lang_switch_text");
-    
-    console.log(\"Page 1 elements found - deContent:\", !!deContent, "enContent:", !!enContent, "textSpan:", !!textSpan);
-    
-    if (deContent && enContent) {
-      // Start with German (default)
-      deContent.style.display = "block";
-      enContent.style.display = "none";
-      if (textSpan) textSpan.textContent = "English Version";
-      console.log(\"Page 1 initialized to German\");
-    }
-    
-    // Test button click
-    var button = document.getElementById("language-toggle-btn");
-    if (button) {
-      console.log(\"Language toggle button found:\", !!button);
-      // Add additional click listener as backup
-      button.addEventListener("click", function() {
-        console.log(\"Button click event listener triggered\");
-        if (typeof window.toggleLanguage === "function") {
-          window.toggleLanguage();
-        } else {
-          console.log(\"toggleLanguage function not found!\");
-        }
-      });
-    } else {
-      console.log(\"Language toggle button NOT found!\");
-    }
-  }, 100);
-  
-  // Initialize checkbox synchronization
-  var deCheck = document.getElementById("consent_check");
-  var enCheck = document.getElementById("consent_check_en");
-  
-  if (deCheck) {
-    deCheck.addEventListener("change", function() {
-      if (enCheck) enCheck.checked = deCheck.checked;
-    });
-  }
-  
-  if (enCheck) {
-    enCheck.addEventListener("change", function() {
-      if (deCheck) deCheck.checked = enCheck.checked;
-    });
-  }
-});
+/* Language switching initialization - REMOVED OLD CONFLICTING CODE */
+/* All initialization is now handled by the PURE AND SIMPLE system in Page 1 */
 </script>'
 
 # Download functions moved to HTML string
 # CSV download function moved to HTML string
 
 study_config <- inrep::create_study_config(
-  name = "HilFo - Hildesheimer Forschungsmethoden - GLOBAL-LANG",
+  name = "HilFo - Hildesheimer Forschungsmethoden - ULTRA-CLEAN",
   study_key = session_uuid,
   theme = "hildesheim",  # Use built-in Hildesheim theme
   custom_page_flow = custom_page_flow,
@@ -2559,7 +2411,7 @@ study_config <- inrep::create_study_config(
   session_save = TRUE,
   session_timeout = 7200,  # 2 hours timeout
   results_processor = create_hilfo_report,  # Add custom results processor
-  custom_js = custom_js  # Add custom JavaScript for language switching and downloads
+  # No custom JavaScript needed - language switching handled in individual pages
 )
 
 cat("\n================================================================================\n")
