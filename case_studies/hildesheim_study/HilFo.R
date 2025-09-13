@@ -2563,18 +2563,14 @@ study_config <- inrep::create_study_config(
     language = "de",  # Start with German
     bilingual = TRUE,  # Enable inrep's built-in bilingual support
     custom_js = "
-      // Global HILFO Language System - Clean Version
+      // HILFO Perfect Language System - Best of Both Versions
       console.log('HILFO Language System Loading...');
       
-      // Initialize language variables
-      if (typeof window.hilfoLanguage === 'undefined') {
-        window.hilfoLanguage = 'de';
-      }
-      if (typeof window.languageLocked === 'undefined') {
-        window.languageLocked = false;
-      }
+      // Initialize language variables globally
+      window.hilfoLanguage = 'de';
+      window.languageLocked = false;
       
-      // Complete German-English translation mappings
+      // Complete German-English question mappings for assessment pages
       window.questionMappings = {
         'Ich fühle mich unsicher, wenn ich programmieren soll.': 'I feel uncertain when I have to program.',
         'Der Gedanke, programmieren zu lernen, macht mich nervös.': 'The thought of learning to program makes me nervous.',
@@ -2616,43 +2612,53 @@ study_config <- inrep::create_study_config(
         'Stimme voll zu': 'Strongly agree'
       };
       
-      // Global translation function
-      window.translateAllContent = function(targetLang) {
-        console.log('Translating to:', targetLang);
+      // Assessment page translation function (for pages other than page 1)
+      window.translateAssessmentContent = function(targetLang) {
+        console.log('Translating assessment content to:', targetLang);
         var isEnglish = (targetLang === 'en');
         
-        // Translate all text elements
-        var allElements = document.querySelectorAll('h1, h2, h3, h4, h5, h6, p, span, label, div, option');
-        allElements.forEach(function(el) {
-          var text = el.textContent.trim();
-          if (text && window.questionMappings[text]) {
-            if (isEnglish) {
-              el.textContent = window.questionMappings[text];
-              console.log('Translated:', text, '->', window.questionMappings[text]);
-            }
-          } else if (!isEnglish) {
-            // Reverse lookup for German
-            for (var german in window.questionMappings) {
-              if (window.questionMappings[german] === text) {
-                el.textContent = german;
-                console.log('Translated back:', text, '->', german);
-                break;
+        // Only translate if NOT on page 1 (page 1 has its own system)
+        var isPage1 = document.getElementById('content_de') && document.getElementById('content_en');
+        if (isPage1) {
+          console.log('Page 1 detected - skipping assessment translation');
+          return;
+        }
+        
+        // Translate questions and options on assessment pages
+        var selectors = ['h1', 'h2', 'h3', 'h4', 'label', 'span', 'p', 'option', 'div'];
+        selectors.forEach(function(selector) {
+          var elements = document.querySelectorAll(selector);
+          elements.forEach(function(el) {
+            var text = el.textContent.trim();
+            if (text && window.questionMappings[text]) {
+              if (isEnglish) {
+                el.textContent = window.questionMappings[text];
+                console.log('Assessment translated:', text, '->', window.questionMappings[text]);
+              } else {
+                // Reverse lookup for German
+                for (var german in window.questionMappings) {
+                  if (window.questionMappings[german] === text) {
+                    el.textContent = german;
+                    console.log('Assessment translated back:', text, '->', german);
+                    break;
+                  }
+                }
               }
             }
-          }
+          });
         });
       };
       
-      // Global toggle function
+      // Global toggle function that works perfectly for all pages
       window.toggleLanguage = function() {
         if (window.languageLocked) return;
         window.languageLocked = true;
         
-        // Toggle language
+        // Toggle language variable
         window.hilfoLanguage = (window.hilfoLanguage === 'de') ? 'en' : 'de';
         console.log('Language switched to:', window.hilfoLanguage);
         
-        // Update button text
+        // Update button text everywhere
         var buttons = document.querySelectorAll('.lang-switch-text, #lang_switch_text, #lang_switch_text_results');
         buttons.forEach(function(btn) {
           if (btn) {
@@ -2660,18 +2666,24 @@ study_config <- inrep::create_study_config(
           }
         });
         
-        // Update content divs for page 1
+        // Handle page 1 content divs (the original perfect system)
         var deContent = document.getElementById('content_de');
         var enContent = document.getElementById('content_en');
         if (deContent && enContent) {
-          deContent.style.display = (window.hilfoLanguage === 'en') ? 'none' : 'block';
-          enContent.style.display = (window.hilfoLanguage === 'en') ? 'block' : 'none';
+          if (window.hilfoLanguage === 'en') {
+            deContent.style.display = 'none';
+            enContent.style.display = 'block';
+          } else {
+            deContent.style.display = 'block';
+            enContent.style.display = 'none';
+          }
+          console.log('Page 1 content switched to:', window.hilfoLanguage);
+        } else {
+          // For other pages, use assessment translation
+          window.translateAssessmentContent(window.hilfoLanguage);
         }
         
-        // Translate all other content
-        window.translateAllContent(window.hilfoLanguage);
-        
-        // Sync with inrep
+        // Sync with inrep system
         if (typeof Shiny !== 'undefined' && Shiny.setInputValue) {
           Shiny.setInputValue('study_language', window.hilfoLanguage, {priority: 'event'});
           Shiny.setInputValue('store_language_globally', window.hilfoLanguage, {priority: 'event'});
@@ -2679,13 +2691,14 @@ study_config <- inrep::create_study_config(
         
         setTimeout(function() {
           window.languageLocked = false;
-        }, 1000);
+        }, 500);
       };
       
-      // Add language button to all pages
+      // Add language button to pages that don't have one
       document.addEventListener('DOMContentLoaded', function() {
         setTimeout(function() {
-          if (!document.querySelector('.hilfo-lang-button')) {
+          // Only add button if page doesn't already have one
+          if (!document.getElementById('lang_switch_text') && !document.querySelector('.hilfo-lang-button')) {
             var btn = document.createElement('div');
             btn.className = 'hilfo-lang-button';
             btn.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 9999;';
@@ -2695,7 +2708,7 @@ study_config <- inrep::create_study_config(
         }, 100);
       });
       
-      console.log('HILFO Language System Ready');
+      console.log('HILFO Perfect Language System Ready');
     ",
     session_save = TRUE,
     session_timeout = 7200,  # 2 hours timeout
