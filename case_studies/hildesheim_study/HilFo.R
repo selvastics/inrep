@@ -608,9 +608,11 @@ custom_page_flow <- list(
     // Apply language to all elements with data-lang attributes
     function applyLanguageToAllPages() {
       var currentLang = window.hilfoLanguage || "de";
+      console.log("Applying language to all pages:", currentLang);
       
       // Update all elements with data-lang attributes
       var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+      console.log("Found", elements.length, "elements with data-lang attributes");
       elements.forEach(function(el) {
         if (currentLang === "en") {
           el.textContent = el.getAttribute("data-lang-en");
@@ -621,6 +623,7 @@ custom_page_flow <- list(
       
       // Update input placeholders
       var inputs = document.querySelectorAll("[data-placeholder-de][data-placeholder-en]");
+      console.log("Found", inputs.length, "inputs with data-placeholder attributes");
       inputs.forEach(function(input) {
         if (currentLang === "en") {
           input.placeholder = input.getAttribute("data-placeholder-en");
@@ -647,12 +650,25 @@ custom_page_flow <- list(
         });
       }
       
-      // Apply language on page load
-      applyLanguageToAllPages();
+      // Apply language on page load with multiple attempts
+      setTimeout(applyLanguageToAllPages, 100);
+      setTimeout(applyLanguageToAllPages, 500);
+      setTimeout(applyLanguageToAllPages, 1000);
     });
     
     // Listen for page changes to apply language
     $(document).on("shiny:value", function() {
+      setTimeout(applyLanguageToAllPages, 100);
+      setTimeout(applyLanguageToAllPages, 500);
+    });
+    
+    // Also listen for Shiny events
+    $(document).on("shiny:connected", function() {
+      setTimeout(applyLanguageToAllPages, 100);
+    });
+    
+    // Listen for custom page changes
+    $(document).on("shiny:inputchanged", function() {
       setTimeout(applyLanguageToAllPages, 100);
     });
     </script>'),
@@ -933,6 +949,14 @@ custom_page_flow <- list(
     </div>'),
     validate = "function(inputs) { return true; }",
     required = FALSE
+  ),
+  
+  # Page 22: Dummy page to prevent indexing error in render_page_navigation
+  list(
+    id = "page22",
+    type = "results",
+    title = "Study Complete",
+    title_en = "Study Complete"
   )
 )
 
