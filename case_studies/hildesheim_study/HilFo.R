@@ -551,74 +551,82 @@ custom_page_flow <- list(
     </div>
     
     <script>
-    // Global language state
+    // ULTRA-ROBUST LANGUAGE SYSTEM - Single source of truth
     window.hilfoLanguage = "de"; // Default to German
+    window.languageLocked = false; // Prevent race conditions
     
-    // Language toggle function
-    function toggleLanguage() {
+    // FORCE language state - this is the single source of truth
+    function forceLanguageState(lang) {
+      if (window.languageLocked) {
+        console.log("Language change blocked - already in progress");
+        return;
+      }
+      
+      window.languageLocked = true;
+      window.hilfoLanguage = lang;
+      
+      console.log("FORCING language to:", lang);
+      
+      // Update all UI elements immediately
+      updateAllLanguageElements(lang);
+      
+      // Send to Shiny with multiple methods to ensure it gets through
+      if (typeof Shiny !== "undefined") {
+        // Method 1: Direct input
+        Shiny.setInputValue("study_language", lang, {priority: "event"});
+        
+        // Method 2: Store globally for inrep
+        Shiny.setInputValue("store_language_globally", lang, {priority: "event"});
+        
+        // Method 3: Force update after a delay
+        setTimeout(function() {
+          Shiny.setInputValue("study_language", lang, {priority: "event"});
+          console.log("Re-sent study_language =", lang, "to Shiny");
+        }, 100);
+        
+        console.log("Sent study_language =", lang, "to Shiny (multiple methods)");
+      }
+      
+      // Unlock after a short delay
+      setTimeout(function() {
+        window.languageLocked = false;
+      }, 500);
+      
+      // Trigger global language change event
+      window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: lang } }));
+    }
+    
+    // Update all language elements immediately
+    function updateAllLanguageElements(lang) {
+      var isEnglish = (lang === "en");
+      
+      // Update content divs
       var deContent = document.getElementById("content_de");
       var enContent = document.getElementById("content_en");
-      var textSpan = document.getElementById("lang_switch_text");
-      var resultsTextSpan = document.getElementById("lang_switch_text_results");
-      
       if (deContent && enContent) {
-        if (deContent.style.display === "none") {
-          // Switch to German
-          deContent.style.display = "block";
-          enContent.style.display = "none";
-          if (textSpan) textSpan.textContent = "English Version";
-          if (resultsTextSpan) resultsTextSpan.textContent = "English Version";
-          window.hilfoLanguage = "de";
-          if (typeof Shiny !== "undefined") {
-            Shiny.setInputValue("study_language", "de", {priority: "event"});
-            console.log("Sent study_language = de to Shiny");
-          }
-        } else {
-          // Switch to English
+        if (isEnglish) {
           deContent.style.display = "none";
           enContent.style.display = "block";
-          if (textSpan) textSpan.textContent = "Deutsche Version";
-          if (resultsTextSpan) resultsTextSpan.textContent = "Deutsche Version";
-          window.hilfoLanguage = "en";
-          if (typeof Shiny !== "undefined") {
-            Shiny.setInputValue("study_language", "en", {priority: "event"});
-            console.log("Sent study_language = en to Shiny");
-          }
-        }
-      } else {
-        // For pages without content_de/content_en (like results page)
-        // Just toggle the global language state
-        if (window.hilfoLanguage === "de") {
-          window.hilfoLanguage = "en";
-          if (resultsTextSpan) resultsTextSpan.textContent = "Deutsche Version";
-          if (typeof Shiny !== "undefined") {
-            Shiny.setInputValue("study_language", "en", {priority: "event"});
-            console.log("Sent study_language = en to Shiny (results page)");
-          }
         } else {
-          window.hilfoLanguage = "de";
-          if (resultsTextSpan) resultsTextSpan.textContent = "English Version";
-          if (typeof Shiny !== "undefined") {
-            Shiny.setInputValue("study_language", "de", {priority: "event"});
-            console.log("Sent study_language = de to Shiny (results page)");
-          }
+          deContent.style.display = "block";
+          enContent.style.display = "none";
         }
       }
       
-      // Apply language to all pages
-      applyLanguageToAllPages();
-    }
-    
-    // Apply language to all elements with data-lang attributes
-    function applyLanguageToAllPages() {
-      var currentLang = window.hilfoLanguage || "de";
-      console.log("Applying language to all pages:", currentLang);
+      // Update button texts
+      var textSpan = document.getElementById("lang_switch_text");
+      var resultsTextSpan = document.getElementById("lang_switch_text_results");
+      if (textSpan) {
+        textSpan.textContent = isEnglish ? "Deutsche Version" : "English Version";
+      }
+      if (resultsTextSpan) {
+        resultsTextSpan.textContent = isEnglish ? "Deutsche Version" : "English Version";
+      }
       
-      // Update all elements with data-lang attributes
+      // Update all data-lang elements
       var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
-      console.log("Found", elements.length, "elements with data-lang attributes");
       elements.forEach(function(el) {
-        if (currentLang === "en") {
+        if (isEnglish) {
           el.textContent = el.getAttribute("data-lang-en");
         } else {
           el.textContent = el.getAttribute("data-lang-de");
@@ -627,9 +635,8 @@ custom_page_flow <- list(
       
       // Update input placeholders
       var inputs = document.querySelectorAll("[data-placeholder-de][data-placeholder-en]");
-      console.log("Found", inputs.length, "inputs with data-placeholder attributes");
       inputs.forEach(function(input) {
-        if (currentLang === "en") {
+        if (isEnglish) {
           input.placeholder = input.getAttribute("data-placeholder-en");
         } else {
           input.placeholder = input.getAttribute("data-placeholder-de");
@@ -637,8 +644,31 @@ custom_page_flow <- list(
       });
     }
     
-    // Checkbox synchronization for consent
+    // ULTRA-SIMPLE language toggle function
+    function toggleLanguage() {
+      if (window.languageLocked) {
+        console.log("Language toggle blocked - already in progress");
+        return;
+      }
+      
+      var newLang = (window.hilfoLanguage === "de") ? "en" : "de";
+      console.log("Toggling language from", window.hilfoLanguage, "to", newLang);
+      
+      forceLanguageState(newLang);
+    }
+    
+    // Apply language to all elements with data-lang attributes (legacy function)
+    function applyLanguageToAllPages() {
+      var currentLang = window.hilfoLanguage || "de";
+      console.log("Applying language to all pages (legacy):", currentLang);
+      updateAllLanguageElements(currentLang);
+    }
+    
+    // ULTRA-ROBUST event handling
     document.addEventListener("DOMContentLoaded", function() {
+      console.log("DOM loaded - initializing language system");
+      
+      // Checkbox synchronization for consent
       var deCheck = document.getElementById("consent_check");
       var enCheck = document.getElementById("consent_check_en");
       
@@ -654,26 +684,51 @@ custom_page_flow <- list(
         });
       }
       
-      // Apply language on page load with multiple attempts
-      setTimeout(applyLanguageToAllPages, 100);
-      setTimeout(applyLanguageToAllPages, 500);
-      setTimeout(applyLanguageToAllPages, 1000);
+      // FORCE language state on page load
+      console.log("Forcing initial language state:", window.hilfoLanguage);
+      forceLanguageState(window.hilfoLanguage);
     });
+    
+    // ROBUST event listeners with debouncing
+    var languageTimeout;
+    function debouncedLanguageUpdate() {
+      clearTimeout(languageTimeout);
+      languageTimeout = setTimeout(function() {
+        if (!window.languageLocked) {
+          console.log("Debounced language update triggered");
+          updateAllLanguageElements(window.hilfoLanguage);
+        }
+      }, 200);
+    }
     
     // Listen for page changes to apply language
     $(document).on("shiny:value", function() {
-      setTimeout(applyLanguageToAllPages, 100);
-      setTimeout(applyLanguageToAllPages, 500);
+      debouncedLanguageUpdate();
     });
     
-    // Also listen for Shiny events
+    // Listen for Shiny events
     $(document).on("shiny:connected", function() {
-      setTimeout(applyLanguageToAllPages, 100);
+      console.log("Shiny connected - forcing language state");
+      forceLanguageState(window.hilfoLanguage);
     });
     
     // Listen for custom page changes
     $(document).on("shiny:inputchanged", function() {
-      setTimeout(applyLanguageToAllPages, 100);
+      debouncedLanguageUpdate();
+    });
+    
+    // Listen for Shiny session events
+    $(document).on("shiny:sessioninitialized", function() {
+      console.log("Shiny session initialized - forcing language state");
+      forceLanguageState(window.hilfoLanguage);
+    });
+    
+    // Global language change listener - ensures all pages stay in sync
+    window.addEventListener('languageChanged', function(event) {
+      console.log("Global language change event received:", event.detail.language);
+      if (!window.languageLocked) {
+        updateAllLanguageElements(event.detail.language);
+      }
     });
     </script>'),
     validate = "function(inputs) { 
@@ -883,34 +938,43 @@ custom_page_flow <- list(
       </div>
     </div>
     <script>
-    // Apply language to personal code page - uses global language system
+    // Apply language to personal code page - uses ULTRA-ROBUST system
     function applyLanguageToPage20() {
-      var currentLang = window.hilfoLanguage || "de";
-      
-      // Update all elements with data-lang attributes
-      var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
-      elements.forEach(function(el) {
-        if (currentLang === "en") {
-          el.textContent = el.getAttribute("data-lang-en");
-        } else {
-          el.textContent = el.getAttribute("data-lang-de");
-        }
-      });
-      
-      // Update input placeholder
-      var input = document.getElementById("personal_code");
-      if (input) {
-        if (currentLang === "en") {
-          input.placeholder = input.getAttribute("data-placeholder-en") || "e.g. MAHA15";
-        } else {
-          input.placeholder = input.getAttribute("data-placeholder-de") || "z.B. MAHA15";
+      // Use the global language system if available
+      if (typeof updateAllLanguageElements === "function") {
+        updateAllLanguageElements(window.hilfoLanguage || "de");
+      } else {
+        // Fallback to local implementation
+        var currentLang = window.hilfoLanguage || "de";
+        
+        // Update all elements with data-lang attributes
+        var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+        elements.forEach(function(el) {
+          if (currentLang === "en") {
+            el.textContent = el.getAttribute("data-lang-en");
+          } else {
+            el.textContent = el.getAttribute("data-lang-de");
+          }
+        });
+        
+        // Update input placeholder
+        var input = document.getElementById("personal_code");
+        if (input) {
+          if (currentLang === "en") {
+            input.placeholder = input.getAttribute("data-placeholder-en") || "e.g. MAHA15";
+          } else {
+            input.placeholder = input.getAttribute("data-placeholder-de") || "z.B. MAHA15";
+          }
         }
       }
     }
     
-    // Apply immediately and on language changes
+    // Apply immediately and on language changes with debouncing
     setTimeout(applyLanguageToPage20, 100);
-    $(document).on("shiny:value", applyLanguageToPage20);
+    setTimeout(applyLanguageToPage20, 500);
+    $(document).on("shiny:value", function() {
+      setTimeout(applyLanguageToPage20, 100);
+    });
     window.addEventListener("languageChanged", applyLanguageToPage20);
     </script>'),
     validate = "function(inputs) { 
