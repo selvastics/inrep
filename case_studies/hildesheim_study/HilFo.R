@@ -2323,7 +2323,8 @@ custom_item_selection <- function(rv, item_bank, config) {
     return(NULL)
 }
 
-# Custom JavaScript removed to prevent syntax conflicts
+# Simple JavaScript for language switching and downloads
+custom_js <- '<script>
 var currentLang = "de";
 
 window.toggleLanguage = function() {
@@ -2566,7 +2567,7 @@ study_config <- inrep::create_study_config(
     session_save = TRUE,
     session_timeout = 7200,  # 2 hours timeout
     results_processor = create_hilfo_report,  # Add custom results processor
-    # No custom JavaScript - using inrep's built-in bilingual support
+    # custom_js removed to prevent syntax conflicts
 )
 
 cat("\n================================================================================\n")
