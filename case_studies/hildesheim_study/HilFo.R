@@ -484,7 +484,25 @@ custom_page_flow <- list(
     title_en = "HilFo",
     content = '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">
       <div style="position: absolute; top: 10px; right: 10px;">
-        <button type="button" id="language-toggle-btn" onclick="console.log('BUTTON CLICKED!'); toggleLanguage();" style="
+        <button type="button" id="language-toggle-btn" onclick="
+          console.log('BUTTON CLICKED!');
+          var deContent = document.getElementById('content_de');
+          var enContent = document.getElementById('content_en');
+          var textSpan = document.getElementById('lang_switch_text');
+          if (deContent && enContent) {
+            if (deContent.style.display === 'none') {
+              deContent.style.display = 'block';
+              enContent.style.display = 'none';
+              if (textSpan) textSpan.textContent = 'English Version';
+              if (typeof Shiny !== 'undefined') Shiny.setInputValue('study_language', 'de', {priority: 'event'});
+            } else {
+              deContent.style.display = 'none';
+              enContent.style.display = 'block';
+              if (textSpan) textSpan.textContent = 'Deutsche Version';
+              if (typeof Shiny !== 'undefined') Shiny.setInputValue('study_language', 'en', {priority: 'event'});
+            }
+          }
+        " style="
           background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
           <span id="lang_switch_text">English Version</span></button>
       </div>
@@ -853,15 +871,7 @@ custom_page_flow <- list(
       </div>
       
       <p style="font-size: 14px; color: #666; margin-top: 20px;">The data has also been automatically saved to the cloud.</p>
-    </div>',
-    # Add required fields for inrep compatibility
-    next_button_text = "Fertig",
-    next_button_text_en = "Finish",
-    show_next_button = TRUE,
-    # Add validation function to prevent navigation errors
-    validation_function = "function() { return true; }",
-    # Add required field for inrep navigation
-    required = FALSE
+    </div>'
   )
 )
 
