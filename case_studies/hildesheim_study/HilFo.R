@@ -2393,14 +2393,20 @@ function downloadCSV() {
 }
 
 /* Language switching functions - simplified to prevent conflicts */
-function toggleLanguage() {
+window.toggleLanguage = function() {
+  console.log("toggleLanguage() called");
   var deContent = document.getElementById("content_de");
   var enContent = document.getElementById("content_en");
   var textSpan = document.getElementById("lang_switch_text");
   
+  console.log("deContent found:", !!deContent);
+  console.log("enContent found:", !!enContent);
+  console.log("textSpan found:", !!textSpan);
+  
   if (deContent && enContent) {
     if (deContent.style.display === "none") {
       /* Switch to German */
+      console.log("Switching to German");
       deContent.style.display = "block";
       enContent.style.display = "none";
       if (textSpan) textSpan.textContent = "English Version";
@@ -2408,10 +2414,12 @@ function toggleLanguage() {
       // Send to inrep system only once
       if (typeof Shiny !== "undefined") {
         Shiny.setInputValue("study_language", "de", {priority: "event"});
+        console.log("Sent study_language = de to Shiny");
       }
       sessionStorage.setItem("hilfo_language", "de");
     } else {
       /* Switch to English */
+      console.log("Switching to English");
       deContent.style.display = "none";
       enContent.style.display = "block";
       if (textSpan) textSpan.textContent = "Deutsche Version";
@@ -2419,9 +2427,12 @@ function toggleLanguage() {
       // Send to inrep system only once
       if (typeof Shiny !== "undefined") {
         Shiny.setInputValue("study_language", "en", {priority: "event"});
+        console.log("Sent study_language = en to Shiny");
       }
       sessionStorage.setItem("hilfo_language", "en");
     }
+  } else {
+    console.log("Error: content elements not found");
   }
   
   // Sync checkboxes
@@ -2434,7 +2445,7 @@ function toggleLanguage() {
       deCheck.checked = enCheck.checked;
     }
   }
-}
+};
 
 /* Apply language to personal code page - simplified version */
 function applyLanguageToPage20() {
@@ -2478,6 +2489,8 @@ function applyLanguageToResultsPage() {
 
 /* Initialize language switching */
 document.addEventListener("DOMContentLoaded", function() {
+  console.log("Language switching initialized");
+  
   // Apply language to personal code page
   setTimeout(applyLanguageToPage20, 100);
   $(document).on("shiny:value", applyLanguageToPage20);
@@ -2487,6 +2500,49 @@ document.addEventListener("DOMContentLoaded", function() {
   setTimeout(applyLanguageToResultsPage, 100);
   $(document).on("shiny:value", applyLanguageToResultsPage);
   window.addEventListener("languageChanged", applyLanguageToResultsPage);
+  
+  // Initialize language on page 1
+  setTimeout(function() {
+    var deContent = document.getElementById("content_de");
+    var enContent = document.getElementById("content_en");
+    var textSpan = document.getElementById("lang_switch_text");
+    
+    console.log("Page 1 language initialization:");
+    console.log("deContent found:", !!deContent);
+    console.log("enContent found:", !!enContent);
+    console.log("textSpan found:", !!textSpan);
+    
+    if (deContent && enContent) {
+      // Start with German (default)
+      deContent.style.display = "block";
+      enContent.style.display = "none";
+      if (textSpan) textSpan.textContent = "English Version";
+      console.log("Page 1 initialized to German");
+    }
+    
+    // Add fallback toggleLanguage function if not already defined
+    if (typeof window.toggleLanguage !== "function") {
+      console.log("Adding fallback toggleLanguage function");
+      window.toggleLanguage = function() {
+        console.log("Fallback toggleLanguage() called");
+        var deContent = document.getElementById("content_de");
+        var enContent = document.getElementById("content_en");
+        var textSpan = document.getElementById("lang_switch_text");
+        
+        if (deContent && enContent) {
+          if (deContent.style.display === "none") {
+            deContent.style.display = "block";
+            enContent.style.display = "none";
+            if (textSpan) textSpan.textContent = "English Version";
+          } else {
+            deContent.style.display = "none";
+            enContent.style.display = "block";
+            if (textSpan) textSpan.textContent = "Deutsche Version";
+          }
+        }
+      };
+    }
+  }, 200);
   
   // Initialize checkbox synchronization
   var deCheck = document.getElementById("consent_check");
@@ -2525,7 +2581,7 @@ study_config <- inrep::create_study_config(
   response_ui_type = "radio",
   progress_style = "bar",
   language = "de",  # Start with German
-  bilingual = TRUE,  # Enable inrep's built-in bilingual support
+  bilingual = FALSE,  # Disable inrep's built-in bilingual support - use custom language switching
   session_save = TRUE,
   session_timeout = 7200,  # 2 hours timeout
   results_processor = create_hilfo_report,  # Add custom results processor
