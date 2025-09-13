@@ -550,7 +550,25 @@ custom_page_flow <- list(
       </div>
     </div>
     
-    </div>',
+    <script>
+    // Checkbox synchronization for consent
+    document.addEventListener("DOMContentLoaded", function() {
+      var deCheck = document.getElementById("consent_check");
+      var enCheck = document.getElementById("consent_check_en");
+      
+      if (deCheck) {
+        deCheck.addEventListener("change", function() {
+          if (enCheck) enCheck.checked = deCheck.checked;
+        });
+      }
+      
+      if (enCheck) {
+        enCheck.addEventListener("change", function() {
+          if (deCheck) deCheck.checked = enCheck.checked;
+        });
+      }
+    });
+    </script>',
     validate = "function(inputs) { 
       try {
         var deCheck = document.getElementById('consent_check');
