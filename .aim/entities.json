@@ -30,5 +30,21 @@
     "description": "Custom R function that generates HTML reports with plots and tables",
     "created": "2025-09-13T15:28:38.840Z",
     "updated": "2025-09-13T15:28:38.840Z"
+  },
+  "page-structure": {
+    "id": "page-structure",
+    "type": "Pattern",
+    "name": "Page Structure Pattern",
+    "description": "Standard structure for custom pages with data-lang attributes",
+    "created": "2025-09-13T15:29:34.605Z",
+    "updated": "2025-09-13T15:29:34.605Z"
+  },
+  "feedback-loop-fix": {
+    "id": "feedback-loop-fix",
+    "type": "Solution",
+    "name": "Feedback Loop Fix",
+    "description": "Removed Shiny communication to prevent language switching loops",
+    "created": "2025-09-13T15:29:36.956Z",
+    "updated": "2025-09-13T15:29:36.956Z"
   }
 }

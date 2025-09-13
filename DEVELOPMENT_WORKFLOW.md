@@ -1,5 +1,28 @@
 # HilFo Study Development Workflow
 
+## 🧠 Memory Knowledge Graph System (REQUIRED)
+
+### Quick Setup
+```bash
+# Run before every development task
+./pre_task_setup.sh
+
+# Or manually check knowledge graph
+node update_knowledge_graph.js show
+```
+
+### Knowledge Graph Commands
+```bash
+# Search for concepts
+node update_knowledge_graph.js search "language switching"
+node update_knowledge_graph.js search "hilfo"
+
+# Add new information
+node update_knowledge_graph.js create-entity <id> <type> <name> [description]
+node update_knowledge_graph.js add-observation <entityId> <observation>
+node update_knowledge_graph.js create-relation <fromId> <relationType> <toId> [description]
+```
+
 ## Memory Knowledge Graph Workflow (REQUIRED)
 
 ### MANDATORY RETRIEVAL WORKFLOW:

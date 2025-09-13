@@ -1,1 +1,20 @@
-{}
+{
+  "hilfo-study_1757777321209": {
+    "id": "hilfo-study_1757777321209",
+    "entityId": "hilfo-study",
+    "observation": "Uses 22 pages total with 1 intro, 2-19 demographics/items, 20 personal code, 21 results, 22 dummy",
+    "created": "2025-09-13T15:28:41.209Z"
+  },
+  "language-switching_1757777323406": {
+    "id": "language-switching_1757777323406",
+    "entityId": "language-switching",
+    "observation": "Uses window.hilfoLanguage state and languageChanged custom event",
+    "created": "2025-09-13T15:28:43.406Z"
+  },
+  "page-structure_1757777381164": {
+    "id": "page-structure_1757777381164",
+    "entityId": "page-structure",
+    "observation": "Uses data-lang-de and data-lang-en attributes for multilingual content",
+    "created": "2025-09-13T15:29:41.164Z"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "knowledge-graph": {
+      "command": "node",
+      "args": [
+        ".aim/kg_utils.js"
+      ],
+      "autoapprove": [
+        "search",
+        "add-entity",
+        "add-observation",
+        "add-relation",
+        "list"
+      ]
+    }
+  }
+}

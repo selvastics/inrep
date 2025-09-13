@@ -1,1 +1,42 @@
-{}
+{
+  "hilfo-study_uses_inrep-framework": {
+    "id": "hilfo-study_uses_inrep-framework",
+    "from": "hilfo-study",
+    "to": "inrep-framework",
+    "type": "uses",
+    "description": "Main framework for adaptive assessment",
+    "created": "2025-09-13T15:28:45.634Z"
+  },
+  "hilfo-study_implements_language-switching": {
+    "id": "hilfo-study_implements_language-switching",
+    "from": "hilfo-study",
+    "to": "language-switching",
+    "type": "implements",
+    "description": "Client-side language switching system",
+    "created": "2025-09-13T15:28:48.421Z"
+  },
+  "hilfo-study_contains_results-processor": {
+    "id": "hilfo-study_contains_results-processor",
+    "from": "hilfo-study",
+    "to": "results-processor",
+    "type": "contains",
+    "description": "Custom results generation function",
+    "created": "2025-09-13T15:28:50.673Z"
+  },
+  "language-switching_uses_page-structure": {
+    "id": "language-switching_uses_page-structure",
+    "from": "language-switching",
+    "to": "page-structure",
+    "type": "uses",
+    "description": "Language switching updates data-lang attributes",
+    "created": "2025-09-13T15:29:43.942Z"
+  },
+  "language-switching_implements_feedback-loop-fix": {
+    "id": "language-switching_implements_feedback-loop-fix",
+    "from": "language-switching",
+    "to": "feedback-loop-fix",
+    "type": "implements",
+    "description": "Pure client-side system prevents feedback loops",
+    "created": "2025-09-13T15:29:46.203Z"
+  }
+}
