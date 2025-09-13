@@ -695,12 +695,7 @@ custom_page_flow <- list(
     type = "demographics",
     title = "Soziodemographische Angaben",
     title_en = "Sociodemographic Information",
-    demographics = c("Alter_VPN", "Studiengang", "Geschlecht"),
-    content = '<div style="position: absolute; top: 10px; right: 10px;">
-        <button type="button" onclick="toggleLanguage()" style="
-          background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
-          <span id="lang_switch_text_page2">English Version</span></button>
-      </div>'
+    demographics = c("Alter_VPN", "Studiengang", "Geschlecht")
   ),
   
   # Page 3: Living situation
@@ -709,12 +704,7 @@ custom_page_flow <- list(
     type = "demographics",
     title = "Wohnsituation",
     title_en = "Living Situation",
-    demographics = c("Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz"),
-    content = '<div style="position: absolute; top: 10px; right: 10px;">
-        <button type="button" onclick="toggleLanguage()" style="
-          background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
-          <span id="lang_switch_text_page3">English Version</span></button>
-      </div>'
+    demographics = c("Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz")
   ),
   
   # Page 4: Lifestyle
@@ -723,8 +713,7 @@ custom_page_flow <- list(
     type = "demographics",
     title = "Lebensstil",
     title_en = "Lifestyle",
-    demographics = c("Rauchen", "Ernährung", "Ernährung_Zusatz"),
-    content = create_language_button("page4")
+    demographics = c("Rauchen", "Ernährung", "Ernährung_Zusatz")
   ),
   
   # Page 5: Education
@@ -733,8 +722,7 @@ custom_page_flow <- list(
     type = "demographics",
     title = "Bildung",
     title_en = "Education",
-    demographics = c("Note_Englisch", "Note_Mathe"),
-    content = create_language_button("page5")
+    demographics = c("Note_Englisch", "Note_Mathe")
   ),
   
   # Page 6: Programming Anxiety Part 1 - FIXED (first 5 items together)
@@ -884,8 +872,7 @@ custom_page_flow <- list(
     type = "demographics",
     title = "Studienzufriedenheit",
     title_en = "Study Satisfaction",
-    demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st"),
-    content = create_language_button("page19")
+    demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st")
   ),
   
   # Page 20: Personal Code
@@ -995,6 +982,8 @@ custom_page_flow <- list(
           // Also trigger a navigation refresh to reload current page
           setTimeout(function() {
             Shiny.setInputValue("force_page_reload", Math.random(), {priority: "event"});
+            // Force demographic page re-render by triggering inrep's language system
+            Shiny.setInputValue("demographic_language_update", window.hilfoLanguage, {priority: "event"});
           }, 200);
         }
         
@@ -2638,6 +2627,8 @@ study_config <- inrep::create_study_config(
           // Also trigger a navigation refresh to reload current page
           setTimeout(function() {
             Shiny.setInputValue("force_page_reload", Math.random(), {priority: "event"});
+            // Force demographic page re-render by triggering inrep's language system
+            Shiny.setInputValue("demographic_language_update", window.hilfoLanguage, {priority: "event"});
           }, 200);
         }
         
@@ -2678,6 +2669,12 @@ study_config <- inrep::create_study_config(
             buttonSpan.textContent = isEnglish ? "Deutsche Version" : "English Version";
           }
         });
+        
+        // Also update the dynamic language button
+        var dynamicLangButton = document.querySelector(".hilfo-lang-button .lang-switch-text");
+        if (dynamicLangButton) {
+          dynamicLangButton.textContent = isEnglish ? "Deutsche Version" : "English Version";
+        }
         
         // Update data-lang elements
         var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
@@ -2760,6 +2757,17 @@ study_config <- inrep::create_study_config(
     
     // Initialize language state from global variable if available
     document.addEventListener("DOMContentLoaded", function() {
+      // Add language switch button to all pages if not already present
+      setTimeout(function() {
+        if (!document.querySelector(".hilfo-lang-button")) {
+          var langButton = document.createElement("div");
+          langButton.className = "hilfo-lang-button";
+          langButton.style.cssText = "position: fixed; top: 10px; right: 10px; z-index: 9999;";
+          langButton.innerHTML = '<button type="button" onclick="toggleLanguage()" style="background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;"><span class="lang-switch-text">English Version</span></button>';
+          document.body.appendChild(langButton);
+        }
+      }, 100);
+      
       if (typeof window.hilfoLanguage !== "undefined") {
         // Trigger language change event to update current page
         document.dispatchEvent(new CustomEvent("languageChanged", { 
@@ -2836,6 +2844,47 @@ study_config <- inrep::create_study_config(
         "Bislang konnte ich den Inhalten der Statistikveranstaltungen gut folgen.": "So far I have been able to follow the content of the statistics courses well.",
         "Ich bin in der Lage, Statistik zu erlernen.": "I am able to learn statistics.",
         
+        // Demographic questions
+        "Wie alt sind Sie?": "How old are you?",
+        "In welchem Studiengang befinden Sie sich?": "Which study program are you in?",
+        "Welches Geschlecht haben Sie?": "What is your gender?",
+        "Wie wohnen Sie?": "How do you live?",
+        "Haben Sie Haustiere?": "Do you have pets?",
+        "Rauchen Sie?": "Do you smoke?",
+        "Wie ernähren Sie sich?": "How do you eat?",
+        "Welche Note hatten Sie in Englisch im Abitur?": "What grade did you have in English in your Abitur?",
+        "Welche Note hatten Sie in Mathematik im Abitur?": "What grade did you have in Mathematics in your Abitur?",
+        "Wie viele Stunden pro Woche bereiten Sie sich auf Lehrveranstaltungen vor oder nach?": "How many hours per week do you prepare for or follow up on courses?",
+        "Wie zufrieden sind Sie mit Ihrem bisherigen Studium an der Universität Hildesheim?": "How satisfied are you with your studies so far at the University of Hildesheim?",
+        "Bitte erstellen Sie einen persönlichen Code:": "Please create a personal code:",
+        
+        // Page titles
+        "Soziodemographische Angaben": "Sociodemographic Information",
+        "Wohnsituation": "Living Situation",
+        "Lebensstil": "Lifestyle", 
+        "Bildung": "Education",
+        "Programmierangst - Teil 1": "Programming Anxiety - Part 1",
+        "Programmierangst - Teil 2": "Programming Anxiety - Part 2",
+        "Studierfähigkeiten": "Study Skills",
+        "Statistik": "Statistics",
+        "Studienzufriedenheit": "Study Satisfaction",
+        "Persönlicher Code": "Personal Code",
+        "Ihre Ergebnisse": "Your Results",
+        
+        // Demographic options
+        "Bachelor Psychologie": "Bachelor Psychology",
+        "Master Psychologie": "Master Psychology",
+        "weiblich oder divers": "female or diverse",
+        "männlich": "male",
+        "Bei meinen Eltern/Elternteil": "With my parents/parent",
+        "In einer Wohngemeinschaft": "In a shared apartment",
+        "Alleine": "Alone",
+        "Mit Partner/in": "With partner",
+        "Im Wohnheim": "In a dormitory",
+        "Sonstiges": "Other",
+        "älter als 30": "older than 30",
+        "Bitte wählen...": "Please select...",
+        
         // Response scale labels
         "Stimme überhaupt nicht zu": "Strongly disagree",
         "Stimme nicht zu": "Disagree", 
@@ -2861,14 +2910,23 @@ study_config <- inrep::create_study_config(
         "h3", "h4", ".item-content", ".question", ".item-text",
         ".form-group label", ".control-label", ".question-label",
         ".assessment-question", ".survey-question", "p strong",
-        ".shiny-input-container label", "[data-question]"
+        ".shiny-input-container label", "[data-question]",
+        // Demographic-specific selectors
+        ".demographic-question", ".demo-question", ".form-label",
+        "label[for*='demo']", "label[for*='demographic']",
+        ".selectize-input", ".selectize-dropdown-content",
+        "h2", "h3", "h4", "h5", "h6", "legend", "fieldset legend"
       ];
       
       // Also update response option labels
       var responseSelectors = [
         ".radio label", ".checkbox label", ".btn-group label",
         ".scale-option", ".response-option", ".likert-option",
-        ".form-check-label", ".btn-outline-primary"
+        ".form-check-label", ".btn-outline-primary",
+        // Demographic-specific response selectors
+        ".selectize-option", ".selectize-item", ".option",
+        "select option", ".dropdown-item", ".choice",
+        ".radio-inline", ".checkbox-inline", "span.option-text"
       ];
       
       // Update questions
