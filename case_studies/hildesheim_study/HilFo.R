@@ -483,7 +483,7 @@ custom_page_flow <- list(
         title = "HilFo",
         content = '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">
       <div style="position: absolute; top: 10px; right: 10px;">
-        <button type="button" id="language-toggle-btn" onclick="toggleLanguage()" style="
+        <button type="button" id="language-toggle-btn" onclick="console.log('Button clicked!'); toggleLanguage();" style="
           background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
           <span id="lang_switch_text">English Version</span></button>
       </div>
@@ -551,14 +551,25 @@ custom_page_flow <- list(
     
     <script>
     // Initialize language state explicitly - only German or English (no default/undefined state)
+    console.log("Page 1 JavaScript loading...");
     if (typeof window.hilfoCurrentLanguage === "undefined") {
       window.hilfoCurrentLanguage = "de";  // Always start with German explicitly
     }
+    console.log("Language initialized to:", window.hilfoCurrentLanguage);
     
     function toggleLanguage() {
+      console.log("toggleLanguage function called!");
+      console.log("Current language state:", window.hilfoCurrentLanguage);
+      
       var deContent = document.getElementById("content_de");
       var enContent = document.getElementById("content_en");
       var textSpan = document.getElementById("lang_switch_text");
+      
+      console.log("Elements found:", {
+        deContent: !!deContent,
+        enContent: !!enContent, 
+        textSpan: !!textSpan
+      });
       
       if (deContent && enContent) {
         // Use explicit language variable instead of CSS display detection
