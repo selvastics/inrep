@@ -842,7 +842,42 @@ custom_page_flow <- list(
         Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</span>
       </div>
     </div>
+    
     <script>
+    // Page 20 Language Detection and Switching
+    function applyLanguageToPage20() {
+      // Check language preference from page 1
+      var currentLang = sessionStorage.getItem("hilfo_language_preference") || 
+                       sessionStorage.getItem("current_language") || 
+                       sessionStorage.getItem("hilfo_language") || "de";
+      
+      console.log("Page 20 applying language:", currentLang);
+      var isEnglish = (currentLang === "en");
+      
+      // Update all elements with data-lang attributes
+      var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+      elements.forEach(function(el) {
+        if (isEnglish) {
+          el.textContent = el.getAttribute("data-lang-en");
+        } else {
+          el.textContent = el.getAttribute("data-lang-de");
+        }
+      });
+      
+      console.log("Page 20 language applied:", isEnglish ? "English" : "German");
+    }
+    
+    // Apply language immediately when page loads
+    document.addEventListener("DOMContentLoaded", function() {
+      applyLanguageToPage20();
+    });
+    
+    // Also apply after a short delay to catch any dynamic content
+    setTimeout(function() {
+      applyLanguageToPage20();
+    }, 500);
+    
+    // Also handle input formatting
     document.addEventListener("DOMContentLoaded", function() {
       var input = document.getElementById("personal_code");
       if (input) {
