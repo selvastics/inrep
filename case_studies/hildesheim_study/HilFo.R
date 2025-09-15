@@ -2346,6 +2346,32 @@ study_config <- inrep::create_study_config(
     progress_style = "bar",
     language = "de",
     bilingual = TRUE,
+    custom_js = "
+      // Language detection for assessment pages (not page 1)
+      document.addEventListener('DOMContentLoaded', function() {
+        // Only run on non-page-1 pages
+        var isPage1 = document.getElementById('content_de') && document.getElementById('content_en');
+        if (isPage1) {
+          console.log('Page 1 detected - skipping assessment language detection');
+          return;
+        }
+        
+        // Check language preference from page 1
+        var langPreference = sessionStorage.getItem('hilfo_language_preference') || 'de';
+        console.log('Assessment page detected language preference:', langPreference);
+        
+        // If English is preferred, notify inrep system
+        if (langPreference === 'en') {
+          console.log('Switching assessment page to English');
+          if (typeof Shiny !== 'undefined' && Shiny.setInputValue) {
+            Shiny.setInputValue('study_language', 'en', {priority: 'event'});
+            Shiny.setInputValue('store_language_globally', 'en', {priority: 'event'});
+          }
+        }
+      });
+      
+      console.log('HILFO Assessment Language Detection Ready');
+    ",
     session_save = TRUE,
     session_timeout = 7200,
     results_processor = create_hilfo_report
