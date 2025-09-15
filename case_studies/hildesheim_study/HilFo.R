@@ -550,53 +550,56 @@ custom_page_flow <- list(
     </div>
     
     <script>
+    // Initialize language state explicitly - only German or English (no default/undefined state)
+    if (typeof window.hilfoCurrentLanguage === "undefined") {
+      window.hilfoCurrentLanguage = "de";  // Always start with German explicitly
+    }
+    
     function toggleLanguage() {
       var deContent = document.getElementById("content_de");
       var enContent = document.getElementById("content_en");
       var textSpan = document.getElementById("lang_switch_text");
       
       if (deContent && enContent) {
-        if (deContent.style.display === "none") {
-          /* Switch to German */
-          deContent.style.display = "block";
-          enContent.style.display = "none";
-          if (textSpan) textSpan.textContent = "English Version";
-          
-          /* Send German language to global system - IMMEDIATE UPDATE */
-          if (typeof Shiny !== "undefined") {
-            Shiny.setInputValue("study_language", "de", {priority: "event"});
-            Shiny.setInputValue("language", "de", {priority: "event"});
-            Shiny.setInputValue("current_language", "de", {priority: "event"});
-            Shiny.setInputValue("hilfo_language_preference", "de", {priority: "event"});
-            // Force immediate page refresh for non-page-1 pages
-            setTimeout(function() {
-              Shiny.setInputValue("force_language_update", Math.random(), {priority: "event"});
-            }, 100);
-          }
-          sessionStorage.setItem("hilfo_language", "de");
-          sessionStorage.setItem("current_language", "de");
-          sessionStorage.setItem("hilfo_language_preference", "de");
-        } else {
+        // Use explicit language variable instead of CSS display detection
+        if (window.hilfoCurrentLanguage === "de") {
           /* Switch to English */
+          window.hilfoCurrentLanguage = "en";
           deContent.style.display = "none";
           enContent.style.display = "block";
           if (textSpan) textSpan.textContent = "Deutsche Version";
           
-          /* Send English language to global system - IMMEDIATE UPDATE */
+          /* Send English language to global system */
           if (typeof Shiny !== "undefined") {
             Shiny.setInputValue("study_language", "en", {priority: "event"});
             Shiny.setInputValue("language", "en", {priority: "event"});
             Shiny.setInputValue("current_language", "en", {priority: "event"});
             Shiny.setInputValue("hilfo_language_preference", "en", {priority: "event"});
-            // Force immediate page refresh for non-page-1 pages
-            setTimeout(function() {
-              Shiny.setInputValue("force_language_update", Math.random(), {priority: "event"});
-            }, 100);
           }
           sessionStorage.setItem("hilfo_language", "en");
           sessionStorage.setItem("current_language", "en");
           sessionStorage.setItem("hilfo_language_preference", "en");
+          
+        } else {
+          /* Switch to German */
+          window.hilfoCurrentLanguage = "de";
+          deContent.style.display = "block";
+          enContent.style.display = "none";
+          if (textSpan) textSpan.textContent = "English Version";
+          
+          /* Send German language to global system */
+          if (typeof Shiny !== "undefined") {
+            Shiny.setInputValue("study_language", "de", {priority: "event"});
+            Shiny.setInputValue("language", "de", {priority: "event"});
+            Shiny.setInputValue("current_language", "de", {priority: "event"});
+            Shiny.setInputValue("hilfo_language_preference", "de", {priority: "event"});
+          }
+          sessionStorage.setItem("hilfo_language", "de");
+          sessionStorage.setItem("current_language", "de");
+          sessionStorage.setItem("hilfo_language_preference", "de");
         }
+        
+        console.log("Language switched to:", window.hilfoCurrentLanguage);
       }
       
       var deCheck = document.getElementById("consent_check");
@@ -846,8 +849,9 @@ custom_page_flow <- list(
     <script>
     // Page 20 Language Detection and Switching
     function applyLanguageToPage20() {
-      // Check language preference from page 1
-      var currentLang = sessionStorage.getItem("hilfo_language_preference") || 
+      // Check language preference from page 1 - use same variable as page 1
+      var currentLang = window.hilfoCurrentLanguage || 
+                       sessionStorage.getItem("hilfo_language_preference") || 
                        sessionStorage.getItem("current_language") || 
                        sessionStorage.getItem("hilfo_language") || "de";
       
