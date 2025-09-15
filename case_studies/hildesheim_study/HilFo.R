@@ -2355,8 +2355,8 @@ study_config <- inrep::create_study_config(
     criteria = "MFI",
     response_ui_type = "radio",
     progress_style = "bar",
-    language = "de",
-    bilingual = TRUE,
+    language = "de",  # Default language
+    bilingual = TRUE,  # Enable bilingual support
     custom_js = "
       // Language detection and switching for assessment pages (not page 1)
       console.log('HILFO Assessment Language System Loading...');
@@ -2430,15 +2430,25 @@ study_config <- inrep::create_study_config(
         if (langPreference === 'en') {
           console.log('English preferred - translating page');
           
-          // Direct translation approach
+          // Multiple translation attempts to ensure it works
           setTimeout(function() {
             translatePageToEnglish();
-          }, 200);
+          }, 100);
           
-          // Also notify inrep system
+          setTimeout(function() {
+            translatePageToEnglish();
+          }, 500);
+          
+          setTimeout(function() {
+            translatePageToEnglish();
+          }, 1000);
+          
+          // Also notify inrep system multiple times
           if (typeof Shiny !== 'undefined' && Shiny.setInputValue) {
             Shiny.setInputValue('study_language', 'en', {priority: 'event'});
             Shiny.setInputValue('store_language_globally', 'en', {priority: 'event'});
+            Shiny.setInputValue('language', 'en', {priority: 'event'});
+            Shiny.setInputValue('current_language', 'en', {priority: 'event'});
           }
         } else {
           console.log('German preferred - keeping page in German');
