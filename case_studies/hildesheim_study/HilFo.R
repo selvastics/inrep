@@ -569,15 +569,7 @@ custom_page_flow <- list(
           enContent.style.display = "block";
           if (textSpan) textSpan.textContent = "Deutsche Version";
           
-          /* Send English language to global system */
-          if (typeof Shiny !== "undefined") {
-            Shiny.setInputValue("study_language", "en", {priority: "event"});
-            Shiny.setInputValue("language", "en", {priority: "event"});
-            Shiny.setInputValue("current_language", "en", {priority: "event"});
-            Shiny.setInputValue("hilfo_language_preference", "en", {priority: "event"});
-          }
-          sessionStorage.setItem("hilfo_language", "en");
-          sessionStorage.setItem("current_language", "en");
+            /* Store English preference only */
           sessionStorage.setItem("hilfo_language_preference", "en");
           
         } else {
@@ -587,19 +579,14 @@ custom_page_flow <- list(
           enContent.style.display = "none";
           if (textSpan) textSpan.textContent = "English Version";
           
-          /* Send German language to global system */
-          if (typeof Shiny !== "undefined") {
-            Shiny.setInputValue("study_language", "de", {priority: "event"});
-            Shiny.setInputValue("language", "de", {priority: "event"});
-            Shiny.setInputValue("current_language", "de", {priority: "event"});
-            Shiny.setInputValue("hilfo_language_preference", "de", {priority: "event"});
-          }
-          sessionStorage.setItem("hilfo_language", "de");
-          sessionStorage.setItem("current_language", "de");
+          /* Store German preference only */
           sessionStorage.setItem("hilfo_language_preference", "de");
         }
         
         console.log("Language switched to:", window.hilfoCurrentLanguage);
+        
+        // Set a flag that other pages can check for language preference
+        window.hilfoLanguageChanged = true;
       }
       
       var deCheck = document.getElementById("consent_check");
