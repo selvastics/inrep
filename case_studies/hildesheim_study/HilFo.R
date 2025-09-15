@@ -2347,7 +2347,60 @@ study_config <- inrep::create_study_config(
     language = "de",
     bilingual = TRUE,
     custom_js = "
-      // Language detection for assessment pages (not page 1)
+      // Language detection and switching for assessment pages (not page 1)
+      console.log('HILFO Assessment Language System Loading...');
+      
+      // Question mappings for direct translation
+      window.questionMappings = {
+        'Wie alt sind Sie?': 'How old are you?',
+        'In welchem Studiengang befinden Sie sich?': 'Which study program are you in?',
+        'Welches Geschlecht haben Sie?': 'What is your gender?',
+        'Bachelor Psychologie': 'Bachelor Psychology',
+        'Master Psychologie': 'Master Psychology',
+        'weiblich oder divers': 'female or diverse',
+        'männlich': 'male',
+        'Bitte wählen...': 'Please select...',
+        'Ich fühle mich unsicher, wenn ich programmieren soll.': 'I feel uncertain when I have to program.',
+        'Der Gedanke, programmieren zu lernen, macht mich nervös.': 'The thought of learning to program makes me nervous.',
+        'Ich habe Angst, beim Programmieren Fehler zu machen.': 'I am afraid of making mistakes when programming.',
+        'Ich fühle mich überfordert, wenn ich an Programmieraufgaben denke.': 'I feel overwhelmed when I think about programming tasks.',
+        'Ich bin besorgt, dass ich nicht gut genug programmieren kann.': 'I am worried that I am not good enough at programming.',
+        'Ich gehe aus mir heraus, bin gesellig.': 'I am outgoing, sociable.',
+        'Ich bin eher ruhig.': 'I am rather quiet.',
+        'Ich bin eher schüchtern.': 'I am rather shy.',
+        'Ich bin gesprächig.': 'I am talkative.',
+        'Stimme überhaupt nicht zu': 'Strongly disagree',
+        'Stimme nicht zu': 'Disagree',
+        'Weder noch': 'Neither agree nor disagree',
+        'Stimme zu': 'Agree',
+        'Stimme voll zu': 'Strongly agree',
+        'Soziodemographische Angaben': 'Sociodemographic Information',
+        'Programmierangst': 'Programming Anxiety',
+        'Persönlichkeit': 'Personality'
+      };
+      
+      // Function to translate page content directly
+      function translatePageToEnglish() {
+        console.log('Translating current page to English');
+        var selectors = ['h1', 'h2', 'h3', 'h4', 'label', 'span', 'p', 'option', 'div'];
+        var translatedCount = 0;
+        
+        selectors.forEach(function(selector) {
+          var elements = document.querySelectorAll(selector);
+          elements.forEach(function(el) {
+            var text = el.textContent.trim();
+            if (text && window.questionMappings[text]) {
+              el.textContent = window.questionMappings[text];
+              translatedCount++;
+              console.log('Translated:', text, '->', window.questionMappings[text]);
+            }
+          });
+        });
+        
+        console.log('Total translations applied:', translatedCount);
+      }
+      
+      // Main language detection for assessment pages
       document.addEventListener('DOMContentLoaded', function() {
         // Only run on non-page-1 pages
         var isPage1 = document.getElementById('content_de') && document.getElementById('content_en');
@@ -2356,22 +2409,34 @@ study_config <- inrep::create_study_config(
           return;
         }
         
+        console.log('Assessment page loading - checking language preference');
+        
         // Check language preference from page 1
         var langPreference = sessionStorage.getItem('hilfo_language_preference') || 'de';
-        console.log('Assessment page detected language preference:', langPreference);
+        console.log('Detected language preference:', langPreference);
         
-        // If English is preferred, notify inrep system
+        // If English is preferred, translate immediately
         if (langPreference === 'en') {
-          console.log('Switching assessment page to English');
+          console.log('English preferred - translating page');
+          
+          // Direct translation approach
+          setTimeout(function() {
+            translatePageToEnglish();
+          }, 200);
+          
+          // Also notify inrep system
           if (typeof Shiny !== 'undefined' && Shiny.setInputValue) {
             Shiny.setInputValue('study_language', 'en', {priority: 'event'});
             Shiny.setInputValue('store_language_globally', 'en', {priority: 'event'});
           }
+        } else {
+          console.log('German preferred - keeping page in German');
         }
       });
       
-      console.log('HILFO Assessment Language Detection Ready');
+      console.log('HILFO Assessment Language System Ready');
     ",
+    session_save = TRUE,
     session_save = TRUE,
     session_timeout = 7200,
     results_processor = create_hilfo_report
