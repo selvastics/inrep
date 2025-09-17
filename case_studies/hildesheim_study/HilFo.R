@@ -448,28 +448,68 @@ demographic_configs <- list(
         question_en = "Please create a personal code (first 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday). Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15",
         type = "text",
         required = FALSE,
-        # NEW: Custom HTML content with beautiful styling
-        html_content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
-          <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Persönlicher Code</h2>
-          <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">Bitte erstellen Sie einen persönlichen Code:</p>
-          <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-            <p style="margin: 0; font-weight: 500;">Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</p>
+        # NEW: Self-contained HTML content with built-in language switching
+        html_content = '<div id="personal-code-container" style="padding: 20px; font-size: 16px; line-height: 1.8;">
+          <div id="content-de">
+            <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Persönlicher Code</h2>
+            <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">Bitte erstellen Sie einen persönlichen Code:</p>
+            <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+              <p style="margin: 0; font-weight: 500;">Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</p>
+            </div>
+            <div style="text-align: center; margin: 30px 0;">
+              <input type="text" id="Persönlicher_Code" name="Persönlicher_Code" placeholder="z.B. MAHA15" style="padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; text-align: center; width: 200px; text-transform: uppercase;" required>
+            </div>
+            <div style="text-align: center; color: #666; font-size: 14px;">Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</div>
           </div>
-          <div style="text-align: center; margin: 30px 0;">
-            <input type="text" id="Persönlicher_Code" name="Persönlicher_Code" placeholder="z.B. MAHA15" style="padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; text-align: center; width: 200px; text-transform: uppercase;" required>
+          <div id="content-en" style="display: none;">
+            <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Personal Code</h2>
+            <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">Please create a personal code:</p>
+            <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+              <p style="margin: 0; font-weight: 500;">First 2 letters of your mothers first name + first 2 letters of your birthplace + day of your birthday</p>
+            </div>
+            <div style="text-align: center; margin: 30px 0;">
+              <input type="text" id="Persönlicher_Code_en" name="Persönlicher_Code" placeholder="e.g. MAHA15" style="padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; text-align: center; width: 200px; text-transform: uppercase;" required>
+            </div>
+            <div style="text-align: center; color: #666; font-size: 14px;">Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</div>
           </div>
-          <div style="text-align: center; color: #666; font-size: 14px;">Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</div>
-        </div>',
-        html_content_en = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
-          <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Personal Code</h2>
-          <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">Please create a personal code:</p>
-          <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-            <p style="margin: 0; font-weight: 500;">First 2 letters of your mothers first name + first 2 letters of your birthplace + day of your birthday</p>
-          </div>
-          <div style="text-align: center; margin: 30px 0;">
-            <input type="text" id="Persönlicher_Code" name="Persönlicher_Code" placeholder="e.g. MAHA15" style="padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; text-align: center; width: 200px; text-transform: uppercase;" required>
-          </div>
-          <div style="text-align: center; color: #666; font-size: 14px;">Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</div>
+          <script>
+          // Universal language detection and switching - works for any study
+          document.addEventListener("DOMContentLoaded", function() {
+            function detectLanguage() {
+              // Check multiple possible language storage locations
+              var lang = sessionStorage.getItem("hilfo_language_preference") ||
+                        sessionStorage.getItem("global_language_preference") ||
+                        sessionStorage.getItem("current_language") ||
+                        sessionStorage.getItem("study_language") ||
+                        localStorage.getItem("user_language") ||
+                        "de";
+              return lang;
+            }
+            
+            function switchLanguage() {
+              var currentLang = detectLanguage();
+              var contentDe = document.getElementById("content-de");
+              var contentEn = document.getElementById("content-en");
+              
+              if (currentLang === "en") {
+                if (contentDe) contentDe.style.display = "none";
+                if (contentEn) contentEn.style.display = "block";
+              } else {
+                if (contentDe) contentDe.style.display = "block";
+                if (contentEn) contentEn.style.display = "none";
+              }
+            }
+            
+            // Switch language on load
+            switchLanguage();
+            
+            // Listen for language changes
+            window.addEventListener("storage", switchLanguage);
+            
+            // Also check periodically for language changes (in case of sessionStorage)
+            setInterval(switchLanguage, 1000);
+          });
+          </script>
         </div>'
     )
 )
