@@ -444,8 +444,8 @@ demographic_configs <- list(
         required = FALSE
     ),
     Persönlicher_Code = list(
-        question = "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags):",
-        question_en = "Please create a personal code (first 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday):",
+        question = "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags). Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15",
+        question_en = "Please create a personal code (first 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday). Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15",
         type = "text",
         required = FALSE
     )
@@ -470,6 +470,88 @@ input_types <- list(
     Zufrieden_Hi_7st = "radio",
     Persönlicher_Code = "text"
 )
+
+# Add beautiful custom styling for personal code page
+personal_code_css <- '
+<style>
+input[id="Persönlicher_Code"] {
+  padding: 15px 20px !important; 
+  font-size: 18px !important; 
+  border: 2px solid #e0e0e0 !important; 
+  border-radius: 8px !important; 
+  text-align: center !important; 
+  width: 200px !important; 
+  text-transform: uppercase !important;
+  margin: 20px auto !important;
+  display: block !important;
+}
+</style>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  var input = document.getElementById("Persönlicher_Code");
+  if (input) {
+    input.placeholder = "z.B. MAHA15";
+    input.addEventListener("input", function() {
+      this.value = this.value.toUpperCase();
+    });
+    
+    // Add beautiful styling by injecting HTML elements
+    var formGroup = input.closest(".form-group");
+    if (formGroup) {
+      var label = formGroup.querySelector(".input-label");
+      if (label) {
+        // Style the label
+        label.style.textAlign = "center";
+        label.style.fontSize = "18px";
+        label.style.marginBottom = "30px";
+        
+        // Create instruction box
+        var instructionBox = document.createElement("div");
+        instructionBox.style.background = "#fff3f4";
+        instructionBox.style.padding = "20px";
+        instructionBox.style.borderLeft = "4px solid #e8041c";
+        instructionBox.style.margin = "20px 0";
+        instructionBox.style.fontWeight = "500";
+        
+        // Get current language to show appropriate text
+        var currentLang = "de";
+        if (sessionStorage.getItem("global_language_preference") === "en" || 
+            sessionStorage.getItem("hilfo_language_preference") === "en") {
+          currentLang = "en";
+        }
+        
+        if (currentLang === "en") {
+          var instructText = "First 2 letters of your mother" + String.fromCharCode(39) + "s first name + first 2 letters of your birthplace + day of your birthday";
+          instructionBox.innerHTML = "<p style=" + String.fromCharCode(34) + "margin: 0;" + String.fromCharCode(34) + ">" + instructText + "</p>";
+          input.placeholder = "e.g. MAHA15";
+        } else {
+          var instructText = "Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags";
+          instructionBox.innerHTML = "<p style=" + String.fromCharCode(34) + "margin: 0;" + String.fromCharCode(34) + ">" + instructText + "</p>";
+          input.placeholder = "z.B. MAHA15";
+        }
+        
+        // Create example text
+        var exampleText = document.createElement("div");
+        exampleText.style.textAlign = "center";
+        exampleText.style.color = "#666";
+        exampleText.style.fontSize = "14px";
+        exampleText.style.marginBottom = "20px";
+        
+        if (currentLang === "en") {
+          exampleText.textContent = "Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15";
+        } else {
+          exampleText.textContent = "Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15";
+        }
+        
+        // Insert elements in correct order
+        label.parentNode.insertBefore(instructionBox, input);
+        label.parentNode.insertBefore(exampleText, input);
+      }
+    }
+  }
+});
+</script>
+'
 
 # =============================================================================
 # CUSTOM PAGE FLOW
@@ -562,12 +644,13 @@ custom_page_flow <- list(
           enContent.style.display = "none";
           if (textSpan) textSpan.textContent = "English Version";
           
-          /* Send German language to global system */
+          /* Send German language to global system - SAFE */
+          sessionStorage.setItem("hilfo_global_language", "de");
           if (typeof Shiny !== "undefined") {
-            Shiny.setInputValue("study_language", "de", {priority: "event"});
-            Shiny.setInputValue("language", "de", {priority: "event"});
-            Shiny.setInputValue("current_language", "de", {priority: "event"});
-            Shiny.setInputValue("hilfo_language_preference", "de", {priority: "event"});
+            // Only send once to prevent loops
+            setTimeout(function() {
+              Shiny.setInputValue("store_language_globally", "de", {priority: "event"});
+            }, 500);
           }
           sessionStorage.setItem("hilfo_language", "de");
           sessionStorage.setItem("current_language", "de");
@@ -578,12 +661,13 @@ custom_page_flow <- list(
           enContent.style.display = "block";
           if (textSpan) textSpan.textContent = "Deutsche Version";
           
-          /* Send English language to global system */
+          /* Send English language to global system - SAFE */
+          sessionStorage.setItem("hilfo_global_language", "en");
           if (typeof Shiny !== "undefined") {
-            Shiny.setInputValue("study_language", "en", {priority: "event"});
-            Shiny.setInputValue("language", "en", {priority: "event"});
-            Shiny.setInputValue("current_language", "en", {priority: "event"});
-            Shiny.setInputValue("hilfo_language_preference", "en", {priority: "event"});
+            // Only send once to prevent loops
+            setTimeout(function() {
+              Shiny.setInputValue("store_language_globally", "en", {priority: "event"});
+            }, 500);
           }
           sessionStorage.setItem("hilfo_language", "en");
           sessionStorage.setItem("current_language", "en");
@@ -804,24 +888,58 @@ custom_page_flow <- list(
         demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st")
     ),
     
-    # Page 20: Personal Code
+    # Page 20: Personal Code - beautiful custom design
     list(
         id = "page20",
         type = "custom",
-        title = "",
+        title = "Persönlicher Code",
         title_en = "Personal Code",
-        content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
+        content_de = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
       <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
-        <span data-lang-de="" data-lang-en="Personal Code">Personal Code</span>
+        Persönlicher Code
       </h2>
       <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
-        <span data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">
-        Please create a personal code:</span>
+        Bitte erstellen Sie einen persönlichen Code:
       </p>
       <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
         <p style="margin: 0; font-weight: 500;">
-          <span data-lang-de="Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags" data-lang-en="First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday">
-          First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday</span>
+          Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags
+        </p>
+      </div>
+      <div style="text-align: center; margin: 30px 0;">
+        <input type="text" id="personal_code" placeholder="z.B. MAHA15" style="
+          padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
+          text-align: center; width: 200px; text-transform: uppercase;" required>
+      </div>
+      <div style="text-align: center; color: #666; font-size: 14px;">
+        Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15
+      </div>
+    </div>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      var input = document.getElementById("personal_code");
+      if (input) {
+        input.addEventListener("input", function() {
+          this.value = this.value.toUpperCase();
+        });
+        input.addEventListener("blur", function() {
+          if (this.value.trim() !== "") {
+            Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
+          }
+        });
+      }
+    });
+    </script>',
+        content_en = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
+      <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
+        Personal Code
+      </h2>
+      <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
+        Please create a personal code:
+      </p>
+      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+        <p style="margin: 0; font-weight: 500;">
+          First 2 letters of your mothers first name + first 2 letters of your birthplace + day of your birthday
         </p>
       </div>
       <div style="text-align: center; margin: 30px 0;">
@@ -830,8 +948,7 @@ custom_page_flow <- list(
           text-align: center; width: 200px; text-transform: uppercase;" required>
       </div>
       <div style="text-align: center; color: #666; font-size: 14px;">
-        <span data-lang-de="Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15" data-lang-en="Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15">
-        Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</span>
+        Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15
       </div>
     </div>
     <script>
@@ -866,6 +983,46 @@ custom_page_flow <- list(
 # =============================================================================
 
 create_hilfo_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
+    # Check if this is being called for CSV export enhancement
+    if (!is.null(session) && is.list(session) && !is.null(session$csv_export)) {
+        # This is a CSV export call - enhance the CSV data with HILFO-specific calculations
+        csv_env <- session$csv_export
+        if (!is.null(csv_env$csv_data)) {
+            # Add HILFO-specific calculated scores to CSV
+            responses <- csv_env$responses
+            
+            # Calculate BFI scores from responses (items 21-40)
+            if (!is.null(responses) && length(responses) >= 40) {
+                bfi_responses <- responses[21:40]
+                if (length(bfi_responses) >= 20) {
+                    csv_env$csv_data$BFI_Extraversion <- mean(c(bfi_responses[1:4]), na.rm = TRUE)
+                    csv_env$csv_data$BFI_Vertraeglichkeit <- mean(c(bfi_responses[5:8]), na.rm = TRUE)
+                    csv_env$csv_data$BFI_Gewissenhaftigkeit <- mean(c(bfi_responses[9:12]), na.rm = TRUE)
+                    csv_env$csv_data$BFI_Neurotizismus <- mean(c(bfi_responses[13:16]), na.rm = TRUE)
+                    csv_env$csv_data$BFI_Offenheit <- mean(c(bfi_responses[17:20]), na.rm = TRUE)
+                }
+            }
+            
+            # Calculate PSQ Stress (items 41-45)
+            if (!is.null(responses) && length(responses) >= 45) {
+                stress_responses <- responses[41:45]
+                csv_env$csv_data$PSQ_Stress <- mean(stress_responses, na.rm = TRUE)
+            }
+            
+            # Calculate MWS Study Skills (items 46-49)
+            if (!is.null(responses) && length(responses) >= 49) {
+                study_responses <- responses[46:49]
+                csv_env$csv_data$MWS_Studierfaehigkeiten <- mean(study_responses, na.rm = TRUE)
+            }
+            
+            # Calculate Statistics (items 50-51)
+            if (!is.null(responses) && length(responses) >= 51) {
+                stats_responses <- responses[50:51]
+                csv_env$csv_data$Statistik <- mean(stats_responses, na.rm = TRUE)
+            }
+        }
+        return(NULL)  # Don't generate HTML report for CSV export
+    }
     # Global error handling for the entire function
     tryCatch({
         # Lazy load packages only when actually needed
@@ -879,19 +1036,19 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     # Get current language from session if available
     current_lang <- "de"  # Default to German
     
-    # Try multiple ways to get the language
+    # Try multiple ways to get the language - prioritize session$input
     if (!is.null(session)) {
-        # Check various possible locations for language
-        if (!is.null(session$userData$language)) {
+        # Check session$input first (this is where the language actually is)
+        if (!is.null(session$input$language)) {
+            current_lang <- session$input$language
+        } else if (!is.null(session$input$study_language)) {
+            current_lang <- session$input$study_language
+        } else if (!is.null(session$userData$language)) {
             current_lang <- session$userData$language
         } else if (!is.null(session$userData$study_language)) {
             current_lang <- session$userData$study_language
         } else if (!is.null(session$userData$current_language)) {
             current_lang <- session$userData$current_language
-        } else if (!is.null(session$input$study_language)) {
-            current_lang <- session$input$study_language
-        } else if (!is.null(session$input$language)) {
-            current_lang <- session$input$language
         }
     }
     
@@ -917,34 +1074,32 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         cat("DEBUG: Using default German language\n")
     }
     
-    # Create is_english variable for compatibility
-    is_english <- (current_lang == "en")
-    cat("DEBUG: is_english =", is_english, "\n")
+    # PRIORITY: If session has language input, use that (this is the most reliable)
+    if (!is.null(session) && !is.null(session$input) && !is.null(session$input$language)) {
+        current_lang <- session$input$language
+        cat("DEBUG: Using language from session$input$language:", current_lang, "\n")
+    }
     
     # Check if we should use English based on the last language selection
-    # Since inrep might not pass session properly, we'll use a different approach
     # Check if there's a language preference stored in the global environment
-    if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
-        stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
+    if (exists("global_language_preference", envir = .GlobalEnv)) {
+        stored_lang <- get("global_language_preference", envir = .GlobalEnv)
         if (!is.null(stored_lang) && stored_lang == "en") {
-            is_english <- TRUE
             current_lang <- "en"
-            cat("DEBUG: Using stored English preference\n")
+            cat("DEBUG: Using stored English preference from global\n")
         }
     }
     
-    # For now, let's default to English if we can't detect the language properly
-    # This ensures the results work while we debug the language detection
+    # Create is_english variable AFTER all language detection
+    is_english <- (current_lang == "en")
+    cat("DEBUG: is_english =", is_english, "\n")
+    
+    # Use German as default unless English is explicitly set
     if (current_lang == "de" && is_english == FALSE) {
-        # Check if we should default to English based on some heuristic
-        # For now, let's make it configurable
-        force_english <- TRUE  # Set to FALSE to use German, TRUE to use English
-        
-        if (force_english) {
-            is_english <- TRUE
-            current_lang <- "en"
-            cat("DEBUG: Using English as fallback\n")
-        }
+        # Keep German as default - no forcing to English
+        is_english <- FALSE
+        current_lang <- "de"
+        cat("DEBUG: Using German as default\n")
     }
     
     # Final check to ensure is_english is properly set
@@ -1202,8 +1357,12 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         )
     })
     
+    # Create title based on language (used in both radar plot branches)
+    radar_title <- if (is_english) "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)"
+    
     # Create radar plot with ggradar
     if (requireNamespace("ggradar", quietly = TRUE)) {
+        
         radar_plot <- ggradar::ggradar(
             radar_data,
             values.radar = c("1", "3", "5"),  # Min, mid, max labels
@@ -1229,7 +1388,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                 plot.background = ggplot2::element_rect(fill = "white", color = NA),
                 plot.margin = ggplot2::margin(20, 20, 20, 20)
             ) +
-            ggplot2::labs(title = if (is_english) "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
+            ggplot2::labs(title = radar_title)
     } else {
         # Fallback to simple ggplot2 approach if ggradar not available
         # Use namespace to avoid loading issues
@@ -1308,7 +1467,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                                                    color = "#e8041c", margin = ggplot2::margin(b = 20)),
                 plot.margin = ggplot2::margin(30, 30, 30, 30)
             ) +
-            ggplot2::labs(title = if (is_english) "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
+            ggplot2::labs(title = radar_title)
     }
     
     # Create bar chart with logical ordering
@@ -1419,29 +1578,32 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         )
     })
     
+    # Create color scale based on language
+    if (is_english) {
+        color_scale <- ggplot2::scale_fill_manual(values = c(
+            "Programming Anxiety" = "#9b59b6",
+            "Personality" = "#e8041c",
+            "Stress" = "#ff6b6b",
+            "Study Skills" = "#4ecdc4",
+            "Statistics" = "#45b7d1"
+        ))
+    } else {
+        color_scale <- ggplot2::scale_fill_manual(values = c(
+            "Programmierangst" = "#9b59b6",
+            "Persönlichkeit" = "#e8041c",
+            "Stress" = "#ff6b6b",
+            "Studierfähigkeiten" = "#4ecdc4",
+            "Statistik" = "#45b7d1"
+        ))
+    }
+    
     bar_plot <- ggplot2::ggplot(all_data, ggplot2::aes(x = dimension, y = score, fill = category)) +
         ggplot2::geom_bar(stat = "identity", width = 0.7) +
         # Add value labels with better formatting
         ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", score)), 
                            vjust = -0.5, size = 6, fontface = "bold", color = "#333") +
-        # Custom color scheme - handle both German and English
-        if (is_english) {
-            ggplot2::scale_fill_manual(values = c(
-                "Programming Anxiety" = "#9b59b6",
-                "Personality" = "#e8041c",
-                "Stress" = "#ff6b6b",
-                "Study Skills" = "#4ecdc4",
-                "Statistics" = "#45b7d1"
-            ))
-        } else {
-            ggplot2::scale_fill_manual(values = c(
-                "Programmierangst" = "#9b59b6",
-                "Persönlichkeit" = "#e8041c",
-                "Stress" = "#ff6b6b",
-                "Studierfähigkeiten" = "#4ecdc4",
-                "Statistik" = "#45b7d1"
-            ))
-        } +
+        # Custom color scheme
+        color_scale +
         # Y-axis customization
         ggplot2::scale_y_continuous(limits = c(0, 5.5), breaks = 0:5) +
         # Theme with larger text
@@ -1459,11 +1621,16 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             legend.title = ggplot2::element_blank(),
             legend.text = ggplot2::element_text(size = 12),
             plot.margin = ggplot2::margin(20, 20, 20, 20)
-        ) +
-        ggplot2::labs(
-            title = if (is_english) "All Dimensions Overview" else "Alle Dimensionen im Überblick", 
-            y = if (is_english) "Score (1-5)" else "Punktzahl (1-5)"
         )
+        
+    # Create bar plot labels
+    bar_title <- if (is_english) "All Dimensions Overview" else "Alle Dimensionen im Überblick"
+    bar_y_label <- if (is_english) "Score (1-5)" else "Punktzahl (1-5)"
+    
+    bar_plot <- bar_plot + ggplot2::labs(
+        title = bar_title,
+        y = bar_y_label
+    )
     
     # Create trace plot for Programming Anxiety adaptive testing
     # Add safeguards for extreme values
@@ -1520,13 +1687,20 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             legend.title = ggplot2::element_blank(),
             panel.grid.minor = ggplot2::element_blank(),
             plot.margin = ggplot2::margin(20, 20, 20, 20)
-        ) +
-        ggplot2::labs(
-            title = if (is_english) "Programming Anxiety - Adaptive Testing Trace" else "Programmierangst - Adaptive Testung",
-            subtitle = sprintf(if (is_english) "Final theta = %.3f (SE = %.3f)" else "Finales theta = %.3f (SE = %.3f)", theta_est, se_est),
-            x = if (is_english) "Item Number" else "Item-Nummer",
-            y = if (is_english) "Theta Estimate" else "Theta-Schaetzung"
         )
+        
+    # Create trace plot labels
+    trace_title <- if (is_english) "Programming Anxiety - Adaptive Testing Trace" else "Programmierangst - Adaptive Testung"
+    trace_subtitle <- sprintf(if (is_english) "Final theta = %.3f (SE = %.3f)" else "Finales theta = %.3f (SE = %.3f)", theta_est, se_est)
+    trace_x_label <- if (is_english) "Item Number" else "Item-Nummer"
+    trace_y_label <- if (is_english) "Theta Estimate" else "Theta-Schaetzung"
+    
+    trace_plot <- trace_plot + ggplot2::labs(
+        title = trace_title,
+        subtitle = trace_subtitle,
+        x = trace_x_label,
+        y = trace_y_label
+    )
     
     # Save plots
     radar_file <- tempfile(fileext = ".png")
@@ -1961,13 +2135,13 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">',
         
         # PDF Download Button
-        '<button onclick="try { if(typeof downloadPDF === \'function\') { downloadPDF(); } else { var content = \'HilFo Study Results\\n\\nGenerated: \' + new Date().toLocaleString() + \'\\n\\nThis is a comprehensive PDF report containing:\\n- Personality profile results\\n- Programming anxiety scores\\n- Study satisfaction ratings\\n- Detailed analysis and recommendations\\n\\nThank you for participating in the HilFo study!\'; var blob = new Blob([content], {type: \'text/plain\'}); var url = window.URL.createObjectURL(blob); var link = document.createElement(\'a\'); link.href = url; link.download = \'HilFo_Results_\' + new Date().toISOString().slice(0,19).replace(/:/g, \'-\') + \'.txt\'; link.click(); window.URL.revokeObjectURL(url); } } catch(e) { alert(\'Download error: \' + e.message); }" class="btn btn-primary" style="background: #e8041c; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+        '<button onclick="if(typeof Shiny !== \'undefined\') { Shiny.setInputValue(\'download_pdf_trigger\', Math.random(), {priority: \'event\'}); } else { alert(\'Download not available\'); }" class="btn btn-primary" style="background: #e8041c; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
         '<i class="fas fa-file-pdf" style="margin-right: 8px;"></i>',
         if (is_english) "Download PDF" else "PDF herunterladen",
         '</button>',
         
         # CSV Download Button  
-        '<button onclick="try { if(typeof downloadCSV === \'function\') { downloadCSV(); } else { var csvContent = \'timestamp,participant_id,study_language,data_type,value\\n\' + new Date().toISOString() + \',HILFO_001,en,study_completed,true\\n\' + new Date().toISOString() + \',HILFO_001,en,personality_assessment,completed\\n\' + new Date().toISOString() + \',HILFO_001,en,programming_anxiety,completed\\n\'; var blob = new Blob([csvContent], {type: \'text/csv\'}); var url = window.URL.createObjectURL(blob); var link = document.createElement(\'a\'); link.href = url; link.download = \'HilFo_Data_\' + new Date().toISOString().slice(0,19).replace(/:/g, \'-\') + \'.csv\'; link.click(); window.URL.revokeObjectURL(url); } } catch(e) { alert(\'Download error: \' + e.message); }" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+        '<button onclick="if(typeof Shiny !== \'undefined\') { Shiny.setInputValue(\'download_csv_trigger\', Math.random(), {priority: \'event\'}); } else { alert(\'Download not available\'); }" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
         '<i class="fas fa-file-csv" style="margin-right: 8px;"></i>',
         if (is_english) "Download CSV" else "CSV herunterladen",
         '</button>',
@@ -2323,208 +2497,50 @@ custom_item_selection <- function(rv, item_bank, config) {
     return(NULL)
 }
 
-# Simple JavaScript for language switching and downloads
-custom_js <- '<script>
-var currentLang = "de";
 
-window.toggleLanguage = function() {
-  currentLang = currentLang === "de" ? "en" : "de";
-  
-  /* Update button text */
-  var btn = document.getElementById("language-toggle-btn");
-  if (btn) {
-    var textSpan = btn.querySelector("#lang_switch_text");
-    if (textSpan) {
-      textSpan.textContent = currentLang === "de" ? "English Version" : "Deutsche Version";
-    }
-  }
-  
-  /* Toggle language elements */
-  var langElements = document.querySelectorAll("[data-lang-de][data-lang-en]");
-  langElements.forEach(function(element) {
-    if (currentLang === "en") {
-      element.textContent = element.getAttribute("data-lang-en");
-    } else {
-      element.textContent = element.getAttribute("data-lang-de");
-    }
-  });
-  
-  /* Send to Shiny for global language switching */
-  if (typeof Shiny !== "undefined") {
-    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
-    Shiny.setInputValue("language", currentLang, {priority: "event"});
-  }
-  
-  /* Store preference */
-  sessionStorage.setItem("hilfo_language", currentLang);
-  
-  /* Only refresh if not on page 1 (page 1 handles its own switching) */
-  if (!window.location.pathname.includes("page1")) {
-    setTimeout(function() {
-      location.reload();
-    }, 300);
-  }
-};
+# =============================================================================
+# STUDY CONFIGURATION WITH BILINGUAL SUPPORT
+# =============================================================================
 
-/* Create language button */
-function createLanguageButton() {
-  if (document.getElementById("language-toggle-btn")) {
-    return;
-  }
-  
-  var btn = document.createElement("button");
-  btn.id = "language-toggle-btn";
-  btn.type = "button";
-  btn.onclick = toggleLanguage;
-  btn.style.cssText = "position: fixed !important; top: 10px !important; right: 10px !important; z-index: 9999 !important; background: #e8041c !important; color: white !important; border: 2px solid #e8041c !important; padding: 8px 16px !important; border-radius: 4px !important; cursor: pointer !important; font-size: 14px !important; font-weight: bold !important;";
-  btn.innerHTML = "<span id=\"lang_switch_text\">" + (currentLang === "de" ? "English Version" : "Deutsche Version") + "</span>";
-  
-  document.body.appendChild(btn);
+# Ensure PURE German default - remove ALL language preferences
+if (exists("global_language_preference", envir = .GlobalEnv)) {
+    rm("global_language_preference", envir = .GlobalEnv)
+}
+if (exists("current_language", envir = .GlobalEnv)) {
+    rm("current_language", envir = .GlobalEnv)
+}
+if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
+    rm("hilfo_language_preference", envir = .GlobalEnv)
 }
 
-/* Initialize */
-document.addEventListener("DOMContentLoaded", function() {
-  var storedLang = sessionStorage.getItem("hilfo_language");
-  if (storedLang) {
-    currentLang = storedLang;
-  }
-  
-  createLanguageButton();
-  
-  /* Send initial language to Shiny */
-  if (currentLang !== "de" && typeof Shiny !== "undefined") {
-    Shiny.setInputValue("study_language", currentLang, {priority: "event"});
-  }
-  
-  /* Show English content if needed */
-  if (currentLang === "en") {
-    var deContent = document.getElementById("content_de");
-    var enContent = document.getElementById("content_en");
-    if (deContent && enContent) {
-      deContent.style.display = "none";
-      enContent.style.display = "block";
-    }
-  }
-});
+# DO NOT set any language preferences - let inrep use pure German default
 
-var observer = new MutationObserver(function(mutations) {
-  createLanguageButton();
-});
-observer.observe(document.body, {
-  childList: true,
-  subtree: true
-});
-
-window.downloadPDF = function() {
-  console.log("downloadPDF function called");
-  try {
-    if (typeof Shiny !== "undefined") {
-      console.log("Shiny available, triggering download_pdf_trigger");
-      Shiny.setInputValue("download_pdf_trigger", Math.random(), {priority: "event"});
-    } else {
-      console.log("Shiny not available, using fallback");
-      downloadPDFFallback();
-    }
-  } catch (e) {
-    console.error("PDF download error:", e);
-    downloadPDFFallback();
-  }
-};
-
-window.downloadCSV = function() {
-  console.log("downloadCSV function called");
-  try {
-    if (typeof Shiny !== "undefined") {
-      console.log("Shiny available, triggering download_csv_trigger");
-      Shiny.setInputValue("download_csv_trigger", Math.random(), {priority: "event"});
-    } else {
-      console.log("Shiny not available, using fallback");
-      downloadCSVFallback();
-    }
-  } catch (e) {
-    console.error("CSV download error:", e);
-    downloadCSVFallback();
-  }
-};
-
-
-function downloadPDFFallback() {
-  try {
-    var content = "HilFo Study Results\\n\\n";
-    content += "Generated: " + new Date().toLocaleString() + "\\n\\n";
-    content += "This is a sample PDF report.\\n";
-    content += "In a full implementation, this would contain:\\n";
-    content += "- Personality profile results\\n";
-    content += "- Programming anxiety scores\\n";
-    content += "- Study satisfaction ratings\\n";
-    content += "- Detailed analysis and recommendations\\n\\n";
-    content += "Thank you for participating in the HilFo study!";
-    
-    var blob = new Blob([content], { type: "text/plain" });
-    var url = window.URL.createObjectURL(blob);
-    var link = document.createElement("a");
-    link.href = url;
-    link.download = "HilFo_Results_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".txt";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-    
-    console.log("PDF download initiated");
-  } catch (e) {
-    console.error("PDF download error:", e);
-    alert("Error downloading PDF. Please try again.");
-  }
-}
-
-function downloadCSVFallback() {
-  try {
-    var csvContent = "timestamp,participant_id,study_language,message\\n";
-    csvContent += new Date().toISOString() + ",HILFO_001," + currentLang + ",Sample data from HilFo study\\n";
-    csvContent += new Date().toISOString() + ",HILFO_002," + currentLang + ",Programming anxiety assessment\\n";
-    csvContent += new Date().toISOString() + ",HILFO_003," + currentLang + ",Personality profile completed\\n";
-    
-    var blob = new Blob([csvContent], { type: "text/csv" });
-    var url = window.URL.createObjectURL(blob);
-    var link = document.createElement("a");
-    link.href = url;
-    link.download = "HilFo_Data_" + new Date().toISOString().slice(0,19).replace(/:/g, "-") + ".csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-    
-    console.log("CSV download initiated");
-  } catch (e) {
-    console.error("CSV download error:", e);
-    alert("Error downloading CSV. Please try again.");
-  }
-}
-</script>'
+session_uuid <- paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 
 study_config <- inrep::create_study_config(
     name = "HilFo - Hildesheimer Forschungsmethoden",
     study_key = session_uuid,
-    theme = "hildesheim",  # Use built-in Hildesheim theme
+    theme = "hildesheim",
     custom_page_flow = custom_page_flow,
     demographics = names(demographic_configs),
     demographic_configs = demographic_configs,
     input_types = input_types,
-    model = "2PL",  # Use 2PL model for IRT
-    adaptive = TRUE,  # Enable adaptive for PA items
-    max_items = 51,  # Total items in bank
-    min_items = 51,  # Must show all items
-    criteria = "MFI",  # Maximum Fisher Information
+    model = "2PL",
+    adaptive = TRUE,
+    max_items = 51,
+    min_items = 51,
+    criteria = "MFI",
     response_ui_type = "radio",
     progress_style = "bar",
-    language = "de",  # Start with German
-    bilingual = TRUE,  # Enable inrep's built-in bilingual support
+    language = "de",
+    bilingual = TRUE,
     session_save = TRUE,
-    session_timeout = 7200,  # 2 hours timeout
-    results_processor = create_hilfo_report,  # Add custom results processor
-    custom_js = custom_js  # Add custom JavaScript for language switching and downloads
+    session_timeout = 7200,
+    results_processor = create_hilfo_report,
+    custom_css = personal_code_css
 )
 
+# Launch the study
 cat("\n================================================================================\n")
 cat("HILFO STUDIE - PRODUCTION VERSION\n")
 cat("================================================================================\n")
@@ -2534,302 +2550,10 @@ cat("Fixed radar plot with proper connections\n")
 cat("Complete data file will be saved as CSV\n")
 cat("================================================================================\n\n")
 
-
-# Download functionality is handled by inrep's built-in download system
-# No custom download handlers needed
-
-
-monitor_adaptive <- function(session_data) {
-    # Enhanced adaptive monitoring with full output
-    if (!is.null(session_data$current_item)) {
-        item_num <- session_data$current_item
-        
-        # Output adaptive info for PA items 6-10
-        if (item_num >= 6 && item_num <= 10) {
-            cat("\n================================================================================\n")
-            cat(sprintf("ADAPTIVE ITEM SELECTION - Programming Anxiety Item %d\n", item_num))
-            cat("================================================================================\n")
-            
-            # Get responses so far
-            responses <- session_data$responses
-            if (!is.null(responses) && length(responses) >= 5) {
-                # Calculate current theta using Newton-Raphson
-                pa_responses <- responses[1:min(length(responses), 10)]
-                
-                # Quick theta estimation
-                theta_est <- 0
-                for (iter in 1:5) {
-                    a_params <- all_items_de$a[1:length(pa_responses)]
-                    b_params <- all_items_de$b[1:length(pa_responses)]
-                    
-                    # 2PL probability
-                    probs <- 1 / (1 + exp(-a_params * (theta_est - b_params)))
-                    
-                    # Convert responses to 0-1
-                    resp_binary <- (pa_responses - 1) / 4
-                    
-                    # Newton-Raphson update
-                    first_deriv <- sum(a_params * (resp_binary - probs))
-                    second_deriv <- -sum(a_params^2 * probs * (1 - probs))
-                    
-                    if (abs(second_deriv) > 0.01) {
-                        theta_est <- theta_est - first_deriv / second_deriv
-                    }
-                }
-                
-                # Calculate SE
-                info <- sum(a_params^2 * (1/(1+exp(-a_params*(theta_est-b_params)))) * 
-                                (1 - 1/(1+exp(-a_params*(theta_est-b_params)))))
-                se_est <- 1 / sqrt(info)
-                
-                cat(sprintf("Current ability estimate: theta = %.3f, SE = %.3f\n", theta_est, se_est))
-                cat(sprintf("Test information so far: %.3f\n", info))
-            }
-            
-            # Show item pool analysis
-            available_items <- 6:20
-            already_shown <- 1:(item_num-1)
-            remaining <- setdiff(available_items, already_shown)
-            
-            cat(sprintf("\nAdaptive pool status:\n"))
-            cat(sprintf("  Items administered: %s\n", paste(already_shown, collapse=", ")))
-            cat(sprintf("  Items remaining: %d items (", length(remaining)))
-            cat(paste(head(remaining, 5), collapse=", "))
-            if (length(remaining) > 5) cat("...")
-            cat(")\n\n")
-            
-            # Calculate information for next items
-            if (exists("theta_est") && length(remaining) > 0) {
-                cat("Item Information Values for candidate items:\n")
-                
-                # Calculate Fisher Information for top candidates
-                for (idx in head(remaining, 5)) {
-                    a <- all_items_de$a[idx]
-                    b <- all_items_de$b[idx]
-                    p <- 1 / (1 + exp(-a * (theta_est - b)))
-                    info <- a^2 * p * (1 - p)
-                    
-                    if (idx == item_num) {
-                        cat(sprintf("  Item %2d (PA_%02d): I = %.4f, b = %5.2f, a = %.2f *** SELECTED ***\n",
-                                    idx, idx, info, b, a))
-                    } else {
-                        cat(sprintf("    Item %2d (PA_%02d): I = %.4f, b = %5.2f, a = %.2f\n",
-                                    idx, idx, info, b, a))
-                    }
-                }
-                
-                cat(sprintf("\nSelection criterion: Maximum Fisher Information at theta = %.3f\n", theta_est))
-            }
-            
-            cat("================================================================================\n\n")
-        }
-    }
-    
-    # Also output general session info periodically
-    if (!is.null(session_data$progress)) {
-        if (session_data$progress %% 10 == 0) {  # Every 10% progress
-            cat(sprintf("[SESSION] Progress: %d%% | Items: %d/%d | Time: %s\n",
-                        session_data$progress,
-                        length(session_data$responses),
-                        session_data$total_items,
-                        format(Sys.time(), "%H:%M:%S")))
-        }
-    }
-}
-
-# No custom CSS or JavaScript needed - inrep handles everything automatically
-# Launch with inrep's built-in capabilities
 inrep::launch_study(
     config = study_config,
-    item_bank = all_items_de,  # Bilingual item bank
+    item_bank = all_items_de,
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
-    save_format = "csv",
-    # Add server-side language tracking and download handlers
-    server_extensions = list(
-        language_tracker = function(input, output, session) {
-            # Track language preference changes
-            shiny::observeEvent(input$hilfo_language_preference, {
-                if (!is.null(input$hilfo_language_preference)) {
-                    hilfo_language_preference <<- input$hilfo_language_preference
-                    cat("Language preference stored:", input$hilfo_language_preference, "\n")
-                }
-            })
-            
-            # Handle PDF download trigger
-            shiny::observeEvent(input$download_pdf_trigger, {
-                cat("PDF download trigger received\n")
-                tryCatch({
-                    if (exists("complete_data", envir = .GlobalEnv)) {
-                        data <- get("complete_data", envir = .GlobalEnv)
-                        cat("DEBUG: PDF download - complete_data columns:", paste(names(data), collapse = ", "), "\n")
-                        
-                        # Extract scores from complete_data
-                        extraversion <- if("BFI_Extraversion" %in% names(data)) data$BFI_Extraversion[1] else "N/A"
-                        agreeableness <- if("BFI_Vertraeglichkeit" %in% names(data)) data$BFI_Vertraeglichkeit[1] else "N/A"
-                        conscientiousness <- if("BFI_Gewissenhaftigkeit" %in% names(data)) data$BFI_Gewissenhaftigkeit[1] else "N/A"
-                        neuroticism <- if("BFI_Neurotizismus" %in% names(data)) data$BFI_Neurotizismus[1] else "N/A"
-                        openness <- if("BFI_Offenheit" %in% names(data)) data$BFI_Offenheit[1] else "N/A"
-                        programming_anxiety <- if("ProgrammingAnxiety" %in% names(data)) data$ProgrammingAnxiety[1] else "N/A"
-                        stress <- if("PSQ_Stress" %in% names(data)) data$PSQ_Stress[1] else "N/A"
-                        study_skills <- if("MWS_Studierfaehigkeiten" %in% names(data)) data$MWS_Studierfaehigkeiten[1] else "N/A"
-                        statistics <- if("Statistik" %in% names(data)) data$Statistik[1] else "N/A"
-                        
-                        # Create comprehensive PDF content
-                        pdf_content <- paste0(
-                            "HilFo Study Results\n",
-                            "==================\n\n",
-                            "Generated: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n",
-                            "Study: HilFo - Hildesheimer Forschungsmethoden\n\n",
-                            "PERSONALITY PROFILE (Big Five)\n",
-                            "=============================\n",
-                            "Your personality was assessed using the Big Five dimensions:\n\n",
-                            "• Extraversion: ", if(is.numeric(extraversion)) round(extraversion, 2) else extraversion, "/5\n",
-                            "• Agreeableness: ", if(is.numeric(agreeableness)) round(agreeableness, 2) else agreeableness, "/5\n",
-                            "• Conscientiousness: ", if(is.numeric(conscientiousness)) round(conscientiousness, 2) else conscientiousness, "/5\n",
-                            "• Neuroticism: ", if(is.numeric(neuroticism)) round(neuroticism, 2) else neuroticism, "/5\n",
-                            "• Openness: ", if(is.numeric(openness)) round(openness, 2) else openness, "/5\n\n",
-                            "PROGRAMMING ANXIETY ASSESSMENT\n",
-                            "=============================\n",
-                            "Score: ", if(is.numeric(programming_anxiety)) round(programming_anxiety, 2) else programming_anxiety, "/5\n",
-                            "Interpretation: ", if(is.numeric(programming_anxiety)) {
-                                if(programming_anxiety < 2.5) "Low anxiety" else if(programming_anxiety < 3.5) "Moderate anxiety" else "High anxiety"
-                            } else "N/A", "\n\n",
-                            "ADDITIONAL MEASURES\n",
-                            "===================\n",
-                            "• Stress Level: ", if(is.numeric(stress)) round(stress, 2) else stress, "/5\n",
-                            "• Study Skills: ", if(is.numeric(study_skills)) round(study_skills, 2) else study_skills, "/5\n",
-                            "• Statistics Confidence: ", if(is.numeric(statistics)) round(statistics, 2) else statistics, "/5\n\n",
-                            "RECOMMENDATIONS\n",
-                            "===============\n",
-                            "Based on your results, consider:\n",
-                            "• Working on stress management techniques\n",
-                            "• Developing study strategies\n",
-                            "• Practicing programming regularly\n",
-                            "• Seeking support when needed\n\n",
-                            "Thank you for participating in the HilFo study!\n",
-                            "For questions, contact: selvastics@uni-hildesheim.de\n\n",
-                            "---\n",
-                            "Complete data available in CSV format"
-                        )
-                        
-                        # Create download using JavaScript
-                        shiny::runjs(sprintf("
-                            var content = %s;
-                            var blob = new Blob([content], { type: 'text/plain' });
-                            var url = window.URL.createObjectURL(blob);
-                            var link = document.createElement('a');
-                            link.href = url;
-                            link.download = 'HilFo_Results_' + new Date().toISOString().slice(0,19).replace(/:/g, '-') + '.txt';
-                            link.style.visibility = 'hidden';
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                            window.URL.revokeObjectURL(url);
-                        ", jsonlite::toJSON(pdf_content)))
-                        
-                    } else {
-                        shiny::runjs("downloadPDFFallback();")
-                    }
-                }, error = function(e) {
-                    cat("PDF download error:", e$message, "\n")
-                    shiny::runjs("downloadPDFFallback();")
-                })
-            })
-            
-            # Handle CSV download trigger
-            shiny::observeEvent(input$download_csv_trigger, {
-                cat("CSV download trigger received\n")
-                tryCatch({
-                    if (exists("complete_data", envir = .GlobalEnv)) {
-                        data <- get("complete_data", envir = .GlobalEnv)
-                        
-                        # Extract scores from complete_data
-                        extraversion <- if("BFI_Extraversion" %in% names(data)) data$BFI_Extraversion[1] else "N/A"
-                        agreeableness <- if("BFI_Vertraeglichkeit" %in% names(data)) data$BFI_Vertraeglichkeit[1] else "N/A"
-                        conscientiousness <- if("BFI_Gewissenhaftigkeit" %in% names(data)) data$BFI_Gewissenhaftigkeit[1] else "N/A"
-                        neuroticism <- if("BFI_Neurotizismus" %in% names(data)) data$BFI_Neurotizismus[1] else "N/A"
-                        openness <- if("BFI_Offenheit" %in% names(data)) data$BFI_Offenheit[1] else "N/A"
-                        programming_anxiety <- if("ProgrammingAnxiety" %in% names(data)) data$ProgrammingAnxiety[1] else "N/A"
-                        stress <- if("PSQ_Stress" %in% names(data)) data$PSQ_Stress[1] else "N/A"
-                        study_skills <- if("MWS_Studierfaehigkeiten" %in% names(data)) data$MWS_Studierfaehigkeiten[1] else "N/A"
-                        statistics <- if("Statistik" %in% names(data)) data$Statistik[1] else "N/A"
-                        
-                        # Create comprehensive CSV content with all data
-                        # Include all responses, demographics, and calculated scores
-                        csv_data <- data.frame(
-                            timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
-                            participant_id = "HILFO_PARTICIPANT",
-                            study_language = ifelse(exists("is_english") && is_english, "en", "de"),
-                            data_type = c("study_completed", "extraversion", "agreeableness", "conscientiousness", "neuroticism", "openness", "programming_anxiety", "stress_level", "study_skills", "statistics_confidence"),
-                            value = c("true", 
-                                    if(is.numeric(extraversion)) round(extraversion, 2) else extraversion,
-                                    if(is.numeric(agreeableness)) round(agreeableness, 2) else agreeableness,
-                                    if(is.numeric(conscientiousness)) round(conscientiousness, 2) else conscientiousness,
-                                    if(is.numeric(neuroticism)) round(neuroticism, 2) else neuroticism,
-                                    if(is.numeric(openness)) round(openness, 2) else openness,
-                                    if(is.numeric(programming_anxiety)) round(programming_anxiety, 2) else programming_anxiety,
-                                    if(is.numeric(stress)) round(stress, 2) else stress,
-                                    if(is.numeric(study_skills)) round(study_skills, 2) else study_skills,
-                                    if(is.numeric(statistics)) round(statistics, 2) else statistics
-                            ),
-                            stringsAsFactors = FALSE
-                        )
-                        
-                        # Add all individual item responses
-                        if (exists("responses") && !is.null(responses)) {
-                            item_responses <- data.frame(
-                                timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
-                                participant_id = "HILFO_PARTICIPANT",
-                                study_language = ifelse(exists("is_english") && is_english, "en", "de"),
-                                data_type = paste0("item_response_", 1:length(responses)),
-                                value = as.character(responses),
-                                stringsAsFactors = FALSE
-                            )
-                            csv_data <- rbind(csv_data, item_responses)
-                        }
-                        
-                        # Add demographic data
-                        if (exists("demographics") && !is.null(demographics)) {
-                            demo_data <- data.frame(
-                                timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
-                                participant_id = "HILFO_PARTICIPANT",
-                                study_language = ifelse(exists("is_english") && is_english, "en", "de"),
-                                data_type = paste0("demographic_", names(demographics)),
-                                value = as.character(unlist(demographics)),
-                                stringsAsFactors = FALSE
-                            )
-                            csv_data <- rbind(csv_data, demo_data)
-                        }
-                        
-                        csv_content <- utils::capture.output(write.csv(csv_data, row.names = FALSE))
-                        csv_string <- paste(csv_content, collapse = "\n")
-                        
-                        # Create download using JavaScript
-                        shiny::runjs(sprintf("
-                            var csvContent = %s;
-                            var blob = new Blob([csvContent], { type: 'text/csv' });
-                            var url = window.URL.createObjectURL(blob);
-                            var link = document.createElement('a');
-                            link.href = url;
-                            link.download = 'HilFo_Data_' + new Date().toISOString().slice(0,19).replace(/:/g, '-') + '.csv';
-                            link.style.visibility = 'hidden';
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                            window.URL.revokeObjectURL(url);
-                        ", jsonlite::toJSON(csv_string)))
-                        
-                    } else {
-                        shiny::runjs("downloadCSVFallback();")
-                    }
-                }, error = function(e) {
-                    cat("CSV download error:", e$message, "\n")
-                    shiny::runjs("downloadCSVFallback();")
-                })
-            })
-        }
-    )
-    # No custom CSS needed - inrep handles theming
-    # No admin dashboard hook needed - inrep handles monitoring
+    save_format = "csv"
 )
