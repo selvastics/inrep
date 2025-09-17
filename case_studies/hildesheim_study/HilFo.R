@@ -888,98 +888,32 @@ custom_page_flow <- list(
         demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st")
     ),
     
-    # Page 20: Personal Code - beautiful custom design like Page 1
+    # Page 20: Personal Code - use simple working approach
     list(
         id = "page20",
         type = "custom",
         title = "Persönlicher Code",
-        title_en = "Personal Code",
+        title_en = "Personal Code", 
         content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
-      <div id="content_de_pc">
-        <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
-          Persönlicher Code
-        </h2>
-        <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
-          Bitte erstellen Sie einen persönlichen Code:
-        </p>
-        <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-          <p style="margin: 0; font-weight: 500;">
-            Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags
-          </p>
-        </div>
-        <div style="text-align: center; margin: 30px 0;">
-          <input type="text" id="personal_code" placeholder="z.B. MAHA15" style="
-            padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
-            text-align: center; width: 200px; text-transform: uppercase;" required>
-        </div>
-        <div style="text-align: center; color: #666; font-size: 14px;">
-          Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15
-        </div>
+      <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Persönlicher Code</h2>
+      <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">Bitte erstellen Sie einen persönlichen Code:</p>
+      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+        <p style="margin: 0; font-weight: 500;">Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</p>
       </div>
-      
-      <div id="content_en_pc" style="display: none;">
-        <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
-          Personal Code
-        </h2>
-        <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
-          Please create a personal code:
-        </p>
-        <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-          <p style="margin: 0; font-weight: 500;">
-            First 2 letters of your mothers first name + first 2 letters of your birthplace + day of your birthday
-          </p>
-        </div>
-        <div style="text-align: center; margin: 30px 0;">
-          <input type="text" id="personal_code_en" placeholder="e.g. MAHA15" style="
-            padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
-            text-align: center; width: 200px; text-transform: uppercase;" required>
-        </div>
-        <div style="text-align: center; color: #666; font-size: 14px;">
-          Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15
-        </div>
+      <div style="text-align: center; margin: 30px 0;">
+        <input type="text" id="personal_code" placeholder="z.B. MAHA15" style="padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; text-align: center; width: 200px; text-transform: uppercase;" required>
       </div>
+      <div style="text-align: center; color: #666; font-size: 14px;">Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</div>
     </div>
     <script>
     document.addEventListener("DOMContentLoaded", function() {
-      function switchLanguage() {
-        var isEnglish = sessionStorage.getItem("hilfo_language_preference") === "en" ||
-                        sessionStorage.getItem("current_language") === "en" ||
-                        sessionStorage.getItem("hilfo_language") === "en";
-        
-        var deContent = document.getElementById("content_de_pc");
-        var enContent = document.getElementById("content_en_pc");
-        
-        if (isEnglish && deContent && enContent) {
-          deContent.style.display = "none";
-          enContent.style.display = "block";
-        } else if (deContent && enContent) {
-          deContent.style.display = "block";
-          enContent.style.display = "none";
-        }
+      var input = document.getElementById("personal_code");
+      if (input) {
+        input.addEventListener("input", function() { this.value = this.value.toUpperCase(); });
+        input.addEventListener("blur", function() {
+          if (this.value.trim() !== "") Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
+        });
       }
-      
-      // Apply language switching
-      switchLanguage();
-      setTimeout(switchLanguage, 100);
-      setTimeout(switchLanguage, 500);
-      
-      // Set up input functionality for both inputs
-      function setupInput(inputId) {
-        var input = document.getElementById(inputId);
-        if (input) {
-          input.addEventListener("input", function() {
-            this.value = this.value.toUpperCase();
-          });
-          input.addEventListener("blur", function() {
-            if (this.value.trim() !== "") {
-              Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
-            }
-          });
-        }
-      }
-      
-      setupInput("personal_code");
-      setupInput("personal_code_en");
     });
     </script>',
     ),
