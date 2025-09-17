@@ -452,7 +452,7 @@ demographic_configs <- list(
         html_content_debug = "This field should have HTML content!",
         # NEW: Self-contained HTML content with built-in language switching
         html_content = '<div id="personal-code-container" style="padding: 20px; font-size: 16px; line-height: 1.8;">
-          <div id="content-de">
+          <div id="content-de" style="display: block;">
             <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Persönlicher Code</h2>
             <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">Bitte erstellen Sie einen persönlichen Code:</p>
             <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
@@ -475,96 +475,51 @@ demographic_configs <- list(
             <div style="text-align: center; color: #666; font-size: 14px;">Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</div>
           </div>
           <script>
-          // Universal language detection and switching - works for any study
+          // SIMPLE and AGGRESSIVE language detection - FORCE English when selected
           document.addEventListener("DOMContentLoaded", function() {
-            function detectLanguage() {
-              // Check multiple possible language storage locations
-              var lang = sessionStorage.getItem("hilfo_language_preference") ||
-                        sessionStorage.getItem("global_language_preference") ||
-                        sessionStorage.getItem("current_language") ||
-                        sessionStorage.getItem("hilfo_language") ||
-                        sessionStorage.getItem("study_language") ||
-                        localStorage.getItem("user_language") ||
-                        "de";
+            function forceLanguageSwitch() {
+              // Check if ANY sessionStorage value indicates English
+              var isEnglish = sessionStorage.getItem("hilfo_language_preference") === "en" ||
+                             sessionStorage.getItem("global_language_preference") === "en" ||
+                             sessionStorage.getItem("current_language") === "en" ||
+                             sessionStorage.getItem("hilfo_language") === "en";
               
-              // DEBUG: Log all storage values
-              console.log("=== PERSONAL CODE LANGUAGE DEBUG ===");
+              var contentDe = document.getElementById("content-de");
+              var contentEn = document.getElementById("content-en");
+              
+              console.log("=== PERSONAL CODE FORCE SWITCH ===");
+              console.log("Is English?", isEnglish);
               console.log("hilfo_language_preference:", sessionStorage.getItem("hilfo_language_preference"));
               console.log("global_language_preference:", sessionStorage.getItem("global_language_preference"));
               console.log("current_language:", sessionStorage.getItem("current_language"));
               console.log("hilfo_language:", sessionStorage.getItem("hilfo_language"));
-              console.log("study_language:", sessionStorage.getItem("study_language"));
-              console.log("user_language:", localStorage.getItem("user_language"));
-              console.log("Final detected language:", lang);
-              console.log("=====================================");
+              console.log("====================================");
               
-              return lang;
-            }
-            
-            function switchLanguage() {
-              var currentLang = detectLanguage();
-              var contentDe = document.getElementById("content-de");
-              var contentEn = document.getElementById("content-en");
-              var inputDe = document.getElementById("Persönlicher_Code");
-              var inputEn = document.getElementById("Persönlicher_Code_en");
-              
-              console.log("Switching Personal Code to language:", currentLang);
-              console.log("Content DE element:", contentDe);
-              console.log("Content EN element:", contentEn);
-              
-              if (currentLang === "en") {
-                if (contentDe) {
-                  contentDe.style.display = "none";
-                  // Sync value from German to English input
-                  if (inputDe && inputEn && inputDe.value) {
-                    inputEn.value = inputDe.value;
-                  }
-                }
-                if (contentEn) {
-                  contentEn.style.display = "block";
-                }
-                console.log("Personal Code: Showing English content");
+              if (isEnglish) {
+                if (contentDe) contentDe.style.display = "none";
+                if (contentEn) contentEn.style.display = "block";
+                console.log("FORCING ENGLISH DISPLAY");
               } else {
-                if (contentEn) {
-                  contentEn.style.display = "none";
-                  // Sync value from English to German input
-                  if (inputDe && inputEn && inputEn.value) {
-                    inputDe.value = inputEn.value;
-                  }
-                }
-                if (contentDe) {
-                  contentDe.style.display = "block";
-                }
-                console.log("Personal Code: Showing German content");
+                if (contentEn) contentEn.style.display = "none";
+                if (contentDe) contentDe.style.display = "block";
+                console.log("SHOWING GERMAN (DEFAULT)");
               }
             }
             
-            // Switch language on load
-            setTimeout(switchLanguage, 100); // Small delay to ensure sessionStorage is ready
+            // Multiple aggressive attempts to switch language
+            setTimeout(forceLanguageSwitch, 10);
+            setTimeout(forceLanguageSwitch, 100);
+            setTimeout(forceLanguageSwitch, 300);
+            setTimeout(forceLanguageSwitch, 600);
+            setTimeout(forceLanguageSwitch, 1000);
             
-            // Sync input values between German and English fields
-            setTimeout(function() {
-              var inputDe = document.getElementById("Persönlicher_Code");
-              var inputEn = document.getElementById("Persönlicher_Code_en");
-              
-              if (inputDe && inputEn) {
-                // Sync DE to EN when typing in German field
-                inputDe.addEventListener("input", function() {
-                  inputEn.value = inputDe.value;
-                });
-                
-                // Sync EN to DE when typing in English field
-                inputEn.addEventListener("input", function() {
-                  inputDe.value = inputEn.value;
-                });
-              }
+            // Keep checking every 200ms for first 5 seconds
+            var attempts = 0;
+            var checker = setInterval(function() {
+              forceLanguageSwitch();
+              attempts++;
+              if (attempts > 25) clearInterval(checker); // Stop after 5 seconds
             }, 200);
-            
-            // Listen for language changes
-            window.addEventListener("storage", switchLanguage);
-            
-            // Also check periodically for language changes (more frequent check)
-            setInterval(switchLanguage, 500);
           });
           </script>
         </div>'
