@@ -3457,7 +3457,12 @@ launch_study <- function(
                       # Return the complete form group
                       shiny::div(
                         class = "form-group",
-                        shiny::tags$label(label_text, class = "input-label"),
+                        # Check if label_text contains HTML tags, if so render as HTML
+                        if (grepl("<[^>]+>", label_text)) {
+                          shiny::div(class = "input-label", shiny::HTML(label_text))
+                        } else {
+                          shiny::tags$label(label_text, class = "input-label")
+                        },
                         input_element,
                         if (!base::is.null(demo_config$help_text)) {
                           shiny::tags$small(class = "form-text text-muted", demo_config$help_text)
