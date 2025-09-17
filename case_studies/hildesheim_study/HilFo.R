@@ -646,7 +646,18 @@ custom_page_flow <- list(
         type = "demographics",
         title = "Soziodemographische Angaben",
         title_en = "Sociodemographic Information",
-        demographics = c("Alter_VPN", "Studiengang", "Geschlecht")
+        demographics = c("Alter_VPN", "Studiengang", "Geschlecht"),
+        content = '<script>
+          // Page 2 language detection
+          document.addEventListener("DOMContentLoaded", function() {
+            var langPref = sessionStorage.getItem("hilfo_language_preference") || "de";
+            console.log("Page 2 language preference:", langPref);
+            if (langPref === "en" && typeof Shiny !== "undefined") {
+              console.log("Page 2 switching to English");
+              Shiny.setInputValue("study_language", "en", {priority: "event"});
+            }
+          });
+        </script>'
     ),
     
     # Page 3: Living situation
@@ -655,7 +666,17 @@ custom_page_flow <- list(
         type = "demographics",
         title = "Wohnsituation",
         title_en = "Living Situation",
-        demographics = c("Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz")
+        demographics = c("Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz"),
+        content = '<script>
+          document.addEventListener("DOMContentLoaded", function() {
+            var langPref = sessionStorage.getItem("hilfo_language_preference") || "de";
+            console.log("Page 3 language preference:", langPref);
+            if (langPref === "en" && typeof Shiny !== "undefined") {
+              console.log("Page 3 switching to English");
+              Shiny.setInputValue("study_language", "en", {priority: "event"});
+            }
+          });
+        </script>'
     ),
     
     # Page 4: Lifestyle
