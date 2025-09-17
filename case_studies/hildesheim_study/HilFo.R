@@ -448,6 +448,8 @@ demographic_configs <- list(
         question_en = "Please create a personal code (first 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday). Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15",
         type = "text",
         required = FALSE,
+        # DEBUG: HTML content presence
+        html_content_debug = "This field should have HTML content!",
         # NEW: Self-contained HTML content with built-in language switching
         html_content = '<div id="personal-code-container" style="padding: 20px; font-size: 16px; line-height: 1.8;">
           <div id="content-de">
@@ -916,9 +918,9 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             responses <- csv_env$responses
             
             # Calculate BFI scores from responses (items 21-40)
-            if (!is.null(responses) && length(responses) >= 40) {
-                bfi_responses <- responses[21:40]
-                if (!is.null(bfi_responses) && length(bfi_responses) >= 20 && !all(is.na(bfi_responses))) {
+        if (!is.null(responses) && is.vector(responses) && length(responses) >= 40) {
+            bfi_responses <- responses[21:40]
+            if (!is.null(bfi_responses) && is.vector(bfi_responses) && length(bfi_responses) >= 20 && !all(is.na(bfi_responses))) {
                     csv_env$csv_data$BFI_Extraversion <- mean(c(bfi_responses[1:4]), na.rm = TRUE)
                     csv_env$csv_data$BFI_Vertraeglichkeit <- mean(c(bfi_responses[5:8]), na.rm = TRUE)
                     csv_env$csv_data$BFI_Gewissenhaftigkeit <- mean(c(bfi_responses[9:12]), na.rm = TRUE)
@@ -928,21 +930,27 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             }
             
             # Calculate PSQ Stress (items 41-45)
-            if (!is.null(responses) && length(responses) >= 45) {
+            if (!is.null(responses) && is.vector(responses) && length(responses) >= 45) {
                 stress_responses <- responses[41:45]
-                csv_env$csv_data$PSQ_Stress <- mean(stress_responses, na.rm = TRUE)
+                if (!is.null(stress_responses) && is.vector(stress_responses) && length(stress_responses) > 0) {
+                    csv_env$csv_data$PSQ_Stress <- mean(stress_responses, na.rm = TRUE)
+                }
             }
             
             # Calculate MWS Study Skills (items 46-49)
-            if (!is.null(responses) && length(responses) >= 49) {
+            if (!is.null(responses) && is.vector(responses) && length(responses) >= 49) {
                 study_responses <- responses[46:49]
-                csv_env$csv_data$MWS_Studierfaehigkeiten <- mean(study_responses, na.rm = TRUE)
+                if (!is.null(study_responses) && is.vector(study_responses) && length(study_responses) > 0) {
+                    csv_env$csv_data$MWS_Studierfaehigkeiten <- mean(study_responses, na.rm = TRUE)
+                }
             }
             
             # Calculate Statistics (items 50-51)
-            if (!is.null(responses) && length(responses) >= 51) {
+            if (!is.null(responses) && is.vector(responses) && length(responses) >= 51) {
                 stats_responses <- responses[50:51]
-                csv_env$csv_data$Statistik <- mean(stats_responses, na.rm = TRUE)
+                if (!is.null(stats_responses) && is.vector(stats_responses) && length(stats_responses) > 0) {
+                    csv_env$csv_data$Statistik <- mean(stats_responses, na.rm = TRUE)
+                }
             }
         }
         return(NULL)  # Don't generate HTML report for CSV export
@@ -1035,7 +1043,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         # Additional debug output
         cat("DEBUG: Final language settings - current_lang:", current_lang, ", is_english:", is_english, "\n")
         
-        if (is.null(responses) || length(responses) == 0) {
+        if (is.null(responses) || !is.vector(responses) || length(responses) == 0) {
             if (is_english) {
                 return(shiny::HTML("<p>No responses available for evaluation.</p>"))
             } else {
