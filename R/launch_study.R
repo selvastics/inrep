@@ -2726,14 +2726,6 @@ launch_study <- function(
       }, delay = 0)  # ZERO delay - immediate execution
     }
     
-    # Return the main UI container
-    return(shiny::div(
-      id = "main-study-container",
-      style = "min-height: 500px; width: 100%; max-width: 100%; margin: 0 auto; padding: 0; position: relative; overflow: hidden;",
-      shiny::uiOutput("page_content")
-    ))
-    })
-    
     # Single language observer - handles language switching efficiently
     shiny::observeEvent(input$study_language, {
       if (!is.null(input$study_language)) {
@@ -2776,6 +2768,22 @@ launch_study <- function(
         # Store globally for HilFo report access
         assign("hilfo_language_preference", input$store_language_globally, envir = .GlobalEnv)
         cat("Stored language globally for HilFo:", input$store_language_globally, "\n")
+        
+        # CRITICAL: Also update the current language for immediate effect
+        new_lang <- input$store_language_globally
+        if (new_lang %in% c("en", "de")) {
+          current_language(new_lang)
+          rv$language <- new_lang
+          
+          # Update UI labels for immediate effect
+          new_labels <- get_language_labels(new_lang)
+          reactive_ui_labels(new_labels)
+          
+          # Store in session userData for access by render functions
+          session$userData$language <- new_lang
+          
+          cat("HILFO: Immediately switched current page to:", new_lang, "\n")
+        }
         
         # CRITICAL: Also update the current language for immediate effect
         new_lang <- input$store_language_globally
@@ -2901,12 +2909,7 @@ launch_study <- function(
       })
     })
     
-    # End of server function - create and return Shiny app
-  }
-  
-  # Create the Shiny application
-  app <- shiny::shinyApp(ui = ui, server = server)
-  
-  # Return the app
-  return(app)
+    # Return the Shiny app
+    return(app)
+  })
 }
