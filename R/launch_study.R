@@ -2524,84 +2524,6 @@ launch_study <- function(
     shiny::uiOutput("study_ui", style = "position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; margin: 0 auto !important; transform: none !important; width: 100% !important; max-width: 1200px !important; display: block !important; visibility: visible !important; opacity: 1 !important;")
   )
   
-  # Process custom page flow with language switching support
-  process_page_flow <- function(config, rv, input, output, session, item_bank, ui_labels, logger, auto_close_time, auto_close_time_unit, disable_auto_close) {
-    if (is.null(config$custom_page_flow) || rv$current_page > length(config$custom_page_flow)) {
-      return(shiny::div("Invalid page"))
-    }
-    
-    current_page_config <- config$custom_page_flow[[rv$current_page]]
-    current_lang <- rv$language %||% config$language %||% "de"
-    
-    # Get page title (with language support)
-    page_title <- if (current_lang == "en" && !is.null(current_page_config$title_en)) {
-      current_page_config$title_en
-    } else {
-      current_page_config$title %||% ""
-    }
-    
-    # Process different page types
-    if (current_page_config$type == "custom") {
-      # Handle custom pages with language switching
-      content_html <- current_page_config$content %||% ""
-      
-      # Add language switching JavaScript if translations are provided
-      if (!is.null(current_page_config$translations)) {
-        # Create JavaScript object with translations
-        translations_js <- paste0(
-          "<script>",
-          "window.inrepTranslations = ", jsonlite::toJSON(current_page_config$translations, auto_unbox = TRUE), ";",
-          "document.addEventListener('DOMContentLoaded', function() {",
-          "  var currentLang = '", current_lang, "';",
-          "  var isEnglish = (currentLang === 'en');",
-          "  ",
-          "  // Apply translations to data-translate elements",
-          "  document.querySelectorAll('[data-translate]').forEach(function(element) {",
-          "    var key = element.getAttribute('data-translate');",
-          "    if (window.inrepTranslations[key]) {",
-          "      var text = isEnglish ? window.inrepTranslations[key].en : window.inrepTranslations[key].de;",
-          "      if (text) element.textContent = text;",
-          "    }",
-          "  });",
-          "  ",
-          "  // Apply translations to data-translate-placeholder elements", 
-          "  document.querySelectorAll('[data-translate-placeholder]').forEach(function(element) {",
-          "    var key = element.getAttribute('data-translate-placeholder');",
-          "    if (window.inrepTranslations[key]) {",
-          "      var text = isEnglish ? window.inrepTranslations[key].en : window.inrepTranslations[key].de;",
-          "      if (text) element.placeholder = text;",
-          "    }",
-          "  });",
-          "});",
-          "</script>"
-        )
-        content_html <- paste0(content_html, translations_js)
-      }
-      
-      return(shiny::div(
-        class = "assessment-card",
-        if (page_title != "") shiny::h3(page_title, class = "card-header"),
-        shiny::HTML(content_html),
-        shiny::div(class = "nav-buttons",
-          if (rv$current_page > 1) {
-            shiny::actionButton("prev_page", "Previous", class = "btn-secondary",
-                               onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
-          },
-          if (rv$current_page < rv$total_pages) {
-            shiny::actionButton("next_page", "Next", class = "btn-primary",
-                               onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
-          } else {
-            shiny::actionButton("submit_test", "Submit", class = "btn-success",
-                               onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
-          }
-        )
-      ))
-    } else {
-      # For other page types, return placeholder (existing logic should handle these)
-      return(shiny::div("Processing page..."))
-    }
-  }
-
   server <- function(input, output, session) {
     # LATER PACKAGE: IMMEDIATE UI DISPLAY - Show UI first, load everything else later
     if (immediate_ui) {
@@ -2819,7 +2741,7 @@ launch_study <- function(
         config$language <<- new_lang
         
         # Store globally for HilFo report access
-        assign("global_language_preference", new_lang, envir = .GlobalEnv)
+        assign("hilfo_language_preference", new_lang, envir = .GlobalEnv)
         
         # Log the change
         cat("Language switched to:", new_lang, "\n")
@@ -2829,12 +2751,12 @@ launch_study <- function(
       }
     })
     
-    # Generic language storage observer (works for all studies)
+    # Also observe store_language_globally for HilFo
     shiny::observeEvent(input$store_language_globally, {
       if (!is.null(input$store_language_globally)) {
-        # Store language preference globally for any study that needs it
-        assign("global_language_preference", input$store_language_globally, envir = .GlobalEnv)
-        cat("Stored language globally:", input$store_language_globally, "\n")
+        # Store globally for HilFo report access
+        assign("hilfo_language_preference", input$store_language_globally, envir = .GlobalEnv)
+        cat("Stored language globally for HilFo:", input$store_language_globally, "\n")
         
         # Update language for FUTURE pages only (not current page to prevent loops)
         new_lang <- input$store_language_globally
@@ -2845,17 +2767,17 @@ launch_study <- function(
             current_language(new_lang)
             rv$language <- new_lang
             session$userData$language <- new_lang
-            cat("Language switched for current page to:", new_lang, "\n")
+            cat("HILFO: Switched current page to:", new_lang, "\n")
           } else {
             # For page 1, just store for future use without triggering re-render
             session$userData$language <- new_lang
-            cat("Language preference stored for future pages:", new_lang, "\n")
+            cat("HILFO: Language preference stored for future pages:", new_lang, "\n")
           }
         }
       }
     })
     
-    # Generic PDF download observer (works for all studies)
+    # Observe PDF download trigger from HilFo
     shiny::observeEvent(input$download_pdf_trigger, {
       cat("PDF download triggered\n")
       # Generate PDF content
@@ -2874,40 +2796,6 @@ launch_study <- function(
           shiny::HTML("<p>No report available</p>")
         }
         
-        # Add automatic language switching JavaScript for custom pages
-        language_js <- sprintf("
-        <script>
-        document.addEventListener('DOMContentLoaded', function() {
-          // Apply inrep language switching to custom pages
-          function applyInrepLanguage() {
-            var currentLang = '%s';
-            var isEnglish = (currentLang === 'en');
-            
-            // Handle data-translate attributes
-            document.querySelectorAll('[data-translate]').forEach(function(element) {
-              var key = element.getAttribute('data-translate');
-              if (window.inrepTranslations && window.inrepTranslations[key]) {
-                var text = isEnglish ? window.inrepTranslations[key].en : window.inrepTranslations[key].de;
-                if (text) element.textContent = text;
-              }
-            });
-            
-            // Handle data-translate-placeholder attributes
-            document.querySelectorAll('[data-translate-placeholder]').forEach(function(element) {
-              var key = element.getAttribute('data-translate-placeholder');
-              if (window.inrepTranslations && window.inrepTranslations[key]) {
-                var text = isEnglish ? window.inrepTranslations[key].en : window.inrepTranslations[key].de;
-                if (text) element.placeholder = text;
-              }
-            });
-          }
-          
-          applyInrepLanguage();
-          setTimeout(applyInrepLanguage, 100);
-        });
-        </script>
-        ", rv$language %||% "de")
-        
         # Create a temporary HTML file
         temp_html <- tempfile(fileext = ".html")
         writeLines(as.character(report_html), temp_html)
@@ -2925,13 +2813,13 @@ launch_study <- function(
       })
     })
     
-    # Generic CSV download observer (works for all studies)
+    # Observe CSV download trigger from HilFo
     shiny::observeEvent(input$download_csv_trigger, {
       cat("CSV download triggered\n")
-      # Try to find the most recent CSV file created by results processor
+      # Try to find the most recent CSV file created by create_hilfo_report
       tryCatch({
-        # Look for the most recent results CSV file (generic pattern)
-        csv_files <- list.files(pattern = ".*_results_.*\\.csv$", full.names = TRUE)
+        # Look for the most recent hilfo_results CSV file
+        csv_files <- list.files(pattern = "hilfo_results_.*\\.csv$", full.names = TRUE)
         if (length(csv_files) > 0) {
           # Get the most recent file
           most_recent <- csv_files[which.max(file.mtime(csv_files))]
@@ -2948,7 +2836,7 @@ launch_study <- function(
               var url = window.URL.createObjectURL(blob);
               var a = document.createElement('a');
               a.href = url;
-              a.download = 'study_results_%s.csv';
+              a.download = 'hilfo_results_%s.csv';
               document.body.appendChild(a);
               a.click();
               document.body.removeChild(a);
@@ -2994,28 +2882,53 @@ launch_study <- function(
             }
           }
           
-          # Let the study's results processor handle any additional data processing
-          # This keeps launch_study.R generic while allowing studies to customize their CSV
-          if (!is.null(config$results_processor) && is.function(config$results_processor)) {
-            # Call results processor to potentially add calculated scores
-            # The results processor can modify csv_data if it needs to add study-specific columns
-            tryCatch({
-              # Some studies might want to add calculated scores to the CSV
-              # They can do this in their results processor by checking for csv_data
-              temp_env <- new.env()
-              temp_env$csv_data <- csv_data
-              temp_env$responses <- rv$responses
-              temp_env$demo_data <- rv$demo_data
-              
-              # Call results processor (it can modify csv_data if needed)
-              config$results_processor(rv$responses, item_bank, rv$demo_data, list(csv_export = temp_env))
-              
-              # Get back any modifications
-              csv_data <- temp_env$csv_data
-            }, error = function(e) {
-              # If results processor fails, continue with basic CSV
-              cat("Results processor failed for CSV enhancement:", e$message, "\n")
-            })
+          # Add calculated scores - SAME LOGIC as create_hilfo_report
+          # Calculate BFI scores from responses (items 21-40)
+          if (!is.null(rv$responses) && length(rv$responses) >= 40) {
+            bfi_responses <- rv$responses[21:40]
+            if (length(bfi_responses) >= 20) {
+              csv_data$BFI_Extraversion <- mean(c(bfi_responses[1:4]), na.rm = TRUE)
+              csv_data$BFI_Vertraeglichkeit <- mean(c(bfi_responses[5:8]), na.rm = TRUE)
+              csv_data$BFI_Gewissenhaftigkeit <- mean(c(bfi_responses[9:12]), na.rm = TRUE)
+              csv_data$BFI_Neurotizismus <- mean(c(bfi_responses[13:16]), na.rm = TRUE)
+              csv_data$BFI_Offenheit <- mean(c(bfi_responses[17:20]), na.rm = TRUE)
+            } else {
+              csv_data$BFI_Extraversion <- NA
+              csv_data$BFI_Vertraeglichkeit <- NA
+              csv_data$BFI_Gewissenhaftigkeit <- NA
+              csv_data$BFI_Neurotizismus <- NA
+              csv_data$BFI_Offenheit <- NA
+            }
+          } else {
+            csv_data$BFI_Extraversion <- NA
+            csv_data$BFI_Vertraeglichkeit <- NA
+            csv_data$BFI_Gewissenhaftigkeit <- NA
+            csv_data$BFI_Neurotizismus <- NA
+            csv_data$BFI_Offenheit <- NA
+          }
+          
+          # Calculate PSQ Stress (items 41-45)
+          if (!is.null(rv$responses) && length(rv$responses) >= 45) {
+            stress_responses <- rv$responses[41:45]
+            csv_data$PSQ_Stress <- mean(stress_responses, na.rm = TRUE)
+          } else {
+            csv_data$PSQ_Stress <- NA
+          }
+          
+          # Calculate MWS Study Skills (items 46-49)
+          if (!is.null(rv$responses) && length(rv$responses) >= 49) {
+            study_responses <- rv$responses[46:49]
+            csv_data$MWS_Studierfaehigkeiten <- mean(study_responses, na.rm = TRUE)
+          } else {
+            csv_data$MWS_Studierfaehigkeiten <- NA
+          }
+          
+          # Calculate Statistics (items 50-51)
+          if (!is.null(rv$responses) && length(rv$responses) >= 51) {
+            stats_responses <- rv$responses[50:51]
+            csv_data$Statistik <- mean(stats_responses, na.rm = TRUE)
+          } else {
+            csv_data$Statistik <- NA
           }
           
           # Convert to CSV string
@@ -3029,7 +2942,7 @@ launch_study <- function(
               var url = window.URL.createObjectURL(blob);
               var a = document.createElement('a');
               a.href = url;
-              a.download = 'study_results_%s.csv';
+              a.download = 'hilfo_results_%s.csv';
               document.body.appendChild(a);
               a.click();
               document.body.removeChild(a);
@@ -4574,13 +4487,13 @@ launch_study <- function(
           logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
           
           # Apply stored language preference when moving FROM page 1 to other pages
-          if (old_page == 1 && exists("global_language_preference", envir = .GlobalEnv)) {
-            stored_lang <- get("global_language_preference", envir = .GlobalEnv)
+          if (old_page == 1 && exists("hilfo_language_preference", envir = .GlobalEnv)) {
+            stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
             if (!is.null(stored_lang) && stored_lang %in% c("en", "de")) {
               current_language(stored_lang)
               rv$language <- stored_lang
               session$userData$language <- stored_lang
-              cat("Applied language preference when leaving page 1:", stored_lang, "\n")
+              cat("HILFO: Applied language preference when leaving page 1:", stored_lang, "\n")
             }
           }
           
@@ -4633,7 +4546,7 @@ launch_study <- function(
           
           # When moving TO page 1, don't apply language changes to prevent loops
           if (rv$current_page == 1) {
-            cat("Moved back to page 1 - language switching handled by page itself\n")
+            cat("HILFO: Moved back to page 1 - language switching handled by page itself\n")
           }
           
           # Log page switch and update start time

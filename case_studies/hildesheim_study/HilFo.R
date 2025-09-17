@@ -817,7 +817,7 @@ custom_page_flow <- list(
         demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st")
     ),
     
-    # Page 20: Personal Code - simple working version
+    # Page 20: Personal Code
     list(
         id = "page20",
         type = "demographics",
