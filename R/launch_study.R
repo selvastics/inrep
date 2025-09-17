@@ -2524,6 +2524,46 @@ launch_study <- function(
     shiny::uiOutput("study_ui", style = "position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; margin: 0 auto !important; transform: none !important; width: 100% !important; max-width: 1200px !important; display: block !important; visibility: visible !important; opacity: 1 !important;")
   )
   
+  # Missing function that processes custom page flow
+  process_page_flow <- function(config, rv, input, output, session, item_bank, ui_labels, logger, auto_close_time, auto_close_time_unit, disable_auto_close) {
+    if (is.null(config$custom_page_flow) || rv$current_page > length(config$custom_page_flow)) {
+      return(shiny::div("Invalid page"))
+    }
+    
+    current_page_config <- config$custom_page_flow[[rv$current_page]]
+    current_lang <- rv$language %||% config$language %||% "de"
+    
+    # Get page title with language support
+    page_title <- if (current_lang == "en" && !is.null(current_page_config$title_en)) {
+      current_page_config$title_en
+    } else {
+      current_page_config$title %||% ""
+    }
+    
+    if (current_page_config$type == "custom") {
+      # Render custom page content
+      content_html <- current_page_config$content %||% "No content defined"
+      
+      return(shiny::div(
+        class = "assessment-card",
+        if (page_title != "") shiny::h3(page_title, class = "card-header"),
+        shiny::HTML(content_html),
+        shiny::div(class = "nav-buttons",
+          if (rv$current_page > 1) {
+            shiny::actionButton("prev_page", "Previous", class = "btn-secondary")
+          },
+          if (rv$current_page < rv$total_pages) {
+            shiny::actionButton("next_page", "Next", class = "btn-primary")
+          } else {
+            shiny::actionButton("submit_test", "Submit", class = "btn-success")
+          }
+        )
+      ))
+    } else {
+      return(shiny::div("Page type not supported in process_page_flow"))
+    }
+  }
+
   server <- function(input, output, session) {
     # LATER PACKAGE: IMMEDIATE UI DISPLAY - Show UI first, load everything else later
     if (immediate_ui) {
