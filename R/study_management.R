@@ -1514,7 +1514,9 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
           class = "form-group custom-html-content",
           shiny::HTML(html_content_to_use)
         ))
-      }    input_id <- paste0("demo_", dem)
+      }
+      
+      input_id <- paste0("demo_", dem)
     input_type <- config$input_types[[dem]] %||% "text"
     
     # Pass language to create_demographic_input
