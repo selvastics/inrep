@@ -550,6 +550,17 @@ custom_page_flow <- list(
     </div>
     
     <script>
+    // FORCE German as default when page loads
+    document.addEventListener("DOMContentLoaded", function() {
+      // Set German as default in sessionStorage if nothing is set
+      if (!sessionStorage.getItem("hilfo_language_preference")) {
+        sessionStorage.setItem("hilfo_language_preference", "de");
+        sessionStorage.setItem("current_language", "de");
+        sessionStorage.setItem("hilfo_language", "de");
+        sessionStorage.setItem("hilfo_global_language", "de");
+      }
+    });
+    
     function toggleLanguage() {
       var deContent = document.getElementById("content_de");
       var enContent = document.getElementById("content_en");
@@ -2438,6 +2449,10 @@ if (exists("current_language", envir = .GlobalEnv)) {
     rm("current_language", envir = .GlobalEnv)
 }
 
+# FORCE German as default language in global environment
+assign("global_language_preference", "de", envir = .GlobalEnv)
+assign("current_language", "de", envir = .GlobalEnv)
+
 session_uuid <- paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 
 study_config <- inrep::create_study_config(
@@ -2456,6 +2471,7 @@ study_config <- inrep::create_study_config(
     response_ui_type = "radio",
     progress_style = "bar",
     language = "de",
+    default_language = "de",
     bilingual = TRUE,
     session_save = TRUE,
     session_timeout = 7200,
