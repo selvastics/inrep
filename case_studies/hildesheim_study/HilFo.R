@@ -838,20 +838,44 @@ custom_page_flow <- list(
     </div>
     <script>
     function applyLanguageToPage20() {
-      // Check stored language preference
+      console.log("=== PAGE 20 LANGUAGE DEBUG ===");
+      
+      // Check all possible sessionStorage keys
+      var keys = ["global_language_preference", "hilfo_language_preference", "current_language", "hilfo_language"];
+      keys.forEach(function(key) {
+        var value = sessionStorage.getItem(key);
+        console.log("sessionStorage." + key + " =", value);
+      });
+      
       var storedLang = sessionStorage.getItem("global_language_preference") || 
                        sessionStorage.getItem("hilfo_language_preference") || 
-                       sessionStorage.getItem("current_language") || "de";
+                       sessionStorage.getItem("current_language") || 
+                       sessionStorage.getItem("hilfo_language") || "de";
+      
+      console.log("Final detected language:", storedLang);
       
       if (storedLang === "en") {
+        console.log("Switching Page 20 to English...");
         // Switch to English
         var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
-        elements.forEach(function(element) {
-          if (element.getAttribute("data-lang-en")) {
-            element.textContent = element.getAttribute("data-lang-en");
+        console.log("Found", elements.length, "elements with language attributes");
+        
+        elements.forEach(function(element, index) {
+          var germanText = element.getAttribute("data-lang-de");
+          var englishText = element.getAttribute("data-lang-en");
+          console.log("Element", index, "- DE:", germanText, "EN:", englishText);
+          
+          if (englishText) {
+            element.textContent = englishText;
+            console.log("Switched element", index, "to English");
           }
         });
+        console.log("Page 20 language switching completed");
+      } else {
+        console.log("Keeping Page 20 in German (detected language:", storedLang, ")");
       }
+      
+      console.log("=== END PAGE 20 DEBUG ===");
     }
     
     document.addEventListener("DOMContentLoaded", function() {
