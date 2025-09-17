@@ -899,13 +899,61 @@ custom_page_flow <- list(
         demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st")
     ),
     
-    # Page 20: Personal Code
+    # Page 20: Personal Code - beautiful custom design
     list(
         id = "page20",
-        type = "demographics",
+        type = "custom",
         title = "Persönlicher Code",
         title_en = "Personal Code",
-        demographics = c("Persönlicher_Code")
+        content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
+      <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
+        <span id="pc-title">Persönlicher Code</span>
+      </h2>
+      <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
+        <span id="pc-instruction">Bitte erstellen Sie einen persönlichen Code:</span>
+      </p>
+      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+        <p style="margin: 0; font-weight: 500;">
+          <span id="pc-format">Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</span>
+        </p>
+      </div>
+      <div style="text-align: center; margin: 30px 0;">
+        <input type="text" id="personal_code" placeholder="z.B. MAHA15" style="
+          padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
+          text-align: center; width: 200px; text-transform: uppercase;" required>
+      </div>
+      <div style="text-align: center; color: #666; font-size: 14px;">
+        <span id="pc-example">Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</span>
+      </div>
+    </div>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Check language and apply translations
+      var currentLang = sessionStorage.getItem("global_language_preference") || 
+                        sessionStorage.getItem("hilfo_language_preference") || "de";
+      
+      if (currentLang === "en") {
+        document.getElementById("pc-title").textContent = "Personal Code";
+        document.getElementById("pc-instruction").textContent = "Please create a personal code:";
+        document.getElementById("pc-format").textContent = "First 2 letters of your mothers first name + first 2 letters of your birthplace + day of your birthday";
+        document.getElementById("pc-example").textContent = "Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15";
+        document.getElementById("personal_code").placeholder = "e.g. MAHA15";
+      }
+      
+      // Set up input functionality
+      var input = document.getElementById("personal_code");
+      if (input) {
+        input.addEventListener("input", function() {
+          this.value = this.value.toUpperCase();
+        });
+        input.addEventListener("blur", function() {
+          if (this.value.trim() !== "") {
+            Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
+          }
+        });
+      }
+    });
+    </script>'
     ),
     
     # Page 21: Results (now with PA results included)
@@ -1014,33 +1062,25 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         cat("DEBUG: Using default German language\n")
     }
     
-    # Create is_english variable for compatibility
-    is_english <- (current_lang == "en")
-    cat("DEBUG: is_english =", is_english, "\n")
+    # PRIORITY: If session has language input, use that (this is the most reliable)
+    if (!is.null(session) && !is.null(session$input) && !is.null(session$input$language)) {
+        current_lang <- session$input$language
+        cat("DEBUG: Using language from session$input$language:", current_lang, "\n")
+    }
     
     # Check if we should use English based on the last language selection
     # Check if there's a language preference stored in the global environment
     if (exists("global_language_preference", envir = .GlobalEnv)) {
         stored_lang <- get("global_language_preference", envir = .GlobalEnv)
         if (!is.null(stored_lang) && stored_lang == "en") {
-            is_english <- TRUE
             current_lang <- "en"
             cat("DEBUG: Using stored English preference from global\n")
         }
     }
     
-    # PRIORITY: If session has language input, use that (this is the most reliable)
-    if (!is.null(session) && !is.null(session$input) && !is.null(session$input$language)) {
-        if (session$input$language == "en") {
-            is_english <- TRUE
-            current_lang <- "en"
-            cat("DEBUG: Using English from session$input$language\n")
-        } else {
-            is_english <- FALSE
-            current_lang <- "de"
-            cat("DEBUG: Using German from session$input$language\n")
-        }
-    }
+    # Create is_english variable AFTER all language detection
+    is_english <- (current_lang == "en")
+    cat("DEBUG: is_english =", is_english, "\n")
     
     # Use German as default unless English is explicitly set
     if (current_lang == "de" && is_english == FALSE) {
