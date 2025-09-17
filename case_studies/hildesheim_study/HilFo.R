@@ -444,8 +444,28 @@ demographic_configs <- list(
         required = FALSE
     ),
     Persönlicher_Code = list(
-        question = "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags):",
-        question_en = "Please create a personal code (first 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday):",
+        question = '<div style="text-align: center; margin-bottom: 30px; font-size: 18px;">
+        Bitte erstellen Sie einen persönlichen Code:
+      </div>
+      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+        <p style="margin: 0; font-weight: 500;">
+          Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags
+        </p>
+      </div>
+      <div style="text-align: center; color: #666; font-size: 14px; margin-bottom: 20px;">
+        Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15
+      </div>',
+        question_en = '<div style="text-align: center; margin-bottom: 30px; font-size: 18px;">
+        Please create a personal code:
+      </div>
+      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+        <p style="margin: 0; font-weight: 500;">
+          First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday
+        </p>
+      </div>
+      <div style="text-align: center; color: #666; font-size: 14px; margin-bottom: 20px;">
+        Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15
+      </div>',
         type = "text",
         required = FALSE
     )
@@ -470,6 +490,38 @@ input_types <- list(
     Zufrieden_Hi_7st = "radio",
     Persönlicher_Code = "text"
 )
+
+# Add custom styling for personal code input
+personal_code_css <- '
+<style>
+input[id="Persönlicher_Code"] {
+  padding: 15px 20px !important; 
+  font-size: 18px !important; 
+  border: 2px solid #e0e0e0 !important; 
+  border-radius: 8px !important; 
+  text-align: center !important; 
+  width: 200px !important; 
+  text-transform: uppercase !important;
+  margin: 0 auto !important;
+  display: block !important;
+}
+input[id="Persönlicher_Code"]::placeholder {
+  text-align: center !important;
+  color: #999 !important;
+}
+</style>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  var input = document.getElementById("Persönlicher_Code");
+  if (input) {
+    input.placeholder = "z.B. MAHA15";
+    input.addEventListener("input", function() {
+      this.value = this.value.toUpperCase();
+    });
+  }
+});
+</script>
+'
 
 # =============================================================================
 # CUSTOM PAGE FLOW
@@ -2390,7 +2442,8 @@ study_config <- inrep::create_study_config(
     bilingual = TRUE,
     session_save = TRUE,
     session_timeout = 7200,
-    results_processor = create_hilfo_report
+    results_processor = create_hilfo_report,
+    custom_css = personal_code_css
 )
 
 # Launch the study
