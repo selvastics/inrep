@@ -2892,9 +2892,13 @@ launch_study <- function(
         shiny::showNotification("Error generating CSV download", type = "error")
       })
     })
+    
+    # End of server function - create and return Shiny app
   }
   
-  # Create and return the Shiny app
+  # Create the Shiny application
   app <- shiny::shinyApp(ui = ui, server = server)
+  
+  # Return the app
   return(app)
 }
