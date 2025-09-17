@@ -2533,14 +2533,15 @@ launch_study <- function(
     current_page_config <- config$custom_page_flow[[rv$current_page]]
     current_lang <- rv$language %||% config$language %||% "de"
     
-    # Get page title with language support
-    page_title <- if (current_lang == "en" && !is.null(current_page_config$title_en)) {
-      current_page_config$title_en
-    } else {
-      current_page_config$title %||% ""
+    # Get page title with language support - add safety checks
+    page_title <- ""
+    if (!is.null(current_lang) && length(current_lang) > 0 && current_lang == "en" && !is.null(current_page_config$title_en)) {
+      page_title <- current_page_config$title_en
+    } else if (!is.null(current_page_config$title)) {
+      page_title <- current_page_config$title
     }
     
-    if (current_page_config$type == "custom") {
+    if (!is.null(current_page_config$type) && length(current_page_config$type) > 0 && current_page_config$type == "custom") {
       # Render custom page content
       content_html <- current_page_config$content %||% "No content defined"
       
