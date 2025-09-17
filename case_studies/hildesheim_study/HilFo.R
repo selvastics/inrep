@@ -917,16 +917,24 @@ custom_page_flow <- list(
     </div>
     <script>
     document.addEventListener("DOMContentLoaded", function() {
-      // Check language and apply translations
-      var currentLang = sessionStorage.getItem("global_language_preference") || 
-                        sessionStorage.getItem("hilfo_language_preference") || "de";
+      // Check language and apply translations - check ALL possible keys
+      var currentLang = sessionStorage.getItem("hilfo_language_preference") || 
+                        sessionStorage.getItem("current_language") || 
+                        sessionStorage.getItem("hilfo_language") || 
+                        sessionStorage.getItem("hilfo_global_language") || 
+                        sessionStorage.getItem("global_language_preference") || "de";
+      
+      console.log("Page 20 detected language:", currentLang);
       
       if (currentLang === "en") {
+        console.log("Switching Page 20 to English");
         document.getElementById("pc-title").textContent = "Personal Code";
         document.getElementById("pc-instruction").textContent = "Please create a personal code:";
         document.getElementById("pc-format").textContent = "First 2 letters of your mothers first name + first 2 letters of your birthplace + day of your birthday";
         document.getElementById("pc-example").textContent = "Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15";
         document.getElementById("personal_code").placeholder = "e.g. MAHA15";
+      } else {
+        console.log("Keeping Page 20 in German");
       }
       
       // Set up input functionality
