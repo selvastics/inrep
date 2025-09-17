@@ -597,27 +597,16 @@ launch_study <- function(
       tryCatch({
         shinyjs::runjs(scroll_js)
       }, error = function(e) {
+        # shinyjs failed, try simple scroll
         tryCatch({
-          shiny::runjs(scroll_js)
-        }, error = function(e2) {
-          # Final fallback - simple scroll
-          tryCatch({
-            shinyjs::runjs("window.scrollTo(0, 0);")
-          }, error = function(e3) {
-            logger(sprintf("Scroll to top failed: %s", e3$message), level = "WARNING")
-          })
-        })
-      })
-    } else {
-      tryCatch({
-        shiny::runjs(scroll_js)
-      }, error = function(e) {
-        tryCatch({
-          shiny::runjs("window.scrollTo(0, 0);")
+          shinyjs::runjs("window.scrollTo(0, 0);")
         }, error = function(e2) {
           logger(sprintf("Scroll to top failed: %s", e2$message), level = "WARNING")
         })
       })
+    } else {
+      # No shinyjs available, skip advanced scrolling
+      logger("shinyjs not available, skipping scroll to top", level = "WARNING")
     }
   }
   
@@ -901,7 +890,8 @@ launch_study <- function(
             style = "margin-top: 30px; text-align: right;",
             shiny::actionButton("next_page", "Next", 
               class = "btn btn-primary",
-              style = "padding: 10px 30px; font-size: 16px;")
+              style = "padding: 10px 30px; font-size: 16px;",
+              onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
           )
         )
       )
@@ -1093,18 +1083,18 @@ launch_study <- function(
   # CRITICAL: Force new session for each user to prevent session sharing
   .force_new_session <- TRUE
   
-  if (FALSE) {  # Skip for now - will be done in server
-      logger("Initializing robust session management", level = "INFO")
-      
-      # Initialize robust session management
-      session_config <- tryCatch({
-        if (exists("initialize_robust_session") && is.function(initialize_robust_session)) {
-          initialize_robust_session(
-            max_session_time = max_session_time,
-            data_preservation_interval = data_preservation_interval,
-            keep_alive_interval = keep_alive_interval,
-            enable_logging = TRUE
-          )
+  # Initialize robust session management
+  logger("Initializing robust session management", level = "INFO")
+  
+  # Initialize robust session management
+  session_config <- tryCatch({
+    if (exists("initialize_robust_session") && is.function(initialize_robust_session)) {
+      initialize_robust_session(
+        max_session_time = max_session_time,
+        data_preservation_interval = data_preservation_interval,
+        keep_alive_interval = keep_alive_interval,
+        enable_logging = TRUE
+      )
         } else {
           # Fallback to basic session management
           list(
@@ -1195,7 +1185,6 @@ launch_study <- function(
       
       logger(sprintf("Session initialized: %s (max time: %d seconds)", 
                      session_config$session_id, session_config$max_time), level = "INFO")
-    }
   
   # Normalize common alternative column names before validation
   if ("content" %in% names(item_bank) && !"Question" %in% names(item_bank)) item_bank$Question <- item_bank$content
@@ -2726,10 +2715,16 @@ launch_study <- function(
       }, delay = 0)  # ZERO delay - immediate execution
     }
     
-    # Observe language changes from Hildesheim study
+    # Single language observer - handles language switching efficiently
     shiny::observeEvent(input$study_language, {
       if (!is.null(input$study_language)) {
         new_lang <- input$study_language
+        
+        # Only update if actually different to prevent toggle loops
+        if (!is.null(rv$language) && rv$language == new_lang) {
+          return()
+        }
+        
         current_language(new_lang)
         
         # Update UI labels
@@ -2739,15 +2734,229 @@ launch_study <- function(
         # Store in session
         session$userData$language <- new_lang
         
+        # Store in rv for access by render functions
+        rv$language <- new_lang
+        
         # Update config language
         config$language <<- new_lang
+        
+        # Store globally for HilFo report access
+        assign("hilfo_language_preference", new_lang, envir = .GlobalEnv)
         
         # Log the change
         cat("Language switched to:", new_lang, "\n")
         
-        # Force UI refresh for language change
-        shiny::invalidateLater(50, session)
+        # DO NOT force UI refresh - let JavaScript handle the switching
+        # This prevents the page_content rendering loop
       }
+    })
+    
+    # Also observe store_language_globally for HilFo
+    shiny::observeEvent(input$store_language_globally, {
+      if (!is.null(input$store_language_globally)) {
+        # Store globally for HilFo report access
+        assign("hilfo_language_preference", input$store_language_globally, envir = .GlobalEnv)
+        cat("Stored language globally for HilFo:", input$store_language_globally, "\n")
+        
+        # Update language for FUTURE pages only (not current page to prevent loops)
+        new_lang <- input$store_language_globally
+        if (new_lang %in% c("en", "de")) {
+          # Only update if we're NOT on page 1 to prevent re-rendering loops
+          current_page <- rv$current_page %||% 1
+          if (current_page != 1) {
+            current_language(new_lang)
+            rv$language <- new_lang
+            session$userData$language <- new_lang
+            cat("HILFO: Switched current page to:", new_lang, "\n")
+          } else {
+            # For page 1, just store for future use without triggering re-render
+            session$userData$language <- new_lang
+            cat("HILFO: Language preference stored for future pages:", new_lang, "\n")
+          }
+        }
+      }
+    })
+    
+    # Observe PDF download trigger from HilFo
+    shiny::observeEvent(input$download_pdf_trigger, {
+      cat("PDF download triggered\n")
+      # Generate PDF content
+      tryCatch({
+        # Get the current report content
+        if (!is.null(rv$cat_result)) {
+          responses <- rv$cat_result$responses
+        } else {
+          responses <- rv$responses
+        }
+        
+        # Generate report HTML
+        report_html <- if (!is.null(config$results_processor) && is.function(config$results_processor)) {
+          config$results_processor(responses, item_bank, rv$demo_data, list(input = list(language = rv$language)))
+        } else {
+          shiny::HTML("<p>No report available</p>")
+        }
+        
+        # Create a temporary HTML file
+        temp_html <- tempfile(fileext = ".html")
+        writeLines(as.character(report_html), temp_html)
+        
+        # Convert to PDF using browser print dialog
+        if (requireNamespace("shinyjs", quietly = TRUE)) {
+          shinyjs::runjs("window.print();")
+        } else {
+          cat("shinyjs not available for PDF download\n")
+        }
+        
+      }, error = function(e) {
+        cat("Error generating PDF:", e$message, "\n")
+        shiny::showNotification("Error generating PDF. Please try again.", type = "error")
+      })
+    })
+    
+    # Observe CSV download trigger from HilFo
+    shiny::observeEvent(input$download_csv_trigger, {
+      cat("CSV download triggered\n")
+      # Try to find the most recent CSV file created by create_hilfo_report
+      tryCatch({
+        # Look for the most recent hilfo_results CSV file
+        csv_files <- list.files(pattern = "hilfo_results_.*\\.csv$", full.names = TRUE)
+        if (length(csv_files) > 0) {
+          # Get the most recent file
+          most_recent <- csv_files[which.max(file.mtime(csv_files))]
+          cat("Found CSV file:", most_recent, "\n")
+          
+          # Read the file content
+          csv_content <- readLines(most_recent, warn = FALSE)
+          
+          # Trigger download via JavaScript
+          if (requireNamespace("shinyjs", quietly = TRUE)) {
+            shinyjs::runjs(sprintf("
+              var csv = %s;
+              var blob = new Blob([csv], {type: 'text/csv'});
+              var url = window.URL.createObjectURL(blob);
+              var a = document.createElement('a');
+              a.href = url;
+              a.download = 'hilfo_results_%s.csv';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              window.URL.revokeObjectURL(url);
+            ", jsonlite::toJSON(paste(csv_content, collapse = "\n")), format(Sys.time(), "%Y%m%d_%H%M%S")))
+          } else {
+            cat("shinyjs not available for CSV download\n")
+          }
+          
+        } else {
+          # Fallback: generate CSV from current data
+          cat("No CSV file found, generating from current data\n")
+          
+          # Collect all data - use same format as cloud storage
+          csv_data <- data.frame(
+            timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S.%6N"),
+            session_id = rv$unique_session_id %||% "",
+            study_language = rv$language %||% "de"
+          )
+          
+          # Add demographics
+          if (!is.null(rv$demo_data)) {
+            for (name in names(rv$demo_data)) {
+              csv_data[[name]] <- rv$demo_data[[name]]
+            }
+          }
+          
+          # Add responses using proper item names (same as cloud storage)
+          if (!is.null(rv$responses)) {
+            # Get item bank to get proper column names
+            if (exists("all_items_de") && !is.null(all_items_de)) {
+              for (i in seq_along(rv$responses)) {
+                if (i <= nrow(all_items_de)) {
+                  col_name <- all_items_de$id[i]  # Use 'id' column, not 'ID'
+                  csv_data[[col_name]] <- rv$responses[i]
+                }
+              }
+            } else {
+              # Fallback to generic names if item bank not available
+              for (i in seq_along(rv$responses)) {
+                csv_data[[paste0("item_", i)]] <- rv$responses[i]
+              }
+            }
+          }
+          
+          # Add calculated scores - SAME LOGIC as create_hilfo_report
+          # Calculate BFI scores from responses (items 21-40)
+          if (!is.null(rv$responses) && length(rv$responses) >= 40) {
+            bfi_responses <- rv$responses[21:40]
+            if (length(bfi_responses) >= 20) {
+              csv_data$BFI_Extraversion <- mean(c(bfi_responses[1:4]), na.rm = TRUE)
+              csv_data$BFI_Vertraeglichkeit <- mean(c(bfi_responses[5:8]), na.rm = TRUE)
+              csv_data$BFI_Gewissenhaftigkeit <- mean(c(bfi_responses[9:12]), na.rm = TRUE)
+              csv_data$BFI_Neurotizismus <- mean(c(bfi_responses[13:16]), na.rm = TRUE)
+              csv_data$BFI_Offenheit <- mean(c(bfi_responses[17:20]), na.rm = TRUE)
+            } else {
+              csv_data$BFI_Extraversion <- NA
+              csv_data$BFI_Vertraeglichkeit <- NA
+              csv_data$BFI_Gewissenhaftigkeit <- NA
+              csv_data$BFI_Neurotizismus <- NA
+              csv_data$BFI_Offenheit <- NA
+            }
+          } else {
+            csv_data$BFI_Extraversion <- NA
+            csv_data$BFI_Vertraeglichkeit <- NA
+            csv_data$BFI_Gewissenhaftigkeit <- NA
+            csv_data$BFI_Neurotizismus <- NA
+            csv_data$BFI_Offenheit <- NA
+          }
+          
+          # Calculate PSQ Stress (items 41-45)
+          if (!is.null(rv$responses) && length(rv$responses) >= 45) {
+            stress_responses <- rv$responses[41:45]
+            csv_data$PSQ_Stress <- mean(stress_responses, na.rm = TRUE)
+          } else {
+            csv_data$PSQ_Stress <- NA
+          }
+          
+          # Calculate MWS Study Skills (items 46-49)
+          if (!is.null(rv$responses) && length(rv$responses) >= 49) {
+            study_responses <- rv$responses[46:49]
+            csv_data$MWS_Studierfaehigkeiten <- mean(study_responses, na.rm = TRUE)
+          } else {
+            csv_data$MWS_Studierfaehigkeiten <- NA
+          }
+          
+          # Calculate Statistics (items 50-51)
+          if (!is.null(rv$responses) && length(rv$responses) >= 51) {
+            stats_responses <- rv$responses[50:51]
+            csv_data$Statistik <- mean(stats_responses, na.rm = TRUE)
+          } else {
+            csv_data$Statistik <- NA
+          }
+          
+          # Convert to CSV string
+          csv_content <- paste(capture.output(write.csv(csv_data, row.names = FALSE)), collapse = "\n")
+          
+          # Trigger download via JavaScript
+          if (requireNamespace("shinyjs", quietly = TRUE)) {
+            shinyjs::runjs(sprintf("
+              var csv = %s;
+              var blob = new Blob([csv], {type: 'text/csv'});
+              var url = window.URL.createObjectURL(blob);
+              var a = document.createElement('a');
+              a.href = url;
+              a.download = 'hilfo_results_%s.csv';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              window.URL.revokeObjectURL(url);
+            ", jsonlite::toJSON(csv_content), format(Sys.time(), "%Y%m%d_%H%M%S")))
+          } else {
+            cat("shinyjs not available for CSV download\n")
+          }
+        }
+        
+      }, error = function(e) {
+        cat("Error generating CSV:", e$message, "\n")
+        shiny::showNotification("Error generating CSV. Please try again.", type = "error")
+      })
     })
     
     # IMMEDIATE UI DISPLAY - Show first page before package loading using later package
@@ -2841,6 +3050,7 @@ launch_study <- function(
   # POPULATE rv IMMEDIATELY - No observe, no async, no delays
   rv$demo_data <- stats::setNames(base::rep(NA, base::length(config$demographics)), config$demographics)
   rv$config <- config  # Store config in rv for access by validation functions
+  rv$language <- config$language %||% "de"  # Initialize language in rv
   
       # Initialize comprehensive dataset system (if functions are available)
     if (exists("initialize_comprehensive_dataset", mode = "function")) {
@@ -3137,7 +3347,8 @@ launch_study <- function(
             shiny::div(class = "assessment-card",
                        shiny::h3(ui_labels$timeout_message, class = "card-header"),
                        shiny::div(class = "nav-buttons",
-                                  shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee")
+                                  shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee",
+                                                     onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
                        )
             )
           )
@@ -3162,7 +3373,8 @@ launch_study <- function(
                                              shiny::p(ui_labels$error_contact_support)
                                 ),
                                 shiny::div(class = "nav-buttons",
-                                                                                        shiny::actionButton("retry_continue", ui_labels$error_continue_button, class = "btn-klee"),
+                                                                                        shiny::actionButton("retry_continue", ui_labels$error_continue_button, class = "btn-klee",
+                                                                                                           onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);"),
                                                                                         shiny::actionButton("restart_test", ui_labels$error_restart_button, class = "btn-klee")
                                 )
                      )
@@ -3180,8 +3392,11 @@ launch_study <- function(
                         demo_config <- config$demographic_configs[[dem]]
                       }
                       
-                      # Use question from config or fall back to variable name
-                      label_text <- if (!base::is.null(demo_config$question)) {
+                      # Use question from config with language support
+                      current_lang <- rv$language %||% config$language %||% "de"
+                      label_text <- if (current_lang == "en" && !base::is.null(demo_config$question_en)) {
+                        demo_config$question_en
+                      } else if (!base::is.null(demo_config$question)) {
                         demo_config$question
                       } else if (!base::is.null(demo_config$label)) {
                         demo_config$label
@@ -3245,7 +3460,12 @@ launch_study <- function(
                       # Return the complete form group
                       shiny::div(
                         class = "form-group",
-                        shiny::tags$label(label_text, class = "input-label"),
+                        # Check if label_text contains HTML tags, if so render as HTML
+                        if (grepl("<[^>]+>", label_text)) {
+                          shiny::div(class = "input-label", shiny::HTML(label_text))
+                        } else {
+                          shiny::tags$label(label_text, class = "input-label")
+                        },
                         input_element,
                         if (!base::is.null(demo_config$help_text)) {
                           shiny::tags$small(class = "form-text text-muted", demo_config$help_text)
@@ -3260,7 +3480,8 @@ launch_study <- function(
                                   demo_inputs,
                                   if (!base::is.null(rv$error_message)) shiny::div(class = "error-message", rv$error_message),
                                   shiny::div(class = "nav-buttons",
-                                             shiny::actionButton("start_test", ui_labels$start_button, class = "btn-klee")
+                                             shiny::actionButton("start_test", ui_labels$start_button, class = "btn-klee",
+                                                                onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
                                   )
                        )
                      )
@@ -3297,7 +3518,8 @@ launch_study <- function(
                      shiny::div(class = "assessment-card",
                                 instructions_content,
                                 shiny::div(class = "nav-buttons",
-                                           shiny::actionButton("begin_test", ui_labels$begin_button, class = "btn-klee")
+                                           shiny::actionButton("begin_test", ui_labels$begin_button, class = "btn-klee",
+                                                              onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
                                 )
                      )
                    },
@@ -3623,7 +3845,8 @@ launch_study <- function(
                        shiny::div(class = "nav-buttons",
                                   shiny::downloadButton("save_report", ui_labels$save_button, class = "btn-klee"),
                                   shiny::downloadButton("download_comprehensive_dataset", "Download Complete Dataset", class = "btn-klee"),
-                                  shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee")
+                                  shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee",
+                                                     onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
                        )
                      ))
                      
@@ -4267,8 +4490,20 @@ launch_study <- function(
           }
           
                   # Move to next page immediately - CSS handles the transition
+          old_page <- rv$current_page
           rv$current_page <- rv$current_page + 1
           logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
+          
+          # Apply stored language preference when moving FROM page 1 to other pages
+          if (old_page == 1 && exists("hilfo_language_preference", envir = .GlobalEnv)) {
+            stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
+            if (!is.null(stored_lang) && stored_lang %in% c("en", "de")) {
+              current_language(stored_lang)
+              rv$language <- stored_lang
+              session$userData$language <- stored_lang
+              cat("HILFO: Applied language preference when leaving page 1:", stored_lang, "\n")
+            }
+          }
           
           # Log page switch and update start time
           if (exists("update_page_start_time")) {
@@ -4313,8 +4548,14 @@ launch_study <- function(
         }
         
                   # Move to previous page immediately - CSS handles the transition
+          old_page <- rv$current_page
           rv$current_page <- rv$current_page - 1
           logger(sprintf("Moving back to page %d of %d", rv$current_page, rv$total_pages))
+          
+          # When moving TO page 1, don't apply language changes to prevent loops
+          if (rv$current_page == 1) {
+            cat("HILFO: Moved back to page 1 - language switching handled by page itself\n")
+          }
           
           # Log page switch and update start time
           if (exists("update_page_start_time")) {
@@ -4562,10 +4803,10 @@ launch_study <- function(
                   tryCatch({
                     shinyjs::runjs(auto_close_js)
                   }, error = function(e) {
-                    shiny::runjs(auto_close_js)
+                    logger(sprintf("Auto-close failed: %s", e$message), level = "WARNING")
                   })
                 } else {
-                  shiny::runjs(auto_close_js)
+                  logger("shinyjs not available for auto-close", level = "WARNING")
                 }
                 
                 # Also try R app close as fallback
@@ -4719,7 +4960,11 @@ launch_study <- function(
           current_ability = config$theta_prior[1] %||% 0,
           current_se = config$theta_prior[2] %||% 1
         )
-        first_item <- inrep::select_next_item(temp_rv, item_bank, config)
+        first_item <- if (isTRUE(config$fast_item_selection)) {
+          inrep::fast_select_next_item(temp_rv, item_bank, config)
+        } else {
+          inrep::select_next_item(temp_rv, item_bank, config)
+        }
         rv$current_item <- first_item
         logger(sprintf("Adaptive mode: Starting with item %s", first_item))
       }
@@ -4754,7 +4999,11 @@ launch_study <- function(
       logger(sprintf("config$model: %s", config$model))
       logger(sprintf("Item bank columns: %s", paste(names(item_bank), collapse = ", ")))
       
-      rv$current_item <- inrep::select_next_item(rv, item_bank, config)
+      rv$current_item <- if (isTRUE(config$fast_item_selection)) {
+        inrep::fast_select_next_item(rv, item_bank, config)
+      } else {
+        inrep::select_next_item(rv, item_bank, config)
+      }
       if (!is.null(config$admin_dashboard_hook) && is.function(config$admin_dashboard_hook)) {
         base::tryCatch({
           config$admin_dashboard_hook(list(
@@ -5066,7 +5315,11 @@ launch_study <- function(
       } else {
         # ROBUST NEXT ITEM SELECTION WITH ERROR RECOVERY
         next_item_result <- base::tryCatch({
-          inrep::select_next_item(rv, item_bank, config)
+          if (isTRUE(config$fast_item_selection)) {
+            inrep::fast_select_next_item(rv, item_bank, config)
+          } else {
+            inrep::select_next_item(rv, item_bank, config)
+          }
         }, error = function(e) {
           logger(sprintf("Next item selection failed, using fallback: %s", e$message), level = "WARNING")
           # Fallback: select next available item

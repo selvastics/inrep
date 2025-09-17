@@ -258,7 +258,7 @@ launch_study(
 
 * IRT Models: 1PL, 2PL, 3PL, GRM
 
-Please cite the TAM package when using IRT functionalities:
+Please cite the TAM package if you use IRT functionalities:
 
 ```
 Robitzsch, A., Kiefer, T., & Wu, M. (2024). TAM: Test Analysis Modules. R package version 4.2-21. https://CRAN.R-project.org/package=TAM
@@ -275,7 +275,7 @@ Robitzsch, A., Kiefer, T., & Wu, M. (2024). TAM: Test Analysis Modules. R packag
 ## Citation
 
 ```
-Selva, C. (2025). inrep: Instant Reports for Adaptive Assessments. R package version 1.0.0. https://github.com/selvastics/inrep
+Selva, C. (2025). inrep: Instant Reports for Adaptive Assessments. R package version 1.0.0. https://doi.org/10.5281/zenodo.16682020
 ```
 
 ## Contributing
