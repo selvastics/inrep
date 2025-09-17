@@ -2769,13 +2769,21 @@ launch_study <- function(
         assign("hilfo_language_preference", input$store_language_globally, envir = .GlobalEnv)
         cat("Stored language globally for HilFo:", input$store_language_globally, "\n")
         
-        # Also update current language for immediate effect on assessment pages
+        # Update language for FUTURE pages only (not current page to prevent loops)
         new_lang <- input$store_language_globally
         if (new_lang %in% c("en", "de")) {
-          current_language(new_lang)
-          rv$language <- new_lang
-          session$userData$language <- new_lang
-          cat("HILFO: Switched current page to:", new_lang, "\n")
+          # Only update if we're NOT on page 1 to prevent re-rendering loops
+          current_page <- rv$current_page %||% 1
+          if (current_page != 1) {
+            current_language(new_lang)
+            rv$language <- new_lang
+            session$userData$language <- new_lang
+            cat("HILFO: Switched current page to:", new_lang, "\n")
+          } else {
+            # For page 1, just store for future use without triggering re-render
+            session$userData$language <- new_lang
+            cat("HILFO: Language preference stored for future pages:", new_lang, "\n")
+          }
         }
       }
     })
@@ -4436,8 +4444,20 @@ launch_study <- function(
           }
           
                   # Move to next page immediately - CSS handles the transition
+          old_page <- rv$current_page
           rv$current_page <- rv$current_page + 1
           logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
+          
+          # Apply stored language preference when moving FROM page 1 to other pages
+          if (old_page == 1 && exists("hilfo_language_preference", envir = .GlobalEnv)) {
+            stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
+            if (!is.null(stored_lang) && stored_lang %in% c("en", "de")) {
+              current_language(stored_lang)
+              rv$language <- stored_lang
+              session$userData$language <- stored_lang
+              cat("HILFO: Applied language preference when leaving page 1:", stored_lang, "\n")
+            }
+          }
           
           # Log page switch and update start time
           if (exists("update_page_start_time")) {
@@ -4482,8 +4502,14 @@ launch_study <- function(
         }
         
                   # Move to previous page immediately - CSS handles the transition
+          old_page <- rv$current_page
           rv$current_page <- rv$current_page - 1
           logger(sprintf("Moving back to page %d of %d", rv$current_page, rv$total_pages))
+          
+          # When moving TO page 1, don't apply language changes to prevent loops
+          if (rv$current_page == 1) {
+            cat("HILFO: Moved back to page 1 - language switching handled by page itself\n")
+          }
           
           # Log page switch and update start time
           if (exists("update_page_start_time")) {
