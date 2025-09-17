@@ -2430,6 +2430,14 @@ custom_item_selection <- function(rv, item_bank, config) {
 # STUDY CONFIGURATION WITH BILINGUAL SUPPORT
 # =============================================================================
 
+# Ensure clean start - remove any leftover language preferences
+if (exists("global_language_preference", envir = .GlobalEnv)) {
+    rm("global_language_preference", envir = .GlobalEnv)
+}
+if (exists("current_language", envir = .GlobalEnv)) {
+    rm("current_language", envir = .GlobalEnv)
+}
+
 session_uuid <- paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 
 study_config <- inrep::create_study_config(
