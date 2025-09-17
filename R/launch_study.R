@@ -2882,17 +2882,54 @@ launch_study <- function(
             }
           }
           
-          # Add calculated scores (same as cloud storage)
-          # These would need to be calculated from the responses, but for now we'll add placeholders
-          # In a real implementation, you'd calculate these from the responses
-          csv_data$BFI_Extraversion <- NA
-          csv_data$BFI_Vertraeglichkeit <- NA
-          csv_data$BFI_Gewissenhaftigkeit <- NA
-          csv_data$BFI_Neurotizismus <- NA
-          csv_data$BFI_Offenheit <- NA
-          csv_data$PSQ_Stress <- NA
-          csv_data$MWS_Studierfaehigkeiten <- NA
-          csv_data$Statistik <- NA
+          # Add calculated scores - SAME LOGIC as create_hilfo_report
+          # Calculate BFI scores from responses (items 21-40)
+          if (!is.null(rv$responses) && length(rv$responses) >= 40) {
+            bfi_responses <- rv$responses[21:40]
+            if (length(bfi_responses) >= 20) {
+              csv_data$BFI_Extraversion <- mean(c(bfi_responses[1:4]), na.rm = TRUE)
+              csv_data$BFI_Vertraeglichkeit <- mean(c(bfi_responses[5:8]), na.rm = TRUE)
+              csv_data$BFI_Gewissenhaftigkeit <- mean(c(bfi_responses[9:12]), na.rm = TRUE)
+              csv_data$BFI_Neurotizismus <- mean(c(bfi_responses[13:16]), na.rm = TRUE)
+              csv_data$BFI_Offenheit <- mean(c(bfi_responses[17:20]), na.rm = TRUE)
+            } else {
+              csv_data$BFI_Extraversion <- NA
+              csv_data$BFI_Vertraeglichkeit <- NA
+              csv_data$BFI_Gewissenhaftigkeit <- NA
+              csv_data$BFI_Neurotizismus <- NA
+              csv_data$BFI_Offenheit <- NA
+            }
+          } else {
+            csv_data$BFI_Extraversion <- NA
+            csv_data$BFI_Vertraeglichkeit <- NA
+            csv_data$BFI_Gewissenhaftigkeit <- NA
+            csv_data$BFI_Neurotizismus <- NA
+            csv_data$BFI_Offenheit <- NA
+          }
+          
+          # Calculate PSQ Stress (items 41-45)
+          if (!is.null(rv$responses) && length(rv$responses) >= 45) {
+            stress_responses <- rv$responses[41:45]
+            csv_data$PSQ_Stress <- mean(stress_responses, na.rm = TRUE)
+          } else {
+            csv_data$PSQ_Stress <- NA
+          }
+          
+          # Calculate MWS Study Skills (items 46-49)
+          if (!is.null(rv$responses) && length(rv$responses) >= 49) {
+            study_responses <- rv$responses[46:49]
+            csv_data$MWS_Studierfaehigkeiten <- mean(study_responses, na.rm = TRUE)
+          } else {
+            csv_data$MWS_Studierfaehigkeiten <- NA
+          }
+          
+          # Calculate Statistics (items 50-51)
+          if (!is.null(rv$responses) && length(rv$responses) >= 51) {
+            stats_responses <- rv$responses[50:51]
+            csv_data$Statistik <- mean(stats_responses, na.rm = TRUE)
+          } else {
+            csv_data$Statistik <- NA
+          }
           
           # Convert to CSV string
           csv_content <- paste(capture.output(write.csv(csv_data, row.names = FALSE)), collapse = "\n")
