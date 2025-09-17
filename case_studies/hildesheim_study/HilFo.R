@@ -452,76 +452,26 @@ demographic_configs <- list(
         html_content_debug = "This field should have HTML content!",
         # NEW: Self-contained HTML content with built-in language switching
         html_content = '<div id="personal-code-container" style="padding: 20px; font-size: 16px; line-height: 1.8;">
-          <div id="content-de" style="display: block;">
-            <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Persönlicher Code</h2>
-            <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">Bitte erstellen Sie einen persönlichen Code:</p>
-            <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-              <p style="margin: 0; font-weight: 500;">Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</p>
-            </div>
-            <div style="text-align: center; margin: 30px 0;">
-              <input type="text" id="Persönlicher_Code" name="Persönlicher_Code" placeholder="z.B. MAHA15" style="padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; text-align: center; width: 200px; text-transform: uppercase;" required>
-            </div>
-            <div style="text-align: center; color: #666; font-size: 14px;">Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</div>
+          <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Persönlicher Code</h2>
+          <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">Bitte erstellen Sie einen persönlichen Code:</p>
+          <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+            <p style="margin: 0; font-weight: 500;">Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</p>
           </div>
-          <div id="content-en" style="display: none;">
-            <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Personal Code</h2>
-            <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">Please create a personal code:</p>
-            <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-              <p style="margin: 0; font-weight: 500;">First 2 letters of your mothers first name + first 2 letters of your birthplace + day of your birthday</p>
-            </div>
-            <div style="text-align: center; margin: 30px 0;">
-              <input type="text" id="Persönlicher_Code_en" name="Persönlicher_Code" placeholder="e.g. MAHA15" style="padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; text-align: center; width: 200px; text-transform: uppercase;" required>
-            </div>
-            <div style="text-align: center; color: #666; font-size: 14px;">Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</div>
+          <div style="text-align: center; margin: 30px 0;">
+            <input type="text" id="Persönlicher_Code" name="Persönlicher_Code" placeholder="z.B. MAHA15" style="padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; text-align: center; width: 200px; text-transform: uppercase;" required>
           </div>
-          <script>
-          // SIMPLE and AGGRESSIVE language detection - FORCE English when selected
-          document.addEventListener("DOMContentLoaded", function() {
-            function forceLanguageSwitch() {
-              // Check if ANY sessionStorage value indicates English
-              var isEnglish = sessionStorage.getItem("hilfo_language_preference") === "en" ||
-                             sessionStorage.getItem("global_language_preference") === "en" ||
-                             sessionStorage.getItem("current_language") === "en" ||
-                             sessionStorage.getItem("hilfo_language") === "en";
-              
-              var contentDe = document.getElementById("content-de");
-              var contentEn = document.getElementById("content-en");
-              
-              console.log("=== PERSONAL CODE FORCE SWITCH ===");
-              console.log("Is English?", isEnglish);
-              console.log("hilfo_language_preference:", sessionStorage.getItem("hilfo_language_preference"));
-              console.log("global_language_preference:", sessionStorage.getItem("global_language_preference"));
-              console.log("current_language:", sessionStorage.getItem("current_language"));
-              console.log("hilfo_language:", sessionStorage.getItem("hilfo_language"));
-              console.log("====================================");
-              
-              if (isEnglish) {
-                if (contentDe) contentDe.style.display = "none";
-                if (contentEn) contentEn.style.display = "block";
-                console.log("FORCING ENGLISH DISPLAY");
-              } else {
-                if (contentEn) contentEn.style.display = "none";
-                if (contentDe) contentDe.style.display = "block";
-                console.log("SHOWING GERMAN (DEFAULT)");
-              }
-            }
-            
-            // Multiple aggressive attempts to switch language
-            setTimeout(forceLanguageSwitch, 10);
-            setTimeout(forceLanguageSwitch, 100);
-            setTimeout(forceLanguageSwitch, 300);
-            setTimeout(forceLanguageSwitch, 600);
-            setTimeout(forceLanguageSwitch, 1000);
-            
-            // Keep checking every 200ms for first 5 seconds
-            var attempts = 0;
-            var checker = setInterval(function() {
-              forceLanguageSwitch();
-              attempts++;
-              if (attempts > 25) clearInterval(checker); // Stop after 5 seconds
-            }, 200);
-          });
-          </script>
+          <div style="text-align: center; color: #666; font-size: 14px;">Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</div>
+        </div>',
+        html_content_en = '<div id="personal-code-container" style="padding: 20px; font-size: 16px; line-height: 1.8;">
+          <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Personal Code</h2>
+          <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">Please create a personal code:</p>
+          <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+            <p style="margin: 0; font-weight: 500;">First 2 letters of your mothers first name + first 2 letters of your birthplace + day of your birthday</p>
+          </div>
+          <div style="text-align: center; margin: 30px 0;">
+            <input type="text" id="Persönlicher_Code" name="Persönlicher_Code" placeholder="e.g. MAHA15" style="padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; text-align: center; width: 200px; text-transform: uppercase;" required>
+          </div>
+          <div style="text-align: center; color: #666; font-size: 14px;">Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</div>
         </div>'
     )
 )
