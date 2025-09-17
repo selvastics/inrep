@@ -2726,8 +2726,12 @@ launch_study <- function(
       }, delay = 0)  # ZERO delay - immediate execution
     }
     
-    # Return the UI content
-    return(ui_content)
+    # Return the main UI container
+    return(shiny::div(
+      id = "main-study-container",
+      style = "min-height: 500px; width: 100%; max-width: 100%; margin: 0 auto; padding: 0; position: relative; overflow: hidden;",
+      shiny::uiOutput("page_content")
+    ))
     })
     
     # Single language observer - handles language switching efficiently
