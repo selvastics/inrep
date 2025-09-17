@@ -916,7 +916,40 @@ custom_page_flow <- list(
         </div>
         <div style="text-align: center; color: #666; font-size: 14px;">Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</div>
       </div>
-    </div>'
+    </div>
+    <script>
+    // Apply language switching when page loads (same logic as Page 1)
+    document.addEventListener("DOMContentLoaded", function() {
+      var storedLang = sessionStorage.getItem("hilfo_language_preference") || 
+                       sessionStorage.getItem("current_language") || 
+                       sessionStorage.getItem("hilfo_language") || "de";
+      
+      var deContent = document.getElementById("content_de");
+      var enContent = document.getElementById("content_en");
+      
+      if (storedLang === "en" && deContent && enContent) {
+        deContent.style.display = "none";
+        enContent.style.display = "block";
+      }
+      
+      // Set up input functionality for both inputs
+      var input1 = document.getElementById("personal_code");
+      var input2 = document.getElementById("personal_code_en");
+      
+      [input1, input2].forEach(function(input) {
+        if (input) {
+          input.addEventListener("input", function() {
+            this.value = this.value.toUpperCase();
+          });
+          input.addEventListener("blur", function() {
+            if (this.value.trim() !== "") {
+              Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
+            }
+          });
+        }
+      });
+    });
+    </script>'
     ),
     
     # Page 21: Results (now with PA results included)
