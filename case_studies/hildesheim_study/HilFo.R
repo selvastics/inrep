@@ -450,9 +450,8 @@ demographic_configs <- list(
         required = FALSE,
         # DEBUG: HTML content presence
         html_content_debug = "This field should have HTML content!",
-        # NEW: Self-contained HTML content with built-in language switching
+        # NEW: Self-contained HTML content with built-in language switching (no duplicate header)
         html_content = '<div id="personal-code-container" style="padding: 20px; font-size: 16px; line-height: 1.8;">
-          <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Persönlicher Code</h2>
           <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">Bitte erstellen Sie einen persönlichen Code:</p>
           <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
             <p style="margin: 0; font-weight: 500;">Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</p>
@@ -463,7 +462,6 @@ demographic_configs <- list(
           <div style="text-align: center; color: #666; font-size: 14px;">Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</div>
         </div>',
         html_content_en = '<div id="personal-code-container" style="padding: 20px; font-size: 16px; line-height: 1.8;">
-          <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Personal Code</h2>
           <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">Please create a personal code:</p>
           <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
             <p style="margin: 0; font-weight: 500;">First 2 letters of your mothers first name + first 2 letters of your birthplace + day of your birthday</p>
