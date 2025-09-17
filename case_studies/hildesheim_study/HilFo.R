@@ -486,7 +486,18 @@ demographic_configs <- list(
                         sessionStorage.getItem("study_language") ||
                         localStorage.getItem("user_language") ||
                         "de";
-              console.log("Detected language for Personal Code:", lang);
+              
+              // DEBUG: Log all storage values
+              console.log("=== PERSONAL CODE LANGUAGE DEBUG ===");
+              console.log("hilfo_language_preference:", sessionStorage.getItem("hilfo_language_preference"));
+              console.log("global_language_preference:", sessionStorage.getItem("global_language_preference"));
+              console.log("current_language:", sessionStorage.getItem("current_language"));
+              console.log("hilfo_language:", sessionStorage.getItem("hilfo_language"));
+              console.log("study_language:", sessionStorage.getItem("study_language"));
+              console.log("user_language:", localStorage.getItem("user_language"));
+              console.log("Final detected language:", lang);
+              console.log("=====================================");
+              
               return lang;
             }
             
@@ -494,22 +505,60 @@ demographic_configs <- list(
               var currentLang = detectLanguage();
               var contentDe = document.getElementById("content-de");
               var contentEn = document.getElementById("content-en");
+              var inputDe = document.getElementById("Persönlicher_Code");
+              var inputEn = document.getElementById("Persönlicher_Code_en");
               
               console.log("Switching Personal Code to language:", currentLang);
+              console.log("Content DE element:", contentDe);
+              console.log("Content EN element:", contentEn);
               
               if (currentLang === "en") {
-                if (contentDe) contentDe.style.display = "none";
-                if (contentEn) contentEn.style.display = "block";
+                if (contentDe) {
+                  contentDe.style.display = "none";
+                  // Sync value from German to English input
+                  if (inputDe && inputEn && inputDe.value) {
+                    inputEn.value = inputDe.value;
+                  }
+                }
+                if (contentEn) {
+                  contentEn.style.display = "block";
+                }
                 console.log("Personal Code: Showing English content");
               } else {
-                if (contentDe) contentDe.style.display = "block";
-                if (contentEn) contentEn.style.display = "none";
+                if (contentEn) {
+                  contentEn.style.display = "none";
+                  // Sync value from English to German input
+                  if (inputDe && inputEn && inputEn.value) {
+                    inputDe.value = inputEn.value;
+                  }
+                }
+                if (contentDe) {
+                  contentDe.style.display = "block";
+                }
                 console.log("Personal Code: Showing German content");
               }
             }
             
             // Switch language on load
             setTimeout(switchLanguage, 100); // Small delay to ensure sessionStorage is ready
+            
+            // Sync input values between German and English fields
+            setTimeout(function() {
+              var inputDe = document.getElementById("Persönlicher_Code");
+              var inputEn = document.getElementById("Persönlicher_Code_en");
+              
+              if (inputDe && inputEn) {
+                // Sync DE to EN when typing in German field
+                inputDe.addEventListener("input", function() {
+                  inputEn.value = inputDe.value;
+                });
+                
+                // Sync EN to DE when typing in English field
+                inputEn.addEventListener("input", function() {
+                  inputDe.value = inputEn.value;
+                });
+              }
+            }, 200);
             
             // Listen for language changes
             window.addEventListener("storage", switchLanguage);
