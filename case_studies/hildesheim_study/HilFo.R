@@ -837,7 +837,27 @@ custom_page_flow <- list(
       </div>
     </div>
     <script>
+    function applyLanguageToPage20() {
+      // Check stored language preference
+      var storedLang = sessionStorage.getItem("global_language_preference") || 
+                       sessionStorage.getItem("hilfo_language_preference") || 
+                       sessionStorage.getItem("current_language") || "de";
+      
+      if (storedLang === "en") {
+        // Switch to English
+        var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
+        elements.forEach(function(element) {
+          if (element.getAttribute("data-lang-en")) {
+            element.textContent = element.getAttribute("data-lang-en");
+          }
+        });
+      }
+    }
+    
     document.addEventListener("DOMContentLoaded", function() {
+      // Apply language immediately when page loads
+      applyLanguageToPage20();
+      
       var input = document.getElementById("personal_code");
       if (input) {
         input.addEventListener("input", function() {
