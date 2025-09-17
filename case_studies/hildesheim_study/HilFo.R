@@ -471,7 +471,7 @@ input_types <- list(
     Persönlicher_Code = "text"
 )
 
-# Add custom styling for personal code input
+# Add beautiful custom styling for personal code page
 personal_code_css <- '
 <style>
 input[id="Persönlicher_Code"] {
@@ -482,12 +482,8 @@ input[id="Persönlicher_Code"] {
   text-align: center !important; 
   width: 200px !important; 
   text-transform: uppercase !important;
-  margin: 0 auto !important;
+  margin: 20px auto !important;
   display: block !important;
-}
-input[id="Persönlicher_Code"]::placeholder {
-  text-align: center !important;
-  color: #999 !important;
 }
 </style>
 <script>
@@ -498,6 +494,58 @@ document.addEventListener("DOMContentLoaded", function() {
     input.addEventListener("input", function() {
       this.value = this.value.toUpperCase();
     });
+    
+    // Add beautiful styling by injecting HTML elements
+    var formGroup = input.closest(".form-group");
+    if (formGroup) {
+      var label = formGroup.querySelector(".input-label");
+      if (label) {
+        // Style the label
+        label.style.textAlign = "center";
+        label.style.fontSize = "18px";
+        label.style.marginBottom = "30px";
+        
+        // Create instruction box
+        var instructionBox = document.createElement("div");
+        instructionBox.style.background = "#fff3f4";
+        instructionBox.style.padding = "20px";
+        instructionBox.style.borderLeft = "4px solid #e8041c";
+        instructionBox.style.margin = "20px 0";
+        instructionBox.style.fontWeight = "500";
+        
+        // Get current language to show appropriate text
+        var currentLang = "de";
+        if (sessionStorage.getItem("global_language_preference") === "en" || 
+            sessionStorage.getItem("hilfo_language_preference") === "en") {
+          currentLang = "en";
+        }
+        
+        if (currentLang === "en") {
+          instructionBox.innerHTML = "<p style=\\"margin: 0;\\">First 2 letters of your mother\\'s first name + first 2 letters of your birthplace + day of your birthday</p>";
+          input.placeholder = "e.g. MAHA15";
+        } else {
+          instructionBox.innerHTML = "<p style=\\"margin: 0;\\">Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</p>";
+          input.placeholder = "z.B. MAHA15";
+        }
+        
+        // Create example text
+        var exampleText = document.createElement("div");
+        exampleText.style.textAlign = "center";
+        exampleText.style.color = "#666";
+        exampleText.style.fontSize = "14px";
+        exampleText.style.marginBottom = "20px";
+        
+        if (currentLang === "en") {
+          exampleText.textContent = "Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15";
+        } else {
+          exampleText.textContent = "Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15";
+        }
+        
+        // Insert elements in correct order
+        label.parentNode.insertBefore(instructionBox, input);
+        label.parentNode.insertBefore(exampleText, input);
+      }
+    }
   }
 });
 </script>
@@ -969,14 +1017,26 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     cat("DEBUG: is_english =", is_english, "\n")
     
     # Check if we should use English based on the last language selection
-    # Since inrep might not pass session properly, we'll use a different approach
     # Check if there's a language preference stored in the global environment
     if (exists("global_language_preference", envir = .GlobalEnv)) {
         stored_lang <- get("global_language_preference", envir = .GlobalEnv)
         if (!is.null(stored_lang) && stored_lang == "en") {
             is_english <- TRUE
             current_lang <- "en"
-            cat("DEBUG: Using stored English preference\n")
+            cat("DEBUG: Using stored English preference from global\n")
+        }
+    }
+    
+    # PRIORITY: If session has language input, use that (this is the most reliable)
+    if (!is.null(session) && !is.null(session$input) && !is.null(session$input$language)) {
+        if (session$input$language == "en") {
+            is_english <- TRUE
+            current_lang <- "en"
+            cat("DEBUG: Using English from session$input$language\n")
+        } else {
+            is_english <- FALSE
+            current_lang <- "de"
+            cat("DEBUG: Using German from session$input$language\n")
         }
     }
     
