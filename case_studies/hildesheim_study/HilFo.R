@@ -1198,8 +1198,12 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         )
     })
     
+    # Create title based on language (used in both radar plot branches)
+    radar_title <- if (is_english) "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)"
+    
     # Create radar plot with ggradar
     if (requireNamespace("ggradar", quietly = TRUE)) {
+        
         radar_plot <- ggradar::ggradar(
             radar_data,
             values.radar = c("1", "3", "5"),  # Min, mid, max labels
@@ -1225,7 +1229,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                 plot.background = ggplot2::element_rect(fill = "white", color = NA),
                 plot.margin = ggplot2::margin(20, 20, 20, 20)
             ) +
-            ggplot2::labs(title = if (is_english) "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
+            ggplot2::labs(title = radar_title)
     } else {
         # Fallback to simple ggplot2 approach if ggradar not available
         # Use namespace to avoid loading issues
@@ -1304,7 +1308,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                                                    color = "#e8041c", margin = ggplot2::margin(b = 20)),
                 plot.margin = ggplot2::margin(30, 30, 30, 30)
             ) +
-            ggplot2::labs(title = if (is_english) "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)")
+            ggplot2::labs(title = radar_title)
     }
     
     # Create bar chart with logical ordering
@@ -1458,11 +1462,16 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             legend.title = ggplot2::element_blank(),
             legend.text = ggplot2::element_text(size = 12),
             plot.margin = ggplot2::margin(20, 20, 20, 20)
-        ) +
-        ggplot2::labs(
-            title = if (is_english) "All Dimensions Overview" else "Alle Dimensionen im Überblick", 
-            y = if (is_english) "Score (1-5)" else "Punktzahl (1-5)"
         )
+        
+    # Create bar plot labels
+    bar_title <- if (is_english) "All Dimensions Overview" else "Alle Dimensionen im Überblick"
+    bar_y_label <- if (is_english) "Score (1-5)" else "Punktzahl (1-5)"
+    
+    bar_plot <- bar_plot + ggplot2::labs(
+        title = bar_title,
+        y = bar_y_label
+    )
     
     # Create trace plot for Programming Anxiety adaptive testing
     # Add safeguards for extreme values
@@ -1519,13 +1528,20 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             legend.title = ggplot2::element_blank(),
             panel.grid.minor = ggplot2::element_blank(),
             plot.margin = ggplot2::margin(20, 20, 20, 20)
-        ) +
-        ggplot2::labs(
-            title = if (is_english) "Programming Anxiety - Adaptive Testing Trace" else "Programmierangst - Adaptive Testung",
-            subtitle = sprintf(if (is_english) "Final theta = %.3f (SE = %.3f)" else "Finales theta = %.3f (SE = %.3f)", theta_est, se_est),
-            x = if (is_english) "Item Number" else "Item-Nummer",
-            y = if (is_english) "Theta Estimate" else "Theta-Schaetzung"
         )
+        
+    # Create trace plot labels
+    trace_title <- if (is_english) "Programming Anxiety - Adaptive Testing Trace" else "Programmierangst - Adaptive Testung"
+    trace_subtitle <- sprintf(if (is_english) "Final theta = %.3f (SE = %.3f)" else "Finales theta = %.3f (SE = %.3f)", theta_est, se_est)
+    trace_x_label <- if (is_english) "Item Number" else "Item-Nummer"
+    trace_y_label <- if (is_english) "Theta Estimate" else "Theta-Schaetzung"
+    
+    trace_plot <- trace_plot + ggplot2::labs(
+        title = trace_title,
+        subtitle = trace_subtitle,
+        x = trace_x_label,
+        y = trace_y_label
+    )
     
     # Save plots
     radar_file <- tempfile(fileext = ".png")
