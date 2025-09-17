@@ -814,16 +814,16 @@ custom_page_flow <- list(
         title_en = "Personal Code",
         content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
       <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
-        <span data-lang-de="" data-lang-en="Personal Code">Personal Code</span>
+        <span data-lang-de="Persönlicher Code" data-lang-en="Personal Code">Persönlicher Code</span>
       </h2>
       <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
         <span data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">
-        Please create a personal code:</span>
+        Bitte erstellen Sie einen persönlichen Code:</span>
       </p>
       <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
         <p style="margin: 0; font-weight: 500;">
           <span data-lang-de="Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags" data-lang-en="First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday">
-          First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday</span>
+          Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</span>
         </p>
       </div>
       <div style="text-align: center; margin: 30px 0;">
@@ -833,7 +833,7 @@ custom_page_flow <- list(
       </div>
       <div style="text-align: center; color: #666; font-size: 14px;">
         <span data-lang-de="Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15" data-lang-en="Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15">
-        Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</span>
+        Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</span>
       </div>
     </div>
     <script>
@@ -935,18 +935,12 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         }
     }
     
-    # For now, let's default to English if we can't detect the language properly
-    # This ensures the results work while we debug the language detection
+    # Use German as default unless English is explicitly set
     if (current_lang == "de" && is_english == FALSE) {
-        # Check if we should default to English based on some heuristic
-        # For now, let's make it configurable
-        force_english <- TRUE  # Set to FALSE to use German, TRUE to use English
-        
-        if (force_english) {
-            is_english <- TRUE
-            current_lang <- "en"
-            cat("DEBUG: Using English as fallback\n")
-        }
+        # Keep German as default - no forcing to English
+        is_english <- FALSE
+        current_lang <- "de"
+        cat("DEBUG: Using German as default\n")
     }
     
     # Final check to ensure is_english is properly set
