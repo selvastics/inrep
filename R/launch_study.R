@@ -2524,6 +2524,84 @@ launch_study <- function(
     shiny::uiOutput("study_ui", style = "position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; margin: 0 auto !important; transform: none !important; width: 100% !important; max-width: 1200px !important; display: block !important; visibility: visible !important; opacity: 1 !important;")
   )
   
+  # Process custom page flow with language switching support
+  process_page_flow <- function(config, rv, input, output, session, item_bank, ui_labels, logger, auto_close_time, auto_close_time_unit, disable_auto_close) {
+    if (is.null(config$custom_page_flow) || rv$current_page > length(config$custom_page_flow)) {
+      return(shiny::div("Invalid page"))
+    }
+    
+    current_page_config <- config$custom_page_flow[[rv$current_page]]
+    current_lang <- rv$language %||% config$language %||% "de"
+    
+    # Get page title (with language support)
+    page_title <- if (current_lang == "en" && !is.null(current_page_config$title_en)) {
+      current_page_config$title_en
+    } else {
+      current_page_config$title %||% ""
+    }
+    
+    # Process different page types
+    if (current_page_config$type == "custom") {
+      # Handle custom pages with language switching
+      content_html <- current_page_config$content %||% ""
+      
+      # Add language switching JavaScript if translations are provided
+      if (!is.null(current_page_config$translations)) {
+        # Create JavaScript object with translations
+        translations_js <- paste0(
+          "<script>",
+          "window.inrepTranslations = ", jsonlite::toJSON(current_page_config$translations, auto_unbox = TRUE), ";",
+          "document.addEventListener('DOMContentLoaded', function() {",
+          "  var currentLang = '", current_lang, "';",
+          "  var isEnglish = (currentLang === 'en');",
+          "  ",
+          "  // Apply translations to data-translate elements",
+          "  document.querySelectorAll('[data-translate]').forEach(function(element) {",
+          "    var key = element.getAttribute('data-translate');",
+          "    if (window.inrepTranslations[key]) {",
+          "      var text = isEnglish ? window.inrepTranslations[key].en : window.inrepTranslations[key].de;",
+          "      if (text) element.textContent = text;",
+          "    }",
+          "  });",
+          "  ",
+          "  // Apply translations to data-translate-placeholder elements", 
+          "  document.querySelectorAll('[data-translate-placeholder]').forEach(function(element) {",
+          "    var key = element.getAttribute('data-translate-placeholder');",
+          "    if (window.inrepTranslations[key]) {",
+          "      var text = isEnglish ? window.inrepTranslations[key].en : window.inrepTranslations[key].de;",
+          "      if (text) element.placeholder = text;",
+          "    }",
+          "  });",
+          "});",
+          "</script>"
+        )
+        content_html <- paste0(content_html, translations_js)
+      }
+      
+      return(shiny::div(
+        class = "assessment-card",
+        if (page_title != "") shiny::h3(page_title, class = "card-header"),
+        shiny::HTML(content_html),
+        shiny::div(class = "nav-buttons",
+          if (rv$current_page > 1) {
+            shiny::actionButton("prev_page", "Previous", class = "btn-secondary",
+                               onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
+          },
+          if (rv$current_page < rv$total_pages) {
+            shiny::actionButton("next_page", "Next", class = "btn-primary",
+                               onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
+          } else {
+            shiny::actionButton("submit_test", "Submit", class = "btn-success",
+                               onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
+          }
+        )
+      ))
+    } else {
+      # For other page types, return placeholder (existing logic should handle these)
+      return(shiny::div("Processing page..."))
+    }
+  }
+
   server <- function(input, output, session) {
     # LATER PACKAGE: IMMEDIATE UI DISPLAY - Show UI first, load everything else later
     if (immediate_ui) {
@@ -2795,6 +2873,40 @@ launch_study <- function(
         } else {
           shiny::HTML("<p>No report available</p>")
         }
+        
+        # Add automatic language switching JavaScript for custom pages
+        language_js <- sprintf("
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          // Apply inrep language switching to custom pages
+          function applyInrepLanguage() {
+            var currentLang = '%s';
+            var isEnglish = (currentLang === 'en');
+            
+            // Handle data-translate attributes
+            document.querySelectorAll('[data-translate]').forEach(function(element) {
+              var key = element.getAttribute('data-translate');
+              if (window.inrepTranslations && window.inrepTranslations[key]) {
+                var text = isEnglish ? window.inrepTranslations[key].en : window.inrepTranslations[key].de;
+                if (text) element.textContent = text;
+              }
+            });
+            
+            // Handle data-translate-placeholder attributes
+            document.querySelectorAll('[data-translate-placeholder]').forEach(function(element) {
+              var key = element.getAttribute('data-translate-placeholder');
+              if (window.inrepTranslations && window.inrepTranslations[key]) {
+                var text = isEnglish ? window.inrepTranslations[key].en : window.inrepTranslations[key].de;
+                if (text) element.placeholder = text;
+              }
+            });
+          }
+          
+          applyInrepLanguage();
+          setTimeout(applyInrepLanguage, 100);
+        });
+        </script>
+        ", rv$language %||% "de")
         
         # Create a temporary HTML file
         temp_html <- tempfile(fileext = ".html")
