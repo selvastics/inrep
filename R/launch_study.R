@@ -2784,22 +2784,6 @@ launch_study <- function(
           
           cat("HILFO: Immediately switched current page to:", new_lang, "\n")
         }
-        
-        # CRITICAL: Also update the current language for immediate effect
-        new_lang <- input$store_language_globally
-        if (new_lang %in% c("en", "de")) {
-          current_language(new_lang)
-          rv$language <- new_lang
-          
-          # Update UI labels for immediate effect
-          new_labels <- get_language_labels(new_lang)
-          reactive_ui_labels(new_labels)
-          
-          # Store in session userData for access by render functions
-          session$userData$language <- new_lang
-          
-          cat("HILFO: Immediately switched current page to:", new_lang, "\n")
-        }
       }
     })
     
