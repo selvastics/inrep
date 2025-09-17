@@ -917,14 +917,21 @@ custom_page_flow <- list(
     </div>
     <script>
     document.addEventListener("DOMContentLoaded", function() {
-      // Check language and apply translations - check ALL possible keys
+      // Check language and apply translations - check ALL possible keys with debugging
+      var keys = ["hilfo_language_preference", "current_language", "hilfo_language", "hilfo_global_language", "global_language_preference"];
+      console.log("=== PAGE 20 LANGUAGE DEBUG ===");
+      keys.forEach(function(key) {
+        var value = sessionStorage.getItem(key);
+        console.log("sessionStorage." + key + " =", value);
+      });
+      
       var currentLang = sessionStorage.getItem("hilfo_language_preference") || 
                         sessionStorage.getItem("current_language") || 
                         sessionStorage.getItem("hilfo_language") || 
                         sessionStorage.getItem("hilfo_global_language") || 
                         sessionStorage.getItem("global_language_preference") || "de";
       
-      console.log("Page 20 detected language:", currentLang);
+      console.log("Page 20 final detected language:", currentLang);
       
       if (currentLang === "en") {
         console.log("Switching Page 20 to English");
