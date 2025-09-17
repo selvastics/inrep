@@ -447,7 +447,30 @@ demographic_configs <- list(
         question = "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags). Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15",
         question_en = "Please create a personal code (first 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday). Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15",
         type = "text",
-        required = FALSE
+        required = FALSE,
+        # NEW: Custom HTML content with beautiful styling
+        html_content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
+          <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Persönlicher Code</h2>
+          <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">Bitte erstellen Sie einen persönlichen Code:</p>
+          <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+            <p style="margin: 0; font-weight: 500;">Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</p>
+          </div>
+          <div style="text-align: center; margin: 30px 0;">
+            <input type="text" id="Persönlicher_Code" name="Persönlicher_Code" placeholder="z.B. MAHA15" style="padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; text-align: center; width: 200px; text-transform: uppercase;" required>
+          </div>
+          <div style="text-align: center; color: #666; font-size: 14px;">Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</div>
+        </div>',
+        html_content_en = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
+          <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">Personal Code</h2>
+          <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">Please create a personal code:</p>
+          <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+            <p style="margin: 0; font-weight: 500;">First 2 letters of your mothers first name + first 2 letters of your birthplace + day of your birthday</p>
+          </div>
+          <div style="text-align: center; margin: 30px 0;">
+            <input type="text" id="Persönlicher_Code" name="Persönlicher_Code" placeholder="e.g. MAHA15" style="padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; text-align: center; width: 200px; text-transform: uppercase;" required>
+          </div>
+          <div style="text-align: center; color: #666; font-size: 14px;">Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</div>
+        </div>'
     )
 )
 
@@ -471,87 +494,7 @@ input_types <- list(
     Persönlicher_Code = "text"
 )
 
-# Add beautiful custom styling for personal code page
-personal_code_css <- '
-<style>
-input[id="Persönlicher_Code"] {
-  padding: 15px 20px !important; 
-  font-size: 18px !important; 
-  border: 2px solid #e0e0e0 !important; 
-  border-radius: 8px !important; 
-  text-align: center !important; 
-  width: 200px !important; 
-  text-transform: uppercase !important;
-  margin: 20px auto !important;
-  display: block !important;
-}
-</style>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  var input = document.getElementById("Persönlicher_Code");
-  if (input) {
-    input.placeholder = "z.B. MAHA15";
-    input.addEventListener("input", function() {
-      this.value = this.value.toUpperCase();
-    });
-    
-    // Add beautiful styling by injecting HTML elements
-    var formGroup = input.closest(".form-group");
-    if (formGroup) {
-      var label = formGroup.querySelector(".input-label");
-      if (label) {
-        // Style the label
-        label.style.textAlign = "center";
-        label.style.fontSize = "18px";
-        label.style.marginBottom = "30px";
-        
-        // Create instruction box
-        var instructionBox = document.createElement("div");
-        instructionBox.style.background = "#fff3f4";
-        instructionBox.style.padding = "20px";
-        instructionBox.style.borderLeft = "4px solid #e8041c";
-        instructionBox.style.margin = "20px 0";
-        instructionBox.style.fontWeight = "500";
-        
-        // Get current language to show appropriate text
-        var currentLang = "de";
-        if (sessionStorage.getItem("global_language_preference") === "en" || 
-            sessionStorage.getItem("hilfo_language_preference") === "en") {
-          currentLang = "en";
-        }
-        
-        if (currentLang === "en") {
-          var instructText = "First 2 letters of your mother" + String.fromCharCode(39) + "s first name + first 2 letters of your birthplace + day of your birthday";
-          instructionBox.innerHTML = "<p style=" + String.fromCharCode(34) + "margin: 0;" + String.fromCharCode(34) + ">" + instructText + "</p>";
-          input.placeholder = "e.g. MAHA15";
-        } else {
-          var instructText = "Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags";
-          instructionBox.innerHTML = "<p style=" + String.fromCharCode(34) + "margin: 0;" + String.fromCharCode(34) + ">" + instructText + "</p>";
-          input.placeholder = "z.B. MAHA15";
-        }
-        
-        // Create example text
-        var exampleText = document.createElement("div");
-        exampleText.style.textAlign = "center";
-        exampleText.style.color = "#666";
-        exampleText.style.fontSize = "14px";
-        exampleText.style.marginBottom = "20px";
-        
-        if (currentLang === "en") {
-          exampleText.textContent = "Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15";
-        } else {
-          exampleText.textContent = "Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15";
-        }
-        
-        // Insert elements in correct order
-        label.parentNode.insertBefore(instructionBox, input);
-        label.parentNode.insertBefore(exampleText, input);
-      }
-    }
-  }
-});
-</script>
-'
+
 
 # =============================================================================
 # CUSTOM PAGE FLOW
@@ -644,13 +587,11 @@ custom_page_flow <- list(
           enContent.style.display = "none";
           if (textSpan) textSpan.textContent = "English Version";
           
-          /* Send German language to global system - SAFE */
+          /* Send German language to global system - CONSISTENT STORAGE */
           sessionStorage.setItem("hilfo_global_language", "de");
+          sessionStorage.setItem("global_language_preference", "de");
           if (typeof Shiny !== "undefined") {
-            // Only send once to prevent loops
-            setTimeout(function() {
-              Shiny.setInputValue("store_language_globally", "de", {priority: "event"});
-            }, 500);
+            Shiny.setInputValue("store_language_globally", "de", {priority: "event"});
           }
           sessionStorage.setItem("hilfo_language", "de");
           sessionStorage.setItem("current_language", "de");
@@ -661,13 +602,11 @@ custom_page_flow <- list(
           enContent.style.display = "block";
           if (textSpan) textSpan.textContent = "Deutsche Version";
           
-          /* Send English language to global system - SAFE */
+          /* Send English language to global system - CONSISTENT STORAGE */
           sessionStorage.setItem("hilfo_global_language", "en");
+          sessionStorage.setItem("global_language_preference", "en");
           if (typeof Shiny !== "undefined") {
-            // Only send once to prevent loops
-            setTimeout(function() {
-              Shiny.setInputValue("store_language_globally", "en", {priority: "event"});
-            }, 500);
+            Shiny.setInputValue("store_language_globally", "en", {priority: "event"});
           }
           sessionStorage.setItem("hilfo_language", "en");
           sessionStorage.setItem("current_language", "en");
@@ -701,6 +640,22 @@ custom_page_flow <- list(
           if (deCheck) deCheck.checked = enCheck.checked;
         });
       }
+    });
+    
+    // GLOBAL LANGUAGE INITIALIZATION - ENSURE CONSISTENCY ACROSS ALL PAGES
+    document.addEventListener("DOMContentLoaded", function() {
+      // Unified language detection for entire study
+      var currentLang = sessionStorage.getItem("hilfo_language_preference") || 
+                       sessionStorage.getItem("global_language_preference") || 
+                       sessionStorage.getItem("current_language") || "de";
+      
+      // Ensure all language keys are consistent
+      sessionStorage.setItem("hilfo_language_preference", currentLang);
+      sessionStorage.setItem("global_language_preference", currentLang);
+      sessionStorage.setItem("current_language", currentLang);
+      sessionStorage.setItem("hilfo_language", currentLang);
+      
+      console.log("Language initialized to:", currentLang);
     });
     </script>',
         validate = "function(inputs) { 
@@ -888,84 +843,13 @@ custom_page_flow <- list(
         demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st")
     ),
     
-    # Page 20: Personal Code - beautiful custom design
+    # Page 20: Personal Code - use demographic type for proper language handling
     list(
         id = "page20",
-        type = "custom",
+        type = "demographics", 
         title = "Persönlicher Code",
         title_en = "Personal Code",
-        content_de = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
-      <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
-        Persönlicher Code
-      </h2>
-      <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
-        Bitte erstellen Sie einen persönlichen Code:
-      </p>
-      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-        <p style="margin: 0; font-weight: 500;">
-          Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags
-        </p>
-      </div>
-      <div style="text-align: center; margin: 30px 0;">
-        <input type="text" id="personal_code" placeholder="z.B. MAHA15" style="
-          padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
-          text-align: center; width: 200px; text-transform: uppercase;" required>
-      </div>
-      <div style="text-align: center; color: #666; font-size: 14px;">
-        Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15
-      </div>
-    </div>
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      var input = document.getElementById("personal_code");
-      if (input) {
-        input.addEventListener("input", function() {
-          this.value = this.value.toUpperCase();
-        });
-        input.addEventListener("blur", function() {
-          if (this.value.trim() !== "") {
-            Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
-          }
-        });
-      }
-    });
-    </script>',
-        content_en = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
-      <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
-        Personal Code
-      </h2>
-      <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
-        Please create a personal code:
-      </p>
-      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-        <p style="margin: 0; font-weight: 500;">
-          First 2 letters of your mothers first name + first 2 letters of your birthplace + day of your birthday
-        </p>
-      </div>
-      <div style="text-align: center; margin: 30px 0;">
-        <input type="text" id="personal_code" placeholder="e.g. MAHA15" style="
-          padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
-          text-align: center; width: 200px; text-transform: uppercase;" required>
-      </div>
-      <div style="text-align: center; color: #666; font-size: 14px;">
-        Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15
-      </div>
-    </div>
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      var input = document.getElementById("personal_code");
-      if (input) {
-        input.addEventListener("input", function() {
-          this.value = this.value.toUpperCase();
-        });
-        input.addEventListener("blur", function() {
-          if (this.value.trim() !== "") {
-            Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
-          }
-        });
-      }
-    });
-    </script>'
+        demographics = c("Persönlicher_Code")
     ),
     
     # Page 21: Results (now with PA results included)
@@ -994,7 +878,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             # Calculate BFI scores from responses (items 21-40)
             if (!is.null(responses) && length(responses) >= 40) {
                 bfi_responses <- responses[21:40]
-                if (length(bfi_responses) >= 20) {
+                if (!is.null(bfi_responses) && length(bfi_responses) >= 20 && !all(is.na(bfi_responses))) {
                     csv_env$csv_data$BFI_Extraversion <- mean(c(bfi_responses[1:4]), na.rm = TRUE)
                     csv_env$csv_data$BFI_Vertraeglichkeit <- mean(c(bfi_responses[5:8]), na.rm = TRUE)
                     csv_env$csv_data$BFI_Gewissenhaftigkeit <- mean(c(bfi_responses[9:12]), na.rm = TRUE)
@@ -1032,1143 +916,1159 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         if (!requireNamespace("base64enc", quietly = TRUE)) {
             stop("base64enc package is required for report generation")
         }
-    
-    # Get current language from session if available
-    current_lang <- "de"  # Default to German
-    
-    # Try multiple ways to get the language - prioritize session$input
-    if (!is.null(session)) {
-        # Check session$input first (this is where the language actually is)
-        if (!is.null(session$input$language)) {
+        
+        # Get current language from session if available
+        current_lang <- "de"  # Default to German
+        
+        # Try multiple ways to get the language - prioritize session$input
+        if (!is.null(session)) {
+            # Check session$input first (this is where the language actually is)
+            if (!is.null(session$input$language)) {
+                current_lang <- session$input$language
+            } else if (!is.null(session$input$study_language)) {
+                current_lang <- session$input$study_language
+            } else if (!is.null(session$userData$language)) {
+                current_lang <- session$userData$language
+            } else if (!is.null(session$userData$study_language)) {
+                current_lang <- session$userData$study_language
+            } else if (!is.null(session$userData$current_language)) {
+                current_lang <- session$userData$current_language
+            }
+        }
+        
+        # Also check global environment for language
+        if (exists("current_language", envir = .GlobalEnv)) {
+            current_lang <- get("current_language", envir = .GlobalEnv)
+        }
+        
+        # Debug: Print what language we detected
+        cat("DEBUG: Detected language in results processor:", current_lang, "\n")
+        
+        # Additional debugging - check session structure
+        if (!is.null(session)) {
+            cat("DEBUG: Session userData keys:", names(session$userData), "\n")
+            if (!is.null(session$input)) {
+                cat("DEBUG: Session input keys:", names(session$input), "\n")
+            }
+        }
+        
+        # Ensure current_lang is never NULL or NA
+        if (is.null(current_lang) || is.na(current_lang) || current_lang == "") {
+            current_lang <- "de"
+            cat("DEBUG: Using default German language\n")
+        }
+        
+        # PRIORITY: If session has language input, use that (this is the most reliable)
+        if (!is.null(session) && !is.null(session$input) && !is.null(session$input$language)) {
             current_lang <- session$input$language
-        } else if (!is.null(session$input$study_language)) {
-            current_lang <- session$input$study_language
-        } else if (!is.null(session$userData$language)) {
-            current_lang <- session$userData$language
-        } else if (!is.null(session$userData$study_language)) {
-            current_lang <- session$userData$study_language
-        } else if (!is.null(session$userData$current_language)) {
-            current_lang <- session$userData$current_language
+            cat("DEBUG: Using language from session$input$language:", current_lang, "\n")
         }
-    }
-    
-    # Also check global environment for language
-    if (exists("current_language", envir = .GlobalEnv)) {
-        current_lang <- get("current_language", envir = .GlobalEnv)
-    }
-    
-    # Debug: Print what language we detected
-    cat("DEBUG: Detected language in results processor:", current_lang, "\n")
-    
-    # Additional debugging - check session structure
-    if (!is.null(session)) {
-        cat("DEBUG: Session userData keys:", names(session$userData), "\n")
-        if (!is.null(session$input)) {
-            cat("DEBUG: Session input keys:", names(session$input), "\n")
+        
+        # Check if we should use English based on the last language selection
+        # Check if there's a language preference stored in the global environment
+        if (exists("global_language_preference", envir = .GlobalEnv)) {
+            stored_lang <- get("global_language_preference", envir = .GlobalEnv)
+            if (!is.null(stored_lang) && stored_lang == "en") {
+                current_lang <- "en"
+                cat("DEBUG: Using stored English preference from global\n")
+            }
         }
-    }
-    
-    # Ensure current_lang is never NULL or NA
-    if (is.null(current_lang) || is.na(current_lang) || current_lang == "") {
-        current_lang <- "de"
-        cat("DEBUG: Using default German language\n")
-    }
-    
-    # PRIORITY: If session has language input, use that (this is the most reliable)
-    if (!is.null(session) && !is.null(session$input) && !is.null(session$input$language)) {
-        current_lang <- session$input$language
-        cat("DEBUG: Using language from session$input$language:", current_lang, "\n")
-    }
-    
-    # Check if we should use English based on the last language selection
-    # Check if there's a language preference stored in the global environment
-    if (exists("global_language_preference", envir = .GlobalEnv)) {
-        stored_lang <- get("global_language_preference", envir = .GlobalEnv)
-        if (!is.null(stored_lang) && stored_lang == "en") {
-            current_lang <- "en"
-            cat("DEBUG: Using stored English preference from global\n")
-        }
-    }
-    
-    # Create is_english variable AFTER all language detection
-    is_english <- (current_lang == "en")
-    cat("DEBUG: is_english =", is_english, "\n")
-    
-    # Use German as default unless English is explicitly set
-    if (current_lang == "de" && is_english == FALSE) {
-        # Keep German as default - no forcing to English
-        is_english <- FALSE
-        current_lang <- "de"
-        cat("DEBUG: Using German as default\n")
-    }
-    
-    # Final check to ensure is_english is properly set
-    if (is.null(is_english) || is.na(is_english)) {
+        
+        # Create is_english variable AFTER all language detection
         is_english <- (current_lang == "en")
-        cat("DEBUG: Reset is_english to:", is_english, "\n")
-    }
-    
-    # Additional debug output
-    cat("DEBUG: Final language settings - current_lang:", current_lang, ", is_english:", is_english, "\n")
-    
-    if (is.null(responses) || length(responses) == 0) {
-        if (is_english) {
-            return(shiny::HTML("<p>No responses available for evaluation.</p>"))
-        } else {
-            return(shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>"))
+        cat("DEBUG: is_english =", is_english, "\n")
+        
+        # Use German as default unless English is explicitly set
+        if (current_lang == "de" && is_english == FALSE) {
+            # Keep German as default - no forcing to English
+            is_english <- FALSE
+            current_lang <- "de"
+            cat("DEBUG: Using German as default\n")
         }
-    }
-    
-    # Ensure demographics is a list
-    if (is.null(demographics)) {
-        demographics <- list()
-    }
-    
-    # Ensure we have all 51 item responses (20 PA + 31 original)
-    if (length(responses) < 51) {
-        responses <- c(responses, rep(3, 51 - length(responses)))
-    }
-    responses <- as.numeric(responses)
-    
-    # Calculate Programming Anxiety score (first 10 items shown)
-    pa_responses <- responses[1:10]
-    # Reverse score items 1, 10 (and 15 if shown)
-    pa_responses[c(1)] <- 6 - pa_responses[c(1)]
-    pa_responses[c(10)] <- 6 - pa_responses[c(10)]
-    pa_score <- mean(pa_responses, na.rm = TRUE)
-    
-    # Compute IRT-based ability estimate for Programming Anxiety
-    # This is a semi-adaptive assessment: 5 fixed + 5 adaptively selected items
-    pa_theta <- pa_score  # Default to classical score
-    
-    # Fit 2PL IRT model for Programming Anxiety
-    cat("\n================================================================================\n")
-    cat("PROGRAMMING ANXIETY - IRT MODEL (2PL)\n")
-    cat("================================================================================\n")
-    cat("Assessment Type: Semi-Adaptive (5 fixed + 5 adaptive items)\n")
-    cat("Total items administered: 10\n")
-    cat("\n")
-    
-    # Get item parameters for the 10 PA items that were shown
-    # Note: In real adaptive testing, items 6-10 would be selected based on responses
-    shown_items <- all_items_de[1:10, ]
-    a_params <- shown_items$a
-    b_params <- shown_items$b
-    
-    # Use Maximum Likelihood Estimation for theta
-    theta_est <- 0  # Start with prior mean
-    converged <- FALSE
-    
-    for (iter in 1:20) {
-        # Calculate probabilities for current theta using 2PL model
-        probs <- 1 / (1 + exp(-a_params * (theta_est - b_params)))
         
-        # Convert responses to 0-1 scale for IRT
-        resp_binary <- (pa_responses - 1) / 4  # Convert 1-5 to 0-1
-        
-        # First derivative (score function)
-        first_deriv <- sum(a_params * (resp_binary - probs))
-        
-        # Second derivative (information)
-        second_deriv <- -sum(a_params^2 * probs * (1 - probs))
-        
-        # Update theta using Newton-Raphson
-        if (abs(second_deriv) > 0.01) {
-            delta <- first_deriv / second_deriv
-            theta_est <- theta_est - delta
-            
-            # Check convergence
-            if (abs(delta) < 0.001) {
-                converged <- TRUE
-                break
-            }
+        # Final check to ensure is_english is properly set
+        if (is.null(is_english) || is.na(is_english)) {
+            is_english <- (current_lang == "en")
+            cat("DEBUG: Reset is_english to:", is_english, "\n")
         }
-    }
-    
-    # Calculate standard error and test information
-    info <- sum(a_params^2 * (1 / (1 + exp(-a_params * (theta_est - b_params)))) * 
-                    (1 - 1 / (1 + exp(-a_params * (theta_est - b_params)))))
-    se_est <- 1 / sqrt(info)
-    reliability <- 1 - (1/info)  # Approximate reliability
-    
-    # Output results
-    cat(sprintf("Classical Score (mean): %.2f (range 1-5)\n", pa_score))
-    cat(sprintf("IRT Theta Estimate: %.3f\n", theta_est))
-    cat(sprintf("Standard Error (SE): %.3f\n", se_est))
-    cat(sprintf("Test Information: %.3f\n", info))
-    cat(sprintf("Reliability: %.3f\n", reliability))
-    cat(sprintf("Convergence: %s (iterations: %d)\n", ifelse(converged, "Yes", "No"), iter))
-    cat("\n")
-    
-    # Interpretation on standardized scale
-    z_score <- theta_est  # Theta is already on z-score scale
-    percentile <- pnorm(z_score) * 100
-    
-    cat(sprintf("Percentile Rank: %.1f%%\n", percentile))
-    
-    if (theta_est < -1.5) {
-        cat("Interpretation: Very low programming anxiety (bottom 7%)\n")
-    } else if (theta_est < -0.5) {
-        cat("Interpretation: Low programming anxiety (below average)\n")
-    } else if (theta_est < 0.5) {
-        cat("Interpretation: Moderate programming anxiety (average)\n")
-    } else if (theta_est < 1.5) {
-        cat("Interpretation: High programming anxiety (above average)\n")
-    } else {
-        cat("Interpretation: Very high programming anxiety (top 7%)\n")
-    }
-    cat("================================================================================\n\n")
-    
-    # Store IRT estimate (scale to 1-5 for consistency with other scores)
-    # Convert theta to 1-5 scale: theta of -2 = 1, theta of 2 = 5
-    pa_theta_scaled <- 3 + theta_est  # Center at 3, each SD = 1 point
-    pa_theta_scaled <- pmax(1, pmin(5, pa_theta_scaled))  # Bound to 1-5
-    pa_theta <- pa_theta_scaled
-    
-    # Create trace plot showing theta progression (simulated for semi-adaptive)
-    # In a real adaptive test, this would show actual theta estimates after each item
-    theta_trace <- numeric(10)
-    se_trace <- numeric(10)
-    
-    # More robust theta progression simulation
-    for (i in 1:10) {
-        # Calculate theta up to item i
-        resp_subset <- (pa_responses[1:i] - 1) / 4
-        a_subset <- a_params[1:i]
-        b_subset <- b_params[1:i]
         
-        # Robust theta estimation with better convergence
-        theta_temp <- 0
-        max_iter <- 20
-        tolerance <- 1e-6
+        # Additional debug output
+        cat("DEBUG: Final language settings - current_lang:", current_lang, ", is_english:", is_english, "\n")
         
-        for (iter in 1:max_iter) {
-            # Calculate probabilities
-            probs <- 1 / (1 + exp(-a_subset * (theta_temp - b_subset)))
-            
-            # First derivative (gradient)
-            first_d <- sum(a_subset * (resp_subset - probs))
-            
-            # Second derivative (Hessian)
-            second_d <- -sum(a_subset^2 * probs * (1 - probs))
-            
-            # Check for convergence
-            if (abs(first_d) < tolerance) break
-            
-            # Update theta with safeguards
-            if (abs(second_d) > 1e-6) {
-                step <- first_d / second_d
-                # Limit step size to prevent instability
-                step <- sign(step) * min(abs(step), 0.5)
-                theta_temp <- theta_temp - step
+        if (is.null(responses) || length(responses) == 0) {
+            if (is_english) {
+                return(shiny::HTML("<p>No responses available for evaluation.</p>"))
             } else {
-                # Fallback: simple gradient descent
-                theta_temp <- theta_temp - 0.1 * first_d
+                return(shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>"))
+            }
+        }
+        
+        # Ensure demographics is a list
+        if (is.null(demographics)) {
+            demographics <- list()
+        }
+        
+        # Ensure we have all 51 item responses (20 PA + 31 original)
+        if (is.null(responses) || length(responses) < 51) {
+            if (is.null(responses)) {
+                responses <- rep(3, 51)
+            } else {
+                responses <- c(responses, rep(3, 51 - length(responses)))
+            }
+        }
+        responses <- as.numeric(responses)
+        
+        # Calculate Programming Anxiety score (first 10 items shown)
+        pa_responses <- responses[1:10]
+        # Reverse score items 1, 10 (and 15 if shown)
+        pa_responses[c(1)] <- 6 - pa_responses[c(1)]
+        pa_responses[c(10)] <- 6 - pa_responses[c(10)]
+        pa_score <- mean(pa_responses, na.rm = TRUE)
+        
+        # Compute IRT-based ability estimate for Programming Anxiety
+        # This is a semi-adaptive assessment: 5 fixed + 5 adaptively selected items
+        pa_theta <- pa_score  # Default to classical score
+        
+        # Fit 2PL IRT model for Programming Anxiety
+        cat("\n================================================================================\n")
+        cat("PROGRAMMING ANXIETY - IRT MODEL (2PL)\n")
+        cat("================================================================================\n")
+        cat("Assessment Type: Semi-Adaptive (5 fixed + 5 adaptive items)\n")
+        cat("Total items administered: 10\n")
+        cat("\n")
+        
+        # Get item parameters for the 10 PA items that were shown
+        # Note: In real adaptive testing, items 6-10 would be selected based on responses
+        shown_items <- all_items_de[1:10, ]
+        a_params <- shown_items$a
+        b_params <- shown_items$b
+        
+        # Use Maximum Likelihood Estimation for theta
+        theta_est <- 0  # Start with prior mean
+        converged <- FALSE
+        
+        for (iter in 1:20) {
+            # Calculate probabilities for current theta using 2PL model
+            probs <- 1 / (1 + exp(-a_params * (theta_est - b_params)))
+            
+            # Convert responses to 0-1 scale for IRT
+            resp_binary <- (pa_responses - 1) / 4  # Convert 1-5 to 0-1
+            
+            # First derivative (score function)
+            first_deriv <- sum(a_params * (resp_binary - probs))
+            
+            # Second derivative (information)
+            second_deriv <- -sum(a_params^2 * probs * (1 - probs))
+            
+            # Update theta using Newton-Raphson
+            if (abs(second_deriv) > 0.01) {
+                delta <- first_deriv / second_deriv
+                theta_est <- theta_est - delta
+                
+                # Check convergence
+                if (abs(delta) < 0.001) {
+                    converged <- TRUE
+                    break
+                }
+            }
+        }
+        
+        # Calculate standard error and test information
+        info <- sum(a_params^2 * (1 / (1 + exp(-a_params * (theta_est - b_params)))) * 
+                        (1 - 1 / (1 + exp(-a_params * (theta_est - b_params)))))
+        se_est <- 1 / sqrt(info)
+        reliability <- 1 - (1/info)  # Approximate reliability
+        
+        # Output results
+        cat(sprintf("Classical Score (mean): %.2f (range 1-5)\n", pa_score))
+        cat(sprintf("IRT Theta Estimate: %.3f\n", theta_est))
+        cat(sprintf("Standard Error (SE): %.3f\n", se_est))
+        cat(sprintf("Test Information: %.3f\n", info))
+        cat(sprintf("Reliability: %.3f\n", reliability))
+        cat(sprintf("Convergence: %s (iterations: %d)\n", ifelse(converged, "Yes", "No"), iter))
+        cat("\n")
+        
+        # Interpretation on standardized scale
+        z_score <- theta_est  # Theta is already on z-score scale
+        percentile <- pnorm(z_score) * 100
+        
+        cat(sprintf("Percentile Rank: %.1f%%\n", percentile))
+        
+        if (theta_est < -1.5) {
+            cat("Interpretation: Very low programming anxiety (bottom 7%)\n")
+        } else if (theta_est < -0.5) {
+            cat("Interpretation: Low programming anxiety (below average)\n")
+        } else if (theta_est < 0.5) {
+            cat("Interpretation: Moderate programming anxiety (average)\n")
+        } else if (theta_est < 1.5) {
+            cat("Interpretation: High programming anxiety (above average)\n")
+        } else {
+            cat("Interpretation: Very high programming anxiety (top 7%)\n")
+        }
+        cat("================================================================================\n\n")
+        
+        # Store IRT estimate (scale to 1-5 for consistency with other scores)
+        # Convert theta to 1-5 scale: theta of -2 = 1, theta of 2 = 5
+        pa_theta_scaled <- 3 + theta_est  # Center at 3, each SD = 1 point
+        pa_theta_scaled <- pmax(1, pmin(5, pa_theta_scaled))  # Bound to 1-5
+        pa_theta <- pa_theta_scaled
+        
+        # Create trace plot showing theta progression (simulated for semi-adaptive)
+        # In a real adaptive test, this would show actual theta estimates after each item
+        theta_trace <- numeric(10)
+        se_trace <- numeric(10)
+        
+        # More robust theta progression simulation
+        for (i in 1:10) {
+            # Calculate theta up to item i
+            resp_subset <- (pa_responses[1:i] - 1) / 4
+            a_subset <- a_params[1:i]
+            b_subset <- b_params[1:i]
+            
+            # Robust theta estimation with better convergence
+            theta_temp <- 0
+            max_iter <- 20
+            tolerance <- 1e-6
+            
+            for (iter in 1:max_iter) {
+                # Calculate probabilities
+                probs <- 1 / (1 + exp(-a_subset * (theta_temp - b_subset)))
+                
+                # First derivative (gradient)
+                first_d <- sum(a_subset * (resp_subset - probs))
+                
+                # Second derivative (Hessian)
+                second_d <- -sum(a_subset^2 * probs * (1 - probs))
+                
+                # Check for convergence
+                if (abs(first_d) < tolerance) break
+                
+                # Update theta with safeguards
+                if (abs(second_d) > 1e-6) {
+                    step <- first_d / second_d
+                    # Limit step size to prevent instability
+                    step <- sign(step) * min(abs(step), 0.5)
+                    theta_temp <- theta_temp - step
+                } else {
+                    # Fallback: simple gradient descent
+                    theta_temp <- theta_temp - 0.1 * first_d
+                }
+                
+                # Bound theta to reasonable range
+                theta_temp <- pmax(-4, pmin(4, theta_temp))
             }
             
-            # Bound theta to reasonable range
-            theta_temp <- pmax(-4, pmin(4, theta_temp))
+            # Calculate information and SE with safeguards
+            probs_final <- 1 / (1 + exp(-a_subset * (theta_temp - b_subset)))
+            info_temp <- sum(a_subset^2 * probs_final * (1 - probs_final))
+            
+            # Ensure information is positive and not too small
+            info_temp <- max(info_temp, 0.1)
+            se_temp <- 1 / sqrt(info_temp)
+            
+            # Bound standard error to reasonable range
+            se_temp <- pmax(0.1, pmin(2.0, se_temp))
+            
+            theta_trace[i] <- theta_temp
+            se_trace[i] <- se_temp
         }
         
-        # Calculate information and SE with safeguards
-        probs_final <- 1 / (1 + exp(-a_subset * (theta_temp - b_subset)))
-        info_temp <- sum(a_subset^2 * probs_final * (1 - probs_final))
-        
-        # Ensure information is positive and not too small
-        info_temp <- max(info_temp, 0.1)
-        se_temp <- 1 / sqrt(info_temp)
-        
-        # Bound standard error to reasonable range
-        se_temp <- pmax(0.1, pmin(2.0, se_temp))
-        
-        theta_trace[i] <- theta_temp
-        se_trace[i] <- se_temp
-    }
-    
-    # Calculate BFI scores - PROPER GROUPING BY TRAIT (now starting at index 21)
-    # Items are ordered: E1, E2, E3, E4, V1, V2, V3, V4, G1, G2, G3, G4, N1, N2, N3, N4, O1, O2, O3, O4
-    scores <- list(
-        ProgrammingAnxiety = if (exists("pa_theta")) pa_theta else pa_score,
-        Extraversion = mean(c(responses[21], 6-responses[22], 6-responses[23], responses[24]), na.rm=TRUE),
-        Verträglichkeit = mean(c(responses[25], 6-responses[26], responses[27], 6-responses[28]), na.rm=TRUE),
-        Gewissenhaftigkeit = mean(c(6-responses[29], responses[30], responses[31], 6-responses[32]), na.rm=TRUE),
-        Neurotizismus = mean(c(6-responses[33], responses[34], responses[35], 6-responses[36]), na.rm=TRUE),
-        Offenheit = mean(c(responses[37], 6-responses[38], responses[39], 6-responses[40]), na.rm=TRUE)
-    )
-    
-    # PSQ Stress score (now at indices 41-45)
-    psq <- responses[41:45]
-    scores$Stress <- mean(c(psq[1:3], 6-psq[4], psq[5]), na.rm=TRUE)
-    
-    # MWS & Statistics (now at indices 46-49 and 50-51)
-    scores$Studierfähigkeiten <- mean(responses[46:49], na.rm=TRUE)
-    scores$Statistik <- mean(responses[50:51], na.rm=TRUE)
-    
-    # Debug: Check scores for missing values
-    cat("DEBUG: Scores values:\n")
-    for (name in names(scores)) {
-        cat(sprintf("  %s: %s (is.na: %s, is.nan: %s)\n", 
-                   name, scores[[name]], is.na(scores[[name]]), is.nan(scores[[name]])))
-    }
-    
-    # Create radar plot using ggradar approach
-    # Check for ggradar (should be pre-installed)
-    
-    # Prepare data for ggradar - needs to be scaled 0-1
-    # Ensure all scores are valid numbers and handle missing values
-    radar_scores <- list(
-        Extraversion = if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) 3 else scores$Extraversion,
-        Verträglichkeit = if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) 3 else scores$Verträglichkeit,
-        Gewissenhaftigkeit = if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) 3 else scores$Gewissenhaftigkeit,
-        Neurotizismus = if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) 3 else scores$Neurotizismus,
-        Offenheit = if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit
-    )
-    
-    # Debug: Check radar scores
-    cat("DEBUG: Radar scores values:\n")
-    for (name in names(radar_scores)) {
-        cat(sprintf("  %s: %s\n", name, radar_scores[[name]]))
-    }
-    
-    tryCatch({
-        radar_data <- data.frame(
-            group = if (is_english) "Your Profile" else "Ihr Profil",
-            Extraversion = radar_scores$Extraversion / 5,
-            Agreeableness = radar_scores$Verträglichkeit / 5,
-            Conscientiousness = radar_scores$Gewissenhaftigkeit / 5,
-            Neuroticism = radar_scores$Neurotizismus / 5,
-            Openness = radar_scores$Offenheit / 5,
-            stringsAsFactors = FALSE,
-            row.names = NULL
+        # Calculate BFI scores - PROPER GROUPING BY TRAIT (now starting at index 21)
+        # Items are ordered: E1, E2, E3, E4, V1, V2, V3, V4, G1, G2, G3, G4, N1, N2, N3, N4, O1, O2, O3, O4
+        scores <- list(
+            ProgrammingAnxiety = if (exists("pa_theta")) pa_theta else pa_score,
+            Extraversion = mean(c(responses[21], 6-responses[22], 6-responses[23], responses[24]), na.rm=TRUE),
+            Verträglichkeit = mean(c(responses[25], 6-responses[26], responses[27], 6-responses[28]), na.rm=TRUE),
+            Gewissenhaftigkeit = mean(c(6-responses[29], responses[30], responses[31], 6-responses[32]), na.rm=TRUE),
+            Neurotizismus = mean(c(6-responses[33], responses[34], responses[35], 6-responses[36]), na.rm=TRUE),
+            Offenheit = mean(c(responses[37], 6-responses[38], responses[39], 6-responses[40]), na.rm=TRUE)
         )
-        cat("DEBUG: radar_data created successfully\n")
-    }, error = function(e) {
-        cat("Error creating radar_data data.frame:", e$message, "\n")
-        # Create fallback radar_data
-        radar_data <- data.frame(
-            group = if (is_english) "Your Profile" else "Ihr Profil",
-            Extraversion = 0.6,
-            Agreeableness = 0.6,
-            Conscientiousness = 0.6,
-            Neuroticism = 0.6,
-            Openness = 0.6,
-            stringsAsFactors = FALSE,
-            row.names = NULL
-        )
-    })
-    
-    # Create title based on language (used in both radar plot branches)
-    radar_title <- if (is_english) "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)"
-    
-    # Create radar plot with ggradar
-    if (requireNamespace("ggradar", quietly = TRUE)) {
         
-        radar_plot <- ggradar::ggradar(
-            radar_data,
-            values.radar = c("1", "3", "5"),  # Min, mid, max labels
-            grid.min = 0,
-            grid.mid = 0.6,
-            grid.max = 1,
-            grid.label.size = 5,
-            axis.label.size = 5,
-            group.point.size = 4,
-            group.line.width = 1.5,
-            background.circle.colour = "white",
-            gridline.min.colour = "gray90",
-            gridline.mid.colour = "gray80",
-            gridline.max.colour = "gray70",
-            group.colours = c("#e8041c"),
-            plot.extent.x.sf = 1.3,
-            plot.extent.y.sf = 1.2,
-            legend.position = "none"
-        ) +
-            ggplot2::theme(
-                plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5, 
-                                                   color = "#e8041c", margin = ggplot2::margin(b = 20)),
-                plot.background = ggplot2::element_rect(fill = "white", color = NA),
-                plot.margin = ggplot2::margin(20, 20, 20, 20)
-            ) +
-            ggplot2::labs(title = radar_title)
-    } else {
-        # Fallback to simple ggplot2 approach if ggradar not available
-        # Use namespace to avoid loading issues
-        if (!requireNamespace("ggplot2", quietly = TRUE)) {
-            stop("ggplot2 package is required for plotting")
+        # PSQ Stress score (now at indices 41-45)
+        psq <- responses[41:45]
+        scores$Stress <- mean(c(psq[1:3], 6-psq[4], psq[5]), na.rm=TRUE)
+        
+        # MWS & Statistics (now at indices 46-49 and 50-51)
+        scores$Studierfähigkeiten <- mean(responses[46:49], na.rm=TRUE)
+        scores$Statistik <- mean(responses[50:51], na.rm=TRUE)
+        
+        # Debug: Check scores for missing values
+        cat("DEBUG: Scores values:\n")
+        for (name in names(scores)) {
+            cat(sprintf("  %s: %s (is.na: %s, is.nan: %s)\n", 
+                        name, scores[[name]], is.na(scores[[name]]), is.nan(scores[[name]])))
         }
         
-        # Create coordinates for manual radar plot
-        n_vars <- 5
-        angles <- seq(0, 2*pi, length.out = n_vars + 1)[-(n_vars + 1)]
+        # Create radar plot using ggradar approach
+        # Check for ggradar (should be pre-installed)
         
-        # Prepare data
-        bfi_scores <- c(scores$Extraversion, scores$Verträglichkeit, 
-                        scores$Gewissenhaftigkeit, scores$Neurotizismus, scores$Offenheit)
-        
-        # Use English labels if current language is English
-        if (is_english) {
-            bfi_labels <- c("Extraversion", "Agreeableness", "Conscientiousness", 
-                            "Neuroticism", "Openness")
-        } else {
-            bfi_labels <- c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", 
-                            "Neurotizismus", "Offenheit")
-        }
-        
-        # Calculate positions
-        x_pos <- bfi_scores * cos(angles - pi/2)
-        y_pos <- bfi_scores * sin(angles - pi/2)
-        
-        # Create data frame for plotting
-        plot_data <- data.frame(
-            x = c(x_pos, x_pos[1]),  # Close the polygon
-            y = c(y_pos, y_pos[1]),
-            label = c(bfi_labels, ""),
-            score = c(bfi_scores, bfi_scores[1])
-        )
-        
-        # Grid lines data
-        grid_data <- expand.grid(
-            r = 1:5,
-            angle = seq(0, 2*pi, length.out = 50)
-        )
-        grid_data$x <- grid_data$r * cos(grid_data$angle)
-        grid_data$y <- grid_data$r * sin(grid_data$angle)
-        
-        # Create plot
-        radar_plot <- ggplot2::ggplot() +
-            # Grid circles
-            ggplot2::geom_path(data = grid_data, ggplot2::aes(x = x, y = y, group = r),
-                               color = "gray85", size = 0.3) +
-            # Spokes
-            ggplot2::geom_segment(data = data.frame(angle = angles),
-                                  ggplot2::aes(x = 0, y = 0,
-                                               xend = 5 * cos(angle - pi/2),
-                                               yend = 5 * sin(angle - pi/2)),
-                                  color = "gray85", size = 0.3) +
-            # Data polygon
-            ggplot2::geom_polygon(data = plot_data, ggplot2::aes(x = x, y = y),
-                                  fill = "#e8041c", alpha = 0.2) +
-            ggplot2::geom_path(data = plot_data, ggplot2::aes(x = x, y = y),
-                               color = "#e8041c", size = 2) +
-            # Points
-            ggplot2::geom_point(data = plot_data[1:5,], ggplot2::aes(x = x, y = y),
-                                color = "#e8041c", size = 5) +
-            # Labels
-            ggplot2::geom_text(data = plot_data[1:5,],
-                               ggplot2::aes(x = x * 1.3, y = y * 1.3, label = label),
-                               size = 5, fontface = "bold") +
-            ggplot2::geom_text(data = plot_data[1:5,],
-                               ggplot2::aes(x = x * 1.1, y = y * 1.1, label = sprintf("%.1f", score)),
-                               size = 4, color = "#e8041c") +
-            ggplot2::coord_equal() +
-            ggplot2::xlim(-6, 6) + ggplot2::ylim(-6, 6) +
-            ggplot2::theme_void() +
-            ggplot2::theme(
-                plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5,
-                                                   color = "#e8041c", margin = ggplot2::margin(b = 20)),
-                plot.margin = ggplot2::margin(30, 30, 30, 30)
-            ) +
-            ggplot2::labs(title = radar_title)
-    }
-    
-    # Create bar chart with logical ordering
-    # Show BFI scales first, then Programming Anxiety, then others
-    # Ensure all scores are valid numbers (replace NA/NaN with 3)
-    if (is_english) {
-        # Use English names as keys for English mode
-        ordered_scores <- list(
-            Extraversion = if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) 3 else scores$Extraversion,
-            Agreeableness = if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) 3 else scores$Verträglichkeit,
-            Conscientiousness = if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) 3 else scores$Gewissenhaftigkeit,
-            Neuroticism = if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) 3 else scores$Neurotizismus,
-            Openness = if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit,
-            ProgrammingAnxiety = if (is.na(scores$ProgrammingAnxiety) || is.nan(scores$ProgrammingAnxiety)) 3 else scores$ProgrammingAnxiety,
-            Stress = if (is.na(scores$Stress) || is.nan(scores$Stress)) 3 else scores$Stress,
-            StudySkills = if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) 3 else scores$Studierfähigkeiten,
-            Statistics = if (is.na(scores$Statistik) || is.nan(scores$Statistik)) 3 else scores$Statistik
-        )
-    } else {
-        # Use German names as keys for German mode
-        ordered_scores <- list(
+        # Prepare data for ggradar - needs to be scaled 0-1
+        # Ensure all scores are valid numbers and handle missing values
+        radar_scores <- list(
             Extraversion = if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) 3 else scores$Extraversion,
             Verträglichkeit = if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) 3 else scores$Verträglichkeit,
             Gewissenhaftigkeit = if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) 3 else scores$Gewissenhaftigkeit,
             Neurotizismus = if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) 3 else scores$Neurotizismus,
-            Offenheit = if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit,
-            ProgrammingAnxiety = if (is.na(scores$ProgrammingAnxiety) || is.nan(scores$ProgrammingAnxiety)) 3 else scores$ProgrammingAnxiety,
-            Stress = if (is.na(scores$Stress) || is.nan(scores$Stress)) 3 else scores$Stress,
-            Studierfähigkeiten = if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) 3 else scores$Studierfähigkeiten,
-            Statistik = if (is.na(scores$Statistik) || is.nan(scores$Statistik)) 3 else scores$Statistik
+            Offenheit = if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit
         )
-    }
-    
-    # Create English dimension names
-    if (is_english) {
-        dimension_names_en <- c(
-            "Extraversion" = "Extraversion",
-            "Agreeableness" = "Agreeableness", 
-            "Conscientiousness" = "Conscientiousness",
-            "Neuroticism" = "Neuroticism",
-            "Openness" = "Openness",
-            "ProgrammingAnxiety" = "Programming Anxiety",
-            "Stress" = "Stress",
-            "StudySkills" = "Study Skills",
-            "Statistics" = "Statistics"
-        )
-    } else {
-        dimension_names_en <- c(
-            "Extraversion" = "Extraversion",
-            "Verträglichkeit" = "Agreeableness", 
-            "Gewissenhaftigkeit" = "Conscientiousness",
-            "Neurotizismus" = "Neuroticism",
-            "Offenheit" = "Openness",
-            "ProgrammingAnxiety" = "Programming Anxiety",
+        
+        # Debug: Check radar scores
+        cat("DEBUG: Radar scores values:\n")
+        for (name in names(radar_scores)) {
+            cat(sprintf("  %s: %s\n", name, radar_scores[[name]]))
+        }
+        
+        tryCatch({
+            radar_data <- data.frame(
+                group = if (is_english) "Your Profile" else "Ihr Profil",
+                Extraversion = radar_scores$Extraversion / 5,
+                Agreeableness = radar_scores$Verträglichkeit / 5,
+                Conscientiousness = radar_scores$Gewissenhaftigkeit / 5,
+                Neuroticism = radar_scores$Neurotizismus / 5,
+                Openness = radar_scores$Offenheit / 5,
+                stringsAsFactors = FALSE,
+                row.names = NULL
+            )
+            cat("DEBUG: radar_data created successfully\n")
+        }, error = function(e) {
+            cat("Error creating radar_data data.frame:", e$message, "\n")
+            # Create fallback radar_data
+            radar_data <- data.frame(
+                group = if (is_english) "Your Profile" else "Ihr Profil",
+                Extraversion = 0.6,
+                Agreeableness = 0.6,
+                Conscientiousness = 0.6,
+                Neuroticism = 0.6,
+                Openness = 0.6,
+                stringsAsFactors = FALSE,
+                row.names = NULL
+            )
+        })
+        
+        # Create title based on language (used in both radar plot branches)
+        radar_title <- if (is_english) "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)"
+        
+        # Create radar plot with ggradar
+        if (requireNamespace("ggradar", quietly = TRUE)) {
+            
+            radar_plot <- ggradar::ggradar(
+                radar_data,
+                values.radar = c("1", "3", "5"),  # Min, mid, max labels
+                grid.min = 0,
+                grid.mid = 0.6,
+                grid.max = 1,
+                grid.label.size = 5,
+                axis.label.size = 5,
+                group.point.size = 4,
+                group.line.width = 1.5,
+                background.circle.colour = "white",
+                gridline.min.colour = "gray90",
+                gridline.mid.colour = "gray80",
+                gridline.max.colour = "gray70",
+                group.colours = c("#e8041c"),
+                plot.extent.x.sf = 1.3,
+                plot.extent.y.sf = 1.2,
+                legend.position = "none"
+            ) +
+                ggplot2::theme(
+                    plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5, 
+                                                       color = "#e8041c", margin = ggplot2::margin(b = 20)),
+                    plot.background = ggplot2::element_rect(fill = "white", color = NA),
+                    plot.margin = ggplot2::margin(20, 20, 20, 20)
+                ) +
+                ggplot2::labs(title = radar_title)
+        } else {
+            # Fallback to simple ggplot2 approach if ggradar not available
+            # Use namespace to avoid loading issues
+            if (!requireNamespace("ggplot2", quietly = TRUE)) {
+                stop("ggplot2 package is required for plotting")
+            }
+            
+            # Create coordinates for manual radar plot
+            n_vars <- 5
+            angles <- seq(0, 2*pi, length.out = n_vars + 1)[-(n_vars + 1)]
+            
+            # Prepare data
+            bfi_scores <- c(scores$Extraversion, scores$Verträglichkeit, 
+                            scores$Gewissenhaftigkeit, scores$Neurotizismus, scores$Offenheit)
+            
+            # Use English labels if current language is English
+            if (is_english) {
+                bfi_labels <- c("Extraversion", "Agreeableness", "Conscientiousness", 
+                                "Neuroticism", "Openness")
+            } else {
+                bfi_labels <- c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", 
+                                "Neurotizismus", "Offenheit")
+            }
+            
+            # Calculate positions
+            x_pos <- bfi_scores * cos(angles - pi/2)
+            y_pos <- bfi_scores * sin(angles - pi/2)
+            
+            # Create data frame for plotting
+            plot_data <- data.frame(
+                x = c(x_pos, x_pos[1]),  # Close the polygon
+                y = c(y_pos, y_pos[1]),
+                label = c(bfi_labels, ""),
+                score = c(bfi_scores, bfi_scores[1])
+            )
+            
+            # Grid lines data
+            grid_data <- expand.grid(
+                r = 1:5,
+                angle = seq(0, 2*pi, length.out = 50)
+            )
+            grid_data$x <- grid_data$r * cos(grid_data$angle)
+            grid_data$y <- grid_data$r * sin(grid_data$angle)
+            
+            # Create plot
+            radar_plot <- ggplot2::ggplot() +
+                # Grid circles
+                ggplot2::geom_path(data = grid_data, ggplot2::aes(x = x, y = y, group = r),
+                                   color = "gray85", size = 0.3) +
+                # Spokes
+                ggplot2::geom_segment(data = data.frame(angle = angles),
+                                      ggplot2::aes(x = 0, y = 0,
+                                                   xend = 5 * cos(angle - pi/2),
+                                                   yend = 5 * sin(angle - pi/2)),
+                                      color = "gray85", size = 0.3) +
+                # Data polygon
+                ggplot2::geom_polygon(data = plot_data, ggplot2::aes(x = x, y = y),
+                                      fill = "#e8041c", alpha = 0.2) +
+                ggplot2::geom_path(data = plot_data, ggplot2::aes(x = x, y = y),
+                                   color = "#e8041c", size = 2) +
+                # Points
+                ggplot2::geom_point(data = plot_data[1:5,], ggplot2::aes(x = x, y = y),
+                                    color = "#e8041c", size = 5) +
+                # Labels
+                ggplot2::geom_text(data = plot_data[1:5,],
+                                   ggplot2::aes(x = x * 1.3, y = y * 1.3, label = label),
+                                   size = 5, fontface = "bold") +
+                ggplot2::geom_text(data = plot_data[1:5,],
+                                   ggplot2::aes(x = x * 1.1, y = y * 1.1, label = sprintf("%.1f", score)),
+                                   size = 4, color = "#e8041c") +
+                ggplot2::coord_equal() +
+                ggplot2::xlim(-6, 6) + ggplot2::ylim(-6, 6) +
+                ggplot2::theme_void() +
+                ggplot2::theme(
+                    plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5,
+                                                       color = "#e8041c", margin = ggplot2::margin(b = 20)),
+                    plot.margin = ggplot2::margin(30, 30, 30, 30)
+                ) +
+                ggplot2::labs(title = radar_title)
+        }
+        
+        # Create bar chart with logical ordering
+        # Show BFI scales first, then Programming Anxiety, then others
+        # Ensure all scores are valid numbers (replace NA/NaN with 3)
+        if (is_english) {
+            # Use English names as keys for English mode
+            ordered_scores <- list(
+                Extraversion = if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) 3 else scores$Extraversion,
+                Agreeableness = if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) 3 else scores$Verträglichkeit,
+                Conscientiousness = if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) 3 else scores$Gewissenhaftigkeit,
+                Neuroticism = if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) 3 else scores$Neurotizismus,
+                Openness = if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit,
+                ProgrammingAnxiety = if (is.na(scores$ProgrammingAnxiety) || is.nan(scores$ProgrammingAnxiety)) 3 else scores$ProgrammingAnxiety,
+                Stress = if (is.na(scores$Stress) || is.nan(scores$Stress)) 3 else scores$Stress,
+                StudySkills = if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) 3 else scores$Studierfähigkeiten,
+                Statistics = if (is.na(scores$Statistik) || is.nan(scores$Statistik)) 3 else scores$Statistik
+            )
+        } else {
+            # Use German names as keys for German mode
+            ordered_scores <- list(
+                Extraversion = if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) 3 else scores$Extraversion,
+                Verträglichkeit = if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) 3 else scores$Verträglichkeit,
+                Gewissenhaftigkeit = if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) 3 else scores$Gewissenhaftigkeit,
+                Neurotizismus = if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) 3 else scores$Neurotizismus,
+                Offenheit = if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit,
+                ProgrammingAnxiety = if (is.na(scores$ProgrammingAnxiety) || is.nan(scores$ProgrammingAnxiety)) 3 else scores$ProgrammingAnxiety,
+                Stress = if (is.na(scores$Stress) || is.nan(scores$Stress)) 3 else scores$Stress,
+                Studierfähigkeiten = if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) 3 else scores$Studierfähigkeiten,
+                Statistik = if (is.na(scores$Statistik) || is.nan(scores$Statistik)) 3 else scores$Statistik
+            )
+        }
+        
+        # Create English dimension names
+        if (is_english) {
+            dimension_names_en <- c(
+                "Extraversion" = "Extraversion",
+                "Agreeableness" = "Agreeableness", 
+                "Conscientiousness" = "Conscientiousness",
+                "Neuroticism" = "Neuroticism",
+                "Openness" = "Openness",
+                "ProgrammingAnxiety" = "Programming Anxiety",
+                "Stress" = "Stress",
+                "StudySkills" = "Study Skills",
+                "Statistics" = "Statistics"
+            )
+        } else {
+            dimension_names_en <- c(
+                "Extraversion" = "Extraversion",
+                "Verträglichkeit" = "Agreeableness", 
+                "Gewissenhaftigkeit" = "Conscientiousness",
+                "Neurotizismus" = "Neuroticism",
+                "Offenheit" = "Openness",
+                "ProgrammingAnxiety" = "Programming Anxiety",
+                "Stress" = "Stress",
+                "Studierfähigkeiten" = "Study Skills",
+                "Statistik" = "Statistics"
+            )
+        }
+        
+        # Create English category names
+        category_names_en <- c(
+            "Persönlichkeit" = "Personality",
+            "Programmierangst" = "Programming Anxiety",
             "Stress" = "Stress",
             "Studierfähigkeiten" = "Study Skills",
             "Statistik" = "Statistics"
         )
-    }
-    
-    # Create English category names
-    category_names_en <- c(
-        "Persönlichkeit" = "Personality",
-        "Programmierangst" = "Programming Anxiety",
-        "Stress" = "Stress",
-        "Studierfähigkeiten" = "Study Skills",
-        "Statistik" = "Statistics"
-    )
-    
-    # Use English names if current language is English
-    if (is_english) {
-        dimension_labels <- dimension_names_en[names(ordered_scores)]
-        # Create category labels that match the English dimension names
-        category_labels <- c(rep("Personality", 5), 
-                             "Programming Anxiety", "Stress", "Study Skills", "Statistics")
-    } else {
-        dimension_labels <- names(ordered_scores)
-        category_labels <- c(rep("Persönlichkeit", 5), 
-                             "Programmierangst", "Stress", "Studierfähigkeiten", "Statistik")
-    }
-    
-    # Create all_data with error handling
-    tryCatch({
-        all_data <- data.frame(
-            dimension = factor(dimension_labels, levels = dimension_labels),
-            score = unlist(ordered_scores),
-            category = factor(category_labels, levels = unique(category_labels)),
-            stringsAsFactors = FALSE,
-            row.names = NULL
-        )
-    }, error = function(e) {
-        cat("Error creating all_data data.frame:", e$message, "\n")
-        # Create fallback data.frame
-        all_data <- data.frame(
-            dimension = factor(if (is_english) {
-                c("Extraversion", "Agreeableness", "Conscientiousness", "Neuroticism", "Openness", "ProgrammingAnxiety", "Stress", "StudySkills", "Statistics")
-            } else {
-                c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", "Neurotizismus", "Offenheit", "ProgrammingAnxiety", "Stress", "Studierfähigkeiten", "Statistik")
-            }),
-            score = rep(3, 9),
-            category = factor(if (is_english) {
-                c(rep("Personality", 5), "Programming Anxiety", "Stress", "Study Skills", "Statistics")
-            } else {
-                c(rep("Persönlichkeit", 5), "Programmierangst", "Stress", "Studierfähigkeiten", "Statistik")
-            }),
-            stringsAsFactors = FALSE,
-            row.names = NULL
-        )
-    })
-    
-    # Create color scale based on language
-    if (is_english) {
-        color_scale <- ggplot2::scale_fill_manual(values = c(
-            "Programming Anxiety" = "#9b59b6",
-            "Personality" = "#e8041c",
-            "Stress" = "#ff6b6b",
-            "Study Skills" = "#4ecdc4",
-            "Statistics" = "#45b7d1"
-        ))
-    } else {
-        color_scale <- ggplot2::scale_fill_manual(values = c(
-            "Programmierangst" = "#9b59b6",
-            "Persönlichkeit" = "#e8041c",
-            "Stress" = "#ff6b6b",
-            "Studierfähigkeiten" = "#4ecdc4",
-            "Statistik" = "#45b7d1"
-        ))
-    }
-    
-    bar_plot <- ggplot2::ggplot(all_data, ggplot2::aes(x = dimension, y = score, fill = category)) +
-        ggplot2::geom_bar(stat = "identity", width = 0.7) +
-        # Add value labels with better formatting
-        ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", score)), 
-                           vjust = -0.5, size = 6, fontface = "bold", color = "#333") +
-        # Custom color scheme
-        color_scale +
-        # Y-axis customization
-        ggplot2::scale_y_continuous(limits = c(0, 5.5), breaks = 0:5) +
-        # Theme with larger text
-        ggplot2::theme_minimal(base_size = 14) +
-        ggplot2::theme(
-            axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = 12, face = "bold"),
-            axis.text.y = ggplot2::element_text(size = 12),
-            axis.title.x = ggplot2::element_blank(),
-            axis.title.y = ggplot2::element_text(size = 14, face = "bold"),
-            plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5, color = "#e8041c", margin = ggplot2::margin(b = 20)),
-            panel.grid.major.x = ggplot2::element_blank(),
-            panel.grid.minor = ggplot2::element_blank(),
-            panel.grid.major.y = ggplot2::element_line(color = "gray90", size = 0.3),
-            legend.position = "bottom",
-            legend.title = ggplot2::element_blank(),
-            legend.text = ggplot2::element_text(size = 12),
-            plot.margin = ggplot2::margin(20, 20, 20, 20)
-        )
         
-    # Create bar plot labels
-    bar_title <- if (is_english) "All Dimensions Overview" else "Alle Dimensionen im Überblick"
-    bar_y_label <- if (is_english) "Score (1-5)" else "Punktzahl (1-5)"
-    
-    bar_plot <- bar_plot + ggplot2::labs(
-        title = bar_title,
-        y = bar_y_label
-    )
-    
-    # Create trace plot for Programming Anxiety adaptive testing
-    # Add safeguards for extreme values
-    theta_trace_bounded <- pmax(-3, pmin(3, theta_trace))
-    se_trace_bounded <- pmax(0.1, pmin(1.5, se_trace))
-    
-    trace_data <- data.frame(
-        item = 1:10,
-        theta = theta_trace_bounded,
-        se_upper = theta_trace_bounded + se_trace_bounded,
-        se_lower = theta_trace_bounded - se_trace_bounded,
-        item_type = c(rep("Fixed", 5), rep("Adaptive", 5)),
-        stringsAsFactors = FALSE,
-        row.names = NULL
-    )
-    
-    # Calculate plot limits dynamically
-    y_min <- min(trace_data$se_lower) - 0.2
-    y_max <- max(trace_data$se_upper) + 0.2
-    
-    trace_plot <- ggplot2::ggplot(trace_data, ggplot2::aes(x = item, y = theta)) +
-        # Confidence band
-        ggplot2::geom_ribbon(ggplot2::aes(ymin = se_lower, ymax = se_upper), 
-                             alpha = 0.3, fill = "#9b59b6") +
-        # Theta line
-        ggplot2::geom_line(linewidth = 2, color = "#9b59b6") +
-        ggplot2::geom_point(ggplot2::aes(color = item_type), size = 4) +
-        # Add horizontal line at final theta
-        ggplot2::geom_hline(yintercept = theta_est, linetype = "dashed", 
-                            color = "#9b59b6", alpha = 0.5) +
-        # Vertical line separating fixed and adaptive
-        ggplot2::geom_vline(xintercept = 5.5, linetype = "dotted", 
-                            color = "gray50", alpha = 0.7) +
-        # Annotations with dynamic positioning
-        ggplot2::annotate("text", x = 2.5, y = y_max * 0.9, 
-                          label = "Fixed Items", size = 4, color = "gray40") +
-        ggplot2::annotate("text", x = 8, y = y_max * 0.9, 
-                          label = "Adaptive Items", size = 4, color = "gray40") +
-        # Scales with dynamic limits
-        ggplot2::scale_x_continuous(breaks = 1:10, labels = 1:10) +
-        ggplot2::scale_y_continuous(limits = c(y_min, y_max)) +
-        ggplot2::scale_color_manual(values = c("Fixed" = "#e8041c", "Adaptive" = "#4ecdc4"), 
-                                    breaks = c("Fixed", "Adaptive")) +
-        # Theme
-        ggplot2::theme_minimal(base_size = 14) +
-        ggplot2::theme(
-            plot.title = ggplot2::element_text(size = 18, face = "bold", hjust = 0.5, 
-                                               color = "#9b59b6", margin = ggplot2::margin(b = 15)),
-            plot.subtitle = ggplot2::element_text(size = 12, hjust = 0.5, 
-                                                  color = "gray50", margin = ggplot2::margin(b = 10)),
-            axis.title = ggplot2::element_text(size = 12, face = "bold"),
-            axis.text = ggplot2::element_text(size = 11),
-            legend.position = "bottom",
-            legend.title = ggplot2::element_blank(),
-            panel.grid.minor = ggplot2::element_blank(),
-            plot.margin = ggplot2::margin(20, 20, 20, 20)
-        )
-        
-    # Create trace plot labels
-    trace_title <- if (is_english) "Programming Anxiety - Adaptive Testing Trace" else "Programmierangst - Adaptive Testung"
-    trace_subtitle <- sprintf(if (is_english) "Final theta = %.3f (SE = %.3f)" else "Finales theta = %.3f (SE = %.3f)", theta_est, se_est)
-    trace_x_label <- if (is_english) "Item Number" else "Item-Nummer"
-    trace_y_label <- if (is_english) "Theta Estimate" else "Theta-Schaetzung"
-    
-    trace_plot <- trace_plot + ggplot2::labs(
-        title = trace_title,
-        subtitle = trace_subtitle,
-        x = trace_x_label,
-        y = trace_y_label
-    )
-    
-    # Save plots
-    radar_file <- tempfile(fileext = ".png")
-    bar_file <- tempfile(fileext = ".png")
-    trace_file <- tempfile(fileext = ".png")
-    
-    suppressMessages({
-        ggplot2::ggsave(radar_file, radar_plot, width = 10, height = 9, dpi = 150, bg = "white")
-        ggplot2::ggsave(bar_file, bar_plot, width = 12, height = 7, dpi = 150, bg = "white")
-        ggplot2::ggsave(trace_file, trace_plot, width = 10, height = 6, dpi = 150, bg = "white")
-    })
-    
-    # Encode as base64
-    radar_base64 <- ""
-    bar_base64 <- ""
-    trace_base64 <- ""  # Initialize trace_base64
-    if (requireNamespace("base64enc", quietly = TRUE)) {
-        radar_base64 <- base64enc::base64encode(radar_file)
-        bar_base64 <- base64enc::base64encode(bar_file)
-        trace_base64 <- base64enc::base64encode(trace_file)
-    }
-    unlink(c(radar_file, bar_file, trace_file))
-    
-    # Create detailed item responses table
-    # Ensure we don't exceed available questions and handle missing values
-    num_questions <- min(31, length(responses), nrow(item_bank))
-    
-    # Debug output
-    cat("DEBUG: Creating item details table\n")
-    cat("DEBUG: num_questions =", num_questions, "\n")
-    cat("DEBUG: length(responses) =", length(responses), "\n")
-    cat("DEBUG: nrow(item_bank) =", nrow(item_bank), "\n")
-    if (!is.null(item_bank) && "Question" %in% names(item_bank)) {
-        cat("DEBUG: item_bank$Question has", length(item_bank$Question), "items\n")
-        cat("DEBUG: First few Question values:", head(item_bank$Question, 5), "\n")
-    }
-    
-    # Create category vector that matches the actual number of questions
-    category_vector <- c(
-        rep("Extraversion", 4), rep("Verträglichkeit", 4), 
-        rep("Gewissenhaftigkeit", 4), rep("Neurotizismus", 4), rep("Offenheit", 4),
-        rep("Stress", 5), rep("Studierfähigkeiten", 4), rep("Statistik", 2)
-    )
-    
-    # Ensure category vector is the right length
-    if (length(category_vector) > num_questions) {
-        category_vector <- category_vector[1:num_questions]
-    } else if (length(category_vector) < num_questions) {
-        category_vector <- c(category_vector, rep("Other", num_questions - length(category_vector)))
-    }
-    
-    # Create item details with proper handling of missing values
-    tryCatch({
-        item_names <- if ("Question" %in% names(item_bank)) {
-            # Ensure no NA or NULL values in item names
-            item_names_raw <- item_bank$Question[1:num_questions]
-            ifelse(is.na(item_names_raw) | is.null(item_names_raw) | item_names_raw == "", 
-                   paste0("Item_", 1:num_questions), 
-                   as.character(item_names_raw))
+        # Use English names if current language is English
+        if (is_english) {
+            dimension_labels <- dimension_names_en[names(ordered_scores)]
+            # Create category labels that match the English dimension names
+            category_labels <- c(rep("Personality", 5), 
+                                 "Programming Anxiety", "Stress", "Study Skills", "Statistics")
         } else {
-            paste0("Item_", 1:num_questions)
+            dimension_labels <- names(ordered_scores)
+            category_labels <- c(rep("Persönlichkeit", 5), 
+                                 "Programmierangst", "Stress", "Studierfähigkeiten", "Statistik")
         }
         
-        # Ensure all vectors have the same length and no missing values
-        item_responses <- responses[1:num_questions]
-        if (length(item_responses) < num_questions) {
-            item_responses <- c(item_responses, rep(NA, num_questions - length(item_responses)))
+        # Create all_data with error handling
+        tryCatch({
+            all_data <- data.frame(
+                dimension = factor(dimension_labels, levels = dimension_labels),
+                score = unlist(ordered_scores),
+                category = factor(category_labels, levels = unique(category_labels)),
+                stringsAsFactors = FALSE,
+                row.names = NULL
+            )
+        }, error = function(e) {
+            cat("Error creating all_data data.frame:", e$message, "\n")
+            # Create fallback data.frame
+            all_data <- data.frame(
+                dimension = factor(if (is_english) {
+                    c("Extraversion", "Agreeableness", "Conscientiousness", "Neuroticism", "Openness", "ProgrammingAnxiety", "Stress", "StudySkills", "Statistics")
+                } else {
+                    c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", "Neurotizismus", "Offenheit", "ProgrammingAnxiety", "Stress", "Studierfähigkeiten", "Statistik")
+                }),
+                score = rep(3, 9),
+                category = factor(if (is_english) {
+                    c(rep("Personality", 5), "Programming Anxiety", "Stress", "Study Skills", "Statistics")
+                } else {
+                    c(rep("Persönlichkeit", 5), "Programmierangst", "Stress", "Studierfähigkeiten", "Statistik")
+                }),
+                stringsAsFactors = FALSE,
+                row.names = NULL
+            )
+        })
+        
+        # Create color scale based on language
+        if (is_english) {
+            color_scale <- ggplot2::scale_fill_manual(values = c(
+                "Programming Anxiety" = "#9b59b6",
+                "Personality" = "#e8041c",
+                "Stress" = "#ff6b6b",
+                "Study Skills" = "#4ecdc4",
+                "Statistics" = "#45b7d1"
+            ))
+        } else {
+            color_scale <- ggplot2::scale_fill_manual(values = c(
+                "Programmierangst" = "#9b59b6",
+                "Persönlichkeit" = "#e8041c",
+                "Stress" = "#ff6b6b",
+                "Studierfähigkeiten" = "#4ecdc4",
+                "Statistik" = "#45b7d1"
+            ))
         }
+        
+        bar_plot <- ggplot2::ggplot(all_data, ggplot2::aes(x = dimension, y = score, fill = category)) +
+            ggplot2::geom_bar(stat = "identity", width = 0.7) +
+            # Add value labels with better formatting
+            ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", score)), 
+                               vjust = -0.5, size = 6, fontface = "bold", color = "#333") +
+            # Custom color scheme
+            color_scale +
+            # Y-axis customization
+            ggplot2::scale_y_continuous(limits = c(0, 5.5), breaks = 0:5) +
+            # Theme with larger text
+            ggplot2::theme_minimal(base_size = 14) +
+            ggplot2::theme(
+                axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = 12, face = "bold"),
+                axis.text.y = ggplot2::element_text(size = 12),
+                axis.title.x = ggplot2::element_blank(),
+                axis.title.y = ggplot2::element_text(size = 14, face = "bold"),
+                plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5, color = "#e8041c", margin = ggplot2::margin(b = 20)),
+                panel.grid.major.x = ggplot2::element_blank(),
+                panel.grid.minor = ggplot2::element_blank(),
+                panel.grid.major.y = ggplot2::element_line(color = "gray90", size = 0.3),
+                legend.position = "bottom",
+                legend.title = ggplot2::element_blank(),
+                legend.text = ggplot2::element_text(size = 12),
+                plot.margin = ggplot2::margin(20, 20, 20, 20)
+            )
+        
+        # Create bar plot labels
+        bar_title <- if (is_english) "All Dimensions Overview" else "Alle Dimensionen im Überblick"
+        bar_y_label <- if (is_english) "Score (1-5)" else "Punktzahl (1-5)"
+        
+        bar_plot <- bar_plot + ggplot2::labs(
+            title = bar_title,
+            y = bar_y_label
+        )
+        
+        # Create trace plot for Programming Anxiety adaptive testing
+        # Add safeguards for extreme values
+        theta_trace_bounded <- pmax(-3, pmin(3, theta_trace))
+        se_trace_bounded <- pmax(0.1, pmin(1.5, se_trace))
+        
+        trace_data <- data.frame(
+            item = 1:10,
+            theta = theta_trace_bounded,
+            se_upper = theta_trace_bounded + se_trace_bounded,
+            se_lower = theta_trace_bounded - se_trace_bounded,
+            item_type = c(rep("Fixed", 5), rep("Adaptive", 5)),
+            stringsAsFactors = FALSE,
+            row.names = NULL
+        )
+        
+        # Calculate plot limits dynamically
+        y_min <- min(trace_data$se_lower) - 0.2
+        y_max <- max(trace_data$se_upper) + 0.2
+        
+        trace_plot <- ggplot2::ggplot(trace_data, ggplot2::aes(x = item, y = theta)) +
+            # Confidence band
+            ggplot2::geom_ribbon(ggplot2::aes(ymin = se_lower, ymax = se_upper), 
+                                 alpha = 0.3, fill = "#9b59b6") +
+            # Theta line
+            ggplot2::geom_line(linewidth = 2, color = "#9b59b6") +
+            ggplot2::geom_point(ggplot2::aes(color = item_type), size = 4) +
+            # Add horizontal line at final theta
+            ggplot2::geom_hline(yintercept = theta_est, linetype = "dashed", 
+                                color = "#9b59b6", alpha = 0.5) +
+            # Vertical line separating fixed and adaptive
+            ggplot2::geom_vline(xintercept = 5.5, linetype = "dotted", 
+                                color = "gray50", alpha = 0.7) +
+            # Annotations with dynamic positioning
+            ggplot2::annotate("text", x = 2.5, y = y_max * 0.9, 
+                              label = "Fixed Items", size = 4, color = "gray40") +
+            ggplot2::annotate("text", x = 8, y = y_max * 0.9, 
+                              label = "Adaptive Items", size = 4, color = "gray40") +
+            # Scales with dynamic limits
+            ggplot2::scale_x_continuous(breaks = 1:10, labels = 1:10) +
+            ggplot2::scale_y_continuous(limits = c(y_min, y_max)) +
+            ggplot2::scale_color_manual(values = c("Fixed" = "#e8041c", "Adaptive" = "#4ecdc4"), 
+                                        breaks = c("Fixed", "Adaptive")) +
+            # Theme
+            ggplot2::theme_minimal(base_size = 14) +
+            ggplot2::theme(
+                plot.title = ggplot2::element_text(size = 18, face = "bold", hjust = 0.5, 
+                                                   color = "#9b59b6", margin = ggplot2::margin(b = 15)),
+                plot.subtitle = ggplot2::element_text(size = 12, hjust = 0.5, 
+                                                      color = "gray50", margin = ggplot2::margin(b = 10)),
+                axis.title = ggplot2::element_text(size = 12, face = "bold"),
+                axis.text = ggplot2::element_text(size = 11),
+                legend.position = "bottom",
+                legend.title = ggplot2::element_blank(),
+                panel.grid.minor = ggplot2::element_blank(),
+                plot.margin = ggplot2::margin(20, 20, 20, 20)
+            )
+        
+        # Create trace plot labels
+        trace_title <- if (is_english) "Programming Anxiety - Adaptive Testing Trace" else "Programmierangst - Adaptive Testung"
+        trace_subtitle <- sprintf(if (is_english) "Final theta = %.3f (SE = %.3f)" else "Finales theta = %.3f (SE = %.3f)", theta_est, se_est)
+        trace_x_label <- if (is_english) "Item Number" else "Item-Nummer"
+        trace_y_label <- if (is_english) "Theta Estimate" else "Theta-Schaetzung"
+        
+        trace_plot <- trace_plot + ggplot2::labs(
+            title = trace_title,
+            subtitle = trace_subtitle,
+            x = trace_x_label,
+            y = trace_y_label
+        )
+        
+        # Save plots
+        radar_file <- tempfile(fileext = ".png")
+        bar_file <- tempfile(fileext = ".png")
+        trace_file <- tempfile(fileext = ".png")
+        
+        suppressMessages({
+            ggplot2::ggsave(radar_file, radar_plot, width = 10, height = 9, dpi = 150, bg = "white")
+            ggplot2::ggsave(bar_file, bar_plot, width = 12, height = 7, dpi = 150, bg = "white")
+            ggplot2::ggsave(trace_file, trace_plot, width = 10, height = 6, dpi = 150, bg = "white")
+        })
+        
+        # Encode as base64
+        radar_base64 <- ""
+        bar_base64 <- ""
+        trace_base64 <- ""  # Initialize trace_base64
+        if (requireNamespace("base64enc", quietly = TRUE)) {
+            radar_base64 <- base64enc::base64encode(radar_file)
+            bar_base64 <- base64enc::base64encode(bar_file)
+            trace_base64 <- base64enc::base64encode(trace_file)
+        }
+        unlink(c(radar_file, bar_file, trace_file))
+        
+        # Create detailed item responses table
+        # Ensure we don't exceed available questions and handle missing values
+        num_questions <- min(31, length(responses), nrow(item_bank))
+        
+        # Debug output
+        cat("DEBUG: Creating item details table\n")
+        cat("DEBUG: num_questions =", num_questions, "\n")
+        cat("DEBUG: length(responses) =", length(responses), "\n")
+        cat("DEBUG: nrow(item_bank) =", nrow(item_bank), "\n")
+        if (!is.null(item_bank) && "Question" %in% names(item_bank)) {
+            cat("DEBUG: item_bank$Question has", length(item_bank$Question), "items\n")
+            cat("DEBUG: First few Question values:", head(item_bank$Question, 5), "\n")
+        }
+        
+        # Create category vector that matches the actual number of questions
+        category_vector <- c(
+            rep("Extraversion", 4), rep("Verträglichkeit", 4), 
+            rep("Gewissenhaftigkeit", 4), rep("Neurotizismus", 4), rep("Offenheit", 4),
+            rep("Stress", 5), rep("Studierfähigkeiten", 4), rep("Statistik", 2)
+        )
         
         # Ensure category vector is the right length
-        if (length(category_vector) < num_questions) {
-            category_vector <- c(category_vector, rep("Other", num_questions - length(category_vector)))
+        if (!is.null(category_vector) && length(category_vector) > num_questions) {
+            category_vector <- category_vector[1:num_questions]
+        } else if (is.null(category_vector) || length(category_vector) < num_questions) {
+            if (is.null(category_vector)) {
+                category_vector <- rep("Other", num_questions)
+            } else {
+                category_vector <- c(category_vector, rep("Other", num_questions - length(category_vector)))
+            }
         }
         
-        item_details <- data.frame(
-            Item = item_names,
-            Response = item_responses,
-            Category = category_vector[1:num_questions],
-            stringsAsFactors = FALSE,
-            row.names = NULL  # Explicitly set row names to NULL to avoid issues
-        )
-    }, error = function(e) {
-        cat("Error creating item_details data.frame:", e$message, "\n")
-        # Create a simple fallback data.frame
-        item_details <- data.frame(
-            Item = paste0("Item_", 1:min(num_questions, 10)),
-            Response = rep(NA, min(num_questions, 10)),
-            Category = rep("Unknown", min(num_questions, 10)),
-            stringsAsFactors = FALSE,
-            row.names = NULL
-        )
-    })
-    
-    # Generate HTML report with download button
-    report_id <- paste0("report_", format(Sys.time(), "%Y%m%d_%H%M%S"))
-    
-    html <- paste0(
-        '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
-        
-        # Radar plot
-        '<div class="report-section">',
-        '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
-        '<span data-lang-de="Persönlichkeitsprofil" data-lang-en="Personality Profile">', if (is_english) "Personality Profile" else "Persönlichkeitsprofil", '</span></h2>',
+        # Create item details with proper handling of missing values
         tryCatch({
-            if (!is.null(radar_base64) && radar_base64 != "") {
-                paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">')
+            item_names <- if ("Question" %in% names(item_bank)) {
+                # Ensure no NA or NULL values in item names
+                item_names_raw <- item_bank$Question[1:num_questions]
+                ifelse(is.na(item_names_raw) | is.null(item_names_raw) | item_names_raw == "", 
+                       paste0("Item_", 1:num_questions), 
+                       as.character(item_names_raw))
             } else {
-                ""
+                paste0("Item_", 1:num_questions)
             }
-        }, error = function(e) ""),
-        '</div>',
-        
-        # Trace plot for Programming Anxiety
-        '<div class="report-section">',
-        '<h2 style="color: #9b59b6; text-align: center; margin-bottom: 25px;">',
-        '<span data-lang-de="Programmierangst - Adaptive Testung" data-lang-en="Programming Anxiety - Adaptive Testing Trace">', if (is_english) "Programming Anxiety - Adaptive Testing Trace" else "Programmierangst - Adaptive Testung", '</span></h2>',
-        tryCatch({
-            if (exists("trace_base64") && !is.null(trace_base64) && trace_base64 != "") {
-                paste0('<img src="data:image/png;base64,', trace_base64, '" style="width: 100%; max-width: 800px; display: block; margin: 0 auto; border-radius: 8px;">')
-            } else {
-                ""
+            
+            # Ensure all vectors have the same length and no missing values
+            item_responses <- responses[1:num_questions]
+            if (is.null(item_responses) || length(item_responses) < num_questions) {
+                if (is.null(item_responses)) {
+                    item_responses <- rep(NA, num_questions)
+                } else {
+                    item_responses <- c(item_responses, rep(NA, num_questions - length(item_responses)))
+                }
             }
-        }, error = function(e) ""),
-        '<p style="text-align: center; color: #666; margin-top: 10px; font-size: 14px;">',
-        '<span data-lang-de="Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items." ',
-        'data-lang-en="This trace plot shows how the theta estimate evolved during the assessment. The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.">',
-        if (is_english) "This trace plot shows how the theta estimate evolved during the assessment. The shaded area represents the standard error band. Vertical line separates fixed and adaptive items." else "Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items.",
-        '</span></p>',
-        '</div>',
-        
-        # Bar chart
-        '<div class="report-section">',
-        '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
-        '<span data-lang-de="Alle Dimensionen im Überblick" data-lang-en="All Dimensions Overview">', if (is_english) "All Dimensions Overview" else "Alle Dimensionen im Überblick", '</span></h2>',
-        tryCatch({
-            if (!is.null(bar_base64) && bar_base64 != "") {
-                paste0('<img src="data:image/png;base64,', bar_base64, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 8px;">')
-            } else {
-                ""
+            
+            # Ensure category vector is the right length
+            if (is.null(category_vector) || length(category_vector) < num_questions) {
+                if (is.null(category_vector)) {
+                    category_vector <- rep("Other", num_questions)
+                } else {
+                    category_vector <- c(category_vector, rep("Other", num_questions - length(category_vector)))
+                }
             }
-        }, error = function(e) ""),
-        '</div>',
-        
-        # Table
-        '<div class="report-section">',
-        '<h2 style="color: #e8041c;">',
-        '<span data-lang-de="Detaillierte Auswertung" data-lang-en="Detailed Results">', if (is_english) "Detailed Results" else "Detaillierte Auswertung", '</span></h2>',
-        '<table style="width: 100%; border-collapse: collapse;">',
-        '<tr style="background: #f8f8f8;">',
-        '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">',
-        if (is_english) "Dimension" else "Dimension", '</th>',
-        '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">',
-        if (is_english) "Mean" else "Mittelwert", '</th>',
-        '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">',
-        if (is_english) "Standard Deviation" else "Standardabweichung", '</th>',
-        '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">',
-        if (is_english) "Interpretation" else "Interpretation", '</th>',
-        '</tr>'
-    )
-    
-    # Calculate standard deviations for each dimension
-    sds <- list()
-    
-    # Programming Anxiety - 10 items (items 1-10)
-    # Apply reverse scoring for items 1, 10, and 15 (but we only have 10 items, so items 1 and 10)
-    pa_items_scored <- responses[1:10]
-    pa_items_scored[1] <- 6 - pa_items_scored[1]  # Reverse item 1
-    pa_items_scored[10] <- 6 - pa_items_scored[10]  # Reverse item 10
-    sd_val <- sd(pa_items_scored, na.rm = TRUE)
-    sds[["ProgrammingAnxiety"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
-    
-    # Big Five dimensions - each has 4 items (with reverse scoring applied)
-    # Items are now 21-40 (after PA items)
-    bfi_dims <- list(
-        Extraversion = c(responses[21], 6-responses[22], 6-responses[23], responses[24]),
-        Verträglichkeit = c(responses[25], 6-responses[26], responses[27], 6-responses[28]),
-        Gewissenhaftigkeit = c(6-responses[29], responses[30], responses[31], 6-responses[32]),
-        Neurotizismus = c(6-responses[33], responses[34], responses[35], 6-responses[36]),
-        Offenheit = c(responses[37], 6-responses[38], responses[39], 6-responses[40])
-    )
-    
-    for (dim_name in names(bfi_dims)) {
-        sd_val <- sd(bfi_dims[[dim_name]], na.rm = TRUE)
-        sds[[dim_name]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
-    }
-    
-    # PSQ Stress - 5 items (with reverse scoring for item 4)
-    # Items are now 41-45 (after PA and BFI)
-    psq_items <- c(responses[41:43], 6-responses[44], responses[45])
-    sd_val <- sd(psq_items, na.rm = TRUE)
-    sds[["Stress"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
-    
-    # MWS Studierfähigkeiten - 4 items (items 46-49)
-    mws_items <- responses[46:49]
-    sd_val <- sd(mws_items, na.rm = TRUE)
-    sds[["Studierfähigkeiten"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
-    
-    # Statistik - 2 items (items 50-51)
-    stat_items <- responses[50:51]
-    sd_val <- sd(stat_items, na.rm = TRUE)
-    sds[["Statistik"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
-    
-    for (name in names(ordered_scores)) {
-        value <- round(ordered_scores[[name]], 2)
-        # Map back to original scores for SD calculation
-        original_name <- if (is_english) {
-            switch(name,
-                   "Agreeableness" = "Verträglichkeit",
-                   "Conscientiousness" = "Gewissenhaftigkeit", 
-                   "Neuroticism" = "Neurotizismus",
-                   "Openness" = "Offenheit",
-                   "StudySkills" = "Studierfähigkeiten",
-                   "Statistics" = "Statistik",
-                   name  # Keep same for others
+            
+            item_details <- data.frame(
+                Item = item_names,
+                Response = item_responses,
+                Category = category_vector[1:num_questions],
+                stringsAsFactors = FALSE,
+                row.names = NULL  # Explicitly set row names to NULL to avoid issues
             )
-        } else {
-            name
+        }, error = function(e) {
+            cat("Error creating item_details data.frame:", e$message, "\n")
+            # Create a simple fallback data.frame
+            item_details <- data.frame(
+                Item = paste0("Item_", 1:min(num_questions, 10)),
+                Response = rep(NA, min(num_questions, 10)),
+                Category = rep("Unknown", min(num_questions, 10)),
+                stringsAsFactors = FALSE,
+                row.names = NULL
+            )
+        })
+        
+        # Generate HTML report with download button
+        report_id <- paste0("report_", format(Sys.time(), "%Y%m%d_%H%M%S"))
+        
+        html <- paste0(
+            '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
+            
+            # Radar plot
+            '<div class="report-section">',
+            '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
+            '<span data-lang-de="Persönlichkeitsprofil" data-lang-en="Personality Profile">', if (is_english) "Personality Profile" else "Persönlichkeitsprofil", '</span></h2>',
+            tryCatch({
+                if (!is.null(radar_base64) && radar_base64 != "") {
+                    paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">')
+                } else {
+                    ""
+                }
+            }, error = function(e) ""),
+            '</div>',
+            
+            # Trace plot for Programming Anxiety
+            '<div class="report-section">',
+            '<h2 style="color: #9b59b6; text-align: center; margin-bottom: 25px;">',
+            '<span data-lang-de="Programmierangst - Adaptive Testung" data-lang-en="Programming Anxiety - Adaptive Testing Trace">', if (is_english) "Programming Anxiety - Adaptive Testing Trace" else "Programmierangst - Adaptive Testung", '</span></h2>',
+            tryCatch({
+                if (exists("trace_base64") && !is.null(trace_base64) && trace_base64 != "") {
+                    paste0('<img src="data:image/png;base64,', trace_base64, '" style="width: 100%; max-width: 800px; display: block; margin: 0 auto; border-radius: 8px;">')
+                } else {
+                    ""
+                }
+            }, error = function(e) ""),
+            '<p style="text-align: center; color: #666; margin-top: 10px; font-size: 14px;">',
+            '<span data-lang-de="Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items." ',
+            'data-lang-en="This trace plot shows how the theta estimate evolved during the assessment. The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.">',
+            if (is_english) "This trace plot shows how the theta estimate evolved during the assessment. The shaded area represents the standard error band. Vertical line separates fixed and adaptive items." else "Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items.",
+            '</span></p>',
+            '</div>',
+            
+            # Bar chart
+            '<div class="report-section">',
+            '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
+            '<span data-lang-de="Alle Dimensionen im Überblick" data-lang-en="All Dimensions Overview">', if (is_english) "All Dimensions Overview" else "Alle Dimensionen im Überblick", '</span></h2>',
+            tryCatch({
+                if (!is.null(bar_base64) && bar_base64 != "") {
+                    paste0('<img src="data:image/png;base64,', bar_base64, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 8px;">')
+                } else {
+                    ""
+                }
+            }, error = function(e) ""),
+            '</div>',
+            
+            # Table
+            '<div class="report-section">',
+            '<h2 style="color: #e8041c;">',
+            '<span data-lang-de="Detaillierte Auswertung" data-lang-en="Detailed Results">', if (is_english) "Detailed Results" else "Detaillierte Auswertung", '</span></h2>',
+            '<table style="width: 100%; border-collapse: collapse;">',
+            '<tr style="background: #f8f8f8;">',
+            '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">',
+            if (is_english) "Dimension" else "Dimension", '</th>',
+            '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">',
+            if (is_english) "Mean" else "Mittelwert", '</th>',
+            '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">',
+            if (is_english) "Standard Deviation" else "Standardabweichung", '</th>',
+            '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">',
+            if (is_english) "Interpretation" else "Interpretation", '</th>',
+            '</tr>'
+        )
+        
+        # Calculate standard deviations for each dimension
+        sds <- list()
+        
+        # Programming Anxiety - 10 items (items 1-10)
+        # Apply reverse scoring for items 1, 10, and 15 (but we only have 10 items, so items 1 and 10)
+        pa_items_scored <- responses[1:10]
+        pa_items_scored[1] <- 6 - pa_items_scored[1]  # Reverse item 1
+        pa_items_scored[10] <- 6 - pa_items_scored[10]  # Reverse item 10
+        sd_val <- sd(pa_items_scored, na.rm = TRUE)
+        sds[["ProgrammingAnxiety"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
+        
+        # Big Five dimensions - each has 4 items (with reverse scoring applied)
+        # Items are now 21-40 (after PA items)
+        bfi_dims <- list(
+            Extraversion = c(responses[21], 6-responses[22], 6-responses[23], responses[24]),
+            Verträglichkeit = c(responses[25], 6-responses[26], responses[27], 6-responses[28]),
+            Gewissenhaftigkeit = c(6-responses[29], responses[30], responses[31], 6-responses[32]),
+            Neurotizismus = c(6-responses[33], responses[34], responses[35], 6-responses[36]),
+            Offenheit = c(responses[37], 6-responses[38], responses[39], 6-responses[40])
+        )
+        
+        for (dim_name in names(bfi_dims)) {
+            sd_val <- sd(bfi_dims[[dim_name]], na.rm = TRUE)
+            sds[[dim_name]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
         }
-        sd_value <- ifelse(original_name %in% names(sds), sds[[original_name]], NA)
-        level <- ifelse(value >= 3.7, 
-                        if (is_english) "High" else "Hoch", 
-                        ifelse(value >= 2.3, 
-                               if (is_english) "Medium" else "Mittel", 
-                               if (is_english) "Low" else "Niedrig"))
-        color <- ifelse(value >= 3.7, "#28a745", ifelse(value >= 2.3, "#ffc107", "#dc3545"))
         
-        # Translate dimension names
-        if (is_english) {
-            name_display <- switch(name,
-                                   "ProgrammingAnxiety" = "Programming Anxiety",
-                                   "Extraversion" = "Extraversion",
-                                   "Agreeableness" = "Agreeableness",
-                                   "Conscientiousness" = "Conscientiousness",
-                                   "Neuroticism" = "Neuroticism",
-                                   "Openness" = "Openness",
-                                   "Stress" = "Stress",
-                                   "StudySkills" = "Study Skills",
-                                   "Statistics" = "Statistics",
-                                   name  # Default fallback
-            )
-        } else {
-            name_display <- switch(name,
-                                   "ProgrammingAnxiety" = "Programmierangst",
-                                   "Extraversion" = "Extraversion",
-                                   "Verträglichkeit" = "Verträglichkeit",
-                                   "Gewissenhaftigkeit" = "Gewissenhaftigkeit",
-                                   "Neurotizismus" = "Neurotizismus",
-                                   "Offenheit" = "Offenheit",
-                                   "Stress" = "Stress",
-                                   "Studierfähigkeiten" = "Studierfähigkeiten",
-                                   "Statistik" = "Statistik",
-                                   name  # Default fallback
+        # PSQ Stress - 5 items (with reverse scoring for item 4)
+        # Items are now 41-45 (after PA and BFI)
+        psq_items <- c(responses[41:43], 6-responses[44], responses[45])
+        sd_val <- sd(psq_items, na.rm = TRUE)
+        sds[["Stress"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
+        
+        # MWS Studierfähigkeiten - 4 items (items 46-49)
+        mws_items <- responses[46:49]
+        sd_val <- sd(mws_items, na.rm = TRUE)
+        sds[["Studierfähigkeiten"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
+        
+        # Statistik - 2 items (items 50-51)
+        stat_items <- responses[50:51]
+        sd_val <- sd(stat_items, na.rm = TRUE)
+        sds[["Statistik"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
+        
+        for (name in names(ordered_scores)) {
+            value <- round(ordered_scores[[name]], 2)
+            # Map back to original scores for SD calculation
+            original_name <- if (is_english) {
+                switch(name,
+                       "Agreeableness" = "Verträglichkeit",
+                       "Conscientiousness" = "Gewissenhaftigkeit", 
+                       "Neuroticism" = "Neurotizismus",
+                       "Openness" = "Offenheit",
+                       "StudySkills" = "Studierfähigkeiten",
+                       "Statistics" = "Statistik",
+                       name  # Keep same for others
+                )
+            } else {
+                name
+            }
+            sd_value <- ifelse(original_name %in% names(sds), sds[[original_name]], NA)
+            level <- ifelse(value >= 3.7, 
+                            if (is_english) "High" else "Hoch", 
+                            ifelse(value >= 2.3, 
+                                   if (is_english) "Medium" else "Mittel", 
+                                   if (is_english) "Low" else "Niedrig"))
+            color <- ifelse(value >= 3.7, "#28a745", ifelse(value >= 2.3, "#ffc107", "#dc3545"))
+            
+            # Translate dimension names
+            if (is_english) {
+                name_display <- switch(name,
+                                       "ProgrammingAnxiety" = "Programming Anxiety",
+                                       "Extraversion" = "Extraversion",
+                                       "Agreeableness" = "Agreeableness",
+                                       "Conscientiousness" = "Conscientiousness",
+                                       "Neuroticism" = "Neuroticism",
+                                       "Openness" = "Openness",
+                                       "Stress" = "Stress",
+                                       "StudySkills" = "Study Skills",
+                                       "Statistics" = "Statistics",
+                                       name  # Default fallback
+                )
+            } else {
+                name_display <- switch(name,
+                                       "ProgrammingAnxiety" = "Programmierangst",
+                                       "Extraversion" = "Extraversion",
+                                       "Verträglichkeit" = "Verträglichkeit",
+                                       "Gewissenhaftigkeit" = "Gewissenhaftigkeit",
+                                       "Neurotizismus" = "Neurotizismus",
+                                       "Offenheit" = "Offenheit",
+                                       "Stress" = "Stress",
+                                       "Studierfähigkeiten" = "Studierfähigkeiten",
+                                       "Statistik" = "Statistik",
+                                       name  # Default fallback
+                )
+            }
+            
+            html <- paste0(html,
+                           '<tr>',
+                           '<td style="padding: 12px; border-bottom: 1px solid #e0e0e0;">', name_display, '</td>',
+                           '<td style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
+                           '<strong style="color: ', color, ';">', value, '</strong></td>',
+                           '<td style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
+                           ifelse(is.na(sd_value), "-", as.character(sd_value)), '</td>',
+                           '<td style="padding: 12px; border-bottom: 1px solid #e0e0e0; color: #666;">',
+                           level, '</td>',
+                           '</tr>'
             )
         }
         
         html <- paste0(html,
-                       '<tr>',
-                       '<td style="padding: 12px; border-bottom: 1px solid #e0e0e0;">', name_display, '</td>',
-                       '<td style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
-                       '<strong style="color: ', color, ';">', value, '</strong></td>',
-                       '<td style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
-                       ifelse(is.na(sd_value), "-", as.character(sd_value)), '</td>',
-                       '<td style="padding: 12px; border-bottom: 1px solid #e0e0e0; color: #666;">',
-                       level, '</td>',
-                       '</tr>'
+                       '</table>',
+                       '</div>'  # Close table section
         )
-    }
-    
-    html <- paste0(html,
-                   '</table>',
-                   '</div>'  # Close table section
-    )
-    
-    # Add beautiful styles for the report
-    html <- paste0(html,
-                   '<style>',
-                   'body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }',
-                   '#report-content { background: #f8f9fa; }',
-                   'table { border-collapse: collapse; width: 100%; }',
-                   'table tr:hover { background: #f5f5f5; }',
-                   'h1, h2 { font-family: "Segoe UI", sans-serif; }',
-                   '.report-section { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 25px; }',
-                   '@media print {',
-                   '  body { font-size: 11pt; }',
-                   '  h1, h2 { color: #e8041c !important; -webkit-print-color-adjust: exact; }',
-                   '}',
-                   '</style>',
-                   
-                   '</div>'
-    )
-    
-    # Save data to CSV file and upload to cloud
-    if (exists("responses") && exists("item_bank")) {
-        cat("DEBUG: Starting complete_data creation\n")
-        tryCatch({
-            # Prepare complete dataset with error handling
+        
+        # Add beautiful styles for the report
+        html <- paste0(html,
+                       '<style>',
+                       'body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }',
+                       '#report-content { background: #f8f9fa; }',
+                       'table { border-collapse: collapse; width: 100%; }',
+                       'table tr:hover { background: #f5f5f5; }',
+                       'h1, h2 { font-family: "Segoe UI", sans-serif; }',
+                       '.report-section { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 25px; }',
+                       '@media print {',
+                       '  body { font-size: 11pt; }',
+                       '  h1, h2 { color: #e8041c !important; -webkit-print-color-adjust: exact; }',
+                       '}',
+                       '</style>',
+                       
+                       '</div>'
+        )
+        
+        # Save data to CSV file and upload to cloud
+        if (exists("responses") && exists("item_bank")) {
+            cat("DEBUG: Starting complete_data creation\n")
             tryCatch({
-                complete_data <- data.frame(
-                    timestamp = Sys.time(),
-                    session_id = paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S")),
-                    study_language = ifelse(exists("session") && !is.null(session$userData$language), 
-                                            session$userData$language, "de"),
-                    stringsAsFactors = FALSE,
-                    row.names = NULL
-                )
-                cat("DEBUG: complete_data created successfully\n")
-            }, error = function(e) {
-                cat("Error creating complete_data data.frame:", e$message, "\n")
-                # Create fallback complete_data
-                complete_data <- data.frame(
-                    timestamp = Sys.time(),
-                    session_id = paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S")),
-                    study_language = "de",
-                    stringsAsFactors = FALSE,
-                    row.names = NULL
-                )
-            })
-            
-            # Add demographics from the session
-            if (exists("demographics") && is.list(demographics)) {
-                for (demo_name in names(demographics)) {
-                    complete_data[[demo_name]] <- demographics[[demo_name]]
-                }
-            }
-            
-            # Add item responses with validation
-            cat("DEBUG: Adding item responses to complete_data\n")
-            cat("DEBUG: nrow(item_bank) =", nrow(item_bank), "\n")
-            cat("DEBUG: length(responses) =", length(responses), "\n")
-            for (i in seq_along(responses)) {
-                if (i <= nrow(item_bank)) {
-                    col_name <- item_bank$id[i]
-                    cat("DEBUG: Item", i, "col_name =", col_name, "(is.na:", is.na(col_name), ")\n")
-                    # Ensure col_name is valid and not NA
-                    if (!is.na(col_name) && !is.null(col_name) && col_name != "") {
-                        complete_data[[col_name]] <- responses[i]
-                    } else {
-                        # Use fallback column name
-                        complete_data[[paste0("Item_", i)]] <- responses[i]
+                # Prepare complete dataset with error handling
+                tryCatch({
+                    complete_data <- data.frame(
+                        timestamp = Sys.time(),
+                        session_id = paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S")),
+                        study_language = ifelse(exists("session") && !is.null(session$userData$language), 
+                                                session$userData$language, "de"),
+                        stringsAsFactors = FALSE,
+                        row.names = NULL
+                    )
+                    cat("DEBUG: complete_data created successfully\n")
+                }, error = function(e) {
+                    cat("Error creating complete_data data.frame:", e$message, "\n")
+                    # Create fallback complete_data
+                    complete_data <- data.frame(
+                        timestamp = Sys.time(),
+                        session_id = paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S")),
+                        study_language = "de",
+                        stringsAsFactors = FALSE,
+                        row.names = NULL
+                    )
+                })
+                
+                # Add demographics from the session
+                if (exists("demographics") && is.list(demographics)) {
+                    for (demo_name in names(demographics)) {
+                        complete_data[[demo_name]] <- demographics[[demo_name]]
                     }
                 }
-            }
-            
-            # Add calculated scores with validation
-            complete_data$BFI_Extraversion <- if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) 3 else scores$Extraversion
-            complete_data$BFI_Vertraeglichkeit <- if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) 3 else scores$Verträglichkeit
-            complete_data$BFI_Gewissenhaftigkeit <- if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) 3 else scores$Gewissenhaftigkeit
-            complete_data$BFI_Neurotizismus <- if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) 3 else scores$Neurotizismus
-            complete_data$BFI_Offenheit <- if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit
-            complete_data$PSQ_Stress <- if (is.na(scores$Stress) || is.nan(scores$Stress)) 3 else scores$Stress
-            complete_data$MWS_Studierfaehigkeiten <- if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) 3 else scores$Studierfähigkeiten
-            complete_data$Statistik <- if (is.na(scores$Statistik) || is.nan(scores$Statistik)) 3 else scores$Statistik
-            
-            # Save locally with proper connection handling
-            local_file <- paste0("hilfo_results_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
-            tryCatch({
-                write.csv(complete_data, local_file, row.names = FALSE)
-                cat("Data saved locally to:", local_file, "\n")
-            }, error = function(e) {
-                cat("Error saving data locally:", e$message, "\n")
-            })
-            
-            # Upload to cloud if configured
-            if (!is.null(WEBDAV_URL) && !is.null(WEBDAV_PASSWORD)) {
-                later::later(function() {
-                    tryCatch({
-                        # For public WebDAV folders, use share token as username
-                        webdav_user <- "OUarlqGbhYopkBc"  # Share token is the username
-                        webdav_pass <- "ws2526"  # Password for the share
-                        
-                        cat("Uploading to cloud storage...\n")
-                        
-                        # Upload using httr with public folder authentication
-                        response <- httr::PUT(
-                            url = paste0(WEBDAV_URL, local_file),
-                            body = httr::upload_file(local_file),
-                            httr::authenticate(webdav_user, webdav_pass, type = "basic"),
-                            httr::add_headers(
-                                "Content-Type" = "text/csv",
-                                "X-Requested-With" = "XMLHttpRequest"
-                            )
-                        )
-                        
-                        if (httr::status_code(response) %in% c(200, 201, 204)) {
-                            cat("Data successfully uploaded to cloud\n")
-                            cat("File:", local_file, "\n")
-                            cat("Upload complete to: https://sync.academiccloud.de/index.php/s/OUarlqGbhYopkBc\n")
+                
+                # Add item responses with validation
+                cat("DEBUG: Adding item responses to complete_data\n")
+                cat("DEBUG: nrow(item_bank) =", nrow(item_bank), "\n")
+                cat("DEBUG: length(responses) =", length(responses), "\n")
+                for (i in seq_along(responses)) {
+                    if (i <= nrow(item_bank)) {
+                        col_name <- item_bank$id[i]
+                        cat("DEBUG: Item", i, "col_name =", col_name, "(is.na:", is.na(col_name), ")\n")
+                        # Ensure col_name is valid and not NA
+                        if (!is.na(col_name) && !is.null(col_name) && col_name != "") {
+                            complete_data[[col_name]] <- responses[i]
                         } else {
-                            cat("Cloud upload failed with status:", httr::status_code(response), "\n")
-                            if (httr::status_code(response) == 401) {
-                                cat("Authentication failed. Trying with share token.\n")
-                                cat("Share token used:", webdav_user, "\n")
-                            }
+                            # Use fallback column name
+                            complete_data[[paste0("Item_", i)]] <- responses[i]
                         }
-                    }, error = function(e) {
-                        cat("Error uploading to cloud:", e$message, "\n")
-                    })
-                }, delay = 0.5)
-            }
+                    }
+                }
+                
+                # Add calculated scores with validation
+                complete_data$BFI_Extraversion <- if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) 3 else scores$Extraversion
+                complete_data$BFI_Vertraeglichkeit <- if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) 3 else scores$Verträglichkeit
+                complete_data$BFI_Gewissenhaftigkeit <- if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) 3 else scores$Gewissenhaftigkeit
+                complete_data$BFI_Neurotizismus <- if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) 3 else scores$Neurotizismus
+                complete_data$BFI_Offenheit <- if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit
+                complete_data$PSQ_Stress <- if (is.na(scores$Stress) || is.nan(scores$Stress)) 3 else scores$Stress
+                complete_data$MWS_Studierfaehigkeiten <- if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) 3 else scores$Studierfähigkeiten
+                complete_data$Statistik <- if (is.na(scores$Statistik) || is.nan(scores$Statistik)) 3 else scores$Statistik
+                
+                # Save locally with proper connection handling
+                local_file <- paste0("hilfo_results_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
+                tryCatch({
+                    write.csv(complete_data, local_file, row.names = FALSE)
+                    cat("Data saved locally to:", local_file, "\n")
+                }, error = function(e) {
+                    cat("Error saving data locally:", e$message, "\n")
+                })
+                
+                # Upload to cloud if configured
+                if (!is.null(WEBDAV_URL) && !is.null(WEBDAV_PASSWORD)) {
+                    later::later(function() {
+                        tryCatch({
+                            # For public WebDAV folders, use share token as username
+                            webdav_user <- "OUarlqGbhYopkBc"  # Share token is the username
+                            webdav_pass <- "ws2526"  # Password for the share
+                            
+                            cat("Uploading to cloud storage...\n")
+                            
+                            # Upload using httr with public folder authentication
+                            response <- httr::PUT(
+                                url = paste0(WEBDAV_URL, local_file),
+                                body = httr::upload_file(local_file),
+                                httr::authenticate(webdav_user, webdav_pass, type = "basic"),
+                                httr::add_headers(
+                                    "Content-Type" = "text/csv",
+                                    "X-Requested-With" = "XMLHttpRequest"
+                                )
+                            )
+                            
+                            if (httr::status_code(response) %in% c(200, 201, 204)) {
+                                cat("Data successfully uploaded to cloud\n")
+                                cat("File:", local_file, "\n")
+                                cat("Upload complete to: https://sync.academiccloud.de/index.php/s/OUarlqGbhYopkBc\n")
+                            } else {
+                                cat("Cloud upload failed with status:", httr::status_code(response), "\n")
+                                if (httr::status_code(response) == 401) {
+                                    cat("Authentication failed. Trying with share token.\n")
+                                    cat("Share token used:", webdav_user, "\n")
+                                }
+                            }
+                        }, error = function(e) {
+                            cat("Error uploading to cloud:", e$message, "\n")
+                        })
+                    }, delay = 0.5)
+                }
+                
+            }, error = function(e) {
+                cat("Error saving data:", e$message, "\n")
+            })
+        }
+        
+        # Add functional minimalistic download section
+        timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+        
+        # Create PDF content as data URL
+        pdf_filename <- paste0("hilfo_results_", timestamp, ".pdf")
+        
+        # Build JavaScript content strings with proper concatenation
+        # Ensure current_lang is safe to use in if statements
+        is_english <- !is.null(current_lang) && !is.na(current_lang) && is_english
+        
+        date_label <- if (is_english) "Date: " else "Datum: "
+        profile_label <- if (is_english) "PERSONALITY PROFILE" else "PERSÖNLICHKEITSPROFIL"
+        pa_label <- if (is_english) "Programming Anxiety: " else "Programmierangst: "
+        agree_label <- if (is_english) "Agreeableness: " else "Verträglichkeit: "
+        consc_label <- if (is_english) "Conscientiousness: " else "Gewissenhaftigkeit: "
+        neuro_label <- if (is_english) "Neuroticism: " else "Neurotizismus: "
+        open_label <- if (is_english) "Openness: " else "Offenheit: "
+        stress_label <- if (is_english) "Stress: " else "Stress: "
+        study_label <- if (is_english) "Study Skills: " else "Studierfähigkeiten: "
+        stat_label <- if (is_english) "Statistics: " else "Statistik: "
+        
+        download_section_html <- paste0(
+            '<div class="download-section" style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">',
+            '<h4 style="color: #333; margin-bottom: 15px;">',
+            if (is_english) "Export Results" else "Ergebnisse exportieren",
+            '</span></h4>',
+            '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">',
             
-        }, error = function(e) {
-            cat("Error saving data:", e$message, "\n")
-        })
-    }
-    
-    # Add functional minimalistic download section
-    timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
-    
-    # Create PDF content as data URL
-    pdf_filename <- paste0("hilfo_results_", timestamp, ".pdf")
-    
-    # Build JavaScript content strings with proper concatenation
-    # Ensure current_lang is safe to use in if statements
-    is_english <- !is.null(current_lang) && !is.na(current_lang) && is_english
-    
-    date_label <- if (is_english) "Date: " else "Datum: "
-    profile_label <- if (is_english) "PERSONALITY PROFILE" else "PERSÖNLICHKEITSPROFIL"
-    pa_label <- if (is_english) "Programming Anxiety: " else "Programmierangst: "
-    agree_label <- if (is_english) "Agreeableness: " else "Verträglichkeit: "
-    consc_label <- if (is_english) "Conscientiousness: " else "Gewissenhaftigkeit: "
-    neuro_label <- if (is_english) "Neuroticism: " else "Neurotizismus: "
-    open_label <- if (is_english) "Openness: " else "Offenheit: "
-    stress_label <- if (is_english) "Stress: " else "Stress: "
-    study_label <- if (is_english) "Study Skills: " else "Studierfähigkeiten: "
-    stat_label <- if (is_english) "Statistics: " else "Statistik: "
-    
-    download_section_html <- paste0(
-        '<div class="download-section" style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">',
-        '<h4 style="color: #333; margin-bottom: 15px;">',
-        if (is_english) "Export Results" else "Ergebnisse exportieren",
-        '</span></h4>',
-        '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">',
+            # PDF Download Button
+            '<button onclick="if(typeof Shiny !== \'undefined\') { Shiny.setInputValue(\'download_pdf_trigger\', Math.random(), {priority: \'event\'}); } else { alert(\'Download not available\'); }" class="btn btn-primary" style="background: #e8041c; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+            '<i class="fas fa-file-pdf" style="margin-right: 8px;"></i>',
+            if (is_english) "Download PDF" else "PDF herunterladen",
+            '</button>',
+            
+            # CSV Download Button  
+            '<button onclick="if(typeof Shiny !== \'undefined\') { Shiny.setInputValue(\'download_csv_trigger\', Math.random(), {priority: \'event\'}); } else { alert(\'Download not available\'); }" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+            '<i class="fas fa-file-csv" style="margin-right: 8px;"></i>',
+            if (is_english) "Download CSV" else "CSV herunterladen",
+            '</button>',
+            
+            '</div>',
+            '</div>',
+            
+            # Print styles
+            '<style>',
+            '@media print {',
+            '  .download-section { display: none !important; }',
+            '  body { font-size: 11pt; }',
+            '  .report-section { page-break-inside: avoid; }',
+            '  h2 { color: #e8041c !important; -webkit-print-color-adjust: exact; }',
+            '}',
+            '</style>'
+        )
         
-        # PDF Download Button
-        '<button onclick="if(typeof Shiny !== \'undefined\') { Shiny.setInputValue(\'download_pdf_trigger\', Math.random(), {priority: \'event\'}); } else { alert(\'Download not available\'); }" class="btn btn-primary" style="background: #e8041c; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
-        '<i class="fas fa-file-pdf" style="margin-right: 8px;"></i>',
-        if (is_english) "Download PDF" else "PDF herunterladen",
-        '</button>',
+        # Add download section and close the main container
+        html <- paste0(
+            html,
+            download_section_html,
+            '</div>'  # Close main report-content div
+        )
         
-        # CSV Download Button  
-        '<button onclick="if(typeof Shiny !== \'undefined\') { Shiny.setInputValue(\'download_csv_trigger\', Math.random(), {priority: \'event\'}); } else { alert(\'Download not available\'); }" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
-        '<i class="fas fa-file-csv" style="margin-right: 8px;"></i>',
-        if (is_english) "Download CSV" else "CSV herunterladen",
-        '</button>',
+        return(shiny::HTML(html))
         
-        '</div>',
-        '</div>',
-        
-        # Print styles
-        '<style>',
-        '@media print {',
-        '  .download-section { display: none !important; }',
-        '  body { font-size: 11pt; }',
-        '  .report-section { page-break-inside: avoid; }',
-        '  h2 { color: #e8041c !important; -webkit-print-color-adjust: exact; }',
-        '}',
-        '</style>'
-    )
-    
-    # Add download section and close the main container
-    html <- paste0(
-        html,
-        download_section_html,
-        '</div>'  # Close main report-content div
-    )
-    
-    return(shiny::HTML(html))
-    
     }, error = function(e) {
         cat("CRITICAL ERROR in create_hilfo_report:", e$message, "\n")
         cat("Error details:", toString(e), "\n")
@@ -2390,7 +2290,7 @@ custom_item_selection <- function(rv, item_bank, config) {
         current_theta <- 0  # Default
         current_se <- 1.0  # Default SE
         
-        if (length(responses_so_far) >= 3) {
+        if (!is.null(responses_so_far) && length(responses_so_far) >= 3) {
             tryCatch({
                 # Use simplified Newton-Raphson for speed
                 # Get item parameters for items shown so far
@@ -2426,7 +2326,7 @@ custom_item_selection <- function(rv, item_bank, config) {
         already_shown <- rv$administered[rv$administered <= 20]
         available_items <- setdiff(pa_pool, already_shown)
         
-        if (length(available_items) == 0) {
+        if (is.null(available_items) || length(available_items) == 0) {
             return(NULL)
         }
         
@@ -2536,8 +2436,7 @@ study_config <- inrep::create_study_config(
     bilingual = TRUE,
     session_save = TRUE,
     session_timeout = 7200,
-    results_processor = create_hilfo_report,
-    custom_css = personal_code_css
+    results_processor = create_hilfo_report
 )
 
 # Launch the study

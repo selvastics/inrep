@@ -524,6 +524,13 @@ create_default_demographic_configs <- function(demographics, input_types, ui_lab
 #' @return TRUE if valid, FALSE otherwise
 #' @export
 validate_demographic_config <- function(config) {
+  # Allow HTML content fields to bypass normal validation
+  if (!is.null(config$html_content) || !is.null(config$html_content_en)) {
+    # For HTML content, we only need the HTML content itself
+    return(TRUE)
+  }
+  
+  # Normal validation for regular demographic fields
   required_fields <- c("field_name", "question_text", "input_type")
   
   if (!all(required_fields %in% names(config))) {
@@ -573,6 +580,29 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
       next
     }
     
+    # CHECK FOR CUSTOM HTML CONTENT - NEW FEATURE
+    if (!is.null(config$html_content) || !is.null(config$html_content_en)) {
+      # Get current language
+      current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
+      
+      # Choose appropriate HTML content
+      html_content <- if (current_lang == "en" && !is.null(config$html_content_en)) {
+        config$html_content_en
+      } else if (!is.null(config$html_content)) {
+        config$html_content
+      } else {
+        config$html_content_en  # fallback to English if German not available
+      }
+      
+      # Return raw HTML content wrapped in shiny::HTML
+      ui_elements[[demo_name]] <- shiny::div(
+        class = "demographic-field custom-html-content",
+        shiny::HTML(html_content)
+      )
+      next  # Skip normal field creation
+    }
+    
+    # NORMAL DEMOGRAPHIC FIELD CREATION (existing code)
     # Get question text based on current language
     current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
     question_text <- if (current_lang == "en" && !is.null(config$question_en)) {
