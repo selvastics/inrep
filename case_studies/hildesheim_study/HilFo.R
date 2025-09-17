@@ -482,9 +482,11 @@ demographic_configs <- list(
               var lang = sessionStorage.getItem("hilfo_language_preference") ||
                         sessionStorage.getItem("global_language_preference") ||
                         sessionStorage.getItem("current_language") ||
+                        sessionStorage.getItem("hilfo_language") ||
                         sessionStorage.getItem("study_language") ||
                         localStorage.getItem("user_language") ||
                         "de";
+              console.log("Detected language for Personal Code:", lang);
               return lang;
             }
             
@@ -493,23 +495,27 @@ demographic_configs <- list(
               var contentDe = document.getElementById("content-de");
               var contentEn = document.getElementById("content-en");
               
+              console.log("Switching Personal Code to language:", currentLang);
+              
               if (currentLang === "en") {
                 if (contentDe) contentDe.style.display = "none";
                 if (contentEn) contentEn.style.display = "block";
+                console.log("Personal Code: Showing English content");
               } else {
                 if (contentDe) contentDe.style.display = "block";
                 if (contentEn) contentEn.style.display = "none";
+                console.log("Personal Code: Showing German content");
               }
             }
             
             // Switch language on load
-            switchLanguage();
+            setTimeout(switchLanguage, 100); // Small delay to ensure sessionStorage is ready
             
             // Listen for language changes
             window.addEventListener("storage", switchLanguage);
             
-            // Also check periodically for language changes (in case of sessionStorage)
-            setInterval(switchLanguage, 1000);
+            // Also check periodically for language changes (more frequent check)
+            setInterval(switchLanguage, 500);
           });
           </script>
         </div>'
