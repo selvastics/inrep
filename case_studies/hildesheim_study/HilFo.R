@@ -1415,29 +1415,32 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         )
     })
     
+    # Create color scale based on language
+    if (is_english) {
+        color_scale <- ggplot2::scale_fill_manual(values = c(
+            "Programming Anxiety" = "#9b59b6",
+            "Personality" = "#e8041c",
+            "Stress" = "#ff6b6b",
+            "Study Skills" = "#4ecdc4",
+            "Statistics" = "#45b7d1"
+        ))
+    } else {
+        color_scale <- ggplot2::scale_fill_manual(values = c(
+            "Programmierangst" = "#9b59b6",
+            "Persönlichkeit" = "#e8041c",
+            "Stress" = "#ff6b6b",
+            "Studierfähigkeiten" = "#4ecdc4",
+            "Statistik" = "#45b7d1"
+        ))
+    }
+    
     bar_plot <- ggplot2::ggplot(all_data, ggplot2::aes(x = dimension, y = score, fill = category)) +
         ggplot2::geom_bar(stat = "identity", width = 0.7) +
         # Add value labels with better formatting
         ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", score)), 
                            vjust = -0.5, size = 6, fontface = "bold", color = "#333") +
-        # Custom color scheme - handle both German and English
-        if (is_english) {
-            ggplot2::scale_fill_manual(values = c(
-                "Programming Anxiety" = "#9b59b6",
-                "Personality" = "#e8041c",
-                "Stress" = "#ff6b6b",
-                "Study Skills" = "#4ecdc4",
-                "Statistics" = "#45b7d1"
-            ))
-        } else {
-            ggplot2::scale_fill_manual(values = c(
-                "Programmierangst" = "#9b59b6",
-                "Persönlichkeit" = "#e8041c",
-                "Stress" = "#ff6b6b",
-                "Studierfähigkeiten" = "#4ecdc4",
-                "Statistik" = "#45b7d1"
-            ))
-        } +
+        # Custom color scheme
+        color_scale +
         # Y-axis customization
         ggplot2::scale_y_continuous(limits = c(0, 5.5), breaks = 0:5) +
         # Theme with larger text
