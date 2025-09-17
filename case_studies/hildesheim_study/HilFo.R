@@ -1510,7 +1510,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                 plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5, color = "#e8041c", margin = ggplot2::margin(b = 20)),
                 panel.grid.major.x = ggplot2::element_blank(),
                 panel.grid.minor = ggplot2::element_blank(),
-                panel.grid.major.y = ggplot2::element_line(color = "gray90", size = 0.3),
+                panel.grid.major.y = ggplot2::element_line(color = "gray90", linewidth = 0.3),
                 legend.position = "bottom",
                 legend.title = ggplot2::element_blank(),
                 legend.text = ggplot2::element_text(size = 12),
