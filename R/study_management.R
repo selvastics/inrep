@@ -1480,34 +1480,41 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
     return(shiny::div("No demographics configured for this page"))
   }
   
-  # Get current language
-  current_lang <- rv$language %||% config$language %||% "de"
-  
-  # Create inputs for each demographic
-  demo_inputs <- lapply(demo_vars, function(dem) {
-    demo_config <- config$demographic_configs[[dem]]
+    # Get current language
+    current_lang <- rv$language %||% config$language %||% "de"
     
-    if (is.null(demo_config)) {
-      return(NULL)
-    }
-    
-    # Get question text based on language
-    question_text <- if (current_lang == "en" && !is.null(demo_config$question_en)) {
-      demo_config$question_en
-    } else {
-      demo_config$question %||% demo_config$question_de %||% dem
-    }
-    
-    # Check if this demographic item has custom HTML content
-    if (!is.null(demo_config$html_content) && demo_config$html_content != "") {
-      # Return raw HTML content for custom styling - bypass normal rendering
-      return(shiny::div(
-        class = "form-group custom-html-content",
-        shiny::HTML(demo_config$html_content)
-      ))
-    }
-    
-    input_id <- paste0("demo_", dem)
+    # Create inputs for each demographic
+    demo_inputs <- lapply(demo_vars, function(dem) {
+      demo_config <- config$demographic_configs[[dem]]
+      
+      if (is.null(demo_config)) {
+        return(NULL)
+      }
+      
+      # Get question text based on language
+      question_text <- if (current_lang == "en" && !is.null(demo_config$question_en)) {
+        demo_config$question_en
+      } else {
+        demo_config$question %||% demo_config$question_de %||% dem
+      }
+      
+      # Check if this demographic item has custom HTML content - LANGUAGE AWARE
+      html_content_to_use <- NULL
+      if (current_lang == "en" && !is.null(demo_config$html_content_en) && demo_config$html_content_en != "") {
+        html_content_to_use <- demo_config$html_content_en
+        cat("DEBUG: Using English HTML content for", dem, "\n")
+      } else if (!is.null(demo_config$html_content) && demo_config$html_content != "") {
+        html_content_to_use <- demo_config$html_content
+        cat("DEBUG: Using German HTML content for", dem, "\n")
+      }
+      
+      if (!is.null(html_content_to_use)) {
+        # Return raw HTML content for custom styling - bypass normal rendering
+        return(shiny::div(
+          class = "form-group custom-html-content",
+          shiny::HTML(html_content_to_use)
+        ))
+      }    input_id <- paste0("demo_", dem)
     input_type <- config$input_types[[dem]] %||% "text"
     
     # Pass language to create_demographic_input
