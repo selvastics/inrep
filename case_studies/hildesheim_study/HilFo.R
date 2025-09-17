@@ -849,33 +849,31 @@ custom_page_flow <- list(
     </div>
     <script>
     document.addEventListener("DOMContentLoaded", function() {
-      // Use inrep\'s built-in language system by checking Shiny input
       function applyLanguage() {
-        // Check if we\'re in English mode using inrep\'s system
-        var isEnglish = false;
+        console.log("=== PAGE 20 LANGUAGE CHECK ===");
         
-        // Method 1: Check if Shiny is available and has language info
-        if (typeof Shiny !== "undefined" && Shiny.shinyapp && Shiny.shinyapp.$inputValues) {
-          var shinyLang = Shiny.shinyapp.$inputValues.study_language || Shiny.shinyapp.$inputValues.language;
-          if (shinyLang === "en") {
-            isEnglish = true;
-          }
-        }
+        // Check sessionStorage for language preference (same as Page 1 sets)
+        var storedLang = sessionStorage.getItem("hilfo_language_preference") || 
+                         sessionStorage.getItem("current_language") || 
+                         sessionStorage.getItem("hilfo_language") || 
+                         sessionStorage.getItem("hilfo_global_language") || "de";
         
-        // Method 2: Check sessionStorage as backup
-        if (!isEnglish) {
-          var storedLang = sessionStorage.getItem("hilfo_language_preference") || 
-                           sessionStorage.getItem("current_language") || 
-                           sessionStorage.getItem("hilfo_language") || "de";
-          if (storedLang === "en") {
-            isEnglish = true;
-          }
-        }
+        console.log("Detected language:", storedLang);
+        
+        var isEnglish = (storedLang === "en");
+        console.log("Is English mode:", isEnglish);
         
         // Apply the language to all elements
         var langElements = document.querySelectorAll(".lang-text");
-        langElements.forEach(function(element) {
-          var text = isEnglish ? element.getAttribute("data-en") : element.getAttribute("data-de");
+        console.log("Found", langElements.length, "language elements");
+        
+        langElements.forEach(function(element, index) {
+          var germanText = element.getAttribute("data-de");
+          var englishText = element.getAttribute("data-en");
+          var text = isEnglish ? englishText : germanText;
+          
+          console.log("Element", index, "- Current:", element.textContent, "-> Setting to:", text);
+          
           if (text) {
             element.textContent = text;
           }
@@ -883,17 +881,21 @@ custom_page_flow <- list(
         
         // Update placeholder if needed
         var input = document.getElementById("personal_code");
-        if (input && isEnglish) {
-          input.placeholder = "e.g. MAHA15";
+        if (input) {
+          var placeholder = isEnglish ? "e.g. MAHA15" : "z.B. MAHA15";
+          input.placeholder = placeholder;
+          console.log("Set placeholder to:", placeholder);
         }
+        
+        console.log("=== PAGE 20 LANGUAGE APPLIED ===");
       }
       
-      // Apply language immediately
+      // Apply language multiple times to catch different loading phases
       applyLanguage();
-      
-      // Also apply after a short delay to catch any late updates
-      setTimeout(applyLanguage, 100);
+      setTimeout(applyLanguage, 50);
+      setTimeout(applyLanguage, 200);
       setTimeout(applyLanguage, 500);
+      setTimeout(applyLanguage, 1000);
       
       // Set up the input functionality
       var input = document.getElementById("personal_code");
