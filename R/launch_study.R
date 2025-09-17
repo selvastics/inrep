@@ -3392,8 +3392,11 @@ launch_study <- function(
                         demo_config <- config$demographic_configs[[dem]]
                       }
                       
-                      # Use question from config or fall back to variable name
-                      label_text <- if (!base::is.null(demo_config$question)) {
+                      # Use question from config with language support
+                      current_lang <- rv$language %||% config$language %||% "de"
+                      label_text <- if (current_lang == "en" && !base::is.null(demo_config$question_en)) {
+                        demo_config$question_en
+                      } else if (!base::is.null(demo_config$question)) {
                         demo_config$question
                       } else if (!base::is.null(demo_config$label)) {
                         demo_config$label

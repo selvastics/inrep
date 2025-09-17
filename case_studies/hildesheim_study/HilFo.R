@@ -444,28 +444,8 @@ demographic_configs <- list(
         required = FALSE
     ),
     Persönlicher_Code = list(
-        question = '<div style="text-align: center; margin-bottom: 30px; font-size: 18px;">
-        Bitte erstellen Sie einen persönlichen Code:
-      </div>
-      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-        <p style="margin: 0; font-weight: 500;">
-          Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags
-        </p>
-      </div>
-      <div style="text-align: center; color: #666; font-size: 14px; margin-bottom: 20px;">
-        Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15
-      </div>',
-        question_en = '<div style="text-align: center; margin-bottom: 30px; font-size: 18px;">
-        Please create a personal code:
-      </div>
-      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-        <p style="margin: 0; font-weight: 500;">
-          First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday
-        </p>
-      </div>
-      <div style="text-align: center; color: #666; font-size: 14px; margin-bottom: 20px;">
-        Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15
-      </div>',
+        question = "Bitte erstellen Sie einen persönlichen Code (erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags). Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15",
+        question_en = "Please create a personal code (first 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday). Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15",
         type = "text",
         required = FALSE
     )
@@ -946,19 +926,19 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     # Get current language from session if available
     current_lang <- "de"  # Default to German
     
-    # Try multiple ways to get the language
+    # Try multiple ways to get the language - prioritize session$input
     if (!is.null(session)) {
-        # Check various possible locations for language
-        if (!is.null(session$userData$language)) {
+        # Check session$input first (this is where the language actually is)
+        if (!is.null(session$input$language)) {
+            current_lang <- session$input$language
+        } else if (!is.null(session$input$study_language)) {
+            current_lang <- session$input$study_language
+        } else if (!is.null(session$userData$language)) {
             current_lang <- session$userData$language
         } else if (!is.null(session$userData$study_language)) {
             current_lang <- session$userData$study_language
         } else if (!is.null(session$userData$current_language)) {
             current_lang <- session$userData$current_language
-        } else if (!is.null(session$input$study_language)) {
-            current_lang <- session$input$study_language
-        } else if (!is.null(session$input$language)) {
-            current_lang <- session$input$language
         }
     }
     
