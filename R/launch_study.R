@@ -2726,6 +2726,10 @@ launch_study <- function(
       }, delay = 0)  # ZERO delay - immediate execution
     }
     
+    # Return the UI content
+    return(ui_content)
+    })
+    
     # Single language observer - handles language switching efficiently
     shiny::observeEvent(input$study_language, {
       if (!is.null(input$study_language)) {
