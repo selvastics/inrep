@@ -817,87 +817,36 @@ custom_page_flow <- list(
         demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st")
     ),
     
-    # Page 20: Personal Code - beautiful custom page with proper language switching
+    # Page 20: Personal Code - use same mechanism as other pages
     list(
         id = "page20",
         type = "custom",
         title = "Persönlicher Code",
         title_en = "Personal Code",
         content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
-      <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
-        <span class="lang-text" data-de="Persönlicher Code" data-en="Personal Code">Persönlicher Code</span>
+      <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;" data-translate="personal_code_title">
+        Persönlicher Code
       </h2>
-      <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
-        <span class="lang-text" data-de="Bitte erstellen Sie einen persönlichen Code:" data-en="Please create a personal code:">
-        Bitte erstellen Sie einen persönlichen Code:</span>
+      <p style="text-align: center; margin-bottom: 30px; font-size: 18px;" data-translate="personal_code_instruction">
+        Bitte erstellen Sie einen persönlichen Code:
       </p>
       <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-        <p style="margin: 0; font-weight: 500;">
-          <span class="lang-text" data-de="Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags" data-en="First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday">
-          Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</span>
+        <p style="margin: 0; font-weight: 500;" data-translate="personal_code_format">
+          Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags
         </p>
       </div>
       <div style="text-align: center; margin: 30px 0;">
-        <input type="text" id="personal_code" placeholder="e.g. MAHA15" style="
+        <input type="text" id="personal_code" placeholder="z.B. MAHA15" style="
           padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
-          text-align: center; width: 200px; text-transform: uppercase;" required>
+          text-align: center; width: 200px; text-transform: uppercase;" required data-translate-placeholder="personal_code_placeholder">
       </div>
-      <div style="text-align: center; color: #666; font-size: 14px;">
-        <span class="lang-text" data-de="Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15" data-en="Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15">
-        Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</span>
+      <div style="text-align: center; color: #666; font-size: 14px;" data-translate="personal_code_example">
+        Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15
       </div>
     </div>
     <script>
     document.addEventListener("DOMContentLoaded", function() {
-      function applyLanguage() {
-        console.log("=== PAGE 20 LANGUAGE CHECK ===");
-        
-        // Check sessionStorage for language preference (same as Page 1 sets)
-        var storedLang = sessionStorage.getItem("hilfo_language_preference") || 
-                         sessionStorage.getItem("current_language") || 
-                         sessionStorage.getItem("hilfo_language") || 
-                         sessionStorage.getItem("hilfo_global_language") || "de";
-        
-        console.log("Detected language:", storedLang);
-        
-        var isEnglish = (storedLang === "en");
-        console.log("Is English mode:", isEnglish);
-        
-        // Apply the language to all elements
-        var langElements = document.querySelectorAll(".lang-text");
-        console.log("Found", langElements.length, "language elements");
-        
-        langElements.forEach(function(element, index) {
-          var germanText = element.getAttribute("data-de");
-          var englishText = element.getAttribute("data-en");
-          var text = isEnglish ? englishText : germanText;
-          
-          console.log("Element", index, "- Current:", element.textContent, "-> Setting to:", text);
-          
-          if (text) {
-            element.textContent = text;
-          }
-        });
-        
-        // Update placeholder if needed
-        var input = document.getElementById("personal_code");
-        if (input) {
-          var placeholder = isEnglish ? "e.g. MAHA15" : "z.B. MAHA15";
-          input.placeholder = placeholder;
-          console.log("Set placeholder to:", placeholder);
-        }
-        
-        console.log("=== PAGE 20 LANGUAGE APPLIED ===");
-      }
-      
-      // Apply language multiple times to catch different loading phases
-      applyLanguage();
-      setTimeout(applyLanguage, 50);
-      setTimeout(applyLanguage, 200);
-      setTimeout(applyLanguage, 500);
-      setTimeout(applyLanguage, 1000);
-      
-      // Set up the input functionality
+      // Simple input functionality - let inrep handle language
       var input = document.getElementById("personal_code");
       if (input) {
         input.addEventListener("input", function() {
@@ -910,7 +859,14 @@ custom_page_flow <- list(
         });
       }
     });
-    </script>'
+    </script>',
+        translations = list(
+            personal_code_title = list(de = "Persönlicher Code", en = "Personal Code"),
+            personal_code_instruction = list(de = "Bitte erstellen Sie einen persönlichen Code:", en = "Please create a personal code:"),
+            personal_code_format = list(de = "Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags", en = "First 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday"),
+            personal_code_example = list(de = "Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15", en = "Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15"),
+            personal_code_placeholder = list(de = "z.B. MAHA15", en = "e.g. MAHA15")
+        )
     ),
     
     # Page 21: Results (now with PA results included)
