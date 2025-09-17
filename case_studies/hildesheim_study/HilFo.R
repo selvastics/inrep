@@ -917,6 +917,30 @@ custom_page_flow <- list(
     </div>
     <script>
     document.addEventListener("DOMContentLoaded", function() {
+      // Check if we need to switch to English
+      var isEnglish = sessionStorage.getItem("hilfo_language_preference") === "en" ||
+                      sessionStorage.getItem("current_language") === "en" ||
+                      sessionStorage.getItem("hilfo_language") === "en";
+      
+      if (isEnglish) {
+        // Switch to English text
+        var title = document.querySelector("h2");
+        if (title) title.textContent = "Personal Code";
+        
+        var instruction = document.querySelector("p");
+        if (instruction) instruction.textContent = "Please create a personal code:";
+        
+        var format = document.querySelector("div[style*=fff3f4] p");
+        if (format) format.textContent = "First 2 letters of your mothers first name + first 2 letters of your birthplace + day of your birthday";
+        
+        var example = document.querySelector("div[style*=color]:last-child");
+        if (example) example.textContent = "Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15";
+        
+        var input = document.getElementById("personal_code");
+        if (input) input.placeholder = "e.g. MAHA15";
+      }
+      
+      // Set up input functionality
       var input = document.getElementById("personal_code");
       if (input) {
         input.addEventListener("input", function() {
@@ -930,42 +954,6 @@ custom_page_flow <- list(
       }
     });
     </script>',
-        content_en = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
-      <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
-        Personal Code
-      </h2>
-      <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
-        Please create a personal code:
-      </p>
-      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-        <p style="margin: 0; font-weight: 500;">
-          First 2 letters of your mothers first name + first 2 letters of your birthplace + day of your birthday
-        </p>
-      </div>
-      <div style="text-align: center; margin: 30px 0;">
-        <input type="text" id="personal_code" placeholder="e.g. MAHA15" style="
-          padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
-          text-align: center; width: 200px; text-transform: uppercase;" required>
-      </div>
-      <div style="text-align: center; color: #666; font-size: 14px;">
-        Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15
-      </div>
-    </div>
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      var input = document.getElementById("personal_code");
-      if (input) {
-        input.addEventListener("input", function() {
-          this.value = this.value.toUpperCase();
-        });
-        input.addEventListener("blur", function() {
-          if (this.value.trim() !== "") {
-            Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
-          }
-        });
-      }
-    });
-    </script>'
     ),
     
     # Page 21: Results (now with PA results included)
