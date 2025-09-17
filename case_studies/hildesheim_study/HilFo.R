@@ -521,10 +521,10 @@ document.addEventListener("DOMContentLoaded", function() {
         }
         
         if (currentLang === "en") {
-          instructionBox.innerHTML = "<p style=\\"margin: 0;\\">First 2 letters of your mother\\'s first name + first 2 letters of your birthplace + day of your birthday</p>";
+          instructionBox.innerHTML = "<p style='margin: 0;'>First 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday</p>";
           input.placeholder = "e.g. MAHA15";
         } else {
-          instructionBox.innerHTML = "<p style=\\"margin: 0;\\">Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</p>";
+          instructionBox.innerHTML = "<p style='margin: 0;'>Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</p>";
           input.placeholder = "z.B. MAHA15";
         }
         
