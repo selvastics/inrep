@@ -917,28 +917,55 @@ custom_page_flow <- list(
     </div>
     <script>
     document.addEventListener("DOMContentLoaded", function() {
-      // Check if we need to switch to English
-      var isEnglish = sessionStorage.getItem("hilfo_language_preference") === "en" ||
-                      sessionStorage.getItem("current_language") === "en" ||
-                      sessionStorage.getItem("hilfo_language") === "en";
-      
-      if (isEnglish) {
-        // Switch to English text
-        var title = document.querySelector("h2");
-        if (title) title.textContent = "Personal Code";
+      function applyLanguage() {
+        // Check multiple ways to detect English mode
+        var isEnglish = false;
         
-        var instruction = document.querySelector("p");
-        if (instruction) instruction.textContent = "Please create a personal code:";
+        // Method 1: Check sessionStorage
+        var storedLang = sessionStorage.getItem("hilfo_language_preference") ||
+                         sessionStorage.getItem("current_language") ||
+                         sessionStorage.getItem("hilfo_language");
+        if (storedLang === "en") {
+          isEnglish = true;
+        }
         
-        var format = document.querySelector("div[style*=fff3f4] p");
-        if (format) format.textContent = "First 2 letters of your mothers first name + first 2 letters of your birthplace + day of your birthday";
+        // Method 2: Check if Shiny has language info
+        if (typeof Shiny !== "undefined" && Shiny.shinyapp && Shiny.shinyapp.$inputValues) {
+          var shinyLang = Shiny.shinyapp.$inputValues.language || Shiny.shinyapp.$inputValues.study_language;
+          if (shinyLang === "en") {
+            isEnglish = true;
+          }
+        }
         
-        var example = document.querySelector("div[style*=color]:last-child");
-        if (example) example.textContent = "Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15";
+        console.log("Page 20 language check - isEnglish:", isEnglish);
         
-        var input = document.getElementById("personal_code");
-        if (input) input.placeholder = "e.g. MAHA15";
+        if (isEnglish) {
+          console.log("Switching Page 20 to English");
+          // Switch to English text
+          var title = document.querySelector("h2");
+          if (title) title.textContent = "Personal Code";
+          
+          var instruction = document.querySelector("p");
+          if (instruction) instruction.textContent = "Please create a personal code:";
+          
+          var format = document.querySelector("div[style*=fff3f4] p");
+          if (format) format.textContent = "First 2 letters of your mothers first name + first 2 letters of your birthplace + day of your birthday";
+          
+          var example = document.querySelector("div[style*=color]:last-child");
+          if (example) example.textContent = "Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15";
+          
+          var input = document.getElementById("personal_code");
+          if (input) input.placeholder = "e.g. MAHA15";
+        } else {
+          console.log("Keeping Page 20 in German");
+        }
       }
+      
+      // Try multiple times to catch language updates
+      applyLanguage();
+      setTimeout(applyLanguage, 100);
+      setTimeout(applyLanguage, 500);
+      setTimeout(applyLanguage, 1000);
       
       // Set up input functionality
       var input = document.getElementById("personal_code");
