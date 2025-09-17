@@ -840,17 +840,17 @@ custom_page_flow <- list(
     function applyLanguageToPage20() {
       console.log("=== PAGE 20 LANGUAGE DEBUG ===");
       
-      // Check all possible sessionStorage keys
-      var keys = ["global_language_preference", "hilfo_language_preference", "current_language", "hilfo_language"];
+      // Check all possible sessionStorage keys (match what page 1 actually sets)
+      var keys = ["hilfo_language_preference", "current_language", "hilfo_language", "hilfo_global_language"];
       keys.forEach(function(key) {
         var value = sessionStorage.getItem(key);
         console.log("sessionStorage." + key + " =", value);
       });
       
-      var storedLang = sessionStorage.getItem("global_language_preference") || 
-                       sessionStorage.getItem("hilfo_language_preference") || 
+      var storedLang = sessionStorage.getItem("hilfo_language_preference") || 
                        sessionStorage.getItem("current_language") || 
-                       sessionStorage.getItem("hilfo_language") || "de";
+                       sessionStorage.getItem("hilfo_language") || 
+                       sessionStorage.getItem("hilfo_global_language") || "de";
       
       console.log("Final detected language:", storedLang);
       
