@@ -894,7 +894,7 @@ custom_page_flow <- list(
         type = "custom",
         title = "Persönlicher Code",
         title_en = "Personal Code",
-        content_de = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
+        content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
       <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
         Persönlicher Code
       </h2>
