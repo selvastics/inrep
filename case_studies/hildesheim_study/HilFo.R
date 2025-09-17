@@ -562,12 +562,13 @@ custom_page_flow <- list(
           enContent.style.display = "none";
           if (textSpan) textSpan.textContent = "English Version";
           
-          /* Send German language to global system */
+          /* Send German language to global system - SAFE */
+          sessionStorage.setItem("hilfo_global_language", "de");
           if (typeof Shiny !== "undefined") {
-            Shiny.setInputValue("study_language", "de", {priority: "event"});
-            Shiny.setInputValue("language", "de", {priority: "event"});
-            Shiny.setInputValue("current_language", "de", {priority: "event"});
-            Shiny.setInputValue("hilfo_language_preference", "de", {priority: "event"});
+            // Only send once to prevent loops
+            setTimeout(function() {
+              Shiny.setInputValue("store_language_globally", "de", {priority: "event"});
+            }, 500);
           }
           sessionStorage.setItem("hilfo_language", "de");
           sessionStorage.setItem("current_language", "de");
@@ -578,12 +579,13 @@ custom_page_flow <- list(
           enContent.style.display = "block";
           if (textSpan) textSpan.textContent = "Deutsche Version";
           
-          /* Send English language to global system */
+          /* Send English language to global system - SAFE */
+          sessionStorage.setItem("hilfo_global_language", "en");
           if (typeof Shiny !== "undefined") {
-            Shiny.setInputValue("study_language", "en", {priority: "event"});
-            Shiny.setInputValue("language", "en", {priority: "event"});
-            Shiny.setInputValue("current_language", "en", {priority: "event"});
-            Shiny.setInputValue("hilfo_language_preference", "en", {priority: "event"});
+            // Only send once to prevent loops
+            setTimeout(function() {
+              Shiny.setInputValue("store_language_globally", "en", {priority: "event"});
+            }, 500);
           }
           sessionStorage.setItem("hilfo_language", "en");
           sessionStorage.setItem("current_language", "en");
@@ -2567,7 +2569,7 @@ study_config <- inrep::create_study_config(
     session_save = TRUE,
     session_timeout = 7200,  # 2 hours timeout
     results_processor = create_hilfo_report,  # Add custom results processor
-    custom_js = custom_js  # Add custom JavaScript for language switching and downloads
+    # No custom JavaScript - using inrep's built-in bilingual support only
 )
 
 cat("\n================================================================================\n")
