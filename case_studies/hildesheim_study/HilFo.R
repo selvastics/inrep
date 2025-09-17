@@ -868,6 +868,46 @@ custom_page_flow <- list(
 # =============================================================================
 
 create_hilfo_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
+    # Check if this is being called for CSV export enhancement
+    if (!is.null(session) && is.list(session) && !is.null(session$csv_export)) {
+        # This is a CSV export call - enhance the CSV data with HILFO-specific calculations
+        csv_env <- session$csv_export
+        if (!is.null(csv_env$csv_data)) {
+            # Add HILFO-specific calculated scores to CSV
+            responses <- csv_env$responses
+            
+            # Calculate BFI scores from responses (items 21-40)
+            if (!is.null(responses) && length(responses) >= 40) {
+                bfi_responses <- responses[21:40]
+                if (length(bfi_responses) >= 20) {
+                    csv_env$csv_data$BFI_Extraversion <- mean(c(bfi_responses[1:4]), na.rm = TRUE)
+                    csv_env$csv_data$BFI_Vertraeglichkeit <- mean(c(bfi_responses[5:8]), na.rm = TRUE)
+                    csv_env$csv_data$BFI_Gewissenhaftigkeit <- mean(c(bfi_responses[9:12]), na.rm = TRUE)
+                    csv_env$csv_data$BFI_Neurotizismus <- mean(c(bfi_responses[13:16]), na.rm = TRUE)
+                    csv_env$csv_data$BFI_Offenheit <- mean(c(bfi_responses[17:20]), na.rm = TRUE)
+                }
+            }
+            
+            # Calculate PSQ Stress (items 41-45)
+            if (!is.null(responses) && length(responses) >= 45) {
+                stress_responses <- responses[41:45]
+                csv_env$csv_data$PSQ_Stress <- mean(stress_responses, na.rm = TRUE)
+            }
+            
+            # Calculate MWS Study Skills (items 46-49)
+            if (!is.null(responses) && length(responses) >= 49) {
+                study_responses <- responses[46:49]
+                csv_env$csv_data$MWS_Studierfaehigkeiten <- mean(study_responses, na.rm = TRUE)
+            }
+            
+            # Calculate Statistics (items 50-51)
+            if (!is.null(responses) && length(responses) >= 51) {
+                stats_responses <- responses[50:51]
+                csv_env$csv_data$Statistik <- mean(stats_responses, na.rm = TRUE)
+            }
+        }
+        return(NULL)  # Don't generate HTML report for CSV export
+    }
     # Global error handling for the entire function
     tryCatch({
         # Lazy load packages only when actually needed
