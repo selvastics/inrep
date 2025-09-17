@@ -580,14 +580,65 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
       next
     }
     
-    # CHECK FOR CUSTOM HTML CONTENT - NEW FEATURE
+    # UNIVERSAL LANGUAGE DETECTION - moved up to use for HTML content selection
+    current_lang <- "de"  # default
+    
+    # Method 1: Check if we're in a Shiny reactive context
+    if (exists("isolate", envir = .GlobalEnv) && exists("session", envir = parent.frame())) {
+      tryCatch({
+        session_obj <- get("session", envir = parent.frame())
+        if (!is.null(session_obj$userData$language)) {
+          current_lang <- session_obj$userData$language
+        }
+      }, error = function(e) {})
+    }
+    
+    # Method 2: Check reactive values context
+    if (current_lang == "de") {
+      tryCatch({
+        # Look for rv in parent environments
+        for (i in 1:10) {
+          env <- parent.frame(i)
+          if (exists("rv", envir = env)) {
+            rv_obj <- get("rv", envir = env)
+            if (!is.null(rv_obj$language)) {
+              current_lang <- rv_obj$language
+              break
+            }
+          }
+        }
+      }, error = function(e) {})
+    }
+    
+    # Method 3: Check for any global language preference (universal)
+    if (current_lang == "de") {
+      global_vars <- c("current_language", "study_language", "user_language")
+      for (var_name in global_vars) {
+        if (exists(var_name, envir = .GlobalEnv)) {
+          lang_val <- get(var_name, envir = .GlobalEnv)
+          if (!is.null(lang_val) && lang_val %in% c("en", "de")) {
+            current_lang <- lang_val
+            break
+          }
+        }
+      }
+    }
+    
+    cat("DEBUG: Detected language for", demo_name, ":", current_lang, "\n")
+    
+    # CHECK FOR CUSTOM HTML CONTENT - WITH LANGUAGE SELECTION
     if (!is.null(config$html_content) || !is.null(config$html_content_en)) {
-      cat("DEBUG: Found HTML content, rendering it directly\n")
+      cat("DEBUG: Found HTML content, selecting based on language:", current_lang, "\n")
       
-      # Just use the html_content directly - language switching is handled by JavaScript in the HTML
-      html_content <- if (!is.null(config$html_content)) {
+      # Choose HTML content based on detected language
+      html_content <- if (current_lang == "en" && !is.null(config$html_content_en)) {
+        cat("DEBUG: Using English HTML content\n")
+        config$html_content_en
+      } else if (!is.null(config$html_content)) {
+        cat("DEBUG: Using German HTML content\n")
         config$html_content
       } else {
+        cat("DEBUG: Fallback to English HTML content\n")
         config$html_content_en
       }
       
@@ -602,12 +653,6 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
       cat("DEBUG: HTML content added to ui_elements for", demo_name, "\n")
       next  # Skip normal field creation
     }
-    
-    # NORMAL DEMOGRAPHIC FIELD CREATION (existing code)
-    # Universal language detection - same as HTML content above
-    current_lang <- "de"  # default
-    
-    # Method 1: Check if we're in a Shiny reactive context
     if (exists("isolate", envir = .GlobalEnv) && exists("session", envir = parent.frame())) {
       tryCatch({
         session_obj <- get("session", envir = parent.frame())
