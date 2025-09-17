@@ -597,27 +597,16 @@ launch_study <- function(
       tryCatch({
         shinyjs::runjs(scroll_js)
       }, error = function(e) {
+        # shinyjs failed, try simple scroll
         tryCatch({
-          shiny::runjs(scroll_js)
-        }, error = function(e2) {
-          # Final fallback - simple scroll
-          tryCatch({
-            shinyjs::runjs("window.scrollTo(0, 0);")
-          }, error = function(e3) {
-            logger(sprintf("Scroll to top failed: %s", e3$message), level = "WARNING")
-          })
-        })
-      })
-    } else {
-      tryCatch({
-        shiny::runjs(scroll_js)
-      }, error = function(e) {
-        tryCatch({
-          shiny::runjs("window.scrollTo(0, 0);")
+          shinyjs::runjs("window.scrollTo(0, 0);")
         }, error = function(e2) {
           logger(sprintf("Scroll to top failed: %s", e2$message), level = "WARNING")
         })
       })
+    } else {
+      # No shinyjs available, skip advanced scrolling
+      logger("shinyjs not available, skipping scroll to top", level = "WARNING")
     }
   }
   
@@ -2812,7 +2801,11 @@ launch_study <- function(
         writeLines(as.character(report_html), temp_html)
         
         # Convert to PDF using browser print dialog
-        shiny::runjs("window.print();")
+        if (requireNamespace("shinyjs", quietly = TRUE)) {
+          shinyjs::runjs("window.print();")
+        } else {
+          cat("shinyjs not available for PDF download\n")
+        }
         
       }, error = function(e) {
         cat("Error generating PDF:", e$message, "\n")
@@ -2836,18 +2829,22 @@ launch_study <- function(
           csv_content <- readLines(most_recent, warn = FALSE)
           
           # Trigger download via JavaScript
-          shiny::runjs(sprintf("
-            var csv = %s;
-            var blob = new Blob([csv], {type: 'text/csv'});
-            var url = window.URL.createObjectURL(blob);
-            var a = document.createElement('a');
-            a.href = url;
-            a.download = 'hilfo_results_%s.csv';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-          ", jsonlite::toJSON(paste(csv_content, collapse = "\n")), format(Sys.time(), "%Y%m%d_%H%M%S")))
+          if (requireNamespace("shinyjs", quietly = TRUE)) {
+            shinyjs::runjs(sprintf("
+              var csv = %s;
+              var blob = new Blob([csv], {type: 'text/csv'});
+              var url = window.URL.createObjectURL(blob);
+              var a = document.createElement('a');
+              a.href = url;
+              a.download = 'hilfo_results_%s.csv';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              window.URL.revokeObjectURL(url);
+            ", jsonlite::toJSON(paste(csv_content, collapse = "\n")), format(Sys.time(), "%Y%m%d_%H%M%S")))
+          } else {
+            cat("shinyjs not available for CSV download\n")
+          }
           
         } else {
           # Fallback: generate CSV from current data
@@ -2901,18 +2898,22 @@ launch_study <- function(
           csv_content <- paste(capture.output(write.csv(csv_data, row.names = FALSE)), collapse = "\n")
           
           # Trigger download via JavaScript
-          shiny::runjs(sprintf("
-            var csv = %s;
-            var blob = new Blob([csv], {type: 'text/csv'});
-            var url = window.URL.createObjectURL(blob);
-            var a = document.createElement('a');
-            a.href = url;
-            a.download = 'hilfo_results_%s.csv';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-          ", jsonlite::toJSON(csv_content), format(Sys.time(), "%Y%m%d_%H%M%S")))
+          if (requireNamespace("shinyjs", quietly = TRUE)) {
+            shinyjs::runjs(sprintf("
+              var csv = %s;
+              var blob = new Blob([csv], {type: 'text/csv'});
+              var url = window.URL.createObjectURL(blob);
+              var a = document.createElement('a');
+              a.href = url;
+              a.download = 'hilfo_results_%s.csv';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              window.URL.revokeObjectURL(url);
+            ", jsonlite::toJSON(csv_content), format(Sys.time(), "%Y%m%d_%H%M%S")))
+          } else {
+            cat("shinyjs not available for CSV download\n")
+          }
         }
         
       }, error = function(e) {
@@ -4757,10 +4758,10 @@ launch_study <- function(
                   tryCatch({
                     shinyjs::runjs(auto_close_js)
                   }, error = function(e) {
-                    shiny::runjs(auto_close_js)
+                    logger(sprintf("Auto-close failed: %s", e$message), level = "WARNING")
                   })
                 } else {
-                  shiny::runjs(auto_close_js)
+                  logger("shinyjs not available for auto-close", level = "WARNING")
                 }
                 
                 # Also try R app close as fallback
