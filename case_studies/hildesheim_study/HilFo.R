@@ -2566,10 +2566,33 @@ study_config <- inrep::create_study_config(
     progress_style = "bar",
     language = "de",  # Start with German
     bilingual = TRUE,  # Enable inrep's built-in bilingual support
+    custom_js = "
+      // Assessment pages language detection (NOT page 1)
+      document.addEventListener('DOMContentLoaded', function() {
+        // Skip page 1 completely
+        var isPage1 = document.getElementById('content_de') && document.getElementById('content_en');
+        if (isPage1) {
+          console.log('Page 1 detected - skipping language detection');
+          return;
+        }
+        
+        console.log('Assessment page loading...');
+        
+        // Check if English was selected on page 1
+        setTimeout(function() {
+          // Check if language preference exists
+          if (typeof hilfo_language_preference !== 'undefined' && hilfo_language_preference === 'en') {
+            console.log('English preference detected - switching page');
+            if (typeof Shiny !== 'undefined' && Shiny.setInputValue) {
+              Shiny.setInputValue('study_language', 'en', {priority: 'event'});
+            }
+          }
+        }, 200);
+      });
+    ",
     session_save = TRUE,
     session_timeout = 7200,  # 2 hours timeout
-    results_processor = create_hilfo_report,  # Add custom results processor
-    # No custom JavaScript - using inrep's built-in bilingual support only
+    results_processor = create_hilfo_report  # Add custom results processor
 )
 
 cat("\n================================================================================\n")
