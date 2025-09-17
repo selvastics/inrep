@@ -806,13 +806,98 @@ custom_page_flow <- list(
         demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st")
     ),
     
-    # Page 20: Personal Code - use demographics type with custom fields for proper language switching
+    # Page 20: Personal Code - beautiful custom page with proper language switching
     list(
         id = "page20",
-        type = "demographics", 
+        type = "custom",
         title = "Persönlicher Code",
         title_en = "Personal Code",
-        demographics = c("Persönlicher_Code")
+        content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
+      <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
+        <span class="lang-text" data-de="Persönlicher Code" data-en="Personal Code">Persönlicher Code</span>
+      </h2>
+      <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
+        <span class="lang-text" data-de="Bitte erstellen Sie einen persönlichen Code:" data-en="Please create a personal code:">
+        Bitte erstellen Sie einen persönlichen Code:</span>
+      </p>
+      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
+        <p style="margin: 0; font-weight: 500;">
+          <span class="lang-text" data-de="Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags" data-en="First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday">
+          Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</span>
+        </p>
+      </div>
+      <div style="text-align: center; margin: 30px 0;">
+        <input type="text" id="personal_code" placeholder="e.g. MAHA15" style="
+          padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
+          text-align: center; width: 200px; text-transform: uppercase;" required>
+      </div>
+      <div style="text-align: center; color: #666; font-size: 14px;">
+        <span class="lang-text" data-de="Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15" data-en="Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15">
+        Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</span>
+      </div>
+    </div>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Use inrep\'s built-in language system by checking Shiny input
+      function applyLanguage() {
+        // Check if we\'re in English mode using inrep\'s system
+        var isEnglish = false;
+        
+        // Method 1: Check if Shiny is available and has language info
+        if (typeof Shiny !== "undefined" && Shiny.shinyapp && Shiny.shinyapp.$inputValues) {
+          var shinyLang = Shiny.shinyapp.$inputValues.study_language || Shiny.shinyapp.$inputValues.language;
+          if (shinyLang === "en") {
+            isEnglish = true;
+          }
+        }
+        
+        // Method 2: Check sessionStorage as backup
+        if (!isEnglish) {
+          var storedLang = sessionStorage.getItem("hilfo_language_preference") || 
+                           sessionStorage.getItem("current_language") || 
+                           sessionStorage.getItem("hilfo_language") || "de";
+          if (storedLang === "en") {
+            isEnglish = true;
+          }
+        }
+        
+        // Apply the language to all elements
+        var langElements = document.querySelectorAll(".lang-text");
+        langElements.forEach(function(element) {
+          var text = isEnglish ? element.getAttribute("data-en") : element.getAttribute("data-de");
+          if (text) {
+            element.textContent = text;
+          }
+        });
+        
+        // Update placeholder if needed
+        var input = document.getElementById("personal_code");
+        if (input && isEnglish) {
+          input.placeholder = "e.g. MAHA15";
+        }
+      }
+      
+      // Apply language immediately
+      applyLanguage();
+      
+      // Also apply after a short delay to catch any late updates
+      setTimeout(applyLanguage, 100);
+      setTimeout(applyLanguage, 500);
+      
+      // Set up the input functionality
+      var input = document.getElementById("personal_code");
+      if (input) {
+        input.addEventListener("input", function() {
+          this.value = this.value.toUpperCase();
+        });
+        input.addEventListener("blur", function() {
+          if (this.value.trim() !== "") {
+            Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
+          }
+        });
+      }
+    });
+    </script>'
     ),
     
     # Page 21: Results (now with PA results included)
