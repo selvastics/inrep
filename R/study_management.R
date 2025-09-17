@@ -1453,6 +1453,15 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
       demo_config$question %||% demo_config$question_de %||% dem
     }
     
+    # Check if this demographic item has custom HTML content
+    if (!is.null(demo_config$html_content) && demo_config$html_content != "") {
+      # Return raw HTML content for custom styling - bypass normal rendering
+      return(shiny::div(
+        class = "form-group custom-html-content",
+        shiny::HTML(demo_config$html_content)
+      ))
+    }
+    
     input_id <- paste0("demo_", dem)
     input_type <- config$input_types[[dem]] %||% "text"
     
