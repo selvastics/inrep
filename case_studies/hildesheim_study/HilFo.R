@@ -817,56 +817,13 @@ custom_page_flow <- list(
         demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st")
     ),
     
-    # Page 20: Personal Code - beautiful custom page with inrep language switching
+    # Page 20: Personal Code - simple working version
     list(
         id = "page20",
-        type = "custom",
+        type = "demographics",
         title = "Persönlicher Code",
         title_en = "Personal Code",
-        content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
-      <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;" data-translate="personal_code_title">
-        Persönlicher Code
-      </h2>
-      <p style="text-align: center; margin-bottom: 30px; font-size: 18px;" data-translate="personal_code_instruction">
-        Bitte erstellen Sie einen persönlichen Code:
-      </p>
-      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-        <p style="margin: 0; font-weight: 500;" data-translate="personal_code_format">
-          Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags
-        </p>
-      </div>
-      <div style="text-align: center; margin: 30px 0;">
-        <input type="text" id="personal_code" placeholder="z.B. MAHA15" style="
-          padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
-          text-align: center; width: 200px; text-transform: uppercase;" required data-translate-placeholder="personal_code_placeholder">
-      </div>
-      <div style="text-align: center; color: #666; font-size: 14px;" data-translate="personal_code_example">
-        Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15
-      </div>
-    </div>
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      // Simple input functionality
-      var input = document.getElementById("personal_code");
-      if (input) {
-        input.addEventListener("input", function() {
-          this.value = this.value.toUpperCase();
-        });
-        input.addEventListener("blur", function() {
-          if (this.value.trim() !== "") {
-            Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
-          }
-        });
-      }
-    });
-    </script>',
-        translations = list(
-            personal_code_title = list(de = "Persönlicher Code", en = "Personal Code"),
-            personal_code_instruction = list(de = "Bitte erstellen Sie einen persönlichen Code:", en = "Please create a personal code:"),
-            personal_code_format = list(de = "Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags", en = "First 2 letters of your mother's first name + first 2 letters of your birthplace + day of your birthday"),
-            personal_code_example = list(de = "Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15", en = "Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15"),
-            personal_code_placeholder = list(de = "z.B. MAHA15", en = "e.g. MAHA15")
-        )
+        demographics = c("Persönlicher_Code")
     ),
     
     # Page 21: Results (now with PA results included)

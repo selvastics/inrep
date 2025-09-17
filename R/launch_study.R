@@ -2524,6 +2524,83 @@ launch_study <- function(
     shiny::uiOutput("study_ui", style = "position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; margin: 0 auto !important; transform: none !important; width: 100% !important; max-width: 1200px !important; display: block !important; visibility: visible !important; opacity: 1 !important;")
   )
   
+  # Process custom page flow with language switching support
+  process_page_flow <- function(config, rv, input, output, session, item_bank, ui_labels, logger, auto_close_time, auto_close_time_unit, disable_auto_close) {
+    if (is.null(config$custom_page_flow) || rv$current_page > length(config$custom_page_flow)) {
+      return(shiny::div("Invalid page"))
+    }
+    
+    current_page_config <- config$custom_page_flow[[rv$current_page]]
+    current_lang <- rv$language %||% config$language %||% "de"
+    
+    # Get page title (with language support)
+    page_title <- if (current_lang == "en" && !is.null(current_page_config$title_en)) {
+      current_page_config$title_en
+    } else {
+      current_page_config$title %||% ""
+    }
+    
+    # Process different page types
+    if (current_page_config$type == "custom") {
+      # Handle custom pages with language switching
+      content_html <- current_page_config$content %||% ""
+      
+      # Add language switching JavaScript if translations are provided
+      if (!is.null(current_page_config$translations)) {
+        # Create JavaScript object with translations
+        translations_js <- paste0(
+          "<script>",
+          "window.inrepTranslations = ", jsonlite::toJSON(current_page_config$translations, auto_unbox = TRUE), ";",
+          "document.addEventListener('DOMContentLoaded', function() {",
+          "  var currentLang = '", current_lang, "';",
+          "  var isEnglish = (currentLang === 'en');",
+          "  ",
+          "  // Apply translations to data-translate elements",
+          "  document.querySelectorAll('[data-translate]').forEach(function(element) {",
+          "    var key = element.getAttribute('data-translate');",
+          "    if (window.inrepTranslations[key]) {",
+          "      var text = isEnglish ? window.inrepTranslations[key].en : window.inrepTranslations[key].de;",
+          "      if (text) element.textContent = text;",
+          "    }",
+          "  });",
+          "  ",
+          "  // Apply translations to data-translate-placeholder elements", 
+          "  document.querySelectorAll('[data-translate-placeholder]').forEach(function(element) {",
+          "    var key = element.getAttribute('data-translate-placeholder');",
+          "    if (window.inrepTranslations[key]) {",
+          "      var text = isEnglish ? window.inrepTranslations[key].en : window.inrepTranslations[key].de;",
+          "      if (text) element.placeholder = text;",
+          "    }",
+          "  });",
+          "});",
+          "</script>"
+        )
+        content_html <- paste0(content_html, translations_js)
+      }
+      
+      return(shiny::div(
+        class = "assessment-card",
+        if (page_title != "") shiny::h3(page_title, class = "card-header"),
+        shiny::HTML(content_html),
+        shiny::div(class = "nav-buttons",
+          if (rv$current_page > 1) {
+            shiny::actionButton("prev_page", "Previous", class = "btn-secondary",
+                               onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
+          },
+          if (rv$current_page < rv$total_pages) {
+            shiny::actionButton("next_page", "Next", class = "btn-primary",
+                               onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
+          } else {
+            shiny::actionButton("submit_test", "Submit", class = "btn-success",
+                               onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
+          }
+        )
+      ))
+    } else {
+      # For other page types, return placeholder (existing logic should handle these)
+      return(shiny::div("Processing page..."))
+    }
+  }
 
   server <- function(input, output, session) {
     # LATER PACKAGE: IMMEDIATE UI DISPLAY - Show UI first, load everything else later
@@ -3372,138 +3449,7 @@ launch_study <- function(
           base::switch(stage,
                    "custom_page_flow" = {
                      # Process and render custom page flow
-                     if (rv$current_page <= length(config$custom_page_flow)) {
-                       current_page_config <- config$custom_page_flow[[rv$current_page]]
-                       
-                       if (current_page_config$type == "demographics") {
-                         # Render demographics page (use existing demographics logic)
-                         demo_inputs <- base::lapply(current_page_config$demographics, function(dem) {
-                           input_type <- config$input_types[[dem]]
-                           demo_config <- config$demographic_configs[[dem]]
-                           current_lang <- rv$language %||% config$language %||% "de"
-                           
-                           # Use appropriate language
-                           question_text <- if (current_lang == "en" && !is.null(demo_config$question_en)) {
-                             demo_config$question_en
-                           } else {
-                             demo_config$question %||% dem
-                           }
-                           
-                           options <- if (current_lang == "en" && !is.null(demo_config$options_en)) {
-                             demo_config$options_en
-                           } else {
-                             demo_config$options
-                           }
-                           
-                           # Create input based on type
-                           if (input_type == "radio" && !is.null(options)) {
-                             shiny::radioButtons(dem, question_text, choices = options, selected = character(0))
-                           } else if (input_type == "select" && !is.null(options)) {
-                             shiny::selectInput(dem, question_text, choices = c("Please select..." = "", options), selected = "")
-                           } else if (input_type == "checkbox" && !is.null(options)) {
-                             shiny::checkboxGroupInput(dem, question_text, choices = options)
-                           } else {
-                             shiny::textInput(dem, question_text, value = "")
-                           }
-                         })
-                         
-                         # Get page title
-                         page_title <- if (rv$language == "en" && !is.null(current_page_config$title_en)) {
-                           current_page_config$title_en
-                         } else {
-                           current_page_config$title %||% ""
-                         }
-                         
-                         shiny::div(
-                           class = "assessment-card",
-                           if (page_title != "") shiny::h3(page_title, class = "card-header"),
-                           demo_inputs,
-                           shiny::div(class = "nav-buttons",
-                             if (rv$current_page > 1) {
-                               shiny::actionButton("prev_page", "Previous", class = "btn-secondary")
-                             },
-                             if (rv$current_page < rv$total_pages) {
-                               shiny::actionButton("next_page", "Next", class = "btn-primary")
-                             } else {
-                               shiny::actionButton("submit_test", "Submit", class = "btn-success")
-                             }
-                           )
-                         )
-                       } else if (current_page_config$type == "custom") {
-                         # Handle custom pages with language switching support
-                         current_lang <- rv$language %||% config$language %||% "de"
-                         page_title <- if (current_lang == "en" && !is.null(current_page_config$title_en)) {
-                           current_page_config$title_en
-                         } else {
-                           current_page_config$title %||% ""
-                         }
-                         
-                         content_html <- current_page_config$content %||% ""
-                         
-                         # Add language switching JavaScript if translations are provided
-                         if (!is.null(current_page_config$translations)) {
-                           translations_js <- paste0(
-                             "<script>",
-                             "window.inrepTranslations = ", jsonlite::toJSON(current_page_config$translations, auto_unbox = TRUE), ";",
-                             "document.addEventListener('DOMContentLoaded', function() {",
-                             "  var currentLang = '", current_lang, "';",
-                             "  var isEnglish = (currentLang === 'en');",
-                             "  ",
-                             "  // Apply translations to data-translate elements",
-                             "  document.querySelectorAll('[data-translate]').forEach(function(element) {",
-                             "    var key = element.getAttribute('data-translate');",
-                             "    if (window.inrepTranslations[key]) {",
-                             "      var text = isEnglish ? window.inrepTranslations[key].en : window.inrepTranslations[key].de;",
-                             "      if (text) element.textContent = text;",
-                             "    }",
-                             "  });",
-                             "  ",
-                             "  // Apply translations to data-translate-placeholder elements", 
-                             "  document.querySelectorAll('[data-translate-placeholder]').forEach(function(element) {",
-                             "    var key = element.getAttribute('data-translate-placeholder');",
-                             "    if (window.inrepTranslations[key]) {",
-                             "      var text = isEnglish ? window.inrepTranslations[key].en : window.inrepTranslations[key].de;",
-                             "      if (text) element.placeholder = text;",
-                             "    }",
-                             "  });",
-                             "});",
-                             "</script>"
-                           )
-                           content_html <- paste0(content_html, translations_js)
-                         }
-                         
-                         shiny::div(
-                           class = "assessment-card",
-                           if (page_title != "") shiny::h3(page_title, class = "card-header"),
-                           shiny::HTML(content_html),
-                           shiny::div(class = "nav-buttons",
-                             if (rv$current_page > 1) {
-                               shiny::actionButton("prev_page", "Previous", class = "btn-secondary")
-                             },
-                             if (rv$current_page < rv$total_pages) {
-                               shiny::actionButton("next_page", "Next", class = "btn-primary")
-                             } else {
-                               shiny::actionButton("submit_test", "Submit", class = "btn-success")
-                             }
-                           )
-                         )
-                       } else if (current_page_config$type == "items") {
-                         # Handle item pages - return placeholder for now (existing items logic should be used)
-                         shiny::div("Items page - use existing item rendering logic")
-                       } else if (current_page_config$type == "results") {
-                         # Handle results pages - call results processor
-                         if (!is.null(config$results_processor) && is.function(config$results_processor)) {
-                           report_html <- config$results_processor(rv$responses, item_bank, rv$demo_data, session)
-                           shiny::div(class = "assessment-card", shiny::HTML(as.character(report_html)))
-                         } else {
-                           shiny::div("No results processor configured")
-                         }
-                       } else {
-                         shiny::div("Unsupported page type:", current_page_config$type)
-                       }
-                     } else {
-                       shiny::div("Page not found")
-                     }
+                     process_page_flow(config, rv, input, output, session, item_bank, ui_labels, logger, auto_close_time, auto_close_time_unit, disable_auto_close)
                    },
                    "error" = {
                      shiny::div(class = "assessment-card error-card",
