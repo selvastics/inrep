@@ -562,14 +562,12 @@ custom_page_flow <- list(
           enContent.style.display = "none";
           if (textSpan) textSpan.textContent = "English Version";
           
-          /* Send German language to global system - ONE TIME ONLY */
+          /* Send German language to global system */
           if (typeof Shiny !== "undefined") {
-            // Reset the English flag and send German
-            window.englishLanguageSent = false;
-            setTimeout(function() {
-              Shiny.setInputValue("study_language", "de", {priority: "event"});
-              Shiny.setInputValue("store_language_globally", "de", {priority: "event"});
-            }, 100);
+            Shiny.setInputValue("study_language", "de", {priority: "event"});
+            Shiny.setInputValue("language", "de", {priority: "event"});
+            Shiny.setInputValue("current_language", "de", {priority: "event"});
+            Shiny.setInputValue("hilfo_language_preference", "de", {priority: "event"});
           }
           sessionStorage.setItem("hilfo_language", "de");
           sessionStorage.setItem("current_language", "de");
@@ -580,16 +578,12 @@ custom_page_flow <- list(
           enContent.style.display = "block";
           if (textSpan) textSpan.textContent = "Deutsche Version";
           
-          /* Send English language to global system - ONE TIME ONLY */
+          /* Send English language to global system */
           if (typeof Shiny !== "undefined") {
-            // Use a flag to prevent multiple calls
-            if (!window.englishLanguageSent) {
-              window.englishLanguageSent = true;
-              setTimeout(function() {
-                Shiny.setInputValue("study_language", "en", {priority: "event"});
-                Shiny.setInputValue("store_language_globally", "en", {priority: "event"});
-              }, 100);
-            }
+            Shiny.setInputValue("study_language", "en", {priority: "event"});
+            Shiny.setInputValue("language", "en", {priority: "event"});
+            Shiny.setInputValue("current_language", "en", {priority: "event"});
+            Shiny.setInputValue("hilfo_language_preference", "en", {priority: "event"});
           }
           sessionStorage.setItem("hilfo_language", "en");
           sessionStorage.setItem("current_language", "en");
@@ -2573,7 +2567,7 @@ study_config <- inrep::create_study_config(
     session_save = TRUE,
     session_timeout = 7200,  # 2 hours timeout
     results_processor = create_hilfo_report,  # Add custom results processor
-    # No custom JavaScript to prevent syntax conflicts
+    custom_js = custom_js  # Add custom JavaScript for language switching and downloads
 )
 
 cat("\n================================================================================\n")
