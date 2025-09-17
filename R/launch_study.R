@@ -3392,6 +3392,19 @@ launch_study <- function(
                         demo_config <- config$demographic_configs[[dem]]
                       }
                       
+                      # CHECK FOR HTML CONTENT - NEW FEATURE!
+                      if (!base::is.null(demo_config) && !base::is.null(demo_config$html_content)) {
+                        cat("DEBUG: Found HTML content in demographics stage for", dem, "\n")
+                        cat("DEBUG: HTML content length:", nchar(demo_config$html_content), "\n")
+                        
+                        # Return raw HTML content instead of normal form field
+                        return(shiny::div(
+                          class = "demographic-field custom-html-content",
+                          shiny::HTML(demo_config$html_content)
+                        ))
+                      }
+                      
+                      # NORMAL FIELD CREATION (existing code)
                       # Use question from config with language support
                       current_lang <- rv$language %||% config$language %||% "de"
                       label_text <- if (current_lang == "en" && !base::is.null(demo_config$question_en)) {
