@@ -806,95 +806,13 @@ custom_page_flow <- list(
         demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st")
     ),
     
-    # Page 20: Personal Code
+    # Page 20: Personal Code - use demographics type with custom fields for proper language switching
     list(
         id = "page20",
-        type = "custom",
-        title = "",
+        type = "demographics", 
+        title = "Persönlicher Code",
         title_en = "Personal Code",
-        content = '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">
-      <h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">
-        <span data-lang-de="Persönlicher Code" data-lang-en="Personal Code">Persönlicher Code</span>
-      </h2>
-      <p style="text-align: center; margin-bottom: 30px; font-size: 18px;">
-        <span data-lang-de="Bitte erstellen Sie einen persönlichen Code:" data-lang-en="Please create a personal code:">
-        Bitte erstellen Sie einen persönlichen Code:</span>
-      </p>
-      <div style="background: #fff3f4; padding: 20px; border-left: 4px solid #e8041c; margin: 20px 0;">
-        <p style="margin: 0; font-weight: 500;">
-          <span data-lang-de="Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags" data-lang-en="First 2 letters of your mother\'s first name + first 2 letters of your birthplace + day of your birthday">
-          Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</span>
-        </p>
-      </div>
-      <div style="text-align: center; margin: 30px 0;">
-        <input type="text" id="personal_code" placeholder="e.g. MAHA15" style="
-          padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; 
-          text-align: center; width: 200px; text-transform: uppercase;" required>
-      </div>
-      <div style="text-align: center; color: #666; font-size: 14px;">
-        <span data-lang-de="Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15" data-lang-en="Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15">
-        Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</span>
-      </div>
-    </div>
-    <script>
-    function applyLanguageToPage20() {
-      console.log("=== PAGE 20 LANGUAGE DEBUG ===");
-      
-      // Check all possible sessionStorage keys (match what page 1 actually sets)
-      var keys = ["hilfo_language_preference", "current_language", "hilfo_language", "hilfo_global_language"];
-      keys.forEach(function(key) {
-        var value = sessionStorage.getItem(key);
-        console.log("sessionStorage." + key + " =", value);
-      });
-      
-      var storedLang = sessionStorage.getItem("hilfo_language_preference") || 
-                       sessionStorage.getItem("current_language") || 
-                       sessionStorage.getItem("hilfo_language") || 
-                       sessionStorage.getItem("hilfo_global_language") || "de";
-      
-      console.log("Final detected language:", storedLang);
-      
-      if (storedLang === "en") {
-        console.log("Switching Page 20 to English...");
-        // Switch to English
-        var elements = document.querySelectorAll("[data-lang-de][data-lang-en]");
-        console.log("Found", elements.length, "elements with language attributes");
-        
-        elements.forEach(function(element, index) {
-          var germanText = element.getAttribute("data-lang-de");
-          var englishText = element.getAttribute("data-lang-en");
-          console.log("Element", index, "- DE:", germanText, "EN:", englishText);
-          
-          if (englishText) {
-            element.textContent = englishText;
-            console.log("Switched element", index, "to English");
-          }
-        });
-        console.log("Page 20 language switching completed");
-      } else {
-        console.log("Keeping Page 20 in German (detected language:", storedLang, ")");
-      }
-      
-      console.log("=== END PAGE 20 DEBUG ===");
-    }
-    
-    document.addEventListener("DOMContentLoaded", function() {
-      // Apply language immediately when page loads
-      applyLanguageToPage20();
-      
-      var input = document.getElementById("personal_code");
-      if (input) {
-        input.addEventListener("input", function() {
-          this.value = this.value.toUpperCase();
-        });
-        input.addEventListener("blur", function() {
-          if (this.value.trim() !== "") {
-            Shiny.setInputValue("Persönlicher_Code", this.value.trim(), {priority: "event"});
-          }
-        });
-      }
-    });
-    </script>'
+        demographics = c("Persönlicher_Code")
     ),
     
     # Page 21: Results (now with PA results included)
