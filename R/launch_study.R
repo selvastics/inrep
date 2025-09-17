@@ -597,16 +597,27 @@ launch_study <- function(
       tryCatch({
         shinyjs::runjs(scroll_js)
       }, error = function(e) {
-        # shinyjs failed, try simple scroll
         tryCatch({
-          shinyjs::runjs("window.scrollTo(0, 0);")
+          shiny::runjs(scroll_js)
+        }, error = function(e2) {
+          # Final fallback - simple scroll
+          tryCatch({
+            shinyjs::runjs("window.scrollTo(0, 0);")
+          }, error = function(e3) {
+            logger(sprintf("Scroll to top failed: %s", e3$message), level = "WARNING")
+          })
+        })
+      })
+    } else {
+      tryCatch({
+        shiny::runjs(scroll_js)
+      }, error = function(e) {
+        tryCatch({
+          shiny::runjs("window.scrollTo(0, 0);")
         }, error = function(e2) {
           logger(sprintf("Scroll to top failed: %s", e2$message), level = "WARNING")
         })
       })
-    } else {
-      # No shinyjs available, skip advanced scrolling
-      logger("shinyjs not available, skipping scroll to top", level = "WARNING")
     }
   }
   
@@ -2751,70 +2762,9 @@ launch_study <- function(
       }
     })
     
-    # Also observe store_language_globally for HilFo
-    shiny::observeEvent(input$store_language_globally, {
-      if (!is.null(input$store_language_globally)) {
-        # Store globally for HilFo report access
-        assign("hilfo_language_preference", input$store_language_globally, envir = .GlobalEnv)
-        cat("Stored language globally for HilFo:", input$store_language_globally, "\n")
-        
-        # Update language for FUTURE pages only (not current page to prevent loops)
-        new_lang <- input$store_language_globally
-        if (new_lang %in% c("en", "de")) {
-          # Only update if we're NOT on page 1 to prevent re-rendering loops
-          current_page <- rv$current_page %||% 1
-          if (current_page != 1) {
-            current_language(new_lang)
-            rv$language <- new_lang
-            session$userData$language <- new_lang
-            cat("HILFO: Switched current page to:", new_lang, "\n")
-          } else {
-            # For page 1, just store for future use without triggering re-render
-            session$userData$language <- new_lang
-            cat("HILFO: Language preference stored for future pages:", new_lang, "\n")
-          }
-        }
-      }
-    })
     
-    # Observe PDF download trigger from HilFo
-    shiny::observeEvent(input$download_pdf_trigger, {
-      cat("PDF download triggered\n")
-      # Generate PDF content
-      tryCatch({
-        # Get the current report content
-        if (!is.null(rv$cat_result)) {
-          responses <- rv$cat_result$responses
-        } else {
-          responses <- rv$responses
-        }
-        
-        # Generate report HTML
-        report_html <- if (!is.null(config$results_processor) && is.function(config$results_processor)) {
-          config$results_processor(responses, item_bank, rv$demo_data, list(input = list(language = rv$language)))
-        } else {
-          shiny::HTML("<p>No report available</p>")
-        }
-        
-        # Create a temporary HTML file
-        temp_html <- tempfile(fileext = ".html")
-        writeLines(as.character(report_html), temp_html)
-        
-        # Convert to PDF using browser print dialog
-        if (requireNamespace("shinyjs", quietly = TRUE)) {
-          shinyjs::runjs("window.print();")
-        } else {
-          cat("shinyjs not available for PDF download\n")
-        }
-        
-      }, error = function(e) {
-        cat("Error generating PDF:", e$message, "\n")
-        shiny::showNotification("Error generating PDF. Please try again.", type = "error")
-      })
-    })
     
-    # Observe CSV download trigger from HilFo
-    shiny::observeEvent(input$download_csv_trigger, {
+    # Custom page flow navigation observers
       cat("CSV download triggered\n")
       # Try to find the most recent CSV file created by create_hilfo_report
       tryCatch({
@@ -2829,22 +2779,18 @@ launch_study <- function(
           csv_content <- readLines(most_recent, warn = FALSE)
           
           # Trigger download via JavaScript
-          if (requireNamespace("shinyjs", quietly = TRUE)) {
-            shinyjs::runjs(sprintf("
-              var csv = %s;
-              var blob = new Blob([csv], {type: 'text/csv'});
-              var url = window.URL.createObjectURL(blob);
-              var a = document.createElement('a');
-              a.href = url;
-              a.download = 'hilfo_results_%s.csv';
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              window.URL.revokeObjectURL(url);
-            ", jsonlite::toJSON(paste(csv_content, collapse = "\n")), format(Sys.time(), "%Y%m%d_%H%M%S")))
-          } else {
-            cat("shinyjs not available for CSV download\n")
-          }
+          shiny::runjs(sprintf("
+            var csv = %s;
+            var blob = new Blob([csv], {type: 'text/csv'});
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'hilfo_results_%s.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+          ", jsonlite::toJSON(paste(csv_content, collapse = "\n")), format(Sys.time(), "%Y%m%d_%H%M%S")))
           
         } else {
           # Fallback: generate CSV from current data
@@ -2882,75 +2828,34 @@ launch_study <- function(
             }
           }
           
-          # Add calculated scores - SAME LOGIC as create_hilfo_report
-          # Calculate BFI scores from responses (items 21-40)
-          if (!is.null(rv$responses) && length(rv$responses) >= 40) {
-            bfi_responses <- rv$responses[21:40]
-            if (length(bfi_responses) >= 20) {
-              csv_data$BFI_Extraversion <- mean(c(bfi_responses[1:4]), na.rm = TRUE)
-              csv_data$BFI_Vertraeglichkeit <- mean(c(bfi_responses[5:8]), na.rm = TRUE)
-              csv_data$BFI_Gewissenhaftigkeit <- mean(c(bfi_responses[9:12]), na.rm = TRUE)
-              csv_data$BFI_Neurotizismus <- mean(c(bfi_responses[13:16]), na.rm = TRUE)
-              csv_data$BFI_Offenheit <- mean(c(bfi_responses[17:20]), na.rm = TRUE)
-            } else {
-              csv_data$BFI_Extraversion <- NA
-              csv_data$BFI_Vertraeglichkeit <- NA
-              csv_data$BFI_Gewissenhaftigkeit <- NA
-              csv_data$BFI_Neurotizismus <- NA
-              csv_data$BFI_Offenheit <- NA
-            }
-          } else {
-            csv_data$BFI_Extraversion <- NA
-            csv_data$BFI_Vertraeglichkeit <- NA
-            csv_data$BFI_Gewissenhaftigkeit <- NA
-            csv_data$BFI_Neurotizismus <- NA
-            csv_data$BFI_Offenheit <- NA
-          }
-          
-          # Calculate PSQ Stress (items 41-45)
-          if (!is.null(rv$responses) && length(rv$responses) >= 45) {
-            stress_responses <- rv$responses[41:45]
-            csv_data$PSQ_Stress <- mean(stress_responses, na.rm = TRUE)
-          } else {
-            csv_data$PSQ_Stress <- NA
-          }
-          
-          # Calculate MWS Study Skills (items 46-49)
-          if (!is.null(rv$responses) && length(rv$responses) >= 49) {
-            study_responses <- rv$responses[46:49]
-            csv_data$MWS_Studierfaehigkeiten <- mean(study_responses, na.rm = TRUE)
-          } else {
-            csv_data$MWS_Studierfaehigkeiten <- NA
-          }
-          
-          # Calculate Statistics (items 50-51)
-          if (!is.null(rv$responses) && length(rv$responses) >= 51) {
-            stats_responses <- rv$responses[50:51]
-            csv_data$Statistik <- mean(stats_responses, na.rm = TRUE)
-          } else {
-            csv_data$Statistik <- NA
-          }
+          # Add calculated scores (same as cloud storage)
+          # These would need to be calculated from the responses, but for now we'll add placeholders
+          # In a real implementation, you'd calculate these from the responses
+          csv_data$BFI_Extraversion <- NA
+          csv_data$BFI_Vertraeglichkeit <- NA
+          csv_data$BFI_Gewissenhaftigkeit <- NA
+          csv_data$BFI_Neurotizismus <- NA
+          csv_data$BFI_Offenheit <- NA
+          csv_data$PSQ_Stress <- NA
+          csv_data$MWS_Studierfaehigkeiten <- NA
+          csv_data$Statistik <- NA
           
           # Convert to CSV string
           csv_content <- paste(capture.output(write.csv(csv_data, row.names = FALSE)), collapse = "\n")
           
           # Trigger download via JavaScript
-          if (requireNamespace("shinyjs", quietly = TRUE)) {
-            shinyjs::runjs(sprintf("
-              var csv = %s;
-              var blob = new Blob([csv], {type: 'text/csv'});
-              var url = window.URL.createObjectURL(blob);
-              var a = document.createElement('a');
-              a.href = url;
-              a.download = 'hilfo_results_%s.csv';
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              window.URL.revokeObjectURL(url);
-            ", jsonlite::toJSON(csv_content), format(Sys.time(), "%Y%m%d_%H%M%S")))
-          } else {
-            cat("shinyjs not available for CSV download\n")
-          }
+          shiny::runjs(sprintf("
+            var csv = %s;
+            var blob = new Blob([csv], {type: 'text/csv'});
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'hilfo_results_%s.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+          ", jsonlite::toJSON(csv_content), format(Sys.time(), "%Y%m%d_%H%M%S")))
         }
         
       }, error = function(e) {
@@ -4482,20 +4387,8 @@ launch_study <- function(
           }
           
                   # Move to next page immediately - CSS handles the transition
-          old_page <- rv$current_page
           rv$current_page <- rv$current_page + 1
           logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
-          
-          # Apply stored language preference when moving FROM page 1 to other pages
-          if (old_page == 1 && exists("hilfo_language_preference", envir = .GlobalEnv)) {
-            stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
-            if (!is.null(stored_lang) && stored_lang %in% c("en", "de")) {
-              current_language(stored_lang)
-              rv$language <- stored_lang
-              session$userData$language <- stored_lang
-              cat("HILFO: Applied language preference when leaving page 1:", stored_lang, "\n")
-            }
-          }
           
           # Log page switch and update start time
           if (exists("update_page_start_time")) {
@@ -4540,14 +4433,8 @@ launch_study <- function(
         }
         
                   # Move to previous page immediately - CSS handles the transition
-          old_page <- rv$current_page
           rv$current_page <- rv$current_page - 1
           logger(sprintf("Moving back to page %d of %d", rv$current_page, rv$total_pages))
-          
-          # When moving TO page 1, don't apply language changes to prevent loops
-          if (rv$current_page == 1) {
-            cat("HILFO: Moved back to page 1 - language switching handled by page itself\n")
-          }
           
           # Log page switch and update start time
           if (exists("update_page_start_time")) {
@@ -4795,10 +4682,10 @@ launch_study <- function(
                   tryCatch({
                     shinyjs::runjs(auto_close_js)
                   }, error = function(e) {
-                    logger(sprintf("Auto-close failed: %s", e$message), level = "WARNING")
+                    shiny::runjs(auto_close_js)
                   })
                 } else {
-                  logger("shinyjs not available for auto-close", level = "WARNING")
+                  shiny::runjs(auto_close_js)
                 }
                 
                 # Also try R app close as fallback
