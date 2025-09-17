@@ -926,8 +926,8 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     # Check if we should use English based on the last language selection
     # Since inrep might not pass session properly, we'll use a different approach
     # Check if there's a language preference stored in the global environment
-    if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
-        stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
+    if (exists("global_language_preference", envir = .GlobalEnv)) {
+        stored_lang <- get("global_language_preference", envir = .GlobalEnv)
         if (!is.null(stored_lang) && stored_lang == "en") {
             is_english <- TRUE
             current_lang <- "en"
