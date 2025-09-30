@@ -1095,15 +1095,15 @@ launch_study <- function(
         keep_alive_interval = keep_alive_interval,
         enable_logging = TRUE
       )
-        } else {
-          # Fallback to basic session management
-          list(
-            session_id = paste0("SESS_", format(Sys.time(), "%Y%m%d_%H%M%S")),
-            start_time = Sys.time(),
-            max_time = max_session_time,
-            log_file = NULL
-          )
-        }
+    } else {
+      # Fallback to basic session management
+      list(
+        session_id = paste0("SESS_", format(Sys.time(), "%Y%m%d_%H%M%S")),
+        start_time = Sys.time(),
+        max_time = max_session_time,
+        log_file = NULL
+      )
+    }
       }, error = function(e) {
         logger(sprintf("Failed to initialize robust session management: %s", e$message), level = "WARNING")
         # Fallback to basic session management

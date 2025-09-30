@@ -155,7 +155,7 @@ export(show_examples)
 export(get_help)
 
 # Comprehensive Data Management Functions
-# Note: These functions are not yet implemented but are called conditionally in the code
+# Note: These functions are not yet implemented or depicted
 # export(initialize_comprehensive_dataset)
 # export(update_comprehensive_dataset)
 # export(get_comprehensive_dataset)
