@@ -1,6 +1,4 @@
 
-
-
 # Ensure inrep is installed only if not present
 if (!requireNamespace("inrep", quietly = TRUE)) {
     if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
@@ -19,6 +17,33 @@ library(shinycssloaders)
 library(patchwork)
 library(markdown)
 library(shinyjs)
+
+# Helper: Attach an observer to a live Shiny session so that when the client
+# sets the `finish_early` input the server attempts to stop the app.
+# Usage: call attach_finish_early_observer(session) from your server function
+# or session initialization code so the observer is registered for that session.
+attach_finish_early_observer <- function(session) {
+    if (is.null(session)) return(invisible(NULL))
+    tryCatch({
+        # Register after first flush to ensure session$input is available
+        session$onFlushed(function() {
+            # observeEvent must be created in server reactive context; placing
+            # it inside onFlushed ensures the callback runs in the correct context.
+            shiny::observeEvent(session$input$finish_early, {
+                # Try to stop the app gracefully
+                tryCatch({
+                    shiny::stopApp()
+                }, error = function(e) {
+                    # If stopApp fails, attempt to close the session
+                    try({ session$close() }, silent = TRUE)
+                })
+            }, ignoreInit = TRUE)
+        }, once = TRUE)
+    }, error = function(e) {
+        message("attach_finish_early_observer: could not attach observer: ", e$message)
+    })
+    invisible(NULL)
+}
 
 
 # =============================================================================
@@ -278,18 +303,12 @@ demographic_configs <- list(
                        "27"="27", "28"="28", "29"="29", "30"="30", "older than 30"="0"),
         required = FALSE
     ),
-    Studiengang = list(
-        question = "In welchem Studiengang befinden Sie sich?",
-        question_en = "Which study program are you in?",
-        options = c("Bachelor Psychologie"="1", "Master Psychologie"="2"),
-        options_en = c("Bachelor Psychology"="1", "Master Psychology"="2"),
-        required = FALSE
-    ),
+
     Geschlecht = list(
         question = "Welches Geschlecht haben Sie?",
         question_en = "What is your gender?",
-        options = c("weiblich oder divers"="1", "männlich"="2"),
-        options_en = c("female or diverse"="1", "male"="2"),
+        options = c("weiblich"="1", "männlich"="2", "divers"="3"),
+        options_en = c("female"="1", "male"="2", "diverse"="3"),
         required = FALSE
     ),
     Wohnstatus = list(
@@ -317,25 +336,8 @@ demographic_configs <- list(
         type = "text",
         required = FALSE
     ),
-    Haustier = list(
-        question = "Haben Sie ein Haustier oder möchten Sie eines?",
-        question_en = "Do you have a pet or would you like one?",
-        options = c(
-            "Hund"="1", "Katze"="2", "Fische"="3", "Vogel"="4",
-            "Nager"="5", "Reptil"="6", "Ich möchte kein Haustier"="7", "Sonstiges"="8"
-        ),
-        options_en = c(
-            "Dog"="1", "Cat"="2", "Fish"="3", "Bird"="4",
-            "Rodent"="5", "Reptile"="6", "I don't want a pet"="7", "Other"="8"
-        ),
-        required = FALSE
-    ),
-    Haustier_Zusatz = list(
-        question = "Anderes Haustier:",
-        question_en = "Other pet:",
-        type = "text",
-        required = FALSE
-    ),
+
+
     Rauchen = list(
         question = "Rauchen Sie?",
         question_en = "Do you smoke?",
@@ -471,18 +473,22 @@ demographic_configs <- list(
           </div>
           <div style="text-align: center; color: #666; font-size: 14px;">Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</div>
         </div>'
+    ),
+    show_personal_results = list(
+        question = "Möchten Sie Ihre persönlichen Ergebnisse dieser Erhebung sehen?",
+        question_en = "Would you like to see your personal results from this assessment?",
+        options = c("Ja, zeigen Sie mir meine persönlichen Ergebnisse" = "yes", "Nein, ich möchte meine persönlichen Ergebnisse nicht sehen" = "no"),
+        options_en = c("Yes, show me my personal results" = "yes", "No, I do not want to see my personal results" = "no"),
+        required = TRUE
     )
 )
 
 input_types <- list(
     Einverständnis = "checkbox",
     Alter_VPN = "select",
-    Studiengang = "radio",
     Geschlecht = "radio",
     Wohnstatus = "radio",
     Wohn_Zusatz = "text",
-    Haustier = "select",
-    Haustier_Zusatz = "text",
     Rauchen = "radio",
     Ernährung = "radio",
     Ernährung_Zusatz = "text",
@@ -491,7 +497,8 @@ input_types <- list(
     Vor_Nachbereitung = "radio",
     Zufrieden_Hi_5st = "radio",
     Zufrieden_Hi_7st = "radio",
-    Persönlicher_Code = "text"
+    Persönlicher_Code = "text",
+    show_personal_results = "radio"
 )
 
 
@@ -517,14 +524,14 @@ custom_page_flow <- list(
         <h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px;">
           Willkommen zur HilFo Studie</h1>
         <h2 style="color: #e8041c;">Liebe Studierende,</h2>
-        <p>In den Übungen zu den statistischen Verfahren wollen wir mit anschaulichen Daten arbeiten, 
-        die von Ihnen selbst stammen. Deswegen wollen wir ein paar Dinge von Ihnen erfahren.</p>
-        <p>Da wir verschiedene Auswertungen ermöglichen wollen, deckt der Fragebogen verschiedene 
+        <p>In den Seminaren zu den statistischen Verfahren wollen wir mit Daten arbeiten, 
+        die von Ihnen selbst stammen. Deswegen bitten wir Sie an der nachfolgenden Befragung teilzunehmen.</p>
+        <p>Da wir die Anwendung verschiedene Auswertungsverfahren ermöglichen wollen, deckt der Fragebogen verschiedene 
         Themenbereiche ab, die voneinander teilweise unabhängig sind.</p>
         <p style="background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;">
         <strong>Ihre Angaben sind dabei selbstverständlich anonym</strong>, es wird keine personenbezogene 
         Auswertung der Daten stattfinden. Die Daten werden von den Erstsemestern Psychologie im 
-        Bachelor generiert und in diesem Jahrgang genutzt, möglicherweise auch in späteren Jahrgängen.</p>
+        Bachelor generiert und in diesem Jahrgang, möglicherweise auch in späteren Jahrgängen genutzt.</p>
         <p>Im Folgenden werden Ihnen dazu Aussagen präsentiert. Wir bitten Sie anzugeben, 
         inwieweit Sie diesen zustimmen. Es gibt keine falschen oder richtigen Antworten. 
         Bitte beantworten Sie die Fragen so, wie es Ihrer Meinung am ehesten entspricht.</p>
@@ -547,9 +554,9 @@ custom_page_flow <- list(
         <h1 style="color: #e8041c; text-align: center; margin-bottom: 30px; font-size: 28px;">
           Welcome to the HilFo Study</h1>
         <h2 style="color: #e8041c;">Dear Students,</h2>
-        <p>In the statistics exercises, we want to work with illustrative data 
-        that comes from you. Therefore, we would like to learn a few things about you.</p>
-        <p>Since we want to enable various analyses, the questionnaire covers different 
+        <p>In the seminars on statistical procedures, we want to work with data 
+        that comes from you. Therefore, we ask you to participate in the following survey.</p>
+        <p>Since we want to enable the application of various analysis procedures, the questionnaire covers different 
         topic areas that are partially independent of each other.</p>
         <p style="background: #fff3f4; padding: 15px; border-left: 4px solid #e8041c;">
         <strong>Your information is completely anonymous</strong>, there will be no personal 
@@ -676,7 +683,7 @@ custom_page_flow <- list(
         type = "demographics",
         title = "Soziodemographische Angaben",
         title_en = "Sociodemographic Information",
-        demographics = c("Alter_VPN", "Studiengang", "Geschlecht")
+        demographics = c("Alter_VPN", "Geschlecht")
     ),
     
     # Page 3: Living situation
@@ -685,7 +692,7 @@ custom_page_flow <- list(
         type = "demographics",
         title = "Wohnsituation",
         title_en = "Living Situation",
-        demographics = c("Wohnstatus", "Wohn_Zusatz", "Haustier", "Haustier_Zusatz")
+        demographics = c("Wohnstatus", "Wohn_Zusatz")
     ),
     
     # Page 4: Lifestyle
@@ -710,8 +717,8 @@ custom_page_flow <- list(
     list(
         id = "page6_pa_fixed",
         type = "items",
-        title = "Programmierangst - Teil 1",
-        title_en = "Programming Anxiety - Part 1",
+        title = "",
+        title_en = "",
         instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
         instructions_en = "Please indicate to what extent the following statements apply to you.",
         item_indices = 1:5,  # First 5 PA items (fixed, all on one page)
@@ -724,8 +731,8 @@ custom_page_flow <- list(
     list(
         id = "page7_pa2",
         type = "items", 
-        title = "Programmierangst - Teil 2",
-        title_en = "Programming Anxiety - Part 2",
+        title = "",
+        title_en = "",
         instructions = "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.",
         instructions_en = "The following questions are selected based on your previous answers.",
         item_indices = 6:6,
@@ -734,32 +741,32 @@ custom_page_flow <- list(
     list(
         id = "page8_pa3",
         type = "items",
-        title = "Programmierangst - Teil 2",
-        title_en = "Programming Anxiety - Part 2",
+        title = "",
+        title_en = "",
         item_indices = 7:7,
         scale_type = "likert"
     ),
     list(
         id = "page9_pa4",
         type = "items",
-        title = "Programmierangst - Teil 2",
-        title_en = "Programming Anxiety - Part 2",
+        title = "",
+        title_en = "",
         item_indices = 8:8,
         scale_type = "likert"
     ),
     list(
         id = "page10_pa5",
         type = "items",
-        title = "Programmierangst - Teil 2",
-        title_en = "Programming Anxiety - Part 2",
+        title = "",
+        title_en = "",
         item_indices = 9:9,
         scale_type = "likert"
     ),
     list(
         id = "page11_pa6",
         type = "items",
-        title = "Programmierangst - Teil 2",
-        title_en = "Programming Anxiety - Part 2",
+        title = "",
+        title_en = "",
         item_indices = 10:10,
         scale_type = "likert"
     ),
@@ -816,8 +823,8 @@ custom_page_flow <- list(
     list(
         id = "page17",
         type = "items",
-        title = "Studierfähigkeiten",
-        title_en = "Study Skills",
+        title = "",
+        title_en = "",
         instructions = "Wie leicht oder schwer fällt es Ihnen...",
         instructions_en = "How easy or difficult is it for you...",
         item_indices = 46:49,  # MWS items
@@ -828,8 +835,8 @@ custom_page_flow <- list(
     list(
         id = "page18",
         type = "items",
-        title = "Statistik",
-        title_en = "Statistics",
+        title = "",
+        title_en = "",
         item_indices = 50:51,  # Statistics items
         scale_type = "likert"
     ),
@@ -852,6 +859,15 @@ custom_page_flow <- list(
         demographics = c("Persönlicher_Code")
     ),
     
+    # Page 20a: Pre-results confirmation (participant-facing page before results)
+    list(
+            id = "page20a_preresults",
+            type = "demographics",
+            title = "Die Erhebung ist beendet",
+            title_en = "Assessment complete",
+            demographics = c("show_personal_results")
+        ),
+
     # Page 21: Results (now with PA results included)
     list(
         id = "page21",
@@ -1008,6 +1024,82 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                 return(shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>"))
             }
         }
+
+        # Honor participant preference for showing personal results
+        # If the participant selected 'no' on the pre-results page, show a minimal page
+        # that only displays the automatic-close message and a countdown (290 seconds).
+        try({
+            show_pref <- NULL
+            
+            # Debug: Print all available data
+            cat("DEBUG: === CHECKING FOR show_personal_results ===\n")
+            cat("DEBUG: demographics is null?", is.null(demographics), "\n")
+            if (!is.null(demographics)) {
+                cat("DEBUG: demographics class:", class(demographics), "\n")
+                cat("DEBUG: demographics names:", names(demographics), "\n")
+                if (is.list(demographics)) {
+                    cat("DEBUG: demographics contents:", str(demographics), "\n")
+                }
+            }
+            
+            # First check demographics parameter (most reliable)
+            # Handle both list and named vector formats
+            if (!is.null(demographics)) {
+                if (is.list(demographics) && !is.null(demographics$show_personal_results)) {
+                    show_pref <- demographics$show_personal_results
+                    cat("DEBUG: Found show_personal_results in demographics list:", show_pref, "\n")
+                } else if (is.vector(demographics) && "show_personal_results" %in% names(demographics)) {
+                    show_pref <- demographics["show_personal_results"]
+                    cat("DEBUG: Found show_personal_results in demographics vector:", show_pref, "\n")
+                }
+            }
+            # Fallback to session input
+            else if (!is.null(session) && !is.null(session$input) && !is.null(session$input$show_personal_results)) {
+                show_pref <- session$input$show_personal_results
+                cat("DEBUG: Found show_personal_results in session$input:", show_pref, "\n")
+            } 
+            # Fallback to session userData
+            else if (!is.null(session) && !is.null(session$userData) && !is.null(session$userData$show_personal_results)) {
+                show_pref <- session$userData$show_personal_results
+                cat("DEBUG: Found show_personal_results in session$userData:", show_pref, "\n")
+            }
+            # Global environment fallback
+            else if (exists("show_personal_results", envir = .GlobalEnv)) {
+                show_pref <- get("show_personal_results", envir = .GlobalEnv)
+                cat("DEBUG: Found show_personal_results in global env:", show_pref, "\n")
+            }
+            else {
+                cat("DEBUG: No show_personal_results found anywhere - defaulting to show results\n")
+            }
+            if (!is.null(show_pref) && nzchar(as.character(show_pref))) {
+                # Normalize
+                sp <- tolower(as.character(show_pref))
+                cat("DEBUG: Normalized show_pref value:", sp, "\n")
+                cat("DEBUG: Checking if sp is in 'no', 'n', 'false', '0'\n")
+                if (sp %in% c("no", "n", "false", "0")) {
+                    cat("DEBUG: User selected NO - showing thank you message only\n")
+                    # Simple thank you message - let inrep handle countdown
+                    html_no <- paste0(
+                        '<div style="padding:40px; text-align:center; font-family: Arial, sans-serif;">',
+                        '<div style="background:#f8f9fa; padding:30px; border-radius:10px; border:1px solid #dee2e6; max-width:600px; margin:0 auto;">',
+                        '<h2 style="color:#e8041c; margin-bottom:20px;">', 
+                        if (is_english) 'Assessment Complete' else 'Vielen Dank für Ihre Teilnahme!',
+                        '</h2>',
+                        '<p style="color:#666; font-size:16px; margin-bottom:0;">',
+                        if (is_english) 'Your data has been saved successfully.' else 'Ihre Daten wurden erfolgreich gespeichert.',
+                        '</p>',
+                        '</div>',
+                        '</div>',
+                        # Hide the page title
+                        '<style>',
+                        '.page-title, .study-title, h1:first-child, .results-title { display: none !important; }',
+                        '</style>'
+                    )
+
+                    return(shiny::HTML(html_no))
+                }
+            }
+        }, silent = TRUE)
         
         # Ensure demographics is a list
         if (is.null(demographics)) {
@@ -1377,8 +1469,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                 Openness = if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit,
                 ProgrammingAnxiety = if (is.na(scores$ProgrammingAnxiety) || is.nan(scores$ProgrammingAnxiety)) 3 else scores$ProgrammingAnxiety,
                 Stress = if (is.na(scores$Stress) || is.nan(scores$Stress)) 3 else scores$Stress,
-                StudySkills = if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) 3 else scores$Studierfähigkeiten,
-                Statistics = if (is.na(scores$Statistik) || is.nan(scores$Statistik)) 3 else scores$Statistik
+                StudySkills = if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) 3 else scores$Studierfähigkeiten
             )
         } else {
             # Use German names as keys for German mode
@@ -1390,8 +1481,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                 Offenheit = if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit,
                 ProgrammingAnxiety = if (is.na(scores$ProgrammingAnxiety) || is.nan(scores$ProgrammingAnxiety)) 3 else scores$ProgrammingAnxiety,
                 Stress = if (is.na(scores$Stress) || is.nan(scores$Stress)) 3 else scores$Stress,
-                Studierfähigkeiten = if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) 3 else scores$Studierfähigkeiten,
-                Statistik = if (is.na(scores$Statistik) || is.nan(scores$Statistik)) 3 else scores$Statistik
+                Studierfähigkeiten = if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) 3 else scores$Studierfähigkeiten
             )
         }
         
@@ -1405,8 +1495,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                 "Openness" = "Openness",
                 "ProgrammingAnxiety" = "Programming Anxiety",
                 "Stress" = "Stress",
-                "StudySkills" = "Study Skills",
-                "Statistics" = "Statistics"
+                "StudySkills" = "Study Skills"
             )
         } else {
             dimension_names_en <- c(
@@ -1417,8 +1506,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                 "Offenheit" = "Openness",
                 "ProgrammingAnxiety" = "Programming Anxiety",
                 "Stress" = "Stress",
-                "Studierfähigkeiten" = "Study Skills",
-                "Statistik" = "Statistics"
+                "Studierfähigkeiten" = "Study Skills"
             )
         }
         
@@ -1427,8 +1515,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             "Persönlichkeit" = "Personality",
             "Programmierangst" = "Programming Anxiety",
             "Stress" = "Stress",
-            "Studierfähigkeiten" = "Study Skills",
-            "Statistik" = "Statistics"
+            "Studierfähigkeiten" = "Study Skills"
         )
         
         # Use English names if current language is English
@@ -1436,11 +1523,11 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             dimension_labels <- dimension_names_en[names(ordered_scores)]
             # Create category labels that match the English dimension names
             category_labels <- c(rep("Personality", 5), 
-                                 "Programming Anxiety", "Stress", "Study Skills", "Statistics")
+                                 "Programming Anxiety", "Stress", "Study Skills")
         } else {
             dimension_labels <- names(ordered_scores)
             category_labels <- c(rep("Persönlichkeit", 5), 
-                                 "Programmierangst", "Stress", "Studierfähigkeiten", "Statistik")
+                                 "Programmierangst", "Stress", "Studierfähigkeiten")
         }
         
         # Create all_data with error handling
@@ -1457,15 +1544,15 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             # Create fallback data.frame
             all_data <- data.frame(
                 dimension = factor(if (is_english) {
-                    c("Extraversion", "Agreeableness", "Conscientiousness", "Neuroticism", "Openness", "ProgrammingAnxiety", "Stress", "StudySkills", "Statistics")
+                    c("Extraversion", "Agreeableness", "Conscientiousness", "Neuroticism", "Openness", "ProgrammingAnxiety", "Stress", "StudySkills")
                 } else {
-                    c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", "Neurotizismus", "Offenheit", "ProgrammingAnxiety", "Stress", "Studierfähigkeiten", "Statistik")
+                    c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", "Neurotizismus", "Offenheit", "ProgrammingAnxiety", "Stress", "Studierfähigkeiten")
                 }),
-                score = rep(3, 9),
+                score = rep(3, 8),
                 category = factor(if (is_english) {
-                    c(rep("Personality", 5), "Programming Anxiety", "Stress", "Study Skills", "Statistics")
+                    c(rep("Personality", 5), "Programming Anxiety", "Stress", "Study Skills")
                 } else {
-                    c(rep("Persönlichkeit", 5), "Programmierangst", "Stress", "Studierfähigkeiten", "Statistik")
+                    c(rep("Persönlichkeit", 5), "Programmierangst", "Stress", "Studierfähigkeiten")
                 }),
                 stringsAsFactors = FALSE,
                 row.names = NULL
@@ -1478,16 +1565,14 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                 "Programming Anxiety" = "#9b59b6",
                 "Personality" = "#e8041c",
                 "Stress" = "#ff6b6b",
-                "Study Skills" = "#4ecdc4",
-                "Statistics" = "#45b7d1"
+                "Study Skills" = "#4ecdc4"
             ))
         } else {
             color_scale <- ggplot2::scale_fill_manual(values = c(
                 "Programmierangst" = "#9b59b6",
                 "Persönlichkeit" = "#e8041c",
                 "Stress" = "#ff6b6b",
-                "Studierfähigkeiten" = "#4ecdc4",
-                "Statistik" = "#45b7d1"
+                "Studierfähigkeiten" = "#4ecdc4"
             ))
         }
         
@@ -1604,19 +1689,18 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         suppressMessages({
             ggplot2::ggsave(radar_file, radar_plot, width = 10, height = 9, dpi = 150, bg = "white")
             ggplot2::ggsave(bar_file, bar_plot, width = 12, height = 7, dpi = 150, bg = "white")
-            ggplot2::ggsave(trace_file, trace_plot, width = 10, height = 6, dpi = 150, bg = "white")
         })
         
         # Encode as base64
         radar_base64 <- ""
         bar_base64 <- ""
-        trace_base64 <- ""  # Initialize trace_base64
+        # Programming Anxiety trace intentionally not saved/encoded for participant-facing report
+        trace_base64 <- ""
         if (requireNamespace("base64enc", quietly = TRUE)) {
             radar_base64 <- base64enc::base64encode(radar_file)
             bar_base64 <- base64enc::base64encode(bar_file)
-            trace_base64 <- base64enc::base64encode(trace_file)
         }
-        unlink(c(radar_file, bar_file, trace_file))
+        unlink(c(radar_file, bar_file))
         
         # Create detailed item responses table
         # Ensure we don't exceed available questions and handle missing values
@@ -1704,6 +1788,10 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         report_id <- paste0("report_", format(Sys.time(), "%Y%m%d_%H%M%S"))
         
         html <- paste0(
+            # Hide the page title for both versions
+            '<style>',
+            '.page-title, .study-title, h1:first-child, .results-title { display: none !important; }',
+            '</style>',
             '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
             
             # Radar plot
@@ -1719,23 +1807,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             }, error = function(e) ""),
             '</div>',
             
-            # Trace plot for Programming Anxiety
-            '<div class="report-section">',
-            '<h2 style="color: #9b59b6; text-align: center; margin-bottom: 25px;">',
-            '<span data-lang-de="Programmierangst - Adaptive Testung" data-lang-en="Programming Anxiety - Adaptive Testing Trace">', if (is_english) "Programming Anxiety - Adaptive Testing Trace" else "Programmierangst - Adaptive Testung", '</span></h2>',
-            tryCatch({
-                if (exists("trace_base64") && !is.null(trace_base64) && trace_base64 != "") {
-                    paste0('<img src="data:image/png;base64,', trace_base64, '" style="width: 100%; max-width: 800px; display: block; margin: 0 auto; border-radius: 8px;">')
-                } else {
-                    ""
-                }
-            }, error = function(e) ""),
-            '<p style="text-align: center; color: #666; margin-top: 10px; font-size: 14px;">',
-            '<span data-lang-de="Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items." ',
-            'data-lang-en="This trace plot shows how the theta estimate evolved during the assessment. The shaded area represents the standard error band. Vertical line separates fixed and adaptive items.">',
-            if (is_english) "This trace plot shows how the theta estimate evolved during the assessment. The shaded area represents the standard error band. Vertical line separates fixed and adaptive items." else "Dieses Diagramm zeigt die Entwicklung der Theta-Schätzung während der Bewertung. Der schattierte Bereich zeigt das Standardfehlerband. Die vertikale Linie trennt fixe und adaptive Items.",
-            '</span></p>',
-            '</div>',
+            # (Programming Anxiety trace section intentionally removed from participant-facing report)
             
             # Bar chart
             '<div class="report-section">',
@@ -1762,8 +1834,6 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             if (is_english) "Mean" else "Mittelwert", '</th>',
             '<th style="padding: 12px; border-bottom: 2px solid #e8041c; text-align: center;">',
             if (is_english) "Standard Deviation" else "Standardabweichung", '</th>',
-            '<th style="padding: 12px; border-bottom: 2px solid #e8041c;">',
-            if (is_english) "Interpretation" else "Interpretation", '</th>',
             '</tr>'
         )
         
@@ -1819,7 +1889,6 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                        "Neuroticism" = "Neurotizismus",
                        "Openness" = "Offenheit",
                        "StudySkills" = "Studierfähigkeiten",
-                       "Statistics" = "Statistik",
                        name  # Keep same for others
                 )
             } else {
@@ -1844,7 +1913,6 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                                        "Openness" = "Openness",
                                        "Stress" = "Stress",
                                        "StudySkills" = "Study Skills",
-                                       "Statistics" = "Statistics",
                                        name  # Default fallback
                 )
             } else {
@@ -1857,7 +1925,6 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                                        "Offenheit" = "Offenheit",
                                        "Stress" = "Stress",
                                        "Studierfähigkeiten" = "Studierfähigkeiten",
-                                       "Statistik" = "Statistik",
                                        name  # Default fallback
                 )
             }
@@ -1869,8 +1936,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                            '<strong style="color: ', color, ';">', value, '</strong></td>',
                            '<td style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
                            ifelse(is.na(sd_value), "-", as.character(sd_value)), '</td>',
-                           '<td style="padding: 12px; border-bottom: 1px solid #e0e0e0; color: #666;">',
-                           level, '</td>',
+                           # Interpretation column removed per request
                            '</tr>'
             )
         }
@@ -2083,144 +2149,6 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     })
 }
 
-# =============================================================================
-# ENHANCED DOWNLOAD HANDLER FOR HILDESHEIM
-# =============================================================================
-
-create_hilfo_download_handler <- function() {
-    return(function(format = "pdf") {
-        shiny::downloadHandler(
-            filename = function() {
-                timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
-                paste0("HilFo_Studie_", timestamp, ".", format)
-            },
-            content = function(file) {
-                # Get the current session data
-                session_data <- get("complete_data", envir = .GlobalEnv, inherits = FALSE)
-                
-                if (format == "pdf") {
-                    # Create PDF report
-                    tryCatch({
-                        # Create temporary R Markdown file
-                        temp_rmd <- tempfile(fileext = ".Rmd")
-                        
-                        rmd_content <- '---
-title: "HilFo Studie - Persönlicher Bericht"
-author: "Universität Hildesheim"
-date: "`r format(Sys.Date(), \"%d. %B %Y\")`"
-output: 
-  pdf_document:
-    latex_engine: xelatex
-    includes:
-      in_header: header.tex
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
-library(ggplot2)
-library(knitr)
-```
-
-# Ihre Ergebnisse
-
-## Persönlichkeitsprofil (Big Five)
-
-Ihre Persönlichkeit wurde anhand der Big Five Dimensionen erfasst:
-
-```{r personality-table}
-personality_data <- data.frame(
-  Dimension = c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", 
-                "Neurotizismus", "Offenheit"),
-  Score = c(3.5, 4.2, 3.8, 2.9, 4.1),
-  Interpretation = c("Durchschnittlich", "Hoch", "Überdurchschnittlich", 
-                     "Unterdurchschnittlich", "Hoch")
-)
-kable(personality_data, caption = "Ihre Persönlichkeitswerte")
-```
-
-## Stress und Studierfähigkeiten
-
-```{r stress-plot, fig.height=4, fig.width=6}
-categories <- c("Stress", "Studierfähigkeiten", "Statistik")
-scores <- c(2.8, 3.9, 3.2)
-df <- data.frame(Category = categories, Score = scores)
-
-ggplot(df, aes(x = Category, y = Score, fill = Category)) +
-  geom_bar(stat = "identity") +
-  scale_fill_manual(values = c("#e8041c", "#4ecdc4", "#45b7d1")) +
-  ylim(0, 5) +
-  theme_minimal() +
-  labs(title = "Weitere Dimensionen", y = "Score (1-5)") +
-  theme(legend.position = "none")
-```
-
-## Empfehlungen
-
-Basierend auf Ihren Ergebnissen empfehlen wir:
-
-- Nutzen Sie Ihre hohe Verträglichkeit für Gruppenarbeiten
-- Arbeiten Sie an Stressmanagement-Techniken
-- Ihre Offenheit für Neues ist eine Stärke im Studium
-
----
-
-*Dieser Bericht wurde automatisch generiert. Bei Fragen wenden Sie sich an das Studienberatungsteam.*
-'
-                    
-                    writeLines(rmd_content, temp_rmd)
-                    
-                    # Create header.tex for LaTeX customization
-                    temp_header <- tempfile(fileext = ".tex")
-                    header_content <- '\\usepackage{fancyhdr}
-\\pagestyle{fancy}
-\\fancyhead[L]{HilFo}
-\\fancyhead[R]{Universität Hildesheim}
-\\definecolor{hildesheim}{RGB}{232,4,28}'
-                    writeLines(header_content, temp_header)
-                    
-                    # Render PDF
-                    if (requireNamespace("rmarkdown", quietly = TRUE)) {
-                        rmarkdown::render(temp_rmd, output_file = file, quiet = TRUE)
-                    } else {
-                        # Fallback to simple text file
-                        writeLines("PDF generation requires rmarkdown package", file)
-                    }
-                    
-                    # Clean up
-                    unlink(c(temp_rmd, temp_header))
-                    
-                    }, error = function(e) {
-                        cat("Error generating PDF:", e$message, "\n")
-                        writeLines("Error generating PDF report", file)
-                    })
-        
-                } else if (format == "csv") {
-                    # Export as CSV
-                    if (exists("complete_data", envir = .GlobalEnv)) {
-                        write.csv(session_data, file, row.names = FALSE)
-                    } else {
-                        # Create sample data if no session data
-                        sample_data <- data.frame(
-                            timestamp = Sys.time(),
-                            participant_id = "HILFO_001",
-                            message = "No session data available"
-                        )
-                        write.csv(sample_data, file, row.names = FALSE)
-                    }
-                    
-                } else if (format == "json") {
-                    # Export as JSON
-                    if (requireNamespace("jsonlite", quietly = TRUE)) {
-                        json_data <- jsonlite::toJSON(session_data, pretty = TRUE)
-                        writeLines(json_data, file)
-                    } else {
-                        writeLines('{"error": "jsonlite package required"}', file)
-                    }
-                }
-            }
-        )
-    })
-}
 
 # =============================================================================
 # ADAPTIVE OUTPUT HOOK FUNCTION
@@ -2446,15 +2374,6 @@ study_config <- inrep::create_study_config(
 )
 
 # Launch the study
-cat("\n================================================================================\n")
-cat("HILFO STUDIE - PRODUCTION VERSION\n")
-cat("================================================================================\n")
-cat("All 48 variables recorded with proper names\n")
-cat("Cloud storage enabled with inreptest credentials\n")
-cat("Fixed radar plot with proper connections\n")
-cat("Complete data file will be saved as CSV\n")
-cat("================================================================================\n\n")
-
 inrep::launch_study(
     config = study_config,
     item_bank = all_items_de,
