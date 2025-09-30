@@ -117,6 +117,7 @@ config <- create_study_config(
   theme = "Professional"
 )
 
+# Launch the study
 launch_study(config, bfi_items)
 ```
 
@@ -132,6 +133,7 @@ config_fixed <- create_study_config(
   session_save = TRUE     # Enable recovery
 )
 
+# Launch the study
 launch_study(config_fixed, bfi_items)
 ```
 
@@ -199,7 +201,7 @@ advanced_config <- create_study_config(
   )
 )
 
-# Launch the study (opens a Shiny app)
+# Launch the study
 launch_study(
   config = advanced_config,
   item_bank = cognitive_items
