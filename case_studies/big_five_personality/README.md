@@ -207,19 +207,12 @@ source("case_studies/big_five_personality/analysis_script.R")
 ## References
 
 ### Academic References
-- John, O. P., & Srivastava, S. (1999). The Big Five trait taxonomy: History, measurement, and theoretical perspectives.
-- Rammstedt, B., & John, O. P. (2007). Measuring personality in one minute or less: A 10-item short version of the Big Five Inventory.
+- John, O. P., & Srivastava, S. (1999). The Big Five Trait taxonomy: History, measurement, and theoretical perspectives. In L. A. Pervin & O. P. John (Eds.), Handbook of personality: Theory and research (2nd ed., pp. 102–138). Guilford Press. 
+- Rammstedt, B., & John, O. P. (2007). Measuring personality in one minute or less: A 10-item short version of the Big Five Inventory in English and German. Journal of Research in Personality, 41(1), 203–212. https://doi.org/10.1016/j.jrp.2006.02.001
 
 ### Technical References
 - Robitzsch, A., Kiefer, T., & Wu, M. (2024). TAM: Test Analysis Modules.
 - van der Linden, W. J., & Glas, C. A. W. (2010). Elements of adaptive testing.
-
-## Version History
-
-- **v1.0.0**: Initial release with basic functionality
-- **v1.1.0**: Enhanced item bank and psychometric properties
-- **v1.2.0**: Added advanced features and customization options
-- **v2.0.0**: Comprehensive redesign with improved user experience
 
 ## License
 

@@ -35,11 +35,11 @@ launch_programming_anxiety_study <- function(
   demo_mode = FALSE
 ) {
   
-  cat("🧠 PROGRAMMING ANXIETY ASSESSMENT - ADVANCED IRT FEATURES\n")
+  cat(" PROGRAMMING ANXIETY ASSESSMENT - IRT FEATURES\n")
   cat("================================================================\n")
-  cat("🎯 UNIQUE FEATURES DEMONSTRATED:\n")
+  cat(" UNIQUE FEATURES DEMONSTRATED:\n")
   cat("   • Plausible Values Generation (5 estimates)\n")
-  cat("   • Advanced IRT Models (GRM with confidence intervals)\n")
+  cat("   • IRT Models (GRM with confidence intervals)\n")
   cat("   • Interactive Dashboard with Real-time Analytics\n")
   cat("   • Multi-dimensional Anxiety Profiling (5 dimensions)\n")
   cat("   • Risk Assessment & Intervention Recommendations\n")
@@ -49,7 +49,7 @@ launch_programming_anxiety_study <- function(
   # Enhanced configuration for IRT demonstration
   enhanced_config <- programming_anxiety_config
   
-  # Enable all advanced IRT features
+  # Enable all IRT features
   enhanced_config$enhanced_features <- list(
     plausible_values = list(
       enabled = TRUE,
@@ -94,15 +94,6 @@ launch_programming_anxiety_study <- function(
     host = host
   )
   
-  cat("🚀 STUDY LAUNCHED SUCCESSFULLY!\n")
-  cat("📊 Access the study at: http://localhost:", port, "\n")
-  cat("📈 Features available:\n")
-  cat("   • Adaptive testing with IRT item selection\n")
-  cat("   • Plausible values generation (5 estimates)\n")
-  cat("   • Interactive dashboard with real-time analytics\n")
-  cat("   • Multi-dimensional anxiety profiling\n")
-  cat("   • Risk assessment and recommendations\n")
-  cat("   • Export capabilities (PDF, HTML, CSV, RDS)\n\n")
   
   return(app)
 }
@@ -113,7 +104,7 @@ launch_programming_anxiety_study <- function(
 
 # Function to demonstrate plausible values
 demonstrate_plausible_values <- function(responses) {
-  cat("🧠 PLAUSIBLE VALUES DEMONSTRATION\n")
+  cat("PLAUSIBLE VALUES DEMONSTRATION\n")
   cat("================================\n")
   cat("This feature generates multiple estimates for robust statistical inference:\n\n")
   
@@ -137,7 +128,7 @@ demonstrate_plausible_values <- function(responses) {
 
 # Function to demonstrate interactive dashboard
 demonstrate_dashboard <- function(results) {
-  cat("📊 INTERACTIVE DASHBOARD DEMONSTRATION\n")
+  cat("INTERACTIVE DASHBOARD DEMONSTRATION\n")
   cat("=====================================\n")
   cat("This feature provides real-time analytics and visualizations:\n\n")
   
@@ -157,7 +148,7 @@ demonstrate_dashboard <- function(results) {
 
 # Function to demonstrate risk assessment
 demonstrate_risk_assessment <- function(results) {
-  cat("⚠️ RISK ASSESSMENT DEMONSTRATION\n")
+  cat("RISK ASSESSMENT DEMONSTRATION\n")
   cat("===============================\n")
   cat("This feature provides personalized recommendations:\n\n")
   
@@ -180,24 +171,24 @@ demonstrate_risk_assessment <- function(results) {
 # USAGE INSTRUCTIONS
 # =============================================================================
 
-cat("🧠 PROGRAMMING ANXIETY ASSESSMENT - ADVANCED IRT FEATURES\n")
+cat("PROGRAMMING ANXIETY ASSESSMENT - ADVANCED IRT FEATURES\n")
 cat("================================================================\n")
 cat("This case study demonstrates the most advanced IRT capabilities of inrep:\n\n")
-cat("🎯 UNIQUE FEATURES:\n")
+cat("UNIQUE FEATURES:\n")
 cat("1. PLAUSIBLE VALUES - Multiple estimates for robust statistical inference\n")
 cat("2. ADVANCED IRT MODELS - GRM with confidence intervals and uncertainty quantification\n")
 cat("3. INTERACTIVE DASHBOARD - Real-time analytics and visualizations\n")
 cat("4. MULTI-DIMENSIONAL PROFILING - 5 anxiety dimensions with detailed analysis\n")
 cat("5. RISK ASSESSMENT - Personalized recommendations and intervention strategies\n\n")
-cat("🚀 TO LAUNCH THE STUDY:\n")
+cat("TO LAUNCH THE STUDY:\n")
 cat("   launch_programming_anxiety_study()\n\n")
-cat("📊 TO DEMONSTRATE FEATURES:\n")
+cat("TO DEMONSTRATE FEATURES:\n")
 cat("   # After completing the assessment:\n")
 cat("   results <- get_study_results()\n")
 cat("   demonstrate_plausible_values(results$responses)\n")
 cat("   demonstrate_dashboard(results)\n")
 cat("   demonstrate_risk_assessment(results)\n\n")
-cat("📈 TO EXPORT REPORTS:\n")
+cat("TO EXPORT REPORTS:\n")
 cat("   export_report(results, 'PDF')\n")
 cat("   export_report(results, 'HTML')\n")
 cat("   export_report(results, 'CSV')\n\n")

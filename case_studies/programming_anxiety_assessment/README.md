@@ -6,7 +6,7 @@ This case study demonstrates a comprehensive assessment system focused on Progra
 
 ## Key Features
 
-### 🧠 **Plausible Values System**
+### **Plausible Values System**
 - **Multiple Estimates**: Generate 5 plausible values for robust inference
 - **Confidence Intervals**: 95% confidence intervals for uncertainty quantification
 - **Statistical Robustness**: Enhanced reliability for research and analysis
@@ -24,7 +24,7 @@ This case study demonstrates a comprehensive assessment system focused on Progra
 - **Adaptive Testing**: 20-30 items with SEM < 0.20
 - **Personalized Feedback**: Tailored recommendations and interventions
 
-### 📈 **Advanced Analytics**
+### **Advanced Analytics**
 - **Dimension Analysis**: Detailed breakdown by anxiety type
 - **Risk Assessment**: Identify high-risk areas and protective factors
 - **Trend Analysis**: Track changes over time
