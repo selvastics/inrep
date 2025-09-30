@@ -137,7 +137,7 @@ config_fixed <- create_study_config(
 launch_study(config_fixed, bfi_items)
 ```
 
-### Advanced Cognitive Ability Study (2PL) — Fully Specified
+### Example Cognitive Ability Study with 2PL IRT model — Fully Specified
 
 ```r
 
