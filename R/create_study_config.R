@@ -194,62 +194,16 @@
 #' \code{inrep} focuses on providing the technological infrastructure and user experience
 #' layer around TAM's validated statistical procedures.
 #' 
-#' \strong{Universal HTML Customization System:} Since version 2.1.0, \code{inrep} supports
-#' advanced HTML customization for all page types in custom page flows. This system provides
-#' granular control over styling, layout, and interactivity while maintaining full backward
-#' compatibility with existing studies.
-#' 
-#' \strong{Supported Page Types for HTML Customization:}
+#' \strong{HTML Customization:} All page types in custom page flows now support optional
+#' HTML customization parameters for enhanced styling and layout control:
 #' \itemize{
-#'   \item \code{instructions}: Welcome pages, briefing content, consent forms
-#'   \item \code{demographics}: Participant information collection pages  
-#'   \item \code{items}: Adaptive testing and questionnaire item pages
-#'   \item \code{results}: Final results, reports, and completion pages
-#'   \item \code{custom}: Full HTML control (existing functionality maintained)
+#'   \item \code{custom_css}/\code{custom_css_en}: Inline CSS for page styling
+#'   \item \code{html_prefix}/\code{html_prefix_en}: HTML content before main page
+#'   \item \code{html_suffix}/\code{html_suffix_en}: HTML content after main page
+#'   \item \code{wrapper_class}: CSS class for content wrapper
+#'   \item \code{wrapper_style}: Inline styles for content wrapper
 #' }
-#' 
-#' \strong{Universal HTML Parameters} (available for ALL page types):
-#' \itemize{
-#'   \item \code{custom_css}: Inline CSS styles for page-specific styling
-#'   \item \code{custom_css_en}: English-specific CSS styles for bilingual studies
-#'   \item \code{html_prefix}: HTML content inserted before main page content  
-#'   \item \code{html_prefix_en}: English-specific prefix content
-#'   \item \code{html_suffix}: HTML content inserted after main page content
-#'   \item \code{html_suffix_en}: English-specific suffix content
-#'   \item \code{wrapper_class}: CSS class applied to main content wrapper
-#'   \item \code{wrapper_class_en}: English-specific wrapper class
-#'   \item \code{wrapper_style}: Inline CSS styles for content wrapper
-#'   \item \code{wrapper_style_en}: English-specific wrapper styles
-#'   \item \code{html_head}: Content injected into document head (for external CSS/JS)
-#'   \item \code{custom_js}: Inline JavaScript code for interactivity
-#'   \item \code{custom_js_en}: English-specific JavaScript code
-#' }
-#' 
-#' \strong{Language-Aware Customization:} All HTML parameters support bilingual studies:
-#' \itemize{
-#'   \item Parameters with \code{_en} suffix automatically activate when \code{rv$language == "en"}
-#'   \item Base parameters (without \code{_en}) serve as defaults for German/other languages
-#'   \item System automatically selects appropriate content based on current language setting
-#'   \item Enables sophisticated multilingual interfaces with language-specific styling
-#' }
-#' 
-#' \strong{Backward Compatibility Guarantee:} 
-#' \itemize{
-#'   \item All existing study configurations continue to work without modification
-#'   \item New parameters are completely optional - no breaking changes
-#'   \item Performance impact is minimal when HTML customization is not used
-#'   \item Existing \code{custom} pages retain full functionality unchanged
-#' }
-#' 
-#' \strong{Common Use Cases:}
-#' \itemize{
-#'   \item Hide page titles: \code{custom_css = ".page-title { display: none !important; }"}
-#'   \item Add study branding: \code{html_prefix = "<div class='study-header'>Study Logo</div>"}
-#'   \item Enhanced form styling: \code{wrapper_style = "background: #f8f9fa; padding: 30px;"}
-#'   \item Custom result layouts: \code{wrapper_class = "results-enhanced"}
-#'   \item Conditional content display based on participant responses
-#'   \item Integration with external analytics or accessibility tools
-#' }
+#' Parameters with \code{_en} suffix are used when language is English.
 #' 
 #' @examples
 #' \dontrun{
@@ -479,129 +433,6 @@
 #' @references Robitzsch A, Kiefer T, Wu M (2024). TAM: Test Analysis Modules. 
 #'   R package version 4.2-21. \url{https://CRAN.R-project.org/package=TAM}
 #' 
-#' 
-#' # Example 5: Universal HTML Customization Showcase
-#' # Demonstrates new HTML customization features for all page types
-#' html_custom_config <- create_study_config(
-#'   name = "Enhanced User Experience Study",
-#'   adaptive = FALSE,
-#'   language = "de",  # German with English support
-#'   
-#'   custom_page_flow = list(
-#'     # Instructions page with custom styling
-#'     list(
-#'       id = "welcome",
-#'       type = "instructions",
-#'       title = "Willkommen zur Studie",
-#'       title_en = "Welcome to the Study",
-#'       content = "<p>Vielen Dank für Ihre Teilnahme!</p>",
-#'       content_en = "<p>Thank you for participating!</p>",
-#'       
-#'       # HTML Customization Parameters
-#'       custom_css = "
-#'         .welcome-page { 
-#'           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-#'           color: white; 
-#'           border-radius: 15px;
-#'           padding: 40px;
-#'         }
-#'         .card-header { color: #fff !important; }",
-#'       custom_css_en = "
-#'         .welcome-page { 
-#'           background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-#'           color: white;
-#'           border-radius: 15px; 
-#'           padding: 40px;
-#'         }",
-#'       wrapper_class = "welcome-page",
-#'       html_prefix = "<div class='study-branding'>🧠 Psychologie Studie</div>",
-#'       html_prefix_en = "<div class='study-branding'>🧠 Psychology Study</div>",
-#'       html_suffix = "<div class='footer-info'>Universität Hildesheim</div>",
-#'       custom_js = "console.log('Enhanced welcome page loaded');"
-#'     ),
-#'     
-#'     # Demographics page with form enhancements  
-#'     list(
-#'       id = "participant_info",
-#'       type = "demographics", 
-#'       title = "Ihre Angaben",
-#'       title_en = "Your Information",
-#'       demographics = c("age", "gender", "education"),
-#'       
-#'       # Form styling enhancements
-#'       custom_css = "
-#'         .form-group { 
-#'           background: #f8f9fa; 
-#'           padding: 20px; 
-#'           margin-bottom: 20px;
-#'           border-radius: 8px;
-#'           border-left: 4px solid #e8041c;
-#'         }
-#'         .input-label { 
-#'           font-weight: bold; 
-#'           color: #2c3e50;
-#'           font-size: 16px;
-#'         }",
-#'       wrapper_style = "max-width: 600px; margin: 0 auto; padding: 20px;",
-#'       html_prefix = "
-#'         <div class='privacy-notice'>
-#'           <h4>🔒 Datenschutz</h4>
-#'           <p>Ihre Daten werden vertraulich behandelt.</p>
-#'         </div>",
-#'       html_prefix_en = "
-#'         <div class='privacy-notice'>
-#'           <h4>🔒 Privacy</h4>  
-#'           <p>Your data will be treated confidentially.</p>
-#'         </div>"
-#'     ),
-#'     
-#'     # Results page with conditional display capabilities
-#'     list(
-#'       id = "final_results",
-#'       type = "results",
-#'       title = "Ihre Ergebnisse", 
-#'       title_en = "Your Results",
-#'       
-#'       # Results presentation enhancements
-#'       custom_css = "
-#'         .page-title, .study-title { display: none !important; }
-#'         .results-container {
-#'           background: #ffffff;
-#'           box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-#'           border-radius: 15px;
-#'           padding: 40px;
-#'           margin: 20px auto;
-#'         }
-#'         .thank-you-message {
-#'           text-align: center;
-#'           padding: 30px;
-#'           background: linear-gradient(45deg, #667eea, #764ba2);
-#'           color: white;
-#'           border-radius: 10px;
-#'           margin-bottom: 30px;
-#'         }",
-#'       wrapper_class = "results-container",
-#'       html_prefix = "
-#'         <div class='thank-you-message'>
-#'           <h2>🎉 Studie abgeschlossen!</h2>
-#'           <p>Vielen Dank für Ihre wertvolle Teilnahme.</p>
-#'         </div>",
-#'       html_prefix_en = "
-#'         <div class='thank-you-message'>
-#'           <h2>🎉 Study Complete!</h2>
-#'           <p>Thank you for your valuable participation.</p>
-#'         </div>",
-#'       html_suffix = "
-#'         <div class='contact-info'>
-#'           <p><strong>Fragen?</strong> Kontaktieren Sie uns: study@uni-hildesheim.de</p>
-#'         </div>",
-#'       html_suffix_en = "
-#'         <div class='contact-info'>
-#'           <p><strong>Questions?</strong> Contact us: study@uni-hildesheim.de</p>
-#'         </div>"
-#'     )
-#'   )
-#' )
 #' }
 #' @seealso \code{\link{launch_study}}, \code{\link{estimate_ability}}, 
 #'   \code{\link{validate_item_bank}}
