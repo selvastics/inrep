@@ -1438,128 +1438,45 @@ process_page_flow <- function(config, rv, input, output, session, item_bank, ui_
     )
   )
   
-  # UNIVERSAL HTML CUSTOMIZATION SYSTEM
-  # Apply HTML wrappers and injections to ALL page types
-  enhanced_page_ui <- apply_universal_html_customization(page_ui, current_page, rv, config)
+  # Apply HTML customization if present (simple check)
+  if (!is.null(current_page$custom_css) || !is.null(current_page$html_prefix) || !is.null(current_page$html_suffix) || 
+      !is.null(current_page$wrapper_class) || !is.null(current_page$wrapper_style)) {
+    
+    # Get current language for _en variants
+    current_lang <- rv$language %||% config$language %||% "de"
+    is_english <- current_lang == "en"
+    
+    components <- list()
+    
+    # Add CSS if provided
+    css <- if (is_english && !is.null(current_page$custom_css_en)) current_page$custom_css_en else current_page$custom_css
+    if (!is.null(css)) components <- append(components, list(shiny::tags$style(shiny::HTML(css))))
+    
+    # Add prefix if provided
+    prefix <- if (is_english && !is.null(current_page$html_prefix_en)) current_page$html_prefix_en else current_page$html_prefix
+    if (!is.null(prefix)) components <- append(components, list(shiny::HTML(prefix)))
+    
+    # Wrap content if wrapper specified
+    if (!is.null(current_page$wrapper_class) || !is.null(current_page$wrapper_style)) {
+      page_ui <- shiny::div(class = current_page$wrapper_class, style = current_page$wrapper_style, page_ui)
+    }
+    
+    components <- append(components, list(page_ui))
+    
+    # Add suffix if provided
+    suffix <- if (is_english && !is.null(current_page$html_suffix_en)) current_page$html_suffix_en else current_page$html_suffix
+    if (!is.null(suffix)) components <- append(components, list(shiny::HTML(suffix)))
+    
+    page_ui <- do.call(shiny::tagList, components)
+  }
   
   # Add navigation
   nav_ui <- render_page_navigation(rv, config, current_page_idx)
   
   shiny::tagList(
-    enhanced_page_ui,
+    page_ui,
     nav_ui
   )
-}
-
-#' Apply universal HTML customization to any page type
-#' 
-#' This function wraps page content with custom HTML elements, CSS, and JavaScript
-#' based on page configuration parameters. It maintains backward compatibility
-#' by only applying enhancements when explicitly configured.
-#' 
-#' @param page_ui Base Shiny UI element to enhance
-#' @param page Page configuration object
-#' @param rv Reactive values object (for language detection)
-#' @param config Study configuration object
-#' @return Enhanced Shiny UI element with custom HTML wrappers and injections
-#' @keywords internal
-apply_universal_html_customization <- function(page_ui, page, rv, config) {
-  # Get current language for language-aware customizations
-  current_lang <- rv$language %||% config$language %||% "de"
-  is_english <- current_lang == "en"
-  
-  # Initialize components list for building enhanced UI
-  ui_components <- list()
-  
-  # 1. HEAD CONTENT INJECTION (CSS/JS in document head)
-  if (!is.null(page$html_head)) {
-    ui_components <- append(ui_components, list(shiny::tags$head(shiny::HTML(page$html_head))))
-  }
-  
-  # 2. CUSTOM CSS INJECTION (inline styles)
-  custom_css <- NULL
-  if (is_english && !is.null(page$custom_css_en)) {
-    custom_css <- page$custom_css_en
-  } else if (!is.null(page$custom_css)) {
-    custom_css <- page$custom_css
-  }
-  
-  if (!is.null(custom_css) && nzchar(custom_css)) {
-    ui_components <- append(ui_components, list(shiny::tags$style(shiny::HTML(custom_css))))
-  }
-  
-  # 3. HTML PREFIX (content before main page)
-  html_prefix <- NULL
-  if (is_english && !is.null(page$html_prefix_en)) {
-    html_prefix <- page$html_prefix_en
-  } else if (!is.null(page$html_prefix)) {
-    html_prefix <- page$html_prefix
-  }
-  
-  if (!is.null(html_prefix) && nzchar(html_prefix)) {
-    ui_components <- append(ui_components, list(shiny::HTML(html_prefix)))
-  }
-  
-  # 4. CONTENT WRAPPER (wrap main page content)
-  wrapped_content <- page_ui
-  
-  # Apply wrapper class and/or style if specified
-  wrapper_class <- NULL
-  if (is_english && !is.null(page$wrapper_class_en)) {
-    wrapper_class <- page$wrapper_class_en
-  } else if (!is.null(page$wrapper_class)) {
-    wrapper_class <- page$wrapper_class
-  }
-  
-  wrapper_style <- NULL
-  if (is_english && !is.null(page$wrapper_style_en)) {
-    wrapper_style <- page$wrapper_style_en
-  } else if (!is.null(page$wrapper_style)) {
-    wrapper_style <- page$wrapper_style
-  }
-  
-  if (!is.null(wrapper_class) || !is.null(wrapper_style)) {
-    wrapped_content <- shiny::div(
-      class = wrapper_class,
-      style = wrapper_style,
-      wrapped_content
-    )
-  }
-  
-  ui_components <- append(ui_components, list(wrapped_content))
-  
-  # 5. HTML SUFFIX (content after main page)
-  html_suffix <- NULL
-  if (is_english && !is.null(page$html_suffix_en)) {
-    html_suffix <- page$html_suffix_en
-  } else if (!is.null(page$html_suffix)) {
-    html_suffix <- page$html_suffix
-  }
-  
-  if (!is.null(html_suffix) && nzchar(html_suffix)) {
-    ui_components <- append(ui_components, list(shiny::HTML(html_suffix)))
-  }
-  
-  # 6. CUSTOM JAVASCRIPT INJECTION (inline scripts)
-  custom_js <- NULL
-  if (is_english && !is.null(page$custom_js_en)) {
-    custom_js <- page$custom_js_en
-  } else if (!is.null(page$custom_js)) {
-    custom_js <- page$custom_js
-  }
-  
-  if (!is.null(custom_js) && nzchar(custom_js)) {
-    ui_components <- append(ui_components, list(shiny::tags$script(shiny::HTML(custom_js))))
-  }
-  
-  # Return enhanced UI (or original if no enhancements specified)
-  if (length(ui_components) == 1 && identical(ui_components[[1]], page_ui)) {
-    # No enhancements applied - return original for performance
-    return(page_ui)
-  } else {
-    # Return tagList with all components
-    return(do.call(shiny::tagList, ui_components))
-  }
 }
 
 #' Render instructions page
