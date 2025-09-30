@@ -18,9 +18,11 @@ library(shiny)
 #' 
 #' # Create a basic configuration
 #' config <- create_study_config(
+#'   name = "Basic Adaptive Assessment",
 #'   model = "GRM",          # Graded Response Model
 #'   max_items = 10,         # Stop after 10 items
-#'   adaptive = TRUE         # Enable adaptive item selection
+#'   adaptive = TRUE,        # Enable adaptive item selection
+#'   theme = "Professional"  # Use professional theme
 #' )
 #' 
 #' # Launch the study
@@ -41,7 +43,6 @@ library(shiny)
 #' 
 #' # Launch with custom item bank
 #' cat("Launching Example 1 (Custom Item Bank): Basic Adaptive Test with GRM\n")
-#' cat("Access at: http://localhost:3838\n")
 #' launch_study(config, item_bank)
 
 # Example 2: Multilingual Test in German
@@ -51,10 +52,12 @@ library(shiny)
 #' @example
 #' # Create configuration for German test
 #' config <- create_study_config(
+#'   name = "Deutsches Assessment",
 #'   model = "GRM",          # Graded Response Model
 #'   language = "de",        # German language
 #'   max_items = 12,         # Stop after 12 items
-#'   adaptive = TRUE         # Enable adaptive item selection
+#'   adaptive = TRUE,        # Enable adaptive item selection
+#'   theme = "Professional"
 #' )
 #' 
 #' # Launch the study
@@ -70,11 +73,13 @@ library(shiny)
 #' @example
 #' # Create configuration with demographics
 #' config <- create_study_config(
+#'   name = "Demographic Study",
 #'   model = "GRM",          # Graded Response Model
 #'   demographics = c("Age", "Gender", "Occupation"),
 #'   input_types = list(Age = "numeric", Gender = "select", Occupation = "text"),
 #'   max_items = 8,          # Stop after 8 items
-#'   adaptive = TRUE         # Enable adaptive item selection
+#'   adaptive = TRUE,        # Enable adaptive item selection
+#'   theme = "Professional"
 #' )
 #' 
 #' # Launch the study

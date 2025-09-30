@@ -872,8 +872,8 @@ custom_page_flow <- list(
     list(
         id = "page21",
         type = "results",
-        title = "Ihre Ergebnisse",
-        title_en = "Your Results",
+        title = "",
+        title_en = "",
         results_processor = "create_hilfo_report"
     )
 )
@@ -2346,8 +2346,6 @@ if (exists("current_language", envir = .GlobalEnv)) {
 if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
     rm("hilfo_language_preference", envir = .GlobalEnv)
 }
-
-# DO NOT set any language preferences - let inrep use pure German default
 
 session_uuid <- paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 

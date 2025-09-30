@@ -114,7 +114,7 @@ config <- create_study_config(
   min_items = 5,
   min_SEM = 0.3,          # Stop when precision reached
   demographics = c("Age", "Gender"),
-  theme = "professional"
+  theme = "Professional"
 )
 
 launch_study(config, bfi_items)
@@ -138,8 +138,7 @@ launch_study(config_fixed, bfi_items)
 ### Advanced Cognitive Ability Study (2PL) — Fully Specified
 
 ```r
-# Fully specified cognitive ability study (2PL) with custom item bank
-library(inrep)
+
 
 # Define a complete item bank with varied correct answers
 cognitive_items <- data.frame(
@@ -168,24 +167,16 @@ cognitive_items <- data.frame(
   stringsAsFactors = FALSE
 )
 
-# Optional: attach simple inline images to spatial items
-if (!"Image" %in% names(cognitive_items)) cognitive_items$Image <- ""
-spatial_rows <- which(cognitive_items$domain == "Spatial")
-if (length(spatial_rows) > 0) {
-  svg <- 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="220" height="120"><rect width="220" height="120" fill="%23f8fafc"/><g fill="%232c3e50"><rect x="20" y="30" width="40" height="40" rx="6"/><rect x="80" y="30" width="40" height="40" rx="6"/><rect x="140" y="30" width="40" height="40" rx="6"/></g></svg>'
-  cognitive_items$Image[spatial_rows] <- svg
-}
-
 # Create a detailed configuration
 advanced_config <- create_study_config(
   name = "Cognitive Ability Assessment",
   model = "2PL",
-  estimation_method = "TAM",
+  estimation_method = "TAM", 
   adaptive = TRUE,
   criteria = "MI",
-  min_items = 10,
-  max_items = 20,
-  min_SEM = 0.25,
+  min_items = 8,  
+  max_items = 15,  
+  min_SEM = 0.35,  
   theta_prior = c(0, 1),
   demographics = c("Age", "Gender", "Education", "Native_Language"),
   input_types = list(
@@ -196,30 +187,22 @@ advanced_config <- create_study_config(
   ),
   theme = "Professional",
   session_save = TRUE,
-  parallel_computation = TRUE,
-  cache_enabled = TRUE,
-  accessibility_enhanced = TRUE,
+  parallel_computation = FALSE,  # Disable for stability with small item bank
+  cache_enabled = FALSE,  # Disable for stability
+  # Enable comprehensive reporting with multiple plots
   participant_report = list(
-    show_theta_plot = TRUE,
-    show_response_table = TRUE,
-    show_recommendations = TRUE,
-    use_enhanced_report = TRUE,
-    show_item_difficulty_trend = TRUE,
-    show_domain_breakdown = TRUE
+    show_theta_plot = TRUE,          # Ability progression plot
+    show_response_table = TRUE,      # Detailed response table
+    show_item_difficulty_trend = TRUE,  # Item difficulty vs ability plot
+    show_domain_breakdown = TRUE,    # Domain performance breakdown
+    show_recommendations = TRUE     # Performance recommendations
   )
 )
 
 # Launch the study (opens a Shiny app)
 launch_study(
   config = advanced_config,
-  item_bank = cognitive_items,
-  accessibility = TRUE,
-  admin_dashboard_hook = function(session_data) {
-    message("Participant ID:", session_data$participant_id)
-    message("Progress:", round(session_data$progress, 1), "%")
-    message("Current theta:", round(session_data$theta, 3))
-    message("Standard error:", round(session_data$se, 3))
-  }
+  item_bank = cognitive_items
 )
 ```
 
@@ -254,25 +237,21 @@ launch_study(
 
 ## Configuration
 
-### Models (TAM)
+* Stopping Rules
+* Item Selection Criteria
+* Themes and Languages
+* Session Management
 
-* IRT Models: 1PL, 2PL, 3PL, GRM
+### IRT Models for adaptive modes 
 
-Please cite the TAM package if you use IRT functionalities:
+*  1PL, 2PL, 3PL, GRM
+Imported from the TAM package
 
 ```
 Robitzsch, A., Kiefer, T., & Wu, M. (2024). TAM: Test Analysis Modules. R package version 4.2-21. https://CRAN.R-project.org/package=TAM
 ```
 
-### Configuration Options
-
-* Stopping Rules
-* Item Selection Criteria
-* Themes and Languages
-* Session Management
-* LLM Integration
-
-## Citation
+## Citation 
 
 ```
 Selva, C. (2025). inrep: Instant Reports for Adaptive Assessments. R package version 1.0.0. https://doi.org/10.5281/zenodo.16682020
