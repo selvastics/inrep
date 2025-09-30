@@ -241,21 +241,6 @@ launch_study(
 * Themes and Languages
 * Session Management
 
-### IRT Models for adaptive modes 
-
-*  1PL, 2PL, 3PL, GRM
-Imported from the TAM package
-
-```
-Robitzsch, A., Kiefer, T., & Wu, M. (2024). TAM: Test Analysis Modules. R package version 4.2-21. https://CRAN.R-project.org/package=TAM
-```
-
-## Citation 
-
-```
-Selva, C. (2025). inrep: Instant Reports for Adaptive Assessments. R package version 1.0.0. https://doi.org/10.5281/zenodo.16682020
-```
-
 ## Contributing
 
 See `CONTRIBUTING.md` on GitHub.
