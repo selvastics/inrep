@@ -3941,6 +3941,58 @@ launch_study <- function(
                        ))
                      }
                      
+                     # Universal PDF Download Button (uses theme color)
+                     # Get theme primary color for button styling
+                     theme_primary_color <- "#667eea"  # Default color
+                     if (!base::is.null(theme_config) && !base::is.null(theme_config$primary_color)) {
+                       theme_primary_color <- theme_config$primary_color
+                     } else {
+                       theme_name <- tolower(config$theme %||% "Professional")
+                       theme_primary_color <- base::switch(theme_name,
+                                                           "light" = "#212529",
+                                                           "midnight" = "#6366f1",
+                                                           "sunset" = "#ff6f61",
+                                                           "forest" = "#2e7d32",
+                                                           "ocean" = "#0288d1",
+                                                           "berry" = "#c2185b",
+                                                           "hildesheim" = "#e8041c",
+                                                           "professional" = "#2c3e50",
+                                                           "clinical" = "#A23B72",
+                                                           "research" = "#007bff",
+                                                           "sepia" = "#8B4513",
+                                                           "paper" = "#005073",
+                                                           "monochrome" = "#333333",
+                                                           "large-text" = "#2E5BBA",
+                                                           "inrep" = "#000000",
+                                                           "high-contrast" = "#000000",
+                                                           "dyslexia-friendly" = "#005F73",
+                                                           "darkblue" = "#64ffda",
+                                                           "dark-mode" = "#00D4AA",
+                                                           "colorblind-safe" = "#0072B2",
+                                                           "vibrant" = "#e74c3c",
+                                                           "#667eea"  # Default fallback
+                       )
+                     }
+                     
+                     results_content <- base::c(results_content, base::list(
+                       shiny::div(
+                         class = "download-section",
+                         style = "background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; text-align: center;",
+                         shiny::h4("Export Your Results", style = "color: #333; margin-bottom: 15px;"),
+                         shiny::div(
+                           style = "display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;",
+                           # Universal PDF Download Button (theme-colored)
+                           shiny::tags$button(
+                             onclick = "if(typeof Shiny !== 'undefined') { Shiny.setInputValue('download_pdf_trigger', Math.random(), {priority: 'event'}); } else { alert('Download not available'); }",
+                             class = "btn btn-primary",
+                             style = sprintf("background: %s; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500;", theme_primary_color),
+                             shiny::tags$i(class = "fas fa-file-pdf", style = "margin-right: 8px;"),
+                             "Download PDF Report"
+                           )
+                         )
+                       )
+                     ))
+                     
                      # Footer and controls
                      results_content <- base::c(results_content, base::list(
                        shiny::div(class = "footer",
@@ -3956,7 +4008,7 @@ launch_study <- function(
                      ))
                      
                      shiny::tagList(
-                                             shiny::div(class = "assessment-card", results_content)
+                                             shiny::div(id = "report-content", class = "assessment-card", results_content)
                     )
                   }
           ) # End of switch

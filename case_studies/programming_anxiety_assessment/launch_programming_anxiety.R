@@ -643,7 +643,7 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
     
     # Create comprehensive HTML report
     html_report <- paste0(
-        '<div style="font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px;">',
+        '<div id="report-content" style="font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px;">',
         
         # Header
         '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; text-align: center; margin-bottom: 30px;">',
@@ -690,7 +690,7 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
             paste0('<img src="data:image/png;base64,', bar_plot_data, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">')
         } else {
             '<div style="background: #f5f5f5; padding: 40px; text-align: center; border-radius: 8px; color: #666;">',
-            '<p style="font-size: 16px; margin: 0;">📊 Chart visualization will be generated in the PDF report</p>',
+            '<p style="font-size: 16px; margin: 0;"> Chart visualization will be generated in the PDF report</p>',
             '<p style="font-size: 14px; margin: 10px 0 0 0;">Use the download button below to get the complete report with all figures.</p>',
             '</div>'
         },
@@ -703,7 +703,7 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
             paste0('<img src="data:image/png;base64,', trace_plot_data, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">')
         } else {
             '<div style="background: #f5f5f5; padding: 40px; text-align: center; border-radius: 8px; color: #666;">',
-            '<p style="font-size: 16px; margin: 0;">📈 Trace plot will be included in the PDF report</p>',
+            '<p style="font-size: 16px; margin: 0;"> Trace plot will be included in the PDF report</p>',
             '<p style="font-size: 14px; margin: 10px 0 0 0;">This shows how your ability estimate evolved during the adaptive assessment.</p>',
             '</div>'
         },
@@ -743,39 +743,34 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
         '<p style="color: #555; line-height: 1.7;"><strong>Plausible Values:</strong> The confidence band in the trace plot shows the uncertainty in your theta estimate. As more items were administered, the standard error decreased, indicating improved measurement precision.</p>',
         '</div>',
         
-        # PDF Download Section
-        '<div style="background-color: #e3f2fd; padding: 20px; border-radius: 10px; border-left: 4px solid #2196f3; margin: 25px 0; text-align: center;">',
-        '<h3 style="color: #1976d2; margin-top: 0;">Download Your Report</h3>',
-        '<p style="color: #555; margin-bottom: 15px;">Save your results as a professional PDF report for your records.</p>',
-        '<button onclick="downloadPDFReport()" style="background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3); transition: all 0.3s ease;">',
-        '<i class="fas fa-download" style="margin-right: 8px;"></i>Download PDF Report',
+        # Download Section - Universal System
+        '<div class="download-section" style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">',
+        '<h4 style="color: #333; margin-bottom: 15px;">Export Results</h4>',
+        '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">',
+        
+        # PDF Download Button
+        '<button onclick="if(typeof Shiny !== \'undefined\') { Shiny.setInputValue(\'download_pdf_trigger\', Math.random(), {priority: \'event\'}); } else { alert(\'Download not available\'); }" class="btn btn-primary" style="background: #667eea; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+        '<i class="fas fa-file-pdf" style="margin-right: 8px;"></i>',
+        'Download PDF',
         '</button>',
-        '<script>',
-        'function downloadPDFReport() {',
-        '  // Generate PDF using inrep\'s built-in PDF generation',
-        '  fetch("/download-pdf-report", {',
-        '    method: "POST",',
-        '    headers: { "Content-Type": "application/json" },',
-        '    body: JSON.stringify({ study_key: "', session_uuid, '" })',
-        '  })',
-        '  .then(response => response.blob())',
-        '  .then(blob => {',
-        '    const url = window.URL.createObjectURL(blob);',
-        '    const a = document.createElement("a");',
-        '    a.href = url;',
-        '    a.download = "Programming_Anxiety_Report_', session_uuid, '.pdf";',
-        '    document.body.appendChild(a);',
-        '    a.click();',
-        '    window.URL.revokeObjectURL(url);',
-        '    document.body.removeChild(a);',
-        '  })',
-        '  .catch(error => {',
-        '    alert("PDF generation failed. Please try again or contact support.");',
-        '    console.error("PDF download error:", error);',
-        '  });',
-        '}',
-        '</script>',
+        
+        # CSV Download Button  
+        '<button onclick="if(typeof Shiny !== \'undefined\') { Shiny.setInputValue(\'download_csv_trigger\', Math.random(), {priority: \'event\'}); } else { alert(\'Download not available\'); }" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
+        '<i class="fas fa-file-csv" style="margin-right: 8px;"></i>',
+        'Download CSV',
+        '</button>',
+        
         '</div>',
+        '</div>',
+        
+        # Print styles
+        '<style>',
+        '@media print {',
+        '  .download-section { display: none !important; }',
+        '  body { font-size: 11pt; }',
+        '  h1, h2 { color: #667eea !important; -webkit-print-color-adjust: exact; }',
+        '}',
+        '</style>',
         
         # Thank You
         '<div style="background-color: #f1f8e9; padding: 20px; border-radius: 10px; text-align: center; margin-top: 25px;">',
@@ -799,7 +794,7 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
     }
     
     cat("DEBUG: Returning HTML report with", nchar(html_report), "characters\n")
-    return(html_report)
+    return(shiny::HTML(html_report))
 }
 
 # =============================================================================
@@ -811,7 +806,7 @@ session_uuid <- paste0("prog_anxiety_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 study_config <- create_study_config(
     name = "Programming Anxiety Assessment",
     study_key = session_uuid,
-    model = "2PL",  # Changed to 2PL to match HilFo approach
+    model = "2PL",  # Changed to 2PL 
     estimation_method = "TAM",
     adaptive = TRUE,
     min_items = 20,  # All 20 items will be shown
@@ -825,9 +820,7 @@ study_config <- create_study_config(
     theme = "Professional",
     session_save = TRUE,
     language = "en",
-    # Enable PDF report generation
-    pdf_report = TRUE,
-    pdf_report_template = "professional"
+    results_processor = create_programming_anxiety_report
 )
 
 # =============================================================================
@@ -867,7 +860,5 @@ launch_study(
     item_bank = programming_anxiety_items,
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
-    save_format = "csv",
-    # Enable PDF report generation
-    enable_pdf_reports = TRUE
+    save_format = "csv"
 )

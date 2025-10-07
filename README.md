@@ -137,8 +137,6 @@ launch_study(config_fixed, bfi_items)
 ### Example Cognitive Ability Study with 2PL IRT model — Fully Specified
 
 ```r
-
-
 # Define a complete item bank with varied correct answers
 cognitive_items <- data.frame(
   Question = c(
@@ -189,6 +187,7 @@ advanced_config <- create_study_config(
   parallel_computation = FALSE,  # Disable for stability with small item bank
   cache_enabled = FALSE,  # Disable for stability
   # Enable comprehensive reporting with multiple plots
+  # The universal PDF/CSV download system works automatically!
   participant_report = list(
     show_theta_plot = TRUE,          # Ability progression plot
     show_response_table = TRUE,      # Detailed response table

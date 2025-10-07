@@ -373,7 +373,7 @@ create_bfi_report <- function(responses, item_bank, config) {
     
     # Create HTML report
     html_report <- paste0(
-        '<div style="font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px;">',
+        '<div id="report-content" style="font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px;">',
         '<h1 style="color: #2E8B57; text-align: center;">Big Five Personality Assessment Results</h1>',
         
         if (plot_base64 != "" && nchar(plot_base64) > 100) paste0(
