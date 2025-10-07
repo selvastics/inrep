@@ -19,8 +19,9 @@
 #'   \code{"MI"} (Maximum Information), \code{"RANDOM"}, \code{"WEIGHTED"}, \code{"MFI"} (Maximum Fisher Information).
 #' @param model Character string specifying IRT model passed to TAM functions.
 #'   Options: \code{"1PL"}, \code{"2PL"}, \code{"3PL"}, \code{"GRM"}.
-#' @param estimation_method Character string specifying ability estimation method.
-#'   Primary option: \code{"TAM"}. Alternative compatibility: \code{"MIRT"}, \code{"EAP"}, \code{"WLE"}.
+#' @param estimation_method Character string specifying TAM ability estimation method.
+#'   Options: \code{"EAP"} (Expected A Posteriori) or \code{"WLE"} (Weighted Likelihood Estimation).
+#'   Note: TAM is the package name - these are the specific estimation methods within TAM.
 #' @param recommendation_fun Function to generate personalized recommendations based on 
 #'   ability estimates and demographics, or \code{NULL} for default recommendations.
 #' @param theta_prior Numeric vector of length 2 specifying prior mean and standard deviation
@@ -211,7 +212,7 @@
 #' basic_config <- create_study_config(
 #'   name = "Big Five Personality Assessment",
 #'   model = "GRM",
-#'   estimation_method = "TAM",
+#'   estimation_method = "EAP",
 #'   demographics = c("Age", "Gender", "Education"),
 #'   max_items = 15,
 #'   min_SEM = 0.3,
@@ -234,7 +235,7 @@
 #' research_config <- create_study_config(
 #'   name = "Cognitive Ability Validation Study",
 #'   model = "2PL",
-#'   estimation_method = "TAM",
+#'   estimation_method = "EAP",
 #'   min_items = 12,
 #'   max_items = 25,
 #'   min_SEM = 0.25,
@@ -285,7 +286,7 @@
 #' clinical_config <- create_study_config(
 #'   name = "Depression Screening Instrument",
 #'   model = "GRM",
-#'   estimation_method = "TAM",
+#'   estimation_method = "EAP",
 #'   min_items = 8,
 #'   max_items = 15,
 #'   min_SEM = 0.4,  # Slightly higher for clinical screening
@@ -325,7 +326,7 @@
 #' education_config <- create_study_config(
 #'   name = "Mathematics Proficiency Assessment",
 #'   model = "2PL",
-#'   estimation_method = "TAM",
+#'   estimation_method = "EAP",
 #'   min_items = 15,
 #'   max_items = 30,
 #'   min_SEM = 0.3,
@@ -364,7 +365,7 @@
 #' multilingual_config <- create_study_config(
 #'   name = "Cross-Cultural Personality Study",
 #'   model = "GRM",
-#'   estimation_method = "TAM",
+#'   estimation_method = "EAP",
 #'   min_items = 20,
 #'   max_items = 40,
 #'   min_SEM = 0.25,
@@ -447,7 +448,7 @@ create_study_config <- function(
     max_items = NULL,
     criteria = "MI",
     model = "GRM",
-    estimation_method = "TAM",
+    estimation_method = "EAP",
     recommendation_fun = NULL,
     theta_prior = c(0, 1),
     stopping_rule = NULL,
@@ -576,8 +577,8 @@ create_study_config <- function(
       NULL
     })
     
-    if (!estimation_method %in% c("TAM", "MIRT", "EAP", "WLE")) {
-      validation_errors <- c(validation_errors, "estimation_method must be one of: TAM, MIRT, EAP, WLE")
+    if (!estimation_method %in% c("EAP", "WLE")) {
+      validation_errors <- c(validation_errors, "estimation_method must be one of: EAP, WLE (TAM package methods)")
     }
     
     if (!is.numeric(theta_prior) || length(theta_prior) != 2 || theta_prior[2] <= 0) {
