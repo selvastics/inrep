@@ -30,7 +30,7 @@
 
 - Adaptive and fixed testing; IRT models (1PL, 2PL, 3PL, GRM); stopping rules and item-selection criteria.
 - Shiny-based administration; theme system; multilingual labels (EN, DE, ES, FR).
-- TAM integration for estimation; reporting and validation tools; export to CSV/JSON/SPSS/PDF.
+- TAM integration for IRT estimation in adaptive mode; reporting and validation tools; export to CSV/JSON/SPSS/PDF.
 - Branching, randomization, piping, quotas, and participant management.
 - Session recovery and logging; input validation and basic rate limiting; caching and parallel compute options; accessibility support.
 
@@ -45,8 +45,6 @@ devtools::install_github("selvastics/inrep", ref = "main", force = TRUE)
 # Load the package
 library(inrep)
 ```
-
-**Note:** The package now includes proper dependency version specifications to ensure a clean installation experience without unnecessary update prompts.
 
 <details>
 <summary><strong style="color:#2a5db0">Set up instructions: Expand if R is not yet installed on your system</strong></summary>
