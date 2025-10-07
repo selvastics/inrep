@@ -69,7 +69,7 @@ export(ensure_font_consistency)
 
 # Professional Survey Functions
 export(initialize_survey_features)
-export(create_professional_survey)
+export(create_survey)
 export(compile_logic_rules)
 export(setup_quotas)
 export(manage_participants)

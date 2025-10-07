@@ -589,7 +589,7 @@ survey_config <- create_study_config(
 )
 
 # Add survey capabilities
-survey <- create_professional_survey(
+survey <- create_survey(
   config = survey_config,
   
   # Question types

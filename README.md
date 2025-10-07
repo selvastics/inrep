@@ -27,7 +27,6 @@
 
 ### Key features
 
-
 - Adaptive and fixed testing; IRT models (1PL, 2PL, 3PL, GRM); stopping rules and item-selection criteria.
 - Shiny-based administration; theme system; multilingual labels (EN, DE, ES, FR).
 - TAM integration for IRT estimation in adaptive mode; reporting and validation tools; export to CSV/JSON/SPSS/PDF.
@@ -226,7 +225,7 @@ launch_study(
 
 * **Study management:** `launch_study()`, `create_study_config()`
 * **IRT analysis:** `estimate_ability()`, `select_next_item()`, `validate_item_bank()`
-* **Extensions:** `scrape_website_ui()`, `enable_llm_assistance()`
+* **Extensions:**  `enable_llm_assistance()`
 
 ## Example Datasets
 

@@ -2349,6 +2349,53 @@ if (exists("hilfo_language_preference", envir = .GlobalEnv)) {
 
 session_uuid <- paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 
+# =============================================================================
+# CSV PROCESSOR FOR HILFO-SPECIFIC CALCULATED COLUMNS
+# =============================================================================
+process_hilfo_csv <- function(csv_data, responses, demographics, item_bank) {
+    # Add HILFO-specific calculated scores to CSV
+    if (!is.null(responses) && is.vector(responses) && length(responses) >= 51) {
+        
+        # Calculate BFI scores from responses (items 21-40)
+        if (length(responses) >= 40) {
+            bfi_responses <- responses[21:40]
+            if (length(bfi_responses) >= 20 && !all(is.na(bfi_responses))) {
+                csv_data$BFI_Extraversion <- mean(c(bfi_responses[1:4]), na.rm = TRUE)
+                csv_data$BFI_Vertraeglichkeit <- mean(c(bfi_responses[5:8]), na.rm = TRUE)
+                csv_data$BFI_Gewissenhaftigkeit <- mean(c(bfi_responses[9:12]), na.rm = TRUE)
+                csv_data$BFI_Neurotizismus <- mean(c(bfi_responses[13:16]), na.rm = TRUE)
+                csv_data$BFI_Offenheit <- mean(c(bfi_responses[17:20]), na.rm = TRUE)
+            }
+        }
+        
+        # Calculate PSQ Stress (items 41-45)
+        if (length(responses) >= 45) {
+            stress_responses <- responses[41:45]
+            if (!all(is.na(stress_responses))) {
+                csv_data$PSQ_Stress <- mean(stress_responses, na.rm = TRUE)
+            }
+        }
+        
+        # Calculate MWS Study Skills (items 46-49)
+        if (length(responses) >= 49) {
+            study_responses <- responses[46:49]
+            if (!all(is.na(study_responses))) {
+                csv_data$MWS_Studierfaehigkeiten <- mean(study_responses, na.rm = TRUE)
+            }
+        }
+        
+        # Calculate Statistics (items 50-51)
+        if (length(responses) >= 51) {
+            stats_responses <- responses[50:51]
+            if (!all(is.na(stats_responses))) {
+                csv_data$Statistik <- mean(stats_responses, na.rm = TRUE)
+            }
+        }
+    }
+    
+    return(csv_data)
+}
+
 study_config <- inrep::create_study_config(
     name = "HilFo - Hildesheimer Forschungsmethoden",
     study_key = session_uuid,
@@ -2368,7 +2415,8 @@ study_config <- inrep::create_study_config(
     bilingual = TRUE,
     session_save = TRUE,
     session_timeout = 7200,
-    results_processor = create_hilfo_report
+    results_processor = create_hilfo_report,
+    csv_processor = process_hilfo_csv
 )
 
 # Launch the study

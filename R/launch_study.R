@@ -2777,10 +2777,13 @@ launch_study <- function(
       }
     })
     
-    # Observe PDF download trigger from HilFo
+    # Observe PDF download trigger - Universal solution for all studies
     shiny::observeEvent(input$download_pdf_trigger, {
       cat("PDF download triggered\n")
-      # Generate PDF content
+      
+      # Show notification that PDF is being generated
+      shiny::showNotification("Generating PDF report...", type = "message", duration = 3)
+      
       tryCatch({
         # Get the current report content
         if (!is.null(rv$cat_result)) {
@@ -2789,169 +2792,221 @@ launch_study <- function(
           responses <- rv$responses
         }
         
-        # Generate report HTML
+        # Generate report HTML using the study's custom results_processor
         report_html <- if (!is.null(config$results_processor) && is.function(config$results_processor)) {
           config$results_processor(responses, item_bank, rv$demo_data, list(input = list(language = rv$language)))
         } else {
           shiny::HTML("<p>No report available</p>")
         }
         
-        # Create a temporary HTML file
+        # Create a complete standalone HTML file with all styles
         temp_html <- tempfile(fileext = ".html")
-        writeLines(as.character(report_html), temp_html)
         
-        # Convert to PDF using browser print dialog
-        if (requireNamespace("shinyjs", quietly = TRUE)) {
-          shinyjs::runjs("window.print();")
-        } else {
-          cat("shinyjs not available for PDF download\n")
+        # Build complete HTML document with embedded styles
+        complete_html <- paste0(
+          '<!DOCTYPE html>',
+          '<html lang="', rv$language %||% "en", '">',
+          '<head>',
+          '<meta charset="UTF-8">',
+          '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
+          '<title>Study Results</title>',
+          '<style>',
+          'body { font-family: Arial, sans-serif; padding: 20px; max-width: 1000px; margin: 0 auto; }',
+          '@media print { .download-section { display: none !important; } }',
+          '</style>',
+          '</head>',
+          '<body>',
+          as.character(report_html),
+          '</body>',
+          '</html>'
+        )
+        
+        writeLines(complete_html, temp_html)
+        
+        # Try to convert HTML to PDF using available methods
+        pdf_generated <- FALSE
+        pdf_file <- tempfile(fileext = ".pdf")
+        
+        # Method 1: Try pagedown (best quality, captures everything as rendered)
+        if (!pdf_generated && requireNamespace("pagedown", quietly = TRUE)) {
+          tryCatch({
+            pagedown::chrome_print(input = temp_html, output = pdf_file, verbose = FALSE)
+            pdf_generated <- TRUE
+            cat("PDF generated using pagedown\n")
+          }, error = function(e) {
+            cat("pagedown failed:", e$message, "\n")
+          })
         }
         
-      }, error = function(e) {
-        cat("Error generating PDF:", e$message, "\n")
-        shiny::showNotification("Error generating PDF. Please try again.", type = "error")
-      })
-    })
-    
-    # Observe CSV download trigger from HilFo
-    shiny::observeEvent(input$download_csv_trigger, {
-      cat("CSV download triggered\n")
-      # Try to find the most recent CSV file created by create_hilfo_report
-      tryCatch({
-        # Look for the most recent hilfo_results CSV file
-        csv_files <- list.files(pattern = "hilfo_results_.*\\.csv$", full.names = TRUE)
-        if (length(csv_files) > 0) {
-          # Get the most recent file
-          most_recent <- csv_files[which.max(file.mtime(csv_files))]
-          cat("Found CSV file:", most_recent, "\n")
-          
-          # Read the file content
-          csv_content <- readLines(most_recent, warn = FALSE)
+        # Method 2: Try webshot2 (fallback)
+        if (!pdf_generated && requireNamespace("webshot2", quietly = TRUE)) {
+          tryCatch({
+            webshot2::webshot(url = temp_html, file = pdf_file, vwidth = 1200, vheight = 800)
+            pdf_generated <- TRUE
+            cat("PDF generated using webshot2\n")
+          }, error = function(e) {
+            cat("webshot2 failed:", e$message, "\n")
+          })
+        }
+        
+        # Method 3: Fallback to browser print dialog if no package available
+        if (!pdf_generated) {
+          cat("No PDF generation package available, falling back to browser print\n")
+          if (requireNamespace("shinyjs", quietly = TRUE)) {
+            shinyjs::runjs("window.print();")
+            shiny::showNotification("Please use your browser's print dialog to save as PDF", type = "warning", duration = 5)
+          } else {
+            shiny::showNotification("PDF generation not available. Please print manually.", type = "error")
+          }
+        } else {
+          # PDF was generated successfully, send it to the user
+          # Read the PDF file
+          pdf_content <- readBin(pdf_file, "raw", n = file.info(pdf_file)$size)
+          pdf_base64 <- base64enc::base64encode(pdf_content)
           
           # Trigger download via JavaScript
           if (requireNamespace("shinyjs", quietly = TRUE)) {
+            timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+            study_name <- gsub("[^a-zA-Z0-9_]", "_", config$name %||% "study")
+            filename <- paste0(study_name, "_results_", timestamp, ".pdf")
+            
             shinyjs::runjs(sprintf("
-              var csv = %s;
-              var blob = new Blob([csv], {type: 'text/csv'});
-              var url = window.URL.createObjectURL(blob);
-              var a = document.createElement('a');
-              a.href = url;
-              a.download = 'hilfo_results_%s.csv';
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              window.URL.revokeObjectURL(url);
-            ", jsonlite::toJSON(paste(csv_content, collapse = "\n")), format(Sys.time(), "%Y%m%d_%H%M%S")))
-          } else {
-            cat("shinyjs not available for CSV download\n")
+              var pdfData = 'data:application/pdf;base64,%s';
+              var link = document.createElement('a');
+              link.href = pdfData;
+              link.download = '%s';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            ", pdf_base64, filename))
+            
+            shiny::showNotification("PDF downloaded successfully!", type = "message", duration = 3)
           }
           
-        } else {
-          # Fallback: generate CSV from current data
-          cat("No CSV file found, generating from current data\n")
-          
-          # Collect all data - use same format as cloud storage
-          csv_data <- data.frame(
-            timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S.%6N"),
-            session_id = rv$unique_session_id %||% "",
-            study_language = rv$language %||% "de"
-          )
-          
-          # Add demographics
-          if (!is.null(rv$demo_data)) {
-            for (name in names(rv$demo_data)) {
-              csv_data[[name]] <- rv$demo_data[[name]]
-            }
+          # Clean up temporary files
+          unlink(pdf_file)
+        }
+        
+        unlink(temp_html)
+        
+      }, error = function(e) {
+        cat("Error generating PDF:", e$message, "\n")
+        shiny::showNotification(paste("Error generating PDF:", e$message), type = "error", duration = 5)
+      })
+    })
+    
+    # Observe CSV download trigger - Universal solution for all studies
+    shiny::observeEvent(input$download_csv_trigger, {
+      cat("CSV download triggered\n")
+      
+      shiny::showNotification("Generating CSV export...", type = "message", duration = 2)
+      
+      tryCatch({
+        # Collect all data - use same format as cloud storage
+        csv_data <- data.frame(
+          timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+          session_id = rv$unique_session_id %||% paste0("session_", format(Sys.time(), "%Y%m%d_%H%M%S")),
+          study_name = config$name %||% "study",
+          study_language = rv$language %||% "en"
+        )
+        
+        # Add demographics
+        if (!is.null(rv$demo_data)) {
+          for (name in names(rv$demo_data)) {
+            csv_data[[name]] <- rv$demo_data[[name]]
           }
-          
-          # Add responses using proper item names (same as cloud storage)
-          if (!is.null(rv$responses)) {
-            # Get item bank to get proper column names
-            if (exists("all_items_de") && !is.null(all_items_de)) {
+        }
+        
+        # Add responses using item bank column names if available
+        if (!is.null(rv$responses)) {
+          # Try to get proper item names from item bank
+          if (!is.null(item_bank) && nrow(item_bank) > 0) {
+            # Check for common ID columns in item banks
+            id_column <- NULL
+            if ("id" %in% names(item_bank)) id_column <- "id"
+            else if ("ID" %in% names(item_bank)) id_column <- "ID"
+            else if ("item_id" %in% names(item_bank)) id_column <- "item_id"
+            else if ("Item" %in% names(item_bank)) id_column <- "Item"
+            
+            if (!is.null(id_column)) {
+              # Use item bank IDs
               for (i in seq_along(rv$responses)) {
-                if (i <= nrow(all_items_de)) {
-                  col_name <- all_items_de$id[i]  # Use 'id' column, not 'ID'
+                if (i <= nrow(item_bank)) {
+                  col_name <- item_bank[[id_column]][i]
                   csv_data[[col_name]] <- rv$responses[i]
+                } else {
+                  csv_data[[paste0("item_", i)]] <- rv$responses[i]
                 }
               }
             } else {
-              # Fallback to generic names if item bank not available
+              # No ID column found, use generic names
               for (i in seq_along(rv$responses)) {
                 csv_data[[paste0("item_", i)]] <- rv$responses[i]
               }
             }
-          }
-          
-          # Add calculated scores - SAME LOGIC as create_hilfo_report
-          # Calculate BFI scores from responses (items 21-40)
-          if (!is.null(rv$responses) && length(rv$responses) >= 40) {
-            bfi_responses <- rv$responses[21:40]
-            if (length(bfi_responses) >= 20) {
-              csv_data$BFI_Extraversion <- mean(c(bfi_responses[1:4]), na.rm = TRUE)
-              csv_data$BFI_Vertraeglichkeit <- mean(c(bfi_responses[5:8]), na.rm = TRUE)
-              csv_data$BFI_Gewissenhaftigkeit <- mean(c(bfi_responses[9:12]), na.rm = TRUE)
-              csv_data$BFI_Neurotizismus <- mean(c(bfi_responses[13:16]), na.rm = TRUE)
-              csv_data$BFI_Offenheit <- mean(c(bfi_responses[17:20]), na.rm = TRUE)
-            } else {
-              csv_data$BFI_Extraversion <- NA
-              csv_data$BFI_Vertraeglichkeit <- NA
-              csv_data$BFI_Gewissenhaftigkeit <- NA
-              csv_data$BFI_Neurotizismus <- NA
-              csv_data$BFI_Offenheit <- NA
+          } else {
+            # No item bank, use generic names
+            for (i in seq_along(rv$responses)) {
+              csv_data[[paste0("item_", i)]] <- rv$responses[i]
             }
-          } else {
-            csv_data$BFI_Extraversion <- NA
-            csv_data$BFI_Vertraeglichkeit <- NA
-            csv_data$BFI_Gewissenhaftigkeit <- NA
-            csv_data$BFI_Neurotizismus <- NA
-            csv_data$BFI_Offenheit <- NA
-          }
-          
-          # Calculate PSQ Stress (items 41-45)
-          if (!is.null(rv$responses) && length(rv$responses) >= 45) {
-            stress_responses <- rv$responses[41:45]
-            csv_data$PSQ_Stress <- mean(stress_responses, na.rm = TRUE)
-          } else {
-            csv_data$PSQ_Stress <- NA
-          }
-          
-          # Calculate MWS Study Skills (items 46-49)
-          if (!is.null(rv$responses) && length(rv$responses) >= 49) {
-            study_responses <- rv$responses[46:49]
-            csv_data$MWS_Studierfaehigkeiten <- mean(study_responses, na.rm = TRUE)
-          } else {
-            csv_data$MWS_Studierfaehigkeiten <- NA
-          }
-          
-          # Calculate Statistics (items 50-51)
-          if (!is.null(rv$responses) && length(rv$responses) >= 51) {
-            stats_responses <- rv$responses[50:51]
-            csv_data$Statistik <- mean(stats_responses, na.rm = TRUE)
-          } else {
-            csv_data$Statistik <- NA
-          }
-          
-          # Convert to CSV string
-          csv_content <- paste(capture.output(write.csv(csv_data, row.names = FALSE)), collapse = "\n")
-          
-          # Trigger download via JavaScript
-          if (requireNamespace("shinyjs", quietly = TRUE)) {
-            shinyjs::runjs(sprintf("
-              var csv = %s;
-              var blob = new Blob([csv], {type: 'text/csv'});
-              var url = window.URL.createObjectURL(blob);
-              var a = document.createElement('a');
-              a.href = url;
-              a.download = 'hilfo_results_%s.csv';
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              window.URL.revokeObjectURL(url);
-            ", jsonlite::toJSON(csv_content), format(Sys.time(), "%Y%m%d_%H%M%S")))
-          } else {
-            cat("shinyjs not available for CSV download\n")
           }
         }
+        
+        # Add ability estimates if available (for adaptive tests)
+        if (!is.null(rv$current_ability)) {
+          csv_data$theta <- rv$current_ability
+        }
+        if (!is.null(rv$current_se)) {
+          csv_data$se <- rv$current_se
+        }
+        
+        # Call study-specific CSV processor if defined
+        # This allows each study to add custom calculated columns
+        if (!is.null(config$csv_processor) && is.function(config$csv_processor)) {
+          tryCatch({
+            csv_data <- config$csv_processor(csv_data, rv$responses, rv$demo_data, item_bank)
+            cat("Applied custom CSV processor\n")
+          }, error = function(e) {
+            cat("Warning: Custom CSV processor failed:", e$message, "\n")
+          })
+        }
+        
+        # Convert to CSV string
+        temp_csv <- tempfile(fileext = ".csv")
+        write.csv(csv_data, temp_csv, row.names = FALSE, na = "")
+        csv_content <- readLines(temp_csv, warn = FALSE)
+        unlink(temp_csv)
+        
+        # Trigger download via JavaScript
+        if (requireNamespace("shinyjs", quietly = TRUE)) {
+          timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+          study_name <- gsub("[^a-zA-Z0-9_]", "_", config$name %||% "study")
+          filename <- paste0(study_name, "_results_", timestamp, ".csv")
+          
+          shinyjs::runjs(sprintf("
+            var csv = %s;
+            var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = '%s';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+          ", jsonlite::toJSON(paste(csv_content, collapse = "\n")), filename))
+          
+          shiny::showNotification("CSV downloaded successfully!", type = "message", duration = 3)
+        } else {
+          cat("shinyjs not available for CSV download\n")
+          shiny::showNotification("CSV download not available", type = "error")
+        }
+        
+      }, error = function(e) {
+        cat("Error generating CSV:", e$message, "\n")
+        shiny::showNotification(paste("Error generating CSV:", e$message), type = "error", duration = 5)
+      })
+    })
         
       }, error = function(e) {
         cat("Error generating CSV:", e$message, "\n")

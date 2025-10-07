@@ -1,18 +1,18 @@
-#' Professional Survey Features Module
+#'  Survey Features Module
 #' 
 #' Implements comprehensive survey features including advanced logic, 
 #' participant management, and data handling
 #' 
-#' @name professional_survey_features
+#' @name survey_features
 #' @docType data
 NULL
 
 # Global state for survey features
 .survey_state <- new.env(parent = emptyenv())
 
-#' Initialize Professional Survey Features
+#' Initialize Survey Features
 #' 
-#' Sets up professional survey capabilities
+#' Sets up survey capabilities
 #' 
 #' @param config Survey configuration
 #' @return Invisible NULL
@@ -30,7 +30,7 @@ initialize_survey_features <- function(config = list()) {
 
 #' Create Survey with Advanced Features
 #' 
-#' Creates a comprehensive survey with all professional features
+#' Creates a comprehensive survey with all features
 #' 
 #' @param survey_config Survey configuration
 #' @param questions List of questions
@@ -38,7 +38,7 @@ initialize_survey_features <- function(config = list()) {
 #' @param quotas Quota definitions
 #' @return Survey object
 #' @export
-create_professional_survey <- function(
+create_survey <- function(
   survey_config,
   questions,
   logic_rules = NULL,
@@ -55,7 +55,7 @@ create_professional_survey <- function(
     status = "draft"
   )
   
-  class(survey) <- c("professional_survey", "list")
+  class(survey) <- c("survey", "list")
   return(survey)
 }
 
