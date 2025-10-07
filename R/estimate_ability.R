@@ -386,56 +386,60 @@ estimate_ability <- function(rv, item_bank, config) {
     seq(-4, 4, length.out = 100)
   }
   
-  # Robust TAM branch for dichotomous models
-  if (config$model %in% c("1PL", "2PL", "3PL") && identical(toupper(config$estimation_method), "TAM") && length(responses) >= 5 && requireNamespace("TAM", quietly = TRUE)) {
+  # TAM package estimation for all models (EAP or WLE)
+  use_tam <- config$estimation_method %in% c("EAP", "WLE") && 
+             config$model %in% c("1PL", "2PL", "3PL", "GRM") && 
+             length(responses) >= 3 && 
+             requireNamespace("TAM", quietly = TRUE)
+  
+  if (use_tam) {
     # Require variability to avoid degenerate fits
     if (length(unique(na.omit(as.integer(responses)))) > 1) {
       tryCatch({
         dat <- matrix(as.integer(responses), nrow = 1)
         colnames(dat) <- administered
         ctrl <- list(snodes = 500, progress = FALSE, verbose = FALSE)
+        
+        # Fit appropriate TAM model
         if (config$model == "1PL") {
           mod <- suppressMessages(TAM::tam.mml(resp = dat, irtmodel = "1PL", control = ctrl))
         } else if (config$model == "2PL") {
           mod <- suppressMessages(TAM::tam.mml.2pl(resp = dat, irtmodel = "2PL", control = ctrl))
-        } else {
+        } else if (config$model == "3PL") {
           item_bank_subset <- item_bank[administered, , drop = FALSE]
           c_params <- if ("c" %in% names(item_bank_subset)) item_bank_subset$c else rep(0, length(administered))
           slopes <- if ("a" %in% names(item_bank_subset)) item_bank_subset$a else rep(1, length(administered))
           mod <- suppressMessages(TAM::tam.mml.3pl(resp = dat, gammaslope = slopes, guess = c_params, control = ctrl))
+        } else if (config$model == "GRM") {
+          # GRM: Graded Response Model
+          mod <- suppressMessages(TAM::tam.mml(resp = dat, irtmodel = "GPCM", control = ctrl))
         }
-        est <- suppressMessages(TAM::tam.wle(mod))
-        if (NROW(est) > 0 && is.finite(est$theta[1]) && is.finite(est$error[1])) {
-          message(sprintf("TAM estimation: theta=%.2f, se=%.3f", est$theta[1], est$error[1]))
-          return(list(theta = est$theta[1], se = est$error[1]))
+        
+        # Apply requested estimation method
+        if (config$estimation_method == "WLE") {
+          # WLE: Weighted Likelihood Estimation (frequentist)
+          est <- suppressMessages(TAM::tam.wle(mod))
+          theta_est <- est$theta[1]
+          se_est <- est$error[1]
+          method_name <- "WLE"
         } else {
-          message("TAM estimation produced invalid result, falling back to EAP")
+          # EAP: Expected A Posteriori (Bayesian) - extract from fitted model
+          theta_est <- mod$person$EAP[1]
+          se_est <- mod$person$SE.EAP[1]
+          method_name <- "EAP"
+        }
+        
+        if (is.finite(theta_est) && is.finite(se_est)) {
+          message(sprintf("TAM %s estimation: theta=%.2f, se=%.3f", method_name, theta_est, se_est))
+          return(list(theta = theta_est, se = se_est))
+        } else {
+          message(sprintf("TAM %s estimation produced invalid result, using fallback", method_name))
         }
       }, error = function(e) {
-        message(sprintf("TAM estimation error: %s, falling back to EAP", e$message))
+        message(sprintf("TAM estimation error: %s, using fallback", e$message))
       })
     } else {
-      message("Insufficient response variability for TAM WLE, falling back to EAP")
-    }
-  }
-  
-  # MIRT estimation method
-  if (config$model %in% c("1PL", "2PL", "3PL", "GRM") && config$estimation_method == "MIRT" && length(rv$responses) >= 3 && requireNamespace("mirt", quietly = TRUE)) {
-    mirt_result <- estimate_ability_mirt(
-      responses = rv$responses,
-      administered = rv$administered,
-      item_bank = item_bank,
-      model = config$model,
-      method = "EAP",
-      prior_mean = config$theta_prior[1],
-      prior_sd = config$theta_prior[2],
-      verbose = FALSE
-    )
-    
-    if (!is.null(mirt_result$theta) && !is.na(mirt_result$theta) && mirt_result$method != "error") {
-      return(list(theta = mirt_result$theta, se = mirt_result$se))
-    } else {
-      message("MIRT estimation failed, falling back to EAP")
+      message("Insufficient response variability for TAM, using fallback")
     }
   }
   

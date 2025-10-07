@@ -20,8 +20,9 @@
 #' @param model Character string specifying IRT model passed to TAM functions.
 #'   Options: \code{"1PL"}, \code{"2PL"}, \code{"3PL"}, \code{"GRM"}.
 #' @param estimation_method Character string specifying TAM ability estimation method.
-#'   Options: \code{"EAP"} (Expected A Posteriori) or \code{"WLE"} (Weighted Likelihood Estimation).
-#'   Note: TAM is the package name - these are the specific estimation methods within TAM.
+#'   Options: \code{"EAP"} (Expected A Posteriori - Bayesian, stable with few items, default) or
+#'   \code{"WLE"} (Weighted Likelihood Estimation - frequentist, accurate with many items).
+#'   Both methods use the TAM package exclusively.
 #' @param recommendation_fun Function to generate personalized recommendations based on 
 #'   ability estimates and demographics, or \code{NULL} for default recommendations.
 #' @param theta_prior Numeric vector of length 2 specifying prior mean and standard deviation
@@ -578,7 +579,7 @@ create_study_config <- function(
     })
     
     if (!estimation_method %in% c("EAP", "WLE")) {
-      validation_errors <- c(validation_errors, "estimation_method must be one of: EAP, WLE (TAM package methods)")
+      validation_errors <- c(validation_errors, "estimation_method must be one of: EAP (Expected A Posteriori) or WLE (Weighted Likelihood Estimation) - both use TAM package")
     }
     
     if (!is.numeric(theta_prior) || length(theta_prior) != 2 || theta_prior[2] <= 0) {
