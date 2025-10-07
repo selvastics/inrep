@@ -3172,7 +3172,12 @@ launch_study <- function(
   } else if (config$show_introduction) {
     "instructions"
   } else {
-    "demographics"
+    # Skip demographics if not provided
+    if (!is.null(config$demographics) && length(config$demographics) > 0) {
+      "demographics"
+    } else {
+      "items"
+    }
   }
   rv$current_page <- 1
   rv$total_pages <- if (!is.null(config$custom_page_flow)) length(config$custom_page_flow) else 1
@@ -5072,13 +5077,39 @@ launch_study <- function(
       # Custom or standard flow navigation
       if (!is.null(config$custom_study_flow) && config$enable_custom_navigation) {
         # Custom flow: get next stage from configuration
-        next_stage <- config$custom_study_flow$page_sequence[2] %||% "instructions"
+        next_stage <- config$custom_study_flow$page_sequence[2] %||% "assessment"
         rv$stage <- next_stage
         logger(sprintf("Custom flow: proceeding to %s stage", next_stage))
       } else {
-        # Standard flow: proceed to instructions
-        rv$stage <- "instructions"
-        logger("Standard flow: proceeding to instructions stage")
+        # Standard flow: proceed to assessment (demographics already shown)
+        rv$stage <- "assessment"
+        logger("Standard flow: proceeding to assessment stage after demographics")
+      }
+      
+      # Initialize first item for assessment
+      if (!config$adaptive) {
+        # For non-adaptive mode, start with first item
+        if (!base::is.null(config$fixed_items)) {
+          rv$current_item <- config$fixed_items[1]
+        } else {
+          rv$current_item <- 1
+        }
+        logger(sprintf("Non-adaptive mode: Starting with item %s", rv$current_item))
+      } else {
+        # For adaptive mode, select first item
+        temp_rv <- list(
+          administered = base::integer(0),
+          responses = base::numeric(0),
+          current_ability = config$theta_prior[1] %||% 0,
+          current_se = config$theta_prior[2] %||% 1
+        )
+        first_item <- if (isTRUE(config$fast_item_selection)) {
+          inrep::fast_select_next_item(temp_rv, item_bank, config)
+        } else {
+          inrep::select_next_item(temp_rv, item_bank, config)
+        }
+        rv$current_item <- first_item
+        logger(sprintf("Adaptive mode: Starting with item %s", first_item))
       }
     })
     
@@ -5100,10 +5131,15 @@ launch_study <- function(
         })
       }
       
-      rv$stage <- "assessment"  # Fixed: was "test", now "assessment"
+      # After introduction, go to demographics if provided, otherwise start assessment
+      rv$stage <- if (!is.null(config$demographics) && length(config$demographics) > 0) {
+        "demographics"
+      } else {
+        "assessment"
+      }
       rv$start_time <- base::Sys.time()
       
-      # Scroll to top of page when starting assessment
+      # Scroll to top of page when transitioning
       scroll_to_top_enhanced()
       
       # Initialize item selection for assessment stage

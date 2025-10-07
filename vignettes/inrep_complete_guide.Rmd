@@ -157,7 +157,7 @@ advanced_config <- create_study_config(
   
   # IRT Settings
   model = "GRM",                    # IRT model
-  estimation_method = "TAM",        # Estimation engine
+  estimation_method = "EAP",        # Estimation engine
   
   # Adaptive Testing Parameters
   adaptive = TRUE,                  # Enable adaptive testing

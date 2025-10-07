@@ -54,7 +54,7 @@ library(inrep)
 config <- create_study_config(
   name = "My First Adaptive Test",
   model = "2PL",                    # Two-parameter logistic model
-  estimation_method = "TAM",        # Use TAM for estimation
+  estimation_method = "EAP",        # Use TAM for estimation
   max_items = 10,                   # Maximum 10 items
   min_items = 5,                    # Minimum 5 items
   criteria = "MI"                   # Maximum Information criterion
@@ -95,7 +95,7 @@ The configuration object controls all aspects of your adaptive test:
 advanced_config <- create_study_config(
   name = "Advanced Personality Assessment",
   model = "2PL",
-  estimation_method = "TAM",        # Use TAM (MIRT will be added later)
+  estimation_method = "EAP",        # Use TAM (MIRT will be added later)
   max_items = 20,
   min_items = 8,
   min_SEM = 0.3,                    # Stop when standard error < 0.3
@@ -271,7 +271,7 @@ Here are some typical use cases to get you started:
 education_config <- create_study_config(
   name = "Math Proficiency Test",
   model = "1PL",                    # Rasch model for education
-  estimation_method = "TAM",        # Fast, reliable
+  estimation_method = "EAP",        # Fast, reliable
   max_items = 15,
   min_items = 10,
   min_SEM = 0.32,                   # Educational standard
@@ -284,7 +284,7 @@ education_config <- create_study_config(
 research_config <- create_study_config(
   name = "Personality Research Study",
   model = "2PL",                    # Better fit for traits
-  estimation_method = "TAM",        # Reliable and fast
+  estimation_method = "EAP",        # Reliable and fast
   max_items = 30,
   min_items = 15,
   demographics = c("Age", "Gender", "Country"),
@@ -297,7 +297,7 @@ research_config <- create_study_config(
 clinical_config <- create_study_config(
   name = "Depression Screening",
   model = "GRM",                    # Polytomous responses
-  estimation_method = "TAM",        # Reliable for clinical use
+  estimation_method = "EAP",        # Reliable for clinical use
   max_items = 12,
   min_items = 8,
   min_SEM = 0.25,                   # High precision needed

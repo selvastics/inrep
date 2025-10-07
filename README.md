@@ -168,7 +168,7 @@ cognitive_items <- data.frame(
 advanced_config <- create_study_config(
   name = "Cognitive Ability Assessment",
   model = "2PL",
-  estimation_method = "TAM", 
+  estimation_method = "EAP", 
   adaptive = TRUE,
   criteria = "MI",
   min_items = 8,  
@@ -254,4 +254,3 @@ MIT License
 **Author:** Clievins Selva
 **Affiliation:** University of Hildesheim
 **Contact:** [selva@uni-hildesheim.de](mailto:selva@uni-hildesheim.de)
-
