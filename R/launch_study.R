@@ -3007,12 +3007,6 @@ launch_study <- function(
         shiny::showNotification(paste("Error generating CSV:", e$message), type = "error", duration = 5)
       })
     })
-        
-      }, error = function(e) {
-        cat("Error generating CSV:", e$message, "\n")
-        shiny::showNotification("Error generating CSV. Please try again.", type = "error")
-      })
-    })
     
     # IMMEDIATE UI DISPLAY - Show first page before package loading using later package
     if (isTRUE(list(...)$immediate_ui) || isTRUE(config$immediate_ui)) {
