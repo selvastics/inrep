@@ -193,7 +193,9 @@ advanced_config <- create_study_config(
     show_response_table = TRUE,      # Detailed response table
     show_item_difficulty_trend = TRUE,  # Item difficulty vs ability plot
     show_domain_breakdown = TRUE,    # Domain performance breakdown
-    show_recommendations = TRUE     # Performance recommendations
+    show_recommendations = TRUE,     # Performance recommendations
+    show_legacy_buttons = TRUE  # Enable the 3 old buttons
+
   )
 )
 

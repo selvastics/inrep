@@ -3998,14 +3998,21 @@ launch_study <- function(
                        shiny::div(class = "footer",
                                   shiny::p(config$name),
                                   shiny::p(base::format(base::Sys.time(), "%B %d, %Y"))
-                       ),
-                       shiny::div(class = "nav-buttons",
-                                  shiny::downloadButton("save_report", ui_labels$save_button, class = "btn-klee"),
-                                  shiny::downloadButton("download_comprehensive_dataset", "Download Complete Dataset", class = "btn-klee"),
-                                  shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee",
-                                                     onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
                        )
                      ))
+                     
+                     # Optional legacy download/restart buttons (disabled by default)
+                     # Can be enabled via participant_report$show_legacy_buttons = TRUE
+                     if (isTRUE(pr$show_legacy_buttons)) {
+                       results_content <- base::c(results_content, base::list(
+                         shiny::div(class = "nav-buttons",
+                                    shiny::downloadButton("save_report", ui_labels$save_button, class = "btn-klee"),
+                                    shiny::downloadButton("download_comprehensive_dataset", "Download Complete Dataset", class = "btn-klee"),
+                                    shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee",
+                                                       onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
+                         )
+                       ))
+                     }
                      
                      shiny::tagList(
                                              shiny::div(id = "report-content", class = "assessment-card", results_content)
