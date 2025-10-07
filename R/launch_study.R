@@ -5144,14 +5144,22 @@ launch_study <- function(
           rv$stage <- next_stage
           logger(sprintf("Custom flow: proceeding from instructions to %s stage", next_stage))
         } else {
-          # Fallback to standard flow
-          rv$stage <- "demographics"
-          logger("Custom flow: fallback to demographics stage")
+          # Fallback to standard flow - skip demographics if not provided
+          rv$stage <- if (!is.null(config$demographics) && length(config$demographics) > 0) {
+            "demographics"
+          } else {
+            "items"
+          }
+          logger(sprintf("Custom flow: fallback to %s stage", rv$stage))
         }
       } else {
-        # Standard flow
-        rv$stage <- "demographics"
-        logger("Standard flow: proceeding to demographics stage")
+        # Standard flow - skip demographics if not provided
+        rv$stage <- if (!is.null(config$demographics) && length(config$demographics) > 0) {
+          "demographics"
+        } else {
+          "items"
+        }
+        logger(sprintf("Standard flow: proceeding to %s stage", rv$stage))
       }
       
 
@@ -5196,27 +5204,6 @@ launch_study <- function(
       }
       
       logger("Beginning assessment")
-    })
-    
-    # CUSTOM STUDY FLOW NAVIGATION - NEW
-    shiny::observeEvent(input$proceed_from_custom_instructions, {
-      if (!is.null(config$custom_study_flow) && config$enable_custom_navigation) {
-        # Get next stage from custom flow configuration
-        current_index <- which(config$custom_study_flow$page_sequence == "custom_instructions")
-        if (length(current_index) > 0 && current_index < length(config$custom_study_flow$page_sequence)) {
-          next_stage <- config$custom_study_flow$page_sequence[current_index + 1]
-          rv$stage <- next_stage
-          logger(sprintf("Custom flow: proceeding from instructions to %s stage", next_stage))
-        } else {
-          # Fallback to standard flow
-          rv$stage <- "demographics"
-          logger("Custom flow: fallback to demographics stage")
-        }
-      } else {
-        # Standard flow
-        rv$stage <- "demographics"
-        logger("Standard flow: proceeding to demographics stage")
-      }
     })
     
     # ROBUST SUBMISSION HANDLER - PREVENTS DOUBLE-CLICKS AND NEVER BREAKS
