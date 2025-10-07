@@ -37,64 +37,17 @@ export(generate_report_plots)
 export(create_rmd_content)
 export(create_report_css)
 export(validate_demographic_config)
-export(validate_item_bank)
-export(validate_response_mapping)
-export(validate_study_config)
 export(validate_response_report)
 export(validate_session)
 
 
-# Session Recovery Functions
-export(initialize_recovery)
-export(recover_from_browser_storage)
-export(recover_session)
-export(get_browser_refresh_handler)
-export(get_recovery_status)
 
-# Security Functions
-export(initialize_security)
-export(secure_password)
-export(verify_password)
-export(check_rate_limit)
-export(generate_csrf_token)
-export(validate_csrf_token)
-export(sanitize_input)
-export(validate_email)
-export(track_failed_attempt)
-export(is_blocked)
-export(validate_file_upload)
-export(generate_secure_session_id)
-export(get_security_status)
-export(clear_security_state)
-
-# Performance Functions
 export(initialize_performance_optimization)
-export(cache_result)
-export(get_cached_result)
-export(memoize_function)
-export(optimize_item_bank_operation)
-export(efficient_df_operation)
-export(get_memory_usage)
-export(optimize_query)
-export(handle_concurrent_users)
-export(batch_process_items)
-export(get_performance_status)
-export(clear_performance_state)
 
 # Configuration Handler Functions
 export(validate_and_fix_config)
 export(handle_extreme_parameters)
-export(create_fallback_config)
-export(validate_unicode_text)
-export(handle_branching_rules)
 export(optimize_for_scale)
-
-# Study Simulation Functions
-export(simulate_educational_studies)
-export(simulate_clinical_studies)
-export(simulate_corporate_studies)
-export(simulate_extreme_studies)
-export(run_all_simulations)
 
 # User Experience Functions removed - were not actually used in package
 
@@ -105,14 +58,6 @@ export(`%||%`)
 export(force_detach_inrep)
 export(reinstall_inrep)
 
-# Argument Validation Functions
-export(validate_argument)
-export(validate_theme)
-export(validate_model)
-export(validate_progress_style)
-export(validate_numeric)
-export(validate_config_smart)
-
 # Theme Functions
 export(get_theme_config)
 export(generate_theme_css)
@@ -120,10 +65,6 @@ export(get_theme_css)
 export(get_available_themes)
 export(ensure_font_consistency)
 
-# Responsive UI Functions
-export(get_responsive_css)
-export(create_responsive_question)
-export(apply_responsive_theme)
 
 # Professional Survey Functions
 export(initialize_survey_features)
