@@ -1,3 +1,64 @@
+#' Validate Item Bank Structure
+#'
+#' @description
+#' Basic validation of item bank structure and compatibility with IRT model.
+#'
+#' @param item_bank Data frame containing item bank
+#' @param model IRT model ("GRM", "2PL", "1PL", "3PL")
+#' @return List with validation results: is_valid (logical) and messages (character vector)
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' data(bfi_items)
+#' validation <- validate_item_bank(bfi_items, "GRM")
+#' print(validation$is_valid)
+#' }
+validate_item_bank <- function(item_bank, model = "GRM") {
+  
+  if (!is.data.frame(item_bank)) {
+    return(list(is_valid = FALSE, messages = "Item bank must be a data frame"))
+  }
+  
+  if (nrow(item_bank) == 0) {
+    return(list(is_valid = FALSE, messages = "Item bank is empty"))
+  }
+  
+  # Check required columns
+  if (!"Question" %in% names(item_bank)) {
+    return(list(is_valid = FALSE, messages = "Item bank must have 'Question' column"))
+  }
+  
+  # Model-specific validation
+  if (model == "GRM") {
+    required_cols <- c("a", "b1", "b2", "b3", "b4")
+    missing <- setdiff(required_cols, names(item_bank))
+    if (length(missing) > 0) {
+      return(list(
+        is_valid = FALSE, 
+        messages = paste("GRM model requires columns:", paste(missing, collapse = ", "))
+      ))
+    }
+  } else if (model %in% c("2PL", "3PL")) {
+    required_cols <- c("a", "b")
+    missing <- setdiff(required_cols, names(item_bank))
+    if (length(missing) > 0) {
+      return(list(
+        is_valid = FALSE,
+        messages = paste(model, "model requires columns:", paste(missing, collapse = ", "))
+      ))
+    }
+  } else if (model == "1PL") {
+    if (!"b" %in% names(item_bank)) {
+      return(list(is_valid = FALSE, messages = "1PL model requires 'b' column"))
+    }
+  }
+  
+  # All checks passed
+  return(list(is_valid = TRUE, messages = "Item bank validation passed"))
+}
+
+
 #' Detect Outlier Items in TAM-Compatible Item Banks
 #'
 #' @description

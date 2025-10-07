@@ -37,6 +37,7 @@ export(generate_report_plots)
 export(create_rmd_content)
 export(create_report_css)
 export(validate_demographic_config)
+export(validate_item_bank)
 export(validate_response_report)
 export(validate_session)
 
