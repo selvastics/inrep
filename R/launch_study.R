@@ -2740,8 +2740,8 @@ launch_study <- function(
         # Update config language
         config$language <<- new_lang
         
-        # Store globally for HilFo report access
-        assign("hilfo_language_preference", new_lang, envir = .GlobalEnv)
+        # Store globally for studies that need access to language preference
+        assign("study_language_preference", new_lang, envir = .GlobalEnv)
         
         # Log the change
         cat("Language switched to:", new_lang, "\n")
@@ -2751,12 +2751,12 @@ launch_study <- function(
       }
     })
     
-    # Also observe store_language_globally for HilFo
+    # Observe store_language_globally for any study that needs it
     shiny::observeEvent(input$store_language_globally, {
       if (!is.null(input$store_language_globally)) {
-        # Store globally for HilFo report access
-        assign("hilfo_language_preference", input$store_language_globally, envir = .GlobalEnv)
-        cat("Stored language globally for HilFo:", input$store_language_globally, "\n")
+        # Store globally for any study that needs language access
+        assign("study_language_preference", input$store_language_globally, envir = .GlobalEnv)
+        cat("Stored language globally:", input$store_language_globally, "\n")
         
         # Update language for FUTURE pages only (not current page to prevent loops)
         new_lang <- input$store_language_globally
@@ -2767,56 +2767,100 @@ launch_study <- function(
             current_language(new_lang)
             rv$language <- new_lang
             session$userData$language <- new_lang
-            cat("HILFO: Switched current page to:", new_lang, "\n")
+            cat("Language switched to:", new_lang, "\n")
           } else {
             # For page 1, just store for future use without triggering re-render
             session$userData$language <- new_lang
-            cat("HILFO: Language preference stored for future pages:", new_lang, "\n")
+            cat("Language preference stored for future pages:", new_lang, "\n")
           }
         }
       }
     })
     
     # Observe PDF download trigger - Universal solution for all studies
+    # This uses JavaScript to capture the CURRENT HTML DOM and send it to server for PDF conversion
+    # NO recalculation happens - we screenshot what's already rendered
     shiny::observeEvent(input$download_pdf_trigger, {
       cat("PDF download triggered\n")
       
       # Show notification that PDF is being generated
-      shiny::showNotification("Generating PDF report...", type = "message", duration = 3)
+      shiny::showNotification("Capturing report for PDF...", type = "message", duration = 3)
       
       tryCatch({
-        # Get the current report content
-        if (!is.null(rv$cat_result)) {
-          responses <- rv$cat_result$responses
+        # Step 1: Use JavaScript to send the CURRENTLY DISPLAYED HTML to server
+        if (requireNamespace("shinyjs", quietly = TRUE)) {
+          shinyjs::runjs("
+            // Capture the CURRENT rendered HTML content (no recalculation!)
+            var reportContent = document.getElementById('report-content');
+            if (!reportContent) {
+              // Fallback: try to find main content area
+              reportContent = document.querySelector('.assessment-card') || document.querySelector('.page-content');
+            }
+            
+            if (reportContent) {
+              // Get the full rendered HTML including computed styles
+              var htmlContent = reportContent.outerHTML;
+              
+              // Get all computed styles to preserve appearance
+              var styles = Array.from(document.styleSheets)
+                .map(sheet => {
+                  try {
+                    return Array.from(sheet.cssRules).map(rule => rule.cssText).join('\\n');
+                  } catch(e) {
+                    return '';
+                  }
+                }).join('\\n');
+              
+              // Send to Shiny server
+              Shiny.setInputValue('pdf_html_content', {
+                html: htmlContent,
+                styles: styles,
+                timestamp: Date.now()
+              }, {priority: 'event'});
+            } else {
+              alert('Could not find report content for PDF generation');
+            }
+          ")
         } else {
-          responses <- rv$responses
+          cat("shinyjs not available for PDF generation\n")
+          shiny::showNotification("PDF generation requires shinyjs package", type = "error")
         }
         
-        # Generate report HTML using the study's custom results_processor
-        report_html <- if (!is.null(config$results_processor) && is.function(config$results_processor)) {
-          config$results_processor(responses, item_bank, rv$demo_data, list(input = list(language = rv$language)))
-        } else {
-          shiny::HTML("<p>No report available</p>")
+      }, error = function(e) {
+        cat("Error initiating PDF capture:", e$message, "\n")
+        shiny::showNotification(paste("Error:", e$message), type = "error")
+      })
+    })
+    
+    # Step 2: Receive captured HTML and convert to PDF (server-side)
+    shiny::observeEvent(input$pdf_html_content, {
+      cat("Received HTML content for PDF conversion\n")
+      
+      tryCatch({
+        captured_data <- input$pdf_html_content
+        
+        if (is.null(captured_data) || is.null(captured_data$html)) {
+          stop("No HTML content received")
         }
         
-        # Create a complete standalone HTML file with all styles
+        # Create temporary HTML file with the CAPTURED content
         temp_html <- tempfile(fileext = ".html")
+        pdf_file <- tempfile(fileext = ".pdf")
         
-        # Build complete HTML document with embedded styles
+        # Build complete standalone HTML with captured content and styles
         complete_html <- paste0(
           '<!DOCTYPE html>',
-          '<html lang="', rv$language %||% "en", '">',
+          '<html>',
           '<head>',
           '<meta charset="UTF-8">',
-          '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
-          '<title>Study Results</title>',
           '<style>',
-          'body { font-family: Arial, sans-serif; padding: 20px; max-width: 1000px; margin: 0 auto; }',
-          '@media print { .download-section { display: none !important; } }',
+          captured_data$styles,
+          '\n@media print { .download-section { display: none !important; } }',
+          '\nbody { padding: 20px; }',
           '</style>',
           '</head>',
           '<body>',
-          as.character(report_html),
+          captured_data$html,
           '</body>',
           '</html>'
         )
@@ -2825,7 +2869,6 @@ launch_study <- function(
         
         # Try to convert HTML to PDF using available methods
         pdf_generated <- FALSE
-        pdf_file <- tempfile(fileext = ".pdf")
         
         # Method 1: Try pagedown (best quality, captures everything as rendered)
         if (!pdf_generated && requireNamespace("pagedown", quietly = TRUE)) {
@@ -4557,13 +4600,13 @@ launch_study <- function(
           logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
           
           # Apply stored language preference when moving FROM page 1 to other pages
-          if (old_page == 1 && exists("hilfo_language_preference", envir = .GlobalEnv)) {
-            stored_lang <- get("hilfo_language_preference", envir = .GlobalEnv)
+          if (old_page == 1 && exists("study_language_preference", envir = .GlobalEnv)) {
+            stored_lang <- get("study_language_preference", envir = .GlobalEnv)
             if (!is.null(stored_lang) && stored_lang %in% c("en", "de")) {
               current_language(stored_lang)
               rv$language <- stored_lang
               session$userData$language <- stored_lang
-              cat("HILFO: Applied language preference when leaving page 1:", stored_lang, "\n")
+              cat("Applied stored language preference when leaving page 1:", stored_lang, "\n")
             }
           }
           
@@ -4616,7 +4659,7 @@ launch_study <- function(
           
           # When moving TO page 1, don't apply language changes to prevent loops
           if (rv$current_page == 1) {
-            cat("HILFO: Moved back to page 1 - language switching handled by page itself\n")
+            cat("Moved back to page 1 - language switching handled by page itself\n")
           }
           
           # Log page switch and update start time
