@@ -1,0 +1,37 @@
+:root {
+  --primary-color: #e8041c;
+  --secondary-color: #e8041c;
+  --background-color: #F5F5F5;
+  --text-color: #2C2C2C;
+  --font-family: 'Inter', 'Arial', sans-serif;
+  --border-radius: 8px;
+  --progress-bg-color: #E0E0E0;
+  --error-color: #e8041c;
+  --success-color: #388E3C;
+  --warning-color: #FF9800;
+  --info-color: #1976D2;
+  --button-hover-color: #b30315;
+  --card-shadow: 0 2px 4px rgba(232, 4, 28, 0.08);
+  --border-color: #e8041c;
+  --accent-color: #e8041c;
+  --logo-url: url('https://www.uni-hildesheim.de/fileadmin/_processed_/b/2/csm_logo-uni_4c_2b7e2e2e2a.png');
+}
+
+/*
+ * To display the university logo at the top of your app/page, add this to your UI:
+ *   <div class="hildesheim-logo"></div>
+ * or in Shiny: tags$div(class = "hildesheim-logo")
+ */
+
+/* University logo at the top */
+.hildesheim-logo {
+  width: 260px;
+  height: 60px;
+  background-image: var(--logo-url), url('https://www.uni-hildesheim.de/fileadmin/_processed_/b/2/csm_logo-uni_4c_2b7e2e2e2a.png'); /* fallback for older browsers */
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center top;
+  margin: 24px auto 16px auto;
+  display: block;
+  min-height: 60px;
+}
