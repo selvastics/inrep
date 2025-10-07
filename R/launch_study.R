@@ -5776,7 +5776,12 @@ launch_study <- function(
         })
       }
       
-      rv$stage = "demographics"
+      # Reset to the actual first page: demographics only if they exist, otherwise items
+      rv$stage = if (!is.null(config$demographics) && length(config$demographics) > 0) {
+        "demographics"
+      } else {
+        "items"
+      }
       rv$current_ability <- config$theta_prior[1]
       rv$current_se <- config$theta_prior[2]
       
