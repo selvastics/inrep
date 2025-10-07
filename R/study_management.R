@@ -1,4 +1,4 @@
-#' Study Management for increp Package
+#' Study Management for inrep Package
 #' 
 #' This file consolidates all study management functions including:
 #' - Study flow helpers (from study_flow_helpers.R)
