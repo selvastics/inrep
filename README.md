@@ -1,7 +1,7 @@
 # inrep: Instant Reports for Adaptive Assessments
 
 <table width="100%"><tr>
-<td><h1>inrep: Instant Reports for Adaptive Assessments</h1></td>
+<td><h1></h1></td>
 
 <td align="right" width="160">
   <a href="https://github.com/selvastics/inrep">
