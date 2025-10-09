@@ -920,19 +920,6 @@ create_study_config <- function(
       message("Study configuration created successfully for: ", name)
     }
     
-    # Generate LLM assistance prompt if enabled
-    if (getOption("inrep.llm_assistance", FALSE)) {
-      llm_prompt <- generate_config_optimization_prompt(config)
-      message(paste(rep("=", 60), collapse = ""))
-      message("LLM ASSISTANCE: CONFIGURATION OPTIMIZATION")
-      message(paste(rep("=", 60), collapse = ""))
-      message("Copy the following prompt to ChatGPT, Claude, or your preferred LLM for advanced configuration insights:")
-      message("")
-      message(llm_prompt)
-      message("")
-      message(paste(rep("=", 60), collapse = ""))
-      message("")
-    }
     
     return(config)
     
@@ -941,61 +928,3 @@ create_study_config <- function(
   })
 }
 
-#' Generate Configuration Optimization Prompt for LLM Assistance
-#' @noRd
-generate_config_optimization_prompt <- function(config) {
-  study_type <- if (config$model == "GRM") "personality/psychological" else "cognitive/educational"
-  
-  prompt <- paste0(
-    "# EXPERT STUDY CONFIGURATION OPTIMIZATION\n\n",
-    "You are an expert psychometrician specializing in adaptive testing and Item Response Theory. ",
-    "I need help optimizing my study configuration for maximum psychometric validity and user experience.\n\n",
-    
-    "## CURRENT CONFIGURATION SUMMARY\n",
-    "- Study Name: ", config$name, "\n",
-    "- IRT Model: ", config$model, "\n",
-    "- Item Range: ", config$min_items, " to ", config$max_items %||% "unlimited", " items\n",
-    "- Stopping Criterion: SEM ≤ ", config$min_SEM, "\n",
-    "- Selection Method: ", config$criteria, "\n",
-    "- Theme: ", config$theme, "\n",
-    "- Language: ", config$language, "\n",
-    "- Session Duration: ", config$max_session_duration, " minutes\n",
-    "- Demographics: ", paste(config$demographics %||% "None", collapse = ", "), "\n\n",
-    
-    "## OPTIMIZATION REQUESTS\n\n",
-    "### 1. Psychometric Parameter Optimization\n",
-    "- Evaluate min_SEM (", config$min_SEM, ") appropriateness for ", study_type, " assessment\n",
-    "- Optimize min_items/max_items balance for precision vs burden\n",
-    "- Assess ", config$criteria, " item selection strategy effectiveness\n",
-    "- Review theta_prior distribution for target population\n\n",
-    
-    "### 2. User Experience Enhancement\n",
-    "- Optimize session duration (", config$max_session_duration, " min) for target population\n",
-    "- Evaluate demographic data collection strategy\n",
-    "- Assess theme choice (", config$theme, ") psychological impact\n",
-    "- Review progress feedback and motivation elements\n\n",
-    
-    "### 3. Quality Control Strategy\n",
-    "- Recommend response validation procedures\n",
-    "- Suggest rapid response detection thresholds\n",
-    "- Plan data quality monitoring approaches\n",
-    "- Design bias detection and mitigation strategies\n\n",
-    
-    "### 4. Research Validity Considerations\n",
-    "- Ensure configuration supports research objectives\n",
-    "- Plan for measurement invariance testing\n",
-    "- Consider ethical and privacy implications\n",
-    "- Design validation and calibration procedures\n\n",
-    
-    "## PROVIDE\n",
-    "1. Detailed assessment of current configuration strengths/weaknesses\n",
-    "2. Specific parameter optimization recommendations with rationale\n",
-    "3. Enhanced configuration code with improvements\n",
-    "4. Quality assurance and validation strategy\n",
-    "5. Expected performance metrics and outcomes\n\n",
-    
-    "Please provide expert-level recommendations with specific, actionable improvements and R code examples."
-  )
-  
-  return(prompt)
-}

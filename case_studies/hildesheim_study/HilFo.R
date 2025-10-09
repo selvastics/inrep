@@ -2353,7 +2353,6 @@ session_uuid <- paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 # CSV PROCESSOR FOR HILFO-SPECIFIC CALCULATED COLUMNS
 # =============================================================================
 process_hilfo_csv <- function(csv_data, responses, demographics, item_bank) {
-    # Add HILFO-specific calculated scores to CSV
     if (!is.null(responses) && is.vector(responses) && length(responses) >= 51) {
         
         # Calculate BFI scores from responses (items 21-40)

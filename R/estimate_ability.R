@@ -762,19 +762,6 @@ estimate_ability_mirt <- function(responses, administered, item_bank, model = "2
       message(sprintf("MIRT %s estimation successful: theta=%.3f, se=%.3f, reliability=%.3f", 
                     method, theta_est, se_est, reliability))
       
-      # Generate LLM assistance prompt for ability estimation optimization
-      if (getOption("inrep.llm_assistance", FALSE)) {
-        ability_prompt <- generate_ability_optimization_prompt(result, administered, model)
-        message(paste(rep("=", 60), collapse = ""))
-        message("LLM ASSISTANCE: ABILITY ESTIMATION OPTIMIZATION")
-        message(paste(rep("=", 60), collapse = ""))
-        message("Copy the following prompt to ChatGPT, Claude, or your preferred LLM for advanced ability estimation insights:")
-        message("")
-        message(ability_prompt)
-        message("")
-        message(paste(rep("=", 60), collapse = ""))
-        message("")
-      }
       
       return(result)
       
@@ -787,59 +774,4 @@ estimate_ability_mirt <- function(responses, administered, item_bank, model = "2
     message(sprintf("MIRT estimation error: %s", e$message))
     return(list(theta = prior_mean, se = prior_sd, method = "error", error_msg = e$message))
   })
-}
-
-#' Generate Ability Estimation Optimization Prompt for LLM Assistance
-#' @noRd
-generate_ability_optimization_prompt <- function(result, administered, model) {
-  prompt <- paste0(
-    "# EXPERT ABILITY ESTIMATION ANALYSIS\n\n",
-    "You are an expert psychometrician specializing in Item Response Theory and ability estimation. ",
-    "I need advanced insights on ability estimation quality and optimization.\n\n",
-    
-    "## ESTIMATION RESULTS\n",
-    "- Ability Estimate (θ): ", sprintf("%.3f", result$theta), "\n",
-    "- Standard Error: ", sprintf("%.3f", result$se %||% "Not available"), "\n",
-    "- Estimation Method: ", result$method, "\n",
-    "- IRT Model: ", model, "\n",
-    "- Items Administered: ", length(administered), "\n",
-    "- Convergence: ", result$converged %||% "Not reported", "\n",
-    "- Reliability: ", sprintf("%.3f", result$reliability %||% "Not available"), "\n\n",
-    
-    "## ANALYSIS REQUESTS\n\n",
-    "### 1. Estimation Quality Assessment\n",
-    "- Evaluate standard error (", sprintf("%.3f", result$se %||% 0), ") appropriateness for decision-making\n",
-    "- Assess reliability (", sprintf("%.3f", result$reliability %||% 0), ") for this context\n",
-    "- Analyze ability estimate (", sprintf("%.3f", result$theta), ") interpretability\n",
-    "- Identify potential estimation issues or concerns\n\n",
-    
-    "### 2. Adaptive Testing Efficiency\n",
-    "- Evaluate test efficiency with ", length(administered), " items administered\n",
-    "- Recommend optimal stopping criteria adjustments\n",
-    "- Assess information contribution of recent items\n",
-    "- Suggest item selection strategy improvements\n\n",
-    
-    "### 3. Methodological Considerations\n",
-    "- Compare ", result$method, " performance vs alternatives\n",
-    "- Evaluate ", model, " model appropriateness for this response pattern\n",
-    "- Assess potential bias or measurement issues\n",
-    "- Recommend validation procedures\n\n",
-    
-    "### 4. Practical Implications\n",
-    "- Interpret ability estimate in practical context\n",
-    "- Assess measurement precision for decision-making\n",
-    "- Evaluate confidence in current estimate\n",
-    "- Recommend next steps or additional assessment\n\n",
-    
-    "## PROVIDE\n",
-    "1. Detailed psychometric assessment of estimation quality\n",
-    "2. Specific recommendations for improving measurement precision\n",
-    "3. Interpretation guidelines for ability estimate\n",
-    "4. Quality control recommendations for future administrations\n",
-    "5. Expected performance vs benchmark standards\n\n",
-    
-    "Please provide expert-level insights with specific, actionable recommendations."
-  )
-  
-  return(prompt)
 }
