@@ -32,22 +32,3 @@
    devtools::check()
    ```
 
-## Guidelines
-
-* Follow tidyverse style.
-* Document functions with roxygen2.
-* Keep functions simple, tested, and clear.
-* Add examples that work.
-* Make pull requests small and focused.
-
-## Contribution Workflow
-
-1. Open or check an issue.
-2. Create a branch and make changes.
-3. Test locally.
-4. Submit a pull request with a short description.
-
-## Recognition
-
-Contributors are credited in GitHub and docs. Big changes get highlighted in releases.
-
