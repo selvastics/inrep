@@ -3,10 +3,10 @@
 #' Launch Adaptive Study Interface
 #'
 #' Launches a Shiny-based adaptive or non-adaptive assessment interface that serves as
-#' a comprehensive wrapper around TAM's psychometric capabilities. All IRT computations
+#' a wrapper around shiny and other packages. All IRT computations
 #' (ability estimation, item selection, model fitting) are performed by the TAM package,
 #' while this function provides the interactive interface, workflow management, and
-#' integration layer for comprehensive research workflows.
+#' integration layer for reproducible research workflows.
 #'
 #' @export
 #' @param config A list containing study configuration parameters created by \code{\link{create_study_config}}.
