@@ -9,9 +9,6 @@
 </div>
 <!--- DISCLAIMER BANNER END --->
 
-
-# inrep: Instant Reports for Adaptive Assessments
-
 <table width="100%"><tr>
 <td><h1>inrep: Instant Reports for Adaptive Assessments</h1></td>
 
