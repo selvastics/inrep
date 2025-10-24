@@ -88,6 +88,22 @@ session_save = TRUE # Allow participants to resume session
 launch_study(config_fixed)
 ```
 
+### Debug Mode for Development
+
+When testing your assessments, enable **debug mode** for rapid form filling:
+
+```{r debug_mode_demo, eval=FALSE}
+# Enable debug mode
+launch_study(config_fixed, debug_mode = TRUE)
+```
+
+**Debug shortcuts:**
+- **STRG+A** (CTRL+A): Fill current page with random data
+- **STRG+Q** (CTRL+Q): Auto-fill all pages until results
+- Red indicator shows shortcuts in bottom-right corner
+
+Use this for quick testing during development!
+
 ## Advanced Research-Grade Assessments
 
 Based on the University of Hildesheim HilFo study, here are examples of how to create professional research assessments.
@@ -316,7 +332,7 @@ research_config <- create_study_config(
 )
 
 # Launch the research study
-launch_study(research_config, bfi_items)
+launch_study(research_config, bfi_items, debug_mode = TRUE)
 ```
 
 ### Educational Assessment with Score Calculation
@@ -424,7 +440,7 @@ education_config <- create_study_config(
 )
 
 # Launch educational assessment
-launch_study(education_config, math_items)
+launch_study(education_config, math_items, debug_mode = TRUE)
 ```
 
 ### Clinical Assessment with Reverse Coding
@@ -535,7 +551,7 @@ clinical_config <- create_study_config(
 )
 
 # Launch clinical assessment
-launch_study(clinical_config, bfi_items)  # Using bfi_items as example
+launch_study(clinical_config, bfi_items, debug_mode = TRUE)
 ```
 
 ### Academic Research with Multiple Scales
@@ -654,7 +670,7 @@ academic_config <- create_study_config(
 )
 
 # Launch academic research study
-launch_study(academic_config, bfi_items)
+launch_study(academic_config, bfi_items, debug_mode = TRUE)
 ```
 
 ## Essential Functions and Best Practices
@@ -710,7 +726,7 @@ config <- create_study_config(
 )
 ```
 
-### Some practices I would recommend for Assessments so far
+### Some practices I would recommend for inrep assessments so far
 
 1. **Always include informed consent** with clear participation information 
 2. **Always ask if participants want to receive a report** note that assessment results can be triggering. 

@@ -28,6 +28,8 @@ Suggests:
     shinyjs (>= 1.7.0),
     shinycssloaders (>= 1.0.0),
     base64enc (>= 0.1.0),
+    pagedown (>= 0.18),
+    webshot2 (>= 0.1.0),
     TAM (>= 4.2-21),
     shinyWidgets (>= 0.7.0),
     dplyr (>= 1.0.0),

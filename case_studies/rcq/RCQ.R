@@ -719,14 +719,14 @@ custom_page_flow <- list(
 )
 
 # =============================================================================
-# RESULTS PROCESSOR
+# RESULTS PROCESSOR - COMPREHENSIVE RCQ REPORT
 # =============================================================================
 
 create_rcq_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
     tryCatch({
         
         if (is.null(responses) || !is.vector(responses) || length(responses) == 0) {
-                return(shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>"))
+            return(shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>"))
         }
         
         # Ensure we have enough responses
@@ -735,103 +735,524 @@ create_rcq_report <- function(responses, item_bank, demographics = NULL, session
         }
         responses <- as.numeric(responses)
         
-        # Calculate main scores from first 100 items
-        rcq_score <- mean(responses[1:30], na.rm = TRUE)
-        bfi_neuroticism <- mean(c(responses[34], responses[39], responses[44], responses[49], responses[54], responses[59]), na.rm = TRUE)
-        bfi_extraversion <- mean(c(responses[31], responses[36], responses[41], responses[46], responses[51], responses[56]), na.rm = TRUE)
-        bfi_openness <- mean(c(responses[35], responses[40], responses[45], responses[50], responses[55], responses[60]), na.rm = TRUE)
-        bfi_agreeableness <- mean(c(responses[32], responses[37], responses[42], responses[47], responses[52], responses[57]), na.rm = TRUE)
-        bfi_conscientiousness <- mean(c(responses[33], responses[38], responses[43], responses[48], responses[53], responses[58]), na.rm = TRUE)
+        # =============================================================================
+        # RCQ SUBSCALES CALCULATION (Items 1-30)
+        # =============================================================================
         
+        # RCQ_01: Goal-oriented behavior and future planning (items 2, 5, reverse 1, 13)
+        rcq_goal_oriented <- mean(c(
+            responses[2], responses[5], 
+            8 - responses[1], 8 - responses[13]
+        ), na.rm = TRUE)
+        
+        # RCQ_01: Adaptive coping with anxiety (items 3, 6, reverse 7)
+        rcq_anxiety_coping <- mean(c(
+            responses[3], responses[6],
+            8 - responses[7]
+        ), na.rm = TRUE)
+        
+        # RCQ_01: Reappraisal/Meaning-making (items 4, 12)
+        rcq_reappraisal <- mean(c(responses[4], responses[12]), na.rm = TRUE)
+        
+        # RCQ_01: Wishful thinking (reverse item 8)
+        rcq_wishful_thinking <- 8 - responses[8]
+        
+        # RCQ_01: Family support (item 9)
+        rcq_family_support_1 <- responses[9]
+        
+        # RCQ_01: Giving up quickly (reverse items 10, 13)
+        rcq_giving_up <- mean(c(8 - responses[10], 8 - responses[13]), na.rm = TRUE)
+        
+        # RCQ_01: Humor (items 11 reverse, 14)
+        rcq_humor_1 <- mean(c(8 - responses[11], responses[14]), na.rm = TRUE)
+        
+        # RCQ_01: Physical activity for pain management (item 15)
+        rcq_physical_activity_1 <- responses[15]
+        
+        # RCQ_02: Family support (items 16, 27)
+        rcq_family_support_2 <- mean(c(responses[16], responses[27]), na.rm = TRUE)
+        
+        # RCQ_02: Growth mindset (item 17)
+        rcq_growth_mindset <- responses[17]
+        
+        # RCQ_02: Resource mobilization (item 18)
+        rcq_resource_mobilization <- responses[18]
+        
+        # RCQ_02: Physical activity (items 19, 29)
+        rcq_physical_activity_2 <- mean(c(responses[19], responses[29]), na.rm = TRUE)
+        
+        # RCQ_02: Guilt about past (reverse item 20)
+        rcq_past_guilt <- 8 - responses[20]
+        
+        # RCQ_02: Future confidence (item 21)
+        rcq_future_confidence <- responses[21]
+        
+        # RCQ_02: Optimism in uncertainty (item 22)
+        rcq_optimism <- responses[22]
+        
+        # RCQ_02: Humor in adversity (item 23, 28)
+        rcq_humor_2 <- mean(c(responses[23], responses[28]), na.rm = TRUE)
+        
+        # RCQ_02: Meaning-making (item 24)
+        rcq_meaning_making <- responses[24]
+        
+        # RCQ_02: Sociability (item 25)
+        rcq_sociability <- responses[25]
+        
+        # RCQ_02: Family loyalty (item 26)
+        rcq_family_loyalty <- responses[26]
+        
+        # RCQ_02: Solution-oriented (item 30)
+        rcq_solution_oriented <- responses[30]
+        
+        # Overall RCQ Composite Score
+        rcq_total <- mean(c(
+            rcq_goal_oriented, rcq_anxiety_coping, rcq_reappraisal,
+            rcq_family_support_1, rcq_giving_up, rcq_humor_1,
+            rcq_physical_activity_1, rcq_family_support_2,
+            rcq_growth_mindset, rcq_resource_mobilization,
+            rcq_physical_activity_2, rcq_future_confidence,
+            rcq_optimism, rcq_humor_2, rcq_meaning_making,
+            rcq_sociability, rcq_family_loyalty, rcq_solution_oriented
+        ), na.rm = TRUE)
+        
+        # =============================================================================
+        # BIG FIVE PERSONALITY (Items 31-60)
+        # =============================================================================
+        
+        # Extraversion: 1R, 6, 11, 16, 21R, 26R
+        bfi_extraversion <- mean(c(
+            8 - responses[31], responses[36], responses[41],
+            responses[46], 8 - responses[51], 8 - responses[56]
+        ), na.rm = TRUE)
+        
+        # Agreeableness: 2, 7R, 12, 17R, 22, 27R
+        bfi_agreeableness <- mean(c(
+            responses[32], 8 - responses[37], responses[42],
+            8 - responses[47], responses[52], 8 - responses[57]
+        ), na.rm = TRUE)
+        
+        # Conscientiousness: 3R, 8R, 13, 18, 23, 28R
+        bfi_conscientiousness <- mean(c(
+            8 - responses[33], 8 - responses[38], responses[43],
+            responses[48], responses[53], 8 - responses[58]
+        ), na.rm = TRUE)
+        
+        # Neuroticism: 4, 9, 14R, 19R, 24, 29
+        bfi_neuroticism <- mean(c(
+            responses[34], responses[39], 8 - responses[44],
+            8 - responses[49], responses[54], responses[59]
+        ), na.rm = TRUE)
+        
+        # Openness: 5, 10R, 15, 20R, 25, 30R
+        bfi_openness <- mean(c(
+            responses[35], 8 - responses[40], responses[45],
+            8 - responses[50], responses[55], 8 - responses[60]
+        ), na.rm = TRUE)
+        
+        # =============================================================================
+        # POLITICAL SELF-EFFICACY (Items 61-70)
+        # =============================================================================
         pse_score <- mean(responses[61:70], na.rm = TRUE)
-        woc_score <- mean(responses[71:78], na.rm = TRUE)
-        cope_score <- mean(responses[79:100], na.rm = TRUE)
         
-        # Prepare ordered scores
-            ordered_scores <- list(
-            ResiliencesCoping = round(rcq_score, 2),
-            Neuroticism = round(bfi_neuroticism, 2),
-            Extraversion = round(bfi_extraversion, 2),
-            Openness = round(bfi_openness, 2),
-            Agreeableness = round(bfi_agreeableness, 2),
-            Conscientiousness = round(bfi_conscientiousness, 2),
-            PoliticalSelfEfficacy = round(pse_score, 2),
-            WorkClimate = round(woc_score, 2),
-            Coping = round(cope_score, 2)
+        # =============================================================================
+        # WORK AND ORGANIZATIONAL CLIMATE (Items 71-78)
+        # =============================================================================
+        woc_score <- mean(responses[71:78], na.rm = TRUE)
+        
+        # =============================================================================
+        # BRIEF COPE SUBSCALES (Items 79-106, but we only have up to 100)
+        # =============================================================================
+        # Since we only have items 79-100, we calculate what we can (22 items)
+        
+        # Active Coping: items 2, 7 (positions 80, 85)
+        cope_active <- mean(c(responses[80], responses[85]), na.rm = TRUE)
+        
+        # Planning: items 14, 25 (positions 92, 103 - but 103 is beyond 100)
+        cope_planning <- responses[92]
+        
+        # Positive Reframing: items 12, 17 (positions 90, 95)
+        cope_reframing <- mean(c(responses[90], responses[95]), na.rm = TRUE)
+        
+        # Acceptance: items 20, 24 (positions 98, 102 - but 102 is beyond 100)
+        cope_acceptance <- responses[98]
+        
+        # Humor: items 18, 28 (positions 96, 106 - but 106 is beyond 100)
+        cope_humor <- responses[96]
+        
+        # Support seeking: items 5, 10, 15, 23 (positions 83, 88, 93, 101 - but 101 is beyond 100)
+        cope_support <- mean(c(responses[83], responses[88], responses[93]), na.rm = TRUE)
+        
+        # Denial: items 3, 8 (positions 81, 86)
+        cope_denial <- mean(c(responses[81], responses[86]), na.rm = TRUE)
+        
+        # Venting: items 9, 21 (positions 87, 99)
+        cope_venting <- mean(c(responses[87], responses[99]), na.rm = TRUE)
+        
+        # Self-blame: items 13, 26 (positions 91, 104 - but 104 is beyond 100)
+        cope_self_blame <- responses[91]
+        
+        # Substance use: items 4, 11 (positions 82, 89)
+        cope_substance <- mean(c(responses[82], responses[89]), na.rm = TRUE)
+        
+        # Behavioral disengagement: items 6, 16 (positions 84, 94)
+        cope_disengagement <- mean(c(responses[84], responses[94]), na.rm = TRUE)
+        
+        # Self-distraction: items 1, 19 (positions 79, 97)
+        cope_distraction <- mean(c(responses[79], responses[97]), na.rm = TRUE)
+        
+        # Religion: items 22, 27 (positions 100, 105 - but 105 is beyond 100)
+        cope_religion <- responses[100]
+        
+        # Overall coping score
+        cope_total <- mean(c(
+            cope_active, cope_planning, cope_reframing, cope_acceptance,
+            cope_humor, cope_support, cope_distraction
+        ), na.rm = TRUE)
+        
+        # =============================================================================
+        # PREPARE COMPREHENSIVE SCORES
+        # =============================================================================
+        
+        all_scores <- list(
+            # RCQ Subscales
+            "RCQ: Zielorientierung" = round(rcq_goal_oriented, 2),
+            "RCQ: Angstbewältigung" = round(rcq_anxiety_coping, 2),
+            "RCQ: Neubewertung" = round(rcq_reappraisal, 2),
+            "RCQ: Familiäre Unterstützung" = round(mean(c(rcq_family_support_1, rcq_family_support_2), na.rm = TRUE), 2),
+            "RCQ: Humor" = round(mean(c(rcq_humor_1, rcq_humor_2), na.rm = TRUE), 2),
+            "RCQ: Körperliche Aktivität" = round(mean(c(rcq_physical_activity_1, rcq_physical_activity_2), na.rm = TRUE), 2),
+            "RCQ: Optimismus" = round(rcq_optimism, 2),
+            "RCQ: Lösungsorientierung" = round(rcq_solution_oriented, 2),
+            "RCQ Gesamt" = round(rcq_total, 2),
+            
+            # Big Five
+            "Extraversion" = round(bfi_extraversion, 2),
+            "Verträglichkeit" = round(bfi_agreeableness, 2),
+            "Gewissenhaftigkeit" = round(bfi_conscientiousness, 2),
+            "Neurotizismus" = round(bfi_neuroticism, 2),
+            "Offenheit" = round(bfi_openness, 2),
+            
+            # Other constructs
+            "Politische Selbstwirksamkeit" = round(pse_score, 2),
+            "Arbeitsklima" = round(woc_score, 2),
+            
+            # Coping subscales
+            "Coping: Aktiv" = round(cope_active, 2),
+            "Coping: Planung" = round(cope_planning, 2),
+            "Coping: Positive Umdeutung" = round(cope_reframing, 2),
+            "Coping: Akzeptanz" = round(cope_acceptance, 2),
+            "Coping: Humor" = round(cope_humor, 2),
+            "Coping: Unterstützung suchen" = round(cope_support, 2),
+            "Coping: Verleugnung" = round(cope_denial, 2),
+            "Coping: Gefühle äußern" = round(cope_venting, 2),
+            "Coping: Selbstvorwürfe" = round(cope_self_blame, 2),
+            "Coping: Substanzgebrauch" = round(cope_substance, 2),
+            "Coping: Verhaltensrückzug" = round(cope_disengagement, 2),
+            "Coping: Ablenkung" = round(cope_distraction, 2),
+            "Coping: Religion" = round(cope_religion, 2),
+            "Coping Gesamt" = round(cope_total, 2)
         )
         
-        # Create bar chart
-        chart_data <- data.frame(
-            dimension = names(ordered_scores),
-                score = unlist(ordered_scores),
-            category = c("Coping", "Big Five", "Big Five", "Big Five", "Big Five", "Big Five",
-                        "Work", "Work", "Coping"),
+        # =============================================================================
+        # CREATE VISUALIZATIONS
+        # =============================================================================
+        
+        # RCQ Subscales chart (simple bar chart)
+        rcq_chart_data <- data.frame(
+            dimension = c("Zielorientierung", "Angstbewältigung", "Neubewertung", 
+                         "Familie", "Humor", "Aktivität", "Optimismus", "Lösungen"),
+            score = c(rcq_goal_oriented, rcq_anxiety_coping, rcq_reappraisal,
+                     mean(c(rcq_family_support_1, rcq_family_support_2), na.rm = TRUE),
+                     mean(c(rcq_humor_1, rcq_humor_2), na.rm = TRUE),
+                     mean(c(rcq_physical_activity_1, rcq_physical_activity_2), na.rm = TRUE),
+                     rcq_optimism, rcq_solution_oriented),
             stringsAsFactors = FALSE
         )
         
-        bar_plot <- ggplot2::ggplot(chart_data, ggplot2::aes(x = dimension, y = score, fill = category)) +
-            ggplot2::geom_bar(stat = "identity", width = 0.7) +
-            ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", score)), vjust = -0.5, size = 4) +
-            ggplot2::scale_y_continuous(limits = c(0, 7)) +
+        rcq_plot <- ggplot2::ggplot(rcq_chart_data, ggplot2::aes(x = dimension, y = score)) +
+            ggplot2::geom_bar(stat = "identity", fill = "#2c3e50", width = 0.7) +
+            ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", score)), vjust = -0.5, size = 4, fontface = "bold") +
+            ggplot2::scale_y_continuous(limits = c(0, 7.5), breaks = seq(0, 7, 1)) +
             ggplot2::theme_minimal(base_size = 12) +
             ggplot2::theme(
-                axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = 10),
-                plot.title = ggplot2::element_text(size = 16, face = "bold", hjust = 0.5),
-                legend.position = "bottom"
+                axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = 10, face = "bold"),
+                axis.text.y = ggplot2::element_text(size = 11),
+                axis.title.y = ggplot2::element_text(size = 12, face = "bold"),
+                plot.title = ggplot2::element_text(size = 16, face = "bold", hjust = 0.5, margin = ggplot2::margin(b = 15)),
+                panel.grid.major.x = ggplot2::element_blank(),
+                panel.grid.minor = ggplot2::element_blank()
             ) +
-            ggplot2::labs(title = "RCQ Studienergebnisse", y = "Score")
+            ggplot2::labs(title = "RCQ Resilienz-Dimensionen", x = "", y = "Score (1-7)")
         
-        bar_file <- tempfile(fileext = ".png")
+        # Big Five RADAR CHART (like HilFo)
+        radar_scores <- list(
+            Extraversion = bfi_extraversion,
+            Verträglichkeit = bfi_agreeableness,
+            Gewissenhaftigkeit = bfi_conscientiousness,
+            Neurotizismus = bfi_neuroticism,
+            Offenheit = bfi_openness
+        )
+        
+        # Create radar plot manually (similar to HilFo fallback approach)
+        n_vars <- 5
+        angles <- seq(0, 2*pi, length.out = n_vars + 1)[-(n_vars + 1)]
+        
+        bfi_scores_vec <- c(bfi_extraversion, bfi_agreeableness, bfi_conscientiousness,
+                           bfi_neuroticism, bfi_openness)
+        bfi_labels <- c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", 
+                       "Neurotizismus", "Offenheit")
+        
+        # Normalize to 0-5 scale and calculate positions
+        x_pos <- (bfi_scores_vec / 7 * 5) * cos(angles - pi/2)
+        y_pos <- (bfi_scores_vec / 7 * 5) * sin(angles - pi/2)
+        
+        plot_data <- data.frame(
+            x = c(x_pos, x_pos[1]),
+            y = c(y_pos, y_pos[1]),
+            label = c(bfi_labels, ""),
+            score = c(bfi_scores_vec, bfi_scores_vec[1])
+        )
+        
+        # Grid lines data
+        grid_data <- expand.grid(
+            r = seq(1, 5, 1),
+            angle = seq(0, 2*pi, length.out = 100)
+        )
+        grid_data$x <- grid_data$r * cos(grid_data$angle)
+        grid_data$y <- grid_data$r * sin(grid_data$angle)
+        
+        # Create radar plot
+        bfi_radar_plot <- ggplot2::ggplot() +
+            ggplot2::geom_path(data = grid_data, ggplot2::aes(x = x, y = y, group = r),
+                              color = "gray85", linewidth = 0.3) +
+            ggplot2::geom_segment(data = data.frame(angle = angles),
+                                 ggplot2::aes(x = 0, y = 0,
+                                            xend = 5 * cos(angle - pi/2),
+                                            yend = 5 * sin(angle - pi/2)),
+                                 color = "gray85", linewidth = 0.3) +
+            ggplot2::geom_polygon(data = plot_data, ggplot2::aes(x = x, y = y),
+                                 fill = "#2c3e50", alpha = 0.3) +
+            ggplot2::geom_path(data = plot_data, ggplot2::aes(x = x, y = y),
+                              color = "#2c3e50", linewidth = 1.5) +
+            ggplot2::geom_point(data = plot_data[1:5,], ggplot2::aes(x = x, y = y),
+                               color = "#2c3e50", size = 4) +
+            ggplot2::geom_text(data = plot_data[1:5,],
+                              ggplot2::aes(x = x * 1.35, y = y * 1.35, label = label),
+                              size = 4.5, fontface = "bold") +
+            ggplot2::geom_text(data = plot_data[1:5,],
+                              ggplot2::aes(x = x * 1.12, y = y * 1.12, label = sprintf("%.2f", score)),
+                              size = 3.5, color = "#2c3e50", fontface = "bold") +
+            ggplot2::coord_equal() +
+            ggplot2::xlim(-7, 7) + ggplot2::ylim(-7, 7) +
+            ggplot2::theme_void() +
+            ggplot2::theme(
+                plot.title = ggplot2::element_text(size = 16, face = "bold", hjust = 0.5,
+                                                  margin = ggplot2::margin(b = 15)),
+                plot.margin = ggplot2::margin(20, 20, 20, 20)
+            ) +
+            ggplot2::labs(title = "Big Five Persönlichkeitsprofil")
+        
+        # Coping strategies chart (simple, clean)
+        cope_chart_data <- data.frame(
+            dimension = c("Aktiv", "Planung", "Umdeutung", "Akzeptanz", "Humor", 
+                         "Support", "Ablenkung"),
+            score = c(cope_active, cope_planning, cope_reframing, cope_acceptance,
+                     cope_humor, cope_support, cope_distraction),
+            stringsAsFactors = FALSE
+        )
+        
+        cope_plot <- ggplot2::ggplot(cope_chart_data, ggplot2::aes(x = dimension, y = score)) +
+            ggplot2::geom_bar(stat = "identity", fill = "#7f8c8d", width = 0.7) +
+            ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", score)), vjust = -0.5, size = 4, fontface = "bold") +
+            ggplot2::scale_y_continuous(limits = c(0, 7.5), breaks = seq(0, 7, 1)) +
+            ggplot2::theme_minimal(base_size = 12) +
+            ggplot2::theme(
+                axis.text.x = ggplot2::element_text(angle = 45, hjust = 1, size = 10, face = "bold"),
+                axis.text.y = ggplot2::element_text(size = 11),
+                axis.title.y = ggplot2::element_text(size = 12, face = "bold"),
+                plot.title = ggplot2::element_text(size = 16, face = "bold", hjust = 0.5, margin = ggplot2::margin(b = 15)),
+                panel.grid.major.x = ggplot2::element_blank(),
+                panel.grid.minor = ggplot2::element_blank()
+            ) +
+            ggplot2::labs(title = "Bewältigungsstrategien (Brief COPE)", x = "", y = "Score (1-4)")
+        
+        # Save plots
+        rcq_file <- tempfile(fileext = ".png")
+        bfi_radar_file <- tempfile(fileext = ".png")
+        cope_file <- tempfile(fileext = ".png")
+        
         suppressMessages({
-            ggplot2::ggsave(bar_file, bar_plot, width = 12, height = 6, dpi = 150, bg = "white")
+            ggplot2::ggsave(rcq_file, rcq_plot, width = 11, height = 6, dpi = 150, bg = "white")
+            ggplot2::ggsave(bfi_radar_file, bfi_radar_plot, width = 9, height = 9, dpi = 150, bg = "white")
+            ggplot2::ggsave(cope_file, cope_plot, width = 11, height = 6, dpi = 150, bg = "white")
         })
         
-        bar_base64 <- ""
-        if (requireNamespace("base64enc", quietly = TRUE)) {
-            bar_base64 <- base64enc::base64encode(bar_file)
-        }
-        unlink(bar_file)
+        rcq_base64 <- ""
+        bfi_radar_base64 <- ""
+        cope_base64 <- ""
         
-        # Generate HTML report
+        if (requireNamespace("base64enc", quietly = TRUE)) {
+            rcq_base64 <- base64enc::base64encode(rcq_file)
+            bfi_radar_base64 <- base64enc::base64encode(bfi_radar_file)
+            cope_base64 <- base64enc::base64encode(cope_file)
+        }
+        
+        unlink(c(rcq_file, bfi_radar_file, cope_file))
+        
+        # =============================================================================
+        # GENERATE HTML REPORT
+        # =============================================================================
+        
         html <- paste0(
             '<style>',
             '.page-title, .study-title, h1:first-child { display: none !important; }',
             '</style>',
-            '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
-            '<h2 style="color: #2c3e50; text-align: center; margin-bottom: 25px;">Ihre Ergebnisse</h2>',
-            '<div class="report-section" style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 25px;">',
-            if (bar_base64 != "") paste0('<img src="data:image/png;base64,', bar_base64, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 8px;">') else "",
+            '<div id="report-content" style="padding: 20px; max-width: 1100px; margin: 0 auto; font-family: Arial, sans-serif;">',
+            '<h1 style="color: #2c3e50; text-align: center; margin-bottom: 40px; font-size: 26px; font-weight: bold;">',
+            'Ihre RCQ Studienergebnisse</h1>',
+            
+            # RCQ Section
+            '<div style="background: #ffffff; padding: 25px; margin-bottom: 25px; border: 1px solid #e0e0e0; border-radius: 6px;">',
+            '<h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px; font-weight: bold; border-bottom: 2px solid #2c3e50; padding-bottom: 10px;">',
+            'Resilienz und Coping (RCQ)</h2>',
+            if (rcq_base64 != "") paste0('<img src="data:image/png;base64,', rcq_base64, 
+                                        '" style="width: 100%; max-width: 950px; display: block; margin: 15px auto;">') else "",
+            '<div style="text-align: center; padding: 15px; background: #f8f9fa; margin-top: 15px; border-radius: 4px;">',
+            '<span style="font-size: 14px; color: #7f8c8d; font-weight: bold;">RCQ GESAMTSCORE</span><br>',
+            '<span style="font-size: 28px; font-weight: bold; color: #2c3e50;">', round(rcq_total, 2), '</span>',
+            '<span style="font-size: 16px; color: #7f8c8d;"> / 7.00</span>',
             '</div>',
-            '<div class="report-section" style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">',
-            '<h3 style="color: #2c3e50;">Detaillierte Werte</h3>',
-            '<table style="width: 100%; border-collapse: collapse;">',
-            '<tr style="background: #f8f9fa;">',
-            '<th style="padding: 12px; border-bottom: 2px solid #3498db; text-align: left;">Dimension</th>',
-            '<th style="padding: 12px; border-bottom: 2px solid #3498db; text-align: center;">Score</th>',
-            '</tr>'
+            '</div>',
+            
+            # Big Five Section with RADAR
+            '<div style="background: #ffffff; padding: 25px; margin-bottom: 25px; border: 1px solid #e0e0e0; border-radius: 6px;">',
+            '<h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px; font-weight: bold; border-bottom: 2px solid #2c3e50; padding-bottom: 10px;">',
+            'Persönlichkeit (Big Five)</h2>',
+            if (bfi_radar_base64 != "") paste0('<img src="data:image/png;base64,', bfi_radar_base64, 
+                                        '" style="width: 100%; max-width: 750px; display: block; margin: 15px auto;">') else "",
+            '</div>',
+            
+            # Coping Section
+            '<div style="background: #ffffff; padding: 25px; margin-bottom: 25px; border: 1px solid #e0e0e0; border-radius: 6px;">',
+            '<h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px; font-weight: bold; border-bottom: 2px solid #2c3e50; padding-bottom: 10px;">',
+            'Bewältigungsstrategien (Brief COPE)</h2>',
+            if (cope_base64 != "") paste0('<img src="data:image/png;base64,', cope_base64, 
+                                        '" style="width: 100%; max-width: 950px; display: block; margin: 15px auto;">') else "",
+            '<div style="text-align: center; padding: 15px; background: #f8f9fa; margin-top: 15px; border-radius: 4px;">',
+            '<span style="font-size: 14px; color: #7f8c8d; font-weight: bold;">COPING GESAMTSCORE</span><br>',
+            '<span style="font-size: 28px; font-weight: bold; color: #2c3e50;">', round(cope_total, 2), '</span>',
+            '<span style="font-size: 16px; color: #7f8c8d;"> / 4.00</span>',
+            '</div>',
+            '</div>',
+            
+            # Additional Scores Section
+            '<div style="background: #ffffff; padding: 25px; margin-bottom: 25px; border: 1px solid #e0e0e0; border-radius: 6px;">',
+            '<h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px; font-weight: bold; border-bottom: 2px solid #2c3e50; padding-bottom: 10px;">',
+            'Weitere Dimensionen</h2>',
+            '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">',
+            '<div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 4px;">',
+            '<span style="font-size: 13px; color: #7f8c8d; font-weight: bold;">POLITISCHE SELBSTWIRKSAMKEIT</span><br>',
+            '<span style="font-size: 24px; font-weight: bold; color: #2c3e50;">', round(pse_score, 2), '</span>',
+            '<span style="font-size: 14px; color: #7f8c8d;"> / 7.00</span>',
+            '</div>',
+            '<div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 4px;">',
+            '<span style="font-size: 13px; color: #7f8c8d; font-weight: bold;">ARBEITSKLIMA</span><br>',
+            '<span style="font-size: 24px; font-weight: bold; color: #2c3e50;">', round(woc_score, 2), '</span>',
+            '<span style="font-size: 14px; color: #7f8c8d;"> / 6.00</span>',
+            '</div>',
+            '</div>',
+            '</div>',
+            
+            # Detailed Scores Table
+            '<div style="background: #ffffff; padding: 25px; margin-bottom: 25px; border: 1px solid #e0e0e0; border-radius: 6px;">',
+            '<h2 style="color: #2c3e50; margin-bottom: 20px; font-size: 20px; font-weight: bold; border-bottom: 2px solid #2c3e50; padding-bottom: 10px;">',
+            'Alle Dimensionen im Detail</h2>',
+            '<table style="width: 100%; border-collapse: collapse; margin-top: 15px;">',
+            '<thead>',
+            '<tr style="background: #2c3e50; color: white;">',
+            '<th style="padding: 14px; text-align: left; font-size: 14px; font-weight: bold;">Dimension</th>',
+            '<th style="padding: 14px; text-align: center; font-size: 14px; font-weight: bold;">Score</th>',
+            '</tr>',
+            '</thead>',
+            '<tbody>'
         )
         
-        for (name in names(ordered_scores)) {
-            value <- ordered_scores[[name]]
+        # Add all scores to table (without interpretation column)
+        for (i in seq_along(all_scores)) {
+            name <- names(all_scores)[i]
+            value <- all_scores[[i]]
+            
+            row_color <- if (i %% 2 == 0) "#f8f9fa" else "white"
+            
             html <- paste0(html,
-                '<tr style="border-bottom: 1px solid #e0e0e0;">',
-                '<td style="padding: 12px;">', name, '</td>',
-                '<td style="padding: 12px; text-align: center;"><strong>', value, '</strong></td>',
-                           '</tr>'
+                '<tr style="background: ', row_color, '; border-bottom: 1px solid #e0e0e0;">',
+                '<td style="padding: 12px; font-size: 14px;">', name, '</td>',
+                '<td style="padding: 12px; text-align: center; font-size: 16px; font-weight: bold; color: #2c3e50;">', 
+                value, '</td>',
+                '</tr>'
             )
         }
         
         html <- paste0(html,
-                       '</table>',
+            '</tbody>',
+            '</table>',
             '</div>',
-                       '</div>'
+            
+            # Download Section (PDF & CSV)
+            '<div class="download-section" style="background: #f8f9fa; padding: 20px; border-radius: 4px; margin: 20px 0; border: 1px solid #e0e0e0;">',
+            '<h4 style="color: #2c3e50; margin-bottom: 15px; text-align: center; font-size: 18px; font-weight: bold;">',
+            'Ergebnisse exportieren',
+            '</h4>',
+            '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">',
+            
+            # PDF Download Button
+            '<button onclick="if(typeof Shiny !== \'undefined\') { Shiny.setInputValue(\'download_pdf_trigger\', Math.random(), {priority: \'event\'}); } else { alert(\'Download nicht verfügbar\'); }" class="btn btn-primary" style="background: #2c3e50; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">',
+            '<i class="fas fa-file-pdf" style="margin-right: 8px;"></i>',
+            'PDF herunterladen',
+            '</button>',
+            
+            # CSV Download Button  
+            '<button onclick="if(typeof Shiny !== \'undefined\') { Shiny.setInputValue(\'download_csv_trigger\', Math.random(), {priority: \'event\'}); } else { alert(\'Download nicht verfügbar\'); }" class="btn btn-success" style="background: #7f8c8d; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">',
+            '<i class="fas fa-file-csv" style="margin-right: 8px;"></i>',
+            'CSV herunterladen',
+            '</button>',
+            
+            '</div>',
+            '</div>',
+            
+            # Print styles
+            '<style>',
+            '@media print {',
+            '  .download-section { display: none !important; }',
+            '  body { font-size: 11pt; }',
+            '  .report-section { page-break-inside: avoid; }',
+            '  h2 { color: #2c3e50 !important; -webkit-print-color-adjust: exact; }',
+            '}',
+            '</style>',
+            
+            # Footer
+            '<div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 4px; text-align: center; border: 1px solid #e0e0e0;">',
+            '<p style="color: #7f8c8d; font-size: 13px; margin: 0; line-height: 1.6;">',
+            'Vielen Dank für Ihre Teilnahme an der RCQ Studie!<br>',
+            'Diese Ergebnisse dienen zu Forschungszwecken und stellen keine klinische Diagnose dar.',
+            '</p>',
+            '</div>',
+            
+            '</div>'
         )
         
         return(shiny::HTML(html))
         
     }, error = function(e) {
         cat("ERROR in create_rcq_report:", e$message, "\n")
-        return(shiny::HTML('<div style="padding: 20px; color: red;"><h2>Fehler beim Erstellen der Ergebnisse</h2><p>Ein Fehler ist aufgetreten.</p></div>'))
+        cat("Traceback:", paste(deparse(sys.calls()), collapse = "\n"), "\n")
+        return(shiny::HTML(paste0(
+            '<div style="padding: 20px; color: red;">',
+            '<h2>Fehler beim Erstellen der Ergebnisse</h2>',
+            '<p>Ein Fehler ist aufgetreten: ', e$message, '</p>',
+            '</div>'
+        )))
     })
 }
 
@@ -858,12 +1279,19 @@ study_config <- inrep::create_study_config(
     progress_style = "bar",
     language = "de",
     session_save = TRUE,
-    session_timeout = 3600,
+    session_timeout = 3600,  # Session will timeout after 3600 seconds (1 hour)
+    # NOTE: When session times out or study completes:
+    # 1. Browser/tab will automatically close
+    # 2. All data is saved before closing
+    # 3. Shiny app is stopped with stopApp()
+    # 4. R script terminates completely (if running in background)
+    # This ensures no background R processes remain running
     results_processor = create_rcq_report
 )
 
 # Use only first 100 items from rcq_items for the study
-rcq_items_study <- rcq_items[1:100, ]
+#rcq_items_study <- rcq_items[1:100, ]
+rcq_items_study <- rcq_items
 
 # =============================================================================
 # LAUNCH STUDY
@@ -874,5 +1302,6 @@ inrep::launch_study(
     item_bank = rcq_items_study,
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
-    save_format = "csv"
+    save_format = "csv",
+    debug_mode = TRUE  # Enable debug mode: STRG+A = fill page, STRG+Q = auto-fill all
 )

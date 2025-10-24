@@ -1,3 +1,5 @@
+#' NOTE THIS IS UNDER ACTIVE DEVELOPMENT - WE PUT ALL IN ONE FUNCTION FOR NOW
+
 #' Launch Adaptive Study Interface
 #'
 #' Launches a Shiny-based adaptive or non-adaptive assessment interface that serves as
@@ -39,6 +41,10 @@
 #' @param keep_alive_interval Keep-alive ping interval in seconds (default: 10).
 #' @param enable_error_recovery Logical indicating whether to enable automatic error recovery
 #'   with up to 3 recovery attempts before graceful degradation.
+#' @param debug_mode Logical indicating whether to enable debug mode (default: FALSE).
+#'   When TRUE, enables keyboard shortcuts for rapid testing: STRG+A (CTRL+A) fills current page with
+#'   random responses, STRG+Q (CTRL+Q) auto-fills all pages until results are reached.
+#'   A red debug indicator appears in the bottom-right corner. **Use only for development/testing!**
 #' @param port Numeric port number for Shiny application (default: 3838).
 #'   The application will be accessible at http://host:port.
 #' @param launch_browser Logical indicating whether to automatically open browser (default: TRUE).
@@ -528,6 +534,8 @@ launch_study <- function(
     data_preservation_interval = 30,
     keep_alive_interval = 10,
     enable_error_recovery = TRUE,
+    # DEBUG MODE PARAMETERS
+    debug_mode = FALSE,  # Enable debug shortcuts: STRG+A (fill page), STRG+Q (autofill until results)
     # IMMEDIATE DISPLAY PARAMETERS
     ui_render_delay = NULL,
     package_loading_delay = NULL,
@@ -1695,6 +1703,224 @@ launch_study <- function(
           100% { transform: rotate(360deg) !important; }
         }
       ")),
+      
+      # DEBUG MODE: Auto-fill functionality (CTRL+FILL / CTRL+SHIFT+F)
+      if (debug_mode) {
+        shiny::tags$script(shiny::HTML("
+          // DEBUG MODE AUTO-FILL FUNCTIONALITY
+          console.log('DEBUG MODE ENABLED: Use CTRL+FILL to fill current page, CTRL+SHIFT+F to autofill until results');
+          
+          document.addEventListener('DOMContentLoaded', function() {
+            // Helper function to generate random text
+            function randomText(length = 10) {
+              const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+              let result = '';
+              for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+              }
+              return result;
+            }
+            
+            // Helper function to generate random number
+            function randomNumber(min, max) {
+              return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+            
+            // Helper function to check if element is visible
+            function isVisible(el) {
+              return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length) && 
+                     window.getComputedStyle(el).visibility !== 'hidden' &&
+                     window.getComputedStyle(el).display !== 'none';
+            }
+            
+            // Function to fill all visible inputs on current page
+            function fillCurrentPage() {
+              console.log('DEBUG: Filling current page...');
+              let filledCount = 0;
+              
+              // Fill text inputs
+              document.querySelectorAll('input[type=\"text\"], input[type=\"number\"], input[type=\"email\"], textarea').forEach(function(input) {
+                if (isVisible(input) && !input.disabled && !input.readOnly) {
+                  if (input.type === 'number') {
+                    const min = parseInt(input.min) || 18;
+                    const max = parseInt(input.max) || 99;
+                    input.value = randomNumber(min, max);
+                  } else if (input.type === 'email') {
+                    input.value = 'test' + randomNumber(100, 999) + '@example.com';
+                  } else {
+                    input.value = randomText(randomNumber(5, 15));
+                  }
+                  // Trigger all events for Shiny
+                  input.dispatchEvent(new Event('input', { bubbles: true }));
+                  input.dispatchEvent(new Event('change', { bubbles: true }));
+                  if (typeof jQuery !== 'undefined') {
+                    $(input).trigger('change');
+                  }
+                  filledCount++;
+                }
+              });
+              
+              // Fill radio buttons (select random option)
+              const radioGroups = {};
+              document.querySelectorAll('input[type=\"radio\"]').forEach(function(radio) {
+                if (isVisible(radio) && !radio.disabled) {
+                  const name = radio.name;
+                  if (!radioGroups[name]) {
+                    radioGroups[name] = [];
+                  }
+                  radioGroups[name].push(radio);
+                }
+              });
+              
+              Object.keys(radioGroups).forEach(function(groupName) {
+                const radios = radioGroups[groupName];
+                if (radios.length > 0) {
+                  const randomIndex = randomNumber(0, radios.length - 1);
+                  radios[randomIndex].checked = true;
+                  radios[randomIndex].dispatchEvent(new Event('change', { bubbles: true }));
+                  if (typeof jQuery !== 'undefined') {
+                    $(radios[randomIndex]).trigger('change');
+                  }
+                  filledCount++;
+                }
+              });
+              
+              // Fill checkboxes (randomly check/uncheck)
+              document.querySelectorAll('input[type=\"checkbox\"]').forEach(function(checkbox) {
+                if (isVisible(checkbox) && !checkbox.disabled) {
+                  checkbox.checked = Math.random() > 0.5;
+                  checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                  if (typeof jQuery !== 'undefined') {
+                    $(checkbox).trigger('change');
+                  }
+                  filledCount++;
+                }
+              });
+              
+              // Fill select dropdowns (select random option, not first)
+              document.querySelectorAll('select').forEach(function(select) {
+                if (isVisible(select) && !select.disabled && select.options.length > 1) {
+                  const randomIndex = randomNumber(1, select.options.length - 1);
+                  select.selectedIndex = randomIndex;
+                  select.dispatchEvent(new Event('change', { bubbles: true }));
+                  if (typeof jQuery !== 'undefined') {
+                    $(select).trigger('change');
+                  }
+                  filledCount++;
+                }
+              });
+              
+              // Fill range sliders
+              document.querySelectorAll('input[type=\"range\"]').forEach(function(range) {
+                if (isVisible(range) && !range.disabled) {
+                  const min = parseInt(range.min) || 1;
+                  const max = parseInt(range.max) || 7;
+                  range.value = randomNumber(min, max);
+                  range.dispatchEvent(new Event('input', { bubbles: true }));
+                  range.dispatchEvent(new Event('change', { bubbles: true }));
+                  if (typeof jQuery !== 'undefined') {
+                    $(range).trigger('change');
+                  }
+                  filledCount++;
+                }
+              });
+              
+              console.log('DEBUG: Page filled successfully - ' + filledCount + ' fields filled');
+            }
+            
+            // Function to auto-fill and click next until results page
+            function autoFillUntilResults() {
+              console.log('DEBUG: Auto-filling until results page...');
+              
+              function fillAndContinue() {
+                // Check if we're on results page (look for download buttons or specific results indicators)
+                const isResultsPage = document.querySelector('.download-section') || 
+                                     document.querySelector('#report-content') || 
+                                     document.querySelector('[id*=\"download_pdf\"]');
+                
+                if (isResultsPage) {
+                  console.log('DEBUG: Results page reached, stopping auto-fill');
+                  return;
+                }
+                
+                // Fill current page
+                fillCurrentPage();
+                
+                // Wait a bit for Shiny to process, then click next button
+                setTimeout(function() {
+                  // Look for next/continue/weiter button - multiple strategies
+                  let nextButton = null;
+                  
+                  // Strategy 1: Look for buttons with 'next' in ID
+                  nextButton = document.querySelector('button[id*=\"next\"], button[id*=\"Next\"]');
+                  
+                  // Strategy 2: Look for buttons with text content
+                  if (!nextButton) {
+                    const buttons = document.querySelectorAll('button, input[type=\"submit\"]');
+                    for (let btn of buttons) {
+                      const text = btn.textContent || btn.value || '';
+                      if (text.match(/weiter|next|continue|fortfahren/i)) {
+                        nextButton = btn;
+                        break;
+                      }
+                    }
+                  }
+                  
+                  // Strategy 3: Look for primary action buttons
+                  if (!nextButton) {
+                    nextButton = document.querySelector('.btn-primary, .action-button');
+                  }
+                  
+                  if (nextButton && !nextButton.disabled && isVisible(nextButton)) {
+                    console.log('DEBUG: Clicking next button...', nextButton);
+                    nextButton.click();
+                    
+                    // Continue with next page after a delay
+                    setTimeout(fillAndContinue, 2000);
+                  } else {
+                    console.log('DEBUG: No next button found or button disabled');
+                    // Try one more time after a longer delay
+                    setTimeout(function() {
+                      const retryButton = document.querySelector('button:not([disabled])');
+                      if (retryButton && isVisible(retryButton)) {
+                        console.log('DEBUG: Retry clicking button...', retryButton);
+                        retryButton.click();
+                        setTimeout(fillAndContinue, 2000);
+                      }
+                    }, 1000);
+                  }
+                }, 800);
+              }
+              
+              fillAndContinue();
+            }
+            
+            // Keyboard event listener
+            document.addEventListener('keydown', function(e) {
+              // CTRL+A (STRG+A) - Fill current page only
+              if (e.ctrlKey && !e.shiftKey && (e.key === 'a' || e.key === 'A')) {
+                e.preventDefault();
+                fillCurrentPage();
+                console.log('DEBUG: CTRL+A - Filled current page');
+              }
+              
+              // CTRL+Q (STRG+Q) - Auto-fill all pages until results
+              if (e.ctrlKey && !e.shiftKey && (e.key === 'q' || e.key === 'Q')) {
+                e.preventDefault();
+                autoFillUntilResults();
+                console.log('DEBUG: CTRL+Q - Starting auto-fill sequence');
+              }
+            });
+            
+            // Show debug indicator
+            const debugIndicator = document.createElement('div');
+            debugIndicator.id = 'debug-mode-indicator';
+            debugIndicator.innerHTML = 'DEBUG MODE<br><small>STRG+A: Fill page | STRG+Q: Auto-fill all</small>';
+            debugIndicator.style.cssText = 'position: fixed; bottom: 10px; right: 10px; background: #ff6b6b; color: white; padding: 10px 15px; border-radius: 6px; font-family: monospace; font-size: 11px; z-index: 9999; box-shadow: 0 2px 10px rgba(0,0,0,0.3); text-align: center; line-height: 1.4;';
+            document.body.appendChild(debugIndicator);
+          });
+        "))
+      },
       
       # JAVASCRIPT: ULTIMATE positioning enforcement
       shiny::tags$script(shiny::HTML("
@@ -3252,6 +3478,45 @@ launch_study <- function(
                 logger(sprintf("Final data preservation failed: %s", e$message), level = "WARNING")
               })
             }
+            
+            # Close browser/tab first
+            tryCatch({
+              if (requireNamespace("shinyjs", quietly = TRUE)) {
+                shinyjs::runjs("
+                  (function() {
+                    try {
+                      window.close();
+                    } catch(e) {
+                      try {
+                        if (window.opener) {
+                          window.opener = null;
+                          window.close();
+                        }
+                      } catch(e2) {
+                        window.location.href = 'about:blank';
+                      }
+                    }
+                  })();
+                ")
+              }
+            }, error = function(e) {
+              logger(sprintf("Browser close failed: %s", e$message), level = "WARNING")
+            })
+            
+            # Stop the Shiny app and terminate R script
+            logger("Stopping Shiny app and terminating R process due to timeout", level = "INFO")
+            tryCatch({
+              # Schedule app stop after a brief delay to allow data save
+              later::later(function() {
+                shiny::stopApp()
+                # Force quit R process if running in background
+                if (!interactive()) {
+                  quit(save = "no", status = 0)
+                }
+              }, delay = 2)
+            }, error = function(e) {
+              logger(sprintf("App stop failed: %s", e$message), level = "ERROR")
+            })
           }
         
         # Update activity tracking
@@ -4990,11 +5255,21 @@ launch_study <- function(
                   logger("shinyjs not available for auto-close", level = "WARNING")
                 }
                 
-                # Also try R app close as fallback
+                # Stop the Shiny app and terminate R script
+                logger("Stopping Shiny app and terminating R process after study completion", level = "INFO")
                 tryCatch({
-                  shiny::stopApp()
+                  # Schedule app stop after a brief delay to allow JavaScript to execute
+                  later::later(function() {
+                    shiny::stopApp()
+                    # Force quit R process if running in background
+                    if (!interactive()) {
+                      quit(save = "no", status = 0)
+                    }
+                  }, delay = 3)
                 }, error = function(e) {
-                  # Ignore R app close errors - JavaScript will handle it
+                  logger(sprintf("App stop failed: %s", e$message), level = "ERROR")
+                  # Fallback: immediate stop
+                  shiny::stopApp()
                 })
               }
             })

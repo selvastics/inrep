@@ -675,8 +675,8 @@ custom_page_flow <- list(
     list(
         id = "page2",
         type = "demographics",
-        title = "Soziodemographische Angaben",
-        title_en = "Sociodemographic Information",
+        title = "",
+        title_en = "",
         demographics = c("Alter_VPN", "Geschlecht")
     ),
     
@@ -684,8 +684,8 @@ custom_page_flow <- list(
     list(
         id = "page3",
         type = "demographics",
-        title = "Wohnsituation",
-        title_en = "Living Situation",
+        title = "",
+        title_en = "",
         demographics = c("Wohnstatus", "Wohn_Zusatz")
     ),
     
@@ -693,8 +693,8 @@ custom_page_flow <- list(
     list(
         id = "page4",
         type = "demographics",
-        title = "Lebensstil",
-        title_en = "Lifestyle",
+        title = "",
+        title_en = "",
         demographics = c("Rauchen", "Ernährung", "Ernährung_Zusatz")
     ),
     
@@ -702,8 +702,8 @@ custom_page_flow <- list(
     list(
         id = "page5",
         type = "demographics",
-        title = "Bildung",
-        title_en = "Education",
+        title = "",
+        title_en = "",
         demographics = c("Note_Englisch", "Note_Mathe")
     ),
     
@@ -2418,5 +2418,6 @@ inrep::launch_study(
     item_bank = all_items_de,
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
-    save_format = "csv"
+    save_format = "csv",
+        debug_mode = TRUE  # Enable debug mode: STRG+A = fill page, STRG+Q = auto-fill all
 )

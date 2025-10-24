@@ -67,6 +67,27 @@ launch_study(config, bfi_items)
 That's it! This code creates a fully functional adaptive test interface. Sure, some things are missing, but we will get to that later.
 Note that some BFI item are used in the example but you can use your own item bank.
 
+### Debug Mode for Development
+
+When developing and testing your assessments, you can enable **debug mode** to rapidly fill forms with random data:
+
+```{r debug_mode, eval=FALSE}
+# Enable debug mode with keyboard shortcuts
+launch_study(config, bfi_items, debug_mode = TRUE)
+```
+
+**Debug mode features:**
+- **STRG+A** (CTRL+A): Automatically fills the current page with random responses (text, numbers, radio buttons, checkboxes, etc.)
+- **STRG+Q** (CTRL+Q): Auto-fills ALL pages sequentially until the results page is reached
+- A red indicator appears in the bottom-right corner showing available shortcuts
+- **Use only for development/testing** - not for production!
+
+This is extremely useful when:
+- Testing your study flow and page transitions
+- Debugging results calculation functions
+- Checking report generation
+- Iterating quickly during development
+
 
 ## Understanding the Components
 
@@ -350,7 +371,7 @@ config <- create_study_config(
 )
 
 # Launch the adaptive test with our custom item bank
-launch_study(config, work_personality_items)
+launch_study(config, work_personality_items, debug_mode = TRUE)  # Debug mode enabled
 ```
 
 **You should always use a custom item bank:**
@@ -406,7 +427,7 @@ config <- create_study_config(
 )
 
 # Launch the adaptive test
-launch_study(config, bfi_items)
+launch_study(config, bfi_items, debug_mode = TRUE)
 ```
 
 **Key differences with bfi_items:**
@@ -431,7 +452,7 @@ config <- create_study_config(
 )
 
 # Launch the adaptive test with our custom item bank
-launch_study(config, work_personality_items)
+launch_study(config, work_personality_items, debug_mode = TRUE)
 ```
 
 **What we need to adjust and why compared to the first example:**
@@ -475,7 +496,7 @@ config <- create_study_config(
 )
 
 # Launch the adaptive test with our binary item bank
-launch_study(config, math_knowledge_items)
+launch_study(config, math_knowledge_items, debug_mode = TRUE)
 ```
 
 **Key differences between GRM and 2PL assessments:**
