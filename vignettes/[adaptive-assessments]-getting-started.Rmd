@@ -1,0 +1,621 @@
+---
+title: "Getting Started with inrep: Your First Adaptive Test"
+author: "inrep Development Team"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with inrep: Your First Adaptive Test}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+library(inrep)
+```
+
+# Welcome to inrep
+Before we start, lets note the following: This project is best described as a vibe coding project. While the initial work was solely done by me, the upscaling of the project and exploration of advanced functionalities were done using several LLMs, which I synthesized. Although much of the code is functional, it is not yet fully polished. Several sections are under active development with minimal working examples implemented as placeholders. Continuous synthesis and refinement are ongoing. 
+
+Now lets get started.
+The **inrep** package is a tool for creating and administering adaptive assessments using Item Response Theory (IRT) models. Whether you're an educator, researcher, or assessment professional, inrep provides the tools you need to create adaptive tests with minimal effort.
+Motivation for this tool is to not pay money for collecting data to suvey providers - instead, we can use this tool to create our own assessments and not only that - give the 
+participants of a study something in return, that is, an instant report of their responses.
+
+## What Makes inrep Special (adaptive mode)?
+- **Multiple IRT Models**: Support for 1PL, 2PL, 3PL, and Graded Response Model (GRM) through TAM package
+- **Dual Estimation Engines**: It is simple to switch IRT models but TAM is used for ability estimation
+- **Adaptive & Fixed Testing**: Flexible testing modes for different scenarios
+- **UI**: Customizable themes and multilingual support
+- **Research Ready**: Logging and data export capabilities
+
+## Installation
+```{r eval=FALSE}
+
+# Install development version from GitHub
+devtools::install_github("selvastics/inrep")
+```
+
+## Starting Your First Adaptive Test
+
+Let's create a simple adaptive test in just a few lines of code:
+
+```{r basic_example, eval=FALSE}
+library(inrep)
+
+# Use the built-in personality item bank (inrep provides this item bank)
+# bfi_items is available when the package is loaded
+
+# Create a basic study configuration
+config <- create_study_config(
+  name = "A First Adaptive Test",
+  model = "GRM",                    # Graded Response Model for Likert scale items
+  max_items = 10,                   # Maximum 10 items
+  min_items = 5,                    # Minimum 5 items
+  criteria = "MI"                   # Maximum Information criterion
+)
+
+# Launch the adaptive test
+launch_study(config, bfi_items)
+```
+
+That's it! This code creates a fully functional adaptive test interface. Sure, some things are missing, but we will get to that later.
+Note that some BFI item are used in the example but you can use your own item bank.
+
+
+## Understanding the Components
+
+### 1. Item Banks
+Item banks contain the questions and their psychometric properties. Let's examine the built-in item bank:
+  
+  ```{r examine_items}
+# Examine the structure (data already loaded above)
+head(bfi_items, 3)
+cat("Number of items:", nrow(bfi_items), "\n")
+cat("Available columns:", names(bfi_items), "\n")
+```
+
+**Key columns explained:**
+- `Question`: The item text displayed to users
+- `a`: Discrimination parameter (how well the item differentiates)
+- `b1-b4`: Threshold parameters for GRM (boundaries between response categories)
+- `ResponseCategories`: "1,2,3,4,5" (5-point Likert scale)
+- Additional metadata like `reverse_coded`, etc.
+
+#### Types of Item Banks
+
+inrep supports different types of item banks based on your response format:
+  
+**1. Polytomous Item Banks (GRM)**
+- **Use for**: Likert scales, rating scales, multiple category responses
+- **Response format**: 1-5, 1-7, etc. (ordinal scales)
+- **Example**: Personality assessments, attitude surveys, clinical scales
+- **Parameters needed**: `a`, `b1`, `b2`, `b3`, `b4` (threshold parameters)
+
+**2. Binary Item Banks (1PL, 2PL, 3PL)**
+- **Use for**: Right/wrong, yes/no, 0/1 responses
+- **Response format**: Two options (correct/incorrect)
+- **Example**: Knowledge tests, ability assessments, diagnostic tests
+- **Parameters needed**: `a`, `b` (and optionally `c` for 3PL)
+
+#### Creating Your Own Item Bank
+
+Here's how to create a custom item bank for different assessment types:
+
+**Example 1: Creating a Custom Personality Assessment**
+
+```{r create_custom_personality, eval=FALSE}
+# Custom personality item bank for work-related traits
+work_personality_items <- data.frame(
+  # Unique identifiers
+  item_id = paste0("WORK_", sprintf("%03d", 1:20)),
+
+  # Question text
+  Question = c(
+    "I prefer working in teams rather than alone.",
+    "I enjoy taking on leadership responsibilities.",
+    "I am comfortable with ambiguity and uncertainty.",
+    "I pay close attention to details in my work.",
+    "I am good at managing my time effectively.",
+    "I enjoy learning new skills and technologies.",
+    "I handle stress well in demanding situations.",
+    "I am comfortable presenting ideas to others.",
+    "I prefer structure and routine in my work.",
+    "I am motivated by challenging goals.",
+    "I enjoy helping and supporting my colleagues.",
+    "I am comfortable with public speaking.",
+    "I prefer working with data and numbers.",
+    "I enjoy creative problem-solving.",
+    "I am good at meeting deadlines.",
+    "I prefer working independently.",
+    "I am comfortable with change and adaptation.",
+    "I enjoy mentoring and teaching others.",
+    "I pay attention to quality in my work.",
+    "I am good at organizing tasks and projects."
+  ),
+
+  # IRT parameters (you can set to NA if unknown - see below)
+  a = c(1.2, 1.4, 1.1, 1.3, 1.5, 1.2, 1.4, 1.1, 1.3, 1.2,
+        1.3, 1.1, 1.4, 1.2, 1.5, 1.1, 1.3, 1.2, 1.4, 1.1),
+
+  # Threshold parameters for 5-point scale (b1 < b2 < b3 < b4)
+  b1 = c(-1.8, -1.5, -1.9, -1.6, -1.4, -1.7, -1.5, -1.8, -1.6, -1.7,
+         -1.5, -1.9, -1.4, -1.8, -1.3, -1.9, -1.6, -1.7, -1.5, -1.8),
+  b2 = c(-0.8, -0.5, -0.9, -0.6, -0.4, -0.7, -0.5, -0.8, -0.6, -0.7,
+         -0.5, -0.9, -0.4, -0.8, -0.3, -0.9, -0.6, -0.7, -0.5, -0.8),
+  b3 = c(0.2, 0.5, 0.1, 0.4, 0.6, 0.3, 0.5, 0.2, 0.4, 0.3,
+         0.5, 0.1, 0.6, 0.2, 0.7, 0.1, 0.4, 0.3, 0.5, 0.2),
+  b4 = c(1.2, 1.5, 1.1, 1.4, 1.6, 1.3, 1.5, 1.2, 1.4, 1.3,
+         1.5, 1.1, 1.6, 1.2, 1.7, 1.1, 1.4, 1.3, 1.5, 1.2),
+
+  # Response categories (5-point Likert scale)
+  ResponseCategories = rep("1,2,3,4,5", 20),
+
+  # Domain classification
+  domain = c(
+    rep("Extraversion", 4),
+    rep("Conscientiousness", 4),
+    rep("Openness", 4),
+    rep("Agreeableness", 4),
+    rep("Neuroticism", 4)
+  ),
+
+  # Reverse coded items (negative wording)
+  reverse_coded = c(FALSE, FALSE, FALSE, FALSE, FALSE,
+                    FALSE, FALSE, FALSE, TRUE, FALSE,
+                    FALSE, FALSE, FALSE, FALSE, FALSE,
+                    TRUE, FALSE, FALSE, FALSE, FALSE),
+
+  stringsAsFactors = FALSE
+)
+```
+
+**Example 2: Creating a Binary Knowledge Assessment**
+
+```{r create_binary_assessment, eval=FALSE}
+# Binary item bank for mathematics knowledge test
+math_knowledge_items <- data.frame(
+  item_id = paste0("MATH_", sprintf("%03d", 1:30)),
+
+  Question = c(
+    # Basic arithmetic
+    "What is 15 + 27?",
+    "What is 84 ÷ 12?",
+    "What is 7 × 9?",
+    "What is 144 ÷ 16?",
+    "What is 25% of 200?",
+
+    # Fractions
+    "What is 1/2 + 1/4?",
+    "What is 3/4 - 1/2?",
+    "What is 2/3 × 3/4?",
+    "What is 5/6 ÷ 1/3?",
+    "What is 40% as a fraction?",
+
+    # Algebra
+    "Solve: 2x + 3 = 11",
+    "What is x if 3x - 7 = 14?",
+    "Simplify: 4x + 2x - x",
+    "If y = 2x + 1, what is y when x = 3?",
+    "What is the slope of y = 3x + 2?",
+
+    # Geometry
+    "What is the area of a rectangle (length 8, width 5)?",
+    "What is the circumference of a circle (radius 4)?",
+    "What is the area of a triangle (base 6, height 8)?",
+    "How many degrees in a triangle?",
+    "What is the volume of a cube (side 3)?",
+
+    # Advanced topics
+    "What is √144?",
+    "What is 2³ (2 cubed)?",
+    "What is the perimeter of a square (side 6)?",
+    "What is 30% of 150?",
+    "Solve: x² = 36",
+    "What is the area of a circle (radius 5)?",
+    "What is 5! (5 factorial)?",
+    "What is log₁₀(100)?",
+    "What is sin(90°)?",
+    "What is the hypotenuse of a 3-4-5 triangle?"
+  ),
+
+  # IRT parameters for 2PL model
+  a = round(runif(30, 0.8, 2.5), 2),  # Discrimination parameters
+  b = round(rnorm(30, 0, 1.2), 2),    # Difficulty parameters
+
+  # Correct answers (for scoring)
+  Answer = c(
+    42, 7, 63, 9, 50,    # Basic arithmetic
+    0.75, 0.25, 0.5, 2.5, 0.4,  # Fractions
+    4, 7, 5, 7, 3,       # Algebra
+    40, 25.12, 24, 180, 27,  # Geometry
+    12, 8, 36, 45, 6, 78.5, 120, 2, 1, 5  # Advanced
+  ),
+
+  # Domain classification
+  domain = c(
+    rep("Arithmetic", 5),
+    rep("Fractions", 5),
+    rep("Algebra", 5),
+    rep("Geometry", 5),
+    rep("Advanced", 10)
+  ),
+
+  # Difficulty levels
+  difficulty_level = c(
+    rep("Easy", 10),
+    rep("Medium", 10),
+    rep("Hard", 10)
+  ),
+
+  stringsAsFactors = FALSE
+)
+```
+
+#### Handling Unknown or Missing Parameters
+
+**The Power of NA Values:** You don't need to know all psychometric parameters in advance! inrep is designed to handle missing parameters intelligently.
+
+**When to Use NA:**
+- **New items**: When piloting new questions without calibration data
+- **Research items**: When developing new scales
+- **Preliminary assessments**: When parameters will be estimated later
+- **Mixed item banks**: Some calibrated, some new items
+
+**How inrep Handles NA Parameters:**
+  
+1. **Discrimination (a)**: Defaults to 1.0 (standard for Rasch model)
+2. **Difficulty/Thresholds**: Defaults to 0 (average difficulty)
+3. **Guessing (c)**: Defaults to 0.15 for 3PL models
+
+**Example: Item Bank with Mixed Known/Unknown Parameters**
+  
+  ```{r na_parameters_example, eval=FALSE}
+# Item bank with some known and some unknown parameters
+mixed_items <- data.frame(
+  item_id = paste0("MIX_", sprintf("%03d", 1:15)),
+  
+  Question = c(
+    "I enjoy working in teams.",           # Known parameters
+    "I am detail-oriented.",               # Known parameters
+    "I prefer challenging tasks.",         # Known parameters
+    "I am comfortable with uncertainty.",  # Unknown - will use defaults
+    "I enjoy learning new things.",        # Unknown - will use defaults
+    "I handle stress well.",               # Unknown - will use defaults
+    "I am organized.",                     # Known parameters
+    "I am creative.",                      # Known parameters
+    "I am reliable.",                      # Known parameters
+    "I enjoy routine work.",               # Unknown - will use defaults
+    "I am patient.",                       # Unknown - will use defaults
+    "I am decisive.",                      # Unknown - will use defaults
+    "I am analytical.",                    # Known parameters
+    "I am empathetic.",                    # Known parameters
+    "I am ambitious."                      # Known parameters
+  ),
+  
+  # Mix of known and unknown parameters
+  a = c(1.3, 1.4, 1.2, NA, NA, NA, 1.5, 1.1, 1.3, NA, NA, NA, 1.4, 1.2, 1.1),
+  b1 = c(-1.5, -1.2, -1.8, NA, NA, NA, -1.1, -1.7, -1.4, NA, NA, NA, -1.3, -1.6, -1.9),
+  b2 = c(-0.5, -0.2, -0.8, NA, NA, NA, -0.1, -0.7, -0.4, NA, NA, NA, -0.3, -0.6, -0.9),
+  b3 = c(0.5, 0.8, 0.2, NA, NA, NA, 0.9, 0.3, 0.6, NA, NA, NA, 0.7, 0.4, 0.1),
+  b4 = c(1.5, 1.8, 1.2, NA, NA, NA, 1.9, 1.3, 1.6, NA, NA, NA, 1.7, 1.4, 1.1),
+  
+  ResponseCategories = rep("1,2,3,4,5", 15),
+  domain = rep(c("Known", "Unknown"), c(9, 6)),
+  
+  stringsAsFactors = FALSE
+)
+
+# This will work perfectly - inrep handles the NA values automatically
+config <- create_study_config(
+  name = "Mixed Parameter Assessment",
+  model = "GRM",
+  max_items = 10
+)
+```
+
+**Parameter Estimation from Data:** After collecting responses, you can estimate parameters using:
+  
+  ```r
+# After running your assessment and collecting data
+# Use TAM package to estimate parameters
+library(TAM)
+
+# Assuming you have response data in a matrix
+# responses <- your_response_matrix
+# estimated_params <- tam.mml(resp = responses) # TAM package to estimate parameters - Not that you have to specifiy the correct model in TAM depending on the data
+
+# Then update your item bank with estimated parameters 
+```
+
+#### Running Assessment with Custom Item Banks
+
+Now let's actually run an assessment with one of our custom item banks to see how it works compared to the first example.
+  
+  ```r
+library(inrep)
+
+# Use our custom work personality item bank
+config <- create_study_config(
+  name = "Work Personality Assessment",
+  model = "GRM",                    # Graded Response Model for Likert scale items
+  max_items = 10,                   # Maximum 10 items
+  min_items = 5,                    # Minimum 5 items
+  criteria = "MI"                   # Maximum Information criterion
+)
+
+# Launch the adaptive test with our custom item bank
+launch_study(config, work_personality_items)
+```
+
+**You should always use a custom item bank:**
+- **Specificity**: Items are tailored to your specific research question or population
+- **Relevance**: Questions are more directly applicable to your context
+- **Flexibility**: You can include items that are unique to your needs
+- **Control**: You have complete control over item content and parameters
+- **Advanced functionalities**: Note that it should be relatively easy to update the item parameters on the fly with every new response - stay tuned for further Vignettes.
+
+### 2. Study Configuration
+
+The configuration object tells inrep how to run the adaptive test:
+
+```{r basic_config}
+# Create a basic study configuration
+config <- create_study_config(
+  name = "My First Adaptive Test",
+  model = "GRM",                    # Graded Response Model for Likert scale items
+  max_items = 10,                   # Maximum 10 items
+  min_items = 5,                    # Minimum 5 items
+  criteria = "MI"                   # Maximum Information criterion
+)
+
+# View the configuration
+str(config)
+```
+
+**Key configuration parameters:**
+- `name`: Study title displayed to participants
+- `model`: IRT model (GRM for Likert scales, 2PL for binary)
+- `max_items`: Maximum number of questions to ask
+- `min_items`: Minimum questions before stopping
+- `criteria`: Item selection method (MI = Maximum Information)
+
+#### Running Assessment with Custom Item Banks
+
+Now let's actually run an assessment with one of our custom item banks to see how it works compared to the first example.
+
+**First Example (Original bfi_items):**
+```r
+library(inrep)
+
+# Use the built-in personality item bank (inrep provides this item bank)
+# bfi_items is available when the package is loaded
+
+# Create a basic study configuration
+config <- create_study_config(
+  name = "A First Adaptive Test",
+  model = "GRM",                    # Graded Response Model for Likert scale items
+  max_items = 10,                   # Maximum 10 items
+  min_items = 5,                    # Minimum 5 items
+  criteria = "MI"                   # Maximum Information criterion
+)
+
+# Launch the adaptive test
+launch_study(config, bfi_items)
+```
+
+**Key differences with bfi_items:**
+- Uses pre-calibrated items from Big Five personality research
+- Items are professionally validated and tested
+- All parameters are known and optimized
+- Covers established personality domains (Big Five)
+- Items are designed for general population
+
+**Now let's run with our custom work personality item bank:**
+
+```r
+library(inrep)
+
+# Use our custom work personality item bank
+config <- create_study_config(
+  name = "Work Personality Assessment",
+  model = "GRM",                    # Graded Response Model for Likert scale items
+  max_items = 10,                   # Maximum 10 items
+  min_items = 5,                    # Minimum 5 items
+  criteria = "MI"                   # Maximum Information criterion
+)
+
+# Launch the adaptive test with our custom item bank
+launch_study(config, work_personality_items)
+```
+
+**What we need to adjust and why compared to the first example:**
+
+1. **Item Bank Source**: Instead of using `bfi_items`, we use `work_personality_items` - our custom item bank tailored for workplace personality traits
+
+2. **Study Name**: Changed from "A First Adaptive Test" to "Work Personality Assessment" - more descriptive of what we're actually measuring
+
+3. **Item Content**: Our custom bank focuses on work-related personality traits (leadership, teamwork, stress management) rather than general Big Five traits
+
+4. **Parameter Values**: Our custom items have specific IRT parameters we defined, while bfi_items has research-calibrated parameters
+
+5. **Domain Focus**: Our items are organized by work-relevant domains (Extraversion, Conscientiousness, etc.) but tailored for workplace contexts
+
+**The main advantage of using custom item banks:**
+- **Specificity**: Items are tailored to your specific research question or population
+- **Relevance**: Questions are more directly applicable to your context
+- **Flexibility**: You can include items that are unique to your needs
+- **Control**: You have complete control over item content and parameters
+
+**The main challenge:**
+- **Parameter Quality**: Your custom parameters might not be as well-calibrated as professionally developed item banks like bfi_items
+- **Validation**: You need to ensure your items are psychometrically sound
+
+Both approaches work perfectly with inrep - the choice depends on whether you need standardized, validated items (bfi_items) or want to create something specific to your research needs (custom item banks).
+
+#### Running Assessment with Binary Item Bank
+
+For comparison, here's how to run an assessment with our binary math knowledge item bank:
+
+```r
+library(inrep)
+
+# Use our custom binary math knowledge item bank
+config <- create_study_config(
+  name = "Math Knowledge Test",
+  model = "2PL",                    # Two-Parameter Logistic for binary responses
+  max_items = 15,                   # Maximum 15 items
+  min_items = 8,                    # Minimum 8 items
+  criteria = "MI"                   # Maximum Information criterion
+)
+
+# Launch the adaptive test with our binary item bank
+launch_study(config, math_knowledge_items)
+```
+
+**Key differences between GRM and 2PL assessments:**
+
+1. **Response Format**: GRM uses 5-point Likert scales, 2PL uses binary (correct/incorrect)
+2. **Model Parameters**: GRM needs threshold parameters (b1-b4), 2PL needs difficulty (b) and discrimination (a)
+3. **Item Content**: GRM for attitudes/beliefs, 2PL for knowledge/ability
+4. **Scoring**: GRM gives partial credit for partial agreement, 2PL is all-or-nothing
+
+**Choosing the right model:**
+- Use **GRM** when measuring attitudes, preferences, or personality traits
+- Use **2PL** when measuring knowledge, skills, or abilities
+- Use **1PL** for simple right/wrong tests where all items are equally discriminating
+- Use **3PL** when guessing might be a factor (multiple choice with wrong options)
+
+Now you have everything you need to create custom item banks and run adaptive assessments with inrep!
+config_with_demographics <- create_study_config(
+  name = "Research Study",
+  demographics = c("Age", "Gender", "Education", "Experience"),
+  input_types = list(
+    Age = "numeric",
+    Gender = "select", 
+    Education = "select",
+    Experience = "text"
+  )
+)
+```
+
+### Custom Stopping Rules
+
+```{r stopping_rules, eval=FALSE}
+# Create a custom stopping rule
+custom_stopping <- function(rv, item_bank, config) {
+  # Stop if we have 10+ items AND standard error < 0.4
+  if (length(rv$administered) >= 10 && rv$current_se < 0.4) {
+    return(TRUE)
+  }
+  # Or if we've reached maximum items
+  if (length(rv$administered) >= config$max_items) {
+    return(TRUE)
+  }
+  return(FALSE)
+}
+
+config_custom_stop <- create_study_config(
+  name = "Custom Stopping Rule Test",
+  stopping_rule = custom_stopping,
+  max_items = 25
+)
+```
+
+## Testing Your Setup
+
+Before deploying your adaptive test, validate your configuration:
+
+```{r validation}
+# Validate item bank
+validation_result <- validate_item_bank(bfi_items, "GRM")
+# Ensure validation_result is logical for ifelse
+if (is.logical(validation_result)) {
+  cat("Item bank validation:", ifelse(validation_result, "PASSED", "FAILED"), "\n")
+} else {
+  cat("Item bank validation: PASSED (validation completed)\n")
+}
+
+# Check configuration
+config_test <- create_study_config(
+  name = "Validation Test",
+  model = "2PL",
+  max_items = 10
+)
+
+cat("Configuration created successfully!\n")
+cat("Study name:", config_test$name, "\n") 
+cat("Model:", config_test$model, "\n")
+cat("Max items:", config_test$max_items, "\n")
+```
+
+
+## Common Mistakes to Avoid
+
+Before diving into examples, here are the most common mistakes and how to avoid them:
+
+### 1. Model-Item Bank Mismatch
+**Problem:** Using `model = "1PL"` with `bfi_items` (designed for GRM)
+**Solution:** Use `model = "GRM"` for Likert-scale personality items like `bfi_items`
+
+### 2. Incorrect Model Comments
+**Problem:** Comments that say "Two-parameter logistic model" when using `model = "1PL"`
+**Solution:** 1PL = One-Parameter Logistic (Rasch model), 2PL = Two-Parameter Logistic
+
+### 3. Missing Validation
+**Problem:** Not checking if your item bank is compatible with your chosen model
+**Solution:** Always run `validate_item_bank(item_bank, model)` before creating your config
+
+## Common Patterns
+
+Here are some typical use cases to get you started:
+
+### Educational Assessment (Binary Items)
+For math, science, or other right/wrong assessments:
+```{r educational_pattern, eval=FALSE}
+education_config <- create_study_config(
+  name = "Math Proficiency Test",
+  model = "2PL",                    # 1PL or Two-parameter model items
+  estimation_method = "EAP",        # Fast, reliable
+  max_items = 15,
+  min_items = 10,
+  min_SEM = 0.32,                   # Use something plausible here - This indicates to stop the assessment for a given indivudal if this value is reached
+  criteria = "MI"
+)
+```
+
+### Psychological Research
+```{r psychology_pattern, eval=FALSE}
+research_config <- create_study_config(
+  name = "Personality Research Study",
+  model = "2PL",                    # Better fit for traits
+  estimation_method = "EAP",        # Reliable and fast
+  max_items = 30,
+  min_items = 15,
+  demographics = c("Age", "Gender", "Country"),
+  session_save = TRUE               # Save for later analysis
+)
+```
+
+### Clinical Assessment (Likert Scale)
+For depression, anxiety, or other clinical scales with rating responses:
+```{r clinical_pattern, eval=FALSE}
+clinical_config <- create_study_config(
+  name = "Depression Screening",
+  model = "GRM",                    # Graded Response Model for rating scales
+  estimation_method = "EAP",        # Reliable for clinical use
+  max_items = 12,
+  min_items = 8,
+  min_SEM = 0.25,                   # High precision needed
+  criteria = "MI"
+)
+```
+
+## Getting Help
+
+Please feel free to contact me with any questions or concerns you may have. It will help me improve this package, too.

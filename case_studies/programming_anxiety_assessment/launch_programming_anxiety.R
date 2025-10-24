@@ -1,5 +1,5 @@
 # =============================================================================
-# PROGRAMMING ANXIETY ASSESSMENT - COMPLETE STANDALONE SCRIPT
+# PROGRAMMING ANXIETY ASSESSMENT
 # =============================================================================
 # This case study demonstrates programming anxiety assessment using inrep
 # with adaptive testing (GRM model) and comprehensive demographics.
@@ -641,147 +641,182 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
         trace_plot_data <- ""
     }
     
-    # Create comprehensive HTML report
+    # Create comprehensive HTML report - fixed structure
     html_report <- paste0(
         '<div id="report-content" style="font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px;">',
-        
-        # Header
-        '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; text-align: center; margin-bottom: 30px;">',
-        '<h1 style="margin: 0; font-size: 28px;">Your Programming Anxiety Results</h1>',
-        '<p style="margin: 10px 0 0 0; opacity: 0.9;">Personalized Analysis Based on Adaptive Testing</p>',
-        '<p style="margin: 10px 0 0 0; opacity: 0.8; font-size: 12px; font-style: italic;">Note: Items are AI-generated placeholders for demonstration purposes</p>',
+
+        # Header - Clean professional styling
+        '<div style="background-color: #2c3e50; color: white; padding: 30px; border-radius: 8px; text-align: center; margin-bottom: 30px; border: 1px solid #34495e;">',
+        '<h1 style="margin: 0; font-size: 28px; font-weight: 300; letter-spacing: 0.5px;">Programming Anxiety Assessment Results</h1>',
+        '<p style="margin: 15px 0 0 0; font-size: 16px; opacity: 0.9;">Comprehensive Analysis Based on Your Responses</p>',
+        '<p style="margin: 8px 0 0 0; font-size: 12px; opacity: 0.8; font-style: italic;">Assessment completed using Item Response Theory</p>',
         '</div>',
-        
-        # Overall Score Card
-        '<div style="background-color: ', level_color, '; color: white; padding: 25px; border-radius: 10px; margin-bottom: 25px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">',
-        '<h2 style="margin: 0 0 10px 0; font-size: 24px;">Overall Anxiety Level</h2>',
-        '<div style="font-size: 48px; font-weight: bold; margin: 15px 0;">', round(pa_theta, 2), '</div>',
-        '<div style="font-size: 18px; margin-bottom: 5px;">', level_text, '</div>',
-        '<div style="font-size: 14px; opacity: 0.9;">Scale: 1.0 (Low) to 5.0 (High)</div>',
+
+        # Overall Score Card - Clean and minimal
+        '<div style="background-color: ', level_color, '; color: white; padding: 30px; border-radius: 8px; margin-bottom: 25px; text-align: center; border: 1px solid #ddd;">',
+        '<h2 style="margin: 0 0 15px 0; font-size: 24px; font-weight: 400;">Overall Anxiety Level</h2>',
+        '<div style="font-size: 56px; font-weight: 300; margin: 15px 0; letter-spacing: -1px;">', round(pa_theta, 2), '</div>',
+        '<div style="font-size: 18px; margin-bottom: 8px; font-weight: 400;">', level_text, '</div>',
+        '<div style="font-size: 13px; opacity: 0.9; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 8px;">Scale: 1.0 (Low) to 5.0 (High)</div>',
         '</div>',
-        
-        # Population Comparison
-        '<div style="background-color: #f5f5f5; padding: 20px; border-radius: 10px; margin-bottom: 25px;">',
-        '<h2 style="color: #667eea; margin-top: 0;">How You Compare</h2>',
+
+        # Population Comparison - Clean grid layout
+        '<div style="background-color: #f8f9fa; padding: 25px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #e9ecef;">',
+        '<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Population Comparison</h2>',
         '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">',
-        '<div style="background: white; padding: 15px; border-radius: 8px; text-align: center;">',
-        '<div style="font-size: 32px; font-weight: bold; color: #667eea;">', round(percentile, 1), '%</div>',
-        '<div style="color: #666; font-size: 14px;">Percentile Rank</div>',
-        '<div style="color: #999; font-size: 12px; margin-top: 5px;">Among programming students</div>',
+        '<div style="background: white; padding: 20px; border-radius: 6px; text-align: center; border: 1px solid #dee2e6;">',
+        '<div style="font-size: 36px; font-weight: 300; color: #495057;">', round(percentile, 1), '%</div>',
+        '<div style="color: #6c757d; font-size: 14px; margin-top: 8px;">Percentile Rank</div>',
+        '<div style="color: #868e96; font-size: 12px; margin-top: 4px;">Among programming students</div>',
         '</div>',
-        '<div style="background: white; padding: 15px; border-radius: 8px; text-align: center;">',
-        '<div style="font-size: 32px; font-weight: bold; color: #43a047;">', round(theta_est, 2), '</div>',
-        '<div style="color: #666; font-size: 14px;">IRT Theta Estimate</div>',
-        '<div style="color: #999; font-size: 12px; margin-top: 5px;">Latent trait level</div>',
+        '<div style="background: white; padding: 20px; border-radius: 6px; text-align: center; border: 1px solid #dee2e6;">',
+        '<div style="font-size: 36px; font-weight: 300; color: #495057;">', round(theta_est, 2), '</div>',
+        '<div style="color: #6c757d; font-size: 14px; margin-top: 8px;">IRT Theta Estimate</div>',
+        '<div style="color: #868e96; font-size: 12px; margin-top: 4px;">Latent trait level</div>',
         '</div>',
-        '<div style="background: white; padding: 15px; border-radius: 8px; text-align: center;">',
-        '<div style="font-size: 32px; font-weight: bold; color: #fb8c00;">', round(se_est, 2), '</div>',
-        '<div style="color: #666; font-size: 14px;">Standard Error</div>',
-        '<div style="color: #999; font-size: 12px; margin-top: 5px;">Measurement precision</div>',
+        '<div style="background: white; padding: 20px; border-radius: 6px; text-align: center; border: 1px solid #dee2e6;">',
+        '<div style="font-size: 36px; font-weight: 300; color: #495057;">', round(se_est, 2), '</div>',
+        '<div style="color: #6c757d; font-size: 14px; margin-top: 8px;">Standard Error</div>',
+        '<div style="color: #868e96; font-size: 12px; margin-top: 4px;">Measurement precision</div>',
         '</div>',
         '</div>',
-        '<p style="color: #555; margin-top: 15px; line-height: 1.6;">', interpretation, '</p>',
+        '<div style="margin-top: 20px; padding: 15px; background: white; border-radius: 6px; border: 1px solid #dee2e6;">',
+        '<p style="color: #495057; margin: 0; line-height: 1.6; font-size: 15px;">', interpretation, '</p>',
         '</div>',
-        
+        '</div>',
+
         # Subscale Visualization
-        '<div style="margin: 25px 0;">',
-        '<h2 style="color: #667eea; text-align: center;">Anxiety Profile by Type</h2>',
-        if (nchar(bar_plot_data) > 0) {
-            paste0('<img src="data:image/png;base64,', bar_plot_data, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">')
-        } else {
-            '<div style="background: #f5f5f5; padding: 40px; text-align: center; border-radius: 8px; color: #666;">',
-            '<p style="font-size: 16px; margin: 0;"> Chart visualization will be generated in the PDF report</p>',
-            '<p style="font-size: 14px; margin: 10px 0 0 0;">Use the download button below to get the complete report with all figures.</p>',
-            '</div>'
-        },
+        '<div style="margin: 25px 0; background-color: #f8f9fa; padding: 25px; border-radius: 8px; border: 1px solid #e9ecef;">',
+        '<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Anxiety Profile by Domain</h2>',
         '</div>',
-        
+
         # Trace Plot
-        '<div style="margin: 25px 0;">',
-        '<h2 style="color: #667eea; text-align: center;">Adaptive Testing Trace</h2>',
-        if (nchar(trace_plot_data) > 0) {
-            paste0('<img src="data:image/png;base64,', trace_plot_data, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">')
-        } else {
-            '<div style="background: #f5f5f5; padding: 40px; text-align: center; border-radius: 8px; color: #666;">',
-            '<p style="font-size: 16px; margin: 0;"> Trace plot will be included in the PDF report</p>',
-            '<p style="font-size: 14px; margin: 10px 0 0 0;">This shows how your ability estimate evolved during the adaptive assessment.</p>',
-            '</div>'
-        },
+        '<div style="margin: 25px 0; background-color: #f8f9fa; padding: 25px; border-radius: 8px; border: 1px solid #e9ecef;">',
+        '<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Adaptive Testing Progression</h2>',
         '</div>',
-        
-        # Detailed Breakdown
-        '<div style="background-color: #f5f5f5; padding: 20px; border-radius: 10px; margin: 25px 0;">',
-        '<h2 style="color: #667eea; margin-top: 0;">Detailed Breakdown</h2>',
-        '<table style="width: 100%; border-collapse: collapse;">',
-        '<tr style="background-color: #667eea; color: white;">',
-        '<th style="padding: 12px; text-align: left;">Anxiety Type</th>',
-        '<th style="padding: 12px; text-align: center;">Your Score</th>',
-        '<th style="padding: 12px; text-align: left;">Interpretation</th>',
+
+        # Detailed Breakdown - Clean table styling
+        '<div style="background-color: #f8f9fa; padding: 25px; border-radius: 8px; margin: 25px 0; border: 1px solid #e9ecef;">',
+        '<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Detailed Subscale Analysis</h2>',
+        '<table style="width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; border: 1px solid #dee2e6;">',
+        '<thead>',
+        '<tr style="background-color: #495057; color: white;">',
+        '<th style="padding: 15px; text-align: left; font-weight: 400; font-size: 14px;">Anxiety Domain</th>',
+        '<th style="padding: 15px; text-align: center; font-weight: 400; font-size: 14px;">Score</th>',
+        '<th style="padding: 15px; text-align: left; font-weight: 400; font-size: 14px;">Level</th>',
         '</tr>',
-        
-        paste0(apply(subscales, 1, function(row) {
+        '</thead>',
+        '<tbody>',
+
+        # Generate table rows - Clean and professional
+        paste0(sapply(1:nrow(subscales), function(i) {
+            row <- subscales[i, ]
             score <- as.numeric(row[2])
             interp <- if (score < 2.5) "Low" else if (score < 3.5) "Moderate" else "High"
+            score_color <- if (score < 2.5) "#28a745" else if (score < 3.5) "#ffc107" else "#dc3545"
             paste0(
-                '<tr style="border-bottom: 1px solid #ddd;">',
-                '<td style="padding: 12px;"><strong style="color:', row[3], ';">', row[1], ' Anxiety</strong></td>',
-                '<td style="padding: 12px; text-align: center;"><span style="background-color:', row[3], '; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold;">', round(score, 2), '</span></td>',
-                '<td style="padding: 12px;">', interp, '</td>',
+                '<tr style="border-bottom: 1px solid #dee2e6;">',
+                '<td style="padding: 15px; font-weight: 500; color: #495057;">', row[1], ' Anxiety</td>',
+                '<td style="padding: 15px; text-align: center;"><span style="background-color: ', score_color, '; color: white; padding: 6px 12px; border-radius: 4px; font-weight: 500; font-size: 13px;">', round(score, 2), '</span></td>',
+                '<td style="padding: 15px; color: #6c757d; font-size: 14px;">', interp, '</td>',
                 '</tr>'
             )
         }), collapse = ""),
-        
+
+        '</tbody>',
         '</table>',
         '</div>',
-        
-        # TAM Analysis Explanation
-        '<div style="background-color: #e3f2fd; padding: 20px; border-radius: 10px; border-left: 4px solid #2196f3; margin: 25px 0;">',
-        '<h3 style="color: #1976d2; margin-top: 0;">About This Assessment</h3>',
-        '<p style="color: #555; line-height: 1.7;"><strong>Adaptive Testing:</strong> This assessment used Item Response Theory (IRT) with a 2PL model to estimate your programming anxiety level. The trace plot above shows how your theta estimate evolved as more items were administered.</p>',
-        '<p style="color: #555; line-height: 1.7;"><strong>Measurement Model:</strong> We used the 2-Parameter Logistic (2PL) model, which accounts for item discrimination and difficulty. Your estimated theta reflects your position on the underlying programming anxiety dimension.</p>',
-        '<p style="color: #555; line-height: 1.7;"><strong>Population Parameters:</strong> The comparison data comes from a normative sample of programming students (θ = ', pop_mean, ', σ = ', pop_sd, '). Your percentile rank indicates that you scored higher than ', round(percentile, 1), '% of students in this population.</p>',
-        '<p style="color: #555; line-height: 1.7;"><strong>Plausible Values:</strong> The confidence band in the trace plot shows the uncertainty in your theta estimate. As more items were administered, the standard error decreased, indicating improved measurement precision.</p>',
-        '</div>',
-        
-        # Download Section - Universal System
-        '<div class="download-section" style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">',
-        '<h4 style="color: #333; margin-bottom: 15px;">Export Results</h4>',
-        '<div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">',
-        
-        # PDF Download Button
-        '<button onclick="if(typeof Shiny !== \'undefined\') { Shiny.setInputValue(\'download_pdf_trigger\', Math.random(), {priority: \'event\'}); } else { alert(\'Download not available\'); }" class="btn btn-primary" style="background: #667eea; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
-        '<i class="fas fa-file-pdf" style="margin-right: 8px;"></i>',
-        'Download PDF',
-        '</button>',
-        
-        # CSV Download Button  
-        '<button onclick="if(typeof Shiny !== \'undefined\') { Shiny.setInputValue(\'download_csv_trigger\', Math.random(), {priority: \'event\'}); } else { alert(\'Download not available\'); }" class="btn btn-success" style="background: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500; transition: all 0.2s ease;">',
-        '<i class="fas fa-file-csv" style="margin-right: 8px;"></i>',
-        'Download CSV',
-        '</button>',
-        
+
+        # Technical Information - Clean and minimal
+        '<div style="background-color: #f8f9fa; padding: 25px; border-radius: 8px; margin: 25px 0; border: 1px solid #e9ecef;">',
+        '<h3 style="color: #495057; margin-top: 0; font-size: 18px; font-weight: 400; margin-bottom: 15px;">Technical Assessment Details</h3>',
+        '<div style="background: white; padding: 20px; border-radius: 6px; border: 1px solid #dee2e6;">',
+        '<p style="color: #495057; margin: 0 0 12px 0; line-height: 1.6; font-size: 14px;"><strong>Assessment Method:</strong> This evaluation used Item Response Theory (IRT) with a 2-Parameter Logistic model to estimate your programming anxiety level.</p>',
+        '<p style="color: #495057; margin: 0 0 12px 0; line-height: 1.6; font-size: 14px;"><strong>Measurement Model:</strong> The 2PL model accounts for both item discrimination and difficulty, providing a precise estimate of your position on the programming anxiety continuum.</p>',
+        '<p style="color: #495057; margin: 0 0 12px 0; line-height: 1.6; font-size: 14px;"><strong>Population Reference:</strong> Comparison data is based on a normative sample of programming students (mean = ', round(pop_mean, 2), ', SD = ', round(pop_sd, 2), '). Your percentile indicates performance relative to this reference group.</p>',
+        '<p style="color: #495057; margin: 0; line-height: 1.6; font-size: 14px;"><strong>Measurement Precision:</strong> The confidence intervals in the trace plot show estimation uncertainty. Precision improves as more items are administered adaptively.</p>',
         '</div>',
         '</div>',
-        
-        # Print styles
+
+        # Download Section - Clean and minimal
+        '<div style="background-color: #f8f9fa; padding: 25px; border-radius: 8px; margin: 25px 0; border: 1px solid #e9ecef;">',
+        '<h3 style="color: #495057; margin-top: 0; font-size: 18px; font-weight: 400; margin-bottom: 15px; text-align: center;">Export Your Results</h3>',
+        '<div style="background: white; padding: 20px; border-radius: 6px; border: 1px solid #dee2e6;">',
+        '<div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">',
+        '<button onclick="if(typeof Shiny !== \'undefined\') { Shiny.setInputValue(\'download_pdf_trigger\', Math.random(), {priority: \'event\'}); } else { alert(\'Download not available\'); }" style="background-color: #495057; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 400; transition: all 0.2s ease; border: 1px solid #495057;">',
+        ' Download PDF Report</button>',
+        '<button onclick="if(typeof Shiny !== \'undefined\') { Shiny.setInputValue(\'download_csv_trigger\', Math.random(), {priority: \'event\'}); } else { alert(\'Download not available\'); }" style="background-color: #28a745; border: none; color: white; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 400; transition: all 0.2s ease; border: 1px solid #28a745;">',
+        ' Download CSV Data</button>',
+        '</div>',
+        '<p style="text-align: center; color: #6c757d; font-size: 12px; margin: 15px 0 0 0;">Results are exported in multiple formats for your analysis and records</p>',
+        '</div>',
+        '</div>',
+
+        # Print styles - Clean and minimal
         '<style>',
         '@media print {',
         '  .download-section { display: none !important; }',
-        '  body { font-size: 11pt; }',
-        '  h1, h2 { color: #667eea !important; -webkit-print-color-adjust: exact; }',
+        '  body { font-family: "Times New Roman", serif; font-size: 11pt; }',
+        '  h1, h2, h3 { color: #000 !important; -webkit-print-color-adjust: exact; }',
+        '  .btn { display: none !important; }',
+        '  table { border: 1px solid #000; }',
+        '  th, td { border: 1px solid #ccc; }',
         '}',
         '</style>',
-        
-        # Thank You
-        '<div style="background-color: #f1f8e9; padding: 20px; border-radius: 10px; text-align: center; margin-top: 25px;">',
-        '<h2 style="color: #558b2f; margin-top: 0;">Thank You!</h2>',
-        '<p style="color: #555; font-size: 16px;">Your participation helps us better understand programming anxiety and improve education for future students.</p>',
-        '<p style="color: #777; font-size: 14px; margin-top: 15px;">Your responses have been securely stored and anonymized for research purposes.</p>',
+
+        # Thank You - Clean and professional
+        '<div style="background-color: #f8f9fa; padding: 30px; border-radius: 8px; text-align: center; margin-top: 30px; border: 1px solid #e9ecef;">',
+        '<h2 style="color: #495057; margin-top: 0; font-size: 22px; font-weight: 400;">Thank You for Participating</h2>',
+        '<p style="color: #495057; font-size: 16px; margin: 15px 0; line-height: 1.6;">Your participation contributes to our understanding of programming anxiety and helps improve educational experiences for future students.</p>',
+        '<p style="color: #6c757d; font-size: 14px; margin: 15px 0 0 0;">Your responses have been securely stored and anonymized for research purposes.</p>',
         '</div>',
-        
+
         '</div>'
     )
     
+    # Add conditional plot content after HTML generation
+    if (nchar(bar_plot_data) > 0) {
+        # Insert bar plot into the HTML
+        html_report <- gsub(
+            '<h2 style="color: #667eea; text-align: center;">Anxiety Profile by Type</h2>',
+            paste0('<h2 style="color: #667eea; text-align: center;">Anxiety Profile by Type</h2>',
+                   '<img src="data:image/png;base64,', bar_plot_data, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">'),
+            html_report
+        )
+    } else {
+        # Insert fallback message for bar plot
+        html_report <- gsub(
+            '<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Anxiety Profile by Domain</h2>',
+            paste0('<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Anxiety Profile by Domain</h2>',
+                   '<div style="background: white; padding: 30px; text-align: center; border-radius: 6px; border: 1px solid #dee2e6; margin-top: 20px;">',
+                   '<p style="font-size: 15px; margin: 0 0 10px 0; color: #495057;">Visual analysis will be included in the complete PDF report</p>',
+                   '<p style="font-size: 13px; margin: 0; color: #6c757d;">Download the full report to view detailed charts and visualizations</p>',
+                   '</div>'),
+            html_report
+        )
+    }
+
+    if (nchar(trace_plot_data) > 0) {
+        # Insert trace plot into the HTML
+        html_report <- gsub(
+            '<h2 style="color: #667eea; text-align: center;">Adaptive Testing Trace</h2>',
+            paste0('<h2 style="color: #667eea; text-align: center;">Adaptive Testing Trace</h2>',
+                   '<img src="data:image/png;base64,', trace_plot_data, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">'),
+            html_report
+        )
+    } else {
+        # Insert fallback message for trace plot
+        html_report <- gsub(
+            '<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Adaptive Testing Progression</h2>',
+            paste0('<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Adaptive Testing Progression</h2>',
+                   '<div style="background: white; padding: 30px; text-align: center; border-radius: 6px; border: 1px solid #dee2e6; margin-top: 20px;">',
+                   '<p style="font-size: 15px; margin: 0 0 10px 0; color: #495057;">Testing progression analysis will be included in the complete PDF report</p>',
+                   '<p style="font-size: 13px; margin: 0; color: #6c757d;">This visualization shows how your ability estimate evolved during the adaptive assessment</p>',
+                   '</div>'),
+            html_report
+        )
+    }
+
     # Ensure we always return something
     if (is.null(html_report) || html_report == "") {
         html_report <- paste0(
@@ -792,7 +827,7 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
             '</div>'
         )
     }
-    
+
     cat("DEBUG: Returning HTML report with", nchar(html_report), "characters\n")
     return(shiny::HTML(html_report))
 }
@@ -807,7 +842,7 @@ study_config <- create_study_config(
     name = "Programming Anxiety Assessment",
     study_key = session_uuid,
     model = "2PL",  # Changed to 2PL 
-    estimation_method = "TAM",
+    estimation_method = "EAP",
     adaptive = TRUE,
     min_items = 20,  # All 20 items will be shown
     max_items = 20,  # All 20 items will be shown
@@ -826,35 +861,6 @@ study_config <- create_study_config(
 # =============================================================================
 # LAUNCH THE STUDY
 # =============================================================================
-
-cat("\n")
-cat("================================================================================\n")
-cat("  PROGRAMMING ANXIETY ASSESSMENT\n")
-cat("  COMPREHENSIVE ANALYSIS WITH TAM & IRT MODELING\n")
-cat("================================================================================\n")
-cat("  Structure: 19 pages total (following HilFo pattern)\n")
-cat("    1. Welcome & Introduction\n")
-cat("    2. Demographics (Age, Gender, Experience, Field of Study)\n")
-cat("    3. Programming Anxiety Part 1: Fixed items (5 items on one page)\n")
-cat("    4-8. Programming Anxiety Part 2: Adaptive items (5 items, one per page)\n")
-cat("    9-18. Additional Programming Anxiety items (10 items, one per page)\n")
-cat("    19. Comprehensive Results with TAM Analysis\n")
-cat("  Features:\n")
-cat("    - 5 subscale scores (Cognitive, Somatic, Avoidance, Performance, Learning)\n")
-cat("    - TAM/IRT analysis with theta estimation\n")
-cat("    - Trace plot showing adaptive testing progression\n")
-cat("    - Population comparison with percentiles\n")
-cat("    - Plausible values and confidence bands\n")
-cat("    - Professional subscale bar chart\n")
-cat("  Technical:\n")
-cat("    - Model: 2-Parameter Logistic (2PL)\n")
-cat("    - Estimation: TAM with EAP\n")
-cat("    - Semi-adaptive: 5 fixed + 15 adaptive items\n")
-cat("    - Selection: Maximum Information (MI)\n")
-cat("    - Cloud storage: Enabled\n")
-cat("================================================================================\n")
-cat("\n")
-
 launch_study(
     config = study_config,
     item_bank = programming_anxiety_items,

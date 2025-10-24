@@ -1,0 +1,723 @@
+---
+title: "A Guide to Non-Adaptive Assessments with inrep"
+author: "inrep Development Team"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    theme: cerulean
+    css: styles.css
+vignette: >
+  %\VignetteIndexEntry{Complete Guide to Non-Adaptive Assessments with inrep}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+```
+
+# Welcome to inrep
+Before we start, lets note the following: This project is best described as a vibe coding project. While the initial work was solely done by me, the upscaling of the project and exploration of advanced functionalities were done using several LLMs, which I synthesized. Although much of the code is functional, it is not yet fully polished. Several sections are under active development with minimal working examples implemented as placeholders. Continuous synthesis and refinement are ongoing. 
+
+Now lets get started.
+At its core, **inrep** is a package for creating and administering assessments. View "getting-started-with-adaptive-assessments.Rmd" to see the more advanced functionalities. Motivation for this tool is to not pay money for collecting data to suvey providers - instead, we can use this tool to create our own assessments and not only that - give theparticipants of a study something in return, that is, an instant report of their responses.
+
+## Installation
+
+
+```{r}
+# Step 1 to 5 can be skipped if you already have R and RStudio installed and you can skip step 4 and 5 if you have devtools package installed.
+## Step 1: Install R
+## Go to https://cran.r-project.org/ and download R for your operating system (Windows, macOS, or Linux).
+## Follow the on-screen installation instructions.
+
+## Step 2: Install RStudio (recommended interface for R)
+## Go to https://posit.co/download/rstudio-desktop/
+## Download and install RStudio after installing R.
+
+## Step 3: Open RStudio
+## Once open, you will see the console (bottom left) where you can type R commands.
+
+## Step 4: Install the 'devtools' package
+## 'devtools' allows you to install packages directly from GitHub.
+#install.packages("devtools")
+
+## Step 5: Load the 'devtools' package
+#library(devtools)
+
+## Step 6: Install the development version of the 'inrep' package from GitHub
+## Make sure you are connected to the internet.
+devtools::install_github("selvastics/inrep")
+
+## Step 7: Load the 'inrep' package
+library(inrep)
+```
+
+## Brief Setup
+
+### Step 1: Load Data
+
+```{r}
+# Load mathematics items
+data(math_items)
+
+# Or load personality items
+# bfi_items is automatically available via LazyData
+```
+
+### Step 2: Create Configuration
+
+```{r}
+# Simple math test
+config_fixed <- create_study_config(
+name = "Fixed Math Test",
+item_bank = "math_items",
+adaptive = FALSE, # Disable adaptive item selection
+max_items = 10, # Use 10 items in fixed order
+theme = "Professional", # Built-in visual theme
+session_save = TRUE # Allow participants to resume session
+)
+```
+
+### Step 3: Launch Assessment
+
+```{r}
+# Start the assessment
+launch_study(config_fixed)
+```
+
+## Advanced Research-Grade Assessments
+
+Based on the University of Hildesheim HilFo study, here are examples of how to create professional research assessments.
+
+### Bilingual Research Study (Like HilFo)
+
+This example shows how to create a comprehensive bilingual study with multiple assessment types:
+
+```{r bilingual_research_study, eval=FALSE}
+# =============================================================================
+# BILINGUAL RESEARCH STUDY CONFIGURATION
+# Inspired by University of Hildesheim HilFo Study
+# =============================================================================
+
+# Define comprehensive demographics (German/English bilingual)
+demographic_configs <- list(
+    Einverständnis = list(
+        question = "Einverständniserklärung",
+        question_en = "Declaration of Consent",
+        options = c("Ich bin mit der Teilnahme an der Befragung einverstanden" = "1"),
+        options_en = c("I agree to participate in the survey" = "1"),
+        required = TRUE
+    ),
+    Alter_VPN = list(
+        question = "Wie alt sind Sie?",
+        question_en = "How old are you?",
+        options = c("17"="17", "18"="18", "19"="19", "20"="20", "21"="21",
+                    "22"="22", "23"="23", "24"="24", "25"="25", "26"="26",
+                    "27"="27", "28"="28", "29"="29", "30"="30", "älter als 30"="31"),
+        options_en = c("17"="17", "18"="18", "19"="19", "20"="20", "21"="21",
+                       "22"="22", "23"="23", "24"="24", "25"="25", "26"="26",
+                       "27"="27", "28"="28", "29"="29", "30"="30", "older than 30"="31"),
+        required = TRUE
+    ),
+    Geschlecht = list(
+        question = "Welches Geschlecht haben Sie?",
+        question_en = "What is your gender?",
+        options = c("weiblich"="1", "männlich"="2", "divers"="3"),
+        options_en = c("female"="1", "male"="2", "diverse"="3"),
+        required = TRUE
+    ),
+    Studiengang = list(
+        question = "Was studieren Sie?",
+        question_en = "What do you study?",
+        options = c("Bachelor Psychologie"="1", "Master Psychologie"="2", "Anderer Studiengang"="3"),
+        options_en = c("Bachelor Psychology"="1", "Master Psychology"="2", "Other program"="3"),
+        required = TRUE
+    ),
+    Wohnstatus = list(
+        question = "Wie wohnen Sie?",
+        question_en = "How do you live?",
+        options = c(
+            "Bei meinen Eltern/Elternteil"="1",
+            "In einer WG/WG in einem Wohnheim"="2",
+            "Alleine/in abgeschlossener Wohneinheit in einem Wohnheim"="3",
+            "Mit meinem/r Partner*In (mit oder ohne Kinder)"="4",
+            "Anders"="5"
+        ),
+        options_en = c(
+            "With my parents/parent"="1",
+            "In a shared apartment/dorm"="2",
+            "Alone/in a self-contained unit in a dorm"="3",
+            "With my partner (with or without children)"="4",
+            "Other"="5"
+        ),
+        required = TRUE
+    )
+)
+
+# Input types for different question formats
+input_types <- list(
+    Einverständnis = "checkbox",
+    Alter_VPN = "select",
+    Geschlecht = "select",
+    Studiengang = "select",
+    Wohnstatus = "select"
+)
+
+# Custom page flow with bilingual introduction and consent
+custom_page_flow <- list(
+    # Page 1: Bilingual introduction with consent
+    list(
+        id = "intro_page",
+        type = "custom",
+        title = "Research Study",
+        content = '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">
+            <div style="position: absolute; top: 10px; right: 10px;">
+                <button type="button" id="language-toggle" onclick="toggleLanguage()" style="
+                    background: #007cba; color: white; border: 2px solid #007cba;
+                    padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                    <span id="lang_text">English Version</span></button>
+            </div>
+
+            <div id="content_de" style="display: block;">
+                <h1 style="color: #007cba; text-align: center;">Willkommen zur Forschungsstudie</h1>
+                <p><strong>Liebe Teilnehmer*innen,</strong></p>
+                <p>Diese Studie untersucht verschiedene Aspekte des studentischen Lebens und der Persönlichkeit.
+                Ihre Teilnahme ist freiwillig und anonym.</p>
+                <p><strong>Die Befragung dauert etwa 15-20 Minuten.</strong></p>
+
+                <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #007cba; margin: 20px 0;">
+                    <label style="display: flex; align-items: flex-start; cursor: pointer;">
+                        <input type="checkbox" id="consent_de" style="margin-right: 10px; margin-top: 2px;" required>
+                        <span><strong>Ich bin mit der Teilnahme an der Befragung einverstanden und bestätige,
+                        dass ich die Hinweise gelesen habe.</strong></span>
+                    </label>
+                </div>
+            </div>
+
+            <div id="content_en" style="display: none;">
+                <h1 style="color: #007cba; text-align: center;">Welcome to the Research Study</h1>
+                <p><strong>Dear Participants,</strong></p>
+                <p>This study examines various aspects of student life and personality.
+                Your participation is voluntary and anonymous.</p>
+                <p><strong>The survey takes about 15-20 minutes.</strong></p>
+
+                <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #007cba; margin: 20px 0;">
+                    <label style="display: flex; align-items: flex-start; cursor: pointer;">
+                        <input type="checkbox" id="consent_en" style="margin-right: 10px; margin-top: 2px;" required>
+                        <span><strong>I agree to participate in the survey and confirm that I have read the information.</strong></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        function toggleLanguage() {
+            var deContent = document.getElementById("content_de");
+            var enContent = document.getElementById("content_en");
+            var textSpan = document.getElementById("lang_text");
+
+            if (deContent.style.display === "none") {
+                deContent.style.display = "block";
+                enContent.style.display = "none";
+                textSpan.textContent = "English Version";
+                Shiny.setInputValue("current_language", "de");
+            } else {
+                deContent.style.display = "none";
+                enContent.style.display = "block";
+                textSpan.textContent = "Deutsche Version";
+                Shiny.setInputValue("current_language", "en");
+            }
+        }
+        </script>'
+    ),
+
+    # Page 2: Demographics collection
+    list(
+        id = "demographics_page",
+        type = "demographics",
+        title = "Persönliche Angaben",
+        title_en = "Personal Information"
+    ),
+
+    # Pages 3-7: Big Five Personality (5 items, one per page)
+    list(
+        id = "personality_start",
+        type = "items",
+        title = "Persönlichkeit",
+        title_en = "Personality",
+        instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
+        instructions_en = "Please indicate how much you agree with the following statements.",
+        item_indices = 1:5,
+        scale_type = "likert"
+    ),
+
+    # Page 8: Academic Motivation (5 items)
+    list(
+        id = "academic_motivation",
+        type = "items",
+        title = "Studienmotivation",
+        title_en = "Academic Motivation",
+        instructions = "Wie schwierig finden Sie die folgenden Aspekte des Studiums?",
+        instructions_en = "How difficult do you find the following aspects of studying?",
+        item_indices = 6:10,
+        scale_type = "difficulty"
+    ),
+
+    # Page 9: Final questions and completion
+    list(
+        id = "completion_page",
+        type = "custom",
+        title = "Abschluss",
+        title_en = "Completion",
+        content = '<div style="text-align: center; padding: 40px;">
+            <div id="completion_de" style="display: block;">
+                <h2 style="color: #007cba;">Vielen Dank für Ihre Teilnahme!</h2>
+                <p>Ihre Antworten wurden erfolgreich gespeichert.</p>
+                <p>Sie können das Browserfenster jetzt schließen.</p>
+            </div>
+            <div id="completion_en" style="display: none;">
+                <h2 style="color: #007cba;">Thank you for participating!</h2>
+                <p>Your responses have been saved successfully.</p>
+                <p>You may now close the browser window.</p>
+            </div>
+        </div>'
+    )
+)
+
+# Create the comprehensive study configuration
+research_config <- create_study_config(
+    name = "University Research Study",
+    theme = "Professional",
+    language = "de",                    # Default German
+    bilingual = TRUE,                   # Enable bilingual support
+    custom_page_flow = custom_page_flow,
+    demographics = names(demographic_configs),
+    demographic_configs = demographic_configs,
+    input_types = input_types,
+
+    # Assessment settings
+    model = "GRM",
+    adaptive = FALSE,                   # Non-adaptive (fixed order)
+    max_items = 10,
+    min_items = 10,
+    criteria = "FIXED",                 # Fixed item selection
+
+    # Session management
+    session_save = TRUE,
+    session_timeout = 3600,             # 1 hour timeout
+    max_session_duration = 30,          # 30 minutes max
+
+    # Data handling
+    report_formats = c("csv", "json", "rds"),
+    show_session_time = TRUE
+)
+
+# Launch the research study
+launch_study(research_config, bfi_items)
+```
+
+### Educational Assessment with Score Calculation
+
+This example demonstrates how to create an educational assessment with automatic score calculation:
+
+```{r educational_assessment, eval=FALSE}
+# =============================================================================
+# EDUCATIONAL ASSESSMENT WITH AUTOMATIC SCORING
+# =============================================================================
+
+# Define comprehensive demographics for students
+student_demographics <- list(
+    Student_ID = list(
+        question = "Student ID",
+        type = "text",
+        required = TRUE,
+        validation = "alphanumeric"
+    ),
+    Grade = list(
+        question = "Current Grade Level",
+        options = c("6", "7", "8", "9", "10", "11", "12"),
+        required = TRUE
+    ),
+    Subject = list(
+        question = "Primary Subject Focus",
+        options = c("Mathematics", "Science", "Language Arts", "Social Studies", "Other"),
+        required = TRUE
+    ),
+    Experience = list(
+        question = "Previous Experience with Statistics",
+        options = c(
+            "None" = "1",
+            "Basic concepts only" = "2",
+            "Some coursework" = "3",
+            "Advanced coursework" = "4",
+            "Research experience" = "5"
+        ),
+        required = TRUE
+    )
+)
+
+# Custom results processor for educational scoring
+calculate_educational_scores <- function(responses, demographics, item_bank) {
+    # Calculate domain scores
+    domain_scores <- list()
+
+    if (!is.null(responses) && length(responses) >= nrow(item_bank)) {
+        # Group items by domain (assuming domain column exists)
+        if ("domain" %in% names(item_bank)) {
+            domains <- unique(item_bank$domain)
+            for (domain in domains) {
+                domain_items <- which(item_bank$domain == domain)
+                if (length(domain_items) > 0) {
+                    domain_responses <- responses[domain_items]
+                    domain_scores[[domain]] <- mean(domain_responses, na.rm = TRUE)
+                }
+            }
+        }
+
+        # Calculate overall performance
+        domain_scores$Overall <- mean(responses, na.rm = TRUE)
+
+        # Calculate percentile based on typical performance
+        domain_scores$Percentile <- round(pnorm(domain_scores$Overall) * 100)
+    }
+
+    return(domain_scores)
+}
+
+# Create educational configuration
+education_config <- create_study_config(
+    name = "Statistics Proficiency Assessment",
+    model = "2PL",
+    adaptive = FALSE,
+    max_items = 20,
+    min_items = 15,
+    criteria = "FIXED",
+
+    # Student demographics
+    demographics = names(student_demographics),
+    demographic_configs = student_demographics,
+
+    # Educational settings
+    theme = "Professional",
+    language = "en",
+    response_ui_type = "radio",
+    progress_style = "bar",
+
+    # Session management
+    session_save = TRUE,
+    session_timeout = 1800,  # 30 minutes
+    max_session_duration = 45,
+
+    # Results processing
+    results_processor = function(results) {
+        # Custom processing for educational context
+        cat("Processing educational assessment results...\n")
+        return(results)
+    },
+
+    # Data export
+    report_formats = c("csv", "json", "pdf"),
+    show_session_time = TRUE
+)
+
+# Launch educational assessment
+launch_study(education_config, math_items)
+```
+
+### Clinical Assessment with Reverse Coding
+
+This example shows how to handle reverse-coded items and clinical scoring:
+
+```{r clinical_assessment, eval=FALSE}
+# =============================================================================
+# CLINICAL ASSESSMENT WITH REVERSE CODING
+# =============================================================================
+
+# Define clinical demographics
+clinical_demographics <- list(
+    Patient_ID = list(
+        question = "Patient ID",
+        type = "text",
+        required = TRUE,
+        validation = "numeric"
+    ),
+    Age = list(
+        question = "Age",
+        options = c("18-25", "26-35", "36-45", "46-55", "56-65", "65+"),
+        required = TRUE
+    ),
+    Gender = list(
+        question = "Gender",
+        options = c("Female", "Male", "Non-binary", "Prefer not to say"),
+        required = TRUE
+    ),
+    Treatment_History = list(
+        question = "Previous Treatment",
+        options = c("None", "Medication only", "Therapy only", "Both", "Other"),
+        required = TRUE
+    )
+)
+
+# Custom results processor for clinical scoring
+process_clinical_scores <- function(responses, demographics, item_bank) {
+    clinical_scores <- list()
+
+    if (!is.null(responses) && length(responses) >= nrow(item_bank)) {
+        # Handle reverse coding (assuming reverse_coded column exists)
+        if ("reverse_coded" %in% names(item_bank)) {
+            scored_responses <- responses
+            reverse_items <- which(item_bank$reverse_coded == TRUE)
+            if (length(reverse_items) > 0) {
+                # Reverse code: 6 - response for 5-point scales
+                scored_responses[reverse_items] <- 6 - responses[reverse_items]
+            }
+
+            # Calculate subscale scores
+            if ("subscale" %in% names(item_bank)) {
+                subscales <- unique(item_bank$subscale)
+                for (subscale in subscales) {
+                    subscale_items <- which(item_bank$subscale == subscale)
+                    if (length(subscale_items) > 0) {
+                        subscale_responses <- scored_responses[subscale_items]
+                        clinical_scores[[subscale]] <- mean(subscale_responses, na.rm = TRUE)
+                    }
+                }
+            }
+
+            # Calculate overall clinical score
+            clinical_scores$Overall <- mean(scored_responses, na.rm = TRUE)
+
+            # Risk assessment based on thresholds
+            clinical_scores$Risk_Level <- ifelse(
+                clinical_scores$Overall > 3.5, "High",
+                ifelse(clinical_scores$Overall > 2.5, "Moderate", "Low")
+            )
+        }
+    }
+
+    return(clinical_scores)
+}
+
+# Create clinical assessment configuration
+clinical_config <- create_study_config(
+    name = "Depression Screening Assessment",
+    model = "GRM",
+    adaptive = FALSE,
+    max_items = 21,  # PHQ-9 scale
+    min_items = 21,
+    criteria = "FIXED",
+
+    # Clinical demographics
+    demographics = names(clinical_demographics),
+    demographic_configs = clinical_demographics,
+
+    # Clinical settings
+    theme = "Professional",
+    language = "en",
+    response_ui_type = "radio",
+    progress_style = "minimal",
+
+    # Session management
+    session_save = TRUE,
+    session_timeout = 1800,
+    max_session_duration = 20,
+
+    # Results processing
+    results_processor = process_clinical_scores,
+    report_formats = c("csv", "json"),
+
+    # Privacy and ethics
+    show_session_time = FALSE,
+    enable_back_navigation = FALSE
+)
+
+# Launch clinical assessment
+launch_study(clinical_config, bfi_items)  # Using bfi_items as example
+```
+
+### Academic Research with Multiple Scales
+
+This example demonstrates a comprehensive academic research study:
+
+```{r academic_research, eval=FALSE}
+# =============================================================================
+# ACADEMIC RESEARCH STUDY WITH MULTIPLE SCALES
+# =============================================================================
+
+# Complex demographics for academic research
+academic_demographics <- list(
+    Participant_ID = list(
+        question = "Participant ID",
+        type = "text",
+        required = TRUE
+    ),
+    Age = list(
+        question = "Age",
+        options = c("18-20", "21-25", "26-30", "31-35", "36-40", "41+"),
+        required = TRUE
+    ),
+    Academic_Year = list(
+        question = "Academic Year",
+        options = c("1st Year", "2nd Year", "3rd Year", "4th Year", "Graduate", "Other"),
+        required = TRUE
+    ),
+    Major = list(
+        question = "Field of Study",
+        options = c("Psychology", "Education", "Social Sciences", "Natural Sciences",
+                   "Engineering", "Business", "Arts", "Other"),
+        required = TRUE
+    ),
+    GPA = list(
+        question = "Current GPA (if applicable)",
+        options = c("Below 2.0", "2.0-2.5", "2.6-3.0", "3.1-3.5", "3.6-4.0", "N/A"),
+        required = FALSE
+    )
+)
+
+# Custom data processor for academic research
+process_academic_data <- function(responses, demographics, item_bank) {
+    academic_results <- list()
+
+    if (!is.null(responses) && length(responses) >= nrow(item_bank)) {
+        # Calculate multiple scale scores
+        scale_ranges <- list(
+            personality = 1:20,     # BFI items
+            stress = 21:25,         # PSQ items
+            motivation = 26:29,     # MWS items
+            self_efficacy = 30:32   # Statistics self-efficacy
+        )
+
+        for (scale_name in names(scale_ranges)) {
+            scale_items <- scale_ranges[[scale_name]]
+            if (max(scale_items) <= length(responses)) {
+                scale_responses <- responses[scale_items]
+
+                # Handle reverse coding for each scale
+                if ("reverse_coded" %in% names(item_bank) && scale_name == "personality") {
+                    reverse_items <- which(item_bank$reverse_coded[scale_items] == TRUE)
+                    if (length(reverse_items) > 0) {
+                        scale_responses[reverse_items] <- 6 - scale_responses[reverse_items]
+                    }
+                }
+
+                academic_results[[paste0(scale_name, "_score")]] <- mean(scale_responses, na.rm = TRUE)
+            }
+        }
+
+        # Calculate composite scores
+        if (length(academic_results) >= 3) {
+            academic_results$wellbeing_index <- (
+                academic_results$personality_score * 0.4 +
+                (6 - academic_results$stress_score) * 0.4 +  # Reverse stress
+                academic_results$motivation_score * 0.2
+            )
+        }
+    }
+
+    return(academic_results)
+}
+
+# Create academic research configuration
+academic_config <- create_study_config(
+    name = "Academic Wellbeing and Performance Study",
+    model = "GRM",
+    adaptive = FALSE,
+    max_items = 32,
+    min_items = 25,
+    criteria = "FIXED",
+
+    # Academic demographics
+    demographics = names(academic_demographics),
+    demographic_configs = academic_demographics,
+
+    # Research settings
+    theme = "Professional",
+    language = "en",
+    response_ui_type = "radio",
+    progress_style = "segmented",
+
+    # Session management
+    session_save = TRUE,
+    session_timeout = 3600,
+    max_session_duration = 45,
+
+    # Data processing
+    results_processor = process_academic_data,
+    report_formats = c("csv", "json", "rds"),
+
+    # Research features
+    show_session_time = TRUE,
+    enable_back_navigation = TRUE
+)
+
+# Launch academic research study
+launch_study(academic_config, bfi_items)
+```
+
+## Essential Functions and Best Practices
+
+### Core Configuration Functions
+- `create_study_config()`: Main configuration function for all study parameters
+- `validate_item_bank()`: Validate item bank structure and compatibility
+- `launch_study()`: Start the assessment interface
+
+### Advanced Features from HilFo Study
+
+#### 1. Bilingual Support
+```r
+# Enable bilingual interface
+config <- create_study_config(
+    name = "Bilingual Study",
+    language = "de",        # Default language
+    bilingual = TRUE,       # Enable language switching
+    # ... other parameters
+)
+```
+
+#### 2. Custom Page Flows
+```r
+# Define custom study structure
+custom_flow <- list(
+    list(id = "intro", type = "custom", content = "Custom HTML"),
+    list(id = "demographics", type = "demographics"),
+    list(id = "assessment", type = "items", item_indices = 1:10)
+)
+
+config <- create_study_config(
+    custom_page_flow = custom_flow,
+    # ... other parameters
+)
+```
+
+#### 3. Reverse Coding
+```r
+# Items with reverse_coded = TRUE will be automatically reverse coded
+# For 5-point scales: new_value = 6 - original_value
+# For 7-point scales: new_value = 8 - original_value
+```
+
+#### 4. Custom Data Processing
+```r
+# Process results automatically
+config <- create_study_config(
+    results_processor = function(results) {
+        # Custom processing logic
+        return(processed_results)
+    }
+)
+```
+
+### Some practices I would recommend for Assessments so far
+
+1. **Always include informed consent** with clear participation information 
+2. **Always ask if participants want to receive a report** note that assessment results can be triggering. 
+2. **Use bilingual support** for international studies - allow partipants to switch language during the assessment
+3. **Implement proper reverse coding** for negatively worded items
+4. **Calculate composite scores** from subscale means
+5. **Validate item banks** before deployment
+6. **Use session management** for participant convenience
+7. **Export multiple formats** (CSV, JSON, RDS) for analysis flexibility
+8. **Test thoroughly** in different browsers and devices

@@ -463,7 +463,7 @@ study_config <- create_study_config(
     name = "Big Five Personality Assessment",
     study_key = session_uuid,
     model = "GRM",
-    estimation_method = "TAM",
+    estimation_method = "EAP",
     adaptive = FALSE,  # Using custom_page_flow for sequential sections
     custom_page_flow = custom_page_flow,
     demographics = names(demographic_configs),
