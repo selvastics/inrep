@@ -855,42 +855,42 @@ generate_theme_css <- function(theme_name = "light") {
       }
     }
   ',
-    colors$primary %||% "#4A90E2",           /* 1 */
-    colors$secondary %||% "#7BB3EC",         /* 2 */
-    colors$success %||% "#7ED321",          /* 3 */
-    colors$info %||% "#50E3C2",             /* 4 */
-    colors$warning %||% "#F5A623",          /* 5 */
-    colors$danger %||% "#D0021B",           /* 6 */
-    colors$background %||% "#FFFFFF",        /* 7 */
-    colors$surface %||% "#F7F9FC",          /* 8 */
-    colors$text %||% "#333333",             /* 9 */
-    colors$text_secondary %||% "#828282",   /* 10 */
-    colors$border %||% "#E1E8ED",           /* 11 */
+    colors$primary %||% "#4A90E2",
+    colors$secondary %||% "#7BB3EC",
+    colors$success %||% "#7ED321",
+    colors$info %||% "#50E3C2",
+    colors$warning %||% "#F5A623",
+    colors$danger %||% "#D0021B",
+    colors$background %||% "#FFFFFF",
+    colors$surface %||% "#F7F9FC",
+    colors$text %||% "#333333",
+    colors$text_secondary %||% "#828282",
+    colors$border %||% "#E1E8ED",
 
-    /* Aliases for compatibility */
-    colors$primary %||% "#4A90E2",           /* 12 */
-    colors$secondary %||% "#7BB3EC",         /* 13 */
-    colors$success %||% "#7ED321",          /* 14 */
-    colors$info %||% "#50E3C2",             /* 15 */
-    colors$warning %||% "#F5A623",          /* 16 */
-    colors$danger %||% "#D0021B",           /* 17 */
-    colors$background %||% "#FFFFFF",        /* 18 */
-    colors$surface %||% "#F7F9FC",          /* 19 */
-    colors$text %||% "#333333",             /* 20 */
-    colors$text_secondary %||% "#828282",   /* 21 */
-    colors$border %||% "#E1E8ED",           /* 22 */
+    # Aliases for compatibility
+    colors$primary %||% "#4A90E2",
+    colors$secondary %||% "#7BB3EC",
+    colors$success %||% "#7ED321",
+    colors$info %||% "#50E3C2",
+    colors$warning %||% "#F5A623",
+    colors$danger %||% "#D0021B",
+    colors$background %||% "#FFFFFF",
+    colors$surface %||% "#F7F9FC",
+    colors$text %||% "#333333",
+    colors$text_secondary %||% "#828282",
+    colors$border %||% "#E1E8ED",
 
-    /* Typography */
-    fonts$heading %||% "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif", /* 23 */
-    fonts$body %||% "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",     /* 24 */
-    fonts$mono %||% "'SF Mono', Monaco, 'Cascadia Code', monospace",               /* 25 */
+    # Typography
+    fonts$heading %||% "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+    fonts$body %||% "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+    fonts$mono %||% "'SF Mono', Monaco, 'Cascadia Code', monospace",
 
-    /* Layout */
-    borders$radius %||% "8px",              /* 26 */
-    borders$width %||% "1px",                /* 27 */
+    # Layout
+    borders$radius %||% "8px",
+    borders$width %||% "1px",
 
-    /* Button text color */
-    button_text_color                        /* 28 */
+    # Button text color
+    button_text_color
   )
   
   return(css)
@@ -964,7 +964,7 @@ get_theme_css <- function(theme = "Light", custom_css = NULL, theme_config = NUL
 #' @return CSS string
 #' @export
 generate_theme_css_from_config <- function(config) {
-  css <- ":root {\n"
+  css <- ":root{\n"
 
   # Colors
   colors <- config$colors %||% list()

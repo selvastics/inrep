@@ -39,9 +39,17 @@
 #' @param keep_alive_interval Keep-alive ping interval in seconds (default: 10).
 #' @param enable_error_recovery Logical indicating whether to enable automatic error recovery
 #'   with up to 3 recovery attempts before graceful degradation.
+#' @param port Numeric port number for Shiny application (default: 3838).
+#'   The application will be accessible at http://host:port.
+#' @param launch_browser Logical indicating whether to automatically open browser (default: TRUE).
+#'   When FALSE, returns the Shiny app object for manual execution.
+#' @param host Character string specifying the host address (default: "127.0.0.1").
+#'   Use "0.0.0.0" for network access or specific IP addresses for remote access.
 #' @param ... Additional parameters passed to Shiny application configuration.
 #'
-#' @return A Shiny application object that can be run with \code{shiny::runApp()}.
+#' @return When \code{launch_browser = TRUE} (default), launches the Shiny application
+#'   in the default browser. When \code{launch_browser = FALSE}, returns the Shiny app
+#'   object for manual execution with \code{shiny::runApp()}.
 #'   The app provides a complete assessment interface with real-time adaptation.
 #'
 #' @details
@@ -364,7 +372,7 @@
 #' advanced_config <- create_study_config(
 #'   name = "Cognitive Ability Assessment",
 #'   model = "2PL", 
-#'   estimation_method = "TAM",
+#'   estimation_method = "EAP",
 #'   max_items = 20,
 #'   min_items = 10,
 #'   min_SEM = 0.25,
@@ -447,7 +455,7 @@
 #' research_config <- create_study_config(
 #'   name = "Psychometric Validation Study",
 #'   model = "3PL",
-#'   estimation_method = "TAM",
+#'   estimation_method = "EAP",
 #'   min_items = 15,
 #'   max_items = 30,
 #'   min_SEM = 0.2,
@@ -508,7 +516,7 @@ launch_study <- function(
     item_bank,
     custom_css = NULL,
     theme_config = NULL,
-    webdav_url = NULL, 
+    webdav_url = NULL,
     password = NULL,
     save_format = "rds",
     logger = function(msg, ...) message(msg),
@@ -530,6 +538,10 @@ launch_study <- function(
     auto_close_time = 300,  # 5 minutes default
     auto_close_time_unit = "seconds",  # "seconds" or "minutes"
     disable_auto_close = FALSE,
+    # BROWSER LAUNCH PARAMETERS
+    port = 3838,
+    launch_browser = TRUE,
+    host = "127.0.0.1",
     ...
 ) {
   
@@ -5870,6 +5882,22 @@ launch_study <- function(
       }
     }, onexit = TRUE)
   }
-  
-  shiny::shinyApp(ui = ui, server = server)
+
+  # Create the Shiny app
+  app <- shiny::shinyApp(ui = ui, server = server)
+
+  # Launch the app with browser control
+  if (launch_browser) {
+    logger(sprintf("Launching study in browser at http://%s:%d", host, port), level = "INFO")
+    tryCatch({
+      shiny::runApp(app, port = port, host = host, launch.browser = TRUE)
+    }, error = function(e) {
+      logger(sprintf("Failed to launch browser: %s", e$message), level = "ERROR")
+      logger("Running app without browser launch. Access at: http://localhost:3838", level = "WARNING")
+      shiny::runApp(app, port = 3838, host = host, launch.browser = FALSE)
+    })
+  } else {
+    logger(sprintf("Study ready. Run shiny::runApp(app) or access at http://%s:%d", host, port), level = "INFO")
+    return(app)
+  }
 }

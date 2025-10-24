@@ -48,108 +48,57 @@ demographic_questions <- list(
   )
 )
 
-# Create study configuration using the new Monochrome theme
+# Create study configuration using the Monochrome theme
 study_config <- create_study_config(
   name = "Psychological Study on R Package Testing Experience",
-  
+
   # Use the elegant Monochrome theme
   theme = "Monochrome",
-  
-  # Demographics configuration
+
+  # Study parameters
+  study_key = "r_testing_psychology_2025",
+  model = "GRM",  # Graded Response Model for Likert scales
+
+  # Fixed questionnaire (not adaptive)
+  adaptive = FALSE,
+  max_items = 6,
+  min_items = 6,
+
+  # UI configuration
+  response_ui_type = "radio",
+  progress_style = "bar",
+
+  # Session management (20-minute timer)
+  session_save = TRUE,
+  max_session_duration = 20,
+
+  # Demographic configurations
   demographics = c("age_range", "r_experience"),
   input_types = list(
     age_range = "radio",
     r_experience = "radio"
   ),
-  
-  # Study parameters
-  study_key = "r_testing_psychology_2025",
-  model = "GRM",  # Graded Response Model for Likert scales
-  
-  # Fixed questionnaire (not adaptive)
-  adaptive = FALSE,
-  max_items = 6,
-  min_items = 6,
-  
-  # UI configuration
-  response_ui_type = "radio",
-  progress_style = "bar",
-  
-  # Session management (20-minute timer)
-  session_save = TRUE,
-  session_timeout = 20,
-  
-  # Demographic configurations
-  demographic_configs = demographic_questions,
-  
-  # Custom instructions
-  instructions = list(
-    welcome = paste0(
-      "Thank you for participating in this psychological study conducted by researchers ",
-      "investigating the experiences of R developers in package testing. This study explores ",
-      "how tools such as testthat, covr, and devtools influence developer confidence, stress, ",
-      "and motivation. Your participation will contribute to improving tools and support for ",
-      "the R community."
-    ),
-    
-    purpose = "To examine psychological factors affecting R package testing workflows.",
-    duration = "Approximately 15-20 minutes.",
-    
-    structure = paste0(
-      "The study consists of a consent form, demographic questions, and a main survey ",
-      "with Likert-scale questions. All questions are optional, but complete responses ",
-      "are appreciated."
-    ),
-    
-    confidentiality = paste0(
-      "Your responses are anonymous and will be used solely for research purposes. ",
-      "Data will be stored securely and reported in aggregate form."
-    ),
-    
-    consent_text = paste0(
-      "This study involves completing a survey about your experiences with R package ",
-      "testing tools. Participation is voluntary, and you may withdraw at any time by ",
-      "closing this window. Your responses will be anonymized and used for academic ",
-      "research only. There are no known risks, and your participation will help advance ",
-      "knowledge in software development psychology."
-    ),
-    
-    contact = "For questions, contact the research team at research@example.edu."
-  ),
-  
-  # Custom recommendation function based on responses
-  recommendation_fun = function(theta, demographics) {
-    if (is.null(theta) || length(theta) == 0) {
-      return("Thank you for participating in this psychological study on R package testing.")
-    }
-    
-    # Calculate average response level
-    avg_score <- mean(theta, na.rm = TRUE)
-    
-    # Provide personalized feedback
-    if (avg_score >= 1) {
-      feedback <- paste0(
-        "Your responses indicate high confidence and positive experiences with R testing tools. ",
-        "Consider sharing your expertise with the community through tutorials or mentoring. ",
-        "Your positive attitude toward testing contributes to the overall quality of R packages."
-      )
-    } else if (avg_score >= 0) {
-      feedback <- paste0(
-        "Your responses show moderate comfort with R testing tools. Consider exploring ",
-        "advanced testing techniques or joining R testing communities for support. ",
-        "Resources like the R Testing Guide and testthat documentation may be helpful."
-      )
-    } else {
-      feedback <- paste0(
-        "Your responses suggest room for growth in R testing practices. Consider starting ",
-        "with basic testthat tutorials and gradually building your testing skills. ",
-        "The R community offers many resources for learning testing best practices."
-      )
-    }
-    
-    return(feedback)
-  }
+  demographic_configs = demographic_questions
 )
+
+# Fix item bank structure to match current API
+r_testing_items$Question <- r_testing_items$item_text
+r_testing_items$ResponseCategories <- rep("1,2,3,4,5", 6)
+r_testing_items <- r_testing_items[, c("Question", "a", "b1", "b2", "b3", "b4", "ResponseCategories")]
+r_testing_items$stringsAsFactors <- FALSE
+
+# Instructions for participants
+cat("Psychological Study on R Package Testing Experience\n")
+cat("=============================================================\n")
+cat("This study examines how R package testing tools affect developer confidence,\n")
+cat("stress, and motivation. Uses a fixed 6-item questionnaire with Monochrome theme.\n")
+cat("Estimated completion time: 15-20 minutes.\n")
+cat("=============================================================\n\n")
+
+# Launch the study
+cat("Launching psychological study...\n")
+cat("Access at: http://localhost:3838\n")
+launch_study(study_config, r_testing_items)
 
 # Display study information
 cat("=== Psychological Study on R Package Testing Experience ===\n")

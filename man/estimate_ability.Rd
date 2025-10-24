@@ -145,7 +145,7 @@ data(bfi_items)
 # Create study configuration
 config <- create_study_config(
   model = "GRM", 
-  estimation_method = "TAM",
+  estimation_method = "EAP",
   theta_prior = c(0, 1)
 )
 
@@ -319,8 +319,9 @@ for (method in methods) {
 }
 \references{
 \itemize{
-  \item Robitzsch, A., Kiefer, T., & Wu, M. (2020). \emph{TAM: Test Analysis Modules}. 
-    R package version 3.5-19. \url{https://CRAN.R-project.org/package=TAM}
+  \item Robitzsch A, Kiefer T, Wu M (2024). TAM: Test Analysis Modules. R package version 4.2-21, https://CRAN.R-project.org/package=TAMst Analysis Modules. 
+R package version 3.5-19. \url{https://CRAN.R-project.org/package=TAM}
+
   \item Warm, T. A. (1989). Weighted likelihood estimation of ability in item response theory. 
     \emph{Psychometrika}, 54(3), 427-450.
   \item Bock, R. D., & Mislevy, R. J. (1982). Adaptive EAP estimation of ability in a microcomputer environment. 
@@ -331,11 +332,6 @@ for (method in methods) {
     Lawrence Erlbaum Associates.
 }
 
-Robitzsch A, Kiefer T, Wu M (2024). TAM: Test Analysis Modules. R package version 4.2-21, https://CRAN.R-project.org/package=TAMst Analysis Modules. 
-R package version 3.5-19. \url{https://CRAN.R-project.org/package=TAM}
-
-Robitzsch, A., Kiefer, T., George, A. C., & Uenlue, A. (2020). 
-CDM: Cognitive Diagnosis Modeling. R package version 7.5-15.
 }
 \seealso{
 \itemize{

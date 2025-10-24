@@ -189,68 +189,20 @@ enhanced_study_config <- create_study_config(
   
   # Extended session management
   session_save = TRUE,
-  session_timeout = 25,  # 25-minute timer
-  
+  max_session_duration = 25,  # 25-minute timer
+
   # UI configuration
   response_ui_type = "radio",
   progress_style = "bar",
-  
+
   # Enhanced validation
   response_validation_fun = function(response) {
     !is.null(response) && nzchar(as.character(response))
   },
-  
+
   # Demographic configurations
   demographic_configs = enhanced_demographics,
-  
-  # Enhanced instructions (academic style)
-  instructions = list(
-    welcome = paste(
-      "We appreciate your participation in this psychological study conducted by the",
-      "Center for Software Psychology at the Institute for Computational Research (fictional).",
-      "This research examines the psychological factors influencing R developers' experiences",
-      "with package testing tools, including testthat, covr, and devtools.",
-      "Your responses will contribute to peer-reviewed research aimed at enhancing",
-      "software development practices."
-    ),
-    
-    purpose = "To investigate self-efficacy, cognitive load, and satisfaction in R package testing workflows.",
-    
-    duration = "Approximately 20-25 minutes.",
-    
-    structure = paste(
-      "The study includes a consent form, demographic questions, a main survey with",
-      "Likert-scale questions, and a debriefing. All questions are optional to respect",
-      "your autonomy."
-    ),
-    
-    confidentiality = paste(
-      "Your responses are anonymous, stored securely, and reported only in aggregate",
-      "form in accordance with ethical guidelines. No personally identifiable",
-      "information is collected."
-    ),
-    
-    consent_text = paste(
-      "This study involves completing a survey about your experiences with R package",
-      "testing tools. Participation is voluntary, and you may withdraw at any time",
-      "by closing this window without penalty. Your responses will be anonymized",
-      "and used solely for academic research, potentially published in a peer-reviewed",
-      "journal. There are no known risks, and benefits include contributing to the",
-      "improvement of R development tools."
-    ),
-    
-    contact = "For inquiries, contact the research team at software.psych@icr.edu or +1-555-0123.",
-    
-    debriefing = paste(
-      "Thank you for participating in this study. The purpose was to examine",
-      "psychological factors, such as self-efficacy and cognitive load, in the context",
-      "of R package testing. Your responses will help us understand how testing tools",
-      "influence developer behavior and inform improvements to tools like testthat",
-      "and covr. If you have any concerns or questions, please contact",
-      "software.psych@icr.edu."
-    )
-  ),
-  
+
   # Advanced recommendation function with construct analysis
   recommendation_fun = function(theta, demographics) {
     if (is.null(theta) || length(theta) == 0) {
@@ -397,8 +349,7 @@ launch_enhanced_study <- function(auto_launch = FALSE) {
     launch_study(
       config = enhanced_study_config,
       item_bank = advanced_psychological_items,
-      port = 3838,
-      launch_browser = TRUE
+      port = 3838
     )
   } else {
     cat("To launch manually, run:\n")

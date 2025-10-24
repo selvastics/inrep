@@ -40,22 +40,28 @@ quick_start <- function(interactive = TRUE) {
   message("3. Psychological Assessment (validated scales)")
   message("4. Employee Screening (with proctoring)")
   message("5. Custom (build from scratch)")
-  
+  message("6. RCQ Resilience Assessment (30 items, German)")
+  message("7. RCQL Extended Resilience (68 items, German)")
+  message("8. Customizable RCQ (for modification)")
+
   if (interactive) {
-    choice <- readline("Select template (1-5): ")
+    choice <- readline("Select template (1-8): ")
     template <- as.numeric(choice)
   } else {
     template <- 2  # Default to educational test
     message("Using template: Educational Test")
   }
-  
+
   # Generate based on template
   result <- switch(template,
     simple_quiz(),
     educational_test(),
     psychological_assessment(),
     employee_screening(),
-    custom_assessment()
+    custom_assessment(),
+    rcq_resilience_assessment(),
+    rcqL_extended_assessment(),
+    custom_rcq_assessment()
   )
   
   if (is.null(result)) {
@@ -355,6 +361,104 @@ custom_assessment <- function() {
   list(config = config, item_bank = item_bank)
 }
 
+#' RCQ Resilience Assessment (30 items)
+#'
+#' Creates a resilience and coping assessment using the RCQ item bank
+#'
+#' @return List with config and item_bank
+#' @export
+rcq_resilience_assessment <- function() {
+  config <- create_study_config(
+    name = "RCQ - Resilienz und Coping Fragebogen",
+    model = "GRM",
+    max_items = 30,
+    min_items = 20,
+    min_SEM = 0.3,
+    demographics = c("alter", "geschlecht", "bildung", "beruf"),
+    theme = "light",
+    language = "de",
+    session_save = TRUE,
+    session_timeout = 3600
+  )
+
+  # Load RCQ items (30 items)
+  data(rcq_old_items)
+
+  message("\n--- RCQ Resilience Assessment ---")
+  message("Assessment created with:")
+  message(sprintf("- %d items in RCQ item bank", nrow(rcq_old_items)))
+  message("- GRM model for optimal measurement")
+  message("- German language interface")
+  message("- Session management enabled")
+
+  list(config = config, item_bank = rcq_old_items)
+}
+
+#' RCQL Extended Resilience Assessment (68 items)
+#'
+#' Creates an extended resilience assessment using the RCQL item bank
+#'
+#' @return List with config and item_bank
+#' @export
+rcqL_extended_assessment <- function() {
+  config <- create_study_config(
+    name = "RCQL - Erweiterte Resilienz und Coping Studie",
+    model = "GRM",
+    max_items = 50,
+    min_items = 30,
+    min_SEM = 0.25,
+    demographics = c("alter", "geschlecht", "bildung", "beruf", "psychotherapie"),
+    theme = "professional",
+    language = "de",
+    session_save = TRUE,
+    session_timeout = 5400  # 90 minutes
+  )
+
+  # Load RCQL items (68 items)
+  data(rcqL_old_items)
+
+  message("\n--- RCQL Extended Resilience Assessment ---")
+  message("Assessment created with:")
+  message(sprintf("- %d items in RCQL item bank", nrow(rcqL_old_items)))
+  message("- GRM model for comprehensive measurement")
+  message("- Extended demographics collection")
+  message("- Professional theme")
+  message("- Longer session timeout")
+
+  list(config = config, item_bank = rcqL_old_items)
+}
+
+#' Customizable RCQ Assessment
+#'
+#' Creates a customizable resilience assessment for user modification
+#'
+#' @return List with config and item_bank
+#' @export
+custom_rcq_assessment <- function() {
+  config <- create_study_config(
+    name = "RCQ - Benutzerdefinierte Resilienz Studie",
+    model = "GRM",
+    max_items = 30,
+    min_items = 15,
+    min_SEM = 0.35,
+    demographics = c("alter", "geschlecht"),
+    theme = "custom",
+    language = "de"
+  )
+
+  # Load customizable RCQ items
+  data(rcq_items)
+
+  message("\n--- Customizable RCQ Assessment ---")
+  message("Assessment created with:")
+  message(sprintf("- %d customizable items", nrow(rcq_items)))
+  message("- Copy of original RCQ items for modification")
+  message("- Ready for content customization")
+  message("- Flexible configuration")
+
+  list(config = config, item_bank = rcq_items)
+}
+
 #' Test Assessment in Demo Mode
 #' 
 #' Runs a quick test of the assessment configuration
@@ -429,7 +533,9 @@ show_examples <- function(task = NULL) {
     "multilingual" = "Multi-language assessment",
     "large_scale" = "Large-scale deployment",
     "custom_ui" = "Custom UI theming",
-    "reporting" = "Advanced reporting"
+    "reporting" = "Advanced reporting",
+    "rcq" = "RCQ resilience and coping assessments",
+    "rcq_custom" = "Customizable RCQ for content modification"
   )
   
   if (is.null(task)) {
@@ -518,6 +624,68 @@ config <- create_study_config(
   demographics = c("Country", "Native_Language"),
   allow_language_switch = TRUE
 )
+',
+
+  rcq = '
+# RCQ Resilience and Coping Assessment
+library(inrep)
+
+# Load RCQ item bank (30 items)
+data(rcq_old_items)
+
+# Create configuration for resilience assessment
+config <- create_study_config(
+  name = "RCQ - Resilienz und Coping Fragebogen",
+  model = "GRM",
+  max_items = 30,
+  min_items = 20,
+  min_SEM = 0.3,
+  demographics = c("alter", "geschlecht", "bildung", "beruf"),
+  theme = "light",
+  language = "de",
+  session_save = TRUE,
+  session_timeout = 3600
+)
+
+# Launch the assessment
+launch_study(config, item_bank = rcq_old_items)
+
+# Alternative: Quick start with predefined function
+result <- rcq_resilience_assessment()
+launch_study(result$config, result$item_bank)
+',
+
+  rcq_custom = '
+# Customizable RCQ Assessment (for content modification)
+library(inrep)
+
+# Load customizable RCQ items
+data(rcq_items)
+
+# Modify items as needed
+custom_items <- rcq_items
+# Example: Change response scale
+custom_items$ResponseCategories <- rep("1,2,3,4,5", nrow(custom_items))
+
+# Create custom configuration
+config <- create_study_config(
+  name = "Custom RCQ Study",
+  model = "GRM",
+  max_items = 25,
+  min_items = 15,
+  demographics = c("alter", "geschlecht"),
+  theme = "custom",
+  language = "de"
+)
+
+# Launch with modified items
+launch_study(config, item_bank = custom_items)
+
+# Or use the predefined function
+result <- custom_rcq_assessment()
+# Modify the item bank before launching
+result$item_bank$ResponseCategories <- rep("1,2,3,4,5", nrow(result$item_bank))
+launch_study(result$config, result$item_bank)
 '
   )
   

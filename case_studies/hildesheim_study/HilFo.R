@@ -1,9 +1,3 @@
-
-# Ensure inrep is installed only if not present
-if (!requireNamespace("inrep", quietly = TRUE)) {
-    if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
-    devtools::install_github("selvastics/inrep", ref = "master")
-}
 library(inrep)
 
 

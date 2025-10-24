@@ -364,3 +364,5 @@ The theme system is part of the inrep package and follows the same license terms
 **Last Updated**: October 2024
 **Version**: 1.0.0
 **Compatibility**: R 4.0+, Shiny 1.7+
+
+

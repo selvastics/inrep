@@ -778,9 +778,9 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
     if (nchar(bar_plot_data) > 0) {
         # Insert bar plot into the HTML
         html_report <- gsub(
-            '<h2 style="color: #667eea; text-align: center;">Anxiety Profile by Type</h2>',
-            paste0('<h2 style="color: #667eea; text-align: center;">Anxiety Profile by Type</h2>',
-                   '<img src="data:image/png;base64,', bar_plot_data, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">'),
+            '<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Anxiety Profile by Domain</h2>',
+            paste0('<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Anxiety Profile by Domain</h2>',
+                   '<img src="data:image/png;base64,', bar_plot_data, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 6px; border: 1px solid #dee2e6; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">'),
             html_report
         )
     } else {
@@ -799,9 +799,9 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
     if (nchar(trace_plot_data) > 0) {
         # Insert trace plot into the HTML
         html_report <- gsub(
-            '<h2 style="color: #667eea; text-align: center;">Adaptive Testing Trace</h2>',
-            paste0('<h2 style="color: #667eea; text-align: center;">Adaptive Testing Trace</h2>',
-                   '<img src="data:image/png;base64,', trace_plot_data, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">'),
+            '<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Adaptive Testing Progression</h2>',
+            paste0('<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Adaptive Testing Progression</h2>',
+                   '<img src="data:image/png;base64,', trace_plot_data, '" style="width: 100%; max-width: 900px; display: block; margin: 0 auto; border-radius: 6px; border: 1px solid #dee2e6; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">'),
             html_report
         )
     } else {

@@ -146,6 +146,10 @@
 #' - **`bfi_items`**: Big Five Inventory personality assessment items
 #' - **`math_items`**: Mathematics assessment items for cognitive testing
 #' - **`cognitive_items`**: Cognitive ability assessment items
+#' - **`rcq_old_items`**: RCQ resilience and coping items (30 items, original version)
+#' - **`rcqL_old_items`**: RCQL long-form resilience and coping items (68 items)
+#' - **`rcq_items`**: Copy of rcq_old_items for user customization
+#' - **`rcqL_items`**: Copy of rcqL_old_items for user customization
 #'
 #' @section Quality Assurance:
 #'

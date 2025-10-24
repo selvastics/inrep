@@ -826,9 +826,9 @@ input[type="radio"] + span, input[type="checkbox"] + span {
 
   .container-fluid {
     padding: var(--spacing-4);
-  }
+}
 
-  .assessment-card {
+.assessment-card {
     padding: var(--spacing-4);
   }
 

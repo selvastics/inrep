@@ -9,7 +9,6 @@
 </div>
 <!--- DISCLAIMER BANNER END --->
 
-
 <table width="100%"><tr>
 <td><h1>inrep: Instant Reports for Adaptive Assessments</h1></td>
 
@@ -228,9 +227,8 @@ launch_study(
 
 ## Documentation
 
-* `vignette("getting-started", package = "inrep")`
-* `vignette("customizing-appearance", package = "inrep")`
-* `vignette("research-workflows", package = "inrep")`
+* `vignette("[non-adaptive-assessments]-getting-started", package = "inrep")`
+* `vignette("[adaptive-assessments]-getting-started", package = "inrep")`
 
 ## Main Functions
 
