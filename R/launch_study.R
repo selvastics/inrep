@@ -47,14 +47,14 @@
 #'   A red debug indicator appears in the bottom-right corner. **Use only for development/testing!**
 #' @param port Numeric port number for Shiny application (default: 3838).
 #'   The application will be accessible at http://host:port.
-#' @param launch_browser Logical indicating whether to automatically open browser (default: TRUE).
-#'   When FALSE, returns the Shiny app object for manual execution.
+#' @param launch_browser Logical indicating whether to automatically open browser (default: FALSE).
+#'   When TRUE, automatically launches in browser. When FALSE, returns the Shiny app object for manual execution.
 #' @param host Character string specifying the host address (default: "127.0.0.1").
 #'   Use "0.0.0.0" for network access or specific IP addresses for remote access.
 #' @param ... Additional parameters passed to Shiny application configuration.
 #'
-#' @return When \code{launch_browser = TRUE} (default), launches the Shiny application
-#'   in the default browser. When \code{launch_browser = FALSE}, returns the Shiny app
+#' @return When \code{launch_browser = TRUE}, launches the Shiny application
+#'   in the default browser. When \code{launch_browser = FALSE} (default), returns the Shiny app
 #'   object for manual execution with \code{shiny::runApp()}.
 #'   The app provides a complete assessment interface with real-time adaptation.
 #'
@@ -548,7 +548,7 @@ launch_study <- function(
     disable_auto_close = FALSE,
     # BROWSER LAUNCH PARAMETERS
     port = 3838,
-    launch_browser = TRUE,
+    launch_browser = FALSE,
     host = "127.0.0.1",
     ...
 ) {
