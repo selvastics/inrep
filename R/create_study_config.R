@@ -1,4 +1,4 @@
-#' Create Study Configuration for IRT-Based Assessment
+#' Create Study Configuration Assessment
 #'
 #' Creates a comprehensive configuration object for adaptive testing studies that utilize 
 #' the TAM package for all psychometric computations. This function configures the parameters 

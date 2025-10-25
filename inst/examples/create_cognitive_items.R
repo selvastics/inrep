@@ -94,19 +94,3 @@ cognitive_items <- data.frame(
 
 # Save to data directory
 save(cognitive_items, file = "../../data/cognitive_items.rda")
-
-cat("Cognitive items dataset created successfully!\n")
-cat("Items:", nrow(cognitive_items), "\n")
-cat("Columns:", names(cognitive_items), "\n")
-cat("Domains:", unique(cognitive_items$domain), "\n")
-cat("Difficulty levels:", unique(cognitive_items$difficulty_level), "\n")
-cat("\nUsage:\n")
-cat("config <- create_study_config(\n")
-cat("  name = 'Cognitive Assessment',\n")
-cat("  model = '2PL',\n")
-cat("  max_items = 20,\n")
-cat("  min_items = 10,\n")
-cat("  criteria = 'MI',\n")
-cat("  theme = 'Professional'\n")
-cat(")\n")
-cat("launch_study(config, cognitive_items)\n")

@@ -1,4 +1,4 @@
-#' Core Utilities for increp Package
+#' Core Utilities for inrep Package
 #' 
 #' This file consolidates all core utility functions including:
 #' - Basic utility functions (from utils.R)

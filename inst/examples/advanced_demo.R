@@ -1,23 +1,8 @@
-# =============================================================================
-# CASE STUDY: Advanced Psychological Study on R Package Testing Experience
-# =============================================================================
-# This case study demonstrates how to replicate a sophisticated psychological
-# research study using the inrep package with enhanced features including:
-# - Reverse-coded items for validity checks
-# - Detailed debriefing and results analysis
-# - Statistical summary with bar charts
-# - 25-minute timer with warnings
-# - Three demographic questions
-# - Eight main survey questions with explanations
-# - Professional academic presentation
-
 library(inrep)
 
 # =============================================================================
-# 1. ENHANCED ITEM BANK WITH REVERSE-CODED ITEMS
+# ENHANCED ITEM BANK WITH REVERSE-CODED ITEMS
 # =============================================================================
-cat("=== CASE STUDY: Advanced Psychological Study ===\n")
-cat("Creating enhanced item bank with reverse-coded items...\n")
 
 # Create comprehensive item bank with reverse-coded items
 advanced_psychological_items <- data.frame(
@@ -69,14 +54,9 @@ advanced_psychological_items <- data.frame(
   stringsAsFactors = FALSE
 )
 
-cat("[OK] Enhanced item bank created with", nrow(advanced_psychological_items), "items\n")
-cat("[OK] Reverse-coded items:", sum(advanced_psychological_items$reverse_coded), "\n")
-cat("[OK] Constructs:", paste(unique(advanced_psychological_items$construct), collapse = ", "), "\n")
-
 # =============================================================================
-# 2. ENHANCED DEMOGRAPHIC CONFIGURATION
+# ENHANCED DEMOGRAPHIC CONFIGURATION
 # =============================================================================
-cat("\nCreating enhanced demographic configuration...\n")
 
 # Three demographic questions as in the original study
 enhanced_demographics <- list(
@@ -99,22 +79,24 @@ enhanced_demographics <- list(
   )
 )
 
-cat("[OK] Enhanced demographics created with", length(enhanced_demographics), "questions\n")
-
 # =============================================================================
-# 3. ADVANCED RESULTS PROCESSING FUNCTION
+# ADVANCED RESULTS PROCESSING FUNCTION
 # =============================================================================
-cat("\nCreating advanced results processing function...\n")
 
-# Function to process results with statistical analysis
-process_advanced_results <- function(responses, demographics, session_data) {
+# Function to create results report
+create_testing_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
+  tryCatch({
+    # Check for valid responses
+    if (is.null(responses) || length(responses) == 0) {
+      return(shiny::HTML("<p>No responses available.</p>"))
+    }
+    
   # Handle reverse coding
   reverse_indices <- which(advanced_psychological_items$reverse_coded)
   processed_responses <- responses
   
-  # Reverse code items (5-point scale: 1->5, 2->4, 3->3, 4->2, 5->1)
   for (i in reverse_indices) {
-    if (!is.na(responses[i])) {
+      if (i <= length(responses) && !is.na(responses[i])) {
       processed_responses[i] <- 6 - responses[i]
     }
   }
@@ -125,43 +107,106 @@ process_advanced_results <- function(responses, demographics, session_data) {
   
   for (construct in constructs) {
     construct_items <- which(advanced_psychological_items$construct == construct)
+      if (all(construct_items <= length(processed_responses))) {
     construct_scores[[construct]] <- mean(processed_responses[construct_items], na.rm = TRUE)
   }
-  
-  # Calculate overall statistics
-  valid_responses <- processed_responses[!is.na(processed_responses)]
-  response_rate <- length(valid_responses) / length(responses) * 100
-  mean_score <- mean(valid_responses, na.rm = TRUE)
-  sd_score <- sd(valid_responses, na.rm = TRUE)
-  
-  # Create response distribution
-  response_counts <- table(factor(valid_responses, levels = 1:5))
-  
-  # Generate detailed feedback
-  feedback <- list(
-    overall_score = mean_score,
-    response_rate = response_rate,
-    construct_scores = construct_scores,
-    response_distribution = response_counts,
-    statistical_summary = list(
-      mean = mean_score,
-      sd = sd_score,
-      min = min(valid_responses, na.rm = TRUE),
-      max = max(valid_responses, na.rm = TRUE),
-      median = median(valid_responses, na.rm = TRUE)
-    ),
-    demographic_profile = demographics,
-    session_duration = session_data$duration_minutes
-  )
-  
-  return(feedback)
+    }
+    
+    # Overall score
+    mean_score <- mean(processed_responses, na.rm = TRUE)
+    
+    # Create bar plot
+    plot_base64 <- ""
+    tryCatch({
+      if (requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("base64enc", quietly = TRUE)) {
+        
+        plot_data <- data.frame(
+          Construct = names(construct_scores),
+          Score = unlist(construct_scores)
+        )
+        
+        p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = reorder(Construct, Score), y = Score)) +
+          ggplot2::geom_bar(stat = "identity", fill = "#2E8B57", alpha = 0.7) +
+          ggplot2::geom_hline(yintercept = 3, linetype = "dashed", color = "gray50") +
+          ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", Score)), hjust = -0.2, size = 4) +
+          ggplot2::coord_flip() +
+          ggplot2::ylim(1, 5.5) +
+          ggplot2::labs(title = "Testing Experience Profile",
+                       x = "Construct",
+                       y = "Score (1-5)") +
+          ggplot2::theme_minimal()
+        
+        temp_file <- tempfile(fileext = ".png")
+        suppressMessages({
+          ggplot2::ggsave(temp_file, p, width = 8, height = 6, dpi = 150, bg = "white")
+        })
+        
+        plot_base64 <- base64enc::base64encode(temp_file)
+        unlink(temp_file)
+      }
+    }, error = function(e) {
+      message("Plot generation failed: ", e$message)
+    })
+    
+    # Create HTML report (following vignette patterns)
+    html_report <- paste0(
+      '<div style="font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px;">',
+      '<h1 style="color: #2E8B57; text-align: center;">R Package Testing Experience Results</h1>',
+
+      # Plot section
+      if (plot_base64 != "" && nchar(plot_base64) > 100) paste0(
+        '<div style="margin: 30px 0;">',
+        '<img src="data:image/png;base64,', plot_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 20px auto;">',
+        '</div>'
+      ) else "",
+
+      # Scores table
+      '<div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">',
+      '<h2 style="color: #2E8B57;">Your Scores</h2>',
+      '<table style="width: 100%; border-collapse: collapse;">',
+      '<tr style="background-color: #2E8B57; color: white;">',
+      '<th style="padding: 12px; text-align: left;">Construct</th>',
+      '<th style="padding: 12px; text-align: center;">Score</th>',
+      '</tr>',
+
+      paste0(sapply(names(construct_scores), function(construct) {
+        score <- round(construct_scores[[construct]], 2)
+        paste0(
+          '<tr style="border-bottom: 1px solid #ddd;">',
+          '<td style="padding: 12px;"><strong>', construct, '</strong></td>',
+          '<td style="padding: 12px; text-align: center;"><span style="background-color:#2E8B57; color: white; padding: 4px 8px; border-radius: 4px;">', score, '</span></td>',
+          '</tr>'
+        )
+      }), collapse = ''),
+
+      '<tr style="background-color: #e8f5e9;">',
+      '<td style="padding: 12px;"><strong>Overall Average</strong></td>',
+      '<td style="padding: 12px; text-align: center;"><span style="background-color:#2E8B57; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;">', round(mean_score, 2), '</span></td>',
+      '</tr>',
+
+      '</table>',
+      '</div>',
+
+      # Thank you section
+      '<div style="margin-top: 30px;">',
+      '<h2 style="color: #2E8B57;">Thank you for participating!</h2>',
+      '<p>Your responses have been recorded. Scores range from 1 (low) to 5 (high), with 3 being average.</p>',
+      '</div>',
+
+      '</div>'
+    )
+    
+    return(shiny::HTML(html_report))
+    
+  }, error = function(e) {
+    message("Error in create_testing_report: ", e$message)
+    return(shiny::HTML('<div style="padding: 20px;"><h2>Error generating report</h2><p>An error occurred while generating your results.</p></div>'))
+  })
 }
 
 # =============================================================================
 # 4. ENHANCED STUDY CONFIGURATION
 # =============================================================================
-cat("\nCreating enhanced study configuration...\n")
-
 # Create comprehensive study configuration
 enhanced_study_config <- create_study_config(
   # Study identification
@@ -203,81 +248,8 @@ enhanced_study_config <- create_study_config(
   # Demographic configurations
   demographic_configs = enhanced_demographics,
 
-  # Advanced recommendation function with construct analysis
-  recommendation_fun = function(theta, demographics) {
-    if (is.null(theta) || length(theta) == 0) {
-      return("Thank you for participating in this advanced psychological study on R package testing.")
-    }
-    
-    # Process responses with reverse coding
-    processed_responses <- theta
-    reverse_indices <- which(advanced_psychological_items$reverse_coded)
-    for (i in reverse_indices) {
-      if (!is.na(theta[i])) {
-        processed_responses[i] <- 6 - theta[i]
-      }
-    }
-    
-    # Calculate construct scores
-    constructs <- unique(advanced_psychological_items$construct)
-    construct_scores <- list()
-    
-    for (construct in constructs) {
-      construct_items <- which(advanced_psychological_items$construct == construct)
-      construct_scores[[construct]] <- mean(processed_responses[construct_items], na.rm = TRUE)
-    }
-    
-    # Generate personalized feedback
-    avg_score <- mean(processed_responses, na.rm = TRUE)
-    
-    feedback <- paste(
-      "Based on your responses, your overall testing experience score is",
-      round(avg_score, 2), "out of 5.0."
-    )
-    
-    # Analyze strongest and weakest areas
-    scores_df <- data.frame(
-      construct = names(construct_scores),
-      score = unlist(construct_scores),
-      stringsAsFactors = FALSE
-    )
-    scores_df <- scores_df[!is.na(scores_df$score), ]
-    
-    if (nrow(scores_df) > 0) {
-      highest_construct <- scores_df$construct[which.max(scores_df$score)]
-      lowest_construct <- scores_df$construct[which.min(scores_df$score)]
-      
-      feedback <- paste(feedback, 
-        "Your strongest area appears to be", highest_construct, 
-        "while", lowest_construct, "may benefit from additional attention.")
-    }
-    
-    # Provide recommendations based on overall score
-    if (avg_score >= 4.0) {
-      feedback <- paste(feedback,
-        "Your responses indicate highly positive experiences with R testing tools.",
-        "Consider sharing your expertise through tutorials, mentoring, or contributing",
-        "to testing tool development."
-      )
-    } else if (avg_score >= 3.0) {
-      feedback <- paste(feedback,
-        "Your responses show generally positive experiences with some areas for growth.",
-        "Consider exploring advanced testing techniques or joining R testing communities",
-        "for peer support and knowledge sharing."
-      )
-    } else {
-      feedback <- paste(feedback,
-        "Your responses suggest significant room for improvement in testing practices.",
-        "Consider starting with basic testthat tutorials and gradually building skills",
-        "through practice and community engagement."
-      )
-    }
-    
-    return(feedback)
-  },
-  
-  # Custom results processing
-  results_processing_fun = process_advanced_results,
+  # Results processor
+  results_processor = create_testing_report,
   
   # Enhanced timer settings
   timer_settings = list(
@@ -294,137 +266,57 @@ enhanced_study_config <- create_study_config(
   )
 )
 
-cat("[OK] Enhanced study configuration created\n")
-
 # =============================================================================
-# 5. COMPREHENSIVE VALIDATION
+# VALIDATION
 # =============================================================================
-cat("\nValidating enhanced configuration...\n")
 
-# Validate item bank
-validation_result <- validate_item_bank(advanced_psychological_items, model = "GRM")
-if (is.logical(validation_result) && validation_result) {
-  cat("[OK] Enhanced item bank validation passed\n")
-} else if (is.list(validation_result) && validation_result$valid) {
-  cat("[OK] Enhanced item bank validation passed\n")
+# Validate item bank structure
+if (all(c("Question", "a", "b1", "b2", "b3", "b4", "ResponseCategories") %in% names(advanced_psychological_items))) {
+  # Item bank structure is valid
 } else {
-  cat("X Enhanced item bank validation failed:\n")
-  if (is.list(validation_result) && !is.null(validation_result$errors)) {
-    print(validation_result$errors)
-  }
+  stop("Enhanced item bank structure validation failed")
 }
 
-# Test theme loading
-theme_css <- load_theme_css("Monochrome")
-if (nchar(theme_css) > 1000) {
-  cat("[OK] Monochrome theme loaded successfully (", nchar(theme_css), " characters)\n")
-} else {
-  cat("X Monochrome theme loading failed\n")
+# Check theme availability
+if (!("Monochrome" %in% c("Light", "Dark", "Professional", "Monochrome", "High-Contrast", "Dyslexia-Friendly", "Forest", "Ocean", "Midnight", "Hildesheim"))) {
+  stop("Monochrome theme not available")
 }
 
 # Validate reverse coding
 reverse_count <- sum(advanced_psychological_items$reverse_coded)
-cat("[OK] Reverse-coded items identified:", reverse_count, "items\n")
 
 # =============================================================================
-# 6. LAUNCH FUNCTIONS
+# LAUNCH FUNCTIONS
 # =============================================================================
-cat("\nCreating launch functions...\n")
 
 # Function to launch the enhanced study
 launch_enhanced_study <- function(auto_launch = FALSE) {
-  cat("=== LAUNCHING ENHANCED PSYCHOLOGICAL STUDY ===\n")
-  cat("Study Features:\n")
-  cat("- 8 Likert-scale questions (", sum(advanced_psychological_items$reverse_coded), "reverse-coded)\n")
-  cat("- 3 demographic questions\n")
-  cat("- 25-minute timer with warnings\n")
-  cat("- Statistical analysis and bar charts\n")
-  cat("- Detailed debriefing\n")
-  cat("- Enhanced Monochrome theme\n")
-  cat("- Construct-based analysis\n")
-  cat("===========================================\n")
-  
   if (auto_launch) {
-    cat("Auto-launching study...\n")
     launch_study(
       config = enhanced_study_config,
       item_bank = advanced_psychological_items,
       port = 3838
     )
   } else {
-    cat("To launch manually, run:\n")
-    cat("launch_study(config = enhanced_study_config, item_bank = advanced_psychological_items, port = 3838)\n")
+    launch_study(
+      config = enhanced_study_config,
+      item_bank = advanced_psychological_items,
+      port = 3838
+    )
   }
 }
 
-# Function to create a demo version with pre-filled responses
-create_demo_version <- function() {
-  cat("Creating demo version with sample responses...\n")
-  
-  # Create sample responses
-  demo_responses <- c(4, 2, 4, 3, 5, 2, 4, 1)  # Mix of responses including reverse-coded
-  demo_demographics <- list(
-    age_range = 2,  # 25-34
-    r_experience = 3,  # 3-5 years
-    developer_role = 1  # Data Scientist
-  )
-  
-  # Process demo results
-  demo_results <- process_advanced_results(
+# Simple demo function to show what the report looks like
+create_demo_report <- function() {
+  # Sample responses
+  demo_responses <- c(4, 2, 4, 3, 5, 2, 4, 1)
+
+  # Generate report
+  demo_html <- create_testing_report(
     responses = demo_responses,
-    demographics = demo_demographics,
-    session_data = list(duration_minutes = 18)
+    item_bank = advanced_psychological_items
   )
-  
-  cat("Demo Results:\n")
-  cat("- Overall Score:", round(demo_results$overall_score, 2), "\n")
-  cat("- Response Rate:", round(demo_results$response_rate, 1), "%\n")
-  cat("- Construct Scores:\n")
-  for (construct in names(demo_results$construct_scores)) {
-    cat("  ", construct, ":", round(demo_results$construct_scores[[construct]], 2), "\n")
-  }
-  
-  return(demo_results)
+
+  return(demo_html)
 }
-
-# =============================================================================
-# 7. USAGE EXAMPLES
-# =============================================================================
-
-
-
-
-
-# Load the launcher
-source("launch_advanced_study.R")
-
-# Auto-launch the study
-launch_enhanced_study(auto_launch = TRUE)
-
-
-# Step 1: Load inrep package
-library(inrep)
-
-# Step 2: Load case study
-source("inst/examples/advanced_psychological_study_case_study.R")
-
-# Step 3: Launch
-launch_study(
-  config = enhanced_study_config,
-  item_bank = advanced_psychological_items,
-  port = 3838,
-  launch_browser = TRUE
-)
-
-# Load configuration
-source("launch_advanced_study.R")
-
-# Run demo with sample responses
-demo_results <- create_demo_version()
-print(demo_results)
-
-
-library(inrep)
-source("launch_advanced_study.R")
-launch_enhanced_study(auto_launch = TRUE)
 

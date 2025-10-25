@@ -1,40 +1,94 @@
-# Purpose: Demonstrates various use cases of the inrep package for adaptive and non-adaptive psychological assessments.
+# Purpose: Demonstrates various use cases of the inrep package following vignette patterns
 # This script provides clear, self-contained examples that guide users from basic to advanced configurations.
 # Each example launches a study and includes detailed explanations for educational purposes.
-# Updated to match current API and best practices from vignettes and case studies.
+# Based on patterns from vignettes and case studies.
 
 # Required packages
 library(inrep)
-library(uuid)
+
+# =============================================================================
+# HELPER: Simple Results Processor (following vignette patterns)
+# =============================================================================
+
+create_simple_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
+  tryCatch({
+    if (is.null(responses) || length(responses) == 0) {
+      return(shiny::HTML("<p>No responses available.</p>"))
+    }
+
+    mean_score <- mean(responses, na.rm = TRUE)
+
+    # Create basic visualization (following vignette approach)
+    plot_base64 <- ""
+    if (requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("base64enc", quietly = TRUE)) {
+      tryCatch({
+        plot_data <- data.frame(
+          Item = 1:length(responses),
+          Score = responses
+        )
+
+        p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = Item, y = Score)) +
+          ggplot2::geom_bar(stat = "identity", fill = "#4A90E2", alpha = 0.7) +
+          ggplot2::labs(title = "Your Responses", x = "Item", y = "Score") +
+          ggplot2::theme_minimal()
+
+        temp_file <- tempfile(fileext = ".png")
+        ggplot2::ggsave(temp_file, p, width = 8, height = 5, dpi = 150, bg = "white")
+        plot_base64 <- base64enc::base64encode(temp_file)
+        unlink(temp_file)
+      }, error = function(e) invisible(NULL))
+    }
+
+    # Simple HTML report (following vignette style)
+    html <- paste0(
+      '<div style="font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px;">',
+      '<h1 style="color: #4A90E2; text-align: center;">Study Results</h1>',
+
+      if (plot_base64 != "" && nchar(plot_base64) > 100) paste0(
+        '<div style="margin: 30px 0;">',
+        '<img src="data:image/png;base64,', plot_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 20px auto;">',
+        '</div>'
+      ) else "",
+
+      '<div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">',
+      '<h2 style="color: #4A90E2;">Summary</h2>',
+      '<p style="font-size: 18px;">Average Score: <strong>', round(mean_score, 2), '</strong></p>',
+      '<p>Thank you for your participation!</p>',
+      '</div>',
+
+      '</div>'
+    )
+
+    return(shiny::HTML(html))
+  }, error = function(e) {
+    return(shiny::HTML('<div style="padding: 20px;"><h2>Error generating report</h2></div>'))
+  })
+}
 
 # =============================================================================
 # Example 1: Basic Adaptive Test with GRM (from vignettes)
 # =============================================================================
 # Purpose: Introduce beginners to a simple adaptive test using the Graded Response Model (GRM).
 
-\dontrun{
-  # Create a basic configuration (from getting-started vignette)
-  config <- create_study_config(
-    name = "A First Adaptive Test",
-    model = "GRM",                    # Graded Response Model for Likert scale items
-    max_items = 10,                   # Maximum 10 items
-    min_items = 5,                    # Minimum 5 items
-    criteria = "MI"                   # Maximum Information criterion
-  )
+# Create a basic configuration (from getting-started vignette)
+config <- create_study_config(
+  name = "A First Adaptive Test",
+  model = "GRM",
+  max_items = 10,
+  min_items = 5,
+  criteria = "MI",
+  results_processor = create_simple_report
+)
 
-  # Launch the adaptive test
-  cat("Example 1: Basic Adaptive Test with GRM\n")
-  cat("Access at: http://localhost:3838\n")
-  launch_study(config, bfi_items)
-}
+# Launch the adaptive test
+launch_study(config, bfi_items)
 
 # =============================================================================
 # Example 2: Custom Work Personality Assessment (from vignettes)
 # =============================================================================
 # Purpose: Demonstrate creating a custom item bank for workplace personality assessment.
 
-\dontrun{
-  # Custom personality item bank for work-related traits (from vignette)
+# Custom personality item bank for work-related traits (from vignette)
   work_personality_items <- data.frame(
     # Unique identifiers
     item_id = paste0("WORK_", sprintf("%03d", 1:20)),
@@ -98,28 +152,25 @@ library(uuid)
     stringsAsFactors = FALSE
   )
 
-  # Launch study with custom item bank
-  config <- create_study_config(
-    name = "Work Personality Assessment",
-    model = "GRM",
-    max_items = 10,
-    min_items = 5,
-    criteria = "MI",
-    theme = "Professional"
-  )
+# Launch study with custom item bank
+config <- create_study_config(
+  name = "Work Personality Assessment",
+  model = "GRM",
+  max_items = 10,
+  min_items = 5,
+  criteria = "MI",
+  theme = "Professional",
+  results_processor = create_simple_report
+)
 
-  cat("Example 2: Custom Work Personality Assessment\n")
-  cat("Access at: http://localhost:3838\n")
-  launch_study(config, work_personality_items)
-}
+launch_study(config, work_personality_items)
 
 # =============================================================================
 # Example 3: Binary Math Knowledge Test (from vignettes)
 # =============================================================================
 # Purpose: Demonstrate binary item bank for knowledge assessment.
 
-\dontrun{
-  # Binary item bank for mathematics knowledge test (from vignette)
+# Binary item bank for mathematics knowledge test (from vignette)
   math_knowledge_items <- data.frame(
     item_id = paste0("MATH_", sprintf("%03d", 1:30)),
 
@@ -197,181 +248,149 @@ library(uuid)
     stringsAsFactors = FALSE
   )
 
-  # Launch binary assessment
-  config <- create_study_config(
-    name = "Math Knowledge Test",
-    model = "2PL",
-    max_items = 15,
-    min_items = 8,
-    criteria = "MI",
-    theme = "Midnight"
-  )
+# Launch binary assessment
+config <- create_study_config(
+  name = "Math Knowledge Test",
+  model = "2PL",
+  max_items = 15,
+  min_items = 8,
+  criteria = "MI",
+  theme = "Midnight",
+  results_processor = create_simple_report
+)
 
-  cat("Example 3: Binary Math Knowledge Test\n")
-  cat("Access at: http://localhost:3838\n")
-  launch_study(config, math_knowledge_items)
-}
+launch_study(config, math_knowledge_items)
 
 # =============================================================================
 # Example 4: Hildesheim University Theme (from case studies)
 # =============================================================================
 # Purpose: Demonstrate university-branded assessment with custom styling.
 
-\dontrun{
-  # Use Hildesheim theme (from case study)
-  config <- create_study_config(
-    name = "Big Five Personality Assessment",
-    model = "GRM",
-    max_items = 20,
-    min_items = 10,
-    criteria = "MI",
-    theme = "Hildesheim",  # University of Hildesheim branding
-    estimation_method = "EAP"
-  )
+# Use Hildesheim theme (from case study)
+config <- create_study_config(
+  name = "Big Five Personality Assessment",
+  model = "GRM",
+  max_items = 20,
+  min_items = 10,
+  criteria = "MI",
+  theme = "Hildesheim",
+  estimation_method = "EAP",
+  results_processor = create_simple_report
+)
 
-  # Add demographic collection
-  demographic_configs <- list(
-    Age = list(
-      field_name = "Age",
-      question_text = "What is your age?",
-      input_type = "radio",
-      options = c(
-        "18 or younger" = 1, "19-20" = 2, "21-25" = 3,
-        "26-30" = 4, "31-40" = 5, "41-50" = 6,
-        "51-60" = 7, "61 or older" = 8
-      ),
-      required = TRUE
+# Add demographic collection
+demographic_configs <- list(
+  Age = list(
+    field_name = "Age",
+    question_text = "What is your age?",
+    input_type = "radio",
+    options = c(
+      "18 or younger" = 1, "19-20" = 2, "21-25" = 3,
+      "26-30" = 4, "31-40" = 5, "41-50" = 6,
+      "51-60" = 7, "61 or older" = 8
     ),
+    required = TRUE
+  ),
 
-    Gender = list(
-      field_name = "Gender",
-      question_text = "How do you identify your gender?",
-      input_type = "radio",
-      options = c(
-        "Female" = 1, "Male" = 2, "Non-binary" = 3,
-        "Other" = 4, "Prefer not to say" = 5
-      ),
-      required = TRUE
-    )
+  Gender = list(
+    field_name = "Gender",
+    question_text = "How do you identify your gender?",
+    input_type = "radio",
+    options = c(
+      "Female" = 1, "Male" = 2, "Non-binary" = 3,
+      "Other" = 4, "Prefer not to say" = 5
+    ),
+    required = TRUE
   )
+)
 
-  config$demographics <- names(demographic_configs)
-  config$demographic_configs <- demographic_configs
-  config$input_types <- list(Age = "radio", Gender = "radio")
+config$demographics <- names(demographic_configs)
+config$demographic_configs <- demographic_configs
+config$input_types <- list(Age = "radio", Gender = "radio")
 
-  cat("Example 4: Hildesheim University Theme\n")
-  cat("Access at: http://localhost:3838\n")
-  launch_study(config, bfi_items)
-}
+launch_study(config, bfi_items)
 
 # =============================================================================
 # Example 5: Accessibility-Focused Assessment (from theme system)
 # =============================================================================
 # Purpose: Demonstrate accessibility features for users with different needs.
 
-\dontrun{
-  # Dyslexia-friendly assessment
-  config <- create_study_config(
-    name = "Dyslexia-Friendly Assessment",
-    model = "GRM",
-    max_items = 15,
-    min_items = 8,
-    criteria = "MI",
-    theme = "Dyslexia-Friendly",  # Enhanced readability
-    estimation_method = "EAP"
-  )
+# Dyslexia-friendly assessment
+config <- create_study_config(
+  name = "Dyslexia-Friendly Assessment",
+  model = "GRM",
+  max_items = 15,
+  min_items = 8,
+  criteria = "MI",
+  theme = "Dyslexia-Friendly",
+  estimation_method = "EAP",
+  results_processor = create_simple_report
+)
 
-  cat("Example 5: Dyslexia-Friendly Assessment\n")
-  cat("Access at: http://localhost:3838\n")
-  launch_study(config, bfi_items)
+launch_study(config, bfi_items)
 
-  # High contrast assessment
-  config_hc <- create_study_config(
-    name = "High Contrast Assessment",
-    model = "GRM",
-    max_items = 15,
-    min_items = 8,
-    criteria = "MI",
-    theme = "High-Contrast"  # Maximum contrast for visual impairments
-  )
+# High contrast assessment
+config_hc <- create_study_config(
+  name = "High Contrast Assessment",
+  model = "GRM",
+  max_items = 15,
+  min_items = 8,
+  criteria = "MI",
+  theme = "High-Contrast",
+  results_processor = create_simple_report
+)
 
-  cat("Example 5b: High Contrast Assessment\n")
-  cat("Access at: http://localhost:3838\n")
-  launch_study(config_hc, bfi_items)
-}
+launch_study(config_hc, bfi_items)
 
 # =============================================================================
 # Example 6: Mixed Parameter Item Bank (from vignettes)
 # =============================================================================
 # Purpose: Demonstrate handling of item banks with mixed known/unknown parameters.
 
-\dontrun{
-  # Item bank with mixed known/unknown parameters (from vignette)
-  mixed_items <- data.frame(
-    item_id = paste0("MIX_", sprintf("%03d", 1:15)),
+# Item bank with mixed known/unknown parameters (from vignette)
+mixed_items <- data.frame(
+  item_id = paste0("MIX_", sprintf("%03d", 1:15)),
 
-    Question = c(
-      "I enjoy working in teams.",           # Known parameters
-      "I am detail-oriented.",               # Known parameters
-      "I prefer challenging tasks.",         # Known parameters
-      "I am comfortable with uncertainty.",  # Unknown - will use defaults
-      "I enjoy learning new things.",        # Unknown - will use defaults
-      "I handle stress well.",               # Unknown - will use defaults
-      "I am organized.",                     # Known parameters
-      "I am creative.",                      # Known parameters
-      "I am reliable.",                      # Known parameters
-      "I enjoy routine work.",               # Unknown - will use defaults
-      "I am patient.",                       # Unknown - will use defaults
-      "I am decisive.",                      # Unknown - will use defaults
-      "I am analytical.",                    # Known parameters
-      "I am empathetic.",                    # Known parameters
-      "I am ambitious."                      # Known parameters
-    ),
+  Question = c(
+    "I enjoy working in teams.",           # Known parameters
+    "I am detail-oriented.",               # Known parameters
+    "I prefer challenging tasks.",         # Known parameters
+    "I am comfortable with uncertainty.",  # Unknown - will use defaults
+    "I enjoy learning new things.",        # Unknown - will use defaults
+    "I handle stress well.",               # Unknown - will use defaults
+    "I am organized.",                     # Known parameters
+    "I am creative.",                      # Known parameters
+    "I am reliable.",                      # Known parameters
+    "I enjoy routine work.",               # Unknown - will use defaults
+    "I am patient.",                       # Unknown - will use defaults
+    "I am decisive.",                      # Unknown - will use defaults
+    "I am analytical.",                    # Known parameters
+    "I am empathetic.",                    # Known parameters
+    "I am ambitious."                      # Known parameters
+  ),
 
-    # Mix of known and unknown parameters
-    a = c(1.3, 1.4, 1.2, NA, NA, NA, 1.5, 1.1, 1.3, NA, NA, NA, 1.4, 1.2, 1.1),
-    b1 = c(-1.5, -1.2, -1.8, NA, NA, NA, -1.1, -1.7, -1.4, NA, NA, NA, -1.3, -1.6, -1.9),
-    b2 = c(-0.5, -0.2, -0.8, NA, NA, NA, -0.1, -0.7, -0.4, NA, NA, NA, -0.3, -0.6, -0.9),
-    b3 = c(0.5, 0.8, 0.2, NA, NA, NA, 0.9, 0.3, 0.6, NA, NA, NA, 0.7, 0.4, 0.1),
-    b4 = c(1.5, 1.8, 1.2, NA, NA, NA, 1.9, 1.3, 1.6, NA, NA, NA, 1.7, 1.4, 1.1),
+  # Mix of known and unknown parameters
+  a = c(1.3, 1.4, 1.2, NA, NA, NA, 1.5, 1.1, 1.3, NA, NA, NA, 1.4, 1.2, 1.1),
+  b1 = c(-1.5, -1.2, -1.8, NA, NA, NA, -1.1, -1.7, -1.4, NA, NA, NA, -1.3, -1.6, -1.9),
+  b2 = c(-0.5, -0.2, -0.8, NA, NA, NA, -0.1, -0.7, -0.4, NA, NA, NA, -0.3, -0.6, -0.9),
+  b3 = c(0.5, 0.8, 0.2, NA, NA, NA, 0.9, 0.3, 0.6, NA, NA, NA, 0.7, 0.4, 0.1),
+  b4 = c(1.5, 1.8, 1.2, NA, NA, NA, 1.9, 1.3, 1.6, NA, NA, NA, 1.7, 1.4, 1.1),
 
-    ResponseCategories = rep("1,2,3,4,5", 15),
-    domain = rep(c("Known", "Unknown"), c(9, 6)),
+  ResponseCategories = rep("1,2,3,4,5", 15),
+  domain = rep(c("Known", "Unknown"), c(9, 6)),
 
-    stringsAsFactors = FALSE
-  )
+  stringsAsFactors = FALSE
+)
 
-  # This will work perfectly - inrep handles the NA values automatically
-  config <- create_study_config(
-    name = "Mixed Parameter Assessment",
-    model = "GRM",
-    max_items = 10,
-    min_items = 5,
-    criteria = "MI",
-    theme = "Forest"
-  )
+# This will work perfectly - inrep handles the NA values automatically
+config <- create_study_config(
+  name = "Mixed Parameter Assessment",
+  model = "GRM",
+  max_items = 10,
+  min_items = 5,
+  criteria = "MI",
+  theme = "Forest",
+  results_processor = create_simple_report
+)
 
-  cat("Example 6: Mixed Parameter Item Bank\n")
-  cat("Access at: http://localhost:3838\n")
-  cat("Note: NA parameters are handled automatically by inrep\n")
-  launch_study(config, mixed_items)
-}
-
-# =============================================================================
-# SUMMARY
-# =============================================================================
-# These examples demonstrate the core functionality of the inrep package:
-#
-# 1. Basic adaptive testing with GRM model using built-in item banks
-# 2. Custom item bank creation for specific research needs
-# 3. Binary item banks for knowledge assessments (2PL model)
-# 4. University-branded themes and demographic collection
-# 5. Accessibility features (dyslexia-friendly, high-contrast)
-# 6. Mixed parameter handling (NA values are handled automatically)
-#
-# For more advanced examples and case studies, see:
-# - vignettes/getting-started.Rmd for detailed tutorials
-# - case_studies/ for real-world research applications
-# - inst/docs/THEME_SYSTEM_GUIDE.md for comprehensive theme documentation
-#
-# All examples are updated to match the current API and best practices.
+launch_study(config, mixed_items)

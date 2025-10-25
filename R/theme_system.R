@@ -1,4 +1,4 @@
-#' Theme System for increp Package
+#' Theme System for inrep Package
 #' 
 #' This file consolidates all theme-related functions including:
 #' - Theme definitions (from themes.R)

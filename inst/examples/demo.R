@@ -78,7 +78,69 @@ study_config <- create_study_config(
     age_range = "radio",
     r_experience = "radio"
   ),
-  demographic_configs = demographic_questions
+  demographic_configs = demographic_questions,
+  
+  # Results processor function (following vignette patterns)
+  results_processor = function(responses, item_bank, demographics = NULL, session = NULL) {
+    tryCatch({
+      if (is.null(responses) || length(responses) == 0) {
+        return(shiny::HTML("<p>No responses available.</p>"))
+      }
+
+      # Calculate average score
+      mean_score <- mean(responses, na.rm = TRUE)
+
+      # Create simple plot (following vignette approach)
+      plot_base64 <- ""
+      tryCatch({
+        if (requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("base64enc", quietly = TRUE)) {
+
+          plot_data <- data.frame(
+            Item = 1:length(responses),
+            Score = responses
+          )
+
+          p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = Item, y = Score)) +
+            ggplot2::geom_bar(stat = "identity", fill = "#2E8B57", alpha = 0.7) +
+            ggplot2::labs(title = "Your Responses", x = "Item", y = "Score") +
+            ggplot2::theme_minimal()
+
+          temp_file <- tempfile(fileext = ".png")
+          ggplot2::ggsave(temp_file, p, width = 8, height = 5, dpi = 150, bg = "white")
+          plot_base64 <- base64enc::base64encode(temp_file)
+          unlink(temp_file)
+        }
+      }, error = function(e) {
+        message("Plot generation failed: ", e$message)
+      })
+
+      # Simple HTML report (following vignette style)
+      html_report <- paste0(
+        '<div style="font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px;">',
+        '<h1 style="color: #2E8B57; text-align: center;">Study Results</h1>',
+
+        if (plot_base64 != "" && nchar(plot_base64) > 100) paste0(
+          '<div style="margin: 30px 0;">',
+          '<img src="data:image/png;base64,', plot_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 20px auto;">',
+          '</div>'
+        ) else "",
+
+        '<div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">',
+        '<h2 style="color: #2E8B57;">Summary</h2>',
+        '<p style="font-size: 18px;">Average Score: <strong>', round(mean_score, 2), '</strong></p>',
+        '<p>Thank you for your participation!</p>',
+        '</div>',
+
+        '</div>'
+      )
+
+      return(shiny::HTML(html_report))
+
+    }, error = function(e) {
+      message("Error generating report: ", e$message)
+      return(shiny::HTML('<div style="padding: 20px;"><h2>Error generating report</h2></div>'))
+    })
+  }
 )
 
 # Fix item bank structure to match current API
@@ -87,65 +149,5 @@ r_testing_items$ResponseCategories <- rep("1,2,3,4,5", 6)
 r_testing_items <- r_testing_items[, c("Question", "a", "b1", "b2", "b3", "b4", "ResponseCategories")]
 r_testing_items$stringsAsFactors <- FALSE
 
-# Instructions for participants
-cat("Psychological Study on R Package Testing Experience\n")
-cat("=============================================================\n")
-cat("This study examines how R package testing tools affect developer confidence,\n")
-cat("stress, and motivation. Uses a fixed 6-item questionnaire with Monochrome theme.\n")
-cat("Estimated completion time: 15-20 minutes.\n")
-cat("=============================================================\n\n")
-
 # Launch the study
-cat("Launching psychological study...\n")
-cat("Access at: http://localhost:3838\n")
 launch_study(study_config, r_testing_items)
-
-# Display study information
-cat("=== Psychological Study on R Package Testing Experience ===\n")
-cat("Theme: Monochrome\n")
-cat("Items:", nrow(r_testing_items), "\n")
-cat("Demographics:", length(study_config$demographics), "\n")
-cat("Timer: 20 minutes\n")
-cat("Model: GRM (Graded Response Model)\n")
-cat("\nAvailable themes:", paste(get_builtin_themes(), collapse = ", "), "\n")
-cat("\nTo launch the study, run:\n")
-cat("launch_study(config = study_config, item_bank = r_testing_items, port = 3838)\n")
-
-# Validate the configuration
-cat("\n=== Validation ===\n")
-validation_result <- validate_item_bank(r_testing_items, model = "GRM")
-if (validation_result$valid) {
-  cat("[OK] Item bank validation passed\n")
-} else {
-  cat("X Item bank validation failed:\n")
-  cat(validation_result$errors, "\n")
-}
-
-# Test theme loading
-cat("\n=== Theme Test ===\n")
-theme_css <- load_theme_css("Monochrome")
-if (nchar(theme_css) > 1000) {
-  cat("[OK] Monochrome theme loaded successfully (", nchar(theme_css), " characters)\n")
-} else {
-  cat("X Monochrome theme loading failed\n")
-}
-
-# Show case-insensitive theme matching
-cat("\n=== Case-Insensitive Theme Matching ===\n")
-test_themes <- c("monochrome", "MONOCHROME", "Monochrome", "MonoChrome")
-for (theme in test_themes) {
-  result <- validate_theme_name(theme)
-  if (!is.null(result)) {
-    cat("[OK]", theme, "->", result, "\n")
-  } else {
-    cat("X", theme, "-> validation failed\n")
-  }
-}
-
-# Example launch (commented out to prevent automatic execution)
-# launch_study(
-#   config = study_config,
-#   item_bank = r_testing_items,
-#   port = 3838,
-#   launch_browser = TRUE
-# )

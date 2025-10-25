@@ -3,10 +3,10 @@
 #' Launch Adaptive Study Interface
 #'
 #' Launches a Shiny-based adaptive or non-adaptive assessment interface that serves as
-#' a wrapper around shiny and other packages. All IRT computations
+#' a comprehensive wrapper around TAM's psychometric capabilities. All IRT computations
 #' (ability estimation, item selection, model fitting) are performed by the TAM package,
 #' while this function provides the interactive interface, workflow management, and
-#' integration layer for reproducible research workflows.
+#' integration layer for comprehensive research workflows.
 #'
 #' @export
 #' @param config A list containing study configuration parameters created by \code{\link{create_study_config}}.
@@ -897,14 +897,14 @@ launch_study <- function(
         style = "max-width: 800px; margin: 0 auto; padding: 20px;",
         shiny::div(
           class = "card",
-          style = "padding: 30px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);",
-          shiny::h2(first_page_config$title %||% "Welcome", style = "color: #333; margin-bottom: 20px;"),
+          style = "padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);",
+          shiny::h2(first_page_config$title %||% "Welcome", class = "card-header", style = "margin-bottom: 20px;"),
           if (!is.null(first_page_config$content)) {
             shiny::HTML(first_page_config$content)
           } else if (!is.null(first_page_config$instructions)) {
-            shiny::p(first_page_config$instructions, style = "color: #666; line-height: 1.6;")
+            shiny::p(first_page_config$instructions, style = "color: var(--text-color); line-height: 1.6; opacity: 0.9;")
           } else {
-            shiny::p("Loading assessment...", style = "color: #666;")
+            shiny::p("Loading assessment...", style = "color: var(--text-color); opacity: 0.9;")
           },
           shiny::div(
             style = "margin-top: 30px; text-align: right;",
@@ -1089,7 +1089,8 @@ launch_study <- function(
     logger("Cloud storage disabled - results will be saved locally only", level = "INFO")
   }
   
-  logger(base::sprintf("Launching study: %s with theme: %s", config$name, config$theme %||% "Light"), level = "INFO")
+  theme_display <- if (is.list(config$theme)) "custom" else (config$theme %||% "Light")
+  logger(base::sprintf("Launching study: %s with theme: %s", config$name, theme_display), level = "INFO")
   
   if (!is.null(config$admin_dashboard_hook) && is.function(config$admin_dashboard_hook)) {
     logger("Admin dashboard hook registered", level = "INFO")
@@ -1268,15 +1269,16 @@ launch_study <- function(
       width: 100%;
     }
     
+    .card {
+      border-radius: var(--border-radius);
+    }
+    
     .assessment-card {
-      background: white;
       border-radius: var(--border-radius);
       padding: 30px;
       margin: 20px 0;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
       border: 1px solid var(--secondary-color);
-      background-color: var(--background-color);
-      color: var(--text-color);
       animation: fadeInCard 0.1s ease-in;
     }
     
@@ -1554,10 +1556,61 @@ launch_study <- function(
     class = "full-width-app",
     if (requireNamespace("shinyjs", quietly = TRUE)) shinyjs::useShinyjs(),
     
-
+    # FORCE SELECT DROPDOWN OPTIONS TO USE THEME COLORS
+    shiny::tags$script(shiny::HTML("
+      $(document).ready(function() {
+        // Force all select dropdowns to use dark styling
+        function forceSelectStyling() {
+          $('select').each(function() {
+            var $select = $(this);
+            
+            // Style the select element itself
+            $select.css({
+              'background-color': '#1e293b',
+              'color': '#f1f5f9',
+              'border-color': '#475569'
+            });
+            
+            // Force option elements with both CSS and inline styles
+            $select.find('option').each(function() {
+              var $opt = $(this);
+              // Try CSS
+              $opt.css({
+                'background-color': '#1e293b',
+                'color': '#f1f5f9'
+              });
+              // Also try inline style attribute
+              $opt.attr('style', 'background-color: #1e293b !important; color: #f1f5f9 !important;');
+            });
+          });
+        }
+        
+        forceSelectStyling();
+        
+        // Re-apply aggressively
+        setTimeout(forceSelectStyling, 100);
+        setTimeout(forceSelectStyling, 500);
+        
+        // Re-apply when new content is added
+        $(document).on('shiny:value shiny:inputchanged', function() {
+          setTimeout(forceSelectStyling, 50);
+          setTimeout(forceSelectStyling, 200);
+        });
+        
+        // Re-apply on focus (when dropdown opens)
+        $(document).on('focus', 'select', function() {
+          setTimeout(forceSelectStyling, 10);
+        });
+      });
+    ")),
     
     # ULTIMATE CORNER FLASH ELIMINATION - ALL METHODS COMBINED!
     shiny::tags$head(
+      # Force dark color scheme for Midnight theme (makes dropdowns work)
+      if (!is.null(config$theme) && is.character(config$theme) && tolower(config$theme) == "midnight") {
+        shiny::tags$meta(name = "color-scheme", content = "dark")
+      },
+      
       # Logging JavaScript for testing center data collection
       if (config$log_data %||% FALSE) {
         shiny::tags$script(shiny::HTML(paste0("
@@ -1673,7 +1726,7 @@ launch_study <- function(
           transform: translate(-50%, -50%) !important;
           font-size: 18px !important;
           font-weight: bold !important;
-          color: #333 !important;
+          color: var(--text-color) !important;
           text-align: center !important;
           z-index: 100 !important;
           margin: 0 !important;
@@ -2754,7 +2807,7 @@ launch_study <- function(
     #     shiny::div(class = "loading-spinner")
     #   )
     # ),
-    if (tolower(config$theme %||% "") == "hildesheim") shiny::div(class = "hildesheim-logo"),
+    if (is.character(config$theme) && tolower(config$theme) == "hildesheim") shiny::div(class = "hildesheim-logo"),
     # Session status indicator for session saving
     if (session_save) {
       shiny::uiOutput("session_status_ui")
@@ -3902,13 +3955,13 @@ launch_study <- function(
                        )
                      }
                      
-                     shiny::div(class = "assessment-card",
-                                instructions_content,
-                                shiny::div(class = "nav-buttons",
-                                           shiny::actionButton("begin_test", ui_labels$begin_button, class = "btn-klee",
-                                                              onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
-                                )
-                     )
+                    shiny::div(class = "assessment-card",
+                               instructions_content,
+                               shiny::div(class = "nav-buttons",
+                                          shiny::actionButton("begin_test", ui_labels$begin_button, class = "btn-klee",
+                                                             onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
+                               )
+                    )
                    },
                    "assessment" = {
                      # Debug: Log item display state
@@ -4002,7 +4055,7 @@ launch_study <- function(
                          # Get theme primary color for progress arc and tiny circle
                          theme_primary <- if (!is.null(theme_config) && !is.null(theme_config$primary_color)) {
                            theme_config$primary_color
-                         } else if (!is.null(config$theme) && nzchar(config$theme)) {
+                         } else if (is.character(config$theme) && nzchar(config$theme)) {
                            theme_name <- tolower(config$theme)
                            switch(theme_name,
                              "light" = "#007bff",
@@ -4075,8 +4128,7 @@ launch_study <- function(
                                font-family: 'Helvetica Neue', 'Arial', sans-serif;
                                font-size: 20px;
                                font-weight: 500;
-                               color: #333;
-                               text-shadow: 0 0 2px rgba(255,255,255,0.8);
+                               color: var(--text-color);
                              }
                            ", theme_primary)),
                            shiny::tags$svg(
@@ -4229,7 +4281,7 @@ launch_study <- function(
                      if (!base::is.null(theme_config) && !base::is.null(theme_config$primary_color)) {
                        theme_primary_color <- theme_config$primary_color
                      } else {
-                       theme_name <- tolower(config$theme %||% "Professional")
+                       theme_name <- if (is.character(config$theme)) tolower(config$theme) else "professional"
                        theme_primary_color <- base::switch(theme_name,
                                                            "light" = "#212529",
                                                            "midnight" = "#6366f1",
@@ -4258,9 +4310,9 @@ launch_study <- function(
                      
                      results_content <- base::c(results_content, base::list(
                        shiny::div(
-                         class = "download-section",
-                         style = "background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; text-align: center;",
-                         shiny::h4("Export Your Results", style = "color: #333; margin-bottom: 15px;"),
+                        class = "download-section",
+                        style = "padding: 20px; border-radius: 5px; margin: 20px 0; text-align: center;",
+                        shiny::h4("Export Your Results", style = "color: var(--text-color); margin-bottom: 15px;"),
                          shiny::div(
                            style = "display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;",
                            # Universal PDF Download Button (theme-colored)
@@ -4330,7 +4382,7 @@ launch_study <- function(
       if (!base::is.null(theme_config) && !base::is.null(theme_config$primary_color)) {
         theme_colors$primary <- theme_config$primary_color
       } else {
-        theme_name <- tolower(config$theme %||% "Light")
+        theme_name <- if (is.character(config$theme)) tolower(config$theme) else "light"
         theme_colors$primary <- base::switch(theme_name,
                                              "light" = "#212529",
                                              "midnight" = "#6366f1",

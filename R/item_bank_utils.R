@@ -1,7 +1,7 @@
 #' Validate Item Bank Structure
 #'
 #' @description
-#' Comprehensive validation of item bank structure and compatibility with IRT model.
+#' validation of item bank structure and compatibility with IRT model.
 #' Provides detailed feedback on mismatches and suggests appropriate configurations.
 #'
 #' @param item_bank Data frame containing item bank

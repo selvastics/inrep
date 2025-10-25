@@ -1,4 +1,4 @@
-#' UI Components for increp Package
+#' UI Components for inrep Package
 #' 
 #' This file consolidates all UI component functions including:
 #' - UI helper functions (from ui_helper.R)
@@ -674,7 +674,7 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
             ),
             
             # HILDESHEIM STUDY RESULTS - INTEGRATED PLOTS
-            if (!is.null(config$theme) && config$theme == "hildesheim") {
+            if (is.character(config$theme) && tolower(config$theme) == "hildesheim") {
               shiny::div(class = "mt-8",
                 shiny::h3(class = "text-xl font-bold mb-4 text-blue-600", "Hildesheim Psychologie Studie 2025 - Results"),
                 

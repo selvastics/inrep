@@ -72,6 +72,13 @@ export(get_theme_css)
 export(get_available_themes)
 export(ensure_font_consistency)
 
+# Language Functions
+export(get_language_labels)
+export(get_label)
+export(list_supported_languages)
+export(is_supported_language)
+export(get_language_name)
+
 
 # Professional Survey Functions
 export(initialize_survey_features)
