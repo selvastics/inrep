@@ -159,7 +159,7 @@ config <- create_study_config(
   max_items = 10,
   min_items = 5,
   criteria = "MI",
-  theme = "Professional",
+  theme = "large-text",
   results_processor = create_simple_report
 )
 

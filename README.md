@@ -202,9 +202,7 @@ advanced_config <- create_study_config(
     show_response_table = TRUE,      # Detailed response table
     show_item_difficulty_trend = TRUE,  # Item difficulty vs ability plot
     show_domain_breakdown = TRUE,    # Domain performance breakdown
-    show_recommendations = TRUE,     # Performance recommendations
-    show_legacy_buttons = TRUE  # Enable the 3 old buttons
-
+    show_recommendations = TRUE     # Performance recommendations (needs to be specified)
   )
 )
 
@@ -227,8 +225,9 @@ launch_study(
 
 ## Documentation
 
-* `vignette("[non-adaptive-assessments]-getting-started", package = "inrep")`
-* `vignette("[adaptive-assessments]-getting-started", package = "inrep")`
+* `vignette("1-non-adaptive-assessments-getting-started.Rmd", package = "inrep")`
+
+* `vignette("2-adaptive-assessments-getting-started.Rmd", package = "inrep")`
 
 ## Main Functions
 

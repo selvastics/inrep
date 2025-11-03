@@ -755,7 +755,8 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
       }
       
       # Translate "Please select..." based on language
-      placeholder_text <- if (current_lang == "en") "Please select..." else "Bitte wählen..."
+      labels <- get_language_labels(current_lang)
+      placeholder_text <- labels$please_select
       
       ui_elements[[demo_name]] <- shiny::div(
         class = "demographic-field",
@@ -1551,6 +1552,16 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
       input_id <- paste0("demo_", dem)
     input_type <- config$input_types[[dem]] %||% "text"
     
+    # AUTO-DETECT input type from config if not explicitly set
+    if (is.null(input_type) || input_type == "text") {
+      if (!is.null(demo_config$type)) {
+        input_type <- demo_config$type
+      }
+      else if (!is.null(demo_config$options) && length(demo_config$options) > 0) {
+        input_type <- "select"
+      }
+    }
+    
     # Pass language to create_demographic_input
     input_element <- create_demographic_input(
       input_id, 
@@ -1692,7 +1703,9 @@ convert_markdown_to_html <- function(text) {
 #' Render custom page
 render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
   # Special handling for filter page
-  if (page$id == "page3" || page$title == "Filter") {
+  # NOTE: Previously triggered on id == "page3" which caused unintended hijacking.
+  # Now only trigger when id == "pageFilter" or title == "Filter".
+  if (page$id == "pageFilter" || page$title == "Filter") {
     # Load validation module if needed for filter functionality
     if (!exists("create_filter_page")) {
       validation_file <- system.file("R", "custom_page_flow_validation.R", package = "inrep")
@@ -1702,7 +1715,8 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
     }
     
     if (exists("create_filter_page") && !is.null(input)) {
-      return(create_filter_page(input, config))
+      current_lang <- rv$language %||% config$language %||% "de"
+      return(create_filter_page(input, config, current_lang))
     }
   }
   
@@ -2014,7 +2028,8 @@ create_demographic_input <- function(input_id, demo_config, input_type, current_
   }
   
   # Get language-specific placeholder
-  placeholder_text <- if (language == "en") "Please select..." else "Bitte wählen..."
+  labels <- get_language_labels(language)
+  placeholder_text <- labels$please_select
   
   switch(input_type,
     "text" = shiny::textInput(
@@ -2493,11 +2508,8 @@ validate_page_progression <- function(current_page, input, config) {
         if (is.null(value) || value == "" || (is.character(value) && nchar(trimws(value)) == 0)) {
           # Get language
           current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
-          error_msg <- if (current_lang == "en") {
-            "Please complete all required fields on this page."
-          } else {
-            "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
-          }
+          labels <- get_language_labels(current_lang)
+          error_msg <- labels$demo_error
           errors <- c(errors, error_msg)
           missing_fields <- c(missing_fields, field)
         }
@@ -2526,11 +2538,7 @@ validate_page_progression <- function(current_page, input, config) {
         # This is a fallback for custom pages that don't specify required_fields
         # but still need validation
         current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
-        error_msg <- if (current_lang == "en") {
-          "Please complete all required fields on this page."
-        } else {
-          "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
-        }
+        error_msg <- get_label("demo_error", current_lang)
         errors <- c(errors, error_msg)
       }
     }
@@ -2545,15 +2553,16 @@ validate_page_progression <- function(current_page, input, config) {
 
 #' Create filter page with actual functionality
 #' @export
-create_filter_page <- function(input, config) {
+create_filter_page <- function(input, config, language = "de") {
   # Get the selected study program
   studiengang <- input$demo_Studiengang
   
   if (is.null(studiengang) || studiengang == "") {
+    labels <- get_language_labels(language)
     return(shiny::div(
       class = "assessment-card",
       shiny::h3("Filter", class = "card-header"),
-      shiny::p("Bitte wählen Sie zuerst Ihren Studiengang aus.",
+      shiny::p(labels$please_select,
                style = "padding: 20px; color: #dc3545;")
     ))
   }
@@ -2600,11 +2609,8 @@ show_validation_errors <- function(errors, language = "de") {
   if (length(errors) == 0) return(NULL)
   
   # Use passed language or default to German
-  header_text <- if (language == "en") {
-    "Please complete the following:"
-  } else {
-    "Bitte vervollständigen Sie die folgenden Angaben:"
-  }
+  labels <- get_language_labels(language)
+  header_text <- labels$demo_error
   
   shiny::div(
     class = "validation-error",

@@ -27,7 +27,7 @@
 #'
 #' @source
 #' Based on resilience and coping research literature, adapted for German-speaking populations.
-#' Items are calibrated for optimal psychometric properties in adaptive testing contexts.
+#' NOTE: Items properties are not yet calibrated for accurate measurement in adaptive testing contexts.
 #'
 #' @keywords datasets resilience coping German IRT GRM
 #' @name rcq_items_data

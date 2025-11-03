@@ -1,5 +1,0 @@
-Authors@R: person("Clievins", "Selva", 
-                  email = "selva@uni-hildesheim.de", 
-                  role = c("aut", "cre"),
-                  comment = c(ORCID = "0000-0001-9980-7127", 
-                             affiliation = "University of Hildesheim, Department of Psychology"))

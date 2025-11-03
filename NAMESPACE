@@ -18,6 +18,7 @@ export(enable_llm_assistance)
 export(estimate_ability)
 export(estimate_ability_mirt)
 export(generate_llm_prompt)
+export(generate_debug_mode_js)
 export(inrep_code)
 export(generate_uuid)
 export(get_llm_assistance_settings)
@@ -49,8 +50,6 @@ export(initialize_performance_optimization)
 export(validate_and_fix_config)
 export(handle_extreme_parameters)
 export(optimize_for_scale)
-
-# User Experience Functions removed - were not actually used in package
 
 # Operators
 export(`%||%`)
@@ -88,32 +87,6 @@ export(setup_quotas)
 export(manage_participants)
 export(export_survey_data)
 export(get_survey_statistics)
-
-# Quick Start Functions
-export(quick_start)
-export(simple_quiz)
-export(educational_test)
-export(psychological_assessment)
-export(employee_screening)
-export(custom_assessment)
-export(test_assessment)
-export(show_examples)
-export(get_help)
-export(rcq_resilience_assessment)
-export(rcqL_extended_assessment)
-export(custom_rcq_assessment)
-
-# Comprehensive Data Management Functions
-# Note: These functions are not yet implemented or depicted
-# export(initialize_comprehensive_dataset)
-# export(update_comprehensive_dataset)
-# export(get_comprehensive_dataset)
-# export(export_comprehensive_dataset)
-# export(reset_comprehensive_dataset)
-# export(get_dataset_summary)
-# export(log_action)
-# export(log_page_time)
-# export(update_page_start_time)
 
 # Enhanced Response Label Functions
 export(generate_response_categories)

@@ -1,10 +1,15 @@
 ---
-title: "Getting Started with inrep: Your First Adaptive Test"
+title: "Getting Started with Adaptive Assessments in inrep"
 author: "inrep Development Team"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    theme: cerulean
+    css: styles.css
 vignette: >
-  %\VignetteIndexEntry{Getting Started with inrep: Your First Adaptive Test}
+  %\VignetteIndexEntry{Getting Started with Adaptive Assessments in inrep}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -20,11 +25,11 @@ library(inrep)
 ```
 
 # Welcome to inrep
-Before we start, lets note the following: This project is best described as a vibe coding project. While the initial work was solely done by me, the upscaling of the project and exploration of advanced functionalities were done using several LLMs, which I synthesized. Although much of the code is functional, it is not yet fully polished. Several sections are under active development with minimal working examples implemented as placeholders. Continuous synthesis and refinement are ongoing. 
+Before we start, lets note the following: This project is best described as a vibe coding project. While the initial work was solely done by me, the upscaling of the project and exploration of advanced functionalities were done using several LLMs, which I synthesized. Although much of the code is functional, it is not yet fully polished. Several sections are under active development with minimal working examples implemented as placeholders. Continuous synthesis and refinement are ongoing.
 
 Now lets get started.
 The **inrep** package is a tool for creating and administering adaptive assessments using Item Response Theory (IRT) models. Whether you're an educator, researcher, or assessment professional, inrep provides the tools you need to create adaptive tests with minimal effort.
-Motivation for this tool is to not pay money for collecting data to suvey providers - instead, we can use this tool to create our own assessments and not only that - give the 
+Motivation for this tool is to not pay money for collecting data to suvey providers - instead, we can use this tool to create our own assessments and not only that - give the
 participants of a study something in return, that is, an instant report of their responses.
 
 ## What Makes inrep Special (adaptive mode)?
@@ -351,7 +356,7 @@ library(TAM)
 # responses <- your_response_matrix
 # estimated_params <- tam.mml(resp = responses) # TAM package to estimate parameters - Not that you have to specifiy the correct model in TAM depending on the data
 
-# Then update your item bank with estimated parameters 
+# Then update your item bank with estimated parameters
 ```
 
 #### Running Assessment with Custom Item Banks
@@ -518,7 +523,7 @@ config_with_demographics <- create_study_config(
   demographics = c("Age", "Gender", "Education", "Experience"),
   input_types = list(
     Age = "numeric",
-    Gender = "select", 
+    Gender = "select",
     Education = "select",
     Experience = "text"
   )
@@ -570,7 +575,7 @@ config_test <- create_study_config(
 )
 
 cat("Configuration created successfully!\n")
-cat("Study name:", config_test$name, "\n") 
+cat("Study name:", config_test$name, "\n")
 cat("Model:", config_test$model, "\n")
 cat("Max items:", config_test$max_items, "\n")
 ```

@@ -655,11 +655,36 @@ create_study_config <- function(
     # Validate demographics and input_types
     if (!is.null(demographics)) {
       if (is.null(input_types)) {
-        # Set sensible defaults
-        input_types <- setNames(rep("text", length(demographics)), demographics)
-        if ("Age" %in% demographics) input_types["Age"] <- "numeric"
-        if ("Gender" %in% demographics) input_types["Gender"] <- "select"
-        if ("Education" %in% demographics) input_types["Education"] <- "select"
+        # First, try to extract from demographic_configs if available
+        if (!is.null(demographic_configs) && is.list(demographic_configs)) {
+          input_types <- list()
+          for (dem in demographics) {
+            if (!is.null(demographic_configs[[dem]])) {
+              config_item <- demographic_configs[[dem]]
+              # Check for explicit type field
+              if (!is.null(config_item$type)) {
+                input_types[[dem]] <- config_item$type
+              }
+              # Auto-detect as select if options are present
+              else if (!is.null(config_item$options) && length(config_item$options) > 0) {
+                input_types[[dem]] <- "select"
+              }
+              # Default to text
+              else {
+                input_types[[dem]] <- "text"
+              }
+            } else {
+              input_types[[dem]] <- "text"
+            }
+          }
+          input_types <- as.list(input_types)
+        } else {
+          # Set sensible defaults if no demographic_configs
+          input_types <- setNames(rep("text", length(demographics)), demographics)
+          if ("Age" %in% demographics) input_types["Age"] <- "numeric"
+          if ("Gender" %in% demographics) input_types["Gender"] <- "select"
+          if ("Education" %in% demographics) input_types["Education"] <- "select"
+        }
       } else {
         if (!is.list(input_types) || !all(demographics %in% names(input_types))) {
           stop("input_types must be a named list with entries for all demographics")
@@ -712,7 +737,25 @@ create_study_config <- function(
     
     if (is.null(response_validation_fun)) {
       response_validation_fun <- function(response) {
-        !is.null(response) && !is.na(response) && nchar(as.character(response)) > 0
+        # Enhanced validation for better handling of quick responses and dropdown issues
+        if (is.null(response) || is.na(response)) {
+          return(FALSE)
+        }
+
+        response_str <- as.character(response)
+
+        # Handle empty strings and whitespace-only responses
+        if (nchar(trimws(response_str)) == 0) {
+          return(FALSE)
+        }
+
+        # Handle special dropdown cases where response might be empty but valid
+        # This catches cases where dropdown selection happens too quickly
+        if (response_str == "" || response_str == " ") {
+          return(FALSE)
+        }
+
+        return(TRUE)
       }
     }
     
