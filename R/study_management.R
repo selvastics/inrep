@@ -1605,16 +1605,96 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
   current_lang <- rv$language %||% config$language %||% "de"
   
   # Get items for this page
+  # Support adaptive item selection when item_indices is NULL or "adaptive"
   if (!is.null(page$item_indices)) {
-    page_items <- item_bank[page$item_indices, ]
+    # Check if item_indices is a function (for dynamic selection)
+    if (is.function(page$item_indices)) {
+      computed_indices <- page$item_indices(rv, item_bank, config)
+      if (!is.null(computed_indices) && length(computed_indices) > 0) {
+        page_items <- item_bank[computed_indices, , drop = FALSE]
+      } else {
+        # Fallback: no items available
+        page_items <- item_bank[integer(0), , drop = FALSE]
+      }
+    } else if (is.character(page$item_indices) && page$item_indices == "adaptive") {
+      # Special marker for adaptive selection
+      if (isTRUE(config$adaptive) && exists("select_next_item", mode = "function")) {
+        # Use adaptive item selection
+        selected_item <- inrep::select_next_item(rv, item_bank, config)
+        if (!is.null(selected_item) && selected_item > 0 && selected_item <= nrow(item_bank)) {
+          # Mark item as administered
+          if (is.null(rv$administered)) rv$administered <- integer(0)
+          rv$administered <- c(rv$administered, selected_item)
+          page_items <- item_bank[selected_item, , drop = FALSE]
+        } else {
+          page_items <- item_bank[integer(0), , drop = FALSE]
+        }
+      } else {
+        # Fallback to sequential if adaptive not available
+        available <- setdiff(seq_len(nrow(item_bank)), rv$administered %||% integer(0))
+        if (length(available) > 0) {
+          selected_item <- min(available)
+          if (is.null(rv$administered)) rv$administered <- integer(0)
+          rv$administered <- c(rv$administered, selected_item)
+          page_items <- item_bank[selected_item, , drop = FALSE]
+        } else {
+          page_items <- item_bank[integer(0), , drop = FALSE]
+        }
+      }
+    } else {
+      # Static vector of indices
+      page_items <- item_bank[page$item_indices, , drop = FALSE]
+    }
   } else if (!is.null(page$item_range)) {
     page_items <- item_bank[page$item_range[1]:page$item_range[2], ]
+  } else if (isTRUE(config$adaptive) && is.null(page$item_indices) && is.null(page$item_range)) {
+    # Adaptive mode and no item_indices specified - use adaptive selection
+    # IMPORTANT: Only select once per page to avoid infinite loops
+    # Use page ID and current_page to create unique cache key
+    current_page_num <- rv$current_page %||% 1
+    page_id <- page$id %||% paste0("page_", current_page_num)
+    
+    # Check if we already selected an item for this specific page
+    if (is.null(rv$page_selected_items)) {
+      rv$page_selected_items <- list()
+    }
+    
+    if (!is.null(rv$page_selected_items[[page_id]])) {
+      # Already selected for this page - use cached selection
+      selected_item <- rv$page_selected_items[[page_id]]
+      if (selected_item > 0 && selected_item <= nrow(item_bank)) {
+        page_items <- item_bank[selected_item, , drop = FALSE]
+      } else {
+        page_items <- item_bank[integer(0), , drop = FALSE]
+      }
+    } else if (exists("select_next_item", mode = "function")) {
+      # First time rendering this page - select item ONCE
+      selected_item <- inrep::select_next_item(rv, item_bank, config)
+      if (!is.null(selected_item) && selected_item > 0 && selected_item <= nrow(item_bank)) {
+        # Cache the selection for this page
+        rv$page_selected_items[[page_id]] <- selected_item
+        if (is.null(rv$administered)) rv$administered <- integer(0)
+        # Only add to administered if not already there
+        if (!selected_item %in% rv$administered) {
+          rv$administered <- c(rv$administered, selected_item)
+        }
+        page_items <- item_bank[selected_item, , drop = FALSE]
+      } else {
+        page_items <- item_bank[integer(0), , drop = FALSE]
+      }
+    } else {
+      # Fallback to pagination
+      items_per_page <- page$items_per_page %||% config$items_per_page %||% 5
+      start_idx <- ((rv$item_page %||% 1) - 1) * items_per_page + 1
+      end_idx <- min(start_idx + items_per_page - 1, nrow(item_bank))
+      page_items <- item_bank[start_idx:end_idx, , drop = FALSE]
+    }
   } else {
     # Use items_per_page to paginate
     items_per_page <- page$items_per_page %||% config$items_per_page %||% 5
     start_idx <- ((rv$item_page %||% 1) - 1) * items_per_page + 1
     end_idx <- min(start_idx + items_per_page - 1, nrow(item_bank))
-    page_items <- item_bank[start_idx:end_idx, ]
+    page_items <- item_bank[start_idx:end_idx, , drop = FALSE]
   }
   
   # Create item UI elements
@@ -1703,9 +1783,7 @@ convert_markdown_to_html <- function(text) {
 #' Render custom page
 render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
   # Special handling for filter page
-  # NOTE: Previously triggered on id == "page3" which caused unintended hijacking.
-  # Now only trigger when id == "pageFilter" or title == "Filter".
-  if (page$id == "pageFilter" || page$title == "Filter") {
+  if (page$id == "page3" || page$title == "Filter") {
     # Load validation module if needed for filter functionality
     if (!exists("create_filter_page")) {
       validation_file <- system.file("R", "custom_page_flow_validation.R", package = "inrep")
@@ -1763,6 +1841,238 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
 
 #' Render results page
 render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_close_time = 300, auto_close_time_unit = "seconds", disable_auto_close = FALSE) {
+  # GENERIC DEBUG HANDLER: Check for show_personal_results preference
+  # This applies to ALL studies, not just specific ones
+  show_pref <- NULL
+  try({
+    # Debug: Print all available data
+    message("DEBUG: === CHECKING FOR show_personal_results ===")
+    message("DEBUG: demographics is null? ", is.null(rv$demo_data))
+    if (!is.null(rv$demo_data)) {
+      message("DEBUG: demographics class: ", class(rv$demo_data))
+      message("DEBUG: demographics names: ", paste(names(rv$demo_data), collapse=" "))
+      if ("show_personal_results" %in% names(rv$demo_data)) {
+        show_pref <- rv$demo_data[["show_personal_results"]]
+        message("DEBUG: Found show_personal_results in rv$demo_data: ", show_pref)
+      }
+    }
+    # Fallback: check if it exists in demo_data as an atomic vector
+    if (is.null(show_pref) && is.atomic(rv$demo_data) && "show_personal_results" %in% names(rv$demo_data)) {
+      show_pref <- rv$demo_data["show_personal_results"]
+      message("DEBUG: Found show_personal_results in atomic demographics vector: ", show_pref)
+    }
+    # Check if user selected NO
+    if (!is.null(show_pref) && nzchar(as.character(show_pref))) {
+      sp <- tolower(trimws(as.character(show_pref)))
+      message("DEBUG: Normalized show_pref value: ", sp)
+      message("DEBUG: Checking if sp is in 'no', 'n', 'false', '0'")
+      if (sp %in% c("no", "n", "false", "0")) {
+        message("DEBUG: User selected NO - showing thank you message only")
+        
+        # CRITICAL: ALWAYS save/send data even when user doesn't want to see results
+        message("DEBUG: Ensuring data is saved/sent before showing thank you message")
+        
+        # Ensure cat_result is set if not already set
+        if (is.null(rv$cat_result)) {
+          rv$cat_result <- list(
+            theta = if (config$adaptive) rv$current_ability else (if (length(rv$responses) > 0) mean(rv$responses, na.rm = TRUE) else NULL),
+            se = if (config$adaptive) rv$current_se else NULL,
+            responses = rv$responses,
+            administered = rv$administered,
+            response_times = rv$response_times
+          )
+          message("DEBUG: Created cat_result for data saving")
+        }
+        
+        # Force data preservation
+        if (exists("preserve_session_data", mode = "function")) {
+          tryCatch({
+            preserve_session_data(force = TRUE)
+            message("DEBUG: Data preserved when user selected NO")
+          }, error = function(e) {
+            message("WARNING: Data preservation failed when user selected NO: ", e$message)
+          })
+        }
+        
+        # CRITICAL: Call results processor even when user selects NO
+        # This ensures data is processed and uploaded to cloud (works for ANY study with results_processor)
+        # The results processor will generate CSV/report and upload it, we just won't show the HTML
+        # This is GENERIC - works for any study, not just HilFo
+        # CRITICAL: Use caching to prevent running twice (Shiny may re-render the page)
+        csv_upload_succeeded <- FALSE  # Initialize flag - will be set to TRUE if CSV upload detected
+        if (!is.null(config$results_processor) && is.function(config$results_processor)) {
+          # Check if results processor has already been called (prevent duplicate execution)
+          results_processor_called <- rv$results_processor_called %||% FALSE
+          if (results_processor_called) {
+            message("DEBUG: Results processor already called - skipping duplicate execution")
+            # Check if CSV upload succeeded by looking for CSV files created recently
+            # Pattern matches: study_results_*.csv, hilfo_results_*.csv, etc. (generic for any study)
+            csv_files <- list.files(pattern = ".*_results_.*\\.csv$", full.names = FALSE)
+            if (length(csv_files) > 0) {
+              # Sort by modification time, get most recent
+              csv_files_info <- file.info(csv_files)
+              most_recent <- rownames(csv_files_info)[which.max(csv_files_info$mtime)]
+              # Check if file was created within last 10 seconds (likely from this session)
+              file_age <- as.numeric(Sys.time() - csv_files_info[most_recent, "mtime"], units = "secs")
+              if (file_age < 10 && file_age >= 0) {
+                csv_upload_succeeded <- TRUE
+                message("DEBUG: CSV upload detected (recent file found: ", most_recent, ", age: ", round(file_age, 2), "s)")
+              }
+            }
+          } else {
+            # Mark as called immediately to prevent duplicate execution
+            rv$results_processor_called <- TRUE
+            
+            message("DEBUG: Calling results processor even though user selected NO - to ensure data processing and upload")
+            tryCatch({
+              processor_args <- names(formals(config$results_processor))
+              
+              # Use cat_result if available, otherwise use raw responses
+              responses_to_use <- if (!is.null(rv$cat_result) && !is.null(rv$cat_result$responses)) {
+                rv$cat_result$responses
+              } else {
+                rv$responses
+              }
+              
+              # Create mock session for results processor (generic - works for any study)
+              # Initialize userData so results processor can store CSV file info there
+              mock_session <- list(
+                input = list(
+                  language_preference = rv$language,
+                  study_language = rv$language,
+                  language = rv$language
+                ),
+                userData = list()
+              )
+              
+              # Call results processor - it will process data and upload, but we ignore the HTML return
+              # This is GENERIC - works for any study's results processor
+              if ("session" %in% processor_args) {
+                if ("demographics" %in% processor_args) {
+                  config$results_processor(responses_to_use, item_bank, rv$demo_data, mock_session)
+                } else {
+                  config$results_processor(responses_to_use, item_bank, session = mock_session)
+                }
+              } else if ("demographics" %in% processor_args) {
+                config$results_processor(responses_to_use, item_bank, rv$demo_data)
+              } else {
+                config$results_processor(responses_to_use, item_bank)
+              }
+              
+              # Check if CSV upload succeeded by looking for recently created CSV files
+              # (R passes lists by value, so mock_session$userData changes won't be visible)
+              # Look for CSV files with generic results pattern (works for any study)
+              # Pattern matches: study_results_*.csv, hilfo_results_*.csv, etc.
+              csv_files <- list.files(pattern = ".*_results_.*\\.csv$", full.names = FALSE)
+              if (length(csv_files) > 0) {
+                csv_files_info <- file.info(csv_files)
+                most_recent <- rownames(csv_files_info)[which.max(csv_files_info$mtime)]
+                # Check if file was created within last 5 seconds (likely from this call)
+                file_age <- as.numeric(Sys.time() - csv_files_info[most_recent, "mtime"], units = "secs")
+                if (file_age < 5 && file_age >= 0) {
+                  csv_upload_succeeded <- TRUE
+                  message("DEBUG: CSV upload detected (file created: ", most_recent, ", age: ", round(file_age, 2), "s)")
+                }
+              }
+              
+              message("DEBUG: Results processor called successfully - data processing and upload should have completed")
+            }, error = function(e) {
+              message("CRITICAL ERROR: Results processor failed when user selected NO: ", e$message)
+              message("This means data processing/upload may have failed - data preserved locally but may not be in cloud!")
+            })
+          }
+        }
+        
+        # Fallback: Save to cloud via save_session_to_cloud if results processor didn't handle it
+        # (This is for studies where results processor doesn't handle cloud upload)
+        # GENERIC solution - works for any study
+        # Note: If results processor already handled upload (e.g., CSV upload), this is just a backup
+        if (config$session_save) {
+          tryCatch({
+            # Get webdav_url and password from rv (stored there by launch_study)
+            webdav_url_to_use <- rv$webdav_url %||% config$webdav_url
+            webdav_password_to_use <- rv$webdav_password %||% config$webdav_password
+            
+            # Check if CSV upload already succeeded (from results processor above)
+            # csv_upload_succeeded is set in the tryCatch block above if results processor stored CSV info
+            
+            # Only call JSON fallback if CSV upload didn't happen
+            # This prevents duplicate uploads and authentication errors
+            if (!csv_upload_succeeded && exists("save_session_to_cloud", where = asNamespace("inrep"), inherits = FALSE)) {
+              message("DEBUG: Attempting JSON fallback cloud save (CSV upload not detected)")
+              result <- inrep:::save_session_to_cloud(rv, config, webdav_url_to_use, webdav_password_to_use)
+              if (result) {
+                message("DEBUG: Fallback cloud save (JSON) succeeded when user selected NO")
+              } else {
+                message("DEBUG: Fallback cloud save (JSON) failed - this is OK if CSV upload already succeeded")
+              }
+            } else if (csv_upload_succeeded) {
+              message("DEBUG: Skipping JSON fallback - CSV upload already succeeded")
+            }
+          }, error = function(e) {
+            # Non-critical error - CSV upload already succeeded, so this is just a backup
+            message("DEBUG: Fallback cloud save (JSON) failed (non-critical): ", e$message)
+            message("DEBUG: This is OK if CSV upload already succeeded")
+          })
+        }
+        
+        # Get current language
+        current_lang <- rv$language %||% config$language %||% "de"
+        is_english <- (current_lang == "en")
+        # Return simple thank you message
+        html_no <- paste0(
+          '<div style="padding:40px; text-align:center; font-family: Arial, sans-serif;">',
+          '<div style="background:#f8f9fa; padding:30px; border-radius:10px; border:1px solid #dee2e6; max-width:600px; margin:0 auto;">',
+          '<h2 style="color:#e8041c; margin-bottom:20px;">', 
+          if (is_english) 'Assessment Complete' else 'Vielen Dank für Ihre Teilnahme!',
+          '</h2>',
+          '<p style="color:#666; font-size:16px; margin-bottom:0;">',
+          if (is_english) 'Your data has been saved successfully.' else 'Ihre Daten wurden erfolgreich gespeichert.',
+          '</p>',
+          '</div>',
+          '</div>',
+          '<style>',
+          '.page-title, .study-title, h1:first-child, .results-title { display: none !important; }',
+          '</style>'
+        )
+        # Convert time to seconds if needed
+        if (auto_close_time_unit == "minutes") {
+          auto_close_seconds <- auto_close_time * 60
+        } else {
+          auto_close_seconds <- auto_close_time
+        }
+        
+        # Create auto-close timer UI if not disabled
+        auto_close_ui <- NULL
+        if (!disable_auto_close && auto_close_seconds > 0) {
+          # Get current language for auto-close messages
+          current_lang <- rv$language %||% config$language %||% "de"
+          
+          # Set language-dependent messages
+          auto_close_title <- if (current_lang == "en") "Session will close automatically" else "Die Sitzung wird automatisch geschlossen"
+          
+          auto_close_ui <- shiny::div(
+            id = "auto-close-timer",
+            class = "auto-close-timer",
+            style = "text-align: center; margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; border: 2px solid #007bff;",
+            shiny::h4(auto_close_title, style = "color: #007bff; margin-bottom: 10px;"),
+            shiny::div(
+              id = "countdown-display",
+              style = "font-size: 24px; font-weight: bold; color: #dc3545; margin-bottom: 10px;",
+              shiny::textOutput("countdown_timer", inline = TRUE)
+            )
+          )
+        }
+        
+        return(shiny::div(
+          class = "assessment-card results-container",
+          shiny::HTML(html_no),
+          auto_close_ui
+        ))
+      }
+    }
+  }, silent = TRUE)
+  
   # Use custom results processor if available
   if (!is.null(config$results_processor) && is.function(config$results_processor)) {
     # Check if function accepts demographics parameter
@@ -1770,24 +2080,57 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
     
     # Use cat_result if available (contains cleaned responses), otherwise use raw responses
     if (!is.null(rv$cat_result) && !is.null(rv$cat_result$responses)) {
-      # Check if processor accepts session parameter for language detection
-      if ("session" %in% processor_args) {
-        # Create a mock session object with language info
-        mock_session <- list(input = list(
-          hilfo_language_preference = rv$language,
-          study_language = rv$language,
-          language = rv$language
-        ))
-        if ("demographics" %in% processor_args) {
-          results_content <- config$results_processor(rv$cat_result$responses, item_bank, rv$demo_data, mock_session)
-        } else {
-          results_content <- config$results_processor(rv$cat_result$responses, item_bank, session = mock_session)
-        }
-      } else if ("demographics" %in% processor_args) {
-        results_content <- config$results_processor(rv$cat_result$responses, item_bank, rv$demo_data)
-      } else {
-        results_content <- config$results_processor(rv$cat_result$responses, item_bank)
+      # CRITICAL: ALWAYS preserve data BEFORE calling results processor
+      if (exists("preserve_session_data", mode = "function")) {
+        tryCatch({
+          preserve_session_data(force = TRUE)
+          message("DEBUG: Data preserved before results processor call (cat_result path)")
+        }, error = function(e) {
+          message("WARNING: Data preservation failed before results processor: ", e$message)
+        })
       }
+      
+      # Wrap results processor in tryCatch to ALWAYS preserve data on error
+      results_content <- tryCatch({
+        # Check if processor accepts session parameter for language detection
+        if ("session" %in% processor_args) {
+          # Create a mock session object with language info
+          mock_session <- list(input = list(
+            hilfo_language_preference = rv$language,
+            study_language = rv$language,
+            language = rv$language
+          ))
+          if ("demographics" %in% processor_args) {
+            config$results_processor(rv$cat_result$responses, item_bank, rv$demo_data, mock_session)
+          } else {
+            config$results_processor(rv$cat_result$responses, item_bank, session = mock_session)
+          }
+        } else if ("demographics" %in% processor_args) {
+          config$results_processor(rv$cat_result$responses, item_bank, rv$demo_data)
+        } else {
+          config$results_processor(rv$cat_result$responses, item_bank)
+        }
+      }, error = function(e) {
+        # CRITICAL: ALWAYS preserve data on error BEFORE returning error message
+        message("CRITICAL ERROR in results processor: ", e$message)
+        message("ALWAYS preserving data before returning error...")
+        if (exists("preserve_session_data", mode = "function")) {
+          tryCatch({
+            preserve_session_data(force = TRUE)
+            message("DEBUG: Data preserved after results processor error (cat_result path)")
+          }, error = function(e2) {
+            message("WARNING: Data preservation failed after results processor error: ", e2$message)
+          })
+        }
+        # Return error message HTML
+        shiny::HTML(paste0(
+          '<div style="padding: 20px; color: red;">',
+          '<h2>Error generating report</h2>',
+          '<p>An error occurred while generating your results, but your data has been saved.</p>',
+          '<p>Error: ', gsub("'", "&apos;", e$message), '</p>',
+          '</div>'
+        ))
+      })
     } else {
       # ROBUST: Ensure all responses are collected before processing
       # Don't remove NA values - they might be valid missing responses
@@ -1811,24 +2154,58 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
       }
       
       if (length(all_responses) > 0) {
-        # Check if processor accepts session parameter for language detection
-        if ("session" %in% processor_args) {
-          # Create a mock session object with language info
-          mock_session <- list(input = list(
-            hilfo_language_preference = rv$language,
-            study_language = rv$language,
-            language = rv$language
-          ))
-          if ("demographics" %in% processor_args) {
-            results_content <- config$results_processor(all_responses, item_bank, rv$demo_data, mock_session)
-          } else {
-            results_content <- config$results_processor(all_responses, item_bank, session = mock_session)
-          }
-        } else if ("demographics" %in% processor_args) {
-          results_content <- config$results_processor(all_responses, item_bank, rv$demo_data)
-        } else {
-          results_content <- config$results_processor(all_responses, item_bank)
+        # CRITICAL: ALWAYS preserve data BEFORE calling results processor
+        # This ensures data is saved even if results processor crashes
+        if (exists("preserve_session_data", mode = "function")) {
+          tryCatch({
+            preserve_session_data(force = TRUE)
+            message("DEBUG: Data preserved before results processor call")
+          }, error = function(e) {
+            message("WARNING: Data preservation failed before results processor: ", e$message)
+          })
         }
+        
+        # Wrap results processor in tryCatch to ALWAYS preserve data on error
+        results_content <- tryCatch({
+          # Check if processor accepts session parameter for language detection
+          if ("session" %in% processor_args) {
+            # Create a mock session object with language info
+            mock_session <- list(input = list(
+              hilfo_language_preference = rv$language,
+              study_language = rv$language,
+              language = rv$language
+            ))
+            if ("demographics" %in% processor_args) {
+              config$results_processor(all_responses, item_bank, rv$demo_data, mock_session)
+            } else {
+              config$results_processor(all_responses, item_bank, session = mock_session)
+            }
+          } else if ("demographics" %in% processor_args) {
+            config$results_processor(all_responses, item_bank, rv$demo_data)
+          } else {
+            config$results_processor(all_responses, item_bank)
+          }
+        }, error = function(e) {
+          # CRITICAL: ALWAYS preserve data on error BEFORE returning error message
+          message("CRITICAL ERROR in results processor: ", e$message)
+          message("ALWAYS preserving data before returning error...")
+          if (exists("preserve_session_data", mode = "function")) {
+            tryCatch({
+              preserve_session_data(force = TRUE)
+              message("DEBUG: Data preserved after results processor error")
+            }, error = function(e2) {
+              message("WARNING: Data preservation failed after results processor error: ", e2$message)
+            })
+          }
+          # Return error message HTML
+          shiny::HTML(paste0(
+            '<div style="padding: 20px; color: red;">',
+            '<h2>Error generating report</h2>',
+            '<p>An error occurred while generating your results, but your data has been saved.</p>',
+            '<p>Error: ', gsub("'", "&apos;", e$message), '</p>',
+            '</div>'
+          ))
+        })
       } else {
         results_content <- shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>")
       }

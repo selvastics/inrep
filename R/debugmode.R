@@ -8,428 +8,600 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
 
   return(shiny::tags$script(shiny::HTML("
     console.log('*** DEBUG MODE STARTED ***');
-    console.log('Hotkeys: Ctrl+A=Fill All | Ctrl+Q=Auto Normal | Ctrl+W=Auto Fast');
+    console.log('Hotkeys: Ctrl+A=Fill Current Page | Ctrl+Q=Auto Normal | Ctrl+W=Auto Fast');
 
-    document.addEventListener('DOMContentLoaded', function() {
-      function randomNumber(min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
+    (function() {
+      'use strict';
+      
+      // Prevent multiple initializations
+      if (window.inrepDebugInitialized) {
+        console.log('DEBUG: Already initialized, skipping');
+        return;
       }
+      window.inrepDebugInitialized = true;
 
-      function randomText(length) {
-        if (!length) length = 10;
-        var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        var result = '';
-        for (var i = 0; i < length; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
-        return result;
-      }
-
-      function isDemographicField(input) {
-        var inputId = (input.id || '').toLowerCase();
-        return inputId.indexOf('demo') !== -1;
-      }
-
-      function getInputLabel(input) {
-        var labelId = input.getAttribute('aria-labelledby');
+      // Utility functions
+      const utils = {
+        randomNumber: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
+        
+        randomText: (length = 10) => {
+          const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+          return Array.from({length}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+        },
+        
+        getInputLabel: (input) => {
+          const labelId = input.getAttribute('aria-labelledby');
         if (labelId) {
-          var label = document.getElementById(labelId);
-          if (label) return label.textContent;
-        }
-        var inputId = input.id;
-        if (inputId) {
-          var label = document.querySelector('label[for=\"' + inputId + '\"]');
-          if (label) return label.textContent;
+            const label = document.getElementById(labelId);
+            if (label) return label.textContent.trim();
+          }
+          if (input.id) {
+            const label = document.querySelector(`label[for=\"${input.id}\"]`);
+            if (label) return label.textContent.trim();
         }
         return '';
-      }
+        },
+        
+        isVisible: (el) => {
+          return el && el.offsetParent !== null && el.offsetHeight > 0 && el.offsetWidth > 0;
+        },
+        
+        triggerShinyUpdate: (id, value) => {
+          if (typeof Shiny !== 'undefined' && Shiny.setInputValue) {
+            Shiny.setInputValue(id, value);
+            // Double-trigger for reliability
+            setTimeout(() => Shiny.setInputValue(id, value), 50);
+          }
+        },
+        
+        triggerEvents: (element, value) => {
+          if (!element) return;
+          
+          if (value !== undefined) {
+            element.value = value;
+          }
+          
+          ['input', 'change', 'blur'].forEach(eventType => {
+            element.dispatchEvent(new Event(eventType, { bubbles: true, cancelable: true }));
+          });
+          
+          // jQuery fallback if available
+          if (typeof jQuery !== 'undefined') {
+            jQuery(element).trigger('change').trigger('input');
+          }
+        }
+      };
 
-      function fillCurrentPageComprehensive() {
-        console.log('DEBUG: Starting fillCurrentPageComprehensive');
-        
-        // STEP 0: First, log all demo inputs we find
-        console.log('DEBUG: Searching for demographic inputs...');
-        document.querySelectorAll('[id^=\"demo_\"]').forEach(function(el) {
-          console.log('DEBUG: Found element with demo_ ID: id=' + el.id + ', tag=' + el.tagName + ', type=' + (el.type || 'N/A'));
-        });
-        
-        // STEP 0.1: Inspect radio button groups and highlight programming anxiety pools
-        var radioGroupSizes = {};
-        document.querySelectorAll('input[type=\"radio\"]').forEach(function(radio) {
-          var group = radio.name || '';
-          if (!group) return;
-          if (!radioGroupSizes[group]) {
-            radioGroupSizes[group] = 0;
-          }
-          radioGroupSizes[group] += 1;
-        });
-        var groupNames = Object.keys(radioGroupSizes);
-        console.log('DEBUG: Identified ' + groupNames.length + ' radio groups on this page');
-        groupNames.forEach(function(group) {
-          var size = radioGroupSizes[group];
-          var descriptor = (size >= 3 && size <= 7) ? ' (Likert-style)' : '';
-          console.log('DEBUG:   Group \"' + group + '\" has ' + size + ' options' + descriptor);
-        });
-        
-        // STEP 1: Handle selectize inputs (Shiny selectInput) - including demographics
-        console.log('DEBUG: Processing selectize inputs...');
-        document.querySelectorAll('input.selectize-control').forEach(function(selectizeInput) {
-          var baseId = selectizeInput.id.replace(/-selectized$/, '');
-          var underlyingSelect = document.getElementById(baseId);
+      // Field filling strategies
+      const fillers = {
+        // Fill selectize (Shiny selectInput)
+        fillSelectize: () => {
+          console.log('DEBUG: Processing selectize inputs...');
+          let count = 0;
           
-          console.log('DEBUG: Processing selectize - baseId=' + baseId + ', selectizeId=' + selectizeInput.id);
-          
-          if (underlyingSelect && underlyingSelect.tagName === 'SELECT') {
-            var options = Array.from(underlyingSelect.options);
-            console.log('DEBUG: Found underlying SELECT for ' + baseId + ' with ' + options.length + ' options');
+          document.querySelectorAll('select:not(.selectized)').forEach(select => {
+            if (select.disabled || !utils.isVisible(select)) return;
             
-            var validOptions = options.filter(function(opt) { 
-              var isValid = opt.value !== '' && opt.value !== ' ' && opt.value !== null;
-              console.log('DEBUG: Option value=\\\"' + opt.value + '\\\" text=\\\"' + opt.text + '\\\" valid=' + isValid);
-              return isValid;
-            });
+            // Check if this select has been selectized
+            const selectizeInput = select.nextElementSibling;
+            const isSelectized = selectizeInput && selectizeInput.classList.contains('selectize-control');
             
-            if (validOptions.length === 0) {
-              console.log('DEBUG: No valid options found for ' + baseId);
-              return;
-            }
-            
-            var chosen = validOptions[0];
-            console.log('DEBUG: SELECTIZE ' + baseId + ' -> choosing value=\\\"' + chosen.value + '\\\" text=\\\"' + chosen.text + '\\\"');
-            
-            // Method 1: Set value on underlying select
-            underlyingSelect.value = chosen.value;
-            underlyingSelect.dispatchEvent(new Event('change', { bubbles: true }));
-            underlyingSelect.dispatchEvent(new Event('input', { bubbles: true }));
-            
-            // Method 2: Update Shiny
-            if (typeof Shiny !== 'undefined') {
-              Shiny.setInputValue(baseId, chosen.value);
-              console.log('DEBUG: Set Shiny value for ' + baseId + ' = ' + chosen.value);
-            }
-            
-            // Method 3: Click on visible selectize input and press Enter
-            console.log('DEBUG: Clicking on selectize input ' + selectizeInput.id + ' and pressing Enter');
-            selectizeInput.click();
-            selectizeInput.focus();
-            
-            // Small delay to let the dropdown open
-            setTimeout(function() {
-              // Press Enter to select first option
-              var enterEvent = new KeyboardEvent('keydown', {
-                key: 'Enter',
-                code: 'Enter',
-                keyCode: 13,
-                which: 13,
-                bubbles: true,
-                cancelable: true
-              });
-              selectizeInput.dispatchEvent(enterEvent);
-              console.log('DEBUG: Pressed Enter on selectize ' + selectizeInput.id);
+            if (isSelectized && select.selectize) {
+              // Use selectize API directly
+              const options = select.selectize.options;
+              const validOptions = Object.keys(options).filter(key => key && key !== '' && key !== ' ');
               
-              // Also update visible input value
-              selectizeInput.value = chosen.value;
-              selectizeInput.dispatchEvent(new Event('change', { bubbles: true }));
-              selectizeInput.dispatchEvent(new Event('input', { bubbles: true }));
-              selectizeInput.dispatchEvent(new Event('blur', { bubbles: true }));
-            }, 100);
-            
-            // Method 4: jQuery trigger if available
-            if (typeof jQuery !== 'undefined') {
-              jQuery(underlyingSelect).val(chosen.value).trigger('change').trigger('input');
-              jQuery(selectizeInput).val(chosen.value).trigger('change').trigger('input');
-              console.log('DEBUG: Triggered jQuery change for ' + baseId);
+              if (validOptions.length > 0) {
+                const chosen = validOptions[0];
+                select.selectize.setValue(chosen, false);
+                select.selectize.blur();
+                utils.triggerShinyUpdate(select.id, chosen);
+                console.log('DEBUG: SELECTIZE', select.id, '->', chosen);
+                count++;
+              }
+            } else if (!isSelectized) {
+              // Regular select (non-selectized)
+              fillers.fillNativeSelect(select) && count++;
             }
-          } else {
-            console.log('DEBUG: No underlying SELECT found for ' + baseId);
-          }
-        });
+          });
+          
+          return count;
+        },
         
-        // STEP 2: Fill numeric and text inputs (demographics) - NEW SMARTER APPROACH
-        console.log('DEBUG: Processing demographic inputs by ID...');
-        document.querySelectorAll('[id^=\\\"demo_\\\"]').forEach(function(input) {
-          if (input.tagName === 'INPUT' && !input.disabled && !input.readOnly) {
-            var inputId = input.id || '';
-            var inputType = input.type || 'text';
+        // Fill native select dropdowns
+        fillNativeSelect: (select) => {
+          if (!select || select.disabled || !utils.isVisible(select)) return false;
+          
+          const validOptions = Array.from(select.options).filter(opt => 
+            opt.value && opt.value.trim() !== '' && opt.value !== ' '
+          );
+          
+          if (validOptions.length === 0) return false;
+          
+          const chosen = validOptions[0];
+          select.value = chosen.value;
+          utils.triggerEvents(select);
+          utils.triggerShinyUpdate(select.id, chosen.value);
+          console.log('DEBUG: SELECT', select.id, '->', chosen.value);
+          return true;
+        },
+        
+        // Fill demographic fields (age, text inputs)
+        fillDemographics: () => {
+          console.log('DEBUG: Processing demographic fields...');
+          let count = 0;
+          
+          // First pass: fill visible fields
+          document.querySelectorAll('[id^=\"demo_\"]').forEach(input => {
+            if (input.tagName !== 'INPUT' || input.disabled || input.readOnly) return;
+            if (!utils.isVisible(input)) return;
             
-            // SKIP if this is a selectize input (check both class and ID pattern)
-            var isSelectizeControl = input.className.indexOf('selectize-control') !== -1;
-            var isSelectizeId = inputId.indexOf('-selectized') !== -1;
-            if (isSelectizeControl || isSelectizeId) {
-              console.log('DEBUG: Skipping selectize input ' + inputId + ' (class=selectize-control or ID ends with -selectized)');
+            // Skip selectize inputs
+            if (input.classList.contains('selectize-control') || 
+                input.id.endsWith('-selectized') ||
+                document.getElementById(input.id.replace('-selectized', ''))?.tagName === 'SELECT') {
               return;
             }
             
-            // ALSO skip if there's a hidden SELECT for this ID
-            var hiddenSelect = document.getElementById(inputId);
-            if (hiddenSelect && hiddenSelect.tagName === 'SELECT') {
-              console.log('DEBUG: Skipping ' + inputId + ' - found underlying SELECT element');
-              return;
-            }
+            const inputType = input.type || 'text';
+            const label = utils.getInputLabel(input).toLowerCase();
+            const isAgeField = input.id === 'demo_1' || 
+                              label.includes('age') || 
+                              label.includes('alter') || 
+                              label.includes('jahr');
             
-            console.log('DEBUG: Found demo input - id=' + inputId + ', type=' + inputType);
+            let value = null;
             
-            // Get the label/question for this field
-            var label = getInputLabel(input);
-            console.log('DEBUG: Label for ' + inputId + ' = \\\"' + label + '\\\"');
-            
-            var labelLower = label.toLowerCase();
-            var value = null;
-            
-            // DEMO_1 is usually Age
-            // DEMO_2+ are usually other demographics
-            var demoNum = inputId.replace('demo_', '');
-            var isFirstDemo = demoNum === '1';
-            
-            // Check if it's an age field (from label or position)
-            var isAgeField = isFirstDemo || labelLower.indexOf('alter') !== -1 || labelLower.indexOf('age') !== -1 || labelLower.indexOf('jahr') !== -1 || labelLower.indexOf('years') !== -1;
-            
-            console.log('DEBUG: isFirstDemo=' + isFirstDemo + ', isAgeField=' + isAgeField + ', inputType=' + inputType);
-            
-            // AGE FIELDS: Always numeric
-            if (isAgeField) {
-              value = randomNumber(18, 75);
-              console.log('DEBUG: Setting AGE ' + inputId + ' to ' + value);
-            } else if (inputType === 'number') {
-              // Numeric inputs
-              value = randomNumber(18, 75);
-              console.log('DEBUG: Setting NUMBER ' + inputId + ' to ' + value);
+            if (isAgeField || inputType === 'number') {
+              value = utils.randomNumber(18, 75);
             } else if (inputType === 'text') {
-              // Text inputs (non-age demographics)
-              value = 'Test ' + randomNumber(100, 999);
-              console.log('DEBUG: Setting TEXT ' + inputId + ' to ' + value);
+              value = `Test ${utils.randomNumber(100, 999)}`;
             }
             
             if (value !== null) {
-              input.value = value;
-              input.dispatchEvent(new Event('input', { bubbles: true }));
-              input.dispatchEvent(new Event('change', { bubbles: true }));
-              input.dispatchEvent(new Event('blur', { bubbles: true }));
-              
-                    if (typeof Shiny !== 'undefined') {
-                Shiny.setInputValue(inputId, value);
-                console.log('DEBUG: Shiny.setInputValue(' + inputId + ', ' + value + ')');
-              }
-                    if (typeof jQuery !== 'undefined') {
-                jQuery(input).val(value).trigger('change').trigger('input');
-                    }
-                  }
-          }
-        });
-
-        // STEP 3: Fill native select dropdowns
-        console.log('DEBUG: Processing native SELECT dropdowns...');
-        document.querySelectorAll('select').forEach(function(select) {
-          if (!select.disabled && select.id.indexOf('-selectized') === -1) {
-            var options = Array.from(select.options);
-            var validOptions = options.filter(function(opt) { return opt.value !== '' && opt.value !== ' '; });
-              if (validOptions.length > 0) {
-              var chosen = validOptions[0];
-              select.value = chosen.value;
-              select.dispatchEvent(new Event('change', { bubbles: true }));
-              select.dispatchEvent(new Event('input', { bubbles: true }));
-              select.dispatchEvent(new Event('blur', { bubbles: true }));
-
-              if (typeof Shiny !== 'undefined' && select.id) {
-                Shiny.setInputValue(select.id, chosen.value);
-              }
-              if (typeof jQuery !== 'undefined') {
-                jQuery(select).val(chosen.value).trigger('change');
-              }
-              console.log('DEBUG: SELECT ' + select.id + ' -> ' + chosen.value);
+              utils.triggerEvents(input, value);
+              utils.triggerShinyUpdate(input.id, value);
+              console.log('DEBUG: DEMO', input.id, '->', value);
+              count++;
             }
-          }
-        });
-        
-        // STEP 4: Fill checkboxes (smart - check consent/agree boxes, 50% for others)
-        document.querySelectorAll('input[type=\"checkbox\"]').forEach(function(checkbox) {
-          if (!checkbox.disabled) {
-            var shouldCheck = false;
-            var label = getInputLabel(checkbox).toLowerCase();
-            
-            if (label.indexOf('agree') !== -1 || label.indexOf('consent') !== -1 || label.indexOf('akzept') !== -1 || label.indexOf('zustimm') !== -1) {
-              shouldCheck = true;
-            } else {
-              shouldCheck = Math.random() > 0.5;
-            }
-            
-            if (shouldCheck && !checkbox.checked) {
-              checkbox.checked = true;
-              checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-              checkbox.dispatchEvent(new Event('input', { bubbles: true }));
-              
-              if (typeof Shiny !== 'undefined' && checkbox.id) {
-                Shiny.setInputValue(checkbox.id, true);
-              }
-            }
-          }
-        });
-        
-        // STEP 5: Fill radio buttons (smart handling for Likert-style groups)
-        var processedGroups = new Set();
-        document.querySelectorAll('input[type=\"radio\"]').forEach(function(radio) {
-          if (radio.disabled) return;
-          var groupName = radio.name || '';
-          if (!groupName || processedGroups.has(groupName)) return;
-          var group = document.querySelectorAll('input[type=\"radio\"][name=\"' + groupName + '\"]');
-          if (!group || group.length === 0) return;
-          processedGroups.add(groupName);
-
-          var options = Array.from(group);
-          var isLikert = options.length >= 3 && options.length <= 7 && options.every(function(opt) {
-            return /^\\d+$/.test(opt.value);
           });
-
-          // Always choose a random option for debug filling (avoid always picking the middle)
-          var randomIndex = Math.floor(Math.random() * options.length);
-          var chosen = options[randomIndex];
-
-          console.log('DEBUG: RADIO GROUP ' + groupName + ' -> selecting value \"' + chosen.value + '\" (options=' + options.length + ')' + (isLikert ? ' [Likert]' : ''));
-
-          if (!chosen.checked) {
+          
+          // Second pass: wait for conditional fields to appear and fill them
+          // This handles cases where selecting Other option shows a text field
+          setTimeout(() => {
+            document.querySelectorAll('[id^=\"demo_\"]').forEach(input => {
+              if (input.tagName !== 'INPUT' || input.disabled || input.readOnly) return;
+              if (!utils.isVisible(input)) return;
+              if (input.value && input.value.trim() !== '') return; // Already filled
+              
+              // Skip selectize inputs
+              if (input.classList.contains('selectize-control') || 
+                  input.id.endsWith('-selectized') ||
+                  document.getElementById(input.id.replace('-selectized', ''))?.tagName === 'SELECT') {
+                return;
+              }
+              
+              const inputType = input.type || 'text';
+              if (inputType === 'text') {
+                const value = `Test ${utils.randomNumber(100, 999)}`;
+                utils.triggerEvents(input, value);
+                utils.triggerShinyUpdate(input.id, value);
+                console.log('DEBUG: DEMO (conditional)', input.id, '->', value);
+                count++;
+              }
+            });
+          }, 500); // Wait 500ms for conditional fields to appear
+          
+          return count;
+        },
+        
+        // Fill checkboxes (smart: check consent/agree, random for others)
+        fillCheckboxes: () => {
+          console.log('DEBUG: Processing checkboxes...');
+          let count = 0;
+          
+          document.querySelectorAll('input[type=\"checkbox\"]').forEach(checkbox => {
+            if (checkbox.disabled || !utils.isVisible(checkbox)) return;
+            if (checkbox.checked) return; // Already checked
+            
+            const label = utils.getInputLabel(checkbox).toLowerCase();
+            const isConsent = /agree|consent|akzept|zustimm|confirm|bestät/i.test(label);
+            const shouldCheck = isConsent || Math.random() > 0.5;
+            
+            if (shouldCheck) {
+              checkbox.checked = true;
+              utils.triggerEvents(checkbox);
+              utils.triggerShinyUpdate(checkbox.id, true);
+              count++;
+            }
+          });
+          
+          console.log('DEBUG: Checked', count, 'checkboxes');
+          return count;
+        },
+        
+        // Fill radio buttons (smart handling for Likert scales)
+        fillRadioButtons: () => {
+          console.log('DEBUG: Processing radio buttons...');
+          const processedGroups = new Set();
+          let count = 0;
+          
+          document.querySelectorAll('input[type=\"radio\"]').forEach(radio => {
+            if (radio.disabled || !utils.isVisible(radio)) return;
+            
+            const groupName = radio.name;
+            if (!groupName || processedGroups.has(groupName)) return;
+            
+            const group = Array.from(document.querySelectorAll(`input[type=\"radio\"][name=\"${groupName}\"]`))
+              .filter(r => !r.disabled && utils.isVisible(r));
+            
+            if (group.length === 0) return;
+            processedGroups.add(groupName);
+            
+            // Check if already selected
+            if (group.some(r => r.checked)) {
+              console.log('DEBUG: Radio group', groupName, 'already has selection');
+              return;
+            }
+            
+            // Detect Likert scale (3-7 options with numeric values)
+            const isLikert = group.length >= 3 && group.length <= 7 && 
+                            group.every(r => /^\\d+$/.test(r.value));
+            
+            // For Likert, prefer middle options; for others, random but avoid Other option
+            let chosenIndex;
+            if (isLikert) {
+              const middleIndex = Math.floor(group.length / 2);
+              // Pick middle ± 1 randomly
+              const variance = Math.random() < 0.5 ? 0 : (Math.random() < 0.5 ? -1 : 1);
+              chosenIndex = Math.max(0, Math.min(group.length - 1, middleIndex + variance));
+            } else {
+              // For non-Likert, detect and avoid Other option (generic detection)
+              // Filter out options that look like Other/Anders/etc (generic)
+              const validOptions = group.filter((r, idx) => {
+                const value = r.value || '';
+                const label = utils.getInputLabel(r) || '';
+                const labelLower = label.toLowerCase();
+                // Generic detection: avoid options with Other/Anders/etc in label or value
+                return !(value.toLowerCase() === 'other' || 
+                        labelLower.includes('other') || 
+                        labelLower.includes('anders') ||
+                        labelLower.includes('sonstiges') ||
+                        labelLower.includes('sonstige'));
+              });
+              
+              if (validOptions.length > 0) {
+                // Choose randomly from valid options (excluding Other-like options)
+                chosenIndex = group.indexOf(validOptions[Math.floor(Math.random() * validOptions.length)]);
+              } else {
+                // Fallback: if all options are Other-like, just pick first
+                chosenIndex = 0;
+              }
+            }
+            
+            const chosen = group[chosenIndex];
             chosen.checked = true;
-            chosen.dispatchEvent(new Event('change', { bubbles: true }));
-            chosen.dispatchEvent(new Event('input', { bubbles: true }));
-            chosen.dispatchEvent(new Event('click', { bubbles: true }));
-            if (typeof Shiny !== 'undefined') {
-              Shiny.setInputValue(groupName, chosen.value);
-              setTimeout(function() {
-                if (typeof Shiny !== 'undefined') {
-                  Shiny.setInputValue(groupName, chosen.value);
+            
+            // Trigger events
+            ['change', 'input', 'click'].forEach(eventType => {
+              chosen.dispatchEvent(new Event(eventType, { bubbles: true, cancelable: true }));
+            });
+            
+            utils.triggerShinyUpdate(groupName, chosen.value);
+            
+            console.log('DEBUG: RADIO', groupName, '->', chosen.value, '(' + group.length + ' options' + (isLikert ? ', Likert' : '') + ')');
+            count++;
+          });
+          
+          console.log('DEBUG: Filled', count, 'radio groups');
+          
+          // CRITICAL: After ALL radio buttons are selected, check for conditional fields
+          // This works for ANY language - uses multiple detection methods
+          setTimeout(() => {
+            console.log('DEBUG: Post-radio conditional field check (language-agnostic)...');
+            
+            // Method 1: Check all demo_ prefixed text inputs
+            document.querySelectorAll('[id^=\"demo_\"]').forEach(input => {
+              if (input.tagName === 'INPUT' && input.type === 'text' && 
+                  utils.isVisible(input) && (!input.value || input.value.trim() === '')) {
+                const value = `Test ${utils.randomNumber(100, 999)}`;
+                utils.triggerEvents(input, value);
+                utils.triggerShinyUpdate(input.id, value);
+                console.log('DEBUG: Filled conditional (demo_ pattern)', input.id);
+              }
+            });
+            
+            // Method 2: Check by ID patterns (language-agnostic)
+            document.querySelectorAll('input[type=\"text\"]').forEach(input => {
+              if (utils.isVisible(input) && (!input.value || input.value.trim() === '')) {
+                const inputId = (input.id || input.name || '').toLowerCase();
+                // Universal patterns that work in any language
+                const conditionalPatterns = ['zusatz', 'other', 'specify', 'anders', 'sonstig', 
+                                           'specify', 'detail', 'please', 'bitte', 'weitere'];
+                if (conditionalPatterns.some(pattern => inputId.includes(pattern))) {
+                  const value = `Test ${utils.randomNumber(100, 999)}`;
+                  utils.triggerEvents(input, value);
+                  utils.triggerShinyUpdate(input.id || input.name, value);
+                  console.log('DEBUG: Filled conditional (pattern match)', input.id || input.name);
                 }
-              }, 50);
+              }
+            });
+            
+            // Method 3: Check for text inputs that appear after radio selection (heuristic)
+            document.querySelectorAll('input[type=\"radio\"]:checked').forEach(radio => {
+              const container = radio.closest('div, form, fieldset, .form-group') || document.body;
+              container.querySelectorAll('input[type=\"text\"]').forEach(input => {
+                if (utils.isVisible(input) && (!input.value || input.value.trim() === '')) {
+                  // Check if it's near the checked radio (likely conditional)
+                  const rect1 = radio.getBoundingClientRect();
+                  const rect2 = input.getBoundingClientRect();
+                  const distance = Math.abs(rect2.top - rect1.bottom);
+                  
+                  if (distance < 200) { // Within 200px - likely conditional
+                    const value = `Test ${utils.randomNumber(100, 999)}`;
+                    utils.triggerEvents(input, value);
+                    utils.triggerShinyUpdate(input.id || input.name, value);
+                    console.log('DEBUG: Filled conditional (proximity)', input.id || input.name);
+                  }
+                }
+              });
+            });
+          }, 600); // Wait 600ms for conditional fields to appear
+          
+          return count;
+        },
+        
+        // Fill text areas and free-text inputs
+        fillFreeText: () => {
+          console.log('DEBUG: Processing free-text fields...');
+          let count = 0;
+          
+          document.querySelectorAll('textarea, input[type=\"text\"]').forEach(el => {
+            if (el.disabled || el.readOnly || !utils.isVisible(el)) return;
+            
+            const id = el.id || '';
+            // Skip demographics (handled separately) and selectize
+            if (id.startsWith('demo_') || 
+                el.classList.contains('selectize-control') ||
+                id.endsWith('-selectized')) {
+              return;
             }
+            
+            const text = `AutoText ${utils.randomNumber(100, 999)} ${utils.randomText(8)}`;
+            utils.triggerEvents(el, text);
+            utils.triggerShinyUpdate(id, text);
+            count++;
+          });
+          
+          console.log('DEBUG: Filled', count, 'free-text fields');
+          return count;
+        }
+      };
+
+      // Main page filling function
+      function fillCurrentPage(callback, fastMode) {
+        console.log('DEBUG: ========== FILLING CURRENT PAGE ==========');
+        
+        const stats = {
+          selectize: 0,
+          demographics: 0,
+          checkboxes: 0,
+          radioGroups: 0,
+          freeText: 0
+        };
+        
+        // Fill in order (selectize first to avoid conflicts)
+        stats.selectize = fillers.fillSelectize();
+        stats.demographics = fillers.fillDemographics();
+        stats.checkboxes = fillers.fillCheckboxes();
+        stats.radioGroups = fillers.fillRadioButtons();
+        stats.freeText = fillers.fillFreeText();
+        
+        // Wait for all updates to propagate - shorter timeout for fast mode
+        const fillTimeout = fastMode ? 500 : 1000;
+        setTimeout(() => {
+          console.log('DEBUG: ========== FILL SUMMARY ==========');
+          console.log('Selectize fields:', stats.selectize);
+          console.log('Demographics:', stats.demographics);
+          console.log('Checkboxes:', stats.checkboxes);
+          console.log('Radio groups:', stats.radioGroups);
+          console.log('Free-text fields:', stats.freeText);
+          console.log('DEBUG: ====================================');
+          
+          if (callback && typeof callback === 'function') {
+            callback();
           }
-        });
-        console.log('DEBUG: Total distinct radio groups filled on this page: ' + processedGroups.size);
-
-        // Also fill any free-text fields on the page (e.g., open_O1)
-        try { fillFreeTextFields(); } catch (e) { console.log('DEBUG: fillFreeTextFields error: ' + e); }
-
-        console.log('DEBUG: fillCurrentPageComprehensive complete');
+        }, fillTimeout);
       }
 
-      // NEW: STEP 6 - Fill free-text fields (textAreaInput and other text inputs not covered above)
-      function fillFreeTextFields() {
-        console.log('DEBUG: Filling free-text fields...');
-        document.querySelectorAll('textarea, input[type=\"text\"]').forEach(function(el) {
-          if (el.disabled || el.readOnly) return;
-          var id = el.id || '';
-          // Skip demographics handled earlier
-          if (id.indexOf('demo_') === 0) return;
-          // Skip selectize controls
-          if (el.className && el.className.indexOf('selectize-control') !== -1) return;
-          var text = 'AutoText ' + Math.floor(Math.random()*1000) + ' ' + randomText(8);
-          el.value = text;
-          el.dispatchEvent(new Event('input', { bubbles: true }));
-          el.dispatchEvent(new Event('change', { bubbles: true }));
-          if (typeof Shiny !== 'undefined' && id) {
-            Shiny.setInputValue(id, text);
-          }
-        });
-      }
-
+      // Navigation helpers
       function getNextButton() {
-        var buttons = document.querySelectorAll('button');
-        for (var i = 0; i < buttons.length; i++) {
-          var btn = buttons[i];
-          var text = btn.textContent.toLowerCase().trim();
-          var id = (btn.id || '').toLowerCase();
-          var className = (btn.className || '').toLowerCase();
+        const buttons = Array.from(document.querySelectorAll('button'));
+        console.log('DEBUG: Searching', buttons.length, 'buttons for next button');
+        
+        // Priority 1: Exact text matches
+        const nextKeywords = ['next', 'weiter', 'submit', 'senden', 'continue', 'fortfahren', 'start', 'beginnen'];
+        for (const btn of buttons) {
+          if (!utils.isVisible(btn) || btn.disabled) continue;
           
-          // Check button text content
-          if (text.indexOf('next') !== -1 || text.indexOf('weiter') !== -1 || text.indexOf('submit') !== -1 || text.indexOf('senden') !== -1 || text.indexOf('continue') !== -1 || text.indexOf('fortfahren') !== -1 || text.indexOf('start') !== -1 || text.indexOf('beginnen') !== -1) {
-            console.log('DEBUG: Found button by text: ' + text);
-            return btn;
-          }
-          
-          // Check button ID or class
-          if (id.indexOf('next') !== -1 || id.indexOf('submit') !== -1 || id.indexOf('continue') !== -1 || className.indexOf('next') !== -1 || className.indexOf('submit') !== -1) {
-            console.log('DEBUG: Found button by ID/class: ' + id);
+          const text = btn.textContent.toLowerCase().trim();
+          if (nextKeywords.some(keyword => text === keyword || text.includes(keyword))) {
+            console.log('DEBUG: Found next button by text:', text);
             return btn;
           }
         }
         
-        // Fallback: Look for any button that's visible and not disabled
-        for (var i = 0; i < buttons.length; i++) {
-          var btn = buttons[i];
-          if (!btn.disabled && btn.offsetHeight > 0) {
-            var text = btn.textContent.toLowerCase();
-            // Skip buttons that should NOT trigger navigation
-            if (text.indexOf('back') === -1 && 
-                text.indexOf('zurück') === -1 && 
-                text.indexOf('cancel') === -1 && 
-                text.indexOf('abbrechen') === -1 &&
-                text.indexOf('download') === -1 &&
-                text.indexOf('herunterladen') === -1 &&
-                text.indexOf('pdf') === -1 &&
-                text.indexOf('speichern') === -1 &&
-                text.indexOf('save') === -1 &&
-                text.indexOf('print') === -1 &&
-                text.indexOf('drucken') === -1) {
-              console.log('DEBUG: Found visible button (fallback): ' + text);
+        // Priority 2: ID or class matches
+        for (const btn of buttons) {
+          if (!utils.isVisible(btn) || btn.disabled) continue;
+          
+          const id = (btn.id || '').toLowerCase();
+          const className = (btn.className || '').toLowerCase();
+          if (id.includes('next') || id.includes('submit') || className.includes('next')) {
+            console.log('DEBUG: Found next button by ID/class:', id);
+            return btn;
+          }
+        }
+        
+        // Priority 3: Visible primary/action button (excluding back/cancel)
+        const excludeKeywords = ['back', 'zurück', 'cancel', 'abbrechen', 'download', 'pdf', 'save', 'print'];
+        for (const btn of buttons) {
+          if (!utils.isVisible(btn) || btn.disabled) continue;
+          
+          const text = btn.textContent.toLowerCase();
+          if (excludeKeywords.some(keyword => text.includes(keyword))) continue;
+          
+          console.log('DEBUG: Found fallback button:', text);
               return btn;
-            }
-          }
         }
         
+        console.log('DEBUG: No suitable next button found');
         return null;
       }
 
       function isReportPage() {
-        var pageContent = document.getElementById('page_content') || document.body;
-        var text = pageContent.textContent.toLowerCase();
-        // Only return true if we see clear report/results indicators
-        return (text.indexOf('result') !== -1 && (text.indexOf('score') !== -1 || text.indexOf('ability') !== -1 || text.indexOf('theta') !== -1)) ||
-               text.indexOf('abgeschlossen') !== -1 || 
-               (text.indexOf('thank') !== -1 && text.indexOf('complete') !== -1) ||
-               text.indexOf('danke') !== -1;
+        const content = (document.getElementById('page_content') || document.body).textContent.toLowerCase();
+        return (content.includes('result') && (content.includes('score') || content.includes('theta'))) ||
+               content.includes('abgeschlossen') ||
+               (content.includes('thank') && content.includes('complete')) ||
+               content.includes('danke für ihre teilnahme');
       }
 
+      // Auto-progression function
       function autoProgressAll(waitTime, transitionTime) {
-        console.log('DEBUG: autoProgressAll started with waitTime=' + waitTime + ', transitionTime=' + transitionTime);
+        console.log('DEBUG: Starting auto-progression wait=' + waitTime + 'ms transition=' + transitionTime + 'ms');
+        
+        // Detect fast mode (waitTime <= 150ms indicates fast mode)
+        const fastMode = waitTime <= 150;
+        
+        let stepCount = 0;
+        const maxSteps = 100; // Safety limit
         
         function progressStep() {
+          stepCount++;
+          console.log('DEBUG: === STEP', stepCount, '===');
+          
+          if (stepCount > maxSteps) {
+            console.log('DEBUG: Max steps reached, stopping');
+            return;
+          }
+          
           if (isReportPage()) {
-            console.log('DEBUG: Report page reached - stopping');
+            console.log('DEBUG: Report page detected, stopping auto-progression');
                   return;
                 }
 
-          fillCurrentPageComprehensive();
-
-                setTimeout(function() {
-            var nextBtn = getNextButton();
-            if (nextBtn) {
-              console.log('DEBUG: Clicking next button');
-              nextBtn.click();
-              setTimeout(progressStep, transitionTime);
-                    } else {
-              console.log('DEBUG: No next button found - may be on report page');
+          fillCurrentPage(() => {
+            // Wait for conditional fields to appear and be filled (LANGUAGE-AGNOSTIC)
+            setTimeout(() => {
+              // Multiple passes to catch conditional fields that appear at different times
+              // Reduce attempts and interval for fast mode
+              let attempts = 0;
+              const maxAttempts = fastMode ? 2 : 5;
+              const checkInterval = fastMode ? 200 : 400;
+              
+              const checkAndFillConditional = () => {
+                attempts++;
+                console.log('DEBUG: Checking for conditional fields, attempt', attempts);
+                
+                // Method 1: Check all demo_ prefixed fields
+                document.querySelectorAll('[id^=\"demo_\"]').forEach(input => {
+                  if (input.tagName === 'INPUT' && input.type === 'text' && 
+                      utils.isVisible(input) && (!input.value || input.value.trim() === '')) {
+                    const value = `Test ${utils.randomNumber(100, 999)}`;
+                    utils.triggerEvents(input, value);
+                    utils.triggerShinyUpdate(input.id, value);
+                    console.log('DEBUG: Filled conditional field (demo_)', input.id);
                   }
-                }, waitTime);
+                });
+                
+                // Method 2: Check all text inputs (language-agnostic)
+                document.querySelectorAll('input[type=\"text\"]').forEach(input => {
+                  if (utils.isVisible(input) && (!input.value || input.value.trim() === '')) {
+                    const inputId = input.id || input.name || '';
+                    // Detect conditional fields by common patterns (works in any language)
+                    const isConditional = inputId.toLowerCase().includes('zusatz') ||
+                                         inputId.toLowerCase().includes('other') ||
+                                         inputId.toLowerCase().includes('specify') ||
+                                         inputId.toLowerCase().includes('anders') ||
+                                         inputId.includes('_Zusatz') ||
+                                         inputId.includes('_other') ||
+                                         inputId.includes('_Other');
+                    
+                    if (isConditional) {
+                      const value = `Test ${utils.randomNumber(100, 999)}`;
+                      utils.triggerEvents(input, value);
+                      utils.triggerShinyUpdate(input.id || input.name, value);
+                      console.log('DEBUG: Filled conditional field (pattern match)', inputId);
+                    }
+                  }
+                });
+                
+                // Method 3: Check for visible empty text inputs near radio buttons (heuristic)
+                document.querySelectorAll('input[type=\"radio\"]:checked').forEach(radio => {
+                  // Find nearby text inputs that might be conditional
+                  const parent = radio.closest('div, form, fieldset') || document.body;
+                  parent.querySelectorAll('input[type=\"text\"]').forEach(input => {
+                    if (utils.isVisible(input) && (!input.value || input.value.trim() === '')) {
+                      const value = `Test ${utils.randomNumber(100, 999)}`;
+                      utils.triggerEvents(input, value);
+                      utils.triggerShinyUpdate(input.id || input.name, value);
+                      console.log('DEBUG: Filled conditional field (proximity)', input.id || input.name);
+                    }
+                  });
+                });
+                
+                // If we haven't found the next button yet and haven't exceeded attempts, try again
+                if (attempts < maxAttempts) {
+                  setTimeout(checkAndFillConditional, checkInterval);
+                } else {
+                  // Final attempt to find and click next button
+                  const nextBtn = getNextButton();
+                  if (nextBtn) {
+                    console.log('DEBUG: Clicking next button after', attempts, 'attempts');
+                    nextBtn.click();
+                    setTimeout(progressStep, transitionTime);
+                  } else {
+                    console.log('DEBUG: No next button found after', attempts, 'attempts, stopping');
+                  }
+                }
+              };
+              
+              // Start checking immediately, then continue checking
+              checkAndFillConditional();
+              
+            }, waitTime);
+          }, fastMode);
               }
 
         progressStep();
       }
 
       // Hotkey handlers
-      document.addEventListener('keydown', function(e) {
-        if (e.ctrlKey) {
-          if (e.key === 'a' || e.key === 'A') {
+      document.addEventListener('keydown', (e) => {
+        if (!e.ctrlKey) return;
+        
+        switch(e.key.toLowerCase()) {
+          case 'a':
             e.preventDefault();
-            console.log('DEBUG: Ctrl+A pressed - filling current page ONLY (no next)');
-            fillCurrentPageComprehensive();
-          } else if (e.key === 'q' || e.key === 'Q') {
+            console.log('DEBUG: Ctrl+A - Fill current page only');
+            fillCurrentPage();
+            break;
+          case 'q':
             e.preventDefault();
-            console.log('DEBUG: Ctrl+Q pressed - auto-fill normal speed');
+            console.log('DEBUG: Ctrl+Q - Auto-fill (normal speed)');
             autoProgressAll(800, 600);
-          } else if (e.key === 'w' || e.key === 'W') {
-          e.preventDefault();
-            console.log('DEBUG: Ctrl+W pressed - auto-fill fast speed');
-            autoProgressAll(300, 300);
-          }
+            break;
+          case 'w':
+            e.preventDefault();
+            console.log('DEBUG: Ctrl+W - Auto-fill (fast speed)');
+            autoProgressAll(100, 100);
+            break;
         }
       });
 
       console.log('DEBUG: Hotkey listeners registered');
-    });
+      console.log('DEBUG: Ready! Press Ctrl+A, Ctrl+Q, or Ctrl+W');
+    })();
   ")))
 }

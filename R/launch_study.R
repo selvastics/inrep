@@ -2978,7 +2978,71 @@ launch_study <- function(
       shiny::showNotification("Generating CSV export...", type = "message", duration = 2)
       
       tryCatch({
-        # Collect all data - use same format as cloud storage
+        # CRITICAL: Check if study-specific complete_data exists (from results processor)
+        # This ensures download uses the EXACT same data that was uploaded to cloud
+        if (!is.null(session$userData$hilfo_complete_data)) {
+          cat("CRITICAL: Using stored complete_data from results processor (same as cloud upload)\n")
+          csv_data <- session$userData$hilfo_complete_data
+          
+          # If file exists, use it directly (same file that was uploaded)
+          if (!is.null(session$userData$hilfo_csv_file) && file.exists(session$userData$hilfo_csv_file)) {
+            cat("CRITICAL: Using same CSV file that was uploaded to cloud:", session$userData$hilfo_csv_file, "\n")
+            csv_content <- readLines(session$userData$hilfo_csv_file, warn = FALSE)
+            
+            # Trigger download via JavaScript using the same file
+            if (requireNamespace("shinyjs", quietly = TRUE)) {
+              filename <- basename(session$userData$hilfo_csv_file)
+              shinyjs::runjs(sprintf("
+                var csv = %s;
+                var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+                var url = window.URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = '%s';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+              ", jsonlite::toJSON(paste(csv_content, collapse = "\n")), filename))
+              
+              shiny::showNotification("CSV downloaded successfully (same as cloud upload)!", type = "message", duration = 3)
+              return()  # Exit early - we used the stored file
+            }
+          }
+          
+          # If file doesn't exist, generate from stored complete_data
+          cat("CRITICAL: File not found, generating CSV from stored complete_data\n")
+          temp_csv <- tempfile(fileext = ".csv")
+          write.csv(csv_data, temp_csv, row.names = FALSE, na = "")
+          csv_content <- readLines(temp_csv, warn = FALSE)
+          unlink(temp_csv)
+          
+          # Trigger download
+          if (requireNamespace("shinyjs", quietly = TRUE)) {
+            timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+            study_name <- gsub("[^a-zA-Z0-9_]", "_", config$name %||% "study")
+            filename <- paste0(study_name, "_results_", timestamp, ".csv")
+            
+            shinyjs::runjs(sprintf("
+              var csv = %s;
+              var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+              var url = window.URL.createObjectURL(blob);
+              var a = document.createElement('a');
+              a.href = url;
+              a.download = '%s';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              window.URL.revokeObjectURL(url);
+            ", jsonlite::toJSON(paste(csv_content, collapse = "\n")), filename))
+            
+            shiny::showNotification("CSV downloaded successfully (same as cloud upload)!", type = "message", duration = 3)
+            return()  # Exit early - we used the stored data
+          }
+        }
+        
+        # Fallback: Collect all data - use same format as cloud storage (for studies without stored data)
+        cat("INFO: No stored complete_data found, generating CSV from scratch\n")
         csv_data <- data.frame(
           timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
           session_id = rv$unique_session_id %||% paste0("session_", format(Sys.time(), "%Y%m%d_%H%M%S")),
@@ -3124,6 +3188,11 @@ launch_study <- function(
   
   # IMMEDIATE SYNCHRONOUS INITIALIZATION - No reactive dependencies
   rv <- shiny::reactiveValues()
+  
+  # CRITICAL: Store webdav_url and password in rv for later access (e.g., in render_results_page)
+  # This ensures cloud save works even when user selects "no" to see results
+  rv$webdav_url <- webdav_url
+  rv$webdav_password <- password
   
   # CRITICAL: Ensure complete session isolation - each user gets fresh data
   # Generate unique session ID first
@@ -3424,15 +3493,28 @@ launch_study <- function(
     
     # Session cleanup when app stops (with fallback)
     session$onSessionEnded(function() {
-      if (session_save && exists("cleanup_session") && is.function(cleanup_session)) {
-        tryCatch({
-          logger("Session ending - cleaning up and preserving final data", level = "INFO")
-          cleanup_session(save_final_data = TRUE)
-        }, error = function(e) {
-          logger(sprintf("Session cleanup failed: %s", e$message), level = "WARNING")
-        })
-      } else if (session_save) {
-        logger("Session ending - basic cleanup", level = "INFO")
+      # CRITICAL: ALWAYS preserve data when session ends, regardless of errors
+      if (session_save) {
+        logger("Session ending - cleaning up and preserving final data", level = "INFO")
+        
+        # Always try to preserve data first
+        if (exists("preserve_session_data", mode = "function")) {
+          tryCatch({
+            preserve_session_data(force = TRUE)
+            logger("Data preserved on session end", level = "INFO")
+          }, error = function(e) {
+            logger(sprintf("Data preservation failed on session end: %s", e$message), level = "ERROR")
+          })
+        }
+        
+        # Then try cleanup if available
+        if (exists("cleanup_session") && is.function(cleanup_session)) {
+          tryCatch({
+            cleanup_session(save_final_data = TRUE)
+          }, error = function(e) {
+            logger(sprintf("Session cleanup failed: %s", e$message), level = "WARNING")
+          })
+        }
       }
     })
     
@@ -4646,9 +4728,31 @@ launch_study <- function(
         
         # Collect item responses from current page
         if (current_page$type == "items") {
-          if (!is.null(current_page$item_indices) && !is.null(item_bank)) {
+          if (!is.null(item_bank)) {
             page_data <- list()
-            for (idx in current_page$item_indices) {
+            # Handle NULL item_indices (adaptive selection) - get from page cache
+            if (is.null(current_page$item_indices)) {
+              # Adaptive selection was used - get from cached page selection
+              current_page_num <- rv$current_page %||% 1
+              page_id <- current_page$id %||% paste0("page_", current_page_num)
+              
+              # First try to get from page_selected_items cache (most reliable)
+              if (!is.null(rv$page_selected_items) && !is.null(rv$page_selected_items[[page_id]])) {
+                item_indices_to_collect <- rv$page_selected_items[[page_id]]
+                logger(sprintf("Using cached item selection for page %s: item %d", page_id, item_indices_to_collect))
+              } else if (!is.null(rv$administered) && length(rv$administered) > 0) {
+                # Fallback: get the last administered item
+                item_indices_to_collect <- tail(rv$administered, 1)
+                logger(sprintf("Using last administered item as fallback: item %d", item_indices_to_collect))
+              } else {
+                item_indices_to_collect <- integer(0)
+                logger("WARNING: No item found to collect response for adaptive page")
+              }
+            } else {
+              item_indices_to_collect <- current_page$item_indices
+            }
+            
+            for (idx in item_indices_to_collect) {
               # Get the actual item to get its ID
               if (idx <= nrow(item_bank)) {
                 item <- item_bank[idx, ]
@@ -4898,9 +5002,31 @@ launch_study <- function(
           }
         } else if (current_page$type == "items") {
           # Collect item responses from final page
-          if (!is.null(current_page$item_indices) && !is.null(item_bank)) {
+          if (!is.null(item_bank)) {
             page_data <- list()
-            for (idx in current_page$item_indices) {
+            # Handle NULL item_indices (adaptive selection) - get from page cache
+            if (is.null(current_page$item_indices)) {
+              # Adaptive selection was used - get from cached page selection
+              current_page_num <- rv$current_page %||% 1
+              page_id <- current_page$id %||% paste0("page_", current_page_num)
+              
+              # First try to get from page_selected_items cache (most reliable)
+              if (!is.null(rv$page_selected_items) && !is.null(rv$page_selected_items[[page_id]])) {
+                item_indices_to_collect <- rv$page_selected_items[[page_id]]
+                logger(sprintf("Using cached item selection for final page %s: item %d", page_id, item_indices_to_collect))
+              } else if (!is.null(rv$administered) && length(rv$administered) > 0) {
+                # Fallback: get the last administered item
+                item_indices_to_collect <- tail(rv$administered, 1)
+                logger(sprintf("Using last administered item as fallback for final page: item %d", item_indices_to_collect))
+              } else {
+                item_indices_to_collect <- integer(0)
+                logger("WARNING: No item found to collect response for final adaptive page")
+              }
+            } else {
+              item_indices_to_collect <- current_page$item_indices
+            }
+            
+            for (idx in item_indices_to_collect) {
               if (idx <= nrow(item_bank)) {
                 item <- item_bank[idx, ]
                 item_id <- item$id %||% paste0("item_", idx)
@@ -4908,6 +5034,7 @@ launch_study <- function(
                 if (!is.null(value) && value != "") {
                   rv$responses[idx] <- as.numeric(value)
                   page_data[[item_id]] <- as.numeric(value)
+                  logger(sprintf("Saved final page item response %d (id: %s): %s", idx, item_id, value))
                 }
               }
             }

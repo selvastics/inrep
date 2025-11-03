@@ -12,8 +12,8 @@ BugReports: https://github.com/selvastics/inrep/issues
 Depends: R (>= 4.1.0)
 Imports:
     shiny (>= 1.7.0),
-    rmarkdown (>= 2.0),
     later (>= 1.3.0),
+    rmarkdown (>= 2.0),
     methods,
     stats,
     utils,
@@ -44,4 +44,4 @@ Encoding: UTF-8
 Language: en-US
 LazyData: true
 Config/testthat/edition: 3
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3

@@ -720,8 +720,7 @@ custom_page_flow <- list(
     ),
     
     # Pages 7-11: Programming Anxiety Part 2 - Adaptive (5 items, one per page)
-    # NOTE: With custom_page_flow, these are shown sequentially, not adaptively
-    # We simulate adaptive output for demonstration
+    # Using NULL item_indices triggers adaptive selection (already supported in render_items_page)
     list(
         id = "page7_pa2",
         type = "items", 
@@ -729,7 +728,7 @@ custom_page_flow <- list(
         title_en = "",
         instructions = "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.",
         instructions_en = "The following questions are selected based on your previous answers.",
-        item_indices = 6:6,
+        item_indices = NULL,  # NULL triggers adaptive selection when adaptive=TRUE
         scale_type = "likert"
     ),
     list(
@@ -737,7 +736,7 @@ custom_page_flow <- list(
         type = "items",
         title = "",
         title_en = "",
-        item_indices = 7:7,
+        item_indices = NULL,  # NULL triggers adaptive selection
         scale_type = "likert"
     ),
     list(
@@ -745,7 +744,7 @@ custom_page_flow <- list(
         type = "items",
         title = "",
         title_en = "",
-        item_indices = 8:8,
+        item_indices = NULL,  # NULL triggers adaptive selection
         scale_type = "likert"
     ),
     list(
@@ -753,7 +752,7 @@ custom_page_flow <- list(
         type = "items",
         title = "",
         title_en = "",
-        item_indices = 9:9,
+        item_indices = NULL,  # NULL triggers adaptive selection
         scale_type = "likert"
     ),
     list(
@@ -761,7 +760,7 @@ custom_page_flow <- list(
         type = "items",
         title = "",
         title_en = "",
-        item_indices = 10:10,
+        item_indices = NULL,  # NULL triggers adaptive selection
         scale_type = "likert"
     ),
     
@@ -839,8 +838,8 @@ custom_page_flow <- list(
     list(
         id = "page19",
         type = "demographics",
-        title = "Studienzufriedenheit",
-        title_en = "Study Satisfaction",
+        title = "",
+        title_en = "",
         demographics = c("Vor_Nachbereitung", "Zufrieden_Hi_5st", "Zufrieden_Hi_7st")
     ),
     
@@ -1019,6 +1018,10 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             }
         }
 
+        # CRITICAL: Initialize flag - will be set to TRUE if user selected NO
+        # This ensures CSV generation runs even when user doesn't want to see results
+        user_wants_no_results <- FALSE
+        
         # Honor participant preference for showing personal results
         # If the participant selected 'no' on the pre-results page, show a minimal page
         # that only displays the automatic-close message and a countdown (290 seconds).
@@ -1071,27 +1074,15 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                 cat("DEBUG: Normalized show_pref value:", sp, "\n")
                 cat("DEBUG: Checking if sp is in 'no', 'n', 'false', '0'\n")
                 if (sp %in% c("no", "n", "false", "0")) {
-                    cat("DEBUG: User selected NO - showing thank you message only\n")
-                    # Simple thank you message - let inrep handle countdown
-                    html_no <- paste0(
-                        '<div style="padding:40px; text-align:center; font-family: Arial, sans-serif;">',
-                        '<div style="background:#f8f9fa; padding:30px; border-radius:10px; border:1px solid #dee2e6; max-width:600px; margin:0 auto;">',
-                        '<h2 style="color:#e8041c; margin-bottom:20px;">', 
-                        if (is_english) 'Assessment Complete' else 'Vielen Dank für Ihre Teilnahme!',
-                        '</h2>',
-                        '<p style="color:#666; font-size:16px; margin-bottom:0;">',
-                        if (is_english) 'Your data has been saved successfully.' else 'Ihre Daten wurden erfolgreich gespeichert.',
-                        '</p>',
-                        '</div>',
-                        '</div>',
-                        # Hide the page title
-                        '<style>',
-                        '.page-title, .study-title, h1:first-child, .results-title { display: none !important; }',
-                        '</style>'
-                    )
-
-                    return(shiny::HTML(html_no))
+                    cat("DEBUG: User selected NO - will show thank you message, but CSV generation will run first\n")
+                    # CRITICAL: Don't return early! We need CSV generation to run first
+                    # Set flag to return simple message later, after CSV generation
+                    user_wants_no_results <- TRUE
+                } else {
+                    user_wants_no_results <- FALSE
                 }
+            } else {
+                user_wants_no_results <- FALSE
             }
         }, silent = TRUE)
         
@@ -1135,41 +1126,93 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         a_params <- shown_items$a
         b_params <- shown_items$b
         
-        # Use Maximum Likelihood Estimation for theta
-        theta_est <- 0  # Start with prior mean
-        converged <- FALSE
-        
-        for (iter in 1:20) {
-            # Calculate probabilities for current theta using 2PL model
-            probs <- 1 / (1 + exp(-a_params * (theta_est - b_params)))
+        # Validate item parameters
+        if (any(is.na(a_params)) || any(is.na(b_params))) {
+            cat("WARNING: Missing item parameters (a or b) - using fallback classical score\n")
+            pa_theta <- pa_score
+            theta_est <- pa_score
+            se_est <- sd(pa_responses, na.rm = TRUE) / sqrt(length(pa_responses))
+        } else {
+            # Use Maximum Likelihood Estimation for theta
+            theta_est <- 0  # Start with prior mean
+            converged <- FALSE
             
-            # Convert responses to 0-1 scale for IRT
-            resp_binary <- (pa_responses - 1) / 4  # Convert 1-5 to 0-1
-            
-            # First derivative (score function)
-            first_deriv <- sum(a_params * (resp_binary - probs))
-            
-            # Second derivative (information)
-            second_deriv <- -sum(a_params^2 * probs * (1 - probs))
+            for (iter in 1:20) {
+                # Calculate probabilities for current theta using 2PL model
+                probs <- 1 / (1 + exp(-a_params * (theta_est - b_params)))
+                
+                # Convert responses to 0-1 scale for IRT
+                resp_binary <- (pa_responses - 1) / 4  # Convert 1-5 to 0-1
+                
+                # Validate responses
+                if (any(is.na(resp_binary))) {
+                    cat("WARNING: Missing responses in iteration", iter, "- using fallback\n")
+                    break
+                }
+                
+                # First derivative (score function)
+                first_deriv <- sum(a_params * (resp_binary - probs), na.rm = TRUE)
+                
+                # Second derivative (information)
+                second_deriv <- -sum(a_params^2 * probs * (1 - probs), na.rm = TRUE)
+                
+                # Validate derivatives
+                if (is.na(first_deriv) || is.na(second_deriv)) {
+                    cat("WARNING: Invalid derivatives in iteration", iter, "- stopping\n")
+                    break
+                }
             
             # Update theta using Newton-Raphson
             if (abs(second_deriv) > 0.01) {
                 delta <- first_deriv / second_deriv
-                theta_est <- theta_est - delta
                 
-                # Check convergence
-                if (abs(delta) < 0.001) {
-                    converged <- TRUE
+                # Check if delta is valid (not NA, not Inf)
+                if (!is.na(delta) && is.finite(delta)) {
+                    theta_est <- theta_est - delta
+                    
+                    # Check convergence
+                    if (abs(delta) < 0.001) {
+                        converged <- TRUE
+                        break
+                    }
+                } else {
+                    # Invalid delta - use fallback or stop iteration
+                    cat("WARNING: Invalid delta in iteration", iter, "- stopping iteration\n")
                     break
                 }
+            } else {
+                # Second derivative too small - stop iteration
+                cat("WARNING: Second derivative too small in iteration", iter, "- stopping iteration\n")
+                break
+            }
+            }
+            
+            # Validate final theta estimate
+            if (!is.finite(theta_est) || is.na(theta_est)) {
+                cat("WARNING: Invalid theta estimate - using fallback classical score\n")
+                theta_est <- pa_score
+            }
+            
+            # Calculate standard error and test information
+            info <- sum(a_params^2 * (1 / (1 + exp(-a_params * (theta_est - b_params)))) * 
+                            (1 - 1 / (1 + exp(-a_params * (theta_est - b_params)))), na.rm = TRUE)
+            
+            # Validate info
+            if (is.na(info) || info <= 0 || !is.finite(info)) {
+                cat("WARNING: Invalid test information - using fallback\n")
+                info <- length(pa_responses)  # Fallback to number of items
+            }
+            
+            se_est <- 1 / sqrt(info)
+            if (!is.finite(se_est) || is.na(se_est)) {
+                se_est <- sd(pa_responses, na.rm = TRUE) / sqrt(length(pa_responses))
+            }
+            
+            reliability <- 1 - (1/info)  # Approximate reliability
+            if (!is.finite(reliability) || is.na(reliability)) {
+                reliability <- 0.7  # Fallback reliability
             }
         }
-        
-        # Calculate standard error and test information
-        info <- sum(a_params^2 * (1 / (1 + exp(-a_params * (theta_est - b_params)))) * 
-                        (1 - 1 / (1 + exp(-a_params * (theta_est - b_params)))))
-        se_est <- 1 / sqrt(info)
-        reliability <- 1 - (1/info)  # Approximate reliability
         
         # Output results
         cat(sprintf("Classical Score (mean): %.2f (range 1-5)\n", pa_score))
@@ -1227,13 +1270,19 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                 probs <- 1 / (1 + exp(-a_subset * (theta_temp - b_subset)))
                 
                 # First derivative (gradient)
-                first_d <- sum(a_subset * (resp_subset - probs))
+                first_d <- sum(a_subset * (resp_subset - probs), na.rm = TRUE)
                 
                 # Second derivative (Hessian)
-                second_d <- -sum(a_subset^2 * probs * (1 - probs))
+                second_d <- -sum(a_subset^2 * probs * (1 - probs), na.rm = TRUE)
                 
-                # Check for convergence
-                if (abs(first_d) < tolerance) break
+                # Validate derivatives before using
+                if (is.na(first_d) || is.na(second_d)) {
+                    cat("WARNING: Invalid derivatives in iteration", iter, "- stopping\n")
+                    break
+                }
+                
+                # Check for convergence (only if first_d is valid)
+                if (is.finite(first_d) && abs(first_d) < tolerance) break
                 
                 # Update theta with safeguards
                 if (abs(second_d) > 1e-6) {
@@ -1958,31 +2007,37 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                        '</div>'
         )
         
-        # Save data to CSV file and upload to cloud
-        if (exists("responses") && exists("item_bank")) {
-            cat("DEBUG: Starting complete_data creation\n")
+        # CRITICAL: Save data to CSV file and upload to cloud
+        # ALWAYS save CSV and upload, regardless of user's preference to see results
+        # Check if responses and item_bank are provided (they're function parameters, not environment variables)
+        if (!is.null(responses) && !is.null(item_bank)) {
+            cat("DEBUG: Starting complete_data creation (CSV generation and upload)\n")
             tryCatch({
                 # Prepare complete dataset with error handling
                 tryCatch({
+                    # CRITICAL: Use the detected current_lang (already determined above in the function)
+                    # This ensures study_language matches the actual language used (en or de)
                     complete_data <- data.frame(
                         timestamp = Sys.time(),
                         session_id = paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S")),
-                        study_language = ifelse(exists("session") && !is.null(session$userData$language), 
-                                                session$userData$language, "de"),
+                        study_language = current_lang,  # Use the detected language (en or de), not hardcoded "de"
                         stringsAsFactors = FALSE,
                         row.names = NULL
                     )
+                    cat("DEBUG: Setting study_language in CSV to:", current_lang, "\n")
                     cat("DEBUG: complete_data created successfully\n")
                 }, error = function(e) {
                     cat("Error creating complete_data data.frame:", e$message, "\n")
                     # Create fallback complete_data
+                    # CRITICAL: Use the detected current_lang even in fallback
                     complete_data <- data.frame(
                         timestamp = Sys.time(),
                         session_id = paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S")),
-                        study_language = "de",
+                        study_language = current_lang,  # Use detected language, not hardcoded "de"
                         stringsAsFactors = FALSE,
                         row.names = NULL
                     )
+                    cat("DEBUG: Fallback - Setting study_language in CSV to:", current_lang, "\n")
                 })
                 
                 # Add demographics from the session
@@ -2020,51 +2075,123 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                 complete_data$MWS_Studierfaehigkeiten <- if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) 3 else scores$Studierfähigkeiten
                 complete_data$Statistik <- if (is.na(scores$Statistik) || is.nan(scores$Statistik)) 3 else scores$Statistik
                 
-                # Save locally with proper connection handling
+                # CRITICAL: Save locally with proper connection handling
+                # Store the file path and complete_data in session for download button to use
                 local_file <- paste0("hilfo_results_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
                 tryCatch({
                     write.csv(complete_data, local_file, row.names = FALSE)
                     cat("Data saved locally to:", local_file, "\n")
+                    
+                    # CRITICAL: Store complete_data and file path in session for download button
+                    # This ensures download button uses the EXACT same data that was uploaded
+                    if (exists("session") && !is.null(session)) {
+                        session$userData$hilfo_complete_data <- complete_data
+                        session$userData$hilfo_csv_file <- local_file
+                        cat("DEBUG: Stored complete_data and file path in session for download button\n")
+                    }
                 }, error = function(e) {
                     cat("Error saving data locally:", e$message, "\n")
                 })
                 
-                # Upload to cloud if configured
+                # CRITICAL: ALWAYS upload to cloud - works in ALL languages (DE and EN)
+                # Use synchronous upload to ensure it completes, don't rely on later::later()
+                # Use the credentials defined at the top of this file (WEBDAV_URL, WEBDAV_PASSWORD)
                 if (!is.null(WEBDAV_URL) && !is.null(WEBDAV_PASSWORD)) {
-                    later::later(function() {
-                        tryCatch({
-                            # For public WebDAV folders, use share token as username
-                            webdav_user <- "OUarlqGbhYopkBc"  # Share token is the username
-                            webdav_pass <- "ws2526"  # Password for the share
-                            
-                            cat("Uploading to cloud storage...\n")
-                            
-                            # Upload using httr with public folder authentication
-                            response <- httr::PUT(
+                    tryCatch({
+                        # For public WebDAV folders, use share token as username
+                        # Use the credentials from the top of the file
+                        webdav_user <- WEBDAV_SHARE_TOKEN  # Share token is the username (from line 82)
+                        webdav_pass <- WEBDAV_PASSWORD    # Use the password defined at top (from line 81)
+                        
+                        cat("CRITICAL: Uploading to cloud storage (language: ", current_lang, ")...\n")
+                        cat("CRITICAL: Using WEBDAV_URL:", WEBDAV_URL, "\n")
+                        cat("CRITICAL: Using credentials from top of file (WEBDAV_SHARE_TOKEN + WEBDAV_PASSWORD)\n")
+                        
+                        # Upload using httr with public folder authentication
+                        # Use synchronous upload (not later::later) to ensure it completes
+                        response <- httr::PUT(
+                            url = paste0(WEBDAV_URL, local_file),
+                            body = httr::upload_file(local_file),
+                            httr::authenticate(webdav_user, webdav_pass, type = "basic"),
+                            httr::add_headers(
+                                "Content-Type" = "text/csv",
+                                "X-Requested-With" = "XMLHttpRequest"
+                            ),
+                            httr::timeout(30)  # 30 second timeout
+                        )
+                        
+                        if (httr::status_code(response) %in% c(200, 201, 204)) {
+                            cat("CRITICAL: Data successfully uploaded to cloud (language: ", current_lang, ")\n")
+                            cat("File:", local_file, "\n")
+                            cat("Upload complete to: https://sync.academiccloud.de/index.php/s/OUarlqGbhYopkBc\n")
+                        } else {
+                            cat("CRITICAL ERROR: Cloud upload failed with status:", httr::status_code(response), " (language: ", current_lang, ")\n")
+                            if (httr::status_code(response) == 401) {
+                                cat("Authentication failed. Trying with share token.\n")
+                                cat("Share token used:", webdav_user, "\n")
+                            }
+                            # TRY AGAIN - don't fail silently
+                            cat("CRITICAL: Retrying cloud upload...\n")
+                            Sys.sleep(1)
+                            response2 <- httr::PUT(
                                 url = paste0(WEBDAV_URL, local_file),
                                 body = httr::upload_file(local_file),
-                                httr::authenticate(webdav_user, webdav_pass, type = "basic"),
+                                httr::authenticate(WEBDAV_SHARE_TOKEN, WEBDAV_PASSWORD, type = "basic"),
                                 httr::add_headers(
                                     "Content-Type" = "text/csv",
                                     "X-Requested-With" = "XMLHttpRequest"
-                                )
+                                ),
+                                httr::timeout(30)
                             )
-                            
-                            if (httr::status_code(response) %in% c(200, 201, 204)) {
-                                cat("Data successfully uploaded to cloud\n")
-                                cat("File:", local_file, "\n")
-                                cat("Upload complete to: https://sync.academiccloud.de/index.php/s/OUarlqGbhYopkBc\n")
+                            if (httr::status_code(response2) %in% c(200, 201, 204)) {
+                                cat("CRITICAL: Data successfully uploaded to cloud on retry (language: ", current_lang, ")\n")
                             } else {
-                                cat("Cloud upload failed with status:", httr::status_code(response), "\n")
-                                if (httr::status_code(response) == 401) {
-                                    cat("Authentication failed. Trying with share token.\n")
-                                    cat("Share token used:", webdav_user, "\n")
-                                }
+                                cat("CRITICAL ERROR: Cloud upload failed on retry with status:", httr::status_code(response2), " (language: ", current_lang, ")\n")
                             }
-                        }, error = function(e) {
-                            cat("Error uploading to cloud:", e$message, "\n")
+                        }
+                    }, error = function(e) {
+                        cat("CRITICAL ERROR uploading to cloud (language: ", current_lang, "): ", e$message, "\n")
+                        cat("CRITICAL: This is a data loss risk - data saved locally but not in cloud!\n")
+                        # Try one more time
+                        tryCatch({
+                            Sys.sleep(2)
+                            response3 <- httr::PUT(
+                                url = paste0(WEBDAV_URL, local_file),
+                                body = httr::upload_file(local_file),
+                                httr::authenticate(WEBDAV_SHARE_TOKEN, WEBDAV_PASSWORD, type = "basic"),
+                                httr::add_headers("Content-Type" = "text/csv"),
+                                httr::timeout(30)
+                            )
+                            if (httr::status_code(response3) %in% c(200, 201, 204)) {
+                                cat("CRITICAL: Data successfully uploaded to cloud on second retry (language: ", current_lang, ")\n")
+                            } else {
+                                cat("CRITICAL ERROR: Cloud upload failed on second retry (language: ", current_lang, ")\n")
+                            }
+                        }, error = function(e2) {
+                            cat("CRITICAL ERROR: All cloud upload attempts failed (language: ", current_lang, "): ", e2$message, "\n")
+                            # Last resort: try with the credentials from the top of the file directly
+                            tryCatch({
+                                cat("CRITICAL: Last resort attempt with WEBDAV_PASSWORD directly...\n")
+                                response4 <- httr::PUT(
+                                    url = paste0(WEBDAV_URL, local_file),
+                                    body = httr::upload_file(local_file),
+                                    httr::authenticate(WEBDAV_SHARE_TOKEN, WEBDAV_PASSWORD, type = "basic"),
+                                    httr::add_headers("Content-Type" = "text/csv"),
+                                    httr::timeout(30)
+                                )
+                                if (httr::status_code(response4) %in% c(200, 201, 204)) {
+                                    cat("CRITICAL: Data successfully uploaded on last resort attempt (language: ", current_lang, ")\n")
+                                } else {
+                                    cat("CRITICAL ERROR: Last resort upload also failed (language: ", current_lang, ")\n")
+                                }
+                            }, error = function(e3) {
+                                cat("CRITICAL ERROR: All upload attempts exhausted (language: ", current_lang, "): ", e3$message, "\n")
+                            })
                         })
-                    }, delay = 0.5)
+                    })
+                } else {
+                    cat("CRITICAL WARNING: WEBDAV_URL or WEBDAV_PASSWORD is NULL - cloud upload skipped (language: ", current_lang, ")\n")
+                    cat("CRITICAL WARNING: WEBDAV_URL =", WEBDAV_URL, ", WEBDAV_PASSWORD =", ifelse(is.null(WEBDAV_PASSWORD), "NULL", "SET"), "\n")
                 }
                 
             }, error = function(e) {
@@ -2133,6 +2260,29 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             '</div>'  # Close main report-content div
         )
         
+        # CRITICAL: If user selected NO, return simple thank you message instead of full report
+        # But CSV generation already ran above, so data is saved
+        if (isTRUE(user_wants_no_results)) {
+            cat("DEBUG: User selected NO - returning simple thank you message (CSV already generated and uploaded)\n")
+            html_no <- paste0(
+                '<div style="padding:40px; text-align:center; font-family: Arial, sans-serif;">',
+                '<div style="background:#f8f9fa; padding:30px; border-radius:10px; border:1px solid #dee2e6; max-width:600px; margin:0 auto;">',
+                '<h2 style="color:#e8041c; margin-bottom:20px;">', 
+                if (is_english) 'Assessment Complete' else 'Vielen Dank für Ihre Teilnahme!',
+                '</h2>',
+                '<p style="color:#666; font-size:16px; margin-bottom:0;">',
+                if (is_english) 'Your data has been saved successfully.' else 'Ihre Daten wurden erfolgreich gespeichert.',
+                '</p>',
+                '</div>',
+                '</div>',
+                # Hide the page title
+                '<style>',
+                '.page-title, .study-title, h1:first-child, .results-title { display: none !important; }',
+                '</style>'
+            )
+            return(shiny::HTML(html_no))
+        }
+        
         return(shiny::HTML(html))
         
     }, error = function(e) {
@@ -2196,63 +2346,111 @@ session_uuid <- paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 # Enable adaptive selection output like inrep examples
 # This function will be called for item selection if we enable it
 custom_item_selection <- function(rv, item_bank, config) {
-    item_num <- length(rv$administered) + 1
+    # IMPORTANT: This function should ONLY be called for adaptive pages (7-11 with item_indices = NULL)
+    # Pages with fixed item_indices should NOT call this function - they use their fixed indices directly
     
-    # First 5 items: Fixed PA items (1-5)
-    if (item_num <= 5) {
-        message(sprintf("Selected fixed item %d (PA_%02d)", item_num, item_num))
-        return(item_num)
+    # Check which items have actually been administered
+    # Page 6 shows items 1-5 together, so they should be in rv$administered
+    # But we need to count PA items (1-20) that have been shown
+    administered_pa <- rv$administered[rv$administered >= 1 & rv$administered <= 20]
+    num_pa_items_shown <- length(administered_pa)
+    
+    # Also check if we have responses for items 1-5 (they might be in rv$responses but not yet in rv$administered)
+    # This handles the case where page 6 collected responses but they're not yet in administered
+    responses_for_pa <- which(!is.na(rv$responses[1:min(20, length(rv$responses))]))
+    num_pa_responses <- length(responses_for_pa)
+    
+    # Use the maximum of administered or responses to determine progress
+    # This ensures we don't repeat items that were already shown
+    effective_pa_count <- max(num_pa_items_shown, num_pa_responses)
+    
+    message(sprintf("DEBUG: Administered PA items: %s (count: %d), PA responses: %s (count: %d), effective: %d", 
+                    paste(administered_pa, collapse=", "), num_pa_items_shown,
+                    paste(responses_for_pa, collapse=", "), num_pa_responses, effective_pa_count))
+    
+    # First 5 items: Fixed PA items (1-5) - should already be shown on page 6
+    # NEVER return items 1-5 - they're already shown on page 6!
+    if (effective_pa_count < 5) {
+        # Items 1-5 haven't been shown yet - this shouldn't happen for pages 7-11
+        # But if we're on an early page, return NULL to skip
+        message("WARNING: Items 1-5 should already be shown on page 6! Skipping selection.")
+        return(NULL)
     }
     
     # Items 6-10: Adaptive PA items (select from pool 6-20)
-    if (item_num >= 6 && item_num <= 10) {
+    # We want 5 adaptive items total (items 6-10 of the PA section)
+    # ONLY handle adaptive selection for pages 7-11
+    if (effective_pa_count >= 5 && effective_pa_count < 10) {
+        adaptive_item_number <- effective_pa_count - 4  # 6th, 7th, 8th, 9th, or 10th PA item
         message("\n================================================================================")
-        message(sprintf("ADAPTIVE ITEM SELECTION - Item %d of 10", item_num))
+        message(sprintf("ADAPTIVE ITEM SELECTION - Selecting PA item #%d (overall item %d of 10 PA items)", 
+                        adaptive_item_number + 5, effective_pa_count + 1))
         message("================================================================================")
         
         # Get responses so far
         responses_so_far <- rv$responses[1:length(rv$responses)]
         message(sprintf("Responses collected so far: %d items", length(responses_so_far)))
         
-        # Estimate current ability using simplified IRT approach
-        current_theta <- 0  # Default
-        current_se <- 1.0  # Default SE
+        # Use current ability estimate if available (updated by estimate_ability after each response)
+        # Otherwise estimate using proper TAM-based estimation
+        current_theta <- rv$current_ability %||% config$theta_prior[1] %||% 0
+        current_se <- rv$ability_se %||% config$theta_prior[2] %||% 1.0
         
-        if (!is.null(responses_so_far) && length(responses_so_far) >= 3) {
+        # If we have responses but no ability estimate yet, estimate it
+        if (!is.null(responses_so_far) && length(responses_so_far) >= 3 && 
+            (is.null(rv$current_ability) || !is.finite(rv$current_ability))) {
             tryCatch({
-                # Use simplified Newton-Raphson for speed
-                # Get item parameters for items shown so far
-                shown_indices <- rv$administered[rv$administered <= 20]
-                a_params <- item_bank$a[shown_indices]
-                b_params <- item_bank$b[shown_indices]
-                item_responses <- responses_so_far
-                
-                # Quick theta estimation (3 iterations max for speed)
-                second_deriv <- -1  # Initialize
-                for (iter in 1:3) {
-                    probs <- 1 / (1 + exp(-a_params * (current_theta - b_params)))
-                    first_deriv <- sum(a_params * (item_responses/5 - probs))
-                    second_deriv <- -sum(a_params^2 * probs * (1 - probs))
-                    
-                    if (abs(second_deriv) > 0.01) {
-                        current_theta <- current_theta - first_deriv / second_deriv
+                # Use inrep's estimate_ability function for proper TAM-based estimation
+                if (exists("estimate_ability", mode = "function")) {
+                    ability_result <- inrep::estimate_ability(rv, item_bank, config)
+                    if (!is.null(ability_result$theta) && is.finite(ability_result$theta)) {
+                        current_theta <- ability_result$theta
+                        current_se <- ability_result$se %||% current_se
+                        # Update rv for future use
+                        rv$current_ability <- current_theta
+                        rv$ability_se <- current_se
+                    }
+                } else {
+                    # Fallback: Use simplified Newton-Raphson for speed
+                    shown_indices <- rv$administered[rv$administered <= 20]
+                    if (length(shown_indices) > 0 && all(shown_indices <= nrow(item_bank))) {
+                        a_params <- item_bank$a[shown_indices]
+                        b_params <- item_bank$b[shown_indices]
+                        item_responses <- responses_so_far[seq_along(shown_indices)]
+                        
+                        # Quick theta estimation (3 iterations max for speed)
+                        for (iter in 1:3) {
+                            probs <- 1 / (1 + exp(-a_params * (current_theta - b_params)))
+                            first_deriv <- sum(a_params * (item_responses/5 - probs))
+                            second_deriv <- -sum(a_params^2 * probs * (1 - probs))
+                            
+                            if (abs(second_deriv) > 0.01) {
+                                current_theta <- current_theta - first_deriv / second_deriv
+                            }
+                        }
+                        current_se <- 1 / sqrt(abs(second_deriv))
                     }
                 }
-                
-                current_se <- 1 / sqrt(abs(second_deriv))
-                
             }, error = function(e) {
-                current_theta <- mean(responses_so_far) - 3  # Center around 0
-                current_se <- 1.0
+                message(sprintf("Error in ability estimation: %s, using prior", e$message))
+                current_theta <- config$theta_prior[1] %||% 0
+                current_se <- config$theta_prior[2] %||% 1.0
             })
         }
         
         message(sprintf("Current ability estimate: theta=%.3f, SE=%.3f", current_theta, current_se))
         
         # Get available PA items (6-20) that haven't been shown
-        pa_pool <- 6:20
-        already_shown <- rv$administered[rv$administered <= 20]
-        available_items <- setdiff(pa_pool, already_shown)
+        pa_pool <- 6:20  # Only pool 6-20 for adaptive selection
+        
+        # Check both administered AND items with responses (to avoid duplicates)
+        # Items 1-5 are ALWAYS excluded (they're on page 6)
+        already_shown_pa <- unique(c(
+            rv$administered[rv$administered >= 1 & rv$administered <= 20],
+            responses_for_pa[responses_for_pa >= 1 & responses_for_pa <= 20],
+            1:5  # Always exclude items 1-5 (shown on page 6)
+        ))
+        available_items <- setdiff(pa_pool, already_shown_pa)
         
         if (is.null(available_items) || length(available_items) == 0) {
             return(NULL)
@@ -2314,14 +2512,19 @@ custom_item_selection <- function(rv, item_bank, config) {
     }
     
     # Items 11+: Fixed non-PA items (21-51 in order)
-    if (item_num > 10) {
-        non_pa_item <- item_num + 10  # Map to items 21-51
-        if (non_pa_item <= nrow(item_bank)) {
-            message(sprintf("Selected fixed item %d (%s)", non_pa_item, item_bank$id[non_pa_item]))
-            return(non_pa_item)
-        }
+    # IMPORTANT: Pages 12+ have fixed item_indices defined directly (e.g., item_indices = 21:25)
+    # They should NOT call this function - they use their fixed indices from page$item_indices
+    # So if we get here with effective_pa_count >= 10, something went wrong
+    # Return NULL and let the page use its fixed item_indices directly
+    if (effective_pa_count >= 10) {
+        message("WARNING: custom_item_selection called but all PA items (1-10) are done.")
+        message("Pages 12+ should use fixed item_indices directly, not call this function.")
+        message("Returning NULL - page should use its fixed item_indices.")
+        return(NULL)
     }
     
+    message(sprintf("WARNING: No item selected. effective_pa_count=%d, num_pa_items_shown=%d, total_items_shown=%d", 
+                    effective_pa_count, num_pa_items_shown, length(rv$administered)))
     return(NULL)
 }
 
@@ -2402,6 +2605,7 @@ study_config <- inrep::create_study_config(
     max_items = 51,
     min_items = 51,
     criteria = "MFI",
+    item_selection_fun = custom_item_selection,  # Enable custom adaptive selection
     response_ui_type = "radio",
     progress_style = "bar",
     language = "de",
