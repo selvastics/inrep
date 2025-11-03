@@ -20,12 +20,12 @@ Imports:
     graphics,
     digest,
     uuid (>= 1.1.0),
-    jsonlite (>= 1.8.0)
+    jsonlite (>= 1.8.0),
+    DT (>= 0.20)
 Suggests:
     httr,
     logr (>= 1.2.0),
     ggplot2 (>= 3.4.0),
-    DT (>= 0.20),
     shinyjs (>= 1.7.0),
     shinycssloaders (>= 1.0.0),
     base64enc (>= 0.1.0),
