@@ -397,7 +397,6 @@ select_next_item_basic_internal <- function(rv, item_bank, config) {
 #' Utility functions for session initialization, validation, and cloud saving.
 #'
 #' @name session_utils
-#' @importFrom logr log_print
 #' @importFrom jsonlite write_json
 #' @importFrom httr PUT authenticate upload_file add_headers status_code
 NULL
