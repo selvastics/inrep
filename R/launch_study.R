@@ -517,7 +517,6 @@
 #' @importFrom knitr kable
 #' @importFrom kableExtra kable_styling
 #' @importFrom tinytex latexmk
-#' @importFrom logr log_print
 launch_study <- function(
     config,
     item_bank,
