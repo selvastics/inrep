@@ -8,7 +8,7 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
 
   return(shiny::tags$script(shiny::HTML("
     console.log('*** DEBUG MODE STARTED ***');
-    console.log('Hotkeys: Ctrl+A=Fill Current Page | Ctrl+Q=Auto Normal | Ctrl+W=Auto Fast');
+    console.log('Hotkeys: Ctrl+A=Fill Current Page | Ctrl+Q=Auto Normal | Ctrl+Y=Auto Fast');
 
     (function() {
       'use strict';
@@ -592,16 +592,16 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
             console.log('DEBUG: Ctrl+Q - Auto-fill (normal speed)');
             autoProgressAll(800, 600);
             break;
-          case 'w':
+          case 'y':
             e.preventDefault();
-            console.log('DEBUG: Ctrl+W - Auto-fill (fast speed)');
+            console.log('DEBUG: Ctrl+Y - Auto-fill (fast speed)');
             autoProgressAll(100, 100);
             break;
         }
       });
 
       console.log('DEBUG: Hotkey listeners registered');
-      console.log('DEBUG: Ready! Press Ctrl+A, Ctrl+Q, or Ctrl+W');
+      console.log('DEBUG: Ready! Press Ctrl+A, Ctrl+Q, or Ctrl+Y');
     })();
   ")))
 }
