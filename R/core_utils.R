@@ -398,7 +398,6 @@ select_next_item_basic_internal <- function(rv, item_bank, config) {
 #'
 #' @name session_utils
 #' @importFrom jsonlite write_json
-#' @importFrom httr PUT authenticate upload_file add_headers status_code
 NULL
 
 #' Initialize Reactive Values for Assessment Session

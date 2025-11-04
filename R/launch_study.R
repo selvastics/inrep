@@ -506,16 +506,9 @@
 #' )
 #' }
 #' @importFrom shiny shinyApp fluidPage tags div numericInput selectInput actionButton downloadButton uiOutput renderUI plotOutput h2 h3 h4 p tagList
-#' @importFrom shinyjs useShinyjs
-#' @importFrom shinyWidgets radioGroupButtons
 #' @importFrom DT datatable DTOutput renderDT formatStyle
-#' @importFrom dplyr %>%
 
 #' @importFrom jsonlite write_json
-#' @importFrom ggplot2 ggplot aes geom_line geom_ribbon theme_minimal labs theme element_text element_line element_blank
-#' @importFrom knitr kable
-#' @importFrom kableExtra kable_styling
-#' @importFrom tinytex latexmk
 launch_study <- function(
     config,
     item_bank,
