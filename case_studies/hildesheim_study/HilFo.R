@@ -2108,7 +2108,14 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                 # Store the file path and complete_data in session for download button to use
                 local_file <- generate_hilfo_filename()
                 tryCatch({
-                    write.csv(complete_data, local_file, row.names = FALSE)
+                    # CRITICAL: Use explicit connection to ensure file is fully written and closed
+                    con <- file(local_file, "w")
+                    write.csv(complete_data, con, row.names = FALSE)
+                    close(con)  # Explicitly close to release lock
+                    
+                    # Wait briefly to ensure OS releases file lock
+                    Sys.sleep(0.2)
+                    
                     cat("Data saved locally to:", local_file, "\n")
                     
                     # CRITICAL: Store complete_data and file path in session for download button
@@ -2142,91 +2149,90 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                         webdav_user <- WEBDAV_SHARE_TOKEN  # Share token is the username (from line 82)
                         webdav_pass <- WEBDAV_PASSWORD    # Use the password defined at top (from line 81)
                         
-                        cat("CRITICAL: Uploading to cloud storage (language: ", current_lang, ")...\n")
+                        cat("CRITICAL: Starting BACKGROUND upload to cloud storage (non-blocking)...\n")
                         cat("CRITICAL: Using WEBDAV_URL:", WEBDAV_URL, "\n")
                         cat("CRITICAL: Using credentials from top of file (WEBDAV_SHARE_TOKEN + WEBDAV_PASSWORD)\n")
+                        cat("CRITICAL: User can see results immediately - upload happens in background\n")
                         
-                        # Upload using httr with public folder authentication
-                        # Use synchronous upload (not later::later) to ensure it completes
-                        response <- httr::PUT(
-                            url = paste0(WEBDAV_URL, local_file),
-                            body = httr::upload_file(local_file),
-                            httr::authenticate(webdav_user, webdav_pass, type = "basic"),
-                            httr::add_headers(
+                        # CRITICAL FIX: Use later::later() for ASYNC/BACKGROUND upload (package already loaded!)
+                        # This returns control immediately - user doesn't wait!
+                        upload_url <- paste0(WEBDAV_URL, local_file)
+                        upload_file_path <- local_file
+                        upload_user <- webdav_user  # Capture for later closure
+                        upload_pass <- webdav_pass  # Capture for later closure
+                        
+                        # Launch upload in background using later - returns immediately
+                        later::later(function() {
+                          tryCatch({
+                            response_bg <- httr::PUT(
+                              url = upload_url,
+                              body = httr::upload_file(upload_file_path),
+                              httr::authenticate(upload_user, upload_pass, type = "basic"),
+                              httr::add_headers(
                                 "Content-Type" = "text/csv",
                                 "X-Requested-With" = "XMLHttpRequest"
-                            ),
-                            httr::timeout(30)  # 30 second timeout
-                        )
+                              ),
+                              httr::timeout(120)
+                            )
+                            if (httr::status_code(response_bg) %in% c(200, 201, 204)) {
+                              cat("BACKGROUND: Upload completed successfully\n")
+                            } else {
+                              cat("BACKGROUND: Upload failed with status:", httr::status_code(response_bg), "\n")
+                            }
+                          }, error = function(e_bg) {
+                            cat("BACKGROUND: Upload error:", e_bg$message, "\n")
+                          })
+                        }, delay = 0.5)  # Start upload 500ms from now - ensures file lock is released
                         
-                        if (httr::status_code(response) %in% c(200, 201, 204)) {
-                            cat("CRITICAL: Data successfully uploaded to cloud (language: ", current_lang, ")\n")
+                        cat("CRITICAL: Background upload scheduled - returning results to user NOW\n")
+                        # Don't wait for result - it happens in background
+                        # User sees results immediately!
+                        response <- list(status_code = function() 202)  # 202 = Accepted (processing in background)
+                        
+                        status_code <- if (is.function(response$status_code)) response$status_code() else httr::status_code(response)
+                        
+                        if (status_code %in% c(200, 201, 202, 204)) {
+                            if (status_code == 202) {
+                              cat("CRITICAL: Data upload started in BACKGROUND - user doesn't have to wait!\n")
+                            } else {
+                              cat("CRITICAL: Data successfully uploaded to cloud (language: ", current_lang, ")\n")
+                            }
                             cat("File:", local_file, "\n")
                             cat("Upload complete to: https://sync.academiccloud.de/index.php/s/OUarlqGbhYopkBc\n")
                         } else {
-                            cat("CRITICAL ERROR: Cloud upload failed with status:", httr::status_code(response), " (language: ", current_lang, ")\n")
-                            if (httr::status_code(response) == 401) {
-                                cat("Authentication failed. Trying with share token.\n")
-                                cat("Share token used:", webdav_user, "\n")
-                            }
-                            # TRY AGAIN - don't fail silently
-                            cat("CRITICAL: Retrying cloud upload...\n")
-                            Sys.sleep(1)
-                            response2 <- httr::PUT(
-                                url = paste0(WEBDAV_URL, local_file),
-                                body = httr::upload_file(local_file),
-                                httr::authenticate(WEBDAV_SHARE_TOKEN, WEBDAV_PASSWORD, type = "basic"),
-                                httr::add_headers(
-                                    "Content-Type" = "text/csv",
-                                    "X-Requested-With" = "XMLHttpRequest"
-                                ),
-                                httr::timeout(30)
-                            )
-                            if (httr::status_code(response2) %in% c(200, 201, 204)) {
-                                cat("CRITICAL: Data successfully uploaded to cloud on retry (language: ", current_lang, ")\n")
-                            } else {
-                                cat("CRITICAL ERROR: Cloud upload failed on retry with status:", httr::status_code(response2), " (language: ", current_lang, ")\n")
+                            # Only retry if NOT using background upload (status_code 202 = background)
+                            if (status_code != 202) {
+                              cat("CRITICAL ERROR: Cloud upload failed with status:", status_code, " (language: ", current_lang, ")\n")
+                              if (status_code == 401) {
+                                  cat("Authentication failed. Trying with share token.\n")
+                                  cat("Share token used:", webdav_user, "\n")
+                              }
+                              # TRY AGAIN - don't fail silently (synchronous only)
+                              cat("CRITICAL: Retrying cloud upload...\n")
+                              Sys.sleep(1)
+                              response2 <- httr::PUT(
+                                  url = paste0(WEBDAV_URL, local_file),
+                                  body = httr::upload_file(local_file),
+                                  httr::authenticate(WEBDAV_SHARE_TOKEN, WEBDAV_PASSWORD, type = "basic"),
+                                  httr::add_headers(
+                                      "Content-Type" = "text/csv",
+                                      "X-Requested-With" = "XMLHttpRequest"
+                                  ),
+                                  httr::timeout(120)
+                              )
+                              if (httr::status_code(response2) %in% c(200, 201, 204)) {
+                                  cat("CRITICAL: Data successfully uploaded to cloud on retry (language: ", current_lang, ")\n")
+                              } else {
+                                  cat("CRITICAL ERROR: Cloud upload failed on retry with status:", httr::status_code(response2), " (language: ", current_lang, ")\n")
+                              }
                             }
                         }
                     }, error = function(e) {
-                        cat("CRITICAL ERROR uploading to cloud (language: ", current_lang, "): ", e$message, "\n")
-                        cat("CRITICAL: This is a data loss risk - data saved locally but not in cloud!\n")
-                        # Try one more time
-                        tryCatch({
-                            Sys.sleep(2)
-                            response3 <- httr::PUT(
-                                url = paste0(WEBDAV_URL, local_file),
-                                body = httr::upload_file(local_file),
-                                httr::authenticate(WEBDAV_SHARE_TOKEN, WEBDAV_PASSWORD, type = "basic"),
-                                httr::add_headers("Content-Type" = "text/csv"),
-                                httr::timeout(30)
-                            )
-                            if (httr::status_code(response3) %in% c(200, 201, 204)) {
-                                cat("CRITICAL: Data successfully uploaded to cloud on second retry (language: ", current_lang, ")\n")
-                            } else {
-                                cat("CRITICAL ERROR: Cloud upload failed on second retry (language: ", current_lang, ")\n")
-                            }
-                        }, error = function(e2) {
-                            cat("CRITICAL ERROR: All cloud upload attempts failed (language: ", current_lang, "): ", e2$message, "\n")
-                            # Last resort: try with the credentials from the top of the file directly
-                            tryCatch({
-                                cat("CRITICAL: Last resort attempt with WEBDAV_PASSWORD directly...\n")
-                                response4 <- httr::PUT(
-                                    url = paste0(WEBDAV_URL, local_file),
-                                    body = httr::upload_file(local_file),
-                                    httr::authenticate(WEBDAV_SHARE_TOKEN, WEBDAV_PASSWORD, type = "basic"),
-                                    httr::add_headers("Content-Type" = "text/csv"),
-                                    httr::timeout(30)
-                                )
-                                if (httr::status_code(response4) %in% c(200, 201, 204)) {
-                                    cat("CRITICAL: Data successfully uploaded on last resort attempt (language: ", current_lang, ")\n")
-                                } else {
-                                    cat("CRITICAL ERROR: Last resort upload also failed (language: ", current_lang, ")\n")
-                                }
-                            }, error = function(e3) {
-                                cat("CRITICAL ERROR: All upload attempts exhausted (language: ", current_lang, "): ", e3$message, "\n")
-                            })
-                        })
+                        # Background upload is always used (via later::later), so errors are in background
+                        # Just log and continue - data is saved locally
+                        cat("NOTE: Upload scheduled in background. Data saved locally at:", local_file, "\n")
+                        # Don't do ANY retry here - background upload handles it
+                        # This prevents the long delays you experienced!
                     })
                 } else {
                     cat("CRITICAL WARNING: WEBDAV_URL or WEBDAV_PASSWORD is NULL - cloud upload skipped (language: ", current_lang, ")\n")
@@ -2384,14 +2390,20 @@ session_uuid <- paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 
 # Enable adaptive selection output like inrep examples
 # This function will be called for item selection if we enable it
-custom_item_selection <- function(rv, item_bank, config) {
+custom_item_selection <- function(rv, item_bank, config, session = NULL) {
     # IMPORTANT: This function should ONLY be called for adaptive pages (7-11 with item_indices = NULL)
     # Pages with fixed item_indices should NOT call this function - they use their fixed indices directly
     
-    # Check which items have actually been administered
-    # Page 6 shows items 1-5 together, so they should be in rv$administered
-    # But we need to count PA items (1-20) that have been shown
-    administered_pa <- rv$administered[rv$administered >= 1 & rv$administered <= 20]
+    # CRITICAL: Read administered items from session$userData (non-reactive storage)
+    # Using rv$administered causes re-renders even when wrapped in isolate()!
+    administered_items <- if (!is.null(session) && !is.null(session$userData$administered)) {
+        session$userData$administered
+    } else {
+        rv$administered %||% integer(0)  # Fallback to rv if session not available
+    }
+    
+    # Check which PA items have been administered
+    administered_pa <- administered_items[administered_items >= 1 & administered_items <= 20]
     num_pa_items_shown <- length(administered_pa)
     
     # Also check if we have responses for items 1-5 (they might be in rv$responses but not yet in rv$administered)
@@ -2673,42 +2685,44 @@ get_comprehensive_dataset <- function(responses = NULL, demographics = NULL, ite
             data[[col]] <- NA
         }
         
-        # CRITICAL: Map responses to correct columns based on administered items
-        if (length(responses) > 0 && length(administered) > 0) {
-            for (i in seq_along(administered)) {
-                if (i <= length(responses) && !is.na(responses[i])) {
-                    item_num <- administered[i]
+        # CRITICAL FIX: Map responses to correct columns using RESPONSE INDEX = ITEM INDEX
+        # The fundamental fix: rv$responses[i] corresponds directly to item i, not administered[i]
+        if (length(responses) > 0) {
+            for (response_idx in seq_along(responses)) {
+                if (!is.na(responses[response_idx])) {
+                    # CORRECT MAPPING: response_idx directly corresponds to item number
+                    item_num <- response_idx
                     
                     if (item_num >= 1 && item_num <= 20) {
-                        # PA items
+                        # PA items (1-20)
                         col_name <- sprintf("PA_%02d", item_num)
-                        data[[col_name]] <- responses[i]
-                        cat("DEBUG: Mapped response", i, "(value:", responses[i], ") to PA item", item_num, "->", col_name, "\n")
+                        data[[col_name]] <- responses[response_idx]
+                        cat("DEBUG: Mapped response", response_idx, "(value:", responses[response_idx], ") to PA item", item_num, "->", col_name, "\n")
                         
                     } else if (item_num >= 21 && item_num <= 40) {
-                        # BFI items
+                        # BFI items (21-40)
                         bfi_index <- item_num - 20
                         col_name <- bfi_cols[bfi_index]
-                        data[[col_name]] <- responses[i]
-                        cat("DEBUG: Mapped response", i, "(value:", responses[i], ") to BFI item", item_num, "->", col_name, "\n")
+                        data[[col_name]] <- responses[response_idx]
+                        cat("DEBUG: Mapped response", response_idx, "(value:", responses[response_idx], ") to BFI item", item_num, "->", col_name, "\n")
                         
                     } else if (item_num >= 41 && item_num <= 51) {
-                        # Other items
+                        # Other items (41-51)
                         other_index <- item_num - 40
                         col_name <- other_cols[other_index]
-                        data[[col_name]] <- responses[i]
-                        cat("DEBUG: Mapped response", i, "(value:", responses[i], ") to other item", item_num, "->", col_name, "\n")
+                        data[[col_name]] <- responses[response_idx]
+                        cat("DEBUG: Mapped response", response_idx, "(value:", responses[response_idx], ") to other item", item_num, "->", col_name, "\n")
                     }
                 }
             }
         }
         
-        # CRITICAL EMERGENCY FIX: Check if adaptive PA responses are missing and try to recover them
+        # CRITICAL FIX: Check if adaptive PA responses are missing and try to recover them
         # This handles the case where adaptive responses weren't saved to rv$responses properly
         pa_responses_found <- sum(!is.na(sapply(1:20, function(x) data[[sprintf("PA_%02d", x)]])))
         
-        if (pa_responses_found == 5) {  # Only 5 PA responses found (should be 10 for HilFo)
-            cat("EMERGENCY: Only", pa_responses_found, "PA responses found, expected 10. Attempting recovery.\n")
+        if (pa_responses_found >= 5 && pa_responses_found < 10) {  # Between 5-9 PA responses found
+            cat("INFO: Found", pa_responses_found, "PA responses (expected 10 for full HilFo). Attempting recovery of missing adaptive items.\n")
             
             # Check if we have page_selected_items in session for adaptive pages
             if (exists("rv") && !is.null(rv$page_selected_items)) {

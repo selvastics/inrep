@@ -1424,7 +1424,7 @@ process_page_flow <- function(config, rv, input, output, session, item_bank, ui_
     
     "demographics" = render_demographics_page(current_page, config, rv, ui_labels),
     
-    "items" = render_items_page(current_page, config, rv, item_bank, ui_labels),
+    "items" = render_items_page(current_page, config, rv, item_bank, ui_labels, session),
     
     "custom" = render_custom_page(current_page, config, rv, ui_labels, input),
     
@@ -1600,7 +1600,7 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
 }
 
 #' Render items page with pagination
-render_items_page <- function(page, config, rv, item_bank, ui_labels) {
+render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
   # Get current language
   current_lang <- rv$language %||% config$language %||% "de"
   
@@ -1622,17 +1622,24 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
         # Use adaptive item selection
         selected_item <- inrep::select_next_item(rv, item_bank, config)
         if (!is.null(selected_item) && selected_item > 0 && selected_item <= nrow(item_bank)) {
-          # Mark item as administered
-          if (is.null(rv$administered)) rv$administered <- integer(0)
-          rv$administered <- c(rv$administered, selected_item)
           page_items <- item_bank[selected_item, , drop = FALSE]
           
-          # CRITICAL: Cache selected item for response collection
+          # CRITICAL: Cache selected item for response collection using session$userData (non-reactive)
           # This ensures adaptive responses can be properly saved to rv$responses[selected_item]
           page_id <- page$id %||% paste0("page_", rv$current_page %||% 1)
-          if (is.null(rv$page_selected_items)) rv$page_selected_items <- list()
-          rv$page_selected_items[[page_id]] <- selected_item
+          if (is.null(session$userData$page_selected_items)) {
+            session$userData$page_selected_items <- list()
+          }
+          session$userData$page_selected_items[[page_id]] <- selected_item
           cat("ADAPTIVE: Cached", page_id, "->", selected_item, "for response collection\n")
+          
+          # Update rv$administered using isolate() to prevent re-render but track selection
+          shiny::isolate({
+            if (is.null(rv$administered)) rv$administered <- integer(0)
+            if (!selected_item %in% rv$administered) {
+              rv$administered <- c(rv$administered, selected_item)
+            }
+          })
           
         } else {
           page_items <- item_bank[integer(0), , drop = FALSE]
@@ -1642,15 +1649,23 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
         available <- setdiff(seq_len(nrow(item_bank)), rv$administered %||% integer(0))
         if (length(available) > 0) {
           selected_item <- min(available)
-          if (is.null(rv$administered)) rv$administered <- integer(0)
-          rv$administered <- c(rv$administered, selected_item)
           page_items <- item_bank[selected_item, , drop = FALSE]
           
-          # Cache fallback selection as well
+          # Cache fallback selection using session$userData (non-reactive)
           page_id <- page$id %||% paste0("page_", rv$current_page %||% 1)
-          if (is.null(rv$page_selected_items)) rv$page_selected_items <- list()
-          rv$page_selected_items[[page_id]] <- selected_item
+          if (is.null(session$userData$page_selected_items)) {
+            session$userData$page_selected_items <- list()
+          }
+          session$userData$page_selected_items[[page_id]] <- selected_item
           cat("ADAPTIVE FALLBACK: Cached", page_id, "->", selected_item, "for response collection\n")
+          
+          # Update rv$administered using isolate() to prevent re-render
+          shiny::isolate({
+            if (is.null(rv$administered)) rv$administered <- integer(0)
+            if (!selected_item %in% rv$administered) {
+              rv$administered <- c(rv$administered, selected_item)
+            }
+          })
           
         } else {
           page_items <- item_bank[integer(0), , drop = FALSE]
@@ -1669,14 +1684,14 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
     current_page_num <- rv$current_page %||% 1
     page_id <- page$id %||% paste0("page_", current_page_num)
     
-    # Check if we already selected an item for this specific page
-    if (is.null(rv$page_selected_items)) {
-      rv$page_selected_items <- list()
+    # Check if we already selected an item for this specific page (using session$userData - non-reactive)
+    if (is.null(session$userData$page_selected_items)) {
+      session$userData$page_selected_items <- list()
     }
     
-    if (!is.null(rv$page_selected_items[[page_id]])) {
+    if (!is.null(session$userData$page_selected_items[[page_id]])) {
       # Already selected for this page - use cached selection
-      selected_item <- rv$page_selected_items[[page_id]]
+      selected_item <- session$userData$page_selected_items[[page_id]]
       if (selected_item > 0 && selected_item <= nrow(item_bank)) {
         page_items <- item_bank[selected_item, , drop = FALSE]
       } else {
@@ -1691,7 +1706,8 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
         # Use custom item selection function (e.g., HilFo study adaptive logic)
         cat("ADAPTIVE: Using custom_item_selection function for page", page_id, "\n")
         tryCatch({
-          selected_item <- custom_item_selection(rv, item_bank, config)
+          # Pass session for access to non-reactive userData
+          selected_item <- custom_item_selection(rv, item_bank, config, session)
           cat("ADAPTIVE: custom_item_selection returned item:", selected_item, "\n")
         }, error = function(e) {
           cat("ERROR: custom_item_selection failed:", e$message, "\n")
@@ -1703,15 +1719,24 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
       }
       
       if (!is.null(selected_item) && selected_item > 0 && selected_item <= nrow(item_bank)) {
-        # Cache the selection for this page
-        rv$page_selected_items[[page_id]] <- selected_item
+        # CRITICAL FIX: Use session$userData for ALL adaptive state (100% non-reactive)
+        if (is.null(session$userData$page_selected_items)) {
+          session$userData$page_selected_items <- list()
+        }
+        session$userData$page_selected_items[[page_id]] <- selected_item
         cat("ADAPTIVE: Cached item", selected_item, "for page", page_id, "\n")
         
-        if (is.null(rv$administered)) rv$administered <- integer(0)
-        # Only add to administered if not already there
-        if (!selected_item %in% rv$administered) {
-          rv$administered <- c(rv$administered, selected_item)
+        # CRITICAL: Track administered items in session$userData ONLY (not rv)
+        # Updating rv$administered triggers re-renders even with isolate()!
+        # custom_item_selection will read from session$userData$administered instead
+        if (is.null(session$userData$administered)) {
+          session$userData$administered <- integer(0)
         }
+        if (!selected_item %in% session$userData$administered) {
+          session$userData$administered <- c(session$userData$administered, selected_item)
+          cat("ADAPTIVE: Updated session$userData$administered (non-reactive) ->", paste(session$userData$administered, collapse=", "), "\n")
+        }
+        
         page_items <- item_bank[selected_item, , drop = FALSE]
       } else {
         page_items <- item_bank[integer(0), , drop = FALSE]
@@ -1726,17 +1751,33 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
   }
   
   # Create item UI elements
+  # CRITICAL FIX: For adaptive items, we need to preserve the actual item bank row number
+  # Get the actual row indices from the item_bank to ensure proper ID mapping
+  actual_row_indices <- if (!is.null(rownames(page_items)) && all(grepl("^[0-9]+$", rownames(page_items)))) {
+    as.integer(rownames(page_items))
+  } else {
+    # Fallback: try to match by id field
+    if (!is.null(page_items$id)) {
+      match(page_items$id, item_bank$id)
+    } else {
+      seq_len(nrow(page_items))
+    }
+  }
+  
   item_elements <- lapply(seq_len(nrow(page_items)), function(i) {
     item <- page_items[i, ]
-    item_id <- paste0("item_", item$id %||% i)
+    actual_idx <- actual_row_indices[i]  # Use actual item bank index, not loop index
     
-    cat("UI DEBUG: Creating input element with ID:", item_id, "for item:", item$id, "\n")
+    # CRITICAL: Use item$id if available, otherwise use actual item bank row number
+    item_id <- item$id %||% paste0("item_", actual_idx)
+    
+    cat("UI DEBUG: Creating input element - loop i:", i, "actual_idx:", actual_idx, "item$id:", item$id, "final item_id:", item_id, "\n")
     
     # Get question text based on language
     question_text <- if (current_lang == "en" && !is.null(item$Question_EN)) {
       item$Question_EN
     } else {
-      item$Question %||% item$content %||% paste("Item", i)
+      item$Question %||% item$content %||% paste("Item", actual_idx)
     }
     
     # Get response options
@@ -1942,9 +1983,9 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
               # Sort by modification time, get most recent
               csv_files_info <- file.info(csv_files)
               most_recent <- rownames(csv_files_info)[which.max(csv_files_info$mtime)]
-              # Check if file was created within last 10 seconds (likely from this session)
+              # CRITICAL FIX: Increase to 150 seconds to prevent JSON fallback during slow CSV upload
               file_age <- as.numeric(Sys.time() - csv_files_info[most_recent, "mtime"], units = "secs")
-              if (file_age < 10 && file_age >= 0) {
+              if (file_age < 150 && file_age >= 0) {
                 csv_upload_succeeded <- TRUE
                 message("DEBUG: CSV upload detected (recent file found: ", most_recent, ", age: ", round(file_age, 2), "s)")
               }
@@ -1964,24 +2005,15 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
                 rv$responses
               }
               
-              # Create mock session for results processor (generic - works for any study)
-              # Initialize userData so results processor can store CSV file info there
-              mock_session <- list(
-                input = list(
-                  language_preference = rv$language,
-                  study_language = rv$language,
-                  language = rv$language
-                ),
-                userData = list()
-              )
-              
+              # CRITICAL FIX: Pass REAL session object (not mock) so userData changes persist!
+              # This allows results_processor to store CSV data that download buttons can access
               # Call results processor - it will process data and upload, but we ignore the HTML return
               # This is GENERIC - works for any study's results processor
               if ("session" %in% processor_args) {
                 if ("demographics" %in% processor_args) {
-                  config$results_processor(responses_to_use, item_bank, rv$demo_data, mock_session)
+                  config$results_processor(responses_to_use, item_bank, rv$demo_data, session)  # REAL session!
                 } else {
-                  config$results_processor(responses_to_use, item_bank, session = mock_session)
+                  config$results_processor(responses_to_use, item_bank, session = session)  # REAL session!
                 }
               } else if ("demographics" %in% processor_args) {
                 config$results_processor(responses_to_use, item_bank, rv$demo_data)
@@ -1997,9 +2029,11 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
               if (length(csv_files) > 0) {
                 csv_files_info <- file.info(csv_files)
                 most_recent <- rownames(csv_files_info)[which.max(csv_files_info$mtime)]
-                # Check if file was created within last 5 seconds (likely from this call)
+                # CRITICAL FIX: Increase time window to 150 seconds to account for slow WebDAV uploads
+                # Previously 5 seconds caused JSON fallback to trigger while CSV upload was still in progress,
+                # resulting in simultaneous uploads competing for bandwidth
                 file_age <- as.numeric(Sys.time() - csv_files_info[most_recent, "mtime"], units = "secs")
-                if (file_age < 5 && file_age >= 0) {
+                if (file_age < 150 && file_age >= 0) {
                   csv_upload_succeeded <- TRUE
                   message("DEBUG: CSV upload detected (file created: ", most_recent, ", age: ", round(file_age, 2), "s)")
                 }
@@ -2845,11 +2879,20 @@ validate_page_progression <- function(current_page, input, config) {
   errors <- character()
   missing_fields <- character()
   
+  # Get current language from config (passed from launch_study)
+  current_lang <- config$current_language %||% config$language %||% "de"
+  
   # Check based on page type
   if (page$type == "instructions" && isTRUE(page$consent)) {
     # Check consent checkbox
     if (!isTRUE(input$consent_checkbox)) {
-      errors <- c(errors, "Bitte bestätigen Sie Ihre Einverständnis zur Teilnahme.")
+      # CRITICAL: Use language-aware consent message
+      consent_msg <- if (current_lang == "en") {
+        "Please confirm your consent to participate."
+      } else {
+        "Bitte bestätigen Sie Ihre Einverständnis zur Teilnahme."
+      }
+      errors <- c(errors, consent_msg)
     }
   } else if (page$type == "demographics") {
     # Check all required demographics
@@ -2866,8 +2909,7 @@ validate_page_progression <- function(current_page, input, config) {
           if (nchar(question) > 50) {
             question <- paste0(substr(question, 1, 47), "...")
           }
-          # Get language from rv or config
-          current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
+          # Use current_lang from top of function
           error_prefix <- if (current_lang == "en") "Please answer: " else "Bitte beantworten Sie: "
           errors <- c(errors, paste0(error_prefix, question))
           missing_fields <- c(missing_fields, input_id)
@@ -2885,23 +2927,20 @@ validate_page_progression <- function(current_page, input, config) {
       
       if (!is.null(item_bank)) {
         for (i in page$item_indices) {
-          # Get the actual item from the item bank
-          if (i <= nrow(item_bank)) {
-            item <- item_bank[i, ]
-            # Use the item's id field if available, otherwise use index
-            item_id <- paste0("item_", item$id %||% i)
-            if (is.null(input[[item_id]]) || input[[item_id]] == "") {
-              # Get language
-              current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
-              error_msg <- if (current_lang == "en") {
-                "Please answer all questions on this page."
-              } else {
-                "Bitte beantworten Sie alle Fragen auf dieser Seite."
-              }
-              errors <- c(errors, error_msg)
-              missing_fields <- c(missing_fields, item_id)
-              # Don't break, collect all missing fields for highlighting
+          # MUST match UI rendering logic at line 1747: item_id <- item$id %||% paste0("item_", actual_idx)
+          item <- item_bank[i, ]
+          item_id <- item$id %||% paste0("item_", i)
+          
+          if (is.null(input[[item_id]]) || input[[item_id]] == "") {
+            # Use current_lang from top of function
+            error_msg <- if (current_lang == "en") {
+              "Please answer all questions on this page."
+            } else {
+              "Bitte beantworten Sie alle Fragen auf dieser Seite."
             }
+            errors <- c(errors, error_msg)
+            missing_fields <- c(missing_fields, item_id)
+            # Don't break, collect all missing fields for highlighting
           }
         }
       }
@@ -2932,11 +2971,8 @@ validate_page_progression <- function(current_page, input, config) {
         code_value <- input$demo_Teilnahme_Code
         if (is.null(code_value) || trimws(code_value) == "") {
           current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
-          error_msg <- if (current_lang == "en") {
-            "Please complete all required fields on this page."
-          } else {
-            "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
-          }
+          labels <- get_language_labels(current_lang)
+          error_msg <- labels$demo_error
           errors <- c(errors, error_msg)
           missing_fields <- c(missing_fields, "demo_Teilnahme_Code")
         }

@@ -10,9 +10,7 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
     console.log('*** DEBUG MODE STARTED ***');
     console.log('Hotkeys: Ctrl+A=Fill Current Page | Ctrl+Q=Auto Normal | Ctrl+Y=Auto Fast');
 
-    // CRITICAL: Initialize immediately AND on DOM ready AND on window load
-    // This ensures debug mode works from the very first page regardless of timing
-    function initializeDebugMode() {
+    (function() {
       'use strict';
       
       // Prevent multiple initializations
@@ -21,30 +19,6 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
         return;
       }
       window.inrepDebugInitialized = true;
-      
-      console.log('DEBUG: Initializing debug mode for all pages including start page');
-      
-      // CRITICAL: Add visual debug indicator immediately
-      if (!document.getElementById('debug-indicator')) {
-        const indicator = document.createElement('div');
-        indicator.id = 'debug-indicator';
-        indicator.innerHTML = '🐛 DEBUG MODE';
-        indicator.style.cssText = `
-          position: fixed;
-          top: 10px;
-          right: 10px;
-          background: #ff4444;
-          color: white;
-          padding: 5px 10px;
-          border-radius: 5px;
-          font-size: 12px;
-          font-weight: bold;
-          z-index: 10000;
-          opacity: 0.8;
-        `;
-        document.body.appendChild(indicator);
-        console.log('DEBUG: Visual indicator added');
-      }
 
       // Utility functions
       const utils = {
@@ -563,7 +537,13 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
                   return;
                 }
 
-          fillCurrentPage(() => {
+          // CRITICAL FIX: Wait for Shiny input binding to complete before filling
+          // This prevents race condition where adaptive items are filled before Shiny binds handlers
+          const bindingDelay = fastMode ? 300 : 500;
+          console.log('DEBUG: Waiting ' + bindingDelay + 'ms for Shiny input binding...');
+          
+          setTimeout(() => {
+            fillCurrentPage(() => {
             // Wait for conditional fields to appear and be filled (LANGUAGE-AGNOSTIC)
             setTimeout(() => {
               // Multiple passes to catch conditional fields that appear at different times
@@ -643,74 +623,45 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
               checkAndFillConditional();
               
             }, waitTime);
-          }, fastMode);
-              }
+          }); // End fillCurrentPage callback
+          }, bindingDelay); // End Shiny binding delay setTimeout
+        } // End progressStep function
 
         progressStep();
       }
 
-      // Hotkey handlers
-      document.addEventListener('keydown', (e) => {
+      // Hotkey handlers - use capture phase and attach to both document and window
+      const keyHandler = (e) => {
         if (!e.ctrlKey) return;
         
         switch(e.key.toLowerCase()) {
           case 'a':
             e.preventDefault();
+            e.stopPropagation();
             console.log('DEBUG: Ctrl+A - Fill current page only');
             fillCurrentPage();
             break;
           case 'q':
             e.preventDefault();
+            e.stopPropagation();
             console.log('DEBUG: Ctrl+Q - Auto-fill (normal speed)');
             autoProgressAll(800, 600);
             break;
           case 'y':
             e.preventDefault();
+            e.stopPropagation();
             console.log('DEBUG: Ctrl+Y - Auto-fill (fast speed)');
             autoProgressAll(100, 100);
             break;
         }
-      });
+      };
+      
+      // Attach to both document and window, using capture phase for reliability
+      document.addEventListener('keydown', keyHandler, true);
+      window.addEventListener('keydown', keyHandler, true);
 
-      console.log('DEBUG: Hotkey listeners registered');
+      console.log('DEBUG: Hotkey listeners registered (capture phase)');
       console.log('DEBUG: Ready! Press Ctrl+A, Ctrl+Q, or Ctrl+Y');
-    }
-    
-    // CRITICAL: Initialize debug mode immediately and with multiple fallbacks
-    // This ensures it works from the very first page of the study
-    console.log('DEBUG: Attempting immediate initialization...');
-    initializeDebugMode();
-    
-    // Fallback 1: DOM content loaded
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', function() {
-        console.log('DEBUG: DOM ready, reinitializing...');
-        setTimeout(initializeDebugMode, 100);
-      });
-    } else {
-      // DOM already ready
-      setTimeout(initializeDebugMode, 100);
-    }
-    
-    // Fallback 2: Window fully loaded
-    if (document.readyState !== 'complete') {
-      window.addEventListener('load', function() {
-        console.log('DEBUG: Window loaded, final initialization...');
-        setTimeout(initializeDebugMode, 200);
-      });
-    }
-    
-    // Fallback 3: Retry after short delays to catch Shiny updates
-    setTimeout(function() {
-      console.log('DEBUG: Delayed retry 1...');
-      initializeDebugMode();
-    }, 500);
-    
-    setTimeout(function() {
-      console.log('DEBUG: Delayed retry 2...');
-      initializeDebugMode();
-    }, 1000);
-    
-    console.log('DEBUG: All initialization methods set up');
+    })();
   ")))
 }

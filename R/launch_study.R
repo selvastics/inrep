@@ -545,6 +545,15 @@ launch_study <- function(
     ...
 ) {
   
+  # Helper function for language-aware validation messages
+  get_validation_fallback_message <- function(current_lang) {
+    if (current_lang == "en") {
+      return("Please complete all required fields.\nPlease answer all questions on this page.")
+    } else {
+      return("Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite.")
+    }
+  }
+  
   # Helper function for robust scroll-to-top functionality (works on desktop and mobile)
   scroll_to_top_enhanced <- function() {
     # Enhanced scroll function that works reliably in web browsers
@@ -4657,9 +4666,10 @@ launch_study <- function(
         
         # First check built-in validation
         if (exists("validate_page_progression")) {
-          # Pass item_bank in config for validation
+          # Pass item_bank and current language in config for validation
           config_with_items <- config
           config_with_items$item_bank <- item_bank
+          config_with_items$current_language <- rv$language
           validation <- validate_page_progression(rv$current_page, input, config_with_items)
           if (!validation$valid) {
             # Show error messages
@@ -4689,7 +4699,8 @@ launch_study <- function(
               # Show custom validation error messages
               output$validation_errors <- shiny::renderUI({
                 current_lang <- rv$language %||% config$language %||% "de"
-                error_message <- custom_validation$message %||% "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
+                # Use language-aware fallback message
+                error_message <- custom_validation$message %||% get_validation_fallback_message(current_lang)
                 show_validation_errors(error_message, language = current_lang)
               })
               
@@ -4749,15 +4760,15 @@ launch_study <- function(
               page_id <- current_page$id %||% paste0("page_", current_page_num)
               
               cat("RESPONSE COLLECTION DEBUG: Adaptive page", page_id, "\n")
-              cat("RESPONSE COLLECTION DEBUG: page_selected_items available:", !is.null(rv$page_selected_items), "\n")
-              if (!is.null(rv$page_selected_items)) {
-                cat("RESPONSE COLLECTION DEBUG: Cached pages:", names(rv$page_selected_items), "\n")
-                cat("RESPONSE COLLECTION DEBUG: page_id cache:", rv$page_selected_items[[page_id]], "\n")
+              cat("RESPONSE COLLECTION DEBUG: page_selected_items available:", !is.null(session$userData$page_selected_items), "\n")
+              if (!is.null(session$userData$page_selected_items)) {
+                cat("RESPONSE COLLECTION DEBUG: Cached pages:", names(session$userData$page_selected_items), "\n")
+                cat("RESPONSE COLLECTION DEBUG: page_id cache:", session$userData$page_selected_items[[page_id]], "\n")
               }
               
-              # First try to get from page_selected_items cache (most reliable)
-              if (!is.null(rv$page_selected_items) && !is.null(rv$page_selected_items[[page_id]])) {
-                item_indices_to_collect <- rv$page_selected_items[[page_id]]
+              # First try to get from page_selected_items cache (most reliable, from session$userData)
+              if (!is.null(session$userData$page_selected_items) && !is.null(session$userData$page_selected_items[[page_id]])) {
+                item_indices_to_collect <- session$userData$page_selected_items[[page_id]]
                 cat("RESPONSE COLLECTION: Using cached item selection for page", page_id, "-> item", item_indices_to_collect, "\n")
                 logger(sprintf("Using cached item selection for page %s: item %d", page_id, item_indices_to_collect))
               } else if (!is.null(rv$administered) && length(rv$administered) > 0) {
@@ -4777,29 +4788,40 @@ launch_study <- function(
             
             cat("RESPONSE COLLECTION: Items to collect:", paste(item_indices_to_collect, collapse=", "), "\n")
             
+            # CRITICAL: Sync session$userData$administered to rv$administered before collection
+            # This ensures rv$administered is up-to-date for results processing
+            if (!is.null(session$userData$administered) && length(session$userData$administered) > 0) {
+              if (is.null(rv$administered)) rv$administered <- integer(0)
+              # Add any items from session that aren't in rv yet
+              new_items <- setdiff(session$userData$administered, rv$administered)
+              if (length(new_items) > 0) {
+                rv$administered <- c(rv$administered, new_items)
+                cat("RESPONSE COLLECTION: Synced", length(new_items), "items from session$userData to rv$administered\n")
+              }
+            }
+            
             for (idx in item_indices_to_collect) {
-              # Get the actual item to get its ID
-              if (idx <= nrow(item_bank)) {
-                item <- item_bank[idx, ]
-                item_id <- item$id %||% paste0("item_", idx)
-                input_id <- paste0("item_", item_id)
-                value <- input[[input_id]]
+              # MUST match UI rendering logic: item_id <- item$id %||% paste0("item_", actual_idx)
+              item <- item_bank[idx, ]
+              item_id <- item$id %||% paste0("item_", idx)
+              value <- input[[item_id]]
+              
+              cat("RESPONSE COLLECTION: Checking idx", idx, "item_id", item_id, "input_id", item_id, "value", value, "\n")
+              
+              if (!is.null(value) && value != "") {
+                rv$item_responses[[item_id]] <- value
+                rv$responses[idx] <- as.numeric(value)
+                page_data[[item_id]] <- as.numeric(value)
                 
-                cat("RESPONSE COLLECTION: Checking idx", idx, "item_id", item_id, "input_id", input_id, "value", value, "\n")
-                
-                if (!is.null(value) && value != "") {
-                  rv$item_responses[[paste0("item_", item_id)]] <- value
-                  # Store in responses vector at the correct position
-                  rv$responses[idx] <- as.numeric(value)
-                  page_data[[item_id]] <- as.numeric(value)
-                  
-                  cat("RESPONSE SAVED: rv$responses[", idx, "] =", as.numeric(value), "\n")
-                  logger(sprintf("Saved item response %d (id: %s): %s", idx, item_id, value))
-                } else {
-                  cat("RESPONSE COLLECTION: No value found for input_id", input_id, "\n")
+                # Update rv$administered during response collection (not during rendering)
+                if (is.null(rv$administered)) rv$administered <- integer(0)
+                if (!idx %in% rv$administered) {
+                  rv$administered <- c(rv$administered, idx)
                 }
+                
+                logger(sprintf("Saved item response %d: %s", idx, value))
               } else {
-                cat("RESPONSE COLLECTION: idx", idx, "exceeds item_bank size", nrow(item_bank), "\n")
+                cat("RESPONSE COLLECTION: No value found for input_id", item_id, "\n")
               }
             }
             
@@ -4873,14 +4895,15 @@ launch_study <- function(
           rv$current_page <- rv$current_page + 1
           logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
           
-          # Apply stored language preference when moving FROM page 1 to other pages
-          if (old_page == 1 && exists("study_language_preference", envir = .GlobalEnv)) {
-            stored_lang <- get("study_language_preference", envir = .GlobalEnv)
-            if (!is.null(stored_lang) && stored_lang %in% c("en", "de")) {
-              current_language(stored_lang)
+          # Apply language preference when moving FROM page 1 (language selection page)
+          # ONLY if user clicked a language button in THIS session (not from old sessions)
+          # DO NOT call current_language() as it triggers page re-render
+          if (old_page == 1 && !is.null(session$userData$language)) {
+            stored_lang <- session$userData$language
+            if (stored_lang %in% c("en", "de")) {
+              # Only update rv$language, NOT current_language() to avoid re-render
               rv$language <- stored_lang
-              session$userData$language <- stored_lang
-              cat("Applied stored language preference when leaving page 1:", stored_lang, "\n")
+              cat("Applied language preference when leaving page 1:", stored_lang, "\n")
             }
           }
           
@@ -4969,9 +4992,10 @@ launch_study <- function(
         
         # First check built-in validation
         if (exists("validate_page_progression")) {
-          # Pass item_bank in config for validation
+          # Pass item_bank and current language in config for validation
           config_with_items <- config
           config_with_items$item_bank <- item_bank
+          config_with_items$current_language <- rv$language
           validation <- validate_page_progression(rv$current_page, input, config_with_items)
           if (!validation$valid) {
             output$validation_errors <- shiny::renderUI({
@@ -4996,7 +5020,8 @@ launch_study <- function(
               # Show custom validation error messages
               output$validation_errors <- shiny::renderUI({
                 current_lang <- rv$language %||% config$language %||% "de"
-                error_message <- custom_validation$message %||% "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
+                # Use language-aware fallback message
+                error_message <- custom_validation$message %||% get_validation_fallback_message(current_lang)
                 show_validation_errors(error_message, language = current_lang)
               })
               
@@ -5045,9 +5070,9 @@ launch_study <- function(
               current_page_num <- rv$current_page %||% 1
               page_id <- current_page$id %||% paste0("page_", current_page_num)
               
-              # First try to get from page_selected_items cache (most reliable)
-              if (!is.null(rv$page_selected_items) && !is.null(rv$page_selected_items[[page_id]])) {
-                item_indices_to_collect <- rv$page_selected_items[[page_id]]
+              # First try to get from page_selected_items cache (most reliable, from session$userData)
+              if (!is.null(session$userData$page_selected_items) && !is.null(session$userData$page_selected_items[[page_id]])) {
+                item_indices_to_collect <- session$userData$page_selected_items[[page_id]]
                 logger(sprintf("Using cached item selection for final page %s: item %d", page_id, item_indices_to_collect))
               } else if (!is.null(rv$administered) && length(rv$administered) > 0) {
                 # Fallback: get the last administered item
@@ -5065,11 +5090,23 @@ launch_study <- function(
               if (idx <= nrow(item_bank)) {
                 item <- item_bank[idx, ]
                 item_id <- item$id %||% paste0("item_", idx)
-                value <- input[[paste0("item_", item_id)]]
+                input_candidates <- c(item_id, paste0("item_", item_id))
+                value <- NULL
+                found_input <- NA_character_
+                for (iid in input_candidates) {
+                  if (!is.null(input[[iid]]) && input[[iid]] != "") {
+                    value <- input[[iid]]
+                    found_input <- iid
+                    break
+                  }
+                }
                 if (!is.null(value) && value != "") {
                   rv$responses[idx] <- as.numeric(value)
                   page_data[[item_id]] <- as.numeric(value)
-                  logger(sprintf("Saved final page item response %d (id: %s): %s", idx, item_id, value))
+                  # also store legacy/keyed entry
+                  rv$item_responses[[paste0("item_", item_id)]] <- value
+                  rv$item_responses[[item_id]] <- value
+                  logger(sprintf("Saved final page item response %d (id: %s) from input %s: %s", idx, item_id, found_input, value))
                 }
               }
             }
