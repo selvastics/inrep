@@ -2542,7 +2542,7 @@ launch_study <- function(
       shiny::div(
         id = "debug-mode-panel",
         style = "width: 100%; background: #E8E8E8; color: #333; padding: 14px 16px; border-bottom: 3px solid #FFD700; font-family: monospace; font-size: 12px; text-align: center; line-height: 1.5; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 9998;",
-        shiny::HTML('<strong> DEBUG MODE ACTIVE</strong><br><small><strong>Ctrl+A:</strong> Fill Current Page | <strong>Ctrl+Q:</strong> Auto-Fill Normal | <strong>Ctrl+W:</strong> Auto-Fill Fast</small>')
+        shiny::HTML('<strong> DEBUG MODE ACTIVE</strong><br><small><strong>Ctrl+A:</strong> Fill Current Page | <strong>Ctrl+Q:</strong> Auto-Fill Normal | <strong>Ctrl+Y:</strong> Auto-Fill Fast</small>')
       )
     },
     shiny::uiOutput("study_ui", style = "position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; margin: 0 auto !important; transform: none !important; width: 100% !important; max-width: 1200px !important; display: block !important; visibility: visible !important; opacity: 1 !important;")
