@@ -1626,6 +1626,14 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
           if (is.null(rv$administered)) rv$administered <- integer(0)
           rv$administered <- c(rv$administered, selected_item)
           page_items <- item_bank[selected_item, , drop = FALSE]
+          
+          # CRITICAL: Cache selected item for response collection
+          # This ensures adaptive responses can be properly saved to rv$responses[selected_item]
+          page_id <- page$id %||% paste0("page_", rv$current_page %||% 1)
+          if (is.null(rv$page_selected_items)) rv$page_selected_items <- list()
+          rv$page_selected_items[[page_id]] <- selected_item
+          cat("ADAPTIVE: Cached", page_id, "->", selected_item, "for response collection\n")
+          
         } else {
           page_items <- item_bank[integer(0), , drop = FALSE]
         }
@@ -1637,6 +1645,13 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
           if (is.null(rv$administered)) rv$administered <- integer(0)
           rv$administered <- c(rv$administered, selected_item)
           page_items <- item_bank[selected_item, , drop = FALSE]
+          
+          # Cache fallback selection as well
+          page_id <- page$id %||% paste0("page_", rv$current_page %||% 1)
+          if (is.null(rv$page_selected_items)) rv$page_selected_items <- list()
+          rv$page_selected_items[[page_id]] <- selected_item
+          cat("ADAPTIVE FALLBACK: Cached", page_id, "->", selected_item, "for response collection\n")
+          
         } else {
           page_items <- item_bank[integer(0), , drop = FALSE]
         }
@@ -1667,12 +1682,31 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
       } else {
         page_items <- item_bank[integer(0), , drop = FALSE]
       }
-    } else if (exists("select_next_item", mode = "function")) {
+    } else {
       # First time rendering this page - select item ONCE
-      selected_item <- inrep::select_next_item(rv, item_bank, config)
+      # CRITICAL FIX: Check for custom_item_selection function first (for HilFo study)
+      selected_item <- NULL
+      
+      if (exists("custom_item_selection", mode = "function")) {
+        # Use custom item selection function (e.g., HilFo study adaptive logic)
+        cat("ADAPTIVE: Using custom_item_selection function for page", page_id, "\n")
+        tryCatch({
+          selected_item <- custom_item_selection(rv, item_bank, config)
+          cat("ADAPTIVE: custom_item_selection returned item:", selected_item, "\n")
+        }, error = function(e) {
+          cat("ERROR: custom_item_selection failed:", e$message, "\n")
+          selected_item <- NULL
+        })
+      } else if (exists("select_next_item", mode = "function")) {
+        # Fallback to standard item selection
+        selected_item <- inrep::select_next_item(rv, item_bank, config)
+      }
+      
       if (!is.null(selected_item) && selected_item > 0 && selected_item <= nrow(item_bank)) {
         # Cache the selection for this page
         rv$page_selected_items[[page_id]] <- selected_item
+        cat("ADAPTIVE: Cached item", selected_item, "for page", page_id, "\n")
+        
         if (is.null(rv$administered)) rv$administered <- integer(0)
         # Only add to administered if not already there
         if (!selected_item %in% rv$administered) {
@@ -1682,12 +1716,6 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
       } else {
         page_items <- item_bank[integer(0), , drop = FALSE]
       }
-    } else {
-      # Fallback to pagination
-      items_per_page <- page$items_per_page %||% config$items_per_page %||% 5
-      start_idx <- ((rv$item_page %||% 1) - 1) * items_per_page + 1
-      end_idx <- min(start_idx + items_per_page - 1, nrow(item_bank))
-      page_items <- item_bank[start_idx:end_idx, , drop = FALSE]
     }
   } else {
     # Use items_per_page to paginate
@@ -1701,6 +1729,8 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels) {
   item_elements <- lapply(seq_len(nrow(page_items)), function(i) {
     item <- page_items[i, ]
     item_id <- paste0("item_", item$id %||% i)
+    
+    cat("UI DEBUG: Creating input element with ID:", item_id, "for item:", item$id, "\n")
     
     # Get question text based on language
     question_text <- if (current_lang == "en" && !is.null(item$Question_EN)) {

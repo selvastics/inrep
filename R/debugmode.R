@@ -10,7 +10,9 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
     console.log('*** DEBUG MODE STARTED ***');
     console.log('Hotkeys: Ctrl+A=Fill Current Page | Ctrl+Q=Auto Normal | Ctrl+Y=Auto Fast');
 
-    (function() {
+    // CRITICAL: Initialize immediately AND on DOM ready AND on window load
+    // This ensures debug mode works from the very first page regardless of timing
+    function initializeDebugMode() {
       'use strict';
       
       // Prevent multiple initializations
@@ -19,6 +21,30 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
         return;
       }
       window.inrepDebugInitialized = true;
+      
+      console.log('DEBUG: Initializing debug mode for all pages including start page');
+      
+      // CRITICAL: Add visual debug indicator immediately
+      if (!document.getElementById('debug-indicator')) {
+        const indicator = document.createElement('div');
+        indicator.id = 'debug-indicator';
+        indicator.innerHTML = '🐛 DEBUG MODE';
+        indicator.style.cssText = `
+          position: fixed;
+          top: 10px;
+          right: 10px;
+          background: #ff4444;
+          color: white;
+          padding: 5px 10px;
+          border-radius: 5px;
+          font-size: 12px;
+          font-weight: bold;
+          z-index: 10000;
+          opacity: 0.8;
+        `;
+        document.body.appendChild(indicator);
+        console.log('DEBUG: Visual indicator added');
+      }
 
       // Utility functions
       const utils = {
@@ -648,6 +674,43 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
 
       console.log('DEBUG: Hotkey listeners registered');
       console.log('DEBUG: Ready! Press Ctrl+A, Ctrl+Q, or Ctrl+Y');
-    })();
+    }
+    
+    // CRITICAL: Initialize debug mode immediately and with multiple fallbacks
+    // This ensures it works from the very first page of the study
+    console.log('DEBUG: Attempting immediate initialization...');
+    initializeDebugMode();
+    
+    // Fallback 1: DOM content loaded
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('DEBUG: DOM ready, reinitializing...');
+        setTimeout(initializeDebugMode, 100);
+      });
+    } else {
+      // DOM already ready
+      setTimeout(initializeDebugMode, 100);
+    }
+    
+    // Fallback 2: Window fully loaded
+    if (document.readyState !== 'complete') {
+      window.addEventListener('load', function() {
+        console.log('DEBUG: Window loaded, final initialization...');
+        setTimeout(initializeDebugMode, 200);
+      });
+    }
+    
+    // Fallback 3: Retry after short delays to catch Shiny updates
+    setTimeout(function() {
+      console.log('DEBUG: Delayed retry 1...');
+      initializeDebugMode();
+    }, 500);
+    
+    setTimeout(function() {
+      console.log('DEBUG: Delayed retry 2...');
+      initializeDebugMode();
+    }, 1000);
+    
+    console.log('DEBUG: All initialization methods set up');
   ")))
 }

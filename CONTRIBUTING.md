@@ -16,7 +16,7 @@
    ```bash
    git clone https://github.com/YOUR_USERNAME/inrep.git
    cd inrep
-   git remote add upstream https://github.com/original-username/inrep.git
+   git remote add upstream https://github.com/selvastics/inrep.git
    ```
 2. Install dependencies:
 

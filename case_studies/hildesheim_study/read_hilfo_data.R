@@ -52,7 +52,7 @@
 
 # Load required libraries
 # -----------------------------------------------------------------------------
-required_packages <- c("haven", "readr", "dplyr", "writexl", "labelled")
+required_packages <- c("rstudioapi","haven", "readr", "dplyr", "writexl", "labelled")
 
 # Check and install missing packages
 # Note: Missing packages are automatically installed if not present
@@ -62,11 +62,15 @@ if(length(missing_packages) > 0) {
 }
 
 # Load libraries
+library(rstudioapi)
 library(haven)
 library(readr)
 library(dplyr)
 library(writexl)
 library(labelled)
+
+# Set working directory to the directory of the current script
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # =============================================================================
 # ITEM DEFINITIONS AND METADATA
@@ -259,20 +263,21 @@ item_ids <- c(
 # =============================================================================
 
 # Likert scale labels (1-5)
-# Note: Keys must be numeric (not character) for numeric columns
-likert_labels <- setNames(
-  c("1 - Trifft überhaupt nicht zu / Not at all",
-    "2 - Trifft eher nicht zu / Rather not",
-    "3 - Neutral / Neutral",
-    "4 - Trifft eher zu / Rather yes",
-    "5 - Trifft voll zu / Fully agree"),
-  c(1, 2, 3, 4, 5)
+# For haven::labelled/labelled_spss the labels vector values must match the data type (numeric codes),
+# and the names are the human-readable labels.
+likert_labels <- c(
+  "1 - Trifft überhaupt nicht zu / Not at all" = 1,
+  "2 - Trifft eher nicht zu / Rather not" = 2,
+  "3 - Neutral / Neutral" = 3,
+  "4 - Trifft eher zu / Rather yes" = 4,
+  "5 - Trifft voll zu / Fully agree" = 5
 )
 
-# Study language labels
+# Study language labels (for character vector). Values must match the underlying values ("de","en").
+# Names are the human-readable labels.
 language_labels <- c(
-  "de" = "German",
-  "en" = "English"
+  "German" = "de",
+  "English" = "en"
 )
 
 # =============================================================================
@@ -343,6 +348,70 @@ compute_bfi_scales <- function(data) {
   ), na.rm = TRUE)
   
   return(data)
+}
+
+# Function to set SPSS-specific attributes and produce SPSS syntax for measures
+# -----------------------------------------------------------------------------
+# Ensures SPSS-friendly formats and prepares a .sps syntax to set measurement levels
+apply_spss_attributes <- function(data) {
+  # Set SPSS display/format attributes that SPSS understands via haven
+  for (col in names(data)) {
+    x <- data[[col]]
+    # Variable label already handled elsewhere; here we ensure formats/classes
+    if (col %in% item_ids) {
+      # Items: ensure labelled_spss with Likert value labels and numeric format
+      if (is.numeric(x)) {
+        # keep any existing var label
+        existing_var_label <- var_label(x)
+        x <- haven::labelled_spss(x, labels = likert_labels)
+        attr(x, "format.spss") <- "F8.0"
+        if (!is.null(existing_var_label)) var_label(x) <- existing_var_label
+      }
+    } else if (col %in% c("BFI_Extraversion", "BFI_Vertraeglichkeit", "BFI_Gewissenhaftigkeit",
+                           "BFI_Neurotizismus", "BFI_Offenheit", "PSQ_Stress",
+                           "MWS_Studierfaehigkeiten", "Statistik")) {
+      # Scale scores: continuous numeric
+      if (is.numeric(x)) {
+        attr(x, "format.spss") <- "F8.2"
+      }
+    } else if (col %in% c("timestamp", "session_id")) {
+      # Keep as character; set reasonable string format width
+      if (is.character(x)) {
+        maxw <- max(nchar(x[!is.na(x)]), 8)
+        attr(x, "format.spss") <- paste0("A", min(max(8, maxw), 255))
+      }
+    } else if (col == "study_language") {
+      # Language: labelled string is not supported; keep character with labels recorded via codebook
+      # For SPSS, we'll set measurement to NOMINAL via syntax file
+      if (is.character(x)) {
+        maxw <- max(nchar(x[!is.na(x)]), 2)
+        attr(x, "format.spss") <- paste0("A", min(max(2, maxw), 16))
+      }
+    }
+    data[[col]] <- x
+  }
+  return(data)
+}
+
+# Function to generate SPSS syntax to set measurement levels and ensure labels
+# -----------------------------------------------------------------------------
+write_sps_syntax <- function(data, sps_path) {
+  # Build lists by type
+  items <- intersect(item_ids, names(data))
+  scales <- intersect(c("BFI_Extraversion", "BFI_Vertraeglichkeit", "BFI_Gewissenhaftigkeit",
+                        "BFI_Neurotizismus", "BFI_Offenheit", "PSQ_Stress",
+                        "MWS_Studierfaehigkeiten", "Statistik"), names(data))
+  nominals <- intersect(c("study_language"), names(data))
+
+  lines <- c(
+    "* Set measurement levels (SPSS).",
+    if (length(items)) paste0("VARIABLE LEVEL ", paste(items, collapse = " "), " (ORDINAL).") else NULL,
+    if (length(scales)) paste0("VARIABLE LEVEL ", paste(scales, collapse = " "), " (SCALE).") else NULL,
+    if (length(nominals)) paste0("VARIABLE LEVEL ", paste(nominals, collapse = " "), " (NOMINAL).") else NULL,
+    "EXECUTE."
+  )
+  lines <- lines[!sapply(lines, is.null)]
+  writeLines(lines, sps_path)
 }
 
 # Function to compute PSQ Stress score
@@ -757,13 +826,21 @@ process_csv_file <- function(file_path, output_dir = "output") {
   # Generate base filename (same as input file without extension)
   base_name <- tools::file_path_sans_ext(basename(file_path))
   
-  # Export to SPSS (.sav) format with variable and value labels
+  # Apply SPSS-specific attributes
+  data <- apply_spss_attributes(data)
+
+  # Export to SPSS (.sav) format with labels and formats
   sav_file <- file.path(output_dir, paste0(base_name, ".sav"))
   write_sav(data, sav_file)
   
-  # Export to Excel (.xlsx) format with variable and value labels
+  # Export to Excel (.xlsx) with Data + Codebook
   xlsx_file <- file.path(output_dir, paste0(base_name, ".xlsx"))
-  write_xlsx(data, xlsx_file)
+  codebook <- create_codebook(data, language = lang)
+  write_xlsx(list(Data = data, Codebook = codebook), xlsx_file)
+
+  # Also write SPSS syntax to set measurement levels (ordinal/nominal/scale)
+  sps_file <- file.path(output_dir, paste0(base_name, ".sps"))
+  write_sps_syntax(data, sps_file)
   
   return(data)
 }
@@ -935,7 +1012,8 @@ process_all_csv_files <- function(input_dir = "study_data", output_dir = "output
       combined_sav <- file.path(output_dir, "hilfo_combined.sav")
       combined_xlsx <- file.path(output_dir, "hilfo_combined.xlsx")
       
-      # Write SPSS file
+      # Apply SPSS-specific attributes and write SPSS file
+      combined_data <- apply_spss_attributes(combined_data)
       write_sav(combined_data, combined_sav)
       
       # Create codebook for Excel
@@ -949,6 +1027,10 @@ process_all_csv_files <- function(input_dir = "study_data", output_dir = "output
         ),
         combined_xlsx
       )
+
+      # Write SPSS syntax for measurement levels
+      combined_sps <- file.path(output_dir, "hilfo_combined.sps")
+      write_sps_syntax(combined_data, combined_sps)
     }
   } else {
     stop("No data was successfully processed from any CSV files.")
@@ -962,7 +1044,7 @@ process_all_csv_files <- function(input_dir = "study_data", output_dir = "output
 # =============================================================================
 # 
 # Process all CSV files in study_data folder:
-process_all_csv_files(input_dir = "study_data", output_dir = "output")
+process_all_csv_files(input_dir = "study_data")
 #
 # Process a single CSV file:
 #   process_csv_file("study_data/your_file.csv", output_dir = "output")

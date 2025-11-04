@@ -2966,6 +2966,15 @@ launch_study <- function(
     shiny::observeEvent(input$download_csv_trigger, {
       cat("CSV download triggered\n")
       
+      # DEBUG: Check what's available in session
+      cat("DEBUG: session$userData keys available:", names(session$userData), "\n")
+      cat("DEBUG: hilfo_complete_data exists:", !is.null(session$userData$hilfo_complete_data), "\n")
+      cat("DEBUG: hilfo_csv_file exists:", !is.null(session$userData$hilfo_csv_file), "\n")
+      if (!is.null(session$userData$hilfo_csv_file)) {
+        cat("DEBUG: hilfo_csv_file path:", session$userData$hilfo_csv_file, "\n")
+        cat("DEBUG: file exists:", file.exists(session$userData$hilfo_csv_file), "\n")
+      }
+      
       shiny::showNotification("Generating CSV export...", type = "message", duration = 2)
       
       tryCatch({
@@ -3010,9 +3019,15 @@ launch_study <- function(
           
           # Trigger download
           if (requireNamespace("shinyjs", quietly = TRUE)) {
+            # CRITICAL: Use consistent HilFo naming convention (same as upload)
             timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
-            study_name <- gsub("[^a-zA-Z0-9_]", "_", config$name %||% "study")
-            filename <- paste0(study_name, "_results_", timestamp, ".csv")
+            filename <- if (exists("generate_hilfo_filename", mode = "function")) {
+              generate_hilfo_filename(timestamp)
+            } else {
+              # Fallback for non-HilFo studies
+              study_name <- gsub("[^a-zA-Z0-9_]", "_", config$name %||% "study")
+              paste0(study_name, "_results_", timestamp, ".csv")
+            }
             
             shinyjs::runjs(sprintf("
               var csv = %s;
@@ -3110,9 +3125,15 @@ launch_study <- function(
         
         # Trigger download via JavaScript
         if (requireNamespace("shinyjs", quietly = TRUE)) {
+          # CRITICAL: Use consistent HilFo naming convention (same as upload)
           timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
-          study_name <- gsub("[^a-zA-Z0-9_]", "_", config$name %||% "study")
-          filename <- paste0(study_name, "_results_", timestamp, ".csv")
+          filename <- if (exists("generate_hilfo_filename", mode = "function")) {
+            generate_hilfo_filename(timestamp)
+          } else {
+            # Fallback for non-HilFo studies
+            study_name <- gsub("[^a-zA-Z0-9_]", "_", config$name %||% "study")
+            paste0(study_name, "_results_", timestamp, ".csv")
+          }
           
           shinyjs::runjs(sprintf("
             var csv = %s;
@@ -4727,35 +4748,58 @@ launch_study <- function(
               current_page_num <- rv$current_page %||% 1
               page_id <- current_page$id %||% paste0("page_", current_page_num)
               
+              cat("RESPONSE COLLECTION DEBUG: Adaptive page", page_id, "\n")
+              cat("RESPONSE COLLECTION DEBUG: page_selected_items available:", !is.null(rv$page_selected_items), "\n")
+              if (!is.null(rv$page_selected_items)) {
+                cat("RESPONSE COLLECTION DEBUG: Cached pages:", names(rv$page_selected_items), "\n")
+                cat("RESPONSE COLLECTION DEBUG: page_id cache:", rv$page_selected_items[[page_id]], "\n")
+              }
+              
               # First try to get from page_selected_items cache (most reliable)
               if (!is.null(rv$page_selected_items) && !is.null(rv$page_selected_items[[page_id]])) {
                 item_indices_to_collect <- rv$page_selected_items[[page_id]]
+                cat("RESPONSE COLLECTION: Using cached item selection for page", page_id, "-> item", item_indices_to_collect, "\n")
                 logger(sprintf("Using cached item selection for page %s: item %d", page_id, item_indices_to_collect))
               } else if (!is.null(rv$administered) && length(rv$administered) > 0) {
                 # Fallback: get the last administered item
                 item_indices_to_collect <- tail(rv$administered, 1)
+                cat("RESPONSE COLLECTION: Using last administered item as fallback:", item_indices_to_collect, "\n")
                 logger(sprintf("Using last administered item as fallback: item %d", item_indices_to_collect))
               } else {
                 item_indices_to_collect <- integer(0)
+                cat("RESPONSE COLLECTION: ERROR - No item found for adaptive page!\n")
                 logger("WARNING: No item found to collect response for adaptive page")
               }
             } else {
               item_indices_to_collect <- current_page$item_indices
+              cat("RESPONSE COLLECTION: Using fixed item_indices:", paste(item_indices_to_collect, collapse=", "), "\n")
             }
+            
+            cat("RESPONSE COLLECTION: Items to collect:", paste(item_indices_to_collect, collapse=", "), "\n")
             
             for (idx in item_indices_to_collect) {
               # Get the actual item to get its ID
               if (idx <= nrow(item_bank)) {
                 item <- item_bank[idx, ]
                 item_id <- item$id %||% paste0("item_", idx)
-                value <- input[[paste0("item_", item_id)]]
+                input_id <- paste0("item_", item_id)
+                value <- input[[input_id]]
+                
+                cat("RESPONSE COLLECTION: Checking idx", idx, "item_id", item_id, "input_id", input_id, "value", value, "\n")
+                
                 if (!is.null(value) && value != "") {
                   rv$item_responses[[paste0("item_", item_id)]] <- value
                   # Store in responses vector at the correct position
                   rv$responses[idx] <- as.numeric(value)
                   page_data[[item_id]] <- as.numeric(value)
+                  
+                  cat("RESPONSE SAVED: rv$responses[", idx, "] =", as.numeric(value), "\n")
                   logger(sprintf("Saved item response %d (id: %s): %s", idx, item_id, value))
+                } else {
+                  cat("RESPONSE COLLECTION: No value found for input_id", input_id, "\n")
                 }
+              } else {
+                cat("RESPONSE COLLECTION: idx", idx, "exceeds item_bank size", nrow(item_bank), "\n")
               }
             }
             
