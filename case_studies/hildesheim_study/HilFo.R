@@ -2547,6 +2547,149 @@ if (exists("study_language_preference", envir = .GlobalEnv)) {
 session_uuid <- paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 
 # =============================================================================
+# COMPREHENSIVE DATASET FUNCTION FOR PROPER ADAPTIVE ITEM MAPPING
+# =============================================================================
+get_comprehensive_dataset <- function() {
+    tryCatch({
+        # Get current session data
+        if (!exists("rv") || is.null(rv$responses) || is.null(rv$administered)) {
+            return(NULL)
+        }
+        
+        # Create base data structure with all expected columns
+        data <- data.frame(
+            timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+            session_id = if(exists("session_uuid")) session_uuid else "unknown",
+            study_name = "HilFo - Hildesheimer Forschungsmethoden", 
+            study_language = "de",
+            stringsAsFactors = FALSE
+        )
+        
+        # Add demographic data
+        if (!is.null(rv$demographics)) {
+            for (demo_name in names(rv$demographics)) {
+                data[[demo_name]] <- rv$demographics[[demo_name]]
+            }
+        }
+        
+        # Initialize all PA columns with NA
+        for (i in 1:20) {
+            data[[sprintf("PA_%02d", i)]] <- NA
+        }
+        
+        # Map responses to correct PA columns based on administered items
+        if (length(rv$responses) > 0 && length(rv$administered) > 0) {
+            # Find PA items (1-20) in administered list
+            pa_mask <- rv$administered >= 1 & rv$administered <= 20
+            pa_items <- rv$administered[pa_mask]
+            pa_response_indices <- which(pa_mask)
+            
+            # Map responses to correct PA columns
+            for (i in seq_along(pa_items)) {
+                if (i <= length(rv$responses)) {
+                    item_num <- pa_items[i]
+                    col_name <- sprintf("PA_%02d", item_num)
+                    data[[col_name]] <- rv$responses[pa_response_indices[i]]
+                }
+            }
+        }
+        
+        # Initialize BFI columns
+        bfi_cols <- c("BFE_01", "BFE_02", "BFE_03", "BFE_04",
+                      "BFV_01", "BFV_02", "BFV_03", "BFV_04", 
+                      "BFG_01", "BFG_02", "BFG_03", "BFG_04",
+                      "BFN_01", "BFN_02", "BFN_03", "BFN_04",
+                      "BFO_01", "BFO_02", "BFO_03", "BFO_04")
+        for (col in bfi_cols) {
+            data[[col]] <- NA
+        }
+        
+        # Map BFI responses (items 21-40)
+        if (length(rv$administered) > 0) {
+            bfi_mask <- rv$administered >= 21 & rv$administered <= 40
+            bfi_items <- rv$administered[bfi_mask]
+            bfi_response_indices <- which(bfi_mask)
+            
+            for (i in seq_along(bfi_items)) {
+                if (i <= length(bfi_response_indices)) {
+                    item_num <- bfi_items[i]
+                    # Map to BFI column names based on item bank structure
+                    if (item_num >= 21 && item_num <= 40) {
+                        bfi_index <- item_num - 20
+                        col_name <- bfi_cols[bfi_index]
+                        data[[col_name]] <- rv$responses[bfi_response_indices[i]]
+                    }
+                }
+            }
+        }
+        
+        # Initialize other columns
+        other_cols <- c("PSQ_02", "PSQ_04", "PSQ_16", "PSQ_29", "PSQ_30",
+                       "MWS_1_KK", "MWS_10_KK", "MWS_17_KK", "MWS_21_KK",
+                       "Statistik_gutfolgen", "Statistik_selbstwirksam")
+        for (col in other_cols) {
+            data[[col]] <- NA
+        }
+        
+        # Map other responses (items 41+)
+        if (length(rv$administered) > 0) {
+            other_mask <- rv$administered >= 41
+            other_items <- rv$administered[other_mask]
+            other_response_indices <- which(other_mask)
+            
+            for (i in seq_along(other_items)) {
+                if (i <= length(other_response_indices)) {
+                    item_num <- other_items[i]
+                    if (item_num >= 41 && item_num <= 51) {
+                        other_index <- item_num - 40
+                        col_name <- other_cols[other_index]
+                        data[[col_name]] <- rv$responses[other_response_indices[i]]
+                    }
+                }
+            }
+        }
+        
+        # Add theta and se if available
+        data$theta <- if(exists("rv") && !is.null(rv$current_ability)) rv$current_ability else NA
+        data$se <- if(exists("rv") && !is.null(rv$ability_se)) rv$ability_se else NA
+        
+        # Add calculated scores (same logic as process_hilfo_csv)
+        if (length(rv$responses) >= 20) {
+            # Calculate BFI scores
+            bfi_responses <- rv$responses[rv$administered >= 21 & rv$administered <= 40]
+            if (length(bfi_responses) >= 20) {
+                data$BFI_Extraversion <- mean(bfi_responses[1:4], na.rm = TRUE)
+                data$BFI_Vertraeglichkeit <- mean(bfi_responses[5:8], na.rm = TRUE) 
+                data$BFI_Gewissenhaftigkeit <- mean(bfi_responses[9:12], na.rm = TRUE)
+                data$BFI_Neurotizismus <- mean(bfi_responses[13:16], na.rm = TRUE)
+                data$BFI_Offenheit <- mean(bfi_responses[17:20], na.rm = TRUE)
+            }
+        }
+        
+        # Calculate other composite scores
+        psq_responses <- rv$responses[rv$administered >= 41 & rv$administered <= 45]
+        if (length(psq_responses) > 0) {
+            data$PSQ_Stress <- mean(psq_responses, na.rm = TRUE)
+        }
+        
+        mws_responses <- rv$responses[rv$administered >= 46 & rv$administered <= 49] 
+        if (length(mws_responses) > 0) {
+            data$MWS_Studierfaehigkeiten <- mean(mws_responses, na.rm = TRUE)
+        }
+        
+        stats_responses <- rv$responses[rv$administered >= 50 & rv$administered <= 51]
+        if (length(stats_responses) > 0) {
+            data$Statistik <- mean(stats_responses, na.rm = TRUE)
+        }
+        
+        return(data)
+        
+    }, error = function(e) {
+        message("Error in get_comprehensive_dataset: ", e$message)
+        return(NULL)
+    })
+}
+
 # CSV PROCESSOR FOR HILFO-SPECIFIC CALCULATED COLUMNS
 # =============================================================================
 process_hilfo_csv <- function(csv_data, responses, demographics, item_bank) {
