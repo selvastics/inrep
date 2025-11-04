@@ -2865,105 +2865,18 @@ launch_study <- function(
       })
     })
     
-    # Step 2: Receive captured HTML and convert to PDF (server-side)
+    # Step 2: Trigger browser print dialog (simple and always works!)
     shiny::observeEvent(input$pdf_html_content, {
-      cat("Received HTML content for PDF conversion\n")
+      cat("PDF download: Using browser print dialog\n")
       
       tryCatch({
-        captured_data <- input$pdf_html_content
-        
-        if (is.null(captured_data) || is.null(captured_data$html)) {
-          stop("No HTML content received")
-        }
-        
-        # Create temporary HTML file with the CAPTURED content
-        temp_html <- tempfile(fileext = ".html")
-        pdf_file <- tempfile(fileext = ".pdf")
-        
-        # Build complete standalone HTML with captured content and styles
-        complete_html <- paste0(
-          '<!DOCTYPE html>',
-          '<html>',
-          '<head>',
-          '<meta charset="UTF-8">',
-          '<style>',
-          captured_data$styles,
-          '\n@media print { .download-section { display: none !important; } }',
-          '\nbody { padding: 20px; }',
-          '</style>',
-          '</head>',
-          '<body>',
-          captured_data$html,
-          '</body>',
-          '</html>'
-        )
-        
-        writeLines(complete_html, temp_html)
-        
-        # Try to convert HTML to PDF using available methods
-        pdf_generated <- FALSE
-        
-        # Method 1: Try pagedown (best quality, captures everything as rendered)
-        if (!pdf_generated && requireNamespace("pagedown", quietly = TRUE)) {
-          tryCatch({
-            pagedown::chrome_print(input = temp_html, output = pdf_file, verbose = FALSE)
-            pdf_generated <- TRUE
-            cat("PDF generated using pagedown\n")
-          }, error = function(e) {
-            cat("pagedown failed:", e$message, "\n")
-          })
-        }
-        
-        # Method 2: Try webshot2 (fallback)
-        if (!pdf_generated && requireNamespace("webshot2", quietly = TRUE)) {
-          tryCatch({
-            webshot2::webshot(url = temp_html, file = pdf_file, vwidth = 1200, vheight = 800)
-            pdf_generated <- TRUE
-            cat("PDF generated using webshot2\n")
-          }, error = function(e) {
-            cat("webshot2 failed:", e$message, "\n")
-          })
-        }
-        
-        # Method 3: Fallback to browser print dialog if no package available
-        if (!pdf_generated) {
-          cat("No PDF generation package available, falling back to browser print\n")
-          if (requireNamespace("shinyjs", quietly = TRUE)) {
-            shinyjs::runjs("window.print();")
-            shiny::showNotification("Please use your browser's print dialog to save as PDF", type = "warning", duration = 5)
-          } else {
-            shiny::showNotification("PDF generation not available. Please print manually.", type = "error")
-          }
+        # Just trigger browser print - user can save as PDF
+        if (requireNamespace("shinyjs", quietly = TRUE)) {
+          shinyjs::runjs("window.print();")
+          shiny::showNotification("Use your browser's print dialog to save as PDF (Ctrl+P or Cmd+P)", type = "message", duration = 5)
         } else {
-          # PDF was generated successfully, send it to the user
-          # Read the PDF file
-          pdf_content <- readBin(pdf_file, "raw", n = file.info(pdf_file)$size)
-          pdf_base64 <- base64enc::base64encode(pdf_content)
-          
-          # Trigger download via JavaScript
-          if (requireNamespace("shinyjs", quietly = TRUE)) {
-            timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
-            study_name <- gsub("[^a-zA-Z0-9_]", "_", config$name %||% "study")
-            filename <- paste0(study_name, "_results_", timestamp, ".pdf")
-            
-            shinyjs::runjs(sprintf("
-              var pdfData = 'data:application/pdf;base64,%s';
-              var link = document.createElement('a');
-              link.href = pdfData;
-              link.download = '%s';
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            ", pdf_base64, filename))
-            
-            shiny::showNotification("PDF downloaded successfully!", type = "message", duration = 3)
-          }
-          
-          # Clean up temporary files
-          unlink(pdf_file)
+          shiny::showNotification("PDF generation not available. Please print manually.", type = "error")
         }
-        
-        unlink(temp_html)
         
       }, error = function(e) {
         cat("Error generating PDF:", e$message, "\n")

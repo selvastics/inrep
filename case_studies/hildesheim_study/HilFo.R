@@ -1102,18 +1102,37 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         # Ensure we have all 51 item responses (20 PA + 31 original)
         if (is.null(responses) || length(responses) < 51) {
             if (is.null(responses)) {
-                responses <- rep(3, 51)
+                responses <- rep(NA, 51)  # Use NA instead of 3 to avoid corrupting calculations
             } else {
-                responses <- c(responses, rep(3, 51 - length(responses)))
+                responses <- c(responses, rep(NA, 51 - length(responses)))
             }
         }
         responses <- as.numeric(responses)
         
-        # Calculate Programming Anxiety score (first 10 items shown)
-        pa_responses <- responses[1:10]
-        # Reverse score items 1, 10 (and 15 if shown)
-        pa_responses[c(1)] <- 6 - pa_responses[c(1)]
-        pa_responses[c(10)] <- 6 - pa_responses[c(10)]
+        # Calculate Programming Anxiety score using ONLY items that were actually administered
+        # PA items are indices 1-20, but only some were shown (adaptive testing)
+        pa_indices <- 1:20
+        pa_responses_all <- responses[pa_indices]
+        
+        # Get only non-NA responses (items that were actually shown)
+        pa_valid_mask <- !is.na(pa_responses_all)
+        pa_valid_indices <- pa_indices[pa_valid_mask]
+        pa_responses <- pa_responses_all[pa_valid_mask]
+        
+        cat(sprintf("DEBUG: Found %d PA responses (out of 20 possible PA items)\n", length(pa_responses)))
+        cat(sprintf("DEBUG: PA items with responses: %s\n", paste(pa_valid_indices, collapse=", ")))
+        
+        # Apply reverse scoring for reverse-coded items that were actually shown
+        # Reverse-coded PA items: 1, 10, 15
+        reverse_pa_items <- c(1, 10, 15)
+        for (i in seq_along(pa_valid_indices)) {
+            item_idx <- pa_valid_indices[i]
+            if (item_idx %in% reverse_pa_items) {
+                cat(sprintf("DEBUG: Reverse scoring PA item %d: %d -> %d\n", item_idx, pa_responses[i], 6 - pa_responses[i]))
+                pa_responses[i] <- 6 - pa_responses[i]
+            }
+        }
+        
         pa_score <- mean(pa_responses, na.rm = TRUE)
         
         # Compute IRT-based ability estimate for Programming Anxiety
@@ -1125,14 +1144,16 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         cat("PROGRAMMING ANXIETY - IRT MODEL (2PL)\n")
         cat("================================================================================\n")
         cat("Assessment Type: Semi-Adaptive (5 fixed + 5 adaptive items)\n")
-        cat("Total items administered: 10\n")
+        cat(sprintf("Total items administered: %d\n", length(pa_responses)))
         cat("\n")
         
-        # Get item parameters for the 10 PA items that were shown
-        # Note: In real adaptive testing, items 6-10 would be selected based on responses
-        shown_items <- all_items_de[1:10, ]
+        # Get item parameters for the PA items that were ACTUALLY shown (adaptive testing)
+        # Use pa_valid_indices from above (the actual item indices with responses)
+        shown_items <- all_items_de[pa_valid_indices, ]
         a_params <- shown_items$a
         b_params <- shown_items$b
+        
+        cat(sprintf("DEBUG: Using item parameters for items: %s\n", paste(pa_valid_indices, collapse=", ")))
         
         # Validate item parameters
         if (any(is.na(a_params)) || any(is.na(b_params))) {
@@ -1891,11 +1912,21 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         # Calculate standard deviations for each dimension
         sds <- list()
         
-        # Programming Anxiety - 10 items (items 1-10)
-        # Apply reverse scoring for items 1, 10, and 15 (but we only have 10 items, so items 1 and 10)
-        pa_items_scored <- responses[1:10]
-        pa_items_scored[1] <- 6 - pa_items_scored[1]  # Reverse item 1
-        pa_items_scored[10] <- 6 - pa_items_scored[10]  # Reverse item 10
+        # Programming Anxiety - use ACTUAL administered items (adaptive testing)
+        # Get all PA responses (indices 1-20)
+        pa_items_all <- responses[1:20]
+        pa_items_valid <- pa_items_all[!is.na(pa_items_all)]
+        pa_valid_idx <- which(!is.na(pa_items_all))
+        
+        # Apply reverse scoring to the items that were shown
+        pa_items_scored <- pa_items_valid
+        reverse_pa_items <- c(1, 10, 15)
+        for (i in seq_along(pa_valid_idx)) {
+            if (pa_valid_idx[i] %in% reverse_pa_items) {
+                pa_items_scored[i] <- 6 - pa_items_scored[i]
+            }
+        }
+        
         sd_val <- sd(pa_items_scored, na.rm = TRUE)
         sds[["ProgrammingAnxiety"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
         
@@ -2108,14 +2139,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                 # Store the file path and complete_data in session for download button to use
                 local_file <- generate_hilfo_filename()
                 tryCatch({
-                    # CRITICAL: Use explicit connection to ensure file is fully written and closed
-                    con <- file(local_file, "w")
-                    write.csv(complete_data, con, row.names = FALSE)
-                    close(con)  # Explicitly close to release lock
-                    
-                    # Wait briefly to ensure OS releases file lock
-                    Sys.sleep(0.2)
-                    
+                    write.csv(complete_data, local_file, row.names = FALSE)
                     cat("Data saved locally to:", local_file, "\n")
                     
                     # CRITICAL: Store complete_data and file path in session for download button
@@ -2125,13 +2149,20 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                     cat("DEBUG: session is not null:", !is.null(get0("session")), "\n")
                     
                     if (exists("session") && !is.null(session)) {
+                        cat("DEBUG: About to store in session$userData\n")
+                        cat("DEBUG: session class:", class(session), "\n")
+                        cat("DEBUG: session$userData class:", class(session$userData), "\n")
+                        
+                        # Use reactiveValues assignment
                         session$userData$hilfo_complete_data <- complete_data
                         session$userData$hilfo_csv_file <- local_file
-                        cat("DEBUG: Successfully stored complete_data (", nrow(complete_data), "rows) and file path (", local_file, ") in session\n")
                         
-                        # Verify storage worked
-                        cat("DEBUG: Verification - hilfo_complete_data exists:", !is.null(session$userData$hilfo_complete_data), "\n")
-                        cat("DEBUG: Verification - hilfo_csv_file:", session$userData$hilfo_csv_file, "\n")
+                        # Force flush by reading back
+                        Sys.sleep(0.1)
+                        
+                        cat("DEBUG: Successfully stored complete_data (", nrow(complete_data), "rows) in session$userData\n")
+                        cat("DEBUG: Immediate verification - hilfo_complete_data exists:", !is.null(session$userData$hilfo_complete_data), "\n")
+                        cat("DEBUG: Immediate verification - hilfo_csv_file:", session$userData$hilfo_csv_file, "\n")
                     } else {
                         cat("WARNING: Cannot store session data - session not available\n")
                     }
@@ -2139,104 +2170,79 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                     cat("Error saving data locally:", e$message, "\n")
                 })
                 
-                # CRITICAL: ALWAYS upload to cloud - works in ALL languages (DE and EN)
-                # Use synchronous upload to ensure it completes, don't rely on later::later()
-                # Use the credentials defined at the top of this file (WEBDAV_URL, WEBDAV_PASSWORD)
+                # CRITICAL: BACKGROUND UPLOAD - Fire and forget, doesn't block results display
+                # Data is already saved locally, so upload can happen in background
+                # User can close browser - upload will complete independently
                 if (!is.null(WEBDAV_URL) && !is.null(WEBDAV_PASSWORD)) {
-                    tryCatch({
-                        # For public WebDAV folders, use share token as username
-                        # Use the credentials from the top of the file
-                        webdav_user <- WEBDAV_SHARE_TOKEN  # Share token is the username (from line 82)
-                        webdav_pass <- WEBDAV_PASSWORD    # Use the password defined at top (from line 81)
+                    
+                    cat("\n")
+                    cat("================================================================================\n")
+                    cat("Cloud upload starting in background...\n")
+                    cat("================================================================================\n")
+                    cat("File:", local_file, "\n")
+                    cat("Your results will appear immediately.\n")
+                    cat("Upload will complete in the background (you can close this window).\n\n")
+                    
+                    # Capture variables in closure for background upload
+                    upload_file_path <- local_file
+                    upload_url <- WEBDAV_URL
+                    upload_user <- WEBDAV_SHARE_TOKEN
+                    upload_pass <- WEBDAV_PASSWORD
+                    
+                    # Schedule background upload using later::later()
+                    later::later(function() {
+                        cat("BACKGROUND: Starting cloud upload...\n")
                         
-                        cat("CRITICAL: Starting BACKGROUND upload to cloud storage (non-blocking)...\n")
-                        cat("CRITICAL: Using WEBDAV_URL:", WEBDAV_URL, "\n")
-                        cat("CRITICAL: Using credentials from top of file (WEBDAV_SHARE_TOKEN + WEBDAV_PASSWORD)\n")
-                        cat("CRITICAL: User can see results immediately - upload happens in background\n")
+                        upload_success <- FALSE
+                        max_retries <- 3
                         
-                        # CRITICAL FIX: Use later::later() for ASYNC/BACKGROUND upload (package already loaded!)
-                        # This returns control immediately - user doesn't wait!
-                        upload_url <- paste0(WEBDAV_URL, local_file)
-                        upload_file_path <- local_file
-                        upload_user <- webdav_user  # Capture for later closure
-                        upload_pass <- webdav_pass  # Capture for later closure
-                        
-                        # Launch upload in background using later - returns immediately
-                        later::later(function() {
-                          tryCatch({
-                            response_bg <- httr::PUT(
-                              url = upload_url,
-                              body = httr::upload_file(upload_file_path),
-                              httr::authenticate(upload_user, upload_pass, type = "basic"),
-                              httr::add_headers(
-                                "Content-Type" = "text/csv",
-                                "X-Requested-With" = "XMLHttpRequest"
-                              ),
-                              httr::timeout(120)
-                            )
-                            if (httr::status_code(response_bg) %in% c(200, 201, 204)) {
-                              cat("BACKGROUND: Upload completed successfully\n")
-                            } else {
-                              cat("BACKGROUND: Upload failed with status:", httr::status_code(response_bg), "\n")
+                        for (retry_count in 1:max_retries) {
+                            if (retry_count > 1) {
+                                wait_time <- 2^(retry_count - 1)
+                                cat("BACKGROUND: Retry", retry_count, "after", wait_time, "seconds...\n")
+                                Sys.sleep(wait_time)
                             }
-                          }, error = function(e_bg) {
-                            cat("BACKGROUND: Upload error:", e_bg$message, "\n")
-                          })
-                        }, delay = 0.5)  # Start upload 500ms from now - ensures file lock is released
-                        
-                        cat("CRITICAL: Background upload scheduled - returning results to user NOW\n")
-                        # Don't wait for result - it happens in background
-                        # User sees results immediately!
-                        response <- list(status_code = function() 202)  # 202 = Accepted (processing in background)
-                        
-                        status_code <- if (is.function(response$status_code)) response$status_code() else httr::status_code(response)
-                        
-                        if (status_code %in% c(200, 201, 202, 204)) {
-                            if (status_code == 202) {
-                              cat("CRITICAL: Data upload started in BACKGROUND - user doesn't have to wait!\n")
-                            } else {
-                              cat("CRITICAL: Data successfully uploaded to cloud (language: ", current_lang, ")\n")
-                            }
-                            cat("File:", local_file, "\n")
-                            cat("Upload complete to: https://sync.academiccloud.de/index.php/s/OUarlqGbhYopkBc\n")
-                        } else {
-                            # Only retry if NOT using background upload (status_code 202 = background)
-                            if (status_code != 202) {
-                              cat("CRITICAL ERROR: Cloud upload failed with status:", status_code, " (language: ", current_lang, ")\n")
-                              if (status_code == 401) {
-                                  cat("Authentication failed. Trying with share token.\n")
-                                  cat("Share token used:", webdav_user, "\n")
-                              }
-                              # TRY AGAIN - don't fail silently (synchronous only)
-                              cat("CRITICAL: Retrying cloud upload...\n")
-                              Sys.sleep(1)
-                              response2 <- httr::PUT(
-                                  url = paste0(WEBDAV_URL, local_file),
-                                  body = httr::upload_file(local_file),
-                                  httr::authenticate(WEBDAV_SHARE_TOKEN, WEBDAV_PASSWORD, type = "basic"),
-                                  httr::add_headers(
-                                      "Content-Type" = "text/csv",
-                                      "X-Requested-With" = "XMLHttpRequest"
-                                  ),
-                                  httr::timeout(120)
-                              )
-                              if (httr::status_code(response2) %in% c(200, 201, 204)) {
-                                  cat("CRITICAL: Data successfully uploaded to cloud on retry (language: ", current_lang, ")\n")
-                              } else {
-                                  cat("CRITICAL ERROR: Cloud upload failed on retry with status:", httr::status_code(response2), " (language: ", current_lang, ")\n")
-                              }
-                            }
+                            
+                            tryCatch({
+                                response <- httr::PUT(
+                                    url = paste0(upload_url, basename(upload_file_path)),
+                                    body = httr::upload_file(upload_file_path),
+                                    httr::authenticate(upload_user, upload_pass, type = "basic"),
+                                    httr::add_headers(
+                                        "Content-Type" = "text/csv",
+                                        "X-Requested-With" = "XMLHttpRequest"
+                                    )
+                                    # NO TIMEOUT - let it take as long as needed in background
+                                )
+                                
+                                if (httr::status_code(response) %in% c(200, 201, 204)) {
+                                    upload_success <- TRUE
+                                    cat("\n")
+                                    cat("================================================================================\n")
+                                    cat("BACKGROUND: Upload SUCCESS!\n")
+                                    cat("================================================================================\n")
+                                    cat("File:", basename(upload_file_path), "\n")
+                                    cat("Location: https://sync.academiccloud.de/index.php/s/OUarlqGbhYopkBc\n\n")
+                                    break
+                                } else {
+                                    cat("BACKGROUND: Upload failed with HTTP", httr::status_code(response), "\n")
+                                }
+                            }, error = function(e) {
+                                cat("BACKGROUND: Upload error:", e$message, "\n")
+                            })
                         }
-                    }, error = function(e) {
-                        # Background upload is always used (via later::later), so errors are in background
-                        # Just log and continue - data is saved locally
-                        cat("NOTE: Upload scheduled in background. Data saved locally at:", local_file, "\n")
-                        # Don't do ANY retry here - background upload handles it
-                        # This prevents the long delays you experienced!
-                    })
+                        
+                        if (!upload_success) {
+                            cat("\n")
+                            cat("================================================================================\n")
+                            cat("BACKGROUND: Upload failed after", max_retries, "attempts\n")
+                            cat("================================================================================\n")
+                            cat("Data saved locally at:", upload_file_path, "\n\n")
+                        }
+                    }, delay = 0.1)  # Start after 0.1 seconds (after results render)
+                    
                 } else {
-                    cat("CRITICAL WARNING: WEBDAV_URL or WEBDAV_PASSWORD is NULL - cloud upload skipped (language: ", current_lang, ")\n")
-                    cat("CRITICAL WARNING: WEBDAV_URL =", WEBDAV_URL, ", WEBDAV_PASSWORD =", ifelse(is.null(WEBDAV_PASSWORD), "NULL", "SET"), "\n")
+                    cat("WARNING: WEBDAV_URL or WEBDAV_PASSWORD not configured - skipping cloud upload\n")
                 }
                 
             }, error = function(e) {

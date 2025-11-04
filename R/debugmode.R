@@ -196,16 +196,93 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
         },
         
         // Fill checkboxes (smart: check consent/agree, random for others)
+        // UNIVERSAL: Detect language toggle and check appropriate consent checkbox
         fillCheckboxes: () => {
           console.log('DEBUG: Processing checkboxes...');
           let count = 0;
           
-          document.querySelectorAll('input[type=\"checkbox\"]').forEach(checkbox => {
+          // Universal language detection - look for common language toggle patterns
+          const languageDivs = [
+            document.getElementById('content_de'),
+            document.getElementById('content_en'),
+            document.querySelector('[id*=\"content_de\"]'),
+            document.querySelector('[id*=\"content_en\"]'),
+            document.querySelector('[id*=\"de_content\"]'),
+            document.querySelector('[id*=\"en_content\"]')
+          ].filter(Boolean);
+          
+          // Determine which language is visible
+          let isFirstLanguageVisible = true; // Default assumption
+          if (languageDivs.length > 0) {
+            const firstDiv = languageDivs[0];
+            isFirstLanguageVisible = firstDiv.style.display !== 'none' && 
+                                   window.getComputedStyle(firstDiv).display !== 'none';
+          }
+          
+          // Find all consent-related checkboxes (universal pattern matching)
+          const allCheckboxes = Array.from(document.querySelectorAll('input[type=\"checkbox\"]'));
+          const consentCheckboxes = allCheckboxes.filter(cb => {
+            const id = (cb.id || '').toLowerCase();
+            const name = (cb.name || '').toLowerCase();
+            const label = utils.getInputLabel(cb).toLowerCase();
+            
+            // Universal consent detection patterns
+            return /consent|agree|akzept|zustimm|confirm|bestät|einverstanden|zustimmung/i.test(id + ' ' + name + ' ' + label) ||
+                   id.includes('consent') || id.includes('agree') ||
+                   name.includes('consent') || name.includes('agree');
+          });
+          
+          // Check visible consent checkbox based on language
+          if (consentCheckboxes.length > 0) {
+            // Find checkboxes that are visible and match current language
+            const visibleConsentCheckboxes = consentCheckboxes.filter(cb => {
+              if (cb.disabled || cb.checked) return false;
+              
+              // Check if checkbox is in visible language section
+              const parent = cb.closest('[id*=\"content_de\"], [id*=\"content_en\"], [id*=\"de\"], [id*=\"en\"]');
+              if (parent) {
+                const isVisible = parent.style.display !== 'none' && 
+                                window.getComputedStyle(parent).display !== 'none';
+                return isVisible;
+              }
+              
+              // If no language-specific parent, check if it's visible
+              return utils.isVisible(cb);
+            });
+            
+            // Check the first visible consent checkbox
+            if (visibleConsentCheckboxes.length > 0) {
+              const consentCheck = visibleConsentCheckboxes[0];
+              consentCheck.checked = true;
+              utils.triggerEvents(consentCheck);
+              utils.triggerShinyUpdate(consentCheck.id || consentCheck.name, true);
+              
+              // Sync any related consent checkboxes (same consent, different language)
+              consentCheckboxes.forEach(cb => {
+                if (cb !== consentCheck && !cb.checked) {
+                  cb.checked = true;
+                }
+              });
+              
+              console.log('DEBUG: Checked consent checkbox:', consentCheck.id || consentCheck.name);
+              count++;
+            }
+          }
+          
+          // Process all other checkboxes
+          allCheckboxes.forEach(checkbox => {
+            // Skip if already processed (consent checkboxes)
+            if (consentCheckboxes.includes(checkbox)) {
+              return;
+            }
+            
             if (checkbox.disabled || !utils.isVisible(checkbox)) return;
             if (checkbox.checked) return; // Already checked
             
             const label = utils.getInputLabel(checkbox).toLowerCase();
-            const isConsent = /agree|consent|akzept|zustimm|confirm|bestät/i.test(label);
+            const isConsent = /agree|consent|akzept|zustimm|confirm|bestät|einverstanden/i.test(label) ||
+                              checkbox.id.toLowerCase().includes('consent') ||
+                              checkbox.id.toLowerCase().includes('agree');
             const shouldCheck = isConsent || Math.random() > 0.5;
             
             if (shouldCheck) {
@@ -296,11 +373,61 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
           console.log('DEBUG: Filled', count, 'radio groups');
           
           // CRITICAL: After ALL radio buttons are selected, check for conditional fields
-          // This works for ANY language - uses multiple detection methods
-          setTimeout(() => {
-            console.log('DEBUG: Post-radio conditional field check (language-agnostic)...');
+          // UNIVERSAL: Works for ANY language including German - uses multiple detection methods
+          // Check multiple times with increasing delays to catch fields that appear later
+          const checkConditionalFields = (attempt = 1, maxAttempts = 5) => {
+            console.log('DEBUG: Post-radio conditional field check, attempt', attempt, '(language-agnostic)...');
+            let filledCount = 0;
             
-            // Method 1: Check all demo_ prefixed text inputs
+            // Method 1: Check ALL visible empty text inputs (most aggressive)
+            document.querySelectorAll('input[type=\"text\"], textarea').forEach(input => {
+              if (input.disabled || input.readOnly || !utils.isVisible(input)) return;
+              if (input.value && input.value.trim() !== '') return; // Already filled
+              
+              // Skip selectize and other special inputs
+              if (input.classList.contains('selectize-control') || 
+                  input.id.endsWith('-selectized')) {
+                return;
+              }
+              
+              const inputId = (input.id || input.name || '').toLowerCase();
+              const label = utils.getInputLabel(input).toLowerCase();
+              
+              // Universal patterns for conditional fields (German + English)
+              const conditionalPatterns = [
+                'zusatz', 'other', 'specify', 'anders', 'sonstig', 'sonstige',
+                'detail', 'please', 'bitte', 'weitere', 'weitere angaben',
+                'andere', 'ernährung', 'ernährungsform', 'specify', 'other',
+                'please specify', 'bitte angeben', 'weitere informationen'
+              ];
+              
+              const isConditional = conditionalPatterns.some(pattern => 
+                inputId.includes(pattern) || label.includes(pattern)
+              );
+              
+              // Also check if it's near a checked radio button (likely conditional)
+              let isNearRadio = false;
+              const allCheckedRadios = document.querySelectorAll('input[type=\"radio\"]:checked');
+              for (const radio of allCheckedRadios) {
+                const rect1 = radio.getBoundingClientRect();
+                const rect2 = input.getBoundingClientRect();
+                const distance = Math.abs(rect2.top - rect1.bottom);
+                if (distance < 300) { // Within 300px - likely conditional
+                  isNearRadio = true;
+                  break;
+                }
+              }
+              
+              if (isConditional || isNearRadio) {
+                const value = `Test ${utils.randomNumber(100, 999)}`;
+                utils.triggerEvents(input, value);
+                utils.triggerShinyUpdate(input.id || input.name, value);
+                console.log('DEBUG: Filled conditional field:', input.id || input.name, 'label:', label);
+                filledCount++;
+              }
+            });
+            
+            // Method 2: Check all demo_ prefixed fields (for demographics)
             document.querySelectorAll('[id^=\"demo_\"]').forEach(input => {
               if (input.tagName === 'INPUT' && input.type === 'text' && 
                   utils.isVisible(input) && (!input.value || input.value.trim() === '')) {
@@ -308,45 +435,48 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
                 utils.triggerEvents(input, value);
                 utils.triggerShinyUpdate(input.id, value);
                 console.log('DEBUG: Filled conditional (demo_ pattern)', input.id);
+                filledCount++;
               }
             });
             
-            // Method 2: Check by ID patterns (language-agnostic)
-            document.querySelectorAll('input[type=\"text\"]').forEach(input => {
-              if (utils.isVisible(input) && (!input.value || input.value.trim() === '')) {
-                const inputId = (input.id || input.name || '').toLowerCase();
-                // Universal patterns that work in any language
-                const conditionalPatterns = ['zusatz', 'other', 'specify', 'anders', 'sonstig', 
-                                           'specify', 'detail', 'please', 'bitte', 'weitere'];
-                if (conditionalPatterns.some(pattern => inputId.includes(pattern))) {
+            // Method 3: Check for text inputs that appear after radio selection (container-based)
+            document.querySelectorAll('input[type=\"radio\"]:checked').forEach(radio => {
+              // Check parent container and nearby containers
+              const container = radio.closest('div, form, fieldset, .form-group, .shiny-input-container') || document.body;
+              const nearbyContainers = [
+                container,
+                container.nextElementSibling,
+                container.parentElement
+              ].filter(Boolean);
+              
+              nearbyContainers.forEach(cont => {
+                if (!cont) return;
+                cont.querySelectorAll('input[type=\"text\"], textarea').forEach(input => {
+                  if (input.disabled || input.readOnly || !utils.isVisible(input)) return;
+                  if (input.value && input.value.trim() !== '') return;
+                  if (input.classList.contains('selectize-control')) return;
+                  
                   const value = `Test ${utils.randomNumber(100, 999)}`;
                   utils.triggerEvents(input, value);
                   utils.triggerShinyUpdate(input.id || input.name, value);
-                  console.log('DEBUG: Filled conditional (pattern match)', input.id || input.name);
-                }
-              }
-            });
-            
-            // Method 3: Check for text inputs that appear after radio selection (heuristic)
-            document.querySelectorAll('input[type=\"radio\"]:checked').forEach(radio => {
-              const container = radio.closest('div, form, fieldset, .form-group') || document.body;
-              container.querySelectorAll('input[type=\"text\"]').forEach(input => {
-                if (utils.isVisible(input) && (!input.value || input.value.trim() === '')) {
-                  // Check if it's near the checked radio (likely conditional)
-                  const rect1 = radio.getBoundingClientRect();
-                  const rect2 = input.getBoundingClientRect();
-                  const distance = Math.abs(rect2.top - rect1.bottom);
-                  
-                  if (distance < 200) { // Within 200px - likely conditional
-                    const value = `Test ${utils.randomNumber(100, 999)}`;
-                    utils.triggerEvents(input, value);
-                    utils.triggerShinyUpdate(input.id || input.name, value);
-                    console.log('DEBUG: Filled conditional (proximity)', input.id || input.name);
-                  }
-                }
+                  console.log('DEBUG: Filled conditional (container proximity)', input.id || input.name);
+                  filledCount++;
+                });
               });
             });
-          }, 600); // Wait 600ms for conditional fields to appear
+            
+            console.log('DEBUG: Filled', filledCount, 'conditional fields in attempt', attempt);
+            
+            // Continue checking if we haven't reached max attempts
+            if (attempt < maxAttempts) {
+              setTimeout(() => checkConditionalFields(attempt + 1, maxAttempts), 400);
+            }
+          };
+          
+          // Start checking immediately, then continue with delays
+          setTimeout(() => checkConditionalFields(1, 5), 300);
+          setTimeout(() => checkConditionalFields(2, 5), 700);
+          setTimeout(() => checkConditionalFields(3, 5), 1200);
           
           return count;
         },
@@ -428,14 +558,24 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
         const buttons = Array.from(document.querySelectorAll('button'));
         console.log('DEBUG: Searching', buttons.length, 'buttons for next button');
         
-        // Priority 1: Exact text matches
-        const nextKeywords = ['next', 'weiter', 'submit', 'senden', 'continue', 'fortfahren', 'start', 'beginnen'];
+        // Priority 1: Exact text matches (including German)
+        const nextKeywords = ['next', 'weiter', 'submit', 'senden', 'continue', 'fortfahren', 
+                             'start', 'beginnen', 'weiter zum', 'weiter zur', 'fortsetzen',
+                             'bestätigen', 'confirm', 'proceed', 'los geht', 'starten'];
         for (const btn of buttons) {
           if (!utils.isVisible(btn) || btn.disabled) continue;
           
           const text = btn.textContent.toLowerCase().trim();
-          if (nextKeywords.some(keyword => text === keyword || text.includes(keyword))) {
-            console.log('DEBUG: Found next button by text:', text);
+          const id = (btn.id || '').toLowerCase();
+          const className = (btn.className || '').toLowerCase();
+          
+          // Check text, id, and class for keywords
+          if (nextKeywords.some(keyword => 
+              text === keyword || 
+              text.includes(keyword) || 
+              id.includes(keyword) ||
+              className.includes(keyword))) {
+            console.log('DEBUG: Found next button by text/id/class:', text, id, className);
             return btn;
           }
         }
@@ -497,11 +637,11 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
                content.includes('fertig') ||
                content.includes('beendet');
         
-        // Check for specific report page indicators
-        const hasReportIndicators = content.includes('hilfo') || // Your study name
-               content.includes('hildesheimer') ||
-               (content.includes('study') && content.includes('complete')) ||
-               (content.includes('studie') && content.includes('abgeschlossen'));
+        // Check for universal report page indicators (any study)
+        const hasReportIndicators = (content.includes('study') && content.includes('complete')) ||
+               (content.includes('studie') && content.includes('abgeschlossen')) ||
+               (content.includes('assessment') && (content.includes('complete') || content.includes('finished'))) ||
+               (content.includes('befragung') && (content.includes('abgeschlossen') || content.includes('beendet')));
         
         const isReport = hasDownloadButtons || hasResultsContent || hasReportIndicators;
         
@@ -543,7 +683,7 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
           console.log('DEBUG: Waiting ' + bindingDelay + 'ms for Shiny input binding...');
           
           setTimeout(() => {
-            fillCurrentPage(() => {
+          fillCurrentPage(() => {
             // Wait for conditional fields to appear and be filled (LANGUAGE-AGNOSTIC)
             setTimeout(() => {
               // Multiple passes to catch conditional fields that appear at different times
@@ -555,53 +695,88 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
               const checkAndFillConditional = () => {
                 attempts++;
                 console.log('DEBUG: Checking for conditional fields, attempt', attempts);
+                let filledCount = 0;
                 
-                // Method 1: Check all demo_ prefixed fields
+                // Method 1: Check ALL visible empty text inputs (most aggressive - universal)
+                document.querySelectorAll('input[type=\"text\"], textarea').forEach(input => {
+                  if (input.disabled || input.readOnly || !utils.isVisible(input)) return;
+                  if (input.value && input.value.trim() !== '') return;
+                  if (input.classList.contains('selectize-control') || 
+                      input.id.endsWith('-selectized')) return;
+                  
+                  const inputId = (input.id || input.name || '').toLowerCase();
+                  const label = utils.getInputLabel(input).toLowerCase();
+                  
+                  // Universal patterns for conditional fields (German + English)
+                  const conditionalPatterns = [
+                    'zusatz', 'other', 'specify', 'anders', 'sonstig', 'sonstige',
+                    'detail', 'please', 'bitte', 'weitere', 'weitere angaben',
+                    'andere', 'ernährung', 'ernährungsform', 'specify', 'other',
+                    'please specify', 'bitte angeben', 'weitere informationen'
+                  ];
+                  
+                  const isConditional = conditionalPatterns.some(pattern => 
+                    inputId.includes(pattern) || label.includes(pattern)
+                  );
+                  
+                  // Also check if it's near a checked radio button (likely conditional)
+                  let isNearRadio = false;
+                  const allCheckedRadios = document.querySelectorAll('input[type=\"radio\"]:checked');
+                  for (const radio of allCheckedRadios) {
+                    const rect1 = radio.getBoundingClientRect();
+                    const rect2 = input.getBoundingClientRect();
+                    const distance = Math.abs(rect2.top - rect1.bottom);
+                    if (distance < 300) {
+                      isNearRadio = true;
+                      break;
+                    }
+                  }
+                  
+                  if (isConditional || isNearRadio) {
+                    const value = `Test ${utils.randomNumber(100, 999)}`;
+                    utils.triggerEvents(input, value);
+                    utils.triggerShinyUpdate(input.id || input.name, value);
+                    console.log('DEBUG: Filled conditional field:', input.id || input.name);
+                    filledCount++;
+                  }
+                });
+                
+                // Method 2: Check all demo_ prefixed fields
                 document.querySelectorAll('[id^=\"demo_\"]').forEach(input => {
                   if (input.tagName === 'INPUT' && input.type === 'text' && 
                       utils.isVisible(input) && (!input.value || input.value.trim() === '')) {
                     const value = `Test ${utils.randomNumber(100, 999)}`;
                     utils.triggerEvents(input, value);
                     utils.triggerShinyUpdate(input.id, value);
-                    console.log('DEBUG: Filled conditional field (demo_)', input.id);
+                    console.log('DEBUG: Filled conditional (demo_)', input.id);
+                    filledCount++;
                   }
                 });
                 
-                // Method 2: Check all text inputs (language-agnostic)
-                document.querySelectorAll('input[type=\"text\"]').forEach(input => {
-                  if (utils.isVisible(input) && (!input.value || input.value.trim() === '')) {
-                    const inputId = input.id || input.name || '';
-                    // Detect conditional fields by common patterns (works in any language)
-                    const isConditional = inputId.toLowerCase().includes('zusatz') ||
-                                         inputId.toLowerCase().includes('other') ||
-                                         inputId.toLowerCase().includes('specify') ||
-                                         inputId.toLowerCase().includes('anders') ||
-                                         inputId.includes('_Zusatz') ||
-                                         inputId.includes('_other') ||
-                                         inputId.includes('_Other');
-                    
-                    if (isConditional) {
-                      const value = `Test ${utils.randomNumber(100, 999)}`;
-                      utils.triggerEvents(input, value);
-                      utils.triggerShinyUpdate(input.id || input.name, value);
-                      console.log('DEBUG: Filled conditional field (pattern match)', inputId);
-                    }
-                  }
-                });
-                
-                // Method 3: Check for visible empty text inputs near radio buttons (heuristic)
+                // Method 3: Check container-based proximity (for any radio selection)
                 document.querySelectorAll('input[type=\"radio\"]:checked').forEach(radio => {
-                  // Find nearby text inputs that might be conditional
-                  const parent = radio.closest('div, form, fieldset') || document.body;
-                  parent.querySelectorAll('input[type=\"text\"]').forEach(input => {
-                    if (utils.isVisible(input) && (!input.value || input.value.trim() === '')) {
+                  const container = radio.closest('div, form, fieldset, .form-group, .shiny-input-container') || document.body;
+                  const nearbyContainers = [
+                    container, container.nextElementSibling, container.parentElement
+                  ].filter(Boolean);
+                  
+                  nearbyContainers.forEach(cont => {
+                    if (!cont) return;
+                    cont.querySelectorAll('input[type=\"text\"], textarea').forEach(input => {
+                      if (input.disabled || input.readOnly || !utils.isVisible(input)) return;
+                      if (input.value && input.value.trim() !== '') return;
+                      if (input.classList.contains('selectize-control')) return;
+                      
                       const value = `Test ${utils.randomNumber(100, 999)}`;
                       utils.triggerEvents(input, value);
                       utils.triggerShinyUpdate(input.id || input.name, value);
-                      console.log('DEBUG: Filled conditional field (proximity)', input.id || input.name);
-                    }
+                      console.log('DEBUG: Filled conditional (container)', input.id || input.name);
+                      filledCount++;
+                    });
                   });
                 });
+                
+                console.log('DEBUG: Filled', filledCount, 'conditional fields in attempt', attempts);
                 
                 // If we haven't found the next button yet and haven't exceeded attempts, try again
                 if (attempts < maxAttempts) {
@@ -638,30 +813,49 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
           case 'a':
             e.preventDefault();
             e.stopPropagation();
+            e.stopImmediatePropagation();
             console.log('DEBUG: Ctrl+A - Fill current page only');
             fillCurrentPage();
-            break;
+            return false;
           case 'q':
             e.preventDefault();
             e.stopPropagation();
+            e.stopImmediatePropagation();
             console.log('DEBUG: Ctrl+Q - Auto-fill (normal speed)');
             autoProgressAll(800, 600);
-            break;
+            return false;
           case 'y':
             e.preventDefault();
             e.stopPropagation();
+            e.stopImmediatePropagation();
             console.log('DEBUG: Ctrl+Y - Auto-fill (fast speed)');
             autoProgressAll(100, 100);
-            break;
+            return false;
         }
       };
       
       // Attach to both document and window, using capture phase for reliability
-      document.addEventListener('keydown', keyHandler, true);
-      window.addEventListener('keydown', keyHandler, true);
+      // Also attach after DOM ready to ensure it works on page 1
+      const attachHandlers = () => {
+        document.addEventListener('keydown', keyHandler, true);
+        window.addEventListener('keydown', keyHandler, true);
+        console.log('DEBUG: Hotkey listeners registered (capture phase)');
+      };
+      
+      // Attach immediately
+      attachHandlers();
+      
+      // Also attach when DOM is ready (for page 1)
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attachHandlers);
+      }
+      
+      // Also attach after a short delay to catch any late-loading content
+      setTimeout(attachHandlers, 100);
+      setTimeout(attachHandlers, 500);
 
-      console.log('DEBUG: Hotkey listeners registered (capture phase)');
       console.log('DEBUG: Ready! Press Ctrl+A, Ctrl+Q, or Ctrl+Y');
+      console.log('DEBUG: Handlers attached to document and window (capture phase)');
     })();
   ")))
 }
