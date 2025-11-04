@@ -382,6 +382,15 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
       function fillCurrentPage(callback, fastMode) {
         console.log('DEBUG: ========== FILLING CURRENT PAGE ==========');
         
+        // Safety check: Don't fill fields on report page
+        if (isReportPage()) {
+          console.log('DEBUG: Report page detected, skipping field filling');
+          if (callback && typeof callback === 'function') {
+            callback();
+          }
+          return;
+        }
+        
         const stats = {
           selectize: 0,
           demographics: 0,
@@ -443,8 +452,9 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
           }
         }
         
-        // Priority 3: Visible primary/action button (excluding back/cancel)
-        const excludeKeywords = ['back', 'zurück', 'cancel', 'abbrechen', 'download', 'pdf', 'save', 'print'];
+        // Priority 3: Visible primary/action button (excluding back/cancel/download)
+        const excludeKeywords = ['back', 'zurück', 'cancel', 'abbrechen', 'download', 'pdf', 'save', 'print', 
+                                'csv', 'export', 'herunterladen', 'speichern', 'exportieren', 'json', 'rds'];
         for (const btn of buttons) {
           if (!utils.isVisible(btn) || btn.disabled) continue;
           
@@ -461,10 +471,46 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
 
       function isReportPage() {
         const content = (document.getElementById('page_content') || document.body).textContent.toLowerCase();
-        return (content.includes('result') && (content.includes('score') || content.includes('theta'))) ||
+        
+        // Check for download buttons or CSV export functionality (indicates report page)
+        const hasDownloadButtons = document.querySelectorAll('button, a, input').length > 0 && 
+          Array.from(document.querySelectorAll('button, a, input')).some(el => {
+            const text = el.textContent?.toLowerCase() || '';
+            const id = el.id?.toLowerCase() || '';
+            const value = el.value?.toLowerCase() || '';
+            return text.includes('download') || text.includes('csv') || text.includes('export') ||
+                   text.includes('herunterladen') || text.includes('speichern') || text.includes('save') ||
+                   id.includes('download') || id.includes('csv') || id.includes('export') ||
+                   value.includes('download') || value.includes('csv');
+          });
+        
+        // Check for results/report content indicators
+        const hasResultsContent = (content.includes('result') && (content.includes('score') || content.includes('theta'))) ||
                content.includes('abgeschlossen') ||
                (content.includes('thank') && content.includes('complete')) ||
-               content.includes('danke für ihre teilnahme');
+               content.includes('danke für ihre teilnahme') ||
+               content.includes('vielen dank') ||
+               content.includes('results') ||
+               content.includes('ergebnis') ||
+               content.includes('auswertung') ||
+               content.includes('completed') ||
+               content.includes('fertig') ||
+               content.includes('beendet');
+        
+        // Check for specific report page indicators
+        const hasReportIndicators = content.includes('hilfo') || // Your study name
+               content.includes('hildesheimer') ||
+               (content.includes('study') && content.includes('complete')) ||
+               (content.includes('studie') && content.includes('abgeschlossen'));
+        
+        const isReport = hasDownloadButtons || hasResultsContent || hasReportIndicators;
+        
+        if (isReport) {
+          console.log('DEBUG: Report page detected - Download buttons:', hasDownloadButtons, 
+                      'Results content:', hasResultsContent, 'Report indicators:', hasReportIndicators);
+        }
+        
+        return isReport;
       }
 
       // Auto-progression function
