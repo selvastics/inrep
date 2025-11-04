@@ -138,7 +138,7 @@
 #' # Create study configuration
 #' config <- create_study_config(
 #'   model = "GRM", 
-#'   estimation_method = "EAP",
+#'   estimation_method = "TAM",
 #'   theta_prior = c(0, 1)
 #' )
 #' 
@@ -365,7 +365,7 @@ estimate_ability <- function(rv, item_bank, config) {
     model <- config
     config <- list(
       model = model,
-      estimation_method = "EAP",
+      estimation_method = "TAM",
       theta_prior = c(0, 1),
       theta_grid = seq(-4, 4, length.out = 100)
     )

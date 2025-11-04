@@ -513,7 +513,6 @@
 
 #' @importFrom jsonlite write_json
 #' @importFrom ggplot2 ggplot aes geom_line geom_ribbon theme_minimal labs theme element_text element_line element_blank
-#' @importFrom pdftools pdf_render_page
 #' @importFrom knitr kable
 #' @importFrom kableExtra kable_styling
 #' @importFrom tinytex latexmk
