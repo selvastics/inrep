@@ -832,7 +832,8 @@ custom_page_flow <- list(
         item_indices = c(6, 8, 9, 21, 23),  # Non-adaptive PA items (all on one page)
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
-        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
+        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety"),
+        required = FALSE
     ),
     
     # Pages 7-11: Programming Anxiety Adaptive (5 items, one per page)
@@ -842,52 +843,65 @@ custom_page_flow <- list(
         type = "items", 
         title = "",
         title_en = "",
-        instructions = "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.",
-        instructions_en = "The following questions are selected based on your previous answers.",
+        instructions = "Die folgenden Fragen werden basierend auf Ihren Antworten auf Seite 6 ausgewählt.",
+        instructions_en = "The following questions are selected based on your answers on page 6.",
         item_indices = NULL,  # NULL triggers adaptive selection
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
-        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
+        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety"),
+        required = TRUE
     ),
     list(
         id = "page8_pa_adapt2",
         type = "items",
         title = "",
         title_en = "",
+        instructions = "Die folgenden Fragen werden basierend auf Ihren Antworten auf Seite 6 und 7 ausgewählt.",
+        instructions_en = "The following questions are selected based on your answers on page 6 and 7.",
         item_indices = NULL,  # NULL triggers adaptive selection
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
-        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
+        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety"),
+        required = TRUE
     ),
     list(
         id = "page9_pa_adapt3",
         type = "items",
         title = "",
         title_en = "",
+        instructions = "Die folgenden Fragen werden basierend auf Ihren Antworten auf Seite 6, 7 und 8 ausgewählt.",
+        instructions_en = "The following questions are selected based on your answers on page 6, 7 and 8.",
         item_indices = NULL,  # NULL triggers adaptive selection
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
-        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
+        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety"),
+        required = TRUE
     ),
     list(
         id = "page10_pa_adapt4",
         type = "items",
         title = "",
         title_en = "",
+        instructions = "Die folgenden Fragen werden basierend auf Ihren Antworten auf Seite 6, 7, 8 und 9 ausgewählt.",
+        instructions_en = "The following questions are selected based on your answers on page 6, 7, 8 and 9.",
         item_indices = NULL,  # NULL triggers adaptive selection
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
-        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
+        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety"),
+        required = TRUE
     ),
     list(
         id = "page11_pa_adapt5",
         type = "items",
         title = "",
         title_en = "",
+        instructions = "Die folgenden Fragen werden basierend auf Ihren Antworten auf Seite 6, 7, 8, 9 und 10 ausgewählt.",
+        instructions_en = "The following questions are selected based on your answers on page 6, 7, 8, 9 and 10.",
         item_indices = NULL,  # NULL triggers adaptive selection
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
-        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
+        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety"),
+        required = TRUE
     ),
     
     # Pages 12-15: BFI items (grouped by trait) - NOT REQUIRED
@@ -1572,40 +1586,50 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         } else {
             # Create radar plot with ggradar
             if (requireNamespace("ggradar", quietly = TRUE)) {
-                # Replace NA values with 0.6 (middle value) for plotting only
+                # CRITICAL: Remove columns with NA values - ggradar cannot handle NA
+                # Keep only dimensions with actual data
                 radar_data_plot <- radar_data
-                for (col in names(radar_data_plot)[-1]) {  # Skip 'group' column
-                    if (is.na(radar_data_plot[[col]])) {
-                        radar_data_plot[[col]] <- 0.6  # Middle value for missing data
-                    }
-                }
                 
-            radar_plot <- ggradar::ggradar(
-                radar_data_plot,
-                values.radar = c("1", "3", "5"),  # Min, mid, max labels
-                grid.min = 0,
-                grid.mid = 0.6,
-                grid.max = 1,
-                grid.label.size = 5,
-                axis.label.size = 5,
-                group.point.size = 4,
-                group.line.width = 1.5,
-                background.circle.colour = "white",
-                gridline.min.colour = "gray90",
-                gridline.mid.colour = "gray80",
-                gridline.max.colour = "gray70",
-                group.colours = c("#e8041c"),
-                plot.extent.x.sf = 1.3,
-                plot.extent.y.sf = 1.2,
-                legend.position = "none"
-            ) +
-                ggplot2::theme(
-                    plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5, 
-                                                       color = "#e8041c", margin = ggplot2::margin(b = 20)),
-                    plot.background = ggplot2::element_rect(fill = "white", color = NA),
-                    plot.margin = ggplot2::margin(20, 20, 20, 20)
-                ) +
-                ggplot2::labs(title = radar_title)
+                # Identify columns with non-NA values (skip 'group' column)
+                na_cols <- sapply(radar_data_plot[-1], function(x) is.na(x) || is.nan(x))
+                cols_to_keep <- c(TRUE, !na_cols)  # Keep 'group' column + non-NA columns
+                
+                radar_data_plot <- radar_data_plot[, cols_to_keep, drop = FALSE]
+                
+                cat("DEBUG: Radar plot columns after NA removal:", paste(names(radar_data_plot), collapse=", "), "\n")
+                
+                # Only plot if we have at least 3 dimensions remaining
+                if (ncol(radar_data_plot) < 4) {  # 'group' + at least 3 dimensions
+                    cat("DEBUG: Not enough dimensions for radar plot after NA removal\n")
+                    radar_plot <- NULL
+                } else {
+                    radar_plot <- ggradar::ggradar(
+                        radar_data_plot,
+                        values.radar = c("1", "3", "5"),  # Min, mid, max labels
+                        grid.min = 0,
+                        grid.mid = 0.6,
+                        grid.max = 1,
+                        grid.label.size = 5,
+                        axis.label.size = 5,
+                        group.point.size = 4,
+                        group.line.width = 1.5,
+                        background.circle.colour = "white",
+                        gridline.min.colour = "gray90",
+                        gridline.mid.colour = "gray80",
+                        gridline.max.colour = "gray70",
+                        group.colours = c("#e8041c"),
+                        plot.extent.x.sf = 1.3,
+                        plot.extent.y.sf = 1.2,
+                        legend.position = "none"
+                        ) +
+                        ggplot2::theme(
+                            plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5, 
+                                                               color = "#e8041c", margin = ggplot2::margin(b = 20)),
+                            plot.background = ggplot2::element_rect(fill = "white", color = NA),
+                            plot.margin = ggplot2::margin(20, 20, 20, 20)
+                        ) +
+                        ggplot2::labs(title = radar_title)
+                }
             } else {
                 # Fallback to simple ggplot2 approach if ggradar not available
             # Use namespace to avoid loading issues
@@ -2312,15 +2336,15 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                     }
                 })
                 
-                # Add calculated scores with validation
-                complete_data$BFI_Extraversion <- if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) 3 else scores$Extraversion
-                complete_data$BFI_Vertraeglichkeit <- if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) 3 else scores$Verträglichkeit
-                complete_data$BFI_Gewissenhaftigkeit <- if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) 3 else scores$Gewissenhaftigkeit
-                complete_data$BFI_Neurotizismus <- if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) 3 else scores$Neurotizismus
-                complete_data$BFI_Offenheit <- if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit
-                complete_data$PSQ_Stress <- if (is.na(scores$Stress) || is.nan(scores$Stress)) 3 else scores$Stress
-                complete_data$MWS_Studierfaehigkeiten <- if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) 3 else scores$Studierfähigkeiten
-                complete_data$Statistik <- if (is.na(scores$Statistik) || is.nan(scores$Statistik)) 3 else scores$Statistik
+                # Add calculated scores - keep NA if no valid responses (NO FALLBACKS)
+                complete_data$BFI_Extraversion <- if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) NA else scores$Extraversion
+                complete_data$BFI_Vertraeglichkeit <- if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) NA else scores$Verträglichkeit
+                complete_data$BFI_Gewissenhaftigkeit <- if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) NA else scores$Gewissenhaftigkeit
+                complete_data$BFI_Neurotizismus <- if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) NA else scores$Neurotizismus
+                complete_data$BFI_Offenheit <- if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) NA else scores$Offenheit
+                complete_data$PSQ_Stress <- if (is.na(scores$Stress) || is.nan(scores$Stress)) NA else scores$Stress
+                complete_data$MWS_Studierfaehigkeiten <- if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) NA else scores$Studierfähigkeiten
+                complete_data$Statistik <- if (is.na(scores$Statistik) || is.nan(scores$Statistik)) NA else scores$Statistik
                 
                 # CRITICAL: Save locally with proper connection handling
                 # Store the file path and complete_data in session for download button to use

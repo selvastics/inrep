@@ -2932,7 +2932,7 @@ validate_page_progression <- function(current_page, input, config) {
     }
   } else if (page$type == "items") {
     # Check all items have responses (only if page$required is not explicitly FALSE)
-    if (!is.null(page$item_indices) && !isFALSE(page$required)) {
+    if (!isFALSE(page$required)) {
       # Try to get item_bank from config or parent environment
       item_bank <- config$item_bank
       if (is.null(item_bank) && exists("item_bank", envir = parent.frame())) {
@@ -2940,21 +2940,45 @@ validate_page_progression <- function(current_page, input, config) {
       }
       
       if (!is.null(item_bank)) {
-        for (i in page$item_indices) {
-          # MUST match UI rendering logic at line 1747: item_id <- item$id %||% paste0("item_", actual_idx)
-          item <- item_bank[i, ]
-          item_id <- item$id %||% paste0("item_", i)
-          
-          if (is.null(input[[item_id]]) || input[[item_id]] == "") {
-            # Use current_lang from top of function
-            error_msg <- if (current_lang == "en") {
-              "Please answer all questions on this page."
-            } else {
-              "Bitte beantworten Sie alle Fragen auf dieser Seite."
+        # Determine which items to check
+        items_to_check <- NULL
+        
+        if (!is.null(page$item_indices)) {
+          # Fixed items page
+          items_to_check <- page$item_indices
+        } else {
+          # Adaptive page (item_indices = NULL) - get from cached selection
+          # This requires access to session$userData$page_selected_items
+          if (exists("session", envir = parent.frame())) {
+            session <- get("session", envir = parent.frame())
+            page_id <- page$id %||% paste0("page_", current_page)
+            
+            if (!is.null(session$userData$page_selected_items) && 
+                !is.null(session$userData$page_selected_items[[page_id]])) {
+              items_to_check <- session$userData$page_selected_items[[page_id]]
+              cat("VALIDATION: Adaptive page", page_id, "- checking item", items_to_check, "\n")
             }
-            errors <- c(errors, error_msg)
-            missing_fields <- c(missing_fields, item_id)
-            # Don't break, collect all missing fields for highlighting
+          }
+        }
+        
+        # Validate selected items have responses
+        if (!is.null(items_to_check) && length(items_to_check) > 0) {
+          for (i in items_to_check) {
+            # MUST match UI rendering logic at line 1747: item_id <- item$id %||% paste0("item_", actual_idx)
+            item <- item_bank[i, ]
+            item_id <- item$id %||% paste0("item_", i)
+            
+            if (is.null(input[[item_id]]) || input[[item_id]] == "") {
+              # Use current_lang from top of function
+              error_msg <- if (current_lang == "en") {
+                "Please answer all questions on this page."
+              } else {
+                "Bitte beantworten Sie alle Fragen auf dieser Seite."
+              }
+              errors <- c(errors, error_msg)
+              missing_fields <- c(missing_fields, item_id)
+              # Don't break, collect all missing fields for highlighting
+            }
           }
         }
       }

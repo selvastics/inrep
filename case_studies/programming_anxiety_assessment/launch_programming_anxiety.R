@@ -282,7 +282,8 @@ programming_anxiety_items <- data.frame(
     # Response categories for 5-point Likert scale (1-5)
     ResponseCategories = rep("1,2,3,4,5", 51),
     
-    stringsAsFactors = FALSE
+    stringsAsFactors = FALSE,
+    row.names = 1:51  # Explicit row names for proper indexing
 )
 
 cat("Programming Anxiety item bank loaded:", nrow(programming_anxiety_items), "items\n")
@@ -295,10 +296,13 @@ cat("  Part 2 (Attitudinal): 28 items (all adaptive)\n")
 
 demographic_configs <- list(
     Age = list(
-        field_name = "Age",
-        question_text = "What is your age?",
-        input_type = "radio",
+        question = "Wie alt sind Sie?",
+        question_en = "What is your age?",
         options = c(
+            "18 oder jünger" = 1, "19-20" = 2, "21-22" = 3, "23-25" = 4,
+            "26-30" = 5, "31-40" = 6, "41 oder älter" = 7
+        ),
+        options_en = c(
             "18 or younger" = 1, "19-20" = 2, "21-22" = 3, "23-25" = 4,
             "26-30" = 5, "31-40" = 6, "41 or older" = 7
         ),
@@ -306,10 +310,13 @@ demographic_configs <- list(
     ),
     
     Gender = list(
-        field_name = "Gender",
-        question_text = "How do you identify your gender?",
-        input_type = "radio",
+        question = "Wie identifizieren Sie Ihr Geschlecht?",
+        question_en = "How do you identify your gender?",
         options = c(
+            "Weiblich" = 1, "Männlich" = 2, "Nicht-binär" = 3, 
+            "Keine Angabe" = 4
+        ),
+        options_en = c(
             "Female" = 1, "Male" = 2, "Non-binary" = 3, 
             "Prefer not to say" = 4
         ),
@@ -317,10 +324,17 @@ demographic_configs <- list(
     ),
     
     Programming_Experience = list(
-        field_name = "Programming_Experience",
-        question_text = "How would you describe your programming experience?",
-        input_type = "radio",
+        question = "Wie würden Sie Ihre Programmiererfahrung beschreiben?",
+        question_en = "How would you describe your programming experience?",
         options = c(
+            "Kompletter Anfänger (keine Erfahrung)" = 1,
+            "Neuling (weniger als 6 Monate)" = 2,
+            "Anfänger (6 Monate - 1 Jahr)" = 3,
+            "Fortgeschritten (1-3 Jahre)" = 4,
+            "Erfahren (3-5 Jahre)" = 5,
+            "Experte (mehr als 5 Jahre)" = 6
+        ),
+        options_en = c(
             "Complete beginner (no experience)" = 1,
             "Novice (less than 6 months)" = 2,
             "Beginner (6 months - 1 year)" = 3,
@@ -332,10 +346,20 @@ demographic_configs <- list(
     ),
     
     Field_of_Study = list(
-        field_name = "Field_of_Study",
-        question_text = "What is your field of study or work?",
-        input_type = "radio",
+        question = "Was ist Ihr Studien- oder Arbeitsfeld?",
+        question_en = "What is your field of study or work?",
         options = c(
+            "Informatik" = 1,
+            "Software-Engineering" = 2,
+            "Data Science/Analytik" = 3,
+            "Ingenieurwesen (anderes)" = 4,
+            "Mathematik/Statistik" = 5,
+            "Naturwissenschaften" = 6,
+            "Wirtschaft/Ökonomie" = 7,
+            "Sozialwissenschaften" = 8,
+            "Anderes" = 9
+        ),
+        options_en = c(
             "Computer Science" = 1,
             "Software Engineering" = 2,
             "Data Science/Analytics" = 3,
@@ -364,30 +388,109 @@ input_types <- list(
 # =============================================================================
 
 custom_page_flow <- list(
-    # Introduction
+    # Introduction with language switcher
     list(
         id = "intro",
         type = "custom",
         title = "Welcome / Willkommen",
-        content = '<div style="max-width: 800px; margin: 0 auto; padding: 40px 20px;">
-            <h1 style="color: #3f51b5; text-align: center;">Programming Anxiety Assessment / Programmierangst-Erhebung</h1>
+        content = '<div style="position: relative; max-width: 800px; margin: 0 auto; padding: 40px 20px;">
+            <!-- Language Switcher -->
+            <div style="position: absolute; top: 10px; right: 10px;">
+                <button onclick="toggleLanguage()" style="padding: 8px 16px; background-color: #3f51b5; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                    <span id="lang_switch_text">Switch to English</span>
+                </button>
+            </div>
             
-            <h2 style="color: #3f51b5;">Dear Participant / Liebe Teilnehmende,</h2>
+            <!-- German Content -->
+            <div id="content_de">
+                <h1 style="color: #3f51b5; text-align: center;">Programmierangst-Erhebung</h1>
+                <h2 style="color: #3f51b5;">Liebe Teilnehmende,</h2>
+                <p>Diese Erhebung misst Angst im Zusammenhang mit Programmieren mithilfe eines validierten Instruments, das von STARS-D adaptiert wurde. Ihre Antworten helfen uns, Programmierangst in Bildungskontexten besser zu verstehen.</p>
+                <p style="background: #e8f5f9; padding: 15px; border-left: 4px solid #3f51b5;">
+                <strong>Ihre Antworten sind vollständig anonym</strong> und werden nur für Forschungszwecke verwendet.</p>
+                <p style="background: #fff3e0; padding: 15px; border-left: 4px solid #ff9800;">
+                <strong>Struktur der Erhebung:</strong><br>
+                <strong>Teil 1:</strong> Situative Angst (10 Items)<br>
+                <strong>Teil 2:</strong> Einstellungs-/Affektive Angst (adaptiv)</p>
+                <p><strong>Die Erhebung dauert etwa 15-20 Minuten.</strong></p>
+            </div>
             
-            <p><strong>English:</strong> This assessment measures anxiety related to programming using a validated instrument adapted from STARS-D. Your responses will help us better understand programming anxiety in educational contexts.</p>
+            <!-- English Content -->
+            <div id="content_en" style="display: none;">
+                <h1 style="color: #3f51b5; text-align: center;">Programming Anxiety Assessment</h1>
+                <h2 style="color: #3f51b5;">Dear Participant,</h2>
+                <p>This assessment measures anxiety related to programming using a validated instrument adapted from STARS-D. Your responses will help us better understand programming anxiety in educational contexts.</p>
+                <p style="background: #e8f5f9; padding: 15px; border-left: 4px solid #3f51b5;">
+                <strong>Your responses are completely anonymous</strong> and will be used for research purposes only.</p>
+                <p style="background: #fff3e0; padding: 15px; border-left: 4px solid #ff9800;">
+                <strong>Assessment Structure:</strong><br>
+                <strong>Part 1:</strong> Situational Anxiety (10 items)<br>
+                <strong>Part 2:</strong> Attitudinal/Affective Anxiety (adaptive)</p>
+                <p><strong>The assessment takes about 15-20 minutes.</strong></p>
+            </div>
             
-            <p><strong>Deutsch:</strong> Diese Erhebung misst Angst im Zusammenhang mit Programmieren mithilfe eines validierten Instruments, das von STARS-D adaptiert wurde. Ihre Antworten helfen uns, Programmierangst in Bildungskontexten besser zu verstehen.</p>
+            <script>
+            function toggleLanguage() {
+                var deContent = document.getElementById("content_de");
+                var enContent = document.getElementById("content_en");
+                var textSpan = document.getElementById("lang_switch_text");
+                
+                if (deContent && enContent) {
+                    if (deContent.style.display === "none") {
+                        // Switch to German
+                        deContent.style.display = "block";
+                        enContent.style.display = "none";
+                        textSpan.textContent = "Switch to English";
+                        // Set language preference
+                        if (typeof Shiny !== "undefined") {
+                            Shiny.setInputValue("language", "de");
+                        }
+                        sessionStorage.setItem("prog_anxiety_language", "de");
+                        sessionStorage.setItem("global_language_preference", "de");
+                        sessionStorage.setItem("current_language", "de");
+                    } else {
+                        // Switch to English
+                        deContent.style.display = "none";
+                        enContent.style.display = "block";
+                        textSpan.textContent = "Wechseln zu Deutsch";
+                        // Set language preference
+                        if (typeof Shiny !== "undefined") {
+                            Shiny.setInputValue("language", "en");
+                        }
+                        sessionStorage.setItem("prog_anxiety_language", "en");
+                        sessionStorage.setItem("global_language_preference", "en");
+                        sessionStorage.setItem("current_language", "en");
+                    }
+                }
+            }
             
-            <p style="background: #e8f5f9; padding: 15px; border-left: 4px solid #3f51b5;">
-            <strong>Your responses are completely anonymous</strong> and will be used for research purposes only.<br>
-            <strong>Ihre Antworten sind vollständig anonym</strong> und werden nur für Forschungszwecke verwendet.</p>
-            
-            <p style="background: #fff3e0; padding: 15px; border-left: 4px solid #ff9800;">
-            <strong>Assessment Structure / Struktur der Erhebung:</strong><br>
-            <strong>Part 1:</strong> Situational Anxiety (10 items) / Situative Angst (10 Items)<br>
-            <strong>Part 2:</strong> Attitudinal/Affective Anxiety (adaptive) / Einstellungs-/Affektive Angst (adaptiv)</p>
-            
-            <p><strong>The assessment takes about 15-20 minutes. / Die Erhebung dauert etwa 15-20 Minuten.</strong></p>
+            // Initialize language on page load
+            document.addEventListener("DOMContentLoaded", function() {
+                var currentLang = sessionStorage.getItem("prog_anxiety_language") || 
+                                 sessionStorage.getItem("global_language_preference") || 
+                                 sessionStorage.getItem("current_language") || "de";
+                
+                sessionStorage.setItem("prog_anxiety_language", currentLang);
+                sessionStorage.setItem("global_language_preference", currentLang);
+                sessionStorage.setItem("current_language", currentLang);
+                
+                // Set initial display based on stored language
+                if (currentLang === "en") {
+                    document.getElementById("content_de").style.display = "none";
+                    document.getElementById("content_en").style.display = "block";
+                    document.getElementById("lang_switch_text").textContent = "Wechseln zu Deutsch";
+                } else {
+                    document.getElementById("content_de").style.display = "block";
+                    document.getElementById("content_en").style.display = "none";
+                    document.getElementById("lang_switch_text").textContent = "Switch to English";
+                }
+                
+                // Notify Shiny
+                if (typeof Shiny !== "undefined") {
+                    Shiny.setInputValue("language", currentLang);
+                }
+            });
+            </script>
         </div>'
     ),
     
@@ -409,8 +512,8 @@ custom_page_flow <- list(
     list(
         id = "page3_part1_fixed",
         type = "items",
-        title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
-        title_en = "Part 1: Situational Programming Anxiety",
+      #  title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
+      #  title_en = "Part 1: Situational Programming Anxiety",
         instructions = "Die folgenden Aussagen beschreiben Situationen, die mit Programmieren zu tun haben. Wählen Sie bitte die Option, die am besten beschreibt, wie viel Angst Sie in der entsprechenden Situation erleben würden. Es gibt keine richtigen oder falschen Antworten.",
         instructions_en = "The following statements describe situations related to programming. Please select the option that best describes how much anxiety you would experience in that situation. There are no right or wrong answers.",
         item_indices = c(6, 8, 9, 21, 23),  # Non-adaptive situational items
@@ -424,8 +527,8 @@ custom_page_flow <- list(
     list(
         id = "page4_part1_adapt1",
         type = "items", 
-        title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
-        title_en = "Part 1: Situational Programming Anxiety",
+      #  title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
+       # title_en = "Part 1: Situational Programming Anxiety",
         instructions = "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.",
         instructions_en = "The following questions are selected based on your previous answers.",
         item_indices = NULL,  # Adaptive selection
@@ -436,8 +539,8 @@ custom_page_flow <- list(
     list(
         id = "page5_part1_adapt2",
         type = "items",
-        title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
-        title_en = "Part 1: Situational Programming Anxiety",
+       # title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
+       # title_en = "Part 1: Situational Programming Anxiety",
         item_indices = NULL,  # Adaptive selection
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
@@ -446,8 +549,8 @@ custom_page_flow <- list(
     list(
         id = "page6_part1_adapt3",
         type = "items",
-        title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
-        title_en = "Part 1: Situational Programming Anxiety",
+      #  title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
+     #  title_en = "Part 1: Situational Programming Anxiety",
         item_indices = NULL,  # Adaptive selection
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
@@ -456,8 +559,8 @@ custom_page_flow <- list(
     list(
         id = "page7_part1_adapt4",
         type = "items",
-        title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
-        title_en = "Part 1: Situational Programming Anxiety",
+       # title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
+       # title_en = "Part 1: Situational Programming Anxiety",
         item_indices = NULL,  # Adaptive selection
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
@@ -466,8 +569,8 @@ custom_page_flow <- list(
     list(
         id = "page8_part1_adapt5",
         type = "items",
-        title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
-        title_en = "Part 1: Situational Programming Anxiety",
+     #   title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
+     #   title_en = "Part 1: Situational Programming Anxiety",
         item_indices = NULL,  # Adaptive selection
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
@@ -484,8 +587,8 @@ custom_page_flow <- list(
     list(
         id = "page9_part2_adapt1",
         type = "items",
-        title = "Teil 2: Einstellungs-/Affektive Programmierangst",
-        title_en = "Part 2: Attitudinal/Affective Programming Anxiety",
+      #  title = "Teil 2: Einstellungs-/Affektive Programmierangst",
+      #  title_en = "Part 2: Attitudinal/Affective Programming Anxiety",
         instructions = "Die folgenden Aussagen beziehen sich darauf, was Sie in Bezug auf Programmieren empfinden. Bitte wählen Sie die Zahl, die am besten auf Sie zutrifft.",
         instructions_en = "The following statements relate to what you feel about programming. Please select the number that best applies to you.",
         item_indices = NULL,
@@ -498,8 +601,8 @@ for (i in 2:28) {
     custom_page_flow[[length(custom_page_flow) + 1]] <- list(
         id = paste0("page", 8 + i, "_part2_adapt", i),
         type = "items",
-        title = "Teil 2: Einstellungs-/Affektive Programmierangst",
-        title_en = "Part 2: Attitudinal/Affective Programming Anxiety",
+     #   title = "Teil 2: Einstellungs-/Affektive Programmierangst",
+      #  title_en = "Part 2: Attitudinal/Affective Programming Anxiety",
         item_indices = NULL,
         scale_type = "likert"
     )
@@ -526,39 +629,59 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
     cat("DEBUG: Response indices:", paste(which(!is.na(responses)), collapse = ", "), "\n")
     cat("DEBUG: Results processor called successfully!\n")
     
-    # Ensure we have responses for all 20 items
-    if (length(responses) < 20) {
-        responses <- c(responses, rep(3, 20 - length(responses)))
+    # Ensure we have responses vector of correct length (51 items)
+    if (is.null(responses) || length(responses) < 51) {
+        responses <- c(responses, rep(NA, 51 - length(responses)))
     }
     responses <- as.numeric(responses)
     
-    # Calculate Programming Anxiety score (all 20 items)
-    pa_responses <- responses[1:20]
+    # Get actual responses (non-NA values)
+    valid_responses <- !is.na(responses)
+    num_valid <- sum(valid_responses)
     
-    # Note: Items 1, 10, and 15 should be reverse scored for proper interpretation
-    # (This matches typical programming anxiety scales)
-    reverse_indices <- c(1, 10, 15)
-    pa_responses[reverse_indices] <- 6 - pa_responses[reverse_indices]
+    cat(sprintf("Valid responses: %d out of 51 items\n", num_valid))
     
-    # Calculate classical score
-    pa_score <- mean(pa_responses, na.rm = TRUE)
+    # Part 1: Situational Anxiety (items 1-23)
+    part1_responses <- responses[1:23]
+    part1_valid <- sum(!is.na(part1_responses))
+    part1_score <- if (part1_valid > 0) mean(part1_responses, na.rm = TRUE) else NA
+    
+    # Part 2: Attitudinal Anxiety (items 24-51)
+    part2_responses <- responses[24:51]
+    part2_valid <- sum(!is.na(part2_responses))
+    part2_score <- if (part2_valid > 0) mean(part2_responses, na.rm = TRUE) else NA
+    
+    # Overall score (all items)
+    pa_score <- mean(responses, na.rm = TRUE)
+    
+    cat(sprintf("Part 1 (Situational): %d responses, mean = %.2f\n", part1_valid, ifelse(is.na(part1_score), 0, part1_score)))
+    cat(sprintf("Part 2 (Attitudinal): %d responses, mean = %.2f\n", part2_valid, ifelse(is.na(part2_score), 0, part2_score)))
+    cat(sprintf("Overall: %d responses, mean = %.2f\n", num_valid, pa_score))
     
     # Compute IRT-based ability estimate for Programming Anxiety
-    # This is a semi-adaptive assessment: 5 fixed + 15 adaptively selected items
+    # This is an adaptive assessment with 51 items (23 situational + 28 attitudinal)
     pa_theta <- pa_score  # Default to classical score
     
     # Fit 2PL IRT model for Programming Anxiety
     cat("\n================================================================================\n")
     cat("PROGRAMMING ANXIETY - IRT MODEL (2PL)\n")
     cat("================================================================================\n")
-    cat("Assessment Type: Semi-Adaptive (5 fixed + 15 adaptive items)\n")
-    cat("Total items administered: 20\n")
+    cat(sprintf("Assessment Type: Adaptive (51-item bank)\n"))
+    cat(sprintf("Total items administered: %d\n", num_valid))
+    cat(sprintf("  - Part 1 (Situational): %d items\n", part1_valid))
+    cat(sprintf("  - Part 2 (Attitudinal): %d items\n", part2_valid))
     cat("\n")
     
-    # Get item parameters for the 20 PA items that were shown
-    shown_items <- item_bank[1:20, ]
+    # Get indices of administered items (non-NA responses)
+    administered_indices <- which(valid_responses)
+    
+    # Get item parameters for the items that were actually shown
+    shown_items <- item_bank[administered_indices, , drop = FALSE]
     a_params <- shown_items$a
     b_params <- shown_items$b
+    
+    # Get responses for administered items only
+    pa_responses <- responses[administered_indices]
     
     # Convert responses to 0-1 scale for IRT (original 1-5 -> 0-4 -> 0-1)
     pa_responses_irt <- (pa_responses - 1) / 4
@@ -626,13 +749,13 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
     pa_theta_scaled <- pmax(1, pmin(5, pa_theta_scaled))  # Bound to 1-5
     pa_theta <- pa_theta_scaled
     
-    # Create trace plot showing theta progression (simulated for semi-adaptive)
-    # In a real adaptive test, this would show actual theta estimates after each item
-    theta_trace <- numeric(20)
-    se_trace <- numeric(20)
+    # Create trace plot showing theta progression
+    # This shows how ability estimate evolved as more items were administered
+    theta_trace <- numeric(num_valid)
+    se_trace <- numeric(num_valid)
     
     # More robust theta progression simulation
-    for (i in 1:20) {
+    for (i in 1:num_valid) {
         # Calculate theta up to item i
         resp_subset <- (pa_responses[1:i] - 1) / 4
         a_subset <- a_params[1:i]
@@ -656,18 +779,16 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
         se_trace[i] <- pmax(0.1, pmin(1.5, se_sub))
     }
     
-    # Calculate subscale scores (5 anxiety types, 4 items each)
+    # Calculate subscale scores (2 parts: Situational and Attitudinal)
     subscales <- data.frame(
-        Type = c("Cognitive", "Somatic", "Avoidance", "Performance", "Learning"),
+        Type = c("Situational Anxiety", "Attitudinal Anxiety"),
         Score = c(
-            mean(responses[1:4], na.rm = TRUE),
-            mean(responses[5:8], na.rm = TRUE),
-            mean(responses[9:12], na.rm = TRUE),
-            mean(responses[13:16], na.rm = TRUE),
-            mean(responses[17:20], na.rm = TRUE)
-        )
+            ifelse(is.na(part1_score), 0, part1_score),
+            ifelse(is.na(part2_score), 0, part2_score)
+        ),
+        Items = c(part1_valid, part2_valid)
     )
-    subscales$Color <- c("#667eea", "#43a047", "#fb8c00", "#e53935", "#8e24aa")
+    subscales$Color <- c("#667eea", "#e53935")
     
     # Interpretation
     if (pa_theta < 2.0) {
@@ -721,12 +842,15 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
         theta_trace_bounded <- pmax(-3, pmin(3, theta_trace))
         se_trace_bounded <- pmax(0.1, pmin(1.5, se_trace))
         
+        # Identify which items are from Part 1 vs Part 2
+        item_types <- ifelse(administered_indices <= 23, "Part 1 (Situational)", "Part 2 (Attitudinal)")
+        
         trace_data <- data.frame(
-            item = 1:20,
+            item = 1:num_valid,
             theta = theta_trace_bounded,
             se_upper = theta_trace_bounded + se_trace_bounded,
             se_lower = theta_trace_bounded - se_trace_bounded,
-            item_type = c(rep("Fixed", 5), rep("Adaptive", 15))
+            item_type = item_types
         )
         
         # Calculate plot limits dynamically
@@ -997,6 +1121,152 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
 }
 
 # =============================================================================
+# CUSTOM ADAPTIVE ITEM SELECTION
+# =============================================================================
+
+custom_item_selection <- function(rv, item_bank, config, session = NULL) {
+    # STARS-D ADAPTED STRUCTURE:
+    # Part 1: 23 situational items (items 1-23)
+    #   - Non-adaptive: 6, 8, 9, 21, 23 (shown fixed on page 3)
+    #   - Adaptive pool: 1-5, 7, 10-20, 22 (18 items)
+    #   - Shows 10 total: 5 non-adaptive + 5 adaptive
+    # Part 2: 28 attitudinal items (items 24-51)
+    #   - All adaptive
+    
+    # CRITICAL: Read administered items from session$userData (non-reactive storage)
+    administered_items <- if (!is.null(session) && !is.null(session$userData$administered)) {
+        session$userData$administered
+    } else {
+        rv$administered %||% integer(0)
+    }
+    
+    # Check which items have been administered
+    num_items_shown <- length(administered_items)
+    
+    # Check responses
+    num_responses <- sum(!is.na(rv$responses))
+    
+    # Use the maximum to determine progress
+    effective_count <- max(num_items_shown, num_responses)
+    
+    message(sprintf("DEBUG: Administered items: %d, Responses: %d, Effective: %d", 
+                    num_items_shown, num_responses, effective_count))
+    
+    # =========================================================================
+    # PART 1: SITUATIONAL ANXIETY (items 1-23)
+    # =========================================================================
+    
+    # Fixed non-adaptive items (6, 8, 9, 21, 23) - shown on page 3
+    fixed_items_part1 <- c(6, 8, 9, 21, 23)
+    
+    # After page 3 (5 fixed items shown), select 5 adaptive items for pages 4-8
+    if (effective_count >= 5 && effective_count < 10) {
+        adaptive_item_number <- effective_count - 4  # 6th, 7th, 8th, 9th, or 10th item
+        message("\n================================================================================")
+        message(sprintf("PART 1 ADAPTIVE - Selecting situational anxiety item #%d", effective_count + 1))
+        message("================================================================================")
+        
+        # Get responses so far
+        responses_so_far <- rv$responses[1:length(rv$responses)]
+        message(sprintf("Responses collected so far: %d items", sum(!is.na(responses_so_far))))
+        
+        # Use current ability estimate if available
+        current_theta <- rv$current_ability %||% 0
+        current_se <- rv$ability_se %||% 1.0
+        
+        message(sprintf("Current ability estimate: theta=%.3f, SE=%.3f", current_theta, current_se))
+        
+        # Adaptive pool for Part 1: 1-5, 7, 10-20, 22 (18 items, excluding fixed 6, 8, 9, 21, 23)
+        adaptive_pool_part1 <- c(1:5, 7, 10:20, 22)
+        
+        # Get items already shown
+        already_shown <- unique(c(administered_items, which(!is.na(rv$responses)), fixed_items_part1))
+        available_items <- setdiff(adaptive_pool_part1, already_shown)
+        
+        if (length(available_items) == 0) {
+            message("WARNING: No available items in Part 1 adaptive pool")
+            return(NULL)
+        }
+        
+        message(sprintf("Available items in pool: %s", paste(available_items, collapse = ", ")))
+        
+        # Calculate Fisher Information for each available item
+        item_info <- sapply(available_items, function(item_idx) {
+            a <- item_bank$a[item_idx]
+            b <- item_bank$b[item_idx]
+            p <- 1 / (1 + exp(-a * (current_theta - b)))
+            info <- a^2 * p * (1 - p)
+            return(info)
+        })
+        
+        # Select item with maximum information
+        best_idx <- which.max(item_info)
+        selected_item <- available_items[best_idx]
+        
+        message(sprintf("\nSelected item %d with Maximum Fisher Information = %.4f", 
+                        selected_item, item_info[best_idx]))
+        message("================================================================================\n")
+        
+        return(selected_item)
+    }
+    
+    # =========================================================================
+    # PART 2: ATTITUDINAL/AFFECTIVE ANXIETY (items 24-51, all adaptive)
+    # =========================================================================
+    
+    if (effective_count >= 10 && effective_count < 38) {
+        adaptive_item_number <- effective_count - 9  # 11th through 38th item
+        message("\n================================================================================")
+        message(sprintf("PART 2 ADAPTIVE - Selecting attitudinal anxiety item #%d", adaptive_item_number))
+        message("================================================================================")
+        
+        # Use current ability estimate
+        current_theta <- rv$current_ability %||% 0
+        current_se <- rv$ability_se %||% 1.0
+        
+        message(sprintf("Current ability estimate: theta=%.3f, SE=%.3f", current_theta, current_se))
+        
+        # Part 2 pool: items 24-51 (all adaptive)
+        adaptive_pool_part2 <- 24:51
+        
+        # Get items already shown
+        already_shown <- unique(c(administered_items, which(!is.na(rv$responses))))
+        available_items <- setdiff(adaptive_pool_part2, already_shown)
+        
+        if (length(available_items) == 0) {
+            message("WARNING: No available items in Part 2 adaptive pool")
+            return(NULL)
+        }
+        
+        message(sprintf("Available items in pool: %s%s", 
+                        paste(head(available_items, 10), collapse = ", "),
+                        if(length(available_items) > 10) "..." else ""))
+        
+        # Calculate Fisher Information
+        item_info <- sapply(available_items, function(item_idx) {
+            a <- item_bank$a[item_idx]
+            b <- item_bank$b[item_idx]
+            p <- 1 / (1 + exp(-a * (current_theta - b)))
+            info <- a^2 * p * (1 - p)
+            return(info)
+        })
+        
+        # Select item with maximum information
+        best_idx <- which.max(item_info)
+        selected_item <- available_items[best_idx]
+        
+        message(sprintf("\nSelected item %d with Maximum Fisher Information = %.4f", 
+                        selected_item, item_info[best_idx]))
+        message("================================================================================\n")
+        
+        return(selected_item)
+    }
+    
+    message(sprintf("WARNING: No item selected. effective_count=%d", effective_count))
+    return(NULL)
+}
+
+# =============================================================================
 # STUDY CONFIGURATION
 # =============================================================================
 
@@ -1012,6 +1282,7 @@ study_config <- create_study_config(
     max_items = 38,  # 10 Part 1 + 28 Part 2
     min_SEM = 0.30,
     criteria = "MI",  # Maximum Information
+    item_selection_fun = custom_item_selection,  # Enable custom adaptive selection
     demographics = names(demographic_configs),
     demographic_configs = demographic_configs,
     input_types = input_types,
@@ -1031,5 +1302,6 @@ launch_study(
     item_bank = programming_anxiety_items,
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
-    save_format = "csv"
+    save_format = "csv",
+    debug=TRUE
 )
