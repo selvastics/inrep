@@ -604,6 +604,7 @@ custom_page_flow <- list(
     type = "custom",
     title = "HilFo",
     content = '<div style="position: relative; padding: 20px; font-size: 16px; line-height: 1.8;">
+      <div class="hildesheim-logo"></div>
       <div style="position: absolute; top: 10px; right: 10px;">
         <button type="button" id="language-toggle-btn" onclick="toggleLanguage()" style="
           background: #e8041c; color: white; border: 2px solid #e8041c; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
@@ -2655,13 +2656,29 @@ custom_item_selection <- function(rv, item_bank, config, session = NULL) {
   # NEVER return these items - they're already shown on page 6!
   fixed_items <- c(6, 8, 9, 21, 23)
   
-  # CRITICAL FIX for shinyapps.io: When no items answered on page 6, return NULL safely
+  # CRITICAL FIX for shinyapps.io: When no items answered on page 6, skip adaptive pages
   # On shinyapps.io, session$userData might not have administered items yet
-  # This is EXPECTED behavior - adaptive pages should show nothing when prerequisites not met
+  # This is EXPECTED behavior when user skips page 6 - we should skip pages 7-11 too
   if (effective_pa_count < 5) {
-    message("INFO: No PA responses yet (effective_pa_count=", effective_pa_count, "). Returning NULL - page will show no items.")
-    message("This is EXPECTED when user skips page 6. Page will display empty and allow continuation.")
-    return(NULL)  # Safe: render_items_page handles NULL by showing empty page
+    message("INFO: No PA responses yet (effective_pa_count=", effective_pa_count, ").")
+    message("This is EXPECTED when user skips page 6. Skipping adaptive pages 7-11.")
+    
+    # Mark pages 7-11 as skipped so navigation will skip them
+    # DO NOT change rv$current_page here - just mark as skipped and return NULL
+    if (!is.null(rv)) {
+      rv$skipped_pages <- unique(c(rv$skipped_pages, 7:11))
+    }
+    
+    # Return NULL so this page shows no items
+    # The navigation system will handle skipping these pages
+    return(NULL)
+  } else {
+    # User HAS enough responses - UNMARK pages 7-11 as skipped
+    # This allows them to see adaptive pages if they go back and answer items
+    if (!is.null(rv) && !is.null(rv$skipped_pages)) {
+      rv$skipped_pages <- setdiff(rv$skipped_pages, 7:11)
+      message("INFO: User has ", effective_pa_count, " PA responses. Enabling adaptive pages 7-11.")
+    }
   }
   
   # Adaptive selection: Select 5 items from pool (18 items total)
@@ -3141,5 +3158,19 @@ inrep::launch_study(
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
   save_format = "csv",
-  debug_mode = TRUE  # Enable debug mode: STRG+A = fill page, STRG+Q = auto-fill all
+  debug_mode = TRUE,  # Enable debug mode: STRG+A = fill page, STRG+Q = auto-fill all
+  custom_css = "
+    /* HilFo Study Logo */
+    .hildesheim-logo {
+      width: 260px;
+      height: 60px;
+      background-image: url('https://www.uni-hildesheim.de/typo3conf/ext/unihildesheim/Resources/Public/Images/logo-uni.svgz');
+      background-repeat: no-repeat;
+      background-size: contain;
+      background-position: center top;
+      margin: 24px auto 16px auto;
+      display: block;
+      min-height: 60px;
+    }
+  "
 )

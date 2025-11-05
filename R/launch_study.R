@@ -3166,6 +3166,34 @@ launch_study <- function(
   })
   
   # =============================================================================
+  # AUTO-SKIP: Automatically skip forward when landing on a skipped page
+  # =============================================================================
+  # This handles the case where user navigates to a page that should be skipped
+  # (e.g., page 7 when PA items weren't answered on page 6)
+  shiny::observe({
+    req(rv$current_page)
+    
+    # Check if current page is in skip list
+    if (!is.null(rv$skipped_pages) && length(rv$skipped_pages) > 0) {
+      if (rv$current_page %in% rv$skipped_pages) {
+        # Current page should be skipped - auto-advance
+        logger(sprintf("AUTO-SKIP: Page %d is marked as skipped, auto-advancing", rv$current_page))
+        
+        new_page <- rv$current_page + 1
+        # Keep skipping until we find a non-skipped page
+        while (new_page %in% rv$skipped_pages && new_page <= rv$total_pages) {
+          new_page <- new_page + 1
+        }
+        
+        if (new_page <= rv$total_pages) {
+          rv$current_page <- new_page
+          logger(sprintf("AUTO-SKIP: Jumped to page %d", new_page))
+        }
+      }
+    }
+  })
+  
+  # =============================================================================
   
   # Log session isolation for security
   logger(sprintf("CRITICAL: Session isolation enforced. New user session: %s", unique_session_id), level = "WARNING")
@@ -4835,6 +4863,15 @@ launch_study <- function(
                   # Move to next page immediately - CSS handles the transition
           old_page <- rv$current_page
           rv$current_page <- rv$current_page + 1
+          
+          # Skip over any pages marked as skipped (e.g., adaptive pages when prerequisites not met)
+          if (!is.null(rv$skipped_pages) && length(rv$skipped_pages) > 0) {
+            while (rv$current_page %in% rv$skipped_pages && rv$current_page <= rv$total_pages) {
+              rv$current_page <- rv$current_page + 1
+              logger(sprintf("Skipping page %d (marked as skipped)", rv$current_page - 1))
+            }
+          }
+          
           logger(sprintf("Moving to page %d of %d", rv$current_page, rv$total_pages))
           
           # Apply language preference when moving FROM page 1 (language selection page)
@@ -4893,7 +4930,17 @@ launch_study <- function(
         
                   # Move to previous page immediately - CSS handles the transition
           old_page <- rv$current_page
-          rv$current_page <- rv$current_page - 1
+          new_page <- rv$current_page - 1
+          
+          # Skip over any pages marked as skipped (e.g., adaptive pages when prerequisites not met)
+          if (!is.null(rv$skipped_pages) && length(rv$skipped_pages) > 0) {
+            while (new_page %in% rv$skipped_pages && new_page > 1) {
+              logger(sprintf("Skipping backwards over page %d (was skipped during forward navigation)", new_page))
+              new_page <- new_page - 1
+            }
+          }
+          
+          rv$current_page <- new_page
           logger(sprintf("Moving back to page %d of %d", rv$current_page, rv$total_pages))
           
           # When moving TO page 1, don't apply language changes to prevent loops
