@@ -3139,76 +3139,29 @@ launch_study <- function(
   rv$unique_session_id <- unique_session_id
   
   # =============================================================================
-  # WATCHDOG: Detect infinite render loops and auto-stop after 30 seconds
+  # WATCHDOG: Simple maximum session time enforcement
   # =============================================================================
-  # Detects when the app gets stuck in an infinite render loop (e.g., page 7 rendering repeatedly)
-  # Also detects true crashes where reactives stop updating completely
-  # Normal user thinking time does NOT trigger this - only pathological behavior
-  rv$last_meaningful_action <- Sys.time()
-  rv$last_page_state <- NULL
-  rv$same_page_render_count <- 0
-  rv$is_app_responsive <- TRUE
-  rv$watchdog_shutdown_triggered <- FALSE
+  # Shuts down session after absolute maximum time (2 hours default)
+  # This prevents stuck sessions from blocking shinyapps.io resources
+  # Does NOT interfere with normal app operation
+  rv$session_start_time <- Sys.time()
+  rv$max_session_duration <- 7200  # 2 hours in seconds
   
-  # Watchdog checker runs every 5 seconds
+  # Simple timer check every 60 seconds
   shiny::observe({
-    shiny::invalidateLater(5000, session)  # Check every 5 seconds
+    shiny::invalidateLater(60000, session)  # Check every minute
     
-    # Only check if not already shutting down
-    if (!rv$watchdog_shutdown_triggered && !is.null(rv$last_meaningful_action) && rv$is_app_responsive) {
-      time_since_action <- as.numeric(difftime(Sys.time(), rv$last_meaningful_action, units = "secs"))
+    session_duration <- as.numeric(difftime(Sys.time(), rv$session_start_time, units = "secs"))
+    
+    # Absolute maximum: 2 hours
+    if (session_duration > rv$max_session_duration) {
+      logger(sprintf("WATCHDOG: Maximum session time reached (%.0f seconds) - shutting down", session_duration), level = "INFO")
       
-      # If no meaningful action for 30 seconds, app is stuck
-      if (time_since_action > 30) {
-        rv$watchdog_shutdown_triggered <- TRUE
-        logger(sprintf("WATCHDOG: App stuck for %.0f seconds (infinite loop or crash) - forcing shutdown", time_since_action), level = "ERROR")
-        rv$is_app_responsive <- FALSE
-        
-        # Try graceful shutdown first
-        tryCatch({
-          shiny::stopApp()
-        }, error = function(e) {
-          # If stopApp fails, close session forcefully
-          try({ session$close() }, silent = TRUE)
-        })
-      }
-    }
-  })
-  
-  # Track meaningful user actions (NOT just reactive changes)
-  # Only these prove the app is actually working correctly
-  shiny::observe({
-    # Don't track if already shutting down
-    if (rv$watchdog_shutdown_triggered) return(NULL)
-    
-    req(rv$stage, rv$current_page)
-    
-    # Create unique state identifier
-    current_state <- paste0(rv$stage, "_", rv$current_page)
-    
-    # If state changed, it's a meaningful action
-    if (is.null(rv$last_page_state) || rv$last_page_state != current_state) {
-      rv$last_page_state <- current_state
-      rv$same_page_render_count <- 0
-      rv$last_meaningful_action <- Sys.time()
-    } else {
-      # Same page/stage rendering again - increment counter
-      rv$same_page_render_count <- rv$same_page_render_count + 1
-      
-      # If same page renders >100 times without state change = infinite loop
-      # Use high threshold to avoid false positives on normal page loads
-      if (rv$same_page_render_count > 100 && !rv$watchdog_shutdown_triggered) {
-        rv$watchdog_shutdown_triggered <- TRUE
-        logger(sprintf("WATCHDOG: Infinite render loop detected on %s (rendered %d times) - forcing shutdown", 
-                      current_state, rv$same_page_render_count), level = "ERROR")
-        rv$is_app_responsive <- FALSE
-        
-        tryCatch({
-          shiny::stopApp()
-        }, error = function(e) {
-          try({ session$close() }, silent = TRUE)
-        })
-      }
+      tryCatch({
+        shiny::stopApp()
+      }, error = function(e) {
+        try({ session$close() }, silent = TRUE)
+      })
     }
   })
   
@@ -4585,9 +4538,6 @@ launch_study <- function(
     if (config$log_data %||% FALSE) {
       # Track input changes
       shiny::observeEvent(input$log_input_change, {
-        # Update heartbeat - app is responsive
-        rv$last_heartbeat <- Sys.time()
-        
         tryCatch({
           log_data <- input$log_input_change
           current_page_id <- paste0("page_", rv$current_page)
@@ -4601,9 +4551,6 @@ launch_study <- function(
       
       # Track button clicks
       shiny::observeEvent(input$log_button_click, {
-        # Update heartbeat - app is responsive
-        rv$last_heartbeat <- Sys.time()
-        
         tryCatch({
           log_data <- input$log_button_click
           current_page_id <- paste0("page_", rv$current_page)
@@ -4807,9 +4754,6 @@ launch_study <- function(
                 rv$item_responses[[item_id]] <- value
                 rv$responses[idx] <- as.numeric(value)
                 page_data[[item_id]] <- as.numeric(value)
-                
-                # Update watchdog - user provided response (meaningful action)
-                rv$last_meaningful_action <- Sys.time()
                 
                 # Update rv$administered during response collection (not during rendering)
                 if (is.null(rv$administered)) rv$administered <- integer(0)
@@ -5104,9 +5048,6 @@ launch_study <- function(
                   # also store legacy/keyed entry
                   rv$item_responses[[paste0("item_", item_id)]] <- value
                   rv$item_responses[[item_id]] <- value
-                  
-                  # Update watchdog - user provided response (meaningful action)
-                  rv$last_meaningful_action <- Sys.time()
                   
                   logger(sprintf("Saved final page item response %d (id: %s) from input %s: %s", idx, item_id, found_input, value))
                 }
