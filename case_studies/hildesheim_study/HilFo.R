@@ -6,6 +6,8 @@ library(emmeans)
 library(ggthemes)
 library(DT)
 library(shinycssloaders)
+library(httr)
+library(later)
 
 # CRITICAL: Standardized filename function to ensure consistency across all exports
 generate_hilfo_filename <- function(timestamp = NULL) {

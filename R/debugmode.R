@@ -805,29 +805,66 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
         progressStep();
       }
 
+      // CRITICAL: Debouncing to prevent crashes from rapid key presses
+      let lastKeyPress = {
+        'a': 0,
+        'q': 0,
+        'y': 0
+      };
+      const DEBOUNCE_TIME = 1000; // 1 second cooldown between presses
+      
       // Hotkey handlers - use capture phase and attach to both document and window
       const keyHandler = (e) => {
         if (!e.ctrlKey) return;
         
-        switch(e.key.toLowerCase()) {
+        const now = Date.now();
+        const key = e.key.toLowerCase();
+        
+        switch(key) {
           case 'a':
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
+            
+            // Check if cooldown period has passed
+            if (now - lastKeyPress['a'] < DEBOUNCE_TIME) {
+              console.log('DEBUG: Ctrl+A ignored - cooldown active (prevents crashes)');
+              return false;
+            }
+            lastKeyPress['a'] = now;
+            
             console.log('DEBUG: Ctrl+A - Fill current page only');
             fillCurrentPage();
             return false;
+            
           case 'q':
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
+            
+            // Check if cooldown period has passed
+            if (now - lastKeyPress['q'] < DEBOUNCE_TIME) {
+              console.log('DEBUG: Ctrl+Q ignored - cooldown active (prevents crashes)');
+              return false;
+            }
+            lastKeyPress['q'] = now;
+            
             console.log('DEBUG: Ctrl+Q - Auto-fill (normal speed)');
             autoProgressAll(800, 600);
             return false;
+            
           case 'y':
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
+            
+            // Check if cooldown period has passed
+            if (now - lastKeyPress['y'] < DEBOUNCE_TIME) {
+              console.log('DEBUG: Ctrl+Y ignored - cooldown active (prevents crashes)');
+              return false;
+            }
+            lastKeyPress['y'] = now;
+            
             console.log('DEBUG: Ctrl+Y - Auto-fill (fast speed)');
             autoProgressAll(100, 100);
             return false;
