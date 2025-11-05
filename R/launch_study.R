@@ -4732,6 +4732,19 @@ launch_study <- function(
                   rv$administered <- c(rv$administered, idx)
                 }
                 
+                # CRITICAL FIX: ALSO update session$userData$administered for bidirectional sync
+                # This ensures custom_item_selection functions can read from session$userData$administered
+                # for BOTH adaptive AND non-adaptive pages
+                if (!is.null(session$userData)) {
+                  if (is.null(session$userData$administered)) {
+                    session$userData$administered <- integer(0)
+                  }
+                  if (!idx %in% session$userData$administered) {
+                    session$userData$administered <- c(session$userData$administered, idx)
+                    cat("RESPONSE COLLECTION: Synced idx", idx, "to session$userData$administered\n")
+                  }
+                }
+                
                 logger(sprintf("Saved item response %d: %s", idx, value))
               } else {
                 cat("RESPONSE COLLECTION: No value found for input_id", item_id, "\n")

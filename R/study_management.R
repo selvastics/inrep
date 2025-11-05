@@ -1788,25 +1788,7 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
     }
     
     # Get response labels based on scale type and language
-    # Support custom_labels (de) and custom_labels_en from page config
-    custom_labels <- if (current_lang == "en" && !is.null(page$custom_labels_en)) {
-      page$custom_labels_en
-    } else if (!is.null(page$custom_labels)) {
-      page$custom_labels
-    } else {
-      NULL
-    }
-    
-    labels <- get_response_labels(page$scale_type %||% "likert", choices, current_lang, custom_labels = custom_labels)
-    
-    # CRITICAL FIX for shinyapps.io: Use NULL instead of character(0) for selected
-    # On shinyapps.io, character(0) causes radioButtons to render as disabled/grey
-    prev_response <- rv$item_responses[[item_id]]
-    selected_value <- if (!is.null(prev_response) && length(prev_response) > 0 && prev_response != "") {
-      prev_response
-    } else {
-      NULL  # Use NULL, not character(0), to ensure buttons are clickable
-    }
+    labels <- get_response_labels(page$scale_type %||% "likert", choices, current_lang)
     
     shiny::div(
       class = "item-container",
@@ -1815,7 +1797,7 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
         inputId = item_id,
         label = NULL,
         choices = setNames(choices, labels),
-        selected = selected_value,
+        selected = rv$item_responses[[item_id]] %||% character(0),
         inline = TRUE
       )
     )

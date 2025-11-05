@@ -14,7 +14,7 @@
   --card-shadow: 0 2px 4px rgba(232, 4, 28, 0.08);
   --border-color: #e8041c;
   --accent-color: #e8041c;
-  --logo-url: url('https://www.uni-hildesheim.de/fileadmin/_processed_/b/2/csm_logo-uni_4c_2b7e2e2e2a.png');
+  --logo-url: url('https://www.uni-hildesheim.de/typo3conf/ext/unihildesheim/Resources/Public/Images/logo-uni.svgz');
 }
 
 /*
@@ -27,7 +27,7 @@
 .hildesheim-logo {
   width: 260px;
   height: 60px;
-  background-image: var(--logo-url), url('https://www.uni-hildesheim.de/fileadmin/_processed_/b/2/csm_logo-uni_4c_2b7e2e2e2a.png'); /* fallback for older browsers */
+  background-image: var(--logo-url), url('https://www.uni-hildesheim.de/typo3conf/ext/unihildesheim/Resources/Public/Images/logo-uni.svgz'); /* fallback for older browsers */
   background-repeat: no-repeat;
   background-size: contain;
   background-position: center top;
