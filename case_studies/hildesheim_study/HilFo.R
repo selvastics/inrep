@@ -92,10 +92,11 @@ WEBDAV_SHARE_TOKEN <- "Y51QPXzJVLWSAcb"  # Share token for authentication
 # =============================================================================
 
 # Create bilingual item bank
+# STARS-D adapted for Programming Anxiety (23 items based on Statistical Anxiety Rating Scale)
 all_items_de <- data.frame(
     id = c(
-        # Programming Anxiety items (20) - ADDED FIRST
-        paste0("PA_", sprintf("%02d", 1:20)),
+        # Programming Anxiety items (23) - STARS-D adapted
+        paste0("PA_", sprintf("%02d", 1:23)),
         # BFI items with proper naming convention
         "BFE_01", "BFE_02", "BFE_03", "BFE_04", # Extraversion
         "BFV_01", "BFV_02", "BFV_03", "BFV_04", # Verträglichkeit (Agreeableness)
@@ -110,29 +111,35 @@ all_items_de <- data.frame(
         "Statistik_gutfolgen", "Statistik_selbstwirksam"
     ),
     Question = c(
-        # Programming Anxiety (German) - NEW - First 5 items suitable for all experience levels
-        "Ich fühle mich unsicher, wenn ich programmieren soll.",
-        "Der Gedanke, programmieren zu lernen, macht mich nervös.",
-        "Ich habe Angst, beim Programmieren Fehler zu machen.",
-        "Ich fühle mich überfordert, wenn ich an Programmieraufgaben denke.",
-        "Ich bin besorgt, dass ich nicht gut genug programmieren kann.",
-        "Ich vermeide es, neue Programmiersprachen zu nutzen, weil ich Angst habe, Fehler zu machen.",
-        "In Gruppencodier-Sitzungen bin ich nervös, dass meine Beiträge nicht geschätzt werden.",
-        "Ich habe Sorge, Programmieraufgaben nicht rechtzeitig aufgrund fehlender Fähigkeiten abschließen zu können.",
-        "Wenn ich bei einem Programmierproblem nicht weiterkomme, ist es mir peinlich, um Hilfe zu bitten.",
-        "Ich fühle mich wohl dabei, meinen Code anderen zu erklären.",
-        "Fortgeschrittene Programmierkonzepte (z.B. Rekursion, Multithreading) finde ich einschüchternd.",
-        "Ich zweifle oft daran, Programmieren über die Grundlagen hinaus lernen zu können.",
-        "Wenn mein Code nicht funktioniert, glaube ich, dass es an meinem mangelnden Talent liegt.",
-        "Es macht mich nervös, Code ohne Schritt-für-Schritt-Anleitung zu schreiben.",
-        "Ich bin zuversichtlich, bestehenden Code zu verändern, um neue Funktionen hinzuzufügen.",
-        "Ich fühle mich manchmal ängstlich, noch bevor ich mit dem Programmieren beginne.",
-        "Allein der Gedanke an das Debuggen macht mich angespannt, selbst bei kleineren Fehlern.",
-        "Ich mache mir Sorgen, für die Qualität meines Codes beurteilt zu werden.",
-        "Wenn mir jemand beim Programmieren zuschaut, werde ich nervös und mache Fehler.",
-        "Schon der Gedanke an bevorstehende Programmieraufgaben setzt mich unter Stress.",
+        # Programming Anxiety (German) - STARS-D adapted (23 items)
+        # Instruction: "Die folgenden Aussagen beschreiben Situationen, die mit Programmieren zu tun haben. 
+        # Wählen Sie bitte die Option, die am besten beschreibt, wie viel Angst Sie in der entsprechenden 
+        # Situation erleben würden. Es gibt keine richtigen oder falschen Antworten."
+        "Sie bereiten sich auf eine Programmierprüfung vor.",
+        "Sie müssen Code aus einem Tutorial oder einer Dokumentation interpretieren.",
+        "Sie fragen Ihren Programmierdozenten/Ihre Programmierdozentin, ob er/sie Ihnen Inhalte aus der Lehrveranstaltung, die Sie nicht verstehen, noch einmal individuell erklären kann.",
+        "Sie bearbeiten eine Programmieraufgabe für eine Lehrveranstaltung.",
+        "Sie müssen ein Problem lösen, indem Sie ein Programm schreiben.",
+        "Sie lesen ein Code-Beispiel, das mehrere Programmierkonzepte enthält.",
+        "Sie versuchen zu entscheiden, welche Programmiersprache oder welches Framework für Ihr Projekt geeignet ist.",
+        "Sie nehmen an einer Programmierprüfung teil.",
+        "Sie lesen eine technische Beschreibung, die Code-Beispiele und Algorithmen enthält.",
+        "Nachdem Sie ihn endlich herausgefunden haben, müssen Sie die Bedeutung einer Fehlermeldung interpretieren.",
+        "Sie betreten einen Raum, um an einer Programmierprüfung teilzunehmen.",
+        "Sie müssen eine Menge an Daten in einem Programm verarbeiten.",
+        "Sie stellen fest, dass ein Kommilitone/eine Kommilitonin eine andere Lösung für ein Programmierproblem hat als Sie.",
+        "Sie müssen entscheiden, ob Ihr Code korrekt funktioniert oder einen Fehler enthält.",
+        "Sie wachen am Morgen einer Programmierprüfung auf.",
+        "Sie bitten einen Dozenten/eine Dozentin, Ihnen Ihren Code oder eine Fehlermeldung zu erklären.",
+        "Sie versuchen, einen Algorithmus zu verstehen und nachzuvollziehen.",
+        "Sie beobachten einen Studenten/eine Studentin, wie er/sie sehr viele Zeilen Code für ein Projekt schreibt.",
+        "Sie bitten jemanden im Computerraum, Ihnen beim Debuggen zu helfen.",
+        "Sie versuchen, Code-Beispiele in einer Dokumentation oder einem Lehrbuch zu verstehen.",
+        "Sie schreiben sich für eine Programmierlehrveranstaltung ein.",
+        "Sie gehen eine bereits benotete Programmierprüfung noch einmal durch.",
+        "Sie bitten einen Kommilitonen/eine Kommilitonin, Ihnen bei einem Programmierproblem zu helfen.",
         
-        # BFI Extraversion
+        # BFI Extraversion (items 24-27)
         "Ich gehe aus mir heraus, bin gesellig.",
         "Ich bin eher ruhig.",
         "Ich bin eher schüchtern.",
@@ -173,34 +180,37 @@ all_items_de <- data.frame(
         "Ich bin in der Lage, Statistik zu erlernen."
     ),
     Question_EN = c(
-        # Programming Anxiety (English) - NEW - First 5 items suitable for all experience levels
-        "I feel uncertain when I have to program.",
-        "The thought of learning to program makes me nervous.",
-        "I am afraid of making mistakes when programming.",
-        "I feel overwhelmed when I think about programming tasks.",
-        "I am worried that I am not good enough at programming.",
-        "I avoid using new programming languages because I am afraid of making mistakes.",
-        "During group coding sessions, I am nervous that my contributions will not be valued.",
-        "I worry that I will be unable to finish a coding assignment on time due to lack of skills.",
-        "When I get stuck on a programming problem, I feel embarrassed to ask for help.",
-        "I feel comfortable explaining my code to others.",
-        "I find advanced coding concepts (e.g., recursion, multithreading) intimidating.",
-        "I often doubt my ability to learn programming beyond the basics.",
-        "When my code does not work, I worry it is because I lack programming talent.",
-        "I feel anxious when asked to write code without step-by-step instructions.",
-        "I am confident in modifying existing code to add new features.",
-        "I sometimes feel anxious even before sitting down to start programming.",
-        "The thought of debugging makes me tense, even if the bug is minor.",
-        "I worry about being judged for the quality of my code.",
-        "When someone watches me code, I get nervous and make mistakes.",
-        "I feel stressed just by thinking about upcoming programming tasks.",
+        # Programming Anxiety (English) - STARS-D adapted (23 items)
+        "You are preparing for a programming exam.",
+        "You have to interpret code from a tutorial or documentation.",
+        "You ask your programming instructor if they can explain content from the course that you don't understand individually.",
+        "You are working on a programming assignment for a course.",
+        "You have to solve a problem by writing a program.",
+        "You are reading a code example that contains multiple programming concepts.",
+        "You are trying to decide which programming language or framework is suitable for your project.",
+        "You are taking a programming exam.",
+        "You are reading a technical description that contains code examples and algorithms.",
+        "After finally figuring it out, you have to interpret the meaning of an error message.",
+        "You enter a room to take a programming exam.",
+        "You have to process a large amount of data in a program.",
+        "You notice that a classmate has a different solution to a programming problem than you do.",
+        "You have to decide whether your code works correctly or contains an error.",
+        "You wake up on the morning of a programming exam.",
+        "You ask an instructor to explain your code or an error message to you.",
+        "You are trying to understand and comprehend an algorithm.",
+        "You observe a student writing many lines of code for a project.",
+        "You ask someone in the computer lab to help you debug.",
+        "You are trying to understand code examples in documentation or a textbook.",
+        "You are enrolling in a programming course.",
+        "You are reviewing an already graded programming exam.",
+        "You ask a classmate to help you with a programming problem.",
         
-        # BFI Extraversion
+        # BFI Extraversion (items 24-27)
         "I am outgoing, sociable.",
         "I am rather quiet.",
         "I am rather shy.",
         "I am talkative.",
-        # BFI Agreeableness
+        # BFI Agreeableness (items 28-31)
         "I am empathetic, warm-hearted.",
         "I have little sympathy for others.",
         "I am helpful and selfless.",
@@ -236,9 +246,8 @@ all_items_de <- data.frame(
         "I am able to learn statistics."
     ),
     reverse_coded = c(
-        # Programming Anxiety reverse coding (items 1, 10, and 15 are reverse scored)
-        TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE,
-        FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE,
+        # Programming Anxiety - no reverse coding (all items measure anxiety directly)
+        rep(FALSE, 23),
         # BFI reverse coding
         FALSE, TRUE, TRUE, FALSE, # Extraversion
         FALSE, TRUE, FALSE, TRUE, # Verträglichkeit
@@ -250,18 +259,113 @@ all_items_de <- data.frame(
         # MWS & Statistics
         rep(FALSE, 6)
     ),
-    ResponseCategories = rep("1,2,3,4,5", 51),
+    ResponseCategories = rep("1,2,3,4,5", 54),  # 23 PA + 20 BFI + 5 PSQ + 4 MWS + 2 Stats = 54
     b = c(
-        # PA items difficulty parameters for IRT
-        -0.5, 0.2, 0.5, 0.3, 0.7, 0.8, 0.4, 0.6, 0.3, -0.2,
-        1.0, 0.9, 0.7, 0.6, 0.1, 0.0, 0.2, 0.4, 0.5, 0.3,
+        # PA items difficulty parameters (AI-generated based on item content)
+        # Note: These parameters are AI-generated estimates based on theoretical difficulty
+        # Items 6, 8, 9, 21, 23 are non-adaptive (fixed presentation)
+        # Remaining 18 items form adaptive pool
+        
+        # Item 1: Preparing for exam - moderate anxiety trigger
+        0.0,
+        # Item 2: Interpreting code from tutorial - lower difficulty
+        -0.3,
+        # Item 3: Asking instructor for help - social anxiety component
+        0.4,
+        # Item 4: Working on assignment - moderate, common situation
+        -0.1,
+        # Item 5: Solving problem by writing program - core programming anxiety
+        0.2,
+        # Item 6: Reading code with multiple concepts - higher cognitive load (NON-ADAPTIVE)
+        0.6,
+        # Item 7: Deciding on language/framework - decision anxiety
+        0.5,
+        # Item 8: Taking exam - high anxiety trigger (NON-ADAPTIVE)
+        0.9,
+        # Item 9: Reading technical description - moderate difficulty (NON-ADAPTIVE)
+        0.3,
+        # Item 10: Interpreting error message - common but stressful
+        0.1,
+        # Item 11: Entering exam room - anticipatory anxiety
+        0.8,
+        # Item 12: Processing large data - competence anxiety
+        0.4,
+        # Item 13: Comparing solutions with peers - social comparison anxiety
+        0.3,
+        # Item 14: Deciding if code is correct - evaluation anxiety
+        0.2,
+        # Item 15: Waking up on exam morning - severe anticipatory anxiety
+        0.7,
+        # Item 16: Asking instructor to explain code - help-seeking anxiety
+        0.5,
+        # Item 17: Understanding algorithms - cognitive challenge
+        0.4,
+        # Item 18: Observing proficient peer - social comparison
+        0.3,
+        # Item 19: Asking for debugging help - help-seeking in public space
+        0.6,
+        # Item 20: Understanding code examples - learning situation
+        0.0,
+        # Item 21: Enrolling in course - commitment anxiety (NON-ADAPTIVE)
+        0.1,
+        # Item 22: Reviewing graded exam - evaluation anxiety
+        0.5,
+        # Item 23: Asking classmate for help - peer help-seeking (NON-ADAPTIVE)
+        0.4,
         # Other items default
         rep(0, 31)
     ),
     a = c(
-        # PA items discrimination parameters for IRT
-        1.2, 1.5, 1.3, 1.1, 1.4, 1.0, 0.9, 1.2, 1.3, 1.4,
-        1.5, 1.2, 1.1, 1.3, 1.2, 1.0, 1.1, 1.3, 1.4, 1.2,
+        # PA items discrimination parameters (AI-generated based on item specificity)
+        # Note: These parameters are AI-generated estimates based on theoretical discrimination
+        # Higher values indicate items that better differentiate between anxiety levels
+        
+        # Item 1: Exam preparation - good discriminator
+        1.3,
+        # Item 2: Interpreting tutorial code - moderate discriminator
+        1.1,
+        # Item 3: Asking instructor - high discriminator (social anxiety)
+        1.5,
+        # Item 4: Working on assignment - good discriminator
+        1.2,
+        # Item 5: Problem solving - excellent discriminator (core skill)
+        1.6,
+        # Item 6: Multiple concepts - good discriminator (NON-ADAPTIVE)
+        1.3,
+        # Item 7: Language decision - moderate discriminator
+        1.1,
+        # Item 8: Taking exam - very high discriminator (NON-ADAPTIVE)
+        1.8,
+        # Item 9: Technical description - moderate discriminator (NON-ADAPTIVE)
+        1.2,
+        # Item 10: Error messages - good discriminator
+        1.4,
+        # Item 11: Entering exam room - high discriminator
+        1.7,
+        # Item 12: Data processing - good discriminator
+        1.3,
+        # Item 13: Peer comparison - moderate discriminator
+        1.2,
+        # Item 14: Code evaluation - good discriminator
+        1.4,
+        # Item 15: Exam morning - very high discriminator
+        1.7,
+        # Item 16: Asking instructor about code - high discriminator
+        1.5,
+        # Item 17: Algorithm understanding - good discriminator
+        1.4,
+        # Item 18: Observing proficient peer - moderate discriminator
+        1.1,
+        # Item 19: Asking for debug help - high discriminator
+        1.6,
+        # Item 20: Code examples - good discriminator
+        1.3,
+        # Item 21: Course enrollment - moderate discriminator (NON-ADAPTIVE)
+        1.0,
+        # Item 22: Reviewing graded exam - good discriminator
+        1.3,
+        # Item 23: Asking classmate - high discriminator (NON-ADAPTIVE)
+        1.5,
         # Other items default
         rep(1, 31)
     ),
@@ -713,61 +817,77 @@ custom_page_flow <- list(
         demographics = c("Note_Englisch", "Note_Mathe")
     ),
     
-    # Page 6: Programming Anxiety Part 1 - FIXED (first 5 items together)
+    # PROGRAMMING ANXIETY SECTION (23 items total - STARS-D adapted)
+    # Non-adaptive items: 6, 8, 9, 21, 23 (shown as fixed)
+    # Adaptive pool: remaining 18 items
+    
+    # Page 6: PA Non-adaptive items (6, 8, 9, 21, 23)
     list(
         id = "page6_pa_fixed",
         type = "items",
         title = "",
         title_en = "",
-        instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
-        instructions_en = "Please indicate to what extent the following statements apply to you.",
-        item_indices = 1:5,  # First 5 PA items (fixed, all on one page)
-        scale_type = "likert"
+        instructions = "Die folgenden Aussagen beschreiben Situationen, die mit Programmieren zu tun haben. Wählen Sie bitte die Option, die am besten beschreibt, wie viel Angst Sie in der entsprechenden Situation erleben würden. Es gibt keine richtigen oder falschen Antworten.",
+        instructions_en = "The following statements describe situations related to programming. Please select the option that best describes how much anxiety you would experience in that situation. There are no right or wrong answers.",
+        item_indices = c(6, 8, 9, 21, 23),  # Non-adaptive PA items (all on one page)
+        scale_type = "likert",
+        custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
+        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
     ),
     
-    # Pages 7-11: Programming Anxiety Part 2 - Adaptive (5 items, one per page)
-    # Using NULL item_indices triggers adaptive selection (already supported in render_items_page)
+    # Pages 7-11: Programming Anxiety Adaptive (5 items, one per page)
+    # Adaptive selection from pool: items 1-5, 7, 10-20, 22 (18 items total, excluding 6, 8, 9, 21, 23)
     list(
-        id = "page7_pa2",
+        id = "page7_pa_adapt1",
         type = "items", 
         title = "",
         title_en = "",
         instructions = "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.",
         instructions_en = "The following questions are selected based on your previous answers.",
-        item_indices = NULL,  # NULL triggers adaptive selection when adaptive=TRUE
-        scale_type = "likert"
+        item_indices = NULL,  # NULL triggers adaptive selection
+        scale_type = "likert",
+        custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
+        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
     ),
     list(
-        id = "page8_pa3",
+        id = "page8_pa_adapt2",
         type = "items",
         title = "",
         title_en = "",
         item_indices = NULL,  # NULL triggers adaptive selection
-        scale_type = "likert"
+        scale_type = "likert",
+        custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
+        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
     ),
     list(
-        id = "page9_pa4",
+        id = "page9_pa_adapt3",
         type = "items",
         title = "",
         title_en = "",
         item_indices = NULL,  # NULL triggers adaptive selection
-        scale_type = "likert"
+        scale_type = "likert",
+        custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
+        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
     ),
     list(
-        id = "page10_pa5",
+        id = "page10_pa_adapt4",
         type = "items",
         title = "",
         title_en = "",
         item_indices = NULL,  # NULL triggers adaptive selection
-        scale_type = "likert"
+        scale_type = "likert",
+        custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
+        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
     ),
     list(
-        id = "page11_pa6",
+        id = "page11_pa_adapt5",
         type = "items",
         title = "",
         title_en = "",
         item_indices = NULL,  # NULL triggers adaptive selection
-        scale_type = "likert"
+        scale_type = "likert",
+        custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
+        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
     ),
     
     # Pages 12-15: BFI items (grouped by trait) - NOT REQUIRED
@@ -778,7 +898,7 @@ custom_page_flow <- list(
         title_en = "",
         instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
         instructions_en = "Please indicate to what extent the following statements apply to you.",
-        item_indices = 21:25,  # BFI items (after 20 PA items)
+        item_indices = 24:28,  # BFI items (after 23 PA items)
         scale_type = "likert",
         required = FALSE
     ),
@@ -787,7 +907,7 @@ custom_page_flow <- list(
         type = "items",
         title = "",
         title_en = "",
-        item_indices = 26:30,  # BFI items continued
+        item_indices = 29:33,  # BFI items continued
         scale_type = "likert",
         required = FALSE
     ),
@@ -796,7 +916,7 @@ custom_page_flow <- list(
         type = "items",
         title = "",
         title_en = "",
-        item_indices = 31:35,  # BFI items continued
+        item_indices = 34:38,  # BFI items continued
         scale_type = "likert",
         required = FALSE
     ),
@@ -805,7 +925,7 @@ custom_page_flow <- list(
         type = "items",
         title = "",
         title_en = "",
-        item_indices = 36:40,  # BFI items final
+        item_indices = 39:43,  # BFI items final
         scale_type = "likert",
         required = FALSE
     ),
@@ -818,7 +938,7 @@ custom_page_flow <- list(
         title_en = "",
         instructions = "Wie sehr treffen die folgenden Aussagen auf Sie zu?",
         instructions_en = "How much do the following statements apply to you?",
-        item_indices = 41:45,  # PSQ items (after 20 PA + 20 BFI)
+        item_indices = 44:48,  # PSQ items (after 23 PA + 20 BFI)
         scale_type = "likert",
         required = FALSE
     ),
@@ -831,7 +951,7 @@ custom_page_flow <- list(
         title_en = "",
         instructions = "Wie leicht oder schwer fällt es Ihnen...",
         instructions_en = "How easy or difficult is it for you...",
-        item_indices = 46:49,  # MWS items
+        item_indices = 49:52,  # MWS items
         scale_type = "difficulty",
         required = FALSE
     ),
@@ -842,7 +962,7 @@ custom_page_flow <- list(
         type = "items",
         title = "",
         title_en = "",
-        item_indices = 50:51,  # Statistics items
+        item_indices = 53:54,  # Statistics items
         scale_type = "likert",
         required = FALSE
     ),
@@ -1104,19 +1224,19 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             demographics <- list()
         }
         
-        # Ensure we have all 51 item responses (20 PA + 31 original)
-        if (is.null(responses) || length(responses) < 51) {
+        # Ensure we have all 54 item responses (23 PA + 20 BFI + 5 PSQ + 4 MWS + 2 Stats)
+        if (is.null(responses) || length(responses) < 54) {
             if (is.null(responses)) {
-                responses <- rep(NA, 51)  # Use NA instead of 3 to avoid corrupting calculations
+                responses <- rep(NA, 54)  # Use NA instead of 3 to avoid corrupting calculations
             } else {
-                responses <- c(responses, rep(NA, 51 - length(responses)))
+                responses <- c(responses, rep(NA, 54 - length(responses)))
             }
         }
         responses <- as.numeric(responses)
         
         # Calculate Programming Anxiety score using ONLY items that were actually administered
-        # PA items are indices 1-20, but only some were shown (adaptive testing)
-        pa_indices <- 1:20
+        # STARS-D adapted: 23 PA items total (10 shown: 5 non-adaptive + 5 adaptive)
+        pa_indices <- 1:23
         pa_responses_all <- responses[pa_indices]
         
         # Get only non-NA responses (items that were actually shown)
@@ -1124,32 +1244,24 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         pa_valid_indices <- pa_indices[pa_valid_mask]
         pa_responses <- pa_responses_all[pa_valid_mask]
         
-        cat(sprintf("DEBUG: Found %d PA responses (out of 20 possible PA items)\n", length(pa_responses)))
+        cat(sprintf("DEBUG: Found %d PA responses (out of 23 possible PA items)\n", length(pa_responses)))
         cat(sprintf("DEBUG: PA items with responses: %s\n", paste(pa_valid_indices, collapse=", ")))
         
-        # Apply reverse scoring for reverse-coded items that were actually shown
-        # Reverse-coded PA items: 1, 10, 15
-        reverse_pa_items <- c(1, 10, 15)
-        for (i in seq_along(pa_valid_indices)) {
-            item_idx <- pa_valid_indices[i]
-            if (item_idx %in% reverse_pa_items) {
-                cat(sprintf("DEBUG: Reverse scoring PA item %d: %d -> %d\n", item_idx, pa_responses[i], 6 - pa_responses[i]))
-                pa_responses[i] <- 6 - pa_responses[i]
-            }
-        }
+        # No reverse scoring for STARS-D adapted items (all items measure anxiety directly)
         
         pa_score <- mean(pa_responses, na.rm = TRUE)
         
         # Compute IRT-based ability estimate for Programming Anxiety
-        # This is a semi-adaptive assessment: 5 fixed + 5 adaptively selected items
+        # STARS-D adapted: 5 non-adaptive (fixed) + 5 adaptive = 10 total
         pa_theta <- pa_score  # Default to classical score
         
         # Fit 2PL IRT model for Programming Anxiety
         cat("\n================================================================================\n")
-        cat("PROGRAMMING ANXIETY - IRT MODEL (2PL)\n")
+        cat("PROGRAMMING ANXIETY - IRT MODEL (2PL) - STARS-D Adapted\n")
         cat("================================================================================\n")
-        cat("Assessment Type: Semi-Adaptive (5 fixed + 5 adaptive items)\n")
-        cat(sprintf("Total items administered: %d\n", length(pa_responses)))
+        cat("Source: Adapted from STARS-D (Statistical Anxiety Rating Scale - German)\n")
+        cat("Assessment Type: Semi-Adaptive (5 non-adaptive + 5 adaptive from pool of 18)\n")
+        cat(sprintf("Total items administered: %d (expected: 10)\n", length(pa_responses)))
         cat("\n")
         
         # Get item parameters for the PA items that were ACTUALLY shown (adaptive testing)
@@ -1348,24 +1460,24 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             se_trace[i] <- se_temp
         }
         
-        # Calculate BFI scores - PROPER GROUPING BY TRAIT (now starting at index 21)
+        # Calculate BFI scores - PROPER GROUPING BY TRAIT (now starting at index 24 after 23 PA items)
         # Items are ordered: E1, E2, E3, E4, V1, V2, V3, V4, G1, G2, G3, G4, N1, N2, N3, N4, O1, O2, O3, O4
         scores <- list(
             ProgrammingAnxiety = if (exists("pa_theta")) pa_theta else pa_score,
-            Extraversion = mean(c(responses[21], 6-responses[22], 6-responses[23], responses[24]), na.rm=TRUE),
-            Verträglichkeit = mean(c(responses[25], 6-responses[26], responses[27], 6-responses[28]), na.rm=TRUE),
-            Gewissenhaftigkeit = mean(c(6-responses[29], responses[30], responses[31], 6-responses[32]), na.rm=TRUE),
-            Neurotizismus = mean(c(6-responses[33], responses[34], responses[35], 6-responses[36]), na.rm=TRUE),
-            Offenheit = mean(c(responses[37], 6-responses[38], responses[39], 6-responses[40]), na.rm=TRUE)
+            Extraversion = mean(c(responses[24], 6-responses[25], 6-responses[26], responses[27]), na.rm=TRUE),
+            Verträglichkeit = mean(c(responses[28], 6-responses[29], responses[30], 6-responses[31]), na.rm=TRUE),
+            Gewissenhaftigkeit = mean(c(6-responses[32], responses[33], responses[34], 6-responses[35]), na.rm=TRUE),
+            Neurotizismus = mean(c(6-responses[36], responses[37], responses[38], 6-responses[39]), na.rm=TRUE),
+            Offenheit = mean(c(responses[40], 6-responses[41], responses[42], 6-responses[43]), na.rm=TRUE)
         )
         
-        # PSQ Stress score (now at indices 41-45)
-        psq <- responses[41:45]
+        # PSQ Stress score (now at indices 44-48)
+        psq <- responses[44:48]
         scores$Stress <- mean(c(psq[1:3], 6-psq[4], psq[5]), na.rm=TRUE)
         
-        # MWS & Statistics (now at indices 46-49 and 50-51)
-        scores$Studierfähigkeiten <- mean(responses[46:49], na.rm=TRUE)
-        scores$Statistik <- mean(responses[50:51], na.rm=TRUE)
+        # MWS & Statistics (now at indices 49-52 and 53-54)
+        scores$Studierfähigkeiten <- mean(responses[49:52], na.rm=TRUE)
+        scores$Statistik <- mean(responses[53:54], na.rm=TRUE)
         
         # Debug: Check scores for missing values
         cat("DEBUG: Scores values:\n")
@@ -1378,13 +1490,13 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         # Check for ggradar (should be pre-installed)
         
         # Prepare data for ggradar - needs to be scaled 0-1
-        # Ensure all scores are valid numbers and handle missing values
+        # Keep NA values as NA (don't replace with default)
         radar_scores <- list(
-            Extraversion = if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) 3 else scores$Extraversion,
-            Verträglichkeit = if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) 3 else scores$Verträglichkeit,
-            Gewissenhaftigkeit = if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) 3 else scores$Gewissenhaftigkeit,
-            Neurotizismus = if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) 3 else scores$Neurotizismus,
-            Offenheit = if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit
+            Extraversion = if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) NA else scores$Extraversion,
+            Verträglichkeit = if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) NA else scores$Verträglichkeit,
+            Gewissenhaftigkeit = if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) NA else scores$Gewissenhaftigkeit,
+            Neurotizismus = if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) NA else scores$Neurotizismus,
+            Offenheit = if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) NA else scores$Offenheit
         )
         
         # Debug: Check radar scores
@@ -1423,11 +1535,26 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         # Create title based on language (used in both radar plot branches)
         radar_title <- if (is_english) "Your Personality Profile (Big Five)" else "Ihr Persönlichkeitsprofil (Big Five)"
         
-        # Create radar plot with ggradar
-        if (requireNamespace("ggradar", quietly = TRUE)) {
-            
+        # Check if we have enough valid data for radar plot (need at least 3 non-NA values)
+        non_na_count <- sum(!is.na(unlist(radar_scores)))
+        skip_radar_plot <- non_na_count < 3
+        
+        if (skip_radar_plot) {
+            cat("DEBUG: Skipping radar plot - only", non_na_count, "non-NA values out of 5\n")
+            radar_plot <- NULL
+        } else {
+            # Create radar plot with ggradar
+            if (requireNamespace("ggradar", quietly = TRUE)) {
+                # Replace NA values with 0.6 (middle value) for plotting only
+                radar_data_plot <- radar_data
+                for (col in names(radar_data_plot)[-1]) {  # Skip 'group' column
+                    if (is.na(radar_data_plot[[col]])) {
+                        radar_data_plot[[col]] <- 0.6  # Middle value for missing data
+                    }
+                }
+                
             radar_plot <- ggradar::ggradar(
-                radar_data,
+                radar_data_plot,
                 values.radar = c("1", "3", "5"),  # Min, mid, max labels
                 grid.min = 0,
                 grid.mid = 0.6,
@@ -1452,8 +1579,8 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                     plot.margin = ggplot2::margin(20, 20, 20, 20)
                 ) +
                 ggplot2::labs(title = radar_title)
-        } else {
-            # Fallback to simple ggplot2 approach if ggradar not available
+            } else {
+                # Fallback to simple ggplot2 approach if ggradar not available
             # Use namespace to avoid loading issues
             if (!requireNamespace("ggplot2", quietly = TRUE)) {
                 stop("ggplot2 package is required for plotting")
@@ -1531,34 +1658,35 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                     plot.margin = ggplot2::margin(30, 30, 30, 30)
                 ) +
                 ggplot2::labs(title = radar_title)
+            }
         }
         
         # Create bar chart with logical ordering
         # Show BFI scales first, then Programming Anxiety, then others
-        # Ensure all scores are valid numbers (replace NA/NaN with 3)
+        # Keep NA/NaN as NA (don't replace with default value)
         if (is_english) {
             # Use English names as keys for English mode
             ordered_scores <- list(
-                Extraversion = if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) 3 else scores$Extraversion,
-                Agreeableness = if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) 3 else scores$Verträglichkeit,
-                Conscientiousness = if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) 3 else scores$Gewissenhaftigkeit,
-                Neuroticism = if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) 3 else scores$Neurotizismus,
-                Openness = if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit,
-                ProgrammingAnxiety = if (is.na(scores$ProgrammingAnxiety) || is.nan(scores$ProgrammingAnxiety)) 3 else scores$ProgrammingAnxiety,
-                Stress = if (is.na(scores$Stress) || is.nan(scores$Stress)) 3 else scores$Stress,
-                StudySkills = if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) 3 else scores$Studierfähigkeiten
+                Extraversion = if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) NA else scores$Extraversion,
+                Agreeableness = if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) NA else scores$Verträglichkeit,
+                Conscientiousness = if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) NA else scores$Gewissenhaftigkeit,
+                Neuroticism = if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) NA else scores$Neurotizismus,
+                Openness = if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) NA else scores$Offenheit,
+                ProgrammingAnxiety = if (is.na(scores$ProgrammingAnxiety) || is.nan(scores$ProgrammingAnxiety)) NA else scores$ProgrammingAnxiety,
+                Stress = if (is.na(scores$Stress) || is.nan(scores$Stress)) NA else scores$Stress,
+                StudySkills = if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) NA else scores$Studierfähigkeiten
             )
         } else {
             # Use German names as keys for German mode
             ordered_scores <- list(
-                Extraversion = if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) 3 else scores$Extraversion,
-                Verträglichkeit = if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) 3 else scores$Verträglichkeit,
-                Gewissenhaftigkeit = if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) 3 else scores$Gewissenhaftigkeit,
-                Neurotizismus = if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) 3 else scores$Neurotizismus,
-                Offenheit = if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) 3 else scores$Offenheit,
-                ProgrammingAnxiety = if (is.na(scores$ProgrammingAnxiety) || is.nan(scores$ProgrammingAnxiety)) 3 else scores$ProgrammingAnxiety,
-                Stress = if (is.na(scores$Stress) || is.nan(scores$Stress)) 3 else scores$Stress,
-                Studierfähigkeiten = if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) 3 else scores$Studierfähigkeiten
+                Extraversion = if (is.na(scores$Extraversion) || is.nan(scores$Extraversion)) NA else scores$Extraversion,
+                Verträglichkeit = if (is.na(scores$Verträglichkeit) || is.nan(scores$Verträglichkeit)) NA else scores$Verträglichkeit,
+                Gewissenhaftigkeit = if (is.na(scores$Gewissenhaftigkeit) || is.nan(scores$Gewissenhaftigkeit)) NA else scores$Gewissenhaftigkeit,
+                Neurotizismus = if (is.na(scores$Neurotizismus) || is.nan(scores$Neurotizismus)) NA else scores$Neurotizismus,
+                Offenheit = if (is.na(scores$Offenheit) || is.nan(scores$Offenheit)) NA else scores$Offenheit,
+                ProgrammingAnxiety = if (is.na(scores$ProgrammingAnxiety) || is.nan(scores$ProgrammingAnxiety)) NA else scores$ProgrammingAnxiety,
+                Stress = if (is.na(scores$Stress) || is.nan(scores$Stress)) NA else scores$Stress,
+                Studierfähigkeiten = if (is.na(scores$Studierfähigkeiten) || is.nan(scores$Studierfähigkeiten)) NA else scores$Studierfähigkeiten
             )
         }
         
@@ -1616,21 +1744,16 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                 stringsAsFactors = FALSE,
                 row.names = NULL
             )
+            # Filter out rows with NA scores for the bar plot
+            # (Keep all rows for the table, but plot only has valid data)
+            all_data <- all_data[!is.na(all_data$score), ]
         }, error = function(e) {
             cat("Error creating all_data data.frame:", e$message, "\n")
-            # Create fallback data.frame
+            # Create fallback data.frame with Programming Anxiety only (the required scale)
             all_data <- data.frame(
-                dimension = factor(if (is_english) {
-                    c("Extraversion", "Agreeableness", "Conscientiousness", "Neuroticism", "Openness", "ProgrammingAnxiety", "Stress", "StudySkills")
-                } else {
-                    c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", "Neurotizismus", "Offenheit", "ProgrammingAnxiety", "Stress", "Studierfähigkeiten")
-                }),
-                score = rep(3, 8),
-                category = factor(if (is_english) {
-                    c(rep("Personality", 5), "Programming Anxiety", "Stress", "Study Skills")
-                } else {
-                    c(rep("Persönlichkeit", 5), "Programmierangst", "Stress", "Studierfähigkeiten")
-                }),
+                dimension = factor("ProgrammingAnxiety"),
+                score = 3,
+                category = factor(if (is_english) "Programming Anxiety" else "Programmierangst"),
                 stringsAsFactors = FALSE,
                 row.names = NULL
             )
@@ -1759,12 +1882,16 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         )
         
         # Save plots
-        radar_file <- tempfile(fileext = ".png")
+        radar_file <- NULL
         bar_file <- tempfile(fileext = ".png")
         trace_file <- tempfile(fileext = ".png")
         
         suppressMessages({
-            ggplot2::ggsave(radar_file, radar_plot, width = 10, height = 9, dpi = 150, bg = "white")
+            # Only save radar plot if it exists
+            if (!is.null(radar_plot)) {
+                radar_file <- tempfile(fileext = ".png")
+                ggplot2::ggsave(radar_file, radar_plot, width = 10, height = 9, dpi = 150, bg = "white")
+            }
             ggplot2::ggsave(bar_file, bar_plot, width = 12, height = 7, dpi = 150, bg = "white")
         })
         
@@ -1774,10 +1901,15 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         # Programming Anxiety trace intentionally not saved/encoded for participant-facing report
         trace_base64 <- ""
         if (requireNamespace("base64enc", quietly = TRUE)) {
-            radar_base64 <- base64enc::base64encode(radar_file)
+            if (!is.null(radar_file)) {
+                radar_base64 <- base64enc::base64encode(radar_file)
+            }
             bar_base64 <- base64enc::base64encode(bar_file)
         }
-        unlink(c(radar_file, bar_file))
+        # Clean up temp files
+        files_to_unlink <- c(bar_file)
+        if (!is.null(radar_file)) files_to_unlink <- c(files_to_unlink, radar_file)
+        unlink(files_to_unlink)
         
         # Create detailed item responses table
         # Ensure we don't exceed available questions and handle missing values
@@ -1917,32 +2049,23 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         # Calculate standard deviations for each dimension
         sds <- list()
         
-        # Programming Anxiety - use ACTUAL administered items (adaptive testing)
-        # Get all PA responses (indices 1-20)
-        pa_items_all <- responses[1:20]
+        # Programming Anxiety - use ACTUAL administered items (STARS-D adapted)
+        # Get all PA responses (indices 1-23, but only 10 shown)
+        pa_items_all <- responses[1:23]
         pa_items_valid <- pa_items_all[!is.na(pa_items_all)]
-        pa_valid_idx <- which(!is.na(pa_items_all))
         
-        # Apply reverse scoring to the items that were shown
-        pa_items_scored <- pa_items_valid
-        reverse_pa_items <- c(1, 10, 15)
-        for (i in seq_along(pa_valid_idx)) {
-            if (pa_valid_idx[i] %in% reverse_pa_items) {
-                pa_items_scored[i] <- 6 - pa_items_scored[i]
-            }
-        }
-        
-        sd_val <- sd(pa_items_scored, na.rm = TRUE)
+        # No reverse scoring for STARS-D adapted items
+        sd_val <- sd(pa_items_valid, na.rm = TRUE)
         sds[["ProgrammingAnxiety"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
         
         # Big Five dimensions - each has 4 items (with reverse scoring applied)
-        # Items are now 21-40 (after PA items)
+        # Items are now 24-43 (after 23 PA items)
         bfi_dims <- list(
-            Extraversion = c(responses[21], 6-responses[22], 6-responses[23], responses[24]),
-            Verträglichkeit = c(responses[25], 6-responses[26], responses[27], 6-responses[28]),
-            Gewissenhaftigkeit = c(6-responses[29], responses[30], responses[31], 6-responses[32]),
-            Neurotizismus = c(6-responses[33], responses[34], responses[35], 6-responses[36]),
-            Offenheit = c(responses[37], 6-responses[38], responses[39], 6-responses[40])
+            Extraversion = c(responses[24], 6-responses[25], 6-responses[26], responses[27]),
+            Verträglichkeit = c(responses[28], 6-responses[29], responses[30], 6-responses[31]),
+            Gewissenhaftigkeit = c(6-responses[32], responses[33], responses[34], 6-responses[35]),
+            Neurotizismus = c(6-responses[36], responses[37], responses[38], 6-responses[39]),
+            Offenheit = c(responses[40], 6-responses[41], responses[42], 6-responses[43])
         )
         
         for (dim_name in names(bfi_dims)) {
@@ -1951,23 +2074,26 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         }
         
         # PSQ Stress - 5 items (with reverse scoring for item 4)
-        # Items are now 41-45 (after PA and BFI)
-        psq_items <- c(responses[41:43], 6-responses[44], responses[45])
+        # Items are now 44-48 (after PA and BFI)
+        psq_items <- c(responses[44:46], 6-responses[47], responses[48])
         sd_val <- sd(psq_items, na.rm = TRUE)
         sds[["Stress"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
         
-        # MWS Studierfähigkeiten - 4 items (items 46-49)
-        mws_items <- responses[46:49]
+        # MWS Studierfähigkeiten - 4 items (items 49-52)
+        mws_items <- responses[49:52]
         sd_val <- sd(mws_items, na.rm = TRUE)
         sds[["Studierfähigkeiten"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
         
-        # Statistik - 2 items (items 50-51)
-        stat_items <- responses[50:51]
+        # Statistik - 2 items (items 53-54)
+        stat_items <- responses[53:54]
         sd_val <- sd(stat_items, na.rm = TRUE)
         sds[["Statistik"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
         
         for (name in names(ordered_scores)) {
-            value <- round(ordered_scores[[name]], 2)
+            # Check if value is NA before rounding
+            raw_value <- ordered_scores[[name]]
+            value <- if (is.na(raw_value)) NA else round(raw_value, 2)
+            
             # Map back to original scores for SD calculation
             original_name <- if (is_english) {
                 switch(name,
@@ -1982,12 +2108,21 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                 name
             }
             sd_value <- ifelse(original_name %in% names(sds), sds[[original_name]], NA)
-            level <- ifelse(value >= 3.7, 
-                            if (is_english) "High" else "Hoch", 
-                            ifelse(value >= 2.3, 
-                                   if (is_english) "Medium" else "Mittel", 
-                                   if (is_english) "Low" else "Niedrig"))
-            color <- ifelse(value >= 3.7, "#28a745", ifelse(value >= 2.3, "#ffc107", "#dc3545"))
+            
+            # Only calculate level and color if value is not NA
+            if (is.na(value)) {
+                level <- "-"
+                color <- "#808080"  # Gray for NA values
+                value_display <- "-"
+            } else {
+                level <- ifelse(value >= 3.7, 
+                                if (is_english) "High" else "Hoch", 
+                                ifelse(value >= 2.3, 
+                                       if (is_english) "Medium" else "Mittel", 
+                                       if (is_english) "Low" else "Niedrig"))
+                color <- ifelse(value >= 3.7, "#28a745", ifelse(value >= 2.3, "#ffc107", "#dc3545"))
+                value_display <- as.character(value)
+            }
             
             # Translate dimension names
             if (is_english) {
@@ -2020,7 +2155,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                            '<tr>',
                            '<td data-label="', if (is_english) 'Dimension' else 'Dimension', '" style="padding: 12px; border-bottom: 1px solid #e0e0e0;">', name_display, '</td>',
                            '<td data-label="', if (is_english) 'Mean' else 'Mittelwert', '" style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
-                           '<strong style="color: ', color, ';">', value, '</strong></td>',
+                           '<strong style="color: ', color, ';">', value_display, '</strong></td>',
                            '<td data-label="', if (is_english) 'SD' else 'SD', '" style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
                            ifelse(is.na(sd_value), "-", as.character(sd_value)), '</td>',
                            # Interpretation column removed per request
@@ -2421,50 +2556,49 @@ session_uuid <- paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 # Enable adaptive selection output like inrep examples
 # This function will be called for item selection if we enable it
 custom_item_selection <- function(rv, item_bank, config, session = NULL) {
-    # IMPORTANT: This function should ONLY be called for adaptive pages (7-11 with item_indices = NULL)
-    # Pages with fixed item_indices should NOT call this function - they use their fixed indices directly
+    # STARS-D ADAPTED: 23 PA items total
+    # Non-adaptive items: 6, 8, 9, 21, 23 (shown fixed on page 6)
+    # Adaptive pool: 1-5, 7, 10-20, 22 (18 items)
+    # This function selects 5 adaptive items for pages 7-11
     
     # CRITICAL: Read administered items from session$userData (non-reactive storage)
-    # Using rv$administered causes re-renders even when wrapped in isolate()!
     administered_items <- if (!is.null(session) && !is.null(session$userData$administered)) {
         session$userData$administered
     } else {
-        rv$administered %||% integer(0)  # Fallback to rv if session not available
+        rv$administered %||% integer(0)
     }
     
-    # Check which PA items have been administered
-    administered_pa <- administered_items[administered_items >= 1 & administered_items <= 20]
+    # Check which PA items have been administered (1-23)
+    administered_pa <- administered_items[administered_items >= 1 & administered_items <= 23]
     num_pa_items_shown <- length(administered_pa)
     
-    # Also check if we have responses for items 1-5 (they might be in rv$responses but not yet in rv$administered)
-    # This handles the case where page 6 collected responses but they're not yet in administered
-    responses_for_pa <- which(!is.na(rv$responses[1:min(20, length(rv$responses))]))
+    # Check responses for PA items
+    responses_for_pa <- which(!is.na(rv$responses[1:min(23, length(rv$responses))]))
     num_pa_responses <- length(responses_for_pa)
     
-    # Use the maximum of administered or responses to determine progress
-    # This ensures we don't repeat items that were already shown
+    # Use the maximum to determine progress
     effective_pa_count <- max(num_pa_items_shown, num_pa_responses)
     
     message(sprintf("DEBUG: Administered PA items: %s (count: %d), PA responses: %s (count: %d), effective: %d", 
                     paste(administered_pa, collapse=", "), num_pa_items_shown,
                     paste(responses_for_pa, collapse=", "), num_pa_responses, effective_pa_count))
     
-    # First 5 items: Fixed PA items (1-5) - should already be shown on page 6
-    # NEVER return items 1-5 - they're already shown on page 6!
+    # Fixed non-adaptive items (6, 8, 9, 21, 23) - should already be shown on page 6
+    # NEVER return these items - they're already shown on page 6!
+    fixed_items <- c(6, 8, 9, 21, 23)
+    
     if (effective_pa_count < 5) {
-        # Items 1-5 haven't been shown yet - this shouldn't happen for pages 7-11
-        # But if we're on an early page, return NULL to skip
-        message("WARNING: Items 1-5 should already be shown on page 6! Skipping selection.")
+        message("WARNING: Fixed items should already be shown on page 6! Skipping selection.")
         return(NULL)
     }
     
-    # Items 6-10: Adaptive PA items (select from pool 6-20)
-    # We want 5 adaptive items total (items 6-10 of the PA section)
-    # ONLY handle adaptive selection for pages 7-11
+    # Adaptive selection: Select 5 items from pool (18 items total)
+    # Pool: 1-5, 7, 10-20, 22 (excluding fixed items 6, 8, 9, 21, 23)
+    # Pages 7-11: Select one item per page
     if (effective_pa_count >= 5 && effective_pa_count < 10) {
         adaptive_item_number <- effective_pa_count - 4  # 6th, 7th, 8th, 9th, or 10th PA item
         message("\n================================================================================")
-        message(sprintf("ADAPTIVE ITEM SELECTION - Selecting PA item #%d (overall item %d of 10 PA items)", 
+        message(sprintf("ADAPTIVE ITEM SELECTION - Selecting PA item #%d (item %d of 10 total PA)", 
                         adaptive_item_number + 5, effective_pa_count + 1))
         message("================================================================================")
         
@@ -2521,17 +2655,19 @@ custom_item_selection <- function(rv, item_bank, config, session = NULL) {
         
         message(sprintf("Current ability estimate: theta=%.3f, SE=%.3f", current_theta, current_se))
         
-        # Get available PA items (6-20) that haven't been shown
-        pa_pool <- 6:20  # Only pool 6-20 for adaptive selection
+        # Get available PA items from adaptive pool (18 items total)
+        # Adaptive pool: 1-5, 7, 10-20, 22
+        # Exclude fixed items: 6, 8, 9, 21, 23
+        adaptive_pool <- c(1:5, 7, 10:20, 22)
         
         # Check both administered AND items with responses (to avoid duplicates)
-        # Items 1-5 are ALWAYS excluded (they're on page 6)
+        # Fixed items (6, 8, 9, 21, 23) are ALWAYS excluded (they're on page 6)
         already_shown_pa <- unique(c(
-            rv$administered[rv$administered >= 1 & rv$administered <= 20],
-            responses_for_pa[responses_for_pa >= 1 & responses_for_pa <= 20],
-            1:5  # Always exclude items 1-5 (shown on page 6)
+            rv$administered[rv$administered >= 1 & rv$administered <= 23],
+            responses_for_pa[responses_for_pa >= 1 & responses_for_pa <= 23],
+            fixed_items  # Always exclude fixed items (shown on page 6)
         ))
-        available_items <- setdiff(pa_pool, already_shown_pa)
+        available_items <- setdiff(adaptive_pool, already_shown_pa)
         
         if (is.null(available_items) || length(available_items) == 0) {
             return(NULL)
@@ -2592,13 +2728,13 @@ custom_item_selection <- function(rv, item_bank, config, session = NULL) {
         return(selected_item)
     }
     
-    # Items 11+: Fixed non-PA items (21-51 in order)
-    # IMPORTANT: Pages 12+ have fixed item_indices defined directly (e.g., item_indices = 21:25)
+    # Items 11+: Fixed non-PA items (24-54 in order)
+    # IMPORTANT: Pages 12+ have fixed item_indices defined directly (e.g., item_indices = 24:28)
     # They should NOT call this function - they use their fixed indices from page$item_indices
     # So if we get here with effective_pa_count >= 10, something went wrong
     # Return NULL and let the page use its fixed item_indices directly
     if (effective_pa_count >= 10) {
-        message("WARNING: custom_item_selection called but all PA items (1-10) are done.")
+        message("WARNING: custom_item_selection called but all 10 PA items are done.")
         message("Pages 12+ should use fixed item_indices directly, not call this function.")
         message("Returning NULL - page should use its fixed item_indices.")
         return(NULL)
@@ -2692,25 +2828,25 @@ get_comprehensive_dataset <- function(responses = NULL, demographics = NULL, ite
         }
         
         # Initialize all item columns with NA
-        # PA items (1-20)
-        for (i in 1:20) {
+        # PA items (1-23) - STARS-D adapted
+        for (i in 1:23) {
             data[[sprintf("PA_%02d", i)]] <- NA
         }
         
-        # BFI items (21-40)
-        bfi_cols <- c("BFE_01", "BFE_02", "BFE_03", "BFE_04",  # Extraversion (21-24)
-                      "BFV_01", "BFV_02", "BFV_03", "BFV_04",  # Verträglichkeit (25-28)
-                      "BFG_01", "BFG_02", "BFG_03", "BFG_04",  # Gewissenhaftigkeit (29-32)
-                      "BFN_01", "BFN_02", "BFN_03", "BFN_04",  # Neurotizismus (33-36)
-                      "BFO_01", "BFO_02", "BFO_03", "BFO_04")  # Offenheit (37-40)
+        # BFI items (24-43)
+        bfi_cols <- c("BFE_01", "BFE_02", "BFE_03", "BFE_04",  # Extraversion (24-27)
+                      "BFV_01", "BFV_02", "BFV_03", "BFV_04",  # Verträglichkeit (28-31)
+                      "BFG_01", "BFG_02", "BFG_03", "BFG_04",  # Gewissenhaftigkeit (32-35)
+                      "BFN_01", "BFN_02", "BFN_03", "BFN_04",  # Neurotizismus (36-39)
+                      "BFO_01", "BFO_02", "BFO_03", "BFO_04")  # Offenheit (40-43)
         for (col in bfi_cols) {
             data[[col]] <- NA
         }
         
-        # Other items (41-51)  
-        other_cols <- c("PSQ_02", "PSQ_04", "PSQ_16", "PSQ_29", "PSQ_30",      # PSQ (41-45)
-                       "MWS_1_KK", "MWS_10_KK", "MWS_17_KK", "MWS_21_KK",     # MWS (46-49)
-                       "Statistik_gutfolgen", "Statistik_selbstwirksam")        # Stats (50-51)
+        # Other items (44-54)  
+        other_cols <- c("PSQ_02", "PSQ_04", "PSQ_16", "PSQ_29", "PSQ_30",      # PSQ (44-48)
+                       "MWS_1_KK", "MWS_10_KK", "MWS_17_KK", "MWS_21_KK",     # MWS (49-52)
+                       "Statistik_gutfolgen", "Statistik_selbstwirksam")        # Stats (53-54)
         for (col in other_cols) {
             data[[col]] <- NA
         }
@@ -2723,22 +2859,22 @@ get_comprehensive_dataset <- function(responses = NULL, demographics = NULL, ite
                     # CORRECT MAPPING: response_idx directly corresponds to item number
                     item_num <- response_idx
                     
-                    if (item_num >= 1 && item_num <= 20) {
-                        # PA items (1-20)
+                    if (item_num >= 1 && item_num <= 23) {
+                        # PA items (1-23) - STARS-D adapted
                         col_name <- sprintf("PA_%02d", item_num)
                         data[[col_name]] <- responses[response_idx]
                         cat("DEBUG: Mapped response", response_idx, "(value:", responses[response_idx], ") to PA item", item_num, "->", col_name, "\n")
                         
-                    } else if (item_num >= 21 && item_num <= 40) {
-                        # BFI items (21-40)
-                        bfi_index <- item_num - 20
+                    } else if (item_num >= 24 && item_num <= 43) {
+                        # BFI items (24-43)
+                        bfi_index <- item_num - 23
                         col_name <- bfi_cols[bfi_index]
                         data[[col_name]] <- responses[response_idx]
                         cat("DEBUG: Mapped response", response_idx, "(value:", responses[response_idx], ") to BFI item", item_num, "->", col_name, "\n")
                         
-                    } else if (item_num >= 41 && item_num <= 51) {
-                        # Other items (41-51)
-                        other_index <- item_num - 40
+                    } else if (item_num >= 44 && item_num <= 54) {
+                        # Other items (44-54)
+                        other_index <- item_num - 43
                         col_name <- other_cols[other_index]
                         data[[col_name]] <- responses[response_idx]
                         cat("DEBUG: Mapped response", response_idx, "(value:", responses[response_idx], ") to other item", item_num, "->", col_name, "\n")
@@ -2904,8 +3040,8 @@ study_config <- inrep::create_study_config(
     input_types = input_types,
     model = "2PL",
     adaptive = TRUE,
-    max_items = 51,
-    min_items = 51,
+    max_items = 54,  # 23 PA + 20 BFI + 5 PSQ + 4 MWS + 2 Stats
+    min_items = 54,
     criteria = "MFI",
     item_selection_fun = custom_item_selection,  # Enable custom adaptive selection
     response_ui_type = "radio",

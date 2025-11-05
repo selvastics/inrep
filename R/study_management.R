@@ -1788,7 +1788,16 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
     }
     
     # Get response labels based on scale type and language
-    labels <- get_response_labels(page$scale_type %||% "likert", choices, current_lang)
+    # Support custom_labels (de) and custom_labels_en from page config
+    custom_labels <- if (current_lang == "en" && !is.null(page$custom_labels_en)) {
+      page$custom_labels_en
+    } else if (!is.null(page$custom_labels)) {
+      page$custom_labels
+    } else {
+      NULL
+    }
+    
+    labels <- get_response_labels(page$scale_type %||% "likert", choices, current_lang, custom_labels = custom_labels)
     
     shiny::div(
       class = "item-container",

@@ -29,68 +29,265 @@ WEBDAV_SHARE_TOKEN <- "Y51QPXzJVLWSAcb"
 # PROGRAMMING ANXIETY ITEM BANK
 # =============================================================================
 
-# Create programming anxiety item bank (20 items)
+# Create programming anxiety item bank - STARS-D adapted (51 items)
+# Part 1: Situational Anxiety (23 items) - situations involving programming
+# Part 2: Attitudinal/Affective Anxiety (28 items) - feelings about programming
 programming_anxiety_items <- data.frame(
-    id = paste0("PA_", sprintf("%02d", 1:20)),
+    id = c(paste0("PA_Sit_", sprintf("%02d", 1:23)), paste0("PA_Att_", sprintf("%02d", 1:28))),
     
     Question = c(
-        # Cognitive Anxiety (4 items)
-        "I worry that I won't be able to solve programming problems",
-        "I think I'm not smart enough for programming",
-        "I fear making mistakes when writing code",
-        "I worry about what others think of my programming skills",
+        # ==================================================================================
+        # PART 1: SITUATIONAL ANXIETY (23 items)
+        # Source: Adapted from STARS-D (Statistical Anxiety Rating Scale - German)
+        # Instruction: "Die folgenden Aussagen beschreiben Situationen, die mit Programmieren 
+        # zu tun haben. Wählen Sie bitte die Option, die am besten beschreibt, wie viel Angst 
+        # Sie in der entsprechenden Situation erleben würden."
+        # ==================================================================================
+        "Sie bereiten sich auf eine Programmierprüfung vor.",
+        "Sie müssen Code aus einem Tutorial oder einer Dokumentation interpretieren.",
+        "Sie fragen Ihren Programmierdozenten/Ihre Programmierdozentin, ob er/sie Ihnen Inhalte aus der Lehrveranstaltung, die Sie nicht verstehen, noch einmal individuell erklären kann.",
+        "Sie bearbeiten eine Programmieraufgabe für eine Lehrveranstaltung.",
+        "Sie müssen ein Problem lösen, indem Sie ein Programm schreiben.",
+        "Sie lesen ein Code-Beispiel, das mehrere Programmierkonzepte enthält.",
+        "Sie versuchen zu entscheiden, welche Programmiersprache oder welches Framework für Ihr Projekt geeignet ist.",
+        "Sie nehmen an einer Programmierprüfung teil.",
+        "Sie lesen eine technische Beschreibung, die Code-Beispiele und Algorithmen enthält.",
+        "Nachdem Sie ihn endlich herausgefunden haben, müssen Sie die Bedeutung einer Fehlermeldung interpretieren.",
+        "Sie betreten einen Raum, um an einer Programmierprüfung teilzunehmen.",
+        "Sie müssen eine Menge an Daten in einem Programm verarbeiten.",
+        "Sie stellen fest, dass ein Kommilitone/eine Kommilitonin eine andere Lösung für ein Programmierproblem hat als Sie.",
+        "Sie müssen entscheiden, ob Ihr Code korrekt funktioniert oder einen Fehler enthält.",
+        "Sie wachen am Morgen einer Programmierprüfung auf.",
+        "Sie bitten einen Dozenten/eine Dozentin, Ihnen Ihren Code oder eine Fehlermeldung zu erklären.",
+        "Sie versuchen, einen Algorithmus zu verstehen und nachzuvollziehen.",
+        "Sie beobachten einen Studenten/eine Studentin, wie er/sie sehr viele Zeilen Code für ein Projekt schreibt.",
+        "Sie bitten jemanden im Computerraum, Ihnen beim Debuggen zu helfen.",
+        "Sie versuchen, Code-Beispiele in einer Dokumentation oder einem Lehrbuch zu verstehen.",
+        "Sie schreiben sich für eine Programmierlehrveranstaltung ein.",
+        "Sie gehen eine bereits benotete Programmierprüfung noch einmal durch.",
+        "Sie bitten einen Kommilitonen/eine Kommilitonin, Ihnen bei einem Programmierproblem zu helfen.",
         
-        # Somatic Anxiety (4 items)
-        "I feel tense when I start programming",
-        "My heart races when I encounter programming errors",
-        "I sweat when working on difficult programming problems",
-        "I feel physically uncomfortable when debugging code",
-        
-        # Avoidance Behavior (4 items)
-        "I put off programming assignments until the last minute",
-        "I avoid taking advanced programming courses",
-        "I skip programming practice sessions",
-        "I avoid asking for help with programming problems",
-        
-        # Performance Anxiety (4 items)
-        "I freeze up during programming tests",
-        "I perform worse on programming tasks under pressure",
-        "I panic when given time limits for programming tasks",
-        "I make more errors when others are watching me program",
-        
-        # Learning Anxiety (4 items)
-        "I feel anxious when learning new programming languages",
-        "I worry about keeping up with new programming technologies",
-        "I feel overwhelmed by complex programming concepts",
-        "I doubt my ability to master advanced programming topics"
+        # ==================================================================================
+        # PART 2: ATTITUDINAL/AFFECTIVE ANXIETY (28 items)
+        # Instruction: "Die folgenden Aussagen beziehen sich darauf, was Sie in Bezug auf 
+        # Programmieren empfinden. Bitte kreisen Sie die Zahl ein, die am besten auf Sie 
+        # zutrifft."
+        # ==================================================================================
+        "Ich bin eine kreative Person und kann mit der Logik von Programmieren nichts anfangen.",
+        "Ich habe Mathe nicht sehr lange belegt und weiß, dass ich Probleme mit Programmieren haben werde.",
+        "Ich frage mich, warum ich Programmieren lernen muss, wenn ich es im Alltag niemals anwenden werde.",
+        "Für mich ist Programmieren sinnlos, da es technisch ist; mein Schwerpunkt im Studienfach ist aber theoretisch.",
+        "Programmieren nimmt mehr Zeit in Anspruch als es wert ist.",
+        "Ich empfinde Programmieren als Zeitverschwendung.",
+        "ProgrammierdozentInnen denken so abstrakt, dass sie unmenschlich erscheinen.",
+        "Ich kann nicht einmal einfache Logik verstehen, wie soll ich da Programmieren verstehen?",
+        "Die meisten ProgrammierdozentInnen kann man nicht als Menschen bezeichnen.",
+        "Ich bin so lange ohne Programmieren ausgekommen, warum soll ich es also jetzt lernen?",
+        "Ich mochte Mathematik noch nie, wie soll mir da Programmieren gefallen?",
+        "Ich will nicht lernen, Programmieren zu mögen.",
+        "Programmieren ist für Menschen, die technisch begabt oder interessiert sind.",
+        "Programmieren ist eine Qual, auf die ich gut verzichten könnte.",
+        "Ich bin nicht intelligent genug, um Programmieren zu verstehen.",
+        "Ich könnte Programmieren mögen, wenn es nicht so logisch wäre.",
+        "Ich wünschte, Programmieren würde von meinem Studienplan gestrichen.",
+        "Ich verstehe nicht, wozu man in meinem Studienfach Programmieren benötigt.",
+        "Ich sehe nicht ein, warum ich meinen Kopf mit Programmieren vollpumpen muss. Es wird mir in meiner weiteren Karriere nichts nützen.",
+        "ProgrammierdozentInnen sprechen eine andere Sprache.",
+        "ProgrammiererInnen sind mehr an Computern interessiert als an Menschen.",
+        "Ich weiß nicht warum, aber ich mag Programmieren einfach nicht.",
+        "ProgrammierdozentInnen sprechen so schnell, dass ich ihnen nicht folgen kann.",
+        "Programmieren übersteigt die menschliche Aufnahmefähigkeit.",
+        "Programmieren ist nicht wirklich schlecht. Es ist lediglich zu technisch.",
+        "Praxiswissen ist für meinen späteren Beruf so wichtig, dass ich meinen Kopf nicht auch noch mit etwas so Forderndem wie Programmieren belasten kann.",
+        "Ich werde Programmieren niemals anwenden, warum muss ich es also lernen?",
+        "Ich denke nicht schnell genug für Programmieren."
     ),
     
-    # IRT parameters for 2-Parameter Logistic Model
+    Question_EN = c(
+        # PART 1: SITUATIONAL ANXIETY (23 items - English)
+        "You are preparing for a programming exam.",
+        "You have to interpret code from a tutorial or documentation.",
+        "You ask your programming instructor if they can explain content from the course that you don't understand individually.",
+        "You are working on a programming assignment for a course.",
+        "You have to solve a problem by writing a program.",
+        "You are reading a code example that contains multiple programming concepts.",
+        "You are trying to decide which programming language or framework is suitable for your project.",
+        "You are taking a programming exam.",
+        "You are reading a technical description that contains code examples and algorithms.",
+        "After finally figuring it out, you have to interpret the meaning of an error message.",
+        "You enter a room to take a programming exam.",
+        "You have to process a large amount of data in a program.",
+        "You notice that a classmate has a different solution to a programming problem than you do.",
+        "You have to decide whether your code works correctly or contains an error.",
+        "You wake up on the morning of a programming exam.",
+        "You ask an instructor to explain your code or an error message to you.",
+        "You are trying to understand and comprehend an algorithm.",
+        "You observe a student writing many lines of code for a project.",
+        "You ask someone in the computer lab to help you debug.",
+        "You are trying to understand code examples in documentation or a textbook.",
+        "You are enrolling in a programming course.",
+        "You are reviewing an already graded programming exam.",
+        "You ask a classmate to help you with a programming problem.",
+        
+        # PART 2: ATTITUDINAL/AFFECTIVE ANXIETY (28 items - English)
+        "I am a creative person and cannot relate to the logic of programming.",
+        "I haven't taken math for very long and know I will have problems with programming.",
+        "I wonder why I have to learn programming when I will never use it in everyday life.",
+        "Programming is pointless for me because it is technical; my focus in my field of study is theoretical.",
+        "Programming takes more time than it is worth.",
+        "I feel programming is a waste of time.",
+        "Programming instructors think so abstractly that they seem inhuman.",
+        "I cannot even understand simple logic, how am I supposed to understand programming?",
+        "Most programming instructors cannot be called human.",
+        "I have gotten along without programming for so long, why should I learn it now?",
+        "I never liked mathematics, how could I like programming?",
+        "I do not want to learn to like programming.",
+        "Programming is for people who are technically gifted or interested.",
+        "Programming is a torment that I could do without.",
+        "I am not intelligent enough to understand programming.",
+        "I could like programming if it were not so logical.",
+        "I wish programming would be removed from my curriculum.",
+        "I do not understand why programming is needed in my field of study.",
+        "I do not see why I should fill my head with programming. It will not help me in my future career.",
+        "Programming instructors speak a different language.",
+        "Programmers are more interested in computers than in people.",
+        "I do not know why, but I simply do not like programming.",
+        "Programming instructors speak so fast that I cannot follow them.",
+        "Programming exceeds human capacity.",
+        "Programming is not really bad. It is just too technical.",
+        "Practical knowledge is so important for my future career that I cannot burden my mind with something as demanding as programming.",
+        "I will never use programming, so why do I have to learn it?",
+        "I do not think fast enough for programming."
+    ),
+    
+    # IRT parameters for 2-Parameter Logistic Model (AI-generated based on item content)
+    # NOTE: These parameters are AI-generated estimates for demonstration purposes
     a = c(
-        1.2, 1.4, 1.1, 1.3,
-        1.1, 1.3, 1.2, 1.4,
-        1.2, 1.4, 1.1, 1.3,
-        1.3, 1.2, 1.4, 1.1,
-        1.2, 1.3, 1.1, 1.4
+        # PART 1: Situational Anxiety (23 items) - discrimination parameters
+        # Items 6, 8, 9, 21, 23 are non-adaptive (marked with comment)
+        1.3,  # 1: Exam preparation
+        1.1,  # 2: Interpret code from tutorial
+        1.5,  # 3: Ask instructor for help
+        1.2,  # 4: Working on assignment
+        1.6,  # 5: Problem solving by programming
+        1.3,  # 6: Reading complex code (NON-ADAPTIVE)
+        1.1,  # 7: Choosing language/framework
+        1.8,  # 8: Taking exam (NON-ADAPTIVE)
+        1.2,  # 9: Reading technical description (NON-ADAPTIVE)
+        1.4,  # 10: Interpreting error message
+        1.7,  # 11: Entering exam room
+        1.3,  # 12: Processing large data
+        1.2,  # 13: Comparing solutions with peers
+        1.4,  # 14: Deciding if code is correct
+        1.7,  # 15: Waking up on exam morning
+        1.5,  # 16: Asking instructor to explain code
+        1.4,  # 17: Understanding algorithms
+        1.1,  # 18: Observing proficient peer
+        1.6,  # 19: Asking for debug help
+        1.3,  # 20: Understanding code examples
+        1.0,  # 21: Enrolling in course (NON-ADAPTIVE)
+        1.3,  # 22: Reviewing graded exam
+        1.5,  # 23: Asking classmate for help (NON-ADAPTIVE)
+        
+        # PART 2: Attitudinal/Affective Anxiety (28 items) - discrimination parameters
+        1.2,  # 24: Creative vs. logical
+        1.3,  # 25: Math background concerns
+        1.4,  # 26: Questioning relevance
+        1.3,  # 27: Technical vs. theoretical
+        1.2,  # 28: Time investment
+        1.3,  # 29: Waste of time
+        1.1,  # 30: Instructors seem inhuman
+        1.5,  # 31: Cannot understand logic
+        1.0,  # 32: Instructors not human
+        1.3,  # 33: No need so far
+        1.4,  # 34: Math dislike transfer
+        1.2,  # 35: Unwilling to like it
+        1.3,  # 36: For technical people only
+        1.4,  # 37: Programming is torture
+        1.6,  # 38: Not intelligent enough
+        1.3,  # 39: Too logical
+        1.4,  # 40: Wish it removed
+        1.3,  # 41: Field relevance question
+        1.4,  # 42: Career irrelevance
+        1.2,  # 43: Different language
+        1.1,  # 44: Computer over people focus
+        1.2,  # 45: Simple dislike
+        1.3,  # 46: Instructors too fast
+        1.1,  # 47: Exceeds capacity
+        1.2,  # 48: Just too technical
+        1.3,  # 49: Practical knowledge priority
+        1.4,  # 50: Never use it
+        1.5   # 51: Think too slowly
     ),
     
     b = c(
-        -0.5, -0.8, 0.2, -0.4,
-        0.1, -0.3, -0.1, -0.6,
-        -0.2, -0.7, 0.0, -0.3,
-        -0.4, 0.1, -0.8, 0.3,
-        0.0, -0.2, 0.4, -0.5
+        # PART 1: Situational Anxiety (23 items) - difficulty parameters
+        0.0,   # 1: Exam preparation - moderate anxiety
+        -0.3,  # 2: Tutorial code - easier situation
+        0.4,   # 3: Ask for help - social anxiety component
+        -0.1,  # 4: Assignment work - common, moderate
+        0.2,   # 5: Problem solving - core anxiety
+        0.6,   # 6: Complex code - higher difficulty (NON-ADAPTIVE)
+        0.5,   # 7: Language choice - decision anxiety
+        0.9,   # 8: Taking exam - high anxiety (NON-ADAPTIVE)
+        0.3,   # 9: Technical reading - moderate (NON-ADAPTIVE)
+        0.1,   # 10: Error message - common stressor
+        0.8,   # 11: Entering exam room - anticipatory anxiety
+        0.4,   # 12: Large data - competence concern
+        0.3,   # 13: Peer comparison - social comparison
+        0.2,   # 14: Code correctness - evaluation anxiety
+        0.7,   # 15: Exam morning - severe anticipatory
+        0.5,   # 16: Explain code to instructor - vulnerability
+        0.4,   # 17: Algorithm understanding - cognitive challenge
+        0.3,   # 18: Observing peer - social comparison
+        0.6,   # 19: Public help-seeking - vulnerability
+        0.0,   # 20: Code examples - learning context
+        0.1,   # 21: Course enrollment - commitment anxiety (NON-ADAPTIVE)
+        0.5,   # 22: Graded exam review - post-evaluation
+        0.4,   # 23: Peer help - social vulnerability (NON-ADAPTIVE)
+        
+        # PART 2: Attitudinal/Affective Anxiety (28 items) - difficulty parameters
+        0.3,   # 24: Creative vs. logical - identity conflict
+        0.2,   # 25: Math background - prerequisite concern
+        0.1,   # 26: Relevance question - motivation
+        0.4,   # 27: Technical vs. theoretical - field mismatch
+        0.2,   # 28: Time cost - pragmatic concern
+        0.5,   # 29: Waste of time - strong negative attitude
+        0.7,   # 30: Instructors inhuman - extreme perception
+        0.4,   # 31: Logic incomprehension - ability doubt
+        0.9,   # 32: Instructors not human - very extreme
+        0.3,   # 33: No past need - resistance to change
+        0.2,   # 34: Math transfer - prior negative experience
+        0.6,   # 35: Unwilling to like - resistance
+        0.1,   # 36: Technical people only - exclusion belief
+        0.5,   # 37: Torture - strong aversion
+        0.6,   # 38: Intelligence doubt - self-efficacy
+        0.4,   # 39: Too logical - cognitive style mismatch
+        0.5,   # 40: Curriculum removal - strong rejection
+        0.3,   # 41: Field relevance - domain question
+        0.4,   # 42: Career irrelevance - future utility doubt
+        0.5,   # 43: Different language - communication barrier
+        0.6,   # 44: Computer focus - social perception
+        0.2,   # 45: Simple dislike - general aversion
+        0.4,   # 46: Too fast - processing challenge
+        0.7,   # 47: Exceeds capacity - extreme difficulty belief
+        0.3,   # 48: Too technical - accessibility concern
+        0.4,   # 49: Practical priority - competing demands
+        0.3,   # 50: Never use - utility question
+        0.5    # 51: Think slowly - processing speed concern
     ),
     
-    reverse_coded = rep(FALSE, 20),
+    reverse_coded = rep(FALSE, 51),  # No reverse coding
     
-    # Response categories for 5-point Likert scale
-    ResponseCategories = rep("1,2,3,4,5", 20),
+    # Response categories for 5-point Likert scale (1-5)
+    ResponseCategories = rep("1,2,3,4,5", 51),
     
     stringsAsFactors = FALSE
 )
 
 cat("Programming Anxiety item bank loaded:", nrow(programming_anxiety_items), "items\n")
+cat("  Part 1 (Situational): 23 items (5 non-adaptive, 18 adaptive pool)\n")
+cat("  Part 2 (Attitudinal): 28 items (all adaptive)\n")
 
 # =============================================================================
 # DEMOGRAPHIC CONFIGURATIONS
@@ -161,7 +358,9 @@ input_types <- list(
 )
 
 # =============================================================================
-# CUSTOM PAGE FLOW WITH INTRO - FOLLOWING HILFO STRUCTURE
+# CUSTOM PAGE FLOW WITH INTRO - TWO-PART STRUCTURE
+# Part 1: Situational Anxiety (23 items: 5 non-adaptive + 5 adaptive from pool of 18)
+# Part 2: Attitudinal/Affective Anxiety (28 items: all adaptive)
 # =============================================================================
 
 custom_page_flow <- list(
@@ -169,26 +368,26 @@ custom_page_flow <- list(
     list(
         id = "intro",
         type = "custom",
-        title = "Welcome",
+        title = "Welcome / Willkommen",
         content = '<div style="max-width: 800px; margin: 0 auto; padding: 40px 20px;">
-            <h1 style="color: #3f51b5; text-align: center;">Programming Anxiety Assessment</h1>
+            <h1 style="color: #3f51b5; text-align: center;">Programming Anxiety Assessment / Programmierangst-Erhebung</h1>
             
-            <h2 style="color: #3f51b5;">Dear Participant,</h2>
+            <h2 style="color: #3f51b5;">Dear Participant / Liebe Teilnehmende,</h2>
             
-            <p>This assessment measures anxiety related to programming. Your responses will help us better 
-            understand the relationship between anxiety and programming performance.</p>
+            <p><strong>English:</strong> This assessment measures anxiety related to programming using a validated instrument adapted from STARS-D. Your responses will help us better understand programming anxiety in educational contexts.</p>
+            
+            <p><strong>Deutsch:</strong> Diese Erhebung misst Angst im Zusammenhang mit Programmieren mithilfe eines validierten Instruments, das von STARS-D adaptiert wurde. Ihre Antworten helfen uns, Programmierangst in Bildungskontexten besser zu verstehen.</p>
             
             <p style="background: #e8f5f9; padding: 15px; border-left: 4px solid #3f51b5;">
-            <strong>Your responses are completely anonymous</strong> and will be used for research purposes only.</p>
+            <strong>Your responses are completely anonymous</strong> and will be used for research purposes only.<br>
+            <strong>Ihre Antworten sind vollständig anonym</strong> und werden nur für Forschungszwecke verwendet.</p>
             
-            <p style="background: #fff9e6; padding: 15px; border-left: 4px solid #ff9800;">
-            <strong>Note:</strong> The items in this assessment are AI-generated placeholders for demonstration purposes. 
-            For actual research, validated psychometric instruments should be used.</p>
+            <p style="background: #fff3e0; padding: 15px; border-left: 4px solid #ff9800;">
+            <strong>Assessment Structure / Struktur der Erhebung:</strong><br>
+            <strong>Part 1:</strong> Situational Anxiety (10 items) / Situative Angst (10 Items)<br>
+            <strong>Part 2:</strong> Attitudinal/Affective Anxiety (adaptive) / Einstellungs-/Affektive Angst (adaptiv)</p>
             
-            <p>Please answer honestly based on how you typically feel in programming situations. 
-            There are no right or wrong answers.</p>
-            
-            <p style="margin-top: 20px;"><strong>The assessment takes about 10-15 minutes.</strong></p>
+            <p><strong>The assessment takes about 15-20 minutes. / Die Erhebung dauert etwa 15-20 Minuten.</strong></p>
         </div>'
     ),
     
@@ -196,158 +395,123 @@ custom_page_flow <- list(
     list(
         id = "demographics",
         type = "demographics",
-        title = "About You",
+        title = "About You / Über Sie",
         title_en = "About You"
     ),
     
-    # Page 3: Programming Anxiety Part 1 - FIXED (first 5 items together)
+    # ===========================================================================
+    # PART 1: SITUATIONAL ANXIETY (23 items total, 10 shown)
+    # Non-adaptive items: 6, 8, 9, 21, 23 (5 items on page 3)
+    # Adaptive items: 5 items from pool of 18 (pages 4-8)
+    # ===========================================================================
+    
+    # Page 3: Part 1 Non-adaptive items (6, 8, 9, 21, 23)
     list(
-        id = "page3_pa_fixed",
+        id = "page3_part1_fixed",
         type = "items",
-        title = "Programming Anxiety Assessment",
-        title_en = "Programming Anxiety Assessment",
-        instructions = "Please rate how much you agree with each statement about programming anxiety.",
-        instructions_en = "Please rate how much you agree with each statement about programming anxiety.",
-        item_indices = 1:5,  # First 5 PA items (fixed, all on one page)
-        scale_type = "likert"
+        title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
+        title_en = "Part 1: Situational Programming Anxiety",
+        instructions = "Die folgenden Aussagen beschreiben Situationen, die mit Programmieren zu tun haben. Wählen Sie bitte die Option, die am besten beschreibt, wie viel Angst Sie in der entsprechenden Situation erleben würden. Es gibt keine richtigen oder falschen Antworten.",
+        instructions_en = "The following statements describe situations related to programming. Please select the option that best describes how much anxiety you would experience in that situation. There are no right or wrong answers.",
+        item_indices = c(6, 8, 9, 21, 23),  # Non-adaptive situational items
+        scale_type = "likert",
+        custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
+        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
     ),
     
-    # Pages 4-8: Programming Anxiety Part 2 - Adaptive (5 items, one per page)
-    # NOTE: With custom_page_flow, these are shown sequentially, not adaptively
-    # We simulate adaptive output for demonstration
+    # Pages 4-8: Part 1 Adaptive items (5 items, one per page)
+    # Pool: 1-5, 7, 10-20, 22 (18 items excluding non-adaptive 6, 8, 9, 21, 23)
     list(
-        id = "page4_pa2",
+        id = "page4_part1_adapt1",
         type = "items", 
-        title = "Programming Anxiety Assessment",
-        title_en = "Programming Anxiety Assessment",
-        instructions = "The following questions are selected based on your previous answers.",
+        title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
+        title_en = "Part 1: Situational Programming Anxiety",
+        instructions = "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.",
         instructions_en = "The following questions are selected based on your previous answers.",
-        item_indices = 6:6,
-        scale_type = "likert"
+        item_indices = NULL,  # Adaptive selection
+        scale_type = "likert",
+        custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
+        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
     ),
     list(
-        id = "page5_pa3",
+        id = "page5_part1_adapt2",
         type = "items",
-        title = "Programming Anxiety Assessment",
-        title_en = "Programming Anxiety Assessment",
-        item_indices = 7:7,
-        scale_type = "likert"
+        title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
+        title_en = "Part 1: Situational Programming Anxiety",
+        item_indices = NULL,  # Adaptive selection
+        scale_type = "likert",
+        custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
+        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
     ),
     list(
-        id = "page6_pa4",
+        id = "page6_part1_adapt3",
         type = "items",
-        title = "Programming Anxiety Assessment",
-        title_en = "Programming Anxiety Assessment",
-        item_indices = 8:8,
-        scale_type = "likert"
+        title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
+        title_en = "Part 1: Situational Programming Anxiety",
+        item_indices = NULL,  # Adaptive selection
+        scale_type = "likert",
+        custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
+        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
     ),
     list(
-        id = "page7_pa5",
+        id = "page7_part1_adapt4",
         type = "items",
-        title = "Programming Anxiety Assessment",
-        title_en = "Programming Anxiety Assessment",
-        item_indices = 9:9,
-        scale_type = "likert"
+        title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
+        title_en = "Part 1: Situational Programming Anxiety",
+        item_indices = NULL,  # Adaptive selection
+        scale_type = "likert",
+        custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
+        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
     ),
     list(
-        id = "page8_pa6",
+        id = "page8_part1_adapt5",
         type = "items",
-        title = "Programming Anxiety Assessment",
-        title_en = "Programming Anxiety Assessment",
-        item_indices = 10:10,
-        scale_type = "likert"
+        title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
+        title_en = "Part 1: Situational Programming Anxiety",
+        item_indices = NULL,  # Adaptive selection
+        scale_type = "likert",
+        custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
+        custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
     ),
     
-    # Pages 9-13: Additional Programming Anxiety items (items 11-20, one per page)
-    list(
-        id = "page9_pa7",
-        type = "items",
-        title = "Programming Anxiety Assessment",
-        title_en = "Programming Anxiety Assessment",
-        item_indices = 11:11,
-        scale_type = "likert"
-    ),
-    list(
-        id = "page10_pa8",
-        type = "items",
-        title = "Programming Anxiety Assessment",
-        title_en = "Programming Anxiety Assessment",
-        item_indices = 12:12,
-        scale_type = "likert"
-    ),
-    list(
-        id = "page11_pa9",
-        type = "items",
-        title = "Programming Anxiety Assessment",
-        title_en = "Programming Anxiety Assessment",
-        item_indices = 13:13,
-        scale_type = "likert"
-    ),
-    list(
-        id = "page12_pa10",
-        type = "items",
-        title = "Programming Anxiety Assessment",
-        title_en = "Programming Anxiety Assessment",
-        item_indices = 14:14,
-        scale_type = "likert"
-    ),
-    list(
-        id = "page13_pa11",
-        type = "items",
-        title = "Programming Anxiety Assessment",
-        title_en = "Programming Anxiety Assessment",
-        item_indices = 15:15,
-        scale_type = "likert"
-    ),
-    list(
-        id = "page14_pa12",
-        type = "items",
-        title = "Programming Anxiety Assessment",
-        title_en = "Programming Anxiety Assessment",
-        item_indices = 16:16,
-        scale_type = "likert"
-    ),
-    list(
-        id = "page15_pa13",
-        type = "items",
-        title = "Programming Anxiety Assessment",
-        title_en = "Programming Anxiety Assessment",
-        item_indices = 17:17,
-        scale_type = "likert"
-    ),
-    list(
-        id = "page16_pa14",
-        type = "items",
-        title = "Programming Anxiety Assessment",
-        title_en = "Programming Anxiety Assessment",
-        item_indices = 18:18,
-        scale_type = "likert"
-    ),
-    list(
-        id = "page17_pa15",
-        type = "items",
-        title = "Programming Anxiety Assessment",
-        title_en = "Programming Anxiety Assessment",
-        item_indices = 19:19,
-        scale_type = "likert"
-    ),
-    list(
-        id = "page18_pa16",
-        type = "items",
-        title = "Programming Anxiety Assessment",
-        title_en = "Programming Anxiety Assessment",
-        item_indices = 20:20,
-        scale_type = "likert"
-    ),
+    # ===========================================================================
+    # PART 2: ATTITUDINAL/AFFECTIVE ANXIETY (28 items, all adaptive)
+    # Items 24-51: All presented adaptively
+    # ===========================================================================
     
-    # Results page
+    # Pages 9-36: Part 2 Adaptive items (28 items, one per page)
+    # Generate pages programmatically to avoid repetition
     list(
-        id = "results",
-        type = "results",
-        title = "Your Results",
-        title_en = "Your Results",
-        results_processor = create_programming_anxiety_report
+        id = "page9_part2_adapt1",
+        type = "items",
+        title = "Teil 2: Einstellungs-/Affektive Programmierangst",
+        title_en = "Part 2: Attitudinal/Affective Programming Anxiety",
+        instructions = "Die folgenden Aussagen beziehen sich darauf, was Sie in Bezug auf Programmieren empfinden. Bitte wählen Sie die Zahl, die am besten auf Sie zutrifft.",
+        instructions_en = "The following statements relate to what you feel about programming. Please select the number that best applies to you.",
+        item_indices = NULL,
+        scale_type = "likert"
     )
+)
+
+# Add remaining Part 2 adaptive pages (pages 10-36)
+for (i in 2:28) {
+    custom_page_flow[[length(custom_page_flow) + 1]] <- list(
+        id = paste0("page", 8 + i, "_part2_adapt", i),
+        type = "items",
+        title = "Teil 2: Einstellungs-/Affektive Programmierangst",
+        title_en = "Part 2: Attitudinal/Affective Programming Anxiety",
+        item_indices = NULL,
+        scale_type = "likert"
+    )
+}
+
+# Add results page
+custom_page_flow[[length(custom_page_flow) + 1]] <- list(
+    id = "results",
+    type = "results",
+    title = "Your Results / Ihre Ergebnisse",
+    title_en = "Your Results",
+    results_processor = create_programming_anxiety_report
 )
 
 # =============================================================================
@@ -839,22 +1003,23 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
 session_uuid <- paste0("prog_anxiety_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 
 study_config <- create_study_config(
-    name = "Programming Anxiety Assessment",
+    name = "Programming Anxiety Assessment - STARS-D Adapted",
     study_key = session_uuid,
-    model = "2PL",  # Changed to 2PL 
+    model = "2PL",
     estimation_method = "EAP",
     adaptive = TRUE,
-    min_items = 20,  # All 20 items will be shown
-    max_items = 20,  # All 20 items will be shown
+    min_items = 38,  # 10 Part 1 + 28 Part 2
+    max_items = 38,  # 10 Part 1 + 28 Part 2
     min_SEM = 0.30,
-    criteria = "MI",
+    criteria = "MI",  # Maximum Information
     demographics = names(demographic_configs),
     demographic_configs = demographic_configs,
     input_types = input_types,
     custom_page_flow = custom_page_flow,
     theme = "Professional",
     session_save = TRUE,
-    language = "en",
+    language = "de",  # Default to German
+    bilingual = TRUE,  # Enable German/English
     results_processor = create_programming_anxiety_report
 )
 
