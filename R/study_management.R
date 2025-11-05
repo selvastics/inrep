@@ -2917,8 +2917,8 @@ validate_page_progression <- function(current_page, input, config) {
       }
     }
   } else if (page$type == "items") {
-    # Check all items have responses
-    if (!is.null(page$item_indices)) {
+    # Check all items have responses (only if page$required is not explicitly FALSE)
+    if (!is.null(page$item_indices) && !isFALSE(page$required)) {
       # Try to get item_bank from config or parent environment
       item_bank <- config$item_bank
       if (is.null(item_bank) && exists("item_bank", envir = parent.frame())) {

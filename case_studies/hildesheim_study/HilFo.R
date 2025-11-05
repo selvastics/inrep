@@ -1,6 +1,4 @@
 library(inrep)
-
-
 library(shiny)
 library(ggplot2)
 library(broom)
@@ -772,7 +770,7 @@ custom_page_flow <- list(
         scale_type = "likert"
     ),
     
-    # Pages 12-15: BFI items (grouped by trait)
+    # Pages 12-15: BFI items (grouped by trait) - NOT REQUIRED
     list(
         id = "page12",
         type = "items",
@@ -781,7 +779,8 @@ custom_page_flow <- list(
         instructions = "Bitte geben Sie an, inwieweit die folgenden Aussagen auf Sie zutreffen.",
         instructions_en = "Please indicate to what extent the following statements apply to you.",
         item_indices = 21:25,  # BFI items (after 20 PA items)
-        scale_type = "likert"
+        scale_type = "likert",
+        required = FALSE
     ),
     list(
         id = "page13",
@@ -789,7 +788,8 @@ custom_page_flow <- list(
         title = "",
         title_en = "",
         item_indices = 26:30,  # BFI items continued
-        scale_type = "likert"
+        scale_type = "likert",
+        required = FALSE
     ),
     list(
         id = "page14",
@@ -797,7 +797,8 @@ custom_page_flow <- list(
         title = "",
         title_en = "",
         item_indices = 31:35,  # BFI items continued
-        scale_type = "likert"
+        scale_type = "likert",
+        required = FALSE
     ),
     list(
         id = "page15",
@@ -805,10 +806,11 @@ custom_page_flow <- list(
         title = "",
         title_en = "",
         item_indices = 36:40,  # BFI items final
-        scale_type = "likert"
+        scale_type = "likert",
+        required = FALSE
     ),
     
-    # Page 16: PSQ Stress
+    # Page 16: PSQ Stress - NOT REQUIRED
     list(
         id = "page16",
         type = "items",
@@ -817,10 +819,11 @@ custom_page_flow <- list(
         instructions = "Wie sehr treffen die folgenden Aussagen auf Sie zu?",
         instructions_en = "How much do the following statements apply to you?",
         item_indices = 41:45,  # PSQ items (after 20 PA + 20 BFI)
-        scale_type = "likert"
+        scale_type = "likert",
+        required = FALSE
     ),
     
-    # Page 17: MWS Study Skills
+    # Page 17: MWS Study Skills - NOT REQUIRED
     list(
         id = "page17",
         type = "items",
@@ -829,17 +832,19 @@ custom_page_flow <- list(
         instructions = "Wie leicht oder schwer fällt es Ihnen...",
         instructions_en = "How easy or difficult is it for you...",
         item_indices = 46:49,  # MWS items
-        scale_type = "difficulty"
+        scale_type = "difficulty",
+        required = FALSE
     ),
     
-    # Page 18: Statistics
+    # Page 18: Statistics - NOT REQUIRED
     list(
         id = "page18",
         type = "items",
         title = "",
         title_en = "",
         item_indices = 50:51,  # Statistics items
-        scale_type = "likert"
+        scale_type = "likert",
+        required = FALSE
     ),
     
     # Page 19: Study satisfaction
@@ -2013,10 +2018,10 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             
             html <- paste0(html,
                            '<tr>',
-                           '<td style="padding: 12px; border-bottom: 1px solid #e0e0e0;">', name_display, '</td>',
-                           '<td style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
+                           '<td data-label="', if (is_english) 'Dimension' else 'Dimension', '" style="padding: 12px; border-bottom: 1px solid #e0e0e0;">', name_display, '</td>',
+                           '<td data-label="', if (is_english) 'Mean' else 'Mittelwert', '" style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
                            '<strong style="color: ', color, ';">', value, '</strong></td>',
-                           '<td style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
+                           '<td data-label="', if (is_english) 'SD' else 'SD', '" style="padding: 12px; text-align: center; border-bottom: 1px solid #e0e0e0;">',
                            ifelse(is.na(sd_value), "-", as.character(sd_value)), '</td>',
                            # Interpretation column removed per request
                            '</tr>'
@@ -2028,7 +2033,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                        '</div>'  # Close table section
         )
         
-        # Add beautiful styles for the report
+        # Add beautiful styles for the report with mobile optimization
         html <- paste0(html,
                        '<style>',
                        'body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }',
@@ -2037,6 +2042,25 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                        'table tr:hover { background: #f5f5f5; }',
                        'h1, h2 { font-family: "Segoe UI", sans-serif; }',
                        '.report-section { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 25px; }',
+                       
+                       '/* Mobile responsive table */',
+                       '@media screen and (max-width: 768px) {',
+                       '  #report-content { padding: 10px; }',
+                       '  .report-section { padding: 15px; }',
+                       '  h2 { font-size: 18px !important; }',
+                       '  table { font-size: 12px; }',
+                       '  table th, table td { padding: 8px 4px !important; }',
+                       '  table img { max-width: 100% !important; height: auto !important; }',
+                       '}',
+                       
+                       '@media screen and (max-width: 480px) {',
+                       '  table { font-size: 11px; }',
+                       '  table th, table td { padding: 6px 2px !important; display: block; width: 100% !important; text-align: left !important; }',
+                       '  table tr { display: block; margin-bottom: 15px; border: 1px solid #e0e0e0; border-radius: 5px; padding: 10px; }',
+                       '  table th { background: #e8041c !important; color: white !important; }',
+                       '  table td:before { content: attr(data-label); font-weight: bold; display: inline-block; width: 50%; }',
+                       '}',
+                       
                        '@media print {',
                        '  body { font-size: 11pt; }',
                        '  h1, h2 { color: #e8041c !important; -webkit-print-color-adjust: exact; }',
@@ -2446,7 +2470,7 @@ custom_item_selection <- function(rv, item_bank, config, session = NULL) {
         
         # Get responses so far
         responses_so_far <- rv$responses[1:length(rv$responses)]
-        message(sprintf("Responses collected so far: %d items", length(responses_so_far)))
+        message(sprintf("Responses collected so far: %d items", sum(!is.na(responses_so_far))))
         
         # Use current ability estimate if available (updated by estimate_ability after each response)
         # Otherwise estimate using proper TAM-based estimation
@@ -2799,6 +2823,8 @@ process_hilfo_csv <- function(csv_data, responses, demographics, item_bank) {
         bfo_cols <- c("BFO_01", "BFO_02", "BFO_03", "BFO_04")  # Offenheit
         
         # Calculate BFI scales
+        # NOTE: 999 values ("Keine Angabe") are stored in CSV but automatically excluded here via !is.na() check
+        # Extract values for BFI calculations
         bfe_values <- sapply(bfe_cols, function(col) if (col %in% names(csv_data) && !is.na(csv_data[[col]])) as.numeric(csv_data[[col]]) else NA)
         bfv_values <- sapply(bfv_cols, function(col) if (col %in% names(csv_data) && !is.na(csv_data[[col]])) as.numeric(csv_data[[col]]) else NA)
         bfg_values <- sapply(bfg_cols, function(col) if (col %in% names(csv_data) && !is.na(csv_data[[col]])) as.numeric(csv_data[[col]]) else NA)
@@ -2815,7 +2841,7 @@ process_hilfo_csv <- function(csv_data, responses, demographics, item_bank) {
         # PSQ Stress using correct column names
         psq_cols <- c("PSQ_02", "PSQ_04", "PSQ_16", "PSQ_29", "PSQ_30")
         psq_values <- sapply(psq_cols, function(col) {
-            if (col %in% names(csv_data) && !is.na(csv_data[[col]])) {
+            if (col %in% names(csv_data) && !is.na(csv_data[[col]]) && csv_data[[col]] != 999) {
                 return(as.numeric(csv_data[[col]]))
             } else {
                 return(NA)
@@ -2829,7 +2855,7 @@ process_hilfo_csv <- function(csv_data, responses, demographics, item_bank) {
         # MWS Study Skills using correct column names
         mws_cols <- c("MWS_1_KK", "MWS_10_KK", "MWS_17_KK", "MWS_21_KK")
         mws_values <- sapply(mws_cols, function(col) {
-            if (col %in% names(csv_data) && !is.na(csv_data[[col]])) {
+            if (col %in% names(csv_data) && !is.na(csv_data[[col]]) && csv_data[[col]] != 999) {
                 return(as.numeric(csv_data[[col]]))
             } else {
                 return(NA)
@@ -2843,7 +2869,7 @@ process_hilfo_csv <- function(csv_data, responses, demographics, item_bank) {
         # Statistics using correct column names
         sta_cols <- c("Statistik_gutfolgen", "Statistik_selbstwirksam")
         sta_values <- sapply(sta_cols, function(col) {
-            if (col %in% names(csv_data) && !is.na(csv_data[[col]])) {
+            if (col %in% names(csv_data) && !is.na(csv_data[[col]]) && csv_data[[col]] != 999) {
                 return(as.numeric(csv_data[[col]]))
             } else {
                 return(NA)
@@ -2863,6 +2889,10 @@ process_hilfo_csv <- function(csv_data, responses, demographics, item_bank) {
     
     return(csv_data)
 }
+
+# =============================================================================
+# STUDY CONFIGURATION
+# =============================================================================
 
 study_config <- inrep::create_study_config(
     name = "HilFo - Hildesheimer Forschungsmethoden",
