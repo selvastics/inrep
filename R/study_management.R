@@ -2913,7 +2913,12 @@ validate_page_progression <- function(current_page, input, config) {
         value <- input[[input_id]]
         
         if (is.null(value) || value == "" || (is.character(value) && nchar(trimws(value)) == 0)) {
-          question <- demo_config$question %||% dem
+          # Use language-appropriate question text
+          question <- if (current_lang == "en" && !is.null(demo_config$question_en)) {
+            demo_config$question_en
+          } else {
+            demo_config$question %||% dem
+          }
           # Truncate long questions for error message
           if (nchar(question) > 50) {
             question <- paste0(substr(question, 1, 47), "...")

@@ -1506,30 +1506,57 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         }
         
         tryCatch({
-            radar_data <- data.frame(
-                group = if (is_english) "Your Profile" else "Ihr Profil",
-                Extraversion = radar_scores$Extraversion / 5,
-                Agreeableness = radar_scores$Verträglichkeit / 5,
-                Conscientiousness = radar_scores$Gewissenhaftigkeit / 5,
-                Neuroticism = radar_scores$Neurotizismus / 5,
-                Openness = radar_scores$Offenheit / 5,
-                stringsAsFactors = FALSE,
-                row.names = NULL
-            )
+            # Use German or English column names based on language
+            if (is_english) {
+                radar_data <- data.frame(
+                    group = "Your Profile",
+                    Extraversion = radar_scores$Extraversion / 5,
+                    Agreeableness = radar_scores$Verträglichkeit / 5,
+                    Conscientiousness = radar_scores$Gewissenhaftigkeit / 5,
+                    Neuroticism = radar_scores$Neurotizismus / 5,
+                    Openness = radar_scores$Offenheit / 5,
+                    stringsAsFactors = FALSE,
+                    row.names = NULL
+                )
+            } else {
+                radar_data <- data.frame(
+                    group = "Ihr Profil",
+                    Extraversion = radar_scores$Extraversion / 5,
+                    Verträglichkeit = radar_scores$Verträglichkeit / 5,
+                    Gewissenhaftigkeit = radar_scores$Gewissenhaftigkeit / 5,
+                    Neurotizismus = radar_scores$Neurotizismus / 5,
+                    Offenheit = radar_scores$Offenheit / 5,
+                    stringsAsFactors = FALSE,
+                    row.names = NULL
+                )
+            }
             cat("DEBUG: radar_data created successfully\n")
         }, error = function(e) {
             cat("Error creating radar_data data.frame:", e$message, "\n")
             # Create fallback radar_data
-            radar_data <- data.frame(
-                group = if (is_english) "Your Profile" else "Ihr Profil",
-                Extraversion = 0.6,
-                Agreeableness = 0.6,
-                Conscientiousness = 0.6,
-                Neuroticism = 0.6,
-                Openness = 0.6,
-                stringsAsFactors = FALSE,
-                row.names = NULL
-            )
+            if (is_english) {
+                radar_data <- data.frame(
+                    group = "Your Profile",
+                    Extraversion = 0.6,
+                    Agreeableness = 0.6,
+                    Conscientiousness = 0.6,
+                    Neuroticism = 0.6,
+                    Openness = 0.6,
+                    stringsAsFactors = FALSE,
+                    row.names = NULL
+                )
+            } else {
+                radar_data <- data.frame(
+                    group = "Ihr Profil",
+                    Extraversion = 0.6,
+                    Verträglichkeit = 0.6,
+                    Gewissenhaftigkeit = 0.6,
+                    Neurotizismus = 0.6,
+                    Offenheit = 0.6,
+                    stringsAsFactors = FALSE,
+                    row.names = NULL
+                )
+            }
         })
         
         # Create title based on language (used in both radar plot branches)
@@ -1705,13 +1732,13 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         } else {
             dimension_names_en <- c(
                 "Extraversion" = "Extraversion",
-                "Verträglichkeit" = "Agreeableness", 
-                "Gewissenhaftigkeit" = "Conscientiousness",
-                "Neurotizismus" = "Neuroticism",
-                "Offenheit" = "Openness",
-                "ProgrammingAnxiety" = "Programming Anxiety",
+                "Verträglichkeit" = "Verträglichkeit", 
+                "Gewissenhaftigkeit" = "Gewissenhaftigkeit",
+                "Neurotizismus" = "Neurotizismus",
+                "Offenheit" = "Offenheit",
+                "ProgrammingAnxiety" = "Programmierangst",
                 "Stress" = "Stress",
-                "Studierfähigkeiten" = "Study Skills"
+                "Studierfähigkeiten" = "Studierfähigkeiten"
             )
         }
         
@@ -1730,7 +1757,8 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             category_labels <- c(rep("Personality", 5), 
                                  "Programming Anxiety", "Stress", "Study Skills")
         } else {
-            dimension_labels <- names(ordered_scores)
+            # In German mode, also use the dimension_names_en mapping to get German labels
+            dimension_labels <- dimension_names_en[names(ordered_scores)]
             category_labels <- c(rep("Persönlichkeit", 5), 
                                  "Programmierangst", "Stress", "Studierfähigkeiten")
         }
@@ -2112,7 +2140,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             # Only calculate level and color if value is not NA
             if (is.na(value)) {
                 level <- "-"
-                color <- "#808080"  # Gray for NA values
+                color <- "#333333"  # Default dark text for NA values
                 value_display <- "-"
             } else {
                 level <- ifelse(value >= 3.7, 
@@ -2120,7 +2148,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                                 ifelse(value >= 2.3, 
                                        if (is_english) "Medium" else "Mittel", 
                                        if (is_english) "Low" else "Niedrig"))
-                color <- ifelse(value >= 3.7, "#28a745", ifelse(value >= 2.3, "#ffc107", "#dc3545"))
+                color <- "#333333"  # Use default dark text color (no highlighting)
                 value_display <- as.character(value)
             }
             
