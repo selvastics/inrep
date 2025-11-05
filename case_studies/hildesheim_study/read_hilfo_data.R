@@ -79,27 +79,30 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 # Item labels (German and English)
 # -----------------------------------------------------------------------------
 item_labels_de <- c(
-  # Programming Anxiety (PA) items 1-20
-  "Ich fühle mich unsicher, wenn ich programmieren soll.",
-  "Der Gedanke, programmieren zu lernen, macht mich nervös.",
-  "Ich habe Angst, beim Programmieren Fehler zu machen.",
-  "Ich fühle mich überfordert, wenn ich an Programmieraufgaben denke.",
-  "Ich bin besorgt, dass ich nicht gut genug programmieren kann.",
-  "Ich vermeide es, neue Programmiersprachen zu nutzen, weil ich Angst habe, Fehler zu machen.",
-  "In Gruppencodier-Sitzungen bin ich nervös, dass meine Beiträge nicht geschätzt werden.",
-  "Ich habe Sorge, Programmieraufgaben nicht rechtzeitig aufgrund fehlender Fähigkeiten abschließen zu können.",
-  "Wenn ich bei einem Programmierproblem nicht weiterkomme, ist es mir peinlich, um Hilfe zu bitten.",
-  "Ich fühle mich wohl dabei, meinen Code anderen zu erklären.",
-  "Fortgeschrittene Programmierkonzepte (z.B. Rekursion, Multithreading) finde ich einschüchternd.",
-  "Ich zweifle oft daran, Programmieren über die Grundlagen hinaus lernen zu können.",
-  "Wenn mein Code nicht funktioniert, glaube ich, dass es an meinem mangelnden Talent liegt.",
-  "Es macht mich nervös, Code ohne Schritt-für-Schritt-Anleitung zu schreiben.",
-  "Ich bin zuversichtlich, bestehenden Code zu verändern, um neue Funktionen hinzuzufügen.",
-  "Ich fühle mich manchmal ängstlich, noch bevor ich mit dem Programmieren beginne.",
-  "Allein der Gedanke an das Debuggen macht mich angespannt, selbst bei kleineren Fehlern.",
-  "Ich mache mir Sorgen, für die Qualität meines Codes beurteilt zu werden.",
-  "Wenn mir jemand beim Programmieren zuschaut, werde ich nervös und mache Fehler.",
-  "Schon der Gedanke an bevorstehende Programmieraufgaben setzt mich unter Stress.",
+  # Programming Anxiety (PA) items 1-23 (STARS-D adapted)
+  "Sie bereiten sich auf eine Programmierprüfung vor.",
+  "Sie müssen Code aus einem Tutorial oder einer Dokumentation interpretieren.",
+  "Sie fragen Ihren Programmierdozenten/Ihre Programmierdozentin, ob er/sie Ihnen Inhalte aus der Lehrveranstaltung, die Sie nicht verstehen, noch einmal individuell erklären kann.",
+  "Sie verstehen die in der Programmier-Lehrveranstaltung besprochenen Themen nicht.",
+  "Sie suchen nach Fehlern in Ihrem Code.",
+  "Sie bearbeiten eine schwierige Programmieraufgabe.",
+  "Sie reichen die Lösung zu einer Programmieraufgabe ein, die Sie nicht verstanden haben.",
+  "Sie schreiben während einer Programmierprüfung Code.",
+  "Sie sollen ein Programm entsprechend bestimmter Vorgaben schreiben.",
+  "Sie fühlen sich wohl dabei, meinen Code anderen zu erklären.",
+  "Sie versuchen zu entscheiden, welche Analysemethode oder welcher Programmansatz angemessen ist.",
+  "Sie müssen eine große Datenmenge in einem Programm verarbeiten.",
+  "Sie erhalten eine Note für eine Programmieraufgabe, die niedriger ist, als Sie gehofft haben.",
+  "Sie schreiben Code ohne Schritt-für-Schritt-Anleitung.",
+  "Sie sind zuversichtlich, bestehenden Code zu verändern, um neue Funktionen hinzuzufügen.",
+  "Sie besuchen eine Programmierveranstaltung.",
+  "Sie untersuchen Fehlermeldungen, um Probleme in Ihrem Code zu finden.",
+  "Sie besprechen mit Ihrem Programmierdozenten/Ihrer Programmierdozentin die Bewertung Ihres Codes.",
+  "Sie sehen zu, wie andere Personen Code schreiben oder eine Fehleranalyse durchführen.",
+  "Sie haben Code geschrieben und drücken auf „Run" oder „Execute", um ihn auszuführen.",
+  "Sie sollen eine Problemstellung in Form eines Programmcodes umsetzen.",
+  "Sie erleben einen unerwarteten Fehler beim Ausführen Ihres Codes.",
+  "Sie stellen fest, dass eine von Ihnen verwendete Funktion oder ein Modul veraltet oder nicht mehr unterstützt wird.",
   
   # BFI Extraversion (BFE) items 21-24
   "Ich gehe aus mir heraus, bin gesellig.",
@@ -150,27 +153,30 @@ item_labels_de <- c(
 )
 
 item_labels_en <- c(
-  # Programming Anxiety (PA) items 1-20
-  "I feel uncertain when I have to program.",
-  "The thought of learning to program makes me nervous.",
-  "I am afraid of making mistakes when programming.",
-  "I feel overwhelmed when I think about programming tasks.",
-  "I am worried that I am not good enough at programming.",
-  "I avoid using new programming languages because I am afraid of making mistakes.",
-  "During group coding sessions, I am nervous that my contributions will not be valued.",
-  "I worry that I will be unable to finish a coding assignment on time due to lack of skills.",
-  "When I get stuck on a programming problem, I feel embarrassed to ask for help.",
-  "I feel comfortable explaining my code to others.",
-  "I find advanced coding concepts (e.g., recursion, multithreading) intimidating.",
-  "I often doubt my ability to learn programming beyond the basics.",
-  "When my code does not work, I worry it is because I lack programming talent.",
-  "I feel anxious when asked to write code without step-by-step instructions.",
-  "I am confident in modifying existing code to add new features.",
-  "I sometimes feel anxious even before sitting down to start programming.",
-  "The thought of debugging makes me tense, even if the bug is minor.",
-  "I worry about being judged for the quality of my code.",
-  "When someone watches me code, I get nervous and make mistakes.",
-  "I feel stressed just by thinking about upcoming programming tasks.",
+  # Programming Anxiety (PA) items 1-23 (STARS-D adapted)
+  "You are studying for an exam in a programming course.",
+  "You have to interpret code from a tutorial or documentation.",
+  "You ask your programming instructor to explain course content that you do not understand.",
+  "You do not understand the topics discussed in the programming course.",
+  "You are looking for bugs in your code.",
+  "You are working on a difficult programming assignment.",
+  "You turn in a solution to a programming assignment that you did not understand.",
+  "You are writing code during a programming exam.",
+  "You are asked to write a program according to specific requirements.",
+  "You feel comfortable explaining your code to others.",
+  "You are trying to decide which analysis method or programming approach is appropriate.",
+  "You have to process a large amount of data in a program.",
+  "You receive a grade on a programming assignment that is lower than you hoped.",
+  "You are writing code without step-by-step instructions.",
+  "You are confident in modifying existing code to add new features.",
+  "You are attending a programming course.",
+  "You are examining error messages to find problems in your code.",
+  "You are discussing the evaluation of your code with your programming instructor.",
+  "You are watching other people write code or perform error analysis.",
+  "You have written code and press 'Run' or 'Execute' to run it.",
+  "You are asked to implement a problem in the form of program code.",
+  "You experience an unexpected error when running your code.",
+  "You discover that a function or module you are using is outdated or no longer supported.",
   
   # BFI Extraversion (BFE) items 21-24
   "I am outgoing, sociable.",
@@ -224,30 +230,31 @@ item_labels_en <- c(
 # -----------------------------------------------------------------------------
 # TRUE means the item needs to be reverse coded (6 - value)
 reverse_coded <- c(
-  # PA items 1-20: items 1, 10, 15 are reverse coded
-  TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE,
+  # PA items 1-23: items 10, 15 are reverse coded (positive items)
+  FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE,
   FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE,
-  # BFE items 21-24: items 22, 23 are reverse coded
+  FALSE, FALSE, FALSE,
+  # BFE items 24-27: items 25, 26 are reverse coded
   FALSE, TRUE, TRUE, FALSE,
-  # BFV items 25-28: items 26, 28 are reverse coded
+  # BFV items 28-31: items 29, 31 are reverse coded
   FALSE, TRUE, FALSE, TRUE,
-  # BFG items 29-32: items 29, 32 are reverse coded
+  # BFG items 32-35: items 32, 35 are reverse coded
   TRUE, FALSE, FALSE, TRUE,
-  # BFN items 33-36: items 33, 36 are reverse coded
+  # BFN items 36-39: items 36, 39 are reverse coded
   TRUE, FALSE, FALSE, TRUE,
-  # BFO items 37-40: items 38, 40 are reverse coded
+  # BFO items 40-43: items 41, 43 are reverse coded
   FALSE, TRUE, FALSE, TRUE,
-  # PSQ items 41-45: item 44 is reverse coded
+  # PSQ items 44-48: item 47 is reverse coded
   FALSE, FALSE, FALSE, TRUE, FALSE,
-  # MWS items 46-49: no reverse coding
+  # MWS items 49-52: no reverse coding
   FALSE, FALSE, FALSE, FALSE,
-  # Statistics items 50-51: no reverse coding
+  # Statistics items 53-54: no reverse coding
   FALSE, FALSE
 )
 
 # Item IDs
 item_ids <- c(
-  paste0("PA_", sprintf("%02d", 1:20)),
+  paste0("PA_", sprintf("%02d", 1:23)),
   "BFE_01", "BFE_02", "BFE_03", "BFE_04",
   "BFV_01", "BFV_02", "BFV_03", "BFV_04",
   "BFG_01", "BFG_02", "BFG_03", "BFG_04",

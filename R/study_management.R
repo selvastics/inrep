@@ -1799,6 +1799,15 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
     
     labels <- get_response_labels(page$scale_type %||% "likert", choices, current_lang, custom_labels = custom_labels)
     
+    # CRITICAL FIX for shinyapps.io: Use NULL instead of character(0) for selected
+    # On shinyapps.io, character(0) causes radioButtons to render as disabled/grey
+    prev_response <- rv$item_responses[[item_id]]
+    selected_value <- if (!is.null(prev_response) && length(prev_response) > 0 && prev_response != "") {
+      prev_response
+    } else {
+      NULL  # Use NULL, not character(0), to ensure buttons are clickable
+    }
+    
     shiny::div(
       class = "item-container",
       shiny::h4(question_text),
@@ -1806,7 +1815,7 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
         inputId = item_id,
         label = NULL,
         choices = setNames(choices, labels),
-        selected = rv$item_responses[[item_id]] %||% character(0),
+        selected = selected_value,
         inline = TRUE
       )
     )

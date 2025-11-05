@@ -840,6 +840,7 @@ custom_page_flow <- list(
     
     # Pages 7-11: Programming Anxiety Adaptive (5 items, one per page)
     # Adaptive selection from pool: items 1-5, 7, 10-20, 22 (18 items total, excluding 6, 8, 9, 21, 23)
+    # IMPORTANT: All PA items are OPTIONAL (required = FALSE)
     list(
         id = "page7_pa_adapt1",
         type = "items", 
@@ -851,7 +852,7 @@ custom_page_flow <- list(
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
         custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety"),
-        required = TRUE
+        required = FALSE
     ),
     list(
         id = "page8_pa_adapt2",
@@ -864,7 +865,7 @@ custom_page_flow <- list(
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
         custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety"),
-        required = TRUE
+        required = FALSE
     ),
     list(
         id = "page9_pa_adapt3",
@@ -877,7 +878,7 @@ custom_page_flow <- list(
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
         custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety"),
-        required = TRUE
+        required = FALSE
     ),
     list(
         id = "page10_pa_adapt4",
@@ -890,7 +891,7 @@ custom_page_flow <- list(
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
         custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety"),
-        required = TRUE
+        required = FALSE
     ),
     list(
         id = "page11_pa_adapt5",
@@ -903,7 +904,7 @@ custom_page_flow <- list(
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
         custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety"),
-        required = TRUE
+        required = FALSE
     ),
     
     # Pages 12-15: BFI items (grouped by trait) - NOT REQUIRED
@@ -1265,11 +1266,14 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         
         # No reverse scoring for STARS-D adapted items (all items measure anxiety directly)
         
-        pa_score <- mean(pa_responses, na.rm = TRUE)
-        
-        # Compute IRT-based ability estimate for Programming Anxiety
-        # STARS-D adapted: 5 non-adaptive (fixed) + 5 adaptive = 10 total
-        pa_theta <- pa_score  # Default to classical score
+        # CRITICAL: Handle case where NO PA responses exist - return NA, not fallback
+        if (length(pa_responses) == 0) {
+            pa_score <- NA
+            pa_theta <- NA
+        } else {
+            pa_score <- mean(pa_responses, na.rm = TRUE)
+            pa_theta <- pa_score  # Default to classical score
+        }
         
         # Fit 2PL IRT model for Programming Anxiety
         cat("\n================================================================================\n")
@@ -1405,10 +1409,15 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         cat("================================================================================\n\n")
         
         # Store IRT estimate (scale to 1-5 for consistency with other scores)
-        # Convert theta to 1-5 scale: theta of -2 = 1, theta of 2 = 5
-        pa_theta_scaled <- 3 + theta_est  # Center at 3, each SD = 1 point
-        pa_theta_scaled <- pmax(1, pmin(5, pa_theta_scaled))  # Bound to 1-5
-        pa_theta <- pa_theta_scaled
+        # CRITICAL: Keep as NA if no valid PA responses, don't create fallback value
+        if (is.na(pa_score) || is.nan(pa_score) || length(pa_responses) == 0) {
+            pa_theta <- NA
+        } else {
+            # Convert theta to 1-5 scale: theta of -2 = 1, theta of 2 = 5
+            pa_theta_scaled <- 3 + theta_est  # Center at 3, each SD = 1 point
+            pa_theta_scaled <- pmax(1, pmin(5, pa_theta_scaled))  # Bound to 1-5
+            pa_theta <- pa_theta_scaled
+        }
         
         # Create trace plot showing theta progression (simulated for semi-adaptive)
         # In a real adaptive test, this would show actual theta estimates after each item
@@ -1478,22 +1487,36 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         
         # Calculate BFI scores - PROPER GROUPING BY TRAIT (now starting at index 24 after 23 PA items)
         # Items are ordered: E1, E2, E3, E4, V1, V2, V3, V4, G1, G2, G3, G4, N1, N2, N3, N4, O1, O2, O3, O4
+        # CRITICAL: Only calculate scale if at least 50% of items are answered (2 out of 4)
+        
+        # Helper function: calculate mean only if enough items present
+        safe_mean <- function(items, min_items = 2) {
+            valid_count <- sum(!is.na(items))
+            if (valid_count >= min_items) {
+                return(mean(items, na.rm = TRUE))
+            } else {
+                return(NA)
+            }
+        }
+        
         scores <- list(
-            ProgrammingAnxiety = if (exists("pa_theta")) pa_theta else pa_score,
-            Extraversion = mean(c(responses[24], 6-responses[25], 6-responses[26], responses[27]), na.rm=TRUE),
-            Verträglichkeit = mean(c(responses[28], 6-responses[29], responses[30], 6-responses[31]), na.rm=TRUE),
-            Gewissenhaftigkeit = mean(c(6-responses[32], responses[33], responses[34], 6-responses[35]), na.rm=TRUE),
-            Neurotizismus = mean(c(6-responses[36], responses[37], responses[38], 6-responses[39]), na.rm=TRUE),
-            Offenheit = mean(c(responses[40], 6-responses[41], responses[42], 6-responses[43]), na.rm=TRUE)
+            ProgrammingAnxiety = pa_score,  # Use simple mean, not IRT theta (IRT is for research only)
+            Extraversion = safe_mean(c(responses[24], 6-responses[25], 6-responses[26], responses[27])),
+            Verträglichkeit = safe_mean(c(responses[28], 6-responses[29], responses[30], 6-responses[31])),
+            Gewissenhaftigkeit = safe_mean(c(6-responses[32], responses[33], responses[34], 6-responses[35])),
+            Neurotizismus = safe_mean(c(6-responses[36], responses[37], responses[38], 6-responses[39])),
+            Offenheit = safe_mean(c(responses[40], 6-responses[41], responses[42], 6-responses[43]))
         )
         
-        # PSQ Stress score (now at indices 44-48)
+        # PSQ Stress score (now at indices 44-48) - need at least 3 out of 5 items
         psq <- responses[44:48]
-        scores$Stress <- mean(c(psq[1:3], 6-psq[4], psq[5]), na.rm=TRUE)
+        scores$Stress <- safe_mean(c(psq[1:3], 6-psq[4], psq[5]), min_items = 3)
         
         # MWS & Statistics (now at indices 49-52 and 53-54)
-        scores$Studierfähigkeiten <- mean(responses[49:52], na.rm=TRUE)
-        scores$Statistik <- mean(responses[53:54], na.rm=TRUE)
+        # MWS: need at least 2 out of 4 items
+        scores$Studierfähigkeiten <- safe_mean(responses[49:52], min_items = 2)
+        # Statistics: need both items (2 out of 2)
+        scores$Statistik <- safe_mean(responses[53:54], min_items = 2)
         
         # Debug: Check scores for missing values
         cat("DEBUG: Scores values:\n")
