@@ -1816,25 +1816,6 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
     page$instructions
   }
   
-  # CRITICAL FIX: When no items are rendered (empty adaptive page), show a message
-  # instead of completely empty content which blocks navigation on shinyapps.io
-  if (length(item_elements) == 0) {
-    skip_message <- if (current_lang == "en") {
-      "No items to display on this page. Please click Continue to proceed."
-    } else {
-      "Keine Elemente auf dieser Seite anzuzeigen. Bitte klicken Sie auf Weiter."
-    }
-    
-    item_elements <- list(
-      shiny::div(
-        class = "skip-page-message",
-        style = "padding: 40px; text-align: center; color: #666; font-style: italic;",
-        shiny::p(skip_message, style = "font-size: 16px; margin: 20px 0;"),
-        shiny::icon("arrow-right", class = "fa-2x", style = "color: #999;")
-      )
-    )
-  }
-  
   shiny::div(
     class = "assessment-card",
     style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",

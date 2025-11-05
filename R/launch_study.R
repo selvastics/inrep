@@ -3138,6 +3138,53 @@ launch_study <- function(
   rv$session_start_time <- Sys.time()
   rv$unique_session_id <- unique_session_id
   
+  # =============================================================================
+  # WATCHDOG: Detect unresponsive app and auto-stop after 30 seconds
+  # =============================================================================
+  # This heartbeat mechanism detects when the Shiny reactive system stops responding
+  # (e.g., infinite loops, crashes, page 6 stuck bug on shinyapps.io)
+  # Normal user thinking time does NOT trigger this - only true unresponsiveness
+  rv$last_heartbeat <- Sys.time()
+  rv$is_app_responsive <- TRUE
+  
+  # Heartbeat checker runs every 5 seconds
+  shiny::observe({
+    shiny::invalidateLater(5000, session)  # Check every 5 seconds
+    
+    if (!is.null(rv$last_heartbeat) && rv$is_app_responsive) {
+      time_since_heartbeat <- as.numeric(difftime(Sys.time(), rv$last_heartbeat, units = "secs"))
+      
+      # If no heartbeat for 30 seconds, app is unresponsive
+      if (time_since_heartbeat > 30) {
+        logger(sprintf("WATCHDOG: App unresponsive for %.0f seconds - forcing shutdown", time_since_heartbeat), level = "ERROR")
+        rv$is_app_responsive <- FALSE
+        
+        # Try graceful shutdown first
+        tryCatch({
+          shiny::stopApp()
+        }, error = function(e) {
+          # If stopApp fails, close session forcefully
+          try({ session$close() }, silent = TRUE)
+        })
+      }
+    }
+  })
+  
+  # Heartbeat pulse - triggered by ANY reactive change (proves app is responsive)
+  # This includes: page navigation, response collection, ability estimation, etc.
+  shiny::observe({
+    # Watch for any activity that proves the app is still responsive
+    req(rv$stage)  # Any stage change = app is responsive
+    rv$last_heartbeat <- Sys.time()
+  })
+  
+  shiny::observe({
+    req(rv$current_page)  # Any page change = app is responsive
+    rv$last_heartbeat <- Sys.time()
+  })
+  
+  # =============================================================================
+  
   # Log session isolation for security
   logger(sprintf("CRITICAL: Session isolation enforced. New user session: %s", unique_session_id), level = "WARNING")
   
@@ -4509,6 +4556,9 @@ launch_study <- function(
     if (config$log_data %||% FALSE) {
       # Track input changes
       shiny::observeEvent(input$log_input_change, {
+        # Update heartbeat - app is responsive
+        rv$last_heartbeat <- Sys.time()
+        
         tryCatch({
           log_data <- input$log_input_change
           current_page_id <- paste0("page_", rv$current_page)
@@ -4522,6 +4572,9 @@ launch_study <- function(
       
       # Track button clicks
       shiny::observeEvent(input$log_button_click, {
+        # Update heartbeat - app is responsive
+        rv$last_heartbeat <- Sys.time()
+        
         tryCatch({
           log_data <- input$log_button_click
           current_page_id <- paste0("page_", rv$current_page)
@@ -4730,19 +4783,6 @@ launch_study <- function(
                 if (is.null(rv$administered)) rv$administered <- integer(0)
                 if (!idx %in% rv$administered) {
                   rv$administered <- c(rv$administered, idx)
-                }
-                
-                # CRITICAL FIX: ALSO update session$userData$administered for bidirectional sync
-                # This ensures custom_item_selection functions can read from session$userData$administered
-                # for BOTH adaptive AND non-adaptive pages
-                if (!is.null(session$userData)) {
-                  if (is.null(session$userData$administered)) {
-                    session$userData$administered <- integer(0)
-                  }
-                  if (!idx %in% session$userData$administered) {
-                    session$userData$administered <- c(session$userData$administered, idx)
-                    cat("RESPONSE COLLECTION: Synced idx", idx, "to session$userData$administered\n")
-                  }
                 }
                 
                 logger(sprintf("Saved item response %d: %s", idx, value))
