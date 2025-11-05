@@ -64,14 +64,9 @@ generate_hilfo_filename <- function(timestamp = NULL) {
 # CLOUD STORAGE CREDENTIALS - Hildesheim Study Folder
 # =============================================================================
 # Public WebDAV folder: https://sync.academiccloud.de/index.php/s/OUarlqGbhYopkBc
-#WEBDAV_URL <- "https://sync.academiccloud.de/public.php/webdav/"
-#WEBDAV_PASSWORD <- "inreptest"
-#WEBDAV_SHARE_TOKEN <- "Y51QPXzJVLWSAcb"  # Share token for authentication
-
-# Public WebDAV folder: https://sync.academiccloud.de/index.php/s/OUarlqGbhYopkBc
 WEBDAV_URL <- "https://sync.academiccloud.de/public.php/webdav/"
-WEBDAV_PASSWORD <- "ws2526"
-WEBDAV_SHARE_TOKEN <- "OUarlqGbhYopkBc"  # Share token for authentication
+WEBDAV_PASSWORD <- "inreptest"
+WEBDAV_SHARE_TOKEN <- "Y51QPXzJVLWSAcb"  # Share token for authentication
 
 # =============================================================================
 # COMPLETE ITEM BANK WITH PROPER VARIABLE NAMES
@@ -831,8 +826,8 @@ custom_page_flow <- list(
     type = "items", 
     title = "",
     title_en = "",
-    instructions = "Die folgenden Fragen werden basierend auf Ihren Antworten auf Seite 6 ausgewählt.",
-    instructions_en = "The following questions are selected based on your answers on page 6.",
+    instructions = "",
+    instructions_en = "",
     item_indices = NULL,  # NULL triggers adaptive selection
     scale_type = "likert",
     custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
@@ -844,8 +839,8 @@ custom_page_flow <- list(
     type = "items",
     title = "",
     title_en = "",
-    instructions = "Die folgenden Fragen werden basierend auf Ihren Antworten auf Seite 6 und 7 ausgewählt.",
-    instructions_en = "The following questions are selected based on your answers on page 6 and 7.",
+    instructions = "",
+    instructions_en = "",
     item_indices = NULL,  # NULL triggers adaptive selection
     scale_type = "likert",
     custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
@@ -857,8 +852,8 @@ custom_page_flow <- list(
     type = "items",
     title = "",
     title_en = "",
-    instructions = "Die folgenden Fragen werden basierend auf Ihren Antworten auf Seite 6, 7 und 8 ausgewählt.",
-    instructions_en = "The following questions are selected based on your answers on page 6, 7 and 8.",
+    instructions = "",
+    instructions_en = "",
     item_indices = NULL,  # NULL triggers adaptive selection
     scale_type = "likert",
     custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
@@ -870,8 +865,8 @@ custom_page_flow <- list(
     type = "items",
     title = "",
     title_en = "",
-    instructions = "Die folgenden Fragen werden basierend auf Ihren Antworten auf Seite 6, 7, 8 und 9 ausgewählt.",
-    instructions_en = "The following questions are selected based on your answers on page 6, 7, 8 and 9.",
+    instructions = "",
+    instructions_en = "",
     item_indices = NULL,  # NULL triggers adaptive selection
     scale_type = "likert",
     custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
@@ -883,8 +878,8 @@ custom_page_flow <- list(
     type = "items",
     title = "",
     title_en = "",
-    instructions = "Die folgenden Fragen werden basierend auf Ihren Antworten auf Seite 6, 7, 8, 9 und 10 ausgewählt.",
-    instructions_en = "The following questions are selected based on your answers on page 6, 7, 8, 9 and 10.",
+    instructions = "",
+    instructions_en = "",
     item_indices = NULL,  # NULL triggers adaptive selection
     scale_type = "likert",
     custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
@@ -3158,19 +3153,5 @@ inrep::launch_study(
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
   save_format = "csv",
-  debug_mode = TRUE,  # Enable debug mode: STRG+A = fill page, STRG+Q = auto-fill all
-  custom_css = "
-    /* HilFo Study Logo */
-    .hildesheim-logo {
-      width: 260px;
-      height: 60px;
-      background-image: url('https://www.uni-hildesheim.de/typo3conf/ext/unihildesheim/Resources/Public/Images/logo-uni.svgz');
-      background-repeat: no-repeat;
-      background-size: contain;
-      background-position: center top;
-      margin: 24px auto 16px auto;
-      display: block;
-      min-height: 60px;
-    }
-  "
+  debug_mode = TRUE  # Enable debug mode: STRG+A = fill page, STRG+Q = auto-fill all
 )
