@@ -3148,16 +3148,19 @@ launch_study <- function(
   rv$last_page_state <- NULL
   rv$same_page_render_count <- 0
   rv$is_app_responsive <- TRUE
+  rv$watchdog_shutdown_triggered <- FALSE
   
   # Watchdog checker runs every 5 seconds
   shiny::observe({
     shiny::invalidateLater(5000, session)  # Check every 5 seconds
     
-    if (!is.null(rv$last_meaningful_action) && rv$is_app_responsive) {
+    # Only check if not already shutting down
+    if (!rv$watchdog_shutdown_triggered && !is.null(rv$last_meaningful_action) && rv$is_app_responsive) {
       time_since_action <- as.numeric(difftime(Sys.time(), rv$last_meaningful_action, units = "secs"))
       
       # If no meaningful action for 30 seconds, app is stuck
       if (time_since_action > 30) {
+        rv$watchdog_shutdown_triggered <- TRUE
         logger(sprintf("WATCHDOG: App stuck for %.0f seconds (infinite loop or crash) - forcing shutdown", time_since_action), level = "ERROR")
         rv$is_app_responsive <- FALSE
         
@@ -3175,6 +3178,9 @@ launch_study <- function(
   # Track meaningful user actions (NOT just reactive changes)
   # Only these prove the app is actually working correctly
   shiny::observe({
+    # Don't track if already shutting down
+    if (rv$watchdog_shutdown_triggered) return(NULL)
+    
     req(rv$stage, rv$current_page)
     
     # Create unique state identifier
@@ -3189,8 +3195,10 @@ launch_study <- function(
       # Same page/stage rendering again - increment counter
       rv$same_page_render_count <- rv$same_page_render_count + 1
       
-      # If same page renders >20 times without state change = infinite loop
-      if (rv$same_page_render_count > 20) {
+      # If same page renders >100 times without state change = infinite loop
+      # Use high threshold to avoid false positives on normal page loads
+      if (rv$same_page_render_count > 100 && !rv$watchdog_shutdown_triggered) {
+        rv$watchdog_shutdown_triggered <- TRUE
         logger(sprintf("WATCHDOG: Infinite render loop detected on %s (rendered %d times) - forcing shutdown", 
                       current_state, rv$same_page_render_count), level = "ERROR")
         rv$is_app_responsive <- FALSE
