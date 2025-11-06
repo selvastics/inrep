@@ -1428,7 +1428,7 @@ process_page_flow <- function(config, rv, input, output, session, item_bank, ui_
     
     "custom" = render_custom_page(current_page, config, rv, ui_labels, input),
     
-    "results" = render_results_page(current_page, config, rv, item_bank, ui_labels, auto_close_time, auto_close_time_unit, disable_auto_close),
+    "results" = render_results_page(current_page, config, rv, item_bank, ui_labels, auto_close_time, auto_close_time_unit, disable_auto_close, session),
     
     # Default fallback
     shiny::div(
@@ -1911,7 +1911,7 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
 }
 
 #' Render results page
-render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_close_time = 300, auto_close_time_unit = "seconds", disable_auto_close = FALSE) {
+render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_close_time = 300, auto_close_time_unit = "seconds", disable_auto_close = FALSE, session = NULL) {
   # GENERIC DEBUG HANDLER: Check for show_personal_results preference
   # This applies to ALL studies, not just specific ones
   show_pref <- NULL

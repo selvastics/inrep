@@ -2406,9 +2406,19 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
           upload_user <- WEBDAV_SHARE_TOKEN
           upload_pass <- WEBDAV_PASSWORD
           
-          # Schedule background upload using later::later()
-          later::later(function() {
-            cat("BACKGROUND: Starting cloud upload...\n")
+          # CRITICAL: When user selects NO, upload IMMEDIATELY (not in background)
+          # This ensures upload completes before session potentially closes
+          # When user selects YES, can upload in background since they'll wait for results
+          
+          upload_immediately <- isTRUE(user_wants_no_results)
+          
+          if (upload_immediately) {
+            # IMMEDIATE UPLOAD - block until complete (user won't see results anyway)
+            cat("\n")
+            cat("================================================================================\n")
+            cat("Starting IMMEDIATE cloud upload (user declined results)...\n")
+            cat("================================================================================\n")
+            cat("File:", local_file, "\n\n")
             
             upload_success <- FALSE
             max_retries <- 3
@@ -2416,7 +2426,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
             for (retry_count in 1:max_retries) {
               if (retry_count > 1) {
                 wait_time <- 2^(retry_count - 1)
-                cat("BACKGROUND: Retry", retry_count, "after", wait_time, "seconds...\n")
+                cat("Retry", retry_count, "after", wait_time, "seconds...\n")
                 Sys.sleep(wait_time)
               }
               
@@ -2428,35 +2438,89 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
                   httr::add_headers(
                     "Content-Type" = "text/csv",
                     "X-Requested-With" = "XMLHttpRequest"
-                  )
-                  # NO TIMEOUT - let it take as long as needed in background
+                  ),
+                  httr::timeout(30)  # 30 second timeout for immediate upload
                 )
                 
                 if (httr::status_code(response) %in% c(200, 201, 204)) {
                   upload_success <- TRUE
                   cat("\n")
                   cat("================================================================================\n")
-                  cat("BACKGROUND: Upload SUCCESS!\n")
+                  cat("Upload SUCCESS!\n")
                   cat("================================================================================\n")
                   cat("File:", basename(upload_file_path), "\n")
                   cat("Location: https://sync.academiccloud.de/index.php/s/OUarlqGbhYopkBc\n\n")
                   break
                 } else {
-                  cat("BACKGROUND: Upload failed with HTTP", httr::status_code(response), "\n")
+                  cat("Upload failed with HTTP", httr::status_code(response), "\n")
                 }
               }, error = function(e) {
-                cat("BACKGROUND: Upload error:", e$message, "\n")
+                cat("Upload error:", e$message, "\n")
               })
             }
             
             if (!upload_success) {
               cat("\n")
               cat("================================================================================\n")
-              cat("BACKGROUND: Upload failed after", max_retries, "attempts\n")
+              cat("Upload failed after", max_retries, "attempts\n")
               cat("================================================================================\n")
               cat("Data saved locally at:", upload_file_path, "\n\n")
             }
-          }, delay = 0.1)  # Start after 0.1 seconds (after results render)
+            
+          } else {
+            # BACKGROUND UPLOAD - don't block results display
+            # Schedule background upload using later::later()
+            later::later(function() {
+              cat("BACKGROUND: Starting cloud upload...\n")
+              
+              upload_success <- FALSE
+              max_retries <- 3
+              
+              for (retry_count in 1:max_retries) {
+                if (retry_count > 1) {
+                  wait_time <- 2^(retry_count - 1)
+                  cat("BACKGROUND: Retry", retry_count, "after", wait_time, "seconds...\n")
+                  Sys.sleep(wait_time)
+                }
+                
+                tryCatch({
+                  response <- httr::PUT(
+                    url = paste0(upload_url, basename(upload_file_path)),
+                    body = httr::upload_file(upload_file_path),
+                    httr::authenticate(upload_user, upload_pass, type = "basic"),
+                    httr::add_headers(
+                      "Content-Type" = "text/csv",
+                      "X-Requested-With" = "XMLHttpRequest"
+                    )
+                    # NO TIMEOUT - let it take as long as needed in background
+                  )
+                  
+                  if (httr::status_code(response) %in% c(200, 201, 204)) {
+                    upload_success <- TRUE
+                    cat("\n")
+                    cat("================================================================================\n")
+                    cat("BACKGROUND: Upload SUCCESS!\n")
+                    cat("================================================================================\n")
+                    cat("File:", basename(upload_file_path), "\n")
+                    cat("Location: https://sync.academiccloud.de/index.php/s/OUarlqGbhYopkBc\n\n")
+                    break
+                  } else {
+                    cat("BACKGROUND: Upload failed with HTTP", httr::status_code(response), "\n")
+                  }
+                }, error = function(e) {
+                  cat("BACKGROUND: Upload error:", e$message, "\n")
+                })
+              }
+              
+              if (!upload_success) {
+                cat("\n")
+                cat("================================================================================\n")
+                cat("BACKGROUND: Upload failed after", max_retries, "attempts\n")
+                cat("================================================================================\n")
+                cat("Data saved locally at:", upload_file_path, "\n\n")
+              }
+            }, delay = 0.1)  # Start after 0.1 seconds (after results render)
+          }
           
         } else {
           cat("WARNING: WEBDAV_URL or WEBDAV_PASSWORD not configured - skipping cloud upload\n")
