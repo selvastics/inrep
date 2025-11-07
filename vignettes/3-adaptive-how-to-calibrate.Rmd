@@ -14,6 +14,8 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+THIS IS STILL UNDER ACTIVE DEVELOPMENT.
+
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -383,16 +385,6 @@ Calibration is the foundation of accurate adaptive testing. By properly calibrat
 - Results are interpretable and comparable across administrations
 
 The calibrated item bank you create can be reused across multiple studies, providing consistent and reliable measurement of the constructs you're interested in.
-
-## Next Steps
-
-1. **Validate your calibration** on new data
-2. **Test the adaptive assessment** with debug mode enabled
-3. **Fine-tune stopping criteria** based on your precision requirements
-4. **Consider multidimensional extensions** for complex constructs like personality
-
-For more advanced calibration techniques and examples, see the TAM package documentation and the inrep examples directory. 
-
 
 
 

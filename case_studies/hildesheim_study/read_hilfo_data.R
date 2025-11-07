@@ -1,10 +1,12 @@
 # =============================================================================
-# Hildesheim Study Data Read-In Script
+# Hildesheim Study Data Read-In Script (UPDATED - NO PA ITEMS)
 # =============================================================================
 # 
 # This script reads CSV files from the study_data folder, processes the data,
 # applies reverse coding, computes scale scores, adds variable and value labels,
 # and exports the data to SPSS (.sav) and Excel (.xlsx) formats.
+#
+# STUDY VERSION: Non-adaptive, 31 items total (Programming Anxiety section removed)
 #
 # FOLDER STRUCTURE:
 #   The script should be in a folder, with a "study_data" subfolder containing CSV files:
@@ -16,9 +18,9 @@
 #       file2.csv
 #       ...
 #     output/          (created automatically)
-#       file1.sav
-#       file1.xlsx
-#       ...
+#       hilfo_combined.sav
+#       hilfo_combined.xlsx
+#       hilfo_combined.sps
 #
 # USAGE:
 #   1. Place your CSV files in a folder named "study_data" (in the same directory as this script)
@@ -26,28 +28,31 @@
 #   3. Find processed files in the "output" folder (or your specified output_dir)
 #
 # OUTPUT:
-#   - Individual .sav and .xlsx files for each input CSV
-#   - Combined .sav and .xlsx files (if multiple CSV files are processed)
-#   - All files include variable labels, value labels, and computed scale scores
+#   - Combined .sav file with all data, variable labels, and value labels
+#   - Combined .xlsx file with Data and Codebook sheets
+#   - Combined .sps file with SPSS syntax for measurement levels
 #
-# SCALE COMPUTATIONS:
-#   - BFI scales: Mean of 4 items each, with reverse coding applied
-#   - PSQ_Stress: Mean of 5 items, with reverse coding for PSQ_29
-#   - MWS_Studierfaehigkeiten: Mean of 4 items
-#   - Statistik: Mean of 2 items
+# SCALE COMPUTATIONS (with reverse coding applied):
+#   - BFI_Extraversion: Mean of items 1-4 (BFE_01 to BFE_04), items 2-3 reversed
+#   - BFI_Vertraeglichkeit: Mean of items 5-8 (BFV_01 to BFV_04), items 6,8 reversed
+#   - BFI_Gewissenhaftigkeit: Mean of items 9-12 (BFG_01 to BFG_04), items 9,12 reversed
+#   - BFI_Neurotizismus: Mean of items 13-16 (BFN_01 to BFN_04), items 13,16 reversed
+#   - BFI_Offenheit: Mean of items 17-20 (BFO_01 to BFO_04), items 18,20 reversed
+#   - PSQ_Stress: Mean of items 21-25 (PSQ_02, PSQ_04, PSQ_16, PSQ_29, PSQ_30), item 24 (PSQ_29) reversed
+#   - MWS_Studierfaehigkeiten: Mean of items 26-29 (MWS_1_KK to MWS_21_KK), no reverse coding
+#   - Statistik: Mean of items 30-31 (Statistik_gutfolgen, Statistik_selbstwirksam), no reverse coding
 #
 # REVERSE CODING:
-#   Applied to items before computing scale scores:
-#   - PA: items 1, 10, 15
-#   - BFE: items 2, 3
-#   - BFV: items 2, 4
-#   - BFG: items 1, 4
-#   - BFN: items 1, 4
-#   - BFO: items 2, 4
-#   - PSQ: item 4 (PSQ_29)
+#   Applied to items before computing scale scores (6 - value):
+#   - BFE: items 2, 3 (BFE_02, BFE_03)
+#   - BFV: items 6, 8 (BFV_02, BFV_04) 
+#   - BFG: items 9, 12 (BFG_01, BFG_04)
+#   - BFN: items 13, 16 (BFN_01, BFN_04)
+#   - BFO: items 18, 20 (BFO_02, BFO_04)
+#   - PSQ: item 24 (PSQ_29 - "I have enough time for myself")
 #
-# Author: Generated for Hildesheim Study
-# Date: 2025
+# Author: Generated for Hildesheim Study (Simplified Version)
+# Date: 2025-11-07
 # =============================================================================
 
 # Load required libraries
@@ -73,155 +78,105 @@ library(labelled)
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # =============================================================================
-# ITEM DEFINITIONS AND METADATA
+# ITEM DEFINITIONS AND METADATA (NO PA ITEMS)
 # =============================================================================
 
 # Item labels (German and English)
 # -----------------------------------------------------------------------------
 item_labels_de <- c(
-  # Programming Anxiety (PA) items 1-23 (STARS-D adapted)
-  "Sie bereiten sich auf eine Programmierprüfung vor.",
-  "Sie müssen Code aus einem Tutorial oder einer Dokumentation interpretieren.",
-  "Sie fragen Ihren Programmierdozenten/Ihre Programmierdozentin, ob er/sie Ihnen Inhalte aus der Lehrveranstaltung, die Sie nicht verstehen, noch einmal individuell erklären kann.",
-  "Sie verstehen die in der Programmier-Lehrveranstaltung besprochenen Themen nicht.",
-  "Sie suchen nach Fehlern in Ihrem Code.",
-  "Sie bearbeiten eine schwierige Programmieraufgabe.",
-  "Sie reichen die Lösung zu einer Programmieraufgabe ein, die Sie nicht verstanden haben.",
-  "Sie schreiben während einer Programmierprüfung Code.",
-  "Sie sollen ein Programm entsprechend bestimmter Vorgaben schreiben.",
-  "Sie fühlen sich wohl dabei, meinen Code anderen zu erklären.",
-  "Sie versuchen zu entscheiden, welche Analysemethode oder welcher Programmansatz angemessen ist.",
-  "Sie müssen eine große Datenmenge in einem Programm verarbeiten.",
-  "Sie erhalten eine Note für eine Programmieraufgabe, die niedriger ist, als Sie gehofft haben.",
-  "Sie schreiben Code ohne Schritt-für-Schritt-Anleitung.",
-  "Sie sind zuversichtlich, bestehenden Code zu verändern, um neue Funktionen hinzuzufügen.",
-  "Sie besuchen eine Programmierveranstaltung.",
-  "Sie untersuchen Fehlermeldungen, um Probleme in Ihrem Code zu finden.",
-  "Sie besprechen mit Ihrem Programmierdozenten/Ihrer Programmierdozentin die Bewertung Ihres Codes.",
-  "Sie sehen zu, wie andere Personen Code schreiben oder eine Fehleranalyse durchführen.",
-  "Sie haben Code geschrieben und drücken auf „Run" oder „Execute", um ihn auszuführen.",
-  "Sie sollen eine Problemstellung in Form eines Programmcodes umsetzen.",
-  "Sie erleben einen unerwarteten Fehler beim Ausführen Ihres Codes.",
-  "Sie stellen fest, dass eine von Ihnen verwendete Funktion oder ein Modul veraltet oder nicht mehr unterstützt wird.",
-  
-  # BFI Extraversion (BFE) items 21-24
+  # BFI Extraversion (BFE) items 1-4
   "Ich gehe aus mir heraus, bin gesellig.",
   "Ich bin eher ruhig.",
   "Ich bin eher schüchtern.",
   "Ich bin gesprächig.",
   
-  # BFI Verträglichkeit (BFV) items 25-28
+  # BFI Verträglichkeit (BFV) items 5-8
   "Ich bin einfühlsam, warmherzig.",
   "Ich habe mit anderen wenig Mitgefühl.",
   "Ich bin hilfsbereit und selbstlos.",
   "Andere sind mir eher gleichgültig, egal.",
   
-  # BFI Gewissenhaftigkeit (BFG) items 29-32
+  # BFI Gewissenhaftigkeit (BFG) items 9-12
   "Ich bin eher unordentlich.",
   "Ich bin systematisch, halte meine Sachen in Ordnung.",
   "Ich mag es sauber und aufgeräumt.",
   "Ich bin eher der chaotische Typ, mache selten sauber.",
   
-  # BFI Neurotizismus (BFN) items 33-36
+  # BFI Neurotizismus (BFN) items 13-16
   "Ich bleibe auch in stressigen Situationen gelassen.",
   "Ich reagiere leicht angespannt.",
   "Ich mache mir oft Sorgen.",
   "Ich werde selten nervös und unsicher.",
   
-  # BFI Offenheit (BFO) items 37-40
+  # BFI Offenheit (BFO) items 17-20
   "Ich bin vielseitig interessiert.",
   "Ich meide philosophische Diskussionen.",
   "Es macht mir Spaß, gründlich über komplexe Dinge nachzudenken und sie zu verstehen.",
   "Mich interessieren abstrakte Überlegungen wenig.",
   
-  # PSQ Stress items 41-45
+  # PSQ Stress items 21-25
   "Ich habe das Gefühl, dass zu viele Forderungen an mich gestellt werden.",
   "Ich habe zuviel zu tun.",
   "Ich fühle mich gehetzt.",
   "Ich habe genug Zeit für mich.",
   "Ich fühle mich unter Termindruck.",
   
-  # MWS Study Skills items 46-49
+  # MWS Study Skills items 26-29
   "mit dem sozialen Klima im Studiengang zurechtzukommen (z.B. Konkurrenz aushalten)",
   "Teamarbeit zu organisieren (z.B. Lerngruppen finden)",
   "Kontakte zu Mitstudierenden zu knüpfen (z.B. für Lerngruppen, Freizeit)",
   "im Team zusammen zu arbeiten (z.B. gemeinsam Aufgaben bearbeiten, Referate vorbereiten)",
   
-  # Statistics items 50-51
+  # Statistics items 30-31
   "Bislang konnte ich den Inhalten der Statistikveranstaltungen gut folgen.",
   "Ich bin in der Lage, Statistik zu erlernen."
 )
 
 item_labels_en <- c(
-  # Programming Anxiety (PA) items 1-23 (STARS-D adapted)
-  "You are studying for an exam in a programming course.",
-  "You have to interpret code from a tutorial or documentation.",
-  "You ask your programming instructor to explain course content that you do not understand.",
-  "You do not understand the topics discussed in the programming course.",
-  "You are looking for bugs in your code.",
-  "You are working on a difficult programming assignment.",
-  "You turn in a solution to a programming assignment that you did not understand.",
-  "You are writing code during a programming exam.",
-  "You are asked to write a program according to specific requirements.",
-  "You feel comfortable explaining your code to others.",
-  "You are trying to decide which analysis method or programming approach is appropriate.",
-  "You have to process a large amount of data in a program.",
-  "You receive a grade on a programming assignment that is lower than you hoped.",
-  "You are writing code without step-by-step instructions.",
-  "You are confident in modifying existing code to add new features.",
-  "You are attending a programming course.",
-  "You are examining error messages to find problems in your code.",
-  "You are discussing the evaluation of your code with your programming instructor.",
-  "You are watching other people write code or perform error analysis.",
-  "You have written code and press 'Run' or 'Execute' to run it.",
-  "You are asked to implement a problem in the form of program code.",
-  "You experience an unexpected error when running your code.",
-  "You discover that a function or module you are using is outdated or no longer supported.",
-  
-  # BFI Extraversion (BFE) items 21-24
+  # BFI Extraversion (BFE) items 1-4
   "I am outgoing, sociable.",
   "I am rather quiet.",
   "I am rather shy.",
   "I am talkative.",
   
-  # BFI Agreeableness (BFV) items 25-28
+  # BFI Agreeableness (BFV) items 5-8
   "I am empathetic, warm-hearted.",
   "I have little sympathy for others.",
   "I am helpful and selfless.",
   "Others are rather indifferent to me.",
   
-  # BFI Conscientiousness (BFG) items 29-32
+  # BFI Conscientiousness (BFG) items 9-12
   "I am rather disorganized.",
   "I am systematic, keep my things in order.",
   "I like it clean and tidy.",
   "I am rather the chaotic type, rarely clean up.",
   
-  # BFI Neuroticism (BFN) items 33-36
+  # BFI Neuroticism (BFN) items 13-16
   "I remain calm even in stressful situations.",
   "I react easily tensed.",
   "I often worry.",
   "I rarely become nervous and insecure.",
   
-  # BFI Openness (BFO) items 37-40
+  # BFI Openness (BFO) items 17-20
   "I have diverse interests.",
   "I avoid philosophical discussions.",
   "I enjoy thinking thoroughly about complex things and understanding them.",
   "Abstract considerations interest me little.",
   
-  # PSQ Stress items 41-45
+  # PSQ Stress items 21-25
   "I feel that too many demands are placed on me.",
   "I have too much to do.",
   "I feel rushed.",
   "I have enough time for myself.",
   "I feel under deadline pressure.",
   
-  # MWS Study Skills items 46-49
+  # MWS Study Skills items 26-29
   "coping with the social climate in the program (e.g., handling competition)",
   "organizing teamwork (e.g., finding study groups)",
   "making contacts with fellow students (e.g., for study groups, leisure)",
   "working together in a team (e.g., working on tasks together, preparing presentations)",
   
-  # Statistics items 50-51
+  # Statistics items 30-31
   "So far I have been able to follow the content of the statistics courses well.",
   "I am able to learn statistics."
 )
@@ -230,31 +185,26 @@ item_labels_en <- c(
 # -----------------------------------------------------------------------------
 # TRUE means the item needs to be reverse coded (6 - value)
 reverse_coded <- c(
-  # PA items 1-23: items 10, 15 are reverse coded (positive items)
-  FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE,
-  FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE,
-  FALSE, FALSE, FALSE,
-  # BFE items 24-27: items 25, 26 are reverse coded
+  # BFE items 1-4: items 2, 3 are reverse coded
   FALSE, TRUE, TRUE, FALSE,
-  # BFV items 28-31: items 29, 31 are reverse coded
+  # BFV items 5-8: items 6, 8 are reverse coded (indices 2, 4 within BFV)
   FALSE, TRUE, FALSE, TRUE,
-  # BFG items 32-35: items 32, 35 are reverse coded
+  # BFG items 9-12: items 9, 12 are reverse coded (indices 1, 4 within BFG)
   TRUE, FALSE, FALSE, TRUE,
-  # BFN items 36-39: items 36, 39 are reverse coded
+  # BFN items 13-16: items 13, 16 are reverse coded (indices 1, 4 within BFN)
   TRUE, FALSE, FALSE, TRUE,
-  # BFO items 40-43: items 41, 43 are reverse coded
+  # BFO items 17-20: items 18, 20 are reverse coded (indices 2, 4 within BFO)
   FALSE, TRUE, FALSE, TRUE,
-  # PSQ items 44-48: item 47 is reverse coded
+  # PSQ items 21-25: item 24 is reverse coded (PSQ_29 - "I have enough time")
   FALSE, FALSE, FALSE, TRUE, FALSE,
-  # MWS items 49-52: no reverse coding
+  # MWS items 26-29: no reverse coding
   FALSE, FALSE, FALSE, FALSE,
-  # Statistics items 53-54: no reverse coding
+  # Statistics items 30-31: no reverse coding
   FALSE, FALSE
 )
 
 # Item IDs
 item_ids <- c(
-  paste0("PA_", sprintf("%02d", 1:23)),
   "BFE_01", "BFE_02", "BFE_03", "BFE_04",
   "BFV_01", "BFV_02", "BFV_03", "BFV_04",
   "BFG_01", "BFG_02", "BFG_03", "BFG_04",
@@ -287,6 +237,83 @@ language_labels <- c(
   "English" = "en"
 )
 
+# Demographic value labels
+alter_labels <- c(
+  "17" = "17", "18" = "18", "19" = "19", "20" = "20", "21" = "21",
+  "22" = "22", "23" = "23", "24" = "24", "25" = "25", "26" = "26",
+  "27" = "27", "28" = "28", "29" = "29", "30" = "30", "Älter als 30 / Older than 30" = "0"
+)
+
+geschlecht_labels <- c(
+  "weiblich/divers / female/diverse" = "1",
+  "männlich / male" = "2"
+)
+
+wohnstatus_labels <- c(
+  "Bei meinen Eltern / With parents" = "1",
+  "In einer WG / Shared apartment" = "2",
+  "Alleine / Alone" = "3",
+  "Mit Partner*In / With partner" = "4",
+  "Anders / Other" = "6"
+)
+
+haustier_labels <- c(
+  "Hund / Dog" = "1",
+  "Katze / Cat" = "2",
+  "Fisch / Fish" = "3",
+  "Vogel / Bird" = "4",
+  "Nager / Rodent" = "5",
+  "Reptil / Reptile" = "6",
+  "Ich möchte kein Haustier / I don't want a pet" = "7",
+  "Sonstiges / Other" = "8"
+)
+
+rauchen_labels <- c(
+  "Ja / Yes" = "1",
+  "Nein / No" = "2"
+)
+
+ernährung_labels <- c(
+  "Vegan / Vegan" = "1",
+  "Vegetarisch / Vegetarian" = "2",
+  "Pescetarisch / Pescetarian" = "7",
+  "Flexitarisch / Flexitarian" = "4",
+  "Omnivor / Omnivore" = "5",
+  "Andere / Other" = "6"
+)
+
+noten_labels <- c(
+  "sehr gut (15-13 Punkte) / very good (15-13 points)" = "1",
+  "gut (12-10 Punkte) / good (12-10 points)" = "2",
+  "befriedigend (9-7 Punkte) / satisfactory (9-7 points)" = "3",
+  "ausreichend (6-4 Punkte) / sufficient (6-4 points)" = "4",
+  "mangelhaft (3-0 Punkte) / poor (3-0 points)" = "5"
+)
+
+vorbereitung_labels <- c(
+  "0 Stunden / 0 hours" = "1",
+  "maximal eine Stunde / max 1 hour" = "2",
+  "mehr als 1, weniger als 2 Stunden / 1-2 hours" = "3",
+  "mehr als 2, weniger als 3 Stunden / 2-3 hours" = "4",
+  "mehr als 3, weniger als 4 Stunden / 3-4 hours" = "5",
+  "mehr als 4 Stunden / more than 4 hours" = "6"
+)
+
+zufriedenheit_labels <- c(
+  "gar nicht zufrieden / not at all satisfied" = "1",
+  "2" = "2",
+  "3" = "3",
+  "4" = "4",
+  "5" = "5",
+  "6" = "6",
+  "sehr zufrieden / very satisfied" = "7"
+)
+
+results_preference_labels <- c(
+  "Ja / Yes" = "yes",
+  "Nein / No" = "no"
+)
+
 # =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
@@ -303,14 +330,8 @@ reverse_code <- function(value, reverse = FALSE) {
 # Function to compute BFI scale scores
 # -----------------------------------------------------------------------------
 compute_bfi_scales <- function(data) {
-  # BFI Extraversion: items 21-24 (BFE_01 to BFE_04)
-  # Reverse code items 22 and 23 (BFE_02, BFE_03)
-  bfe_items <- c(
-    data$BFE_01,
-    reverse_code(data$BFE_02, reverse = TRUE),
-    reverse_code(data$BFE_03, reverse = TRUE),
-    data$BFE_04
-  )
+  # BFI Extraversion: items 1-4 (BFE_01 to BFE_04)
+  # Reverse code items 2 and 3 (BFE_02, BFE_03)
   data$BFI_Extraversion <- rowMeans(cbind(
     data$BFE_01,
     reverse_code(data$BFE_02, reverse = TRUE),
@@ -318,8 +339,8 @@ compute_bfi_scales <- function(data) {
     data$BFE_04
   ), na.rm = TRUE)
   
-  # BFI Verträglichkeit: items 25-28 (BFV_01 to BFV_04)
-  # Reverse code items 26 and 28 (BFV_02, BFV_04)
+  # BFI Verträglichkeit: items 5-8 (BFV_01 to BFV_04)
+  # Reverse code items 6 and 8 (BFV_02, BFV_04)
   data$BFI_Vertraeglichkeit <- rowMeans(cbind(
     data$BFV_01,
     reverse_code(data$BFV_02, reverse = TRUE),
@@ -327,8 +348,8 @@ compute_bfi_scales <- function(data) {
     reverse_code(data$BFV_04, reverse = TRUE)
   ), na.rm = TRUE)
   
-  # BFI Gewissenhaftigkeit: items 29-32 (BFG_01 to BFG_04)
-  # Reverse code items 29 and 32 (BFG_01, BFG_04)
+  # BFI Gewissenhaftigkeit: items 9-12 (BFG_01 to BFG_04)
+  # Reverse code items 9 and 12 (BFG_01, BFG_04)
   data$BFI_Gewissenhaftigkeit <- rowMeans(cbind(
     reverse_code(data$BFG_01, reverse = TRUE),
     data$BFG_02,
@@ -336,8 +357,8 @@ compute_bfi_scales <- function(data) {
     reverse_code(data$BFG_04, reverse = TRUE)
   ), na.rm = TRUE)
   
-  # BFI Neurotizismus: items 33-36 (BFN_01 to BFN_04)
-  # Reverse code items 33 and 36 (BFN_01, BFN_04)
+  # BFI Neurotizismus: items 13-16 (BFN_01 to BFN_04)
+  # Reverse code items 13 and 16 (BFN_01, BFN_04)
   data$BFI_Neurotizismus <- rowMeans(cbind(
     reverse_code(data$BFN_01, reverse = TRUE),
     data$BFN_02,
@@ -345,8 +366,8 @@ compute_bfi_scales <- function(data) {
     reverse_code(data$BFN_04, reverse = TRUE)
   ), na.rm = TRUE)
   
-  # BFI Offenheit: items 37-40 (BFO_01 to BFO_04)
-  # Reverse code items 38 and 40 (BFO_02, BFO_04)
+  # BFI Offenheit: items 17-20 (BFO_01 to BFO_04)
+  # Reverse code items 18 and 20 (BFO_02, BFO_04)
   data$BFI_Offenheit <- rowMeans(cbind(
     data$BFO_01,
     reverse_code(data$BFO_02, reverse = TRUE),
@@ -357,9 +378,52 @@ compute_bfi_scales <- function(data) {
   return(data)
 }
 
-# Function to set SPSS-specific attributes and produce SPSS syntax for measures
+# Function to compute PSQ Stress score
 # -----------------------------------------------------------------------------
-# Ensures SPSS-friendly formats and prepares a .sps syntax to set measurement levels
+compute_psq_stress <- function(data) {
+  # PSQ Stress: items 21-25 (PSQ_02, PSQ_04, PSQ_16, PSQ_29, PSQ_30)
+  # Reverse code item 24 (PSQ_29 - "I have enough time for myself")
+  data$PSQ_Stress <- rowMeans(cbind(
+    data$PSQ_02,
+    data$PSQ_04,
+    data$PSQ_16,
+    reverse_code(data$PSQ_29, reverse = TRUE),
+    data$PSQ_30
+  ), na.rm = TRUE)
+  
+  return(data)
+}
+
+# Function to compute MWS Study Skills score
+# -----------------------------------------------------------------------------
+compute_mws_studierfaehigkeiten <- function(data) {
+  # MWS Studierfähigkeiten: items 26-29 (MWS_1_KK, MWS_10_KK, MWS_17_KK, MWS_21_KK)
+  # No reverse coding needed
+  data$MWS_Studierfaehigkeiten <- rowMeans(cbind(
+    data$MWS_1_KK,
+    data$MWS_10_KK,
+    data$MWS_17_KK,
+    data$MWS_21_KK
+  ), na.rm = TRUE)
+  
+  return(data)
+}
+
+# Function to compute Statistics score
+# -----------------------------------------------------------------------------
+compute_statistik <- function(data) {
+  # Statistics: items 30-31 (Statistik_gutfolgen, Statistik_selbstwirksam)
+  # No reverse coding needed
+  data$Statistik <- rowMeans(cbind(
+    data$Statistik_gutfolgen,
+    data$Statistik_selbstwirksam
+  ), na.rm = TRUE)
+  
+  return(data)
+}
+
+# Function to set SPSS-specific attributes
+# -----------------------------------------------------------------------------
 apply_spss_attributes <- function(data) {
   # Set SPSS display/format attributes that SPSS understands via haven
   for (col in names(data)) {
@@ -400,7 +464,7 @@ apply_spss_attributes <- function(data) {
   return(data)
 }
 
-# Function to generate SPSS syntax to set measurement levels and ensure labels
+# Function to generate SPSS syntax to set measurement levels
 # -----------------------------------------------------------------------------
 write_sps_syntax <- function(data, sps_path) {
   # Build lists by type
@@ -419,50 +483,6 @@ write_sps_syntax <- function(data, sps_path) {
   )
   lines <- lines[!sapply(lines, is.null)]
   writeLines(lines, sps_path)
-}
-
-# Function to compute PSQ Stress score
-# -----------------------------------------------------------------------------
-compute_psq_stress <- function(data) {
-  # PSQ Stress: items 41-45 (PSQ_02, PSQ_04, PSQ_16, PSQ_29, PSQ_30)
-  # Reverse code item 44 (PSQ_29)
-  data$PSQ_Stress <- rowMeans(cbind(
-    data$PSQ_02,
-    data$PSQ_04,
-    data$PSQ_16,
-    reverse_code(data$PSQ_29, reverse = TRUE),
-    data$PSQ_30
-  ), na.rm = TRUE)
-  
-  return(data)
-}
-
-# Function to compute MWS Study Skills score
-# -----------------------------------------------------------------------------
-compute_mws_studierfaehigkeiten <- function(data) {
-  # MWS Studierfähigkeiten: items 46-49 (MWS_1_KK, MWS_10_KK, MWS_17_KK, MWS_21_KK)
-  # No reverse coding needed
-  data$MWS_Studierfaehigkeiten <- rowMeans(cbind(
-    data$MWS_1_KK,
-    data$MWS_10_KK,
-    data$MWS_17_KK,
-    data$MWS_21_KK
-  ), na.rm = TRUE)
-  
-  return(data)
-}
-
-# Function to compute Statistics score
-# -----------------------------------------------------------------------------
-compute_statistik <- function(data) {
-  # Statistics: items 50-51 (Statistik_gutfolgen, Statistik_selbstwirksam)
-  # No reverse coding needed
-  data$Statistik <- rowMeans(cbind(
-    data$Statistik_gutfolgen,
-    data$Statistik_selbstwirksam
-  ), na.rm = TRUE)
-  
-  return(data)
 }
 
 # Function to add variable labels
@@ -547,6 +567,50 @@ add_variable_labels <- function(data, language = "de") {
     var_label(data$study_language) <- "Language of the study (de = German, en = English)"
   }
   
+  # Add labels to demographic variables
+  if ("Alter_VPN" %in% names(data)) {
+    var_label(data$Alter_VPN) <- if(language == "de") "Alter in Jahren" else "Age in years"
+  }
+  if ("Geschlecht" %in% names(data)) {
+    var_label(data$Geschlecht) <- if(language == "de") "Geschlecht" else "Gender"
+  }
+  if ("Wohnstatus" %in% names(data)) {
+    var_label(data$Wohnstatus) <- if(language == "de") "Wohnsituation" else "Living situation"
+  }
+  if ("Wohn_Zusatz" %in% names(data)) {
+    var_label(data$Wohn_Zusatz) <- if(language == "de") "Wohnsituation - Zusatzangabe" else "Living situation - additional info"
+  }
+  if ("Haustier" %in% names(data)) {
+    var_label(data$Haustier) <- if(language == "de") "Haustier (gewünscht oder vorhanden)" else "Pet (desired or owned)"
+  }
+  if ("Rauchen" %in% names(data)) {
+    var_label(data$Rauchen) <- if(language == "de") "Raucherstatus" else "Smoking status"
+  }
+  if ("Ernährung" %in% names(data)) {
+    var_label(data$Ernährung) <- if(language == "de") "Ernährungstyp" else "Diet type"
+  }
+  if ("Ernährung_Zusatz" %in% names(data)) {
+    var_label(data$Ernährung_Zusatz) <- if(language == "de") "Ernährung - Zusatzangabe" else "Diet - additional info"
+  }
+  if ("Note_Englisch" %in% names(data)) {
+    var_label(data$Note_Englisch) <- if(language == "de") "Schulnote Englisch (Abitur)" else "School grade English (Abitur)"
+  }
+  if ("Note_Mathe" %in% names(data)) {
+    var_label(data$Note_Mathe) <- if(language == "de") "Schulnote Mathematik (Abitur)" else "School grade Mathematics (Abitur)"
+  }
+  if ("Vor_Nachbereitung" %in% names(data)) {
+    var_label(data$Vor_Nachbereitung) <- if(language == "de") "Geplante Stunden für Statistik-Vor-/Nachbereitung pro Woche" else "Planned hours for statistics preparation per week"
+  }
+  if ("Zufrieden_Hi_7st" %in% names(data)) {
+    var_label(data$Zufrieden_Hi_7st) <- if(language == "de") "Zufriedenheit mit Studienort Hildesheim" else "Satisfaction with study location Hildesheim"
+  }
+  if ("Persönlicher_Code" %in% names(data)) {
+    var_label(data$Persönlicher_Code) <- if(language == "de") "Persönlicher Code für Längsschnittstudien" else "Personal code for longitudinal studies"
+  }
+  if ("show_personal_results" %in% names(data)) {
+    var_label(data$show_personal_results) <- if(language == "de") "Präferenz zur Anzeige persönlicher Ergebnisse" else "Preference for displaying personal results"
+  }
+  
   return(data)
 }
 
@@ -610,6 +674,44 @@ add_value_labels <- function(data) {
         var_label(data$study_language) <- existing_var_label
       }
     })
+  }
+  
+  # Add value labels to demographic variables (character columns)
+  demographic_label_mapping <- list(
+    Alter_VPN = alter_labels,
+    Geschlecht = geschlecht_labels,
+    Wohnstatus = wohnstatus_labels,
+    Haustier = haustier_labels,
+    Rauchen = rauchen_labels,
+    Ernährung = ernährung_labels,
+    Note_Englisch = noten_labels,
+    Note_Mathe = noten_labels,
+    Vor_Nachbereitung = vorbereitung_labels,
+    Zufrieden_Hi_7st = zufriedenheit_labels,
+    show_personal_results = results_preference_labels
+  )
+  
+  for (demo_var in names(demographic_label_mapping)) {
+    if (demo_var %in% names(data)) {
+      tryCatch({
+        # Get existing variable label
+        existing_var_label <- var_label(data[[demo_var]])
+        
+        # Apply value labels (works for both character and numeric)
+        data[[demo_var]] <- haven::labelled(data[[demo_var]], labels = demographic_label_mapping[[demo_var]])
+        
+        # Restore variable label
+        if (!is.null(existing_var_label)) {
+          var_label(data[[demo_var]]) <- existing_var_label
+        }
+      }, error = function(e) {
+        # If it fails, preserve variable label
+        existing_var_label <- var_label(data[[demo_var]])
+        if (!is.null(existing_var_label)) {
+          var_label(data[[demo_var]]) <- existing_var_label
+        }
+      })
+    }
   }
   
   return(data)
@@ -731,15 +833,21 @@ create_codebook <- function(data, language = "de") {
 # -----------------------------------------------------------------------------
 # Processes a single CSV file: reads data, applies reverse coding, computes scales,
 # adds labels, and exports to SPSS (.sav) and Excel (.xlsx) formats
-# Expected columns: timestamp, session_id, study_language, all item columns, and scale scores
+# Expected columns: timestamp, session_id, study_language, demographics, all item columns, and scale scores
 process_csv_file <- function(file_path, output_dir = "output") {
   
   # Define all expected columns from the CSV format
   expected_character_cols <- c("timestamp", "session_id", "study_language")
+  
+  # Define demographic variables (will be preserved as-is from CSV)
+  demographic_cols <- c("Alter_VPN", "Geschlecht", "Wohnstatus", "Wohn_Zusatz", "Haustier",
+                        "Rauchen", "Ernährung", "Ernährung_Zusatz", "Note_Englisch", "Note_Mathe",
+                        "Vor_Nachbereitung", "Zufrieden_Hi_7st", "Persönlicher_Code", "show_personal_results")
+  
   expected_scale_cols <- c("BFI_Extraversion", "BFI_Vertraeglichkeit", "BFI_Gewissenhaftigkeit", 
                            "BFI_Neurotizismus", "BFI_Offenheit", "PSQ_Stress", 
                            "MWS_Studierfaehigkeiten", "Statistik")
-  all_expected_cols <- c(expected_character_cols, item_ids, expected_scale_cols)
+  all_expected_cols <- c(expected_character_cols, demographic_cols, item_ids, expected_scale_cols)
   
   # Read CSV file - let readr guess types, suppress warnings about missing columns
   suppressWarnings({
@@ -896,10 +1004,16 @@ process_all_csv_files <- function(input_dir = "study_data", output_dir = "output
       
       # Define all expected columns from the CSV format
       expected_character_cols <- c("timestamp", "session_id", "study_language")
+      
+      # Define demographic variables (will be preserved as-is from CSV)
+      demographic_cols <- c("Alter_VPN", "Geschlecht", "Wohnstatus", "Wohn_Zusatz", "Haustier",
+                            "Rauchen", "Ernährung", "Ernährung_Zusatz", "Note_Englisch", "Note_Mathe",
+                            "Vor_Nachbereitung", "Zufrieden_Hi_7st", "Persönlicher_Code", "show_personal_results")
+      
       expected_scale_cols <- c("BFI_Extraversion", "BFI_Vertraeglichkeit", "BFI_Gewissenhaftigkeit", 
                                "BFI_Neurotizismus", "BFI_Offenheit", "PSQ_Stress", 
                                "MWS_Studierfaehigkeiten", "Statistik")
-      all_expected_cols <- c(expected_character_cols, item_ids, expected_scale_cols)
+      all_expected_cols <- c(expected_character_cols, demographic_cols, item_ids, expected_scale_cols)
       
       # Read CSV file - let readr guess types, suppress warnings about missing columns
       suppressWarnings({

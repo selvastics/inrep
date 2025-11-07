@@ -14,9 +14,9 @@ suppressPackageStartupMessages({
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
 # WebDAV configuration
-WEBDAV_URL <- "https://sync.academiccloud.de/index.php/s/p1XNKAOuq68JJJ3"
+WEBDAV_URL <- "https://sync.academiccloud.de/public.php/webdav/Y51QPXzJVLWSAcb"
 WEBDAV_PASSWORD <- "inreptest"
-WEBDAV_SHARE_TOKEN <- "p1XNKAOuq68JJJ3"
+WEBDAV_SHARE_TOKEN <- "Y51QPXzJVLWSAcb"
 
 # =============================================================================
 # ITEM BANK - DIGITAL STRESS (DS1-DS15) + RESILIENCE/COPING (RCQ1-RCQ)
@@ -83,6 +83,8 @@ rcq_items <- c(
     "Ich denke  <br>über Wunder (z.B. Lottogewinn, Spontanheilung)  <br>nach, welche meine Probleme lösen werden."
 )
 
+rcq_midpoint <- ceiling(length(rcq_items) / 2)
+
 all_items <- data.frame(
     id = c(paste0("DS", seq_along(ds_items)), paste0("RCQ", seq_along(rcq_items))),
     Question = c(ds_items, rcq_items),
@@ -107,7 +109,7 @@ for (i in seq_len(nrow(all_items))) {
 
 # Demographic inputs
 input_types$Age <- "numeric"
-input_types$Gender <- "select"
+input_types$Gender <- "radio"
 input_types$StudyProgram <- "text"
 input_types$Semester <- "numeric"
 input_types$ScreenTime <- "radio"   # 1–5 scale as specified
@@ -121,7 +123,7 @@ input_types$open_O1 <- "textArea"
 custom_page_flow <- list(
     # Page 1: Welcome + Consent
     list(
-        id = "page1",
+        id = "welcome",
         type = "custom",
         title = "",
         required = FALSE,
@@ -129,12 +131,17 @@ custom_page_flow <- list(
         render_function = function(input, output, session, rv) {
             shiny::div(
                 class = "assessment-card",
-                shiny::h3("Herzlich willkommen zu meiner Studie!", class = "card-header"),
+                shiny::h3("Herzlich willkommen zu dieser Befragung!", class = "card-header"),
                 shiny::div(
                     style = "padding: 16px;",
-                    shiny::p("Ziel der Umfrage ist es, zu untersuchen, wie Menschen mit digitalem Stress umgehen und welche Rolle Resilienz dabei spielt. Ihre Teilnahme ist freiwillig und anonym. Die Befragung dauert ca. 10 Minuten."),
-                    shiny::div(style = "margin-top: 16px;",
-                               shiny::checkboxInput("consent_agree", "Ich stimme den Teilnahmebedingungen zu und bestätige, dass meine Angaben anonym gespeichert werden dürfen.", value = FALSE)
+                    shiny::HTML(paste0(
+                        "Diese Studie befasst sich mit dem Erleben und Verhalten im Alltag. Die Beantwortung dauert etwa 10 Minuten. Ihre Teilnahme ist selbstverständlich freiwillig und anonym. Sie können die Befragung jederzeit ohne Angabe von Gründen abbrechen, ohne dass Ihnen daraus Nachteile entstehen.<br><br>",
+                        "Bei Fragen zur Studie können Sie sich gerne an Mina Abdulha (mina.abdulha@stud.hs-fresenius.de) wenden."
+                    )),
+                    shiny::div(
+                        style = "margin-top: 16px;",
+                        shiny::p("Ich stimme der Teilnahmebedingungen zu und bestätige, dass meine Angaben anonym gespeichert werden dürfen."),
+                        shiny::checkboxInput("consent_agree", "Ich stimme zu", value = FALSE)
                     )
                 )
             )
@@ -146,7 +153,7 @@ custom_page_flow <- list(
     
     # Page 2: Demographics
     list(
-        id = "page2",
+        id = "demographics",
         type = "custom",
         title = "",
         required = FALSE,
@@ -186,7 +193,7 @@ custom_page_flow <- list(
     
     # Page 3: DS1–DS15 (custom-rendered 7-point endpoints-only)
     list(
-        id = "page3",
+        id = "ds_block",
         type = "custom",
         title = "",
         required = FALSE,
@@ -229,41 +236,91 @@ custom_page_flow <- list(
         }
     ),
     
-    # Page 4: RCQ1–RCQ29 (custom-rendered 7-point endpoints-only)
+    # Page 4: RCQ1–RCQ15 (custom-rendered 7-point endpoints-only)
     list(
-        id = "page4",
+        id = "rcq_block_1",
         type = "custom",
         title = "",
         required = FALSE,
         render_function = function(input, output, session, rv) {
-            idx <- (length(ds_items)+1):(length(ds_items)+length(rcq_items))
-      items_ui <- lapply(idx, function(i) {
+            start_idx <- length(ds_items) + 1
+            end_idx <- length(ds_items) + rcq_midpoint
+            idx <- start_idx:end_idx
+            items_ui <- lapply(idx, function(i) {
                 item_id <- all_items$id[i]
                 item_text <- all_items$Question[i]
-                shiny::div(style = "margin: 16px 0;",
-          shiny::HTML(paste0('<p style="margin-bottom:10px;">', item_text, '</p>')),
-                           shiny::radioButtons(
-                               inputId = item_id,
-                               label = NULL,
-                               choices = setNames(1:7, c(
-                                   "1 = stimme gar nicht zu", "2", "3", "4", "5", "6", "7 = stimme voll zu"
-                               )),
-                               selected = character(0), inline = FALSE
-                           )
+                shiny::div(
+                    style = "margin: 16px 0;",
+                    shiny::HTML(paste0('<p style="margin-bottom:10px;">', item_text, '</p>')),
+                    shiny::radioButtons(
+                        inputId = item_id,
+                        label = NULL,
+                        choices = setNames(1:7, c(
+                            "1 = stimme gar nicht zu", "2", "3", "4", "5", "6", "7 = stimme voll zu"
+                        )),
+                        selected = character(0), inline = FALSE
+                    )
                 )
             })
-      shiny::div(class = "assessment-card",
-        shiny::h3("", class = "card-header"),
-        items_ui
-      )
+            shiny::div(
+                class = "assessment-card",
+                shiny::h3("", class = "card-header"),
+                items_ui
+            )
         },
         completion_handler = function(input, rv) {
-            # Ensure response vector exists
             if (is.null(rv$responses) || length(rv$responses) != nrow(all_items)) {
                 rv$responses <- rep(NA_real_, nrow(all_items))
             }
-            # Map RCQ item inputs into rv$responses
             start_idx <- length(ds_items) + 1
+            end_idx <- length(ds_items) + rcq_midpoint
+            for (i in start_idx:end_idx) {
+                item_id <- all_items$id[i]
+                val <- input[[item_id]]
+                if (!is.null(val) && nzchar(as.character(val))) {
+                    rv$responses[i] <- suppressWarnings(as.numeric(val))
+                }
+            }
+        }
+    ),
+    
+    # Page 5: RCQ16–RCQ30 (custom-rendered 7-point endpoints-only)
+    list(
+        id = "rcq_block_2",
+        type = "custom",
+        title = "",
+        required = FALSE,
+        render_function = function(input, output, session, rv) {
+            start_idx <- length(ds_items) + rcq_midpoint + 1
+            end_idx <- length(ds_items) + length(rcq_items)
+            idx <- start_idx:end_idx
+            items_ui <- lapply(idx, function(i) {
+                item_id <- all_items$id[i]
+                item_text <- all_items$Question[i]
+                shiny::div(
+                    style = "margin: 16px 0;",
+                    shiny::HTML(paste0('<p style="margin-bottom:10px;">', item_text, '</p>')),
+                    shiny::radioButtons(
+                        inputId = item_id,
+                        label = NULL,
+                        choices = setNames(1:7, c(
+                            "1 = stimme gar nicht zu", "2", "3", "4", "5", "6", "7 = stimme voll zu"
+                        )),
+                        selected = character(0), inline = FALSE
+                    )
+                )
+            })
+            shiny::div(
+                class = "assessment-card",
+                shiny::h3("", class = "card-header"),
+                items_ui
+            )
+        },
+        completion_handler = function(input, rv) {
+            if (is.null(rv$responses) || length(rv$responses) != nrow(all_items)) {
+                rv$responses <- rep(NA_real_, nrow(all_items))
+            }
+            start_idx <- length(ds_items) + rcq_midpoint + 1
             end_idx <- length(ds_items) + length(rcq_items)
             for (i in start_idx:end_idx) {
                 item_id <- all_items$id[i]
@@ -275,9 +332,9 @@ custom_page_flow <- list(
         }
     ),
     
-    # Page 5: Open question O1
+    # Page 6: Open question O1
     list(
-        id = "page5",
+        id = "open_question",
         type = "custom",
         title = "",
         required = FALSE,
@@ -295,9 +352,9 @@ custom_page_flow <- list(
         }
     ),
     
-    # Page 6: Thank you + submission
+    # Page 7: Thank you + submission
     list(
-        id = "page6",
+        id = "completion",
         type = "results",
         title = "",
         submit_data = TRUE,
@@ -588,13 +645,14 @@ create_mina_report <- function(responses, item_bank, demographics = NULL, rv = N
     save_to_cloud(data, filename)
     
     # Return thank you message
-  return(shiny::HTML(paste0(
-    '<div style="padding: 40px; text-align: center;">',
-    '<h2 style="color: #2c3e50; margin: 0 0 16px 0;">Vielen Dank für Ihre Teilnahme!</h2>',
-    '<p style="font-size: 16px; color: #666; margin: 0 0 8px 0;">Ihre Angaben wurden erfolgreich gespeichert.</p>',
-    '<p style="font-size: 14px; color: #999; margin: 8px 0 0 0;">(Sie können die Seite jetzt schließen.)</p>',
-    '</div>'
-  )))
+    return(shiny::HTML(paste0(
+        '<div style="padding: 40px; text-align: left; max-width: 960px; margin: 0 auto;">',
+        '<h2 style="color: #2c3e50; margin: 0 0 16px 0;">Vielen Dank für Ihre Teilnahme!</h2>',
+        '<p style="font-size: 16px; color: #444; margin: 0 0 12px 0;">In dieser Studie ging es um die Untersuchung psychischer Widerstandsfähigkeit (Resilienz) und deren Zusammenhang mit der zunehmenden Digitalisierung des Alltags. Besonders interessiert uns, wie Menschen auf digitale Belastungen wie Kommunikationsdruck, ständige Erreichbarkeit oder Informationsüberflutung reagieren und welche Bewältigungsstrategien (Coping-Mechanismen) dabei hilfreich sein können.</p>',
+        '<p style="font-size: 16px; color: #444; margin: 0 0 12px 0;">Ziel dieser Untersuchung ist es, besser zu verstehen, welche Faktoren die Resilienz im digitalen Zeitalter fördern und wie sich alltägliche Belastungen durch digitale Medien auf das Wohlbefinden auswirken. Ihre Angaben werden ausschließlich anonym und zu wissenschaftlichen Zwecken ausgewertet.</p>',
+        '<p style="font-size: 16px; color: #444; margin: 0;">Bei Interesse an den Ergebnissen oder bei Rückfragen können Sie sich gerne per E-Mail an mich wenden: mina.abdulha@stud.hs-fresenius.de<br>.</p>',
+        '</div>'
+    )))
 }
 
 # =============================================================================
@@ -620,7 +678,7 @@ study_config <- inrep::create_study_config(
     session_save = TRUE,
     show_session_time = FALSE,
     show_progress = TRUE,
-    progress_style = "minimal",
+    progress_style = "bar",
     bilingual = FALSE,
     enable_audio = FALSE,
     report_formats = c("csv", "json", "rds"),
@@ -635,10 +693,8 @@ inrep::launch_study(
     config = study_config,
     item_bank = all_items,
     custom_css = custom_css,
-     auto_close_time = 30,           # 15 seconds
-  auto_close_time_unit = "seconds", # Use seconds as unit
     save_format = "csv",
-    webdav_url = "https://sync.academiccloud.de/index.php/s/p1XNKAOuq68JJJ3",
+    webdav_url = "https://sync.academiccloud.de/index.php/s/Y51QPXzJVLWSAcb",
     password = "inreptest",
-    debug_mode = TRUE
+    debug_mode = FALSE
 )

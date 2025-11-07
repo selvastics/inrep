@@ -4839,13 +4839,14 @@ launch_study <- function(
           }
         }
         
-        # Call completion handler for custom pages
-        if (current_page$type == "custom" && !is.null(current_page$completion_handler) && is.function(current_page$completion_handler)) {
+        # Call completion handler for ALL page types (custom, demographics, items, etc.)
+        if (!is.null(current_page$completion_handler) && is.function(current_page$completion_handler)) {
           tryCatch({
-            current_page$completion_handler(input, rv)
-            logger("Called completion handler for custom page", level = "DEBUG")
+            # Pass session, rv, inputs, and config for maximum flexibility
+            current_page$completion_handler(session, rv, input, config)
+            logger(sprintf("Called completion handler for %s page", current_page$type), level = "DEBUG")
           }, error = function(e) {
-            logger(sprintf("Error in completion handler: %s", e$message), level = "WARNING")
+            logger(sprintf("Error in completion handler for %s page: %s", current_page$type, e$message), level = "WARNING")
           })
         }
         
@@ -4879,8 +4880,9 @@ launch_study <- function(
           # DO NOT call current_language() as it triggers page re-render
           if (old_page == 1 && !is.null(session$userData$language)) {
             stored_lang <- session$userData$language
-            if (stored_lang %in% c("en", "de")) {
-              # Only update rv$language, NOT current_language() to avoid re-render
+
+             if (stored_lang %in% c("en", "de") && !identical(rv$language, stored_lang)) {
+              # Only update rv$language when it actually changes to avoid double re-render
               rv$language <- stored_lang
               cat("Applied language preference when leaving page 1:", stored_lang, "\n")
             }
