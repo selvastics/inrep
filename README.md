@@ -4,7 +4,7 @@
     Disclaimer
   </h2>
   <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #343a40; text-align: left;">
-    This project is best described as a vibe coding project. While the initial work was solely done by me, the upscaling of the project and exploration of advanced functionalities were done using several LLMs, which I synthesized. Although much of the code is functional, it is not yet fully polished. Several sections are under active development with minimal working examples implemented as placeholders. Continuous synthesis and refinement are ongoing.
+    This project is best described as a vibe coding project. While the initial work was solely done by me, the upscaling of the project and exploration of advanced functionalities were done using several LLMs, which I synthesized. Much of the code is not yet fully polished. Several sections are under active development with minimal working examples implemented as placeholders. Continuous synthesis and refinement are ongoing. 
   </p>
 </div>
 <!--- DISCLAIMER BANNER END --->
@@ -216,6 +216,10 @@ launch_study(
 ## Theme Customization 
 
 ![inrep themes](man/figures/inrep_themes.png)
+<!-- Demo: See the package in action! -->
+![inrep demos](man/figures/inrep_many_launch.gif)
+
+> **Demos:** The video shows assessments each with a different theme.
 
 > **Themes:** `inrep` supports multiple default UI themes for customizing assessment components.  
 > In addition to built-in options, users can extract CSS styles from institutional websites  
