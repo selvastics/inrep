@@ -13,6 +13,139 @@ library(kableExtra)
 library(httr)
 library(later)
 
+# ============================================================================
+# HOTFIX: Override inrep validation to support sliders
+# ============================================================================
+# This fixes the shinyapps.io deployment error where GitHub version doesn't support sliders yet
+assignInNamespace("validate_demographic_config", function(config) {
+  # Allow HTML content fields to bypass normal validation
+  if (!is.null(config$html_content) || !is.null(config$html_content_en)) {
+    return(TRUE)
+  }
+  
+  # Normal validation for regular demographic fields
+  required_fields <- c("field_name", "question_text", "input_type")
+  
+  if (!all(required_fields %in% names(config))) {
+    return(FALSE)
+  }
+  
+  # ADD SLIDER SUPPORT HERE!
+  if (!config$input_type %in% c("text", "numeric", "select", "radio", "checkbox", "slider")) {
+    return(FALSE)
+  }
+  
+  if (config$input_type %in% c("select", "radio", "checkbox") && is.null(config$options)) {
+    return(FALSE)
+  }
+  
+  return(TRUE)
+}, ns = "inrep")
+
+# HOTFIX 2: Override create_demographic_input to add slider rendering
+# Get the original function first
+original_create_demographic_input <- get("create_demographic_input", envir = asNamespace("inrep"))
+
+# Create new version with slider support
+new_create_demographic_input <- function(input_id, demo_config, input_type, current_value = NULL, 
+                                         language = "de", demographic_name = NULL, 
+                                         current_other_value = NULL, other_input_id = NULL) {
+  
+  # If it's a slider, handle it here
+  if (input_type == "slider") {
+    min_val <- if (!is.null(demo_config$min)) demo_config$min else 0
+    max_val <- if (!is.null(demo_config$max)) demo_config$max else 100
+    step_val <- if (!is.null(demo_config$step)) demo_config$step else 1
+    default_val <- NULL
+    
+    if (!is.null(current_value) && !is.na(current_value)) {
+      suppressWarnings({
+        default_val <- as.numeric(current_value)
+      })
+    }
+    if (is.null(default_val) || is.na(default_val)) {
+      default_val <- if (!is.null(demo_config$default)) demo_config$default else round((min_val + max_val) / 2)
+    }
+    default_val <- max(min(default_val, max_val), min_val)
+    
+    # Get language-aware labels
+    label_min <- if (language == "en" && !is.null(demo_config$label_min_en)) {
+      demo_config$label_min_en
+    } else {
+      demo_config$label_min
+    }
+    
+    label_max <- if (language == "en" && !is.null(demo_config$label_max_en)) {
+      demo_config$label_max_en
+    } else {
+      demo_config$label_max
+    }
+    
+    slider_ui <- shiny::sliderInput(
+      inputId = input_id,
+      label = NULL,
+      min = min_val,
+      max = max_val,
+      value = default_val,
+      step = step_val,
+      width = "100%"
+    )
+    
+    slider_wrapper <- shiny::div(
+      class = "inrep-slider-wrapper",
+      shiny::tags$style(shiny::HTML("
+        .inrep-slider-wrapper .irs {
+          margin-top: 15px !important;
+          margin-bottom: 25px !important;
+        }
+        .inrep-slider-wrapper .irs-line,
+        .inrep-slider-wrapper .irs-bar {
+          height: 8px !important;
+        }
+        .inrep-slider-wrapper .irs-handle {
+          width: 20px !important;
+          height: 20px !important;
+          top: 20px !important;
+          cursor: pointer !important;
+        }
+        .inrep-slider-wrapper .irs-min,
+        .inrep-slider-wrapper .irs-max {
+          display: none !important;
+        }
+        .inrep-slider-wrapper .irs-single {
+          top: -5px !important;
+        }
+        .inrep-slider-wrapper .irs-grid {
+          display: none !important;
+        }
+      ")),
+      slider_ui
+    )
+    
+    if (!is.null(label_min) || !is.null(label_max)) {
+      return(shiny::div(
+        slider_wrapper,
+        shiny::div(
+          style = "display: flex; justify-content: space-between; margin-top: -15px; font-size: 12px; color: #666;",
+          shiny::span(label_min %||% ""),
+          shiny::span(label_max %||% "")
+        )
+      ))
+    } else {
+      return(slider_wrapper)
+    }
+  }
+  
+  # For all other types, use the original function
+  original_create_demographic_input(input_id, demo_config, input_type, current_value, 
+                                    language, demographic_name, current_other_value, other_input_id)
+}
+
+# Override the function in the inrep namespace
+assignInNamespace("create_demographic_input", new_create_demographic_input, ns = "inrep")
+
+message("✓ Slider support hotfix applied to inrep package (validation + UI rendering)")
+
 # Helper: Attach an observer to a live Shiny session so that when the client
 # sets the `finish_early` input the server attempts to stop the app.
 # Usage: call attach_finish_early_observer(session) from your server function

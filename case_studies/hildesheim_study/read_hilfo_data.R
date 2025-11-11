@@ -1,12 +1,16 @@
 # =============================================================================
-# Hildesheim Study Data Read-In Script (UPDATED - NO PA ITEMS)
+# Hildesheim Study Data Read-In Script (UPDATED - SLIDER VERSION)
 # =============================================================================
 # 
 # This script reads CSV files from the study_data folder, processes the data,
 # applies reverse coding, computes scale scores, adds variable and value labels,
 # and exports the data to SPSS (.sav) and Excel (.xlsx) formats.
 #
-# STUDY VERSION: Non-adaptive, 31 items total (Programming Anxiety section removed)
+# STUDY VERSION: Non-adaptive, 29 Likert items + 2 Slider items
+#
+# IMPORTANT: Statistics items (Statistik_gutfolgen, Statistik_selbstwirksam) are
+# captured as DEMOGRAPHIC SLIDERS (1-100 scale) and must be transformed to 1-5
+# scale for psychometric analysis.
 #
 # FOLDER STRUCTURE:
 #   The script should be in a folder, with a "study_data" subfolder containing CSV files:
@@ -40,7 +44,11 @@
 #   - BFI_Offenheit: Mean of items 17-20 (BFO_01 to BFO_04), items 18,20 reversed
 #   - PSQ_Stress: Mean of items 21-25 (PSQ_02, PSQ_04, PSQ_16, PSQ_29, PSQ_30), item 24 (PSQ_29) reversed
 #   - MWS_Studierfaehigkeiten: Mean of items 26-29 (MWS_1_KK to MWS_21_KK), no reverse coding
-#   - Statistik: Mean of items 30-31 (Statistik_gutfolgen, Statistik_selbstwirksam), no reverse coding
+#   - Statistik: Mean of demographics Statistik_gutfolgen and Statistik_selbstwirksam (transformed from 1-100 to 1-5)
+#
+# SLIDER TRANSFORMATION:
+#   Statistics sliders (1-100) are transformed to 1-5 scale using:
+#   transformed_value = ((slider_value - 1) / 99) * 4 + 1
 #
 # REVERSE CODING:
 #   Applied to items before computing scale scores (6 - value):
@@ -51,8 +59,8 @@
 #   - BFO: items 18, 20 (BFO_02, BFO_04)
 #   - PSQ: item 24 (PSQ_29 - "I have enough time for myself")
 #
-# Author: Generated for Hildesheim Study (Simplified Version)
-# Date: 2025-11-07
+# Author: Generated for Hildesheim Study (Slider Version)
+# Date: 2025-11-11
 # =============================================================================
 
 # Load required libraries
@@ -78,8 +86,12 @@ library(labelled)
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # =============================================================================
-# ITEM DEFINITIONS AND METADATA (NO PA ITEMS)
+# ITEM DEFINITIONS AND METADATA (29 LIKERT ITEMS - NO SLIDERS)
 # =============================================================================
+
+# NOTE: Statistik items (Statistik_gutfolgen, Statistik_selbstwirksam) are NOT
+# included here because they are captured as DEMOGRAPHIC SLIDERS (1-100 scale),
+# not as Likert items. They will be handled separately in the demographics section.
 
 # Item labels (German and English)
 # -----------------------------------------------------------------------------
@@ -125,11 +137,9 @@ item_labels_de <- c(
   "mit dem sozialen Klima im Studiengang zurechtzukommen (z.B. Konkurrenz aushalten)",
   "Teamarbeit zu organisieren (z.B. Lerngruppen finden)",
   "Kontakte zu Mitstudierenden zu knüpfen (z.B. für Lerngruppen, Freizeit)",
-  "im Team zusammen zu arbeiten (z.B. gemeinsam Aufgaben bearbeiten, Referate vorbereiten)",
+  "im Team zusammen zu arbeiten (z.B. gemeinsam Aufgaben bearbeiten, Referate vorbereiten)"
   
-  # Statistics items 30-31
-  "Bislang konnte ich den Inhalten der Statistikveranstaltungen gut folgen.",
-  "Ich bin in der Lage, Statistik zu erlernen."
+  # NOTE: Statistics items 30-31 are NOT included here - they are demographic sliders
 )
 
 item_labels_en <- c(
@@ -198,9 +208,9 @@ reverse_coded <- c(
   # PSQ items 21-25: item 24 is reverse coded (PSQ_29 - "I have enough time")
   FALSE, FALSE, FALSE, TRUE, FALSE,
   # MWS items 26-29: no reverse coding
-  FALSE, FALSE, FALSE, FALSE,
-  # Statistics items 30-31: no reverse coding
-  FALSE, FALSE
+  FALSE, FALSE, FALSE, FALSE
+  
+  # NOTE: Statistics items are demographic sliders, not Likert items - no reverse coding needed
 )
 
 # Item IDs
@@ -211,8 +221,10 @@ item_ids <- c(
   "BFN_01", "BFN_02", "BFN_03", "BFN_04",
   "BFO_01", "BFO_02", "BFO_03", "BFO_04",
   "PSQ_02", "PSQ_04", "PSQ_16", "PSQ_29", "PSQ_30",
-  "MWS_1_KK", "MWS_10_KK", "MWS_17_KK", "MWS_21_KK",
-  "Statistik_gutfolgen", "Statistik_selbstwirksam"
+  "MWS_1_KK", "MWS_10_KK", "MWS_17_KK", "MWS_21_KK"
+  
+  # NOTE: Statistics variables (Statistik_gutfolgen, Statistik_selbstwirksam) are
+  # demographic sliders, not item IDs - they will be processed separately
 )
 
 # =============================================================================
@@ -412,11 +424,18 @@ compute_mws_studierfaehigkeiten <- function(data) {
 # Function to compute Statistics score
 # -----------------------------------------------------------------------------
 compute_statistik <- function(data) {
-  # Statistics: items 30-31 (Statistik_gutfolgen, Statistik_selbstwirksam)
-  # No reverse coding needed
+  # Statistics: demographic sliders Statistik_gutfolgen and Statistik_selbstwirksam
+  # These are captured on a 1-100 scale and must be transformed to 1-5 scale
+  # Transformation formula: ((value - 1) / 99) * 4 + 1
+  
+  # Transform slider values (1-100) to Likert scale (1-5)
+  stat_gutfolgen_transformed <- ((data$Statistik_gutfolgen - 1) / 99) * 4 + 1
+  stat_selbstwirksam_transformed <- ((data$Statistik_selbstwirksam - 1) / 99) * 4 + 1
+  
+  # Compute mean of transformed values
   data$Statistik <- rowMeans(cbind(
-    data$Statistik_gutfolgen,
-    data$Statistik_selbstwirksam
+    stat_gutfolgen_transformed,
+    stat_selbstwirksam_transformed
   ), na.rm = TRUE)
   
   return(data)
@@ -609,6 +628,22 @@ add_variable_labels <- function(data, language = "de") {
   }
   if ("show_personal_results" %in% names(data)) {
     var_label(data$show_personal_results) <- if(language == "de") "Präferenz zur Anzeige persönlicher Ergebnisse" else "Preference for displaying personal results"
+  }
+  
+  # Add labels to Statistics slider variables (demographics)
+  if ("Statistik_gutfolgen" %in% names(data)) {
+    var_label(data$Statistik_gutfolgen) <- if(language == "de") {
+      "Statistik - Gut folgen können (Slider 1-100)"
+    } else {
+      "Statistics - Able to follow (Slider 1-100)"
+    }
+  }
+  if ("Statistik_selbstwirksam" %in% names(data)) {
+    var_label(data$Statistik_selbstwirksam) <- if(language == "de") {
+      "Statistik - Selbstwirksamkeit (Slider 1-100)"
+    } else {
+      "Statistics - Self-efficacy (Slider 1-100)"
+    }
   }
   
   return(data)

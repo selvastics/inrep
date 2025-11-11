@@ -1,6 +1,6 @@
 ---
 title: "How to Calibrate Your Item Bank with inrep"
-author: "inrep Development Team"
+author: "inrep"
 date: "`r Sys.Date()`"
 output:
   html_document:
@@ -129,119 +129,125 @@ print(all_params)
 Now that we have calibrated item parameters for each dimension, let's create a proper item bank that inrep can use:
 
 ```{r create_item_bank, eval=FALSE}
-# Create Big Five item bank from your TAM estimates
+# Define Big Five scoring keys (reverse-scored items are prefixed with "-")
+bfi_keys <- list(
+  Agreeableness = c("-A1", "A2", "A3", "A4", "A5"),
+  Conscientiousness = c("C1", "C2", "C3", "-C4", "-C5"),
+  Extraversion = c("-E1", "-E2", "E3", "E4", "E5"),
+  Neuroticism = c("N1", "N2", "N3", "N4", "N5"),
+  Openness = c("O1", "-O2", "O3", "O4", "-O5")
+)
+
+# Derive clean item ids and trait metadata
+trait_item_ids <- lapply(bfi_keys, function(items) gsub("-", "", items))
+target_ids <- unlist(trait_item_ids)
+trait_labels <- rep(names(trait_item_ids), lengths(trait_item_ids))
+trait_sequence <- names(trait_item_ids)
+
+# Provide fallback text if dictionary lookup is unavailable
+fallback_questions <- c(
+  A1 = "Am indifferent to the feelings of others.",
+  A2 = "Inquire about others' well-being.",
+  A3 = "Know how to comfort others.",
+  A4 = "Love children.",
+  A5 = "Make people feel at ease.",
+  C1 = "Am exacting in my work.",
+  C2 = "Continue until everything is perfect.",
+  C3 = "Do things according to a plan.",
+  C4 = "Do things in a half-way manner.",
+  C5 = "Waste my time.",
+  E1 = "Don't talk a lot.",
+  E2 = "Find it difficult to approach others.",
+  E3 = "Know how to captivate people.",
+  E4 = "Make friends easily.",
+  E5 = "Take charge.",
+  N1 = "Get angry easily.",
+  N2 = "Get irritated easily.",
+  N3 = "Have frequent mood swings.",
+  N4 = "Often feel blue.",
+  N5 = "Panic easily.",
+  O1 = "Am full of ideas.",
+  O2 = "Avoid difficult reading material.",
+  O3 = "Carry the conversation to a higher level.",
+  O4 = "Spend time reflecting on things.",
+  O5 = "Will not probe deeply into a subject."
+)
+
+# Helper to load official item wording from psych::bfi.dictionary when available
+load_bfi_questions <- function() {
+  questions <- fallback_questions
+  if (requireNamespace("psych", quietly = TRUE)) {
+    res <- tryCatch(utils::data("bfi.dictionary", package = "psych", envir = environment()), error = function(e) character())
+    if (is.character(res) && length(res) && "bfi.dictionary" %in% res) {
+      dict <- get("bfi.dictionary")
+      if (all(c("name", "item") %in% names(dict))) {
+        lookup <- setNames(as.character(dict$item), as.character(dict$name))
+        overlap <- intersect(names(lookup), target_ids)
+        if (length(overlap)) questions[overlap] <- lookup[overlap]
+      }
+    }
+  }
+  questions[target_ids]
+}
+
+# Flag which items are reverse coded
+derive_reverse_flags <- function(keys) {
+  flags <- setNames(rep(FALSE, length(target_ids)), target_ids)
+  for (items in keys) {
+    for (item in items) {
+      item_id <- gsub("-", "", item)
+      flags[item_id] <- startsWith(item, "-")
+    }
+  }
+  flags
+}
+
+question_lookup <- load_bfi_questions()
+reverse_flags <- derive_reverse_flags(bfi_keys)
+
+# Build item bank using calibrated thresholds (replace with your TAM estimates)
 personality_items <- data.frame(
-  Question = c(
-    # Agreeableness items (A1-A5)
-    "I am someone who is sometimes rude to others (R)",
-    "I am someone who has a forgiving nature",
-    "I am someone who is considerate and kind to almost everyone",
-    "I am someone who is helpful and unselfish with others",
-    "I am someone who starts quarrels with others (R)",
-
-    # Conscientiousness items (C1-C5)
-    "I am someone who does a thorough job",
-    "I am someone who tends to be lazy (R)",
-    "I am someone who does things efficiently",
-    "I am someone who tends to be disorganized (R)",
-    "I am someone who makes plans and follows through with them",
-
-    # Extraversion items (E1-E5)
-    "I am someone who is talkative",
-    "I am someone who is reserved (R)",
-    "I am someone who is full of energy",
-    "I am someone who generates a lot of enthusiasm",
-    "I am someone who is outgoing, sociable",
-
-    # Neuroticism items (N1-N5)
-    "I am someone who can be tense",
-    "I am someone who worries a lot",
-    "I am someone who is emotionally stable, not easily upset (R)",
-    "I am someone who can be moody",
-    "I am someone who remains calm in tense situations (R)",
-
-    # Openness items (O1-O5)
-    "I am someone who is original, comes up with new ideas",
-    "I am someone who is curious about many different things",
-    "I am someone who is ingenious, a deep thinker",
-    "I am someone who has an active imagination",
-    "I am someone who values artistic, aesthetic experiences"
-  ),
-
-  # 6-point Likert scale options (1-6 scale for GRM)
-  Option1 = rep("Disagree strongly", 25),
-  Option2 = rep("Disagree a little", 25),
-  Option3 = rep("Neither agree nor disagree", 25),
-  Option4 = rep("Agree a little", 25),
-  Option5 = rep("Agree moderately", 25),
-  Option6 = rep("Agree strongly", 25),
-
-  # For personality items, there are no "correct" answers - use middle option as placeholder
-  Answer = rep("Neither agree nor disagree", 25),
-
-  # Domain assignments
-  domain = c(
-    rep("Agreeableness", 5),
-    rep("Conscientiousness", 5),
-    rep("Extraversion", 5),
-    rep("Neuroticism", 5),
-    rep("Openness", 5)
-  ),
-
-  # Discrimination parameters - use estimated values or defaults
-  a = c(
-    # Extract from TAM models or use defaults
-    1.2, 1.4, 1.3, 1.1, 1.5,  # Agreeableness
-    1.3, 1.2, 1.4, 1.1, 1.5,  # Conscientiousness
-    1.4, 1.1, 1.3, 1.2, 1.5,  # Extraversion
-    1.2, 1.4, 1.3, 1.1, 1.5,  # Neuroticism
-    1.3, 1.2, 1.4, 1.1, 1.5   # Openness
-  ),
-
-  # Difficulty parameters from TAM (xsi.item) - these are the threshold parameters for GRM
+  id = target_ids,
+  Question = question_lookup[target_ids],
+  domain = trait_labels,
+  reverse_coded = reverse_flags[target_ids],
+  ResponseCategories = "1,2,3,4,5,6",
+  a = 1,
   b1 = c(
-    # Agreeableness thresholds
-    -2.5, -2.8, -2.9, -2.7, -2.6,
-    # Conscientiousness thresholds
-    -2.8, -2.7, -2.6, -2.4, -2.5,
-    # Extraversion thresholds
-    -2.7, -2.5, -2.4, -2.8, -2.9,
-    # Neuroticism thresholds
-    -2.8, -3.0, -2.9, -2.7, -2.8,
-    # Openness thresholds
-    -2.7, -2.5, -2.8, -2.8, -2.4
+    -2.5, -2.8, -2.6, -2.4, -2.3,
+    -2.6, -2.7, -2.5, -2.4, -2.2,
+    -2.7, -2.5, -2.6, -2.8, -2.5,
+    -2.4, -2.6, -2.3, -2.5, -2.2,
+    -2.6, -2.4, -2.5, -2.5, -2.3
   ),
-
   b2 = c(
-    # Second thresholds
-    -1.5, -1.8, -1.9, -1.7, -1.6,
-    -1.8, -1.7, -1.6, -1.4, -1.5,
-    -1.7, -1.5, -1.4, -1.8, -1.9,
-    -1.8, -2.0, -1.9, -1.7, -1.8,
-    -1.7, -1.5, -1.8, -1.8, -1.4
+    -1.5, -1.7, -1.5, -1.4, -1.3,
+    -1.6, -1.6, -1.4, -1.3, -1.2,
+    -1.5, -1.3, -1.4, -1.5, -1.4,
+    -1.4, -1.5, -1.3, -1.4, -1.3,
+    -1.5, -1.3, -1.4, -1.4, -1.2
   ),
-
   b3 = c(
-    # Third thresholds
-    0.5, 0.2, 0.1, 0.3, 0.4,
-    0.2, 0.3, 0.4, 0.6, 0.5,
-    0.3, 0.5, 0.6, 0.2, 0.1,
-    0.2, 0.0, 0.1, 0.3, 0.2,
-    0.3, 0.5, 0.2, 0.2, 0.6
+    -0.3, -0.2, -0.1, -0.2, -0.1,
+    -0.2, -0.1, 0.0, 0.1, 0.0,
+    -0.1, 0.1, 0.0, -0.1, 0.0,
+    0.1, 0.0, 0.2, 0.1, 0.2,
+    0.0, 0.2, 0.1, 0.1, 0.3
   ),
-
   b4 = c(
-    # Fourth thresholds
-    1.5, 1.2, 1.1, 1.3, 1.4,
-    1.2, 1.3, 1.4, 1.6, 1.5,
-    1.3, 1.5, 1.6, 1.2, 1.1,
-    1.2, 1.0, 1.1, 1.3, 1.2,
-    1.3, 1.5, 1.2, 1.2, 1.6
+    0.8, 0.9, 1.0, 0.9, 1.0,
+    0.9, 1.0, 1.2, 1.3, 1.1,
+    1.0, 1.2, 1.1, 1.0, 1.1,
+    1.2, 1.1, 1.4, 1.3, 1.4,
+    1.1, 1.3, 1.2, 1.2, 1.4
   ),
-
-  # Response categories for GRM
-  ResponseCategories = rep("1,2,3,4,5,6", 25),
-
+  b5 = c(
+    1.8, 1.9, 2.0, 2.0, 2.1,
+    2.0, 2.1, 2.2, 2.4, 2.2,
+    2.1, 2.3, 2.2, 2.1, 2.2,
+    2.3, 2.2, 2.5, 2.4, 2.5,
+    2.2, 2.4, 2.3, 2.3, 2.5
+  ),
   stringsAsFactors = FALSE
 )
 ```
@@ -385,6 +391,3 @@ Calibration is the foundation of accurate adaptive testing. By properly calibrat
 - Results are interpretable and comparable across administrations
 
 The calibrated item bank you create can be reused across multiple studies, providing consistent and reliable measurement of the constructs you're interested in.
-
-
-
