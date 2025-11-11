@@ -3233,7 +3233,7 @@ launch_study <- function(
   }
   
   # POPULATE rv IMMEDIATELY - No observe, no async, no delays
-  rv$demo_data <- stats::setNames(base::rep(NA, base::length(config$demographics)), config$demographics)
+  rv$demo_data <- base::as.list(stats::setNames(base::rep(NA, base::length(config$demographics)), config$demographics))
   rv$config <- config  # Store config in rv for access by validation functions
   rv$language <- config$language %||% "de"  # Initialize language in rv
   
@@ -3702,6 +3702,30 @@ launch_study <- function(
                           selected = rv$demo_data[i] %||% base::character(0),
                           width = "100%"
                         ),
+                                                "slider" = {
+                          min_val <- if (!base::is.null(demo_config$min)) demo_config$min else 0
+                          max_val <- if (!base::is.null(demo_config$max)) demo_config$max else 100
+                          step_val <- if (!base::is.null(demo_config$step)) demo_config$step else 1
+                          current_val <- rv$demo_data[[dem]]
+                          if (base::is.null(current_val) || base::is.na(current_val)) {
+                            current_val <- if (!base::is.null(demo_config$default)) demo_config$default else base::round((min_val + max_val) / 2)
+                          }
+                          current_val <- base::as.numeric(current_val)
+                          if (base::is.na(current_val)) {
+                            current_val <- if (!base::is.null(demo_config$default)) demo_config$default else base::round((min_val + max_val) / 2)
+                          }
+                          current_val <- base::max(base::min(current_val, max_val), min_val)
+                          
+                          shiny::sliderInput(
+                            inputId = input_id,
+                            label = NULL,
+                            min = min_val,
+                            max = max_val,
+                            value = current_val,
+                            step = step_val,
+                            width = "100%"
+                          )
+                        },
                         # Default to text input
                         shiny::textInput(
                           inputId = input_id,

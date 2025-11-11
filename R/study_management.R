@@ -537,7 +537,7 @@ validate_demographic_config <- function(config) {
     return(FALSE)
   }
   
-  if (!config$input_type %in% c("text", "numeric", "select", "radio", "checkbox")) {
+  if (!config$input_type %in% c("text", "numeric", "select", "radio", "checkbox", "slider")) {
     return(FALSE)
   }
   
@@ -799,6 +799,45 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
             label = labels$please_specify,
             placeholder = labels$enter_details
           )
+        )
+      )
+      
+    } else if (config$input_type == "slider") {
+      # Get slider parameters from config
+      min_val <- config$min %||% 0
+      max_val <- config$max %||% 100
+      step_val <- config$step %||% 1
+      default_val <- config$default
+      
+      # Get labels for min and max
+      label_min <- if (current_lang == "en") {
+        config$label_min_en %||% config$label_min %||% as.character(min_val)
+      } else {
+        config$label_min %||% as.character(min_val)
+      }
+      
+      label_max <- if (current_lang == "en") {
+        config$label_max_en %||% config$label_max %||% as.character(max_val)
+      } else {
+        config$label_max %||% as.character(max_val)
+      }
+      
+      ui_elements[[demo_name]] <- shiny::div(
+        class = "demographic-field slider-field",
+        shiny::label(question_text, `for` = demo_name),
+        shiny::div(
+          class = "slider-labels",
+          shiny::span(label_min, class = "slider-label-min"),
+          shiny::span(label_max, class = "slider-label-max")
+        ),
+        shiny::sliderInput(
+          inputId = demo_name,
+          label = NULL,
+          min = min_val,
+          max = max_val,
+          value = default_val %||% min_val,
+          step = step_val,
+          width = "100%"
         )
       )
     }
@@ -1566,13 +1605,26 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
     }
     
     
+    # Determine current values including optional "other" text
+    current_main_value <- NULL
+    current_other_value <- NULL
+    if (!is.null(rv$demo_data)) {
+      current_main_value <- rv$demo_data[[dem]]
+      current_other_value <- rv$demo_data[[paste0(dem, "_other")]]
+    }
+    
+    other_input_id <- paste0(input_id, "_other")
+    
     # Pass language to create_demographic_input
     input_element <- create_demographic_input(
       input_id, 
       demo_config, 
       input_type,
-      rv$demo_data[[dem]],
-      current_lang
+      current_main_value,
+      current_lang,
+      demographic_name = dem,
+      current_other_value = current_other_value,
+      other_input_id = other_input_id
     )
     
     shiny::div(
@@ -1974,8 +2026,13 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
         # The results processor will generate CSV/report and upload it, we just won't show the HTML
         # This is GENERIC - works for any study, not just HilFo
         # CRITICAL: Use caching to prevent running twice (Shiny may re-render the page)
-        csv_upload_succeeded <- FALSE  # Initialize flag - will be set to TRUE if CSV upload detected
-        if (!is.null(config$results_processor) && is.function(config$results_processor)) {
+        # Check if upload already done by completion handler (e.g., HilFo page14a)
+        csv_upload_succeeded <- isTRUE(rv$csv_uploaded) || isTRUE(rv$data_uploaded_to_cloud)
+        if (csv_upload_succeeded) {
+          message("DEBUG: CSV/data upload already completed by completion handler - skipping results processor")
+        }
+        
+        if (!csv_upload_succeeded && !is.null(config$results_processor) && is.function(config$results_processor)) {
           # Check if results processor has already been called (prevent duplicate execution)
           results_processor_called <- rv$results_processor_called %||% FALSE
           if (results_processor_called) {
@@ -2061,12 +2118,14 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
             webdav_url_to_use <- rv$webdav_url %||% config$webdav_url
             webdav_password_to_use <- rv$webdav_password %||% config$webdav_password
             
-            # Check if CSV upload already succeeded (from results processor above)
+            # Check if CSV upload already succeeded (from results processor OR completion handler)
             # csv_upload_succeeded is set in the tryCatch block above if results processor stored CSV info
+            # Also check rv$csv_uploaded flag (set by completion handlers like HilFo page14a)
+            upload_already_done <- csv_upload_succeeded || isTRUE(rv$csv_uploaded) || isTRUE(rv$data_uploaded_to_cloud)
             
             # Only call JSON fallback if CSV upload didn't happen
             # This prevents duplicate uploads and authentication errors
-            if (!csv_upload_succeeded && exists("save_session_to_cloud", where = asNamespace("inrep"), inherits = FALSE)) {
+            if (!upload_already_done && exists("save_session_to_cloud", where = asNamespace("inrep"), inherits = FALSE)) {
               message("DEBUG: Attempting JSON fallback cloud save (CSV upload not detected)")
               result <- inrep:::save_session_to_cloud(rv, config, webdav_url_to_use, webdav_password_to_use)
               if (result) {
@@ -2074,8 +2133,8 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
               } else {
                 message("DEBUG: Fallback cloud save (JSON) failed - this is OK if CSV upload already succeeded")
               }
-            } else if (csv_upload_succeeded) {
-              message("DEBUG: Skipping JSON fallback - CSV upload already succeeded")
+            } else if (upload_already_done) {
+              message("DEBUG: Skipping JSON fallback - CSV/data upload already completed")
             }
           }, error = function(e) {
             # Non-critical error - CSV upload already succeeded, so this is just a backup
@@ -2457,13 +2516,23 @@ render_page_navigation <- function(rv, config, current_page_idx) {
 }
 
 #' Create demographic input element
-create_demographic_input <- function(input_id, demo_config, input_type, current_value = NULL, language = "de") {
+create_demographic_input <- function(input_id,
+                                     demo_config,
+                                     input_type,
+                                     current_value = NULL,
+                                     language = "de",
+                                     demographic_name = NULL,
+                                     current_other_value = NULL,
+                                     other_input_id = NULL) {
   # Debug logging for checkbox issues
   if (input_type == "checkbox" && getOption("inrep.debug", FALSE)) {
     cat("DEBUG: Creating checkbox for", input_id, "\n")
     cat("  Options:", str(demo_config$options), "\n")
     cat("  Current value:", current_value, "\n")
   }
+  
+  demographic_name <- demographic_name %||% demo_config$field_name %||% input_id
+  other_input_id <- other_input_id %||% paste0(input_id, "_other")
   
   # Get language-specific options
   options_to_use <- if (language == "en" && !is.null(demo_config$options_en)) {
@@ -2475,6 +2544,20 @@ create_demographic_input <- function(input_id, demo_config, input_type, current_
   # Get language-specific placeholder
   labels <- get_language_labels(language)
   placeholder_text <- labels$please_select
+  other_label <- if (language == "en" && !is.null(demo_config$other_label_en)) {
+    demo_config$other_label_en
+  } else {
+    demo_config$other_label %||% labels$please_specify
+  }
+  other_placeholder <- if (language == "en" && !is.null(demo_config$other_placeholder_en)) {
+    demo_config$other_placeholder_en
+  } else {
+    demo_config$other_placeholder %||% ""
+  }
+  if (!is.null(current_other_value) && is.na(current_other_value)) {
+    current_other_value <- ""
+  }
+  current_other_value <- current_other_value %||% ""
   
   switch(input_type,
     "text" = shiny::textInput(
@@ -2494,21 +2577,139 @@ create_demographic_input <- function(input_id, demo_config, input_type, current_
       width = "100%"
     ),
     
-    "select" = shiny::selectInput(
-      inputId = input_id,
-      label = NULL,
-      choices = c(setNames("", placeholder_text), options_to_use),
-      selected = current_value %||% "",
-      width = "100%"
-    ),
+    "select" = {
+      select_input <- shiny::selectInput(
+        inputId = input_id,
+        label = NULL,
+        choices = c(setNames("", placeholder_text), options_to_use),
+        selected = current_value %||% "",
+        width = "100%"
+      )
+      
+      if (isTRUE(demo_config$allow_other_text)) {
+        other_container_id <- paste0(other_input_id, "_container")
+        other_container <- shiny::div(
+          id = other_container_id,
+          class = paste("other-field-container", paste0("other-field-", input_id)),
+          style = if (!is.null(current_value) && identical(as.character(current_value), "other")) "" else "display: none;",
+          shiny::textInput(
+            inputId = other_input_id,
+            label = other_label,
+            value = current_other_value,
+            placeholder = other_placeholder,
+            width = "100%"
+          )
+        )
+        
+        toggle_script <- shiny::tags$script(shiny::HTML(sprintf("
+          (function() {
+            function initToggle%1$s() {
+              var selectEl = $('#%1$s');
+              var container = $('#%2$s');
+              if (!container.length) return;
+              
+              function toggleOther(value) {
+                if (value === 'other') {
+                  container.stop(true, true).slideDown(150);
+                } else {
+                  container.stop(true, true).slideUp(150);
+                }
+              }
+              
+              if (selectEl.length) {
+                toggleOther(selectEl.val());
+                selectEl.on('change.inrepOther', function() {
+                  toggleOther($(this).val());
+                });
+              }
+            }
+            
+            if (document.readyState !== 'loading') {
+              initToggle%1$s();
+            } else {
+              document.addEventListener('DOMContentLoaded', initToggle%1$s, { once: true });
+            }
+            
+            $(document).on('shiny:value', function(ev) {
+              if (ev.name === '%1$s') {
+                $('#%1$s').trigger('change.inrepOther');
+              }
+            });
+          })();
+        ", input_id, other_container_id)))
+        
+        shiny::tagList(select_input, other_container, toggle_script)
+      } else {
+        select_input
+      }
+    },
     
-    "radio" = shiny::radioButtons(
-      inputId = input_id,
-      label = NULL,
-      choices = options_to_use,
-      selected = current_value %||% character(0),
-      width = "100%"
-    ),
+    "radio" = {
+      radio_input <- shiny::radioButtons(
+        inputId = input_id,
+        label = NULL,
+        choices = options_to_use,
+        selected = current_value %||% character(0),
+        width = "100%"
+      )
+      
+      if (isTRUE(demo_config$allow_other_text)) {
+        other_container_id <- paste0(other_input_id, "_container")
+        other_container <- shiny::div(
+          id = other_container_id,
+          class = paste("other-field-container", paste0("other-field-", input_id)),
+          style = if (!is.null(current_value) && identical(as.character(current_value), "other")) "" else "display: none;",
+          shiny::textInput(
+            inputId = other_input_id,
+            label = other_label,
+            value = current_other_value,
+            placeholder = other_placeholder,
+            width = "100%"
+          )
+        )
+        
+        toggle_script <- shiny::tags$script(shiny::HTML(sprintf("
+          (function() {
+            function initToggle%1$s() {
+              var radioEls = $('input[name=\"%1$s\"]');
+              var container = $('#%2$s');
+              if (!container.length) return;
+              
+              function toggleOther(value) {
+                if (value === 'other') {
+                  container.stop(true, true).slideDown(150);
+                } else {
+                  container.stop(true, true).slideUp(150);
+                }
+              }
+              
+              if (radioEls.length) {
+                toggleOther(radioEls.filter(':checked').val());
+                radioEls.on('change.inrepOther', function() {
+                  toggleOther($(this).val());
+                });
+              }
+            }
+            
+            if (document.readyState !== 'loading') {
+              initToggle%1$s();
+            } else {
+              document.addEventListener('DOMContentLoaded', initToggle%1$s, { once: true });
+            }
+            
+            $(document).on('shiny:value', function(ev) {
+              if (ev.name === '%1$s') {
+                $('input[name=\"%1$s\"]').trigger('change.inrepOther');
+              }
+            });
+          })();
+        ", input_id, other_container_id)))
+        
+        shiny::tagList(radio_input, other_container, toggle_script)
+      } else {
+        radio_input
+      }
+    },
     
         "slider" = {
       min_val <- if (!is.null(demo_config$min)) demo_config$min else 0

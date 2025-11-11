@@ -216,10 +216,6 @@ launch_study(
 ## Theme Customization 
 
 ![inrep themes](man/figures/inrep_themes.png)
-<!-- Demo: See the package in action! -->
-![inrep demos](man/figures/inrep_many_launch.gif)
-
-> **Demos:** The video shows assessments each with a different theme.
 
 > **Themes:** `inrep` supports multiple default UI themes for customizing assessment components.  
 > In addition to built-in options, users can extract CSS styles from institutional websites  
