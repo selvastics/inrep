@@ -1571,11 +1571,16 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
       }
       
       # Check if this demographic item has custom HTML content - LANGUAGE AWARE
+      # FIX: Add length check to prevent vector comparison error
       html_content_to_use <- NULL
-      if (current_lang == "en" && !is.null(demo_config$html_content_en) && demo_config$html_content_en != "") {
+      if (current_lang == "en" && !is.null(demo_config$html_content_en) && 
+          is.character(demo_config$html_content_en) && length(demo_config$html_content_en) == 1 && 
+          demo_config$html_content_en != "") {
         html_content_to_use <- demo_config$html_content_en
         cat("DEBUG: Using English HTML content for", dem, "\n")
-      } else if (!is.null(demo_config$html_content) && demo_config$html_content != "") {
+      } else if (!is.null(demo_config$html_content) && 
+                 is.character(demo_config$html_content) && length(demo_config$html_content) == 1 && 
+                 demo_config$html_content != "") {
         html_content_to_use <- demo_config$html_content
         cat("DEBUG: Using German HTML content for", dem, "\n")
       }
