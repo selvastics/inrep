@@ -3240,7 +3240,11 @@ validate_page_progression <- function(current_page, input, config) {
         input_id <- paste0("demo_", dem)
         value <- input[[input_id]]
         
-        if (is.null(value) || value == "" || (is.character(value) && nchar(trimws(value)) == 0)) {
+        # FIX: Handle vectors (checkboxes) safely - check length first
+        is_empty <- is.null(value) || length(value) == 0 || all(value == "") || 
+                    (is.character(value) && length(value) == 1 && nchar(trimws(value)) == 0)
+        
+        if (is_empty) {
           # Use language-appropriate question text
           question <- if (current_lang == "en" && !is.null(demo_config$question_en)) {
             demo_config$question_en
