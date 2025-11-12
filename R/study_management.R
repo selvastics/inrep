@@ -2864,14 +2864,53 @@ create_demographic_input <- function(input_id,
           value = final_value
         )
       } else {
-        # Multiple checkboxes
-        shiny::checkboxGroupInput(
+        # Multiple checkboxes (checkbox group)
+        labels <- get_language_labels(language)
+        
+        checkbox_ui <- shiny::checkboxGroupInput(
           inputId = input_id,
           label = NULL,
           choices = demo_config$options,
           selected = current_value %||% character(0),
           width = "100%"
         )
+        
+        # Add "other" text field if allow_other_text is TRUE
+        if (!is.null(demo_config$allow_other_text) && demo_config$allow_other_text) {
+          other_label <- if (language == "en" && !is.null(demo_config$other_label_en)) {
+            demo_config$other_label_en
+          } else {
+            demo_config$other_label %||% labels$please_specify
+          }
+          
+          other_placeholder <- if (language == "en" && !is.null(demo_config$other_placeholder_en)) {
+            demo_config$other_placeholder_en
+          } else {
+            demo_config$other_placeholder %||% labels$enter_details
+          }
+          
+          # Use current_other_value if provided, otherwise empty
+          other_value <- current_other_value %||% ""
+          
+          shiny::div(
+            checkbox_ui,
+            shiny::conditionalPanel(
+              condition = sprintf("input.%s && input.%s.includes('other')", input_id, input_id),
+              shiny::div(
+                style = "margin-top: 10px;",
+                shiny::textInput(
+                  inputId = paste0(input_id, "_other"),
+                  label = other_label,
+                  placeholder = other_placeholder,
+                  value = other_value,
+                  width = "100%"
+                )
+              )
+            )
+          )
+        } else {
+          checkbox_ui
+        }
       }
     },
     
