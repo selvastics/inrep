@@ -4725,7 +4725,8 @@ launch_study <- function(
           for (dem in demo_vars) {
             input_id <- paste0("demo_", dem)
             value <- input[[input_id]]
-            if (!is.null(value) && value != "") {
+            # FIX: Handle vectors (checkboxes) safely - check length first
+            if (!is.null(value) && length(value) > 0 && !all(value == "")) {
               rv$demo_data[[dem]] <- value
               page_data[[dem]] <- value
               logger(sprintf("Saved demographic %s: %s", dem, substr(as.character(value), 1, 20)))
