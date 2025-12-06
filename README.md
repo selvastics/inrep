@@ -28,7 +28,7 @@
 ## Overview
 
 **inrep Studio**  A starting point for building surveys without writing a single line of code. You can set up items, routing, scoring, and labels through an intuitive Shiny interface. This studio exports *inrep* code which runs directly in R.  
-Try it out:  https://selvastics.shinyapps.io/inrep-studio/
+Try it out: <a href="https://selvastics.shinyapps.io/inrep-studio/" target="_blank"><strong>inrep-studio</strong></a>
 
 ![inrep demo](man/figures/prev2025-12-06%20181825.png)
 
