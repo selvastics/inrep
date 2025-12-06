@@ -1,8 +1,8 @@
 Package: inrep
 Type: Package
 Title: Instant Reports for Adaptive Assessments
-Version: 1.0.0
-Date: 2025-07-20
+Version: 0.3.0
+Date: 2025-12-06
 Authors@R: person(given = "Clievins", family = "Selva", email = "selva@uni-hildesheim.de", role = c("aut", "cre"), comment = c(ORCID = "0000-0001-9980-7127"))
 Author: Clievins Selva [aut, cre] (<ORCID = "0000-0001-9980-7127">)
 Maintainer: Clievins Selva <selva@uni-hildesheim.de>
@@ -39,7 +39,7 @@ Suggests:
     knitr (>= 1.40.0),
     tinytex (>= 0.40.0),
     testthat (>= 3.0.0)
-License: MIT + file LICENSE
+License: C + file LICENSE
 Encoding: UTF-8
 Language: en-US
 LazyData: true
