@@ -103,7 +103,7 @@ If you encounter any error during installation, make sure Rtools (on Windows) or
 
 ### Dependencies
 
-The package requires R ≥ 4.1.0 and integrates with the following packages:
+The package requires R ≥ 4.1.0 and integrates mainly with the following packages:
 
 * **shiny**
 * **TAM**
@@ -136,6 +136,9 @@ launch_study(config, bfi_items)
 ### Non-Adaptive Testing (Fixed questionnaire)
 
 ```r
+library(inrep)
+data(bfi_items)
+
 # Traditional questionnaire with fixed item order
 config_fixed <- create_study_config(
   name = "Personality Questionnaire",
