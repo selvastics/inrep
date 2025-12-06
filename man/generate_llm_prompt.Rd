@@ -2,31 +2,48 @@
 % Please edit documentation in R/llm_assistance.R
 \name{generate_llm_prompt}
 \alias{generate_llm_prompt}
-\title{Generate Customization Guidance Prompt}
+\title{Generate LLM Customization Prompt}
 \usage{
 generate_llm_prompt(config = NULL, focus = "general", item_bank = NULL)
 }
 \arguments{
-\item{config}{Study configuration object created by \code{\link{create_study_config}}.
-If NULL, generates a general customization prompt.}
+\item{config}{Study configuration from \code{\link{create_study_config}}.
+If NULL, generates general context.}
 
-\item{focus}{Area to customize. Options: "stopping_rules", "selection", "estimation", 
-"general". Default is "general".}
+\item{focus}{Focus area: "stopping_rules", "selection", "estimation", "general".}
 
-\item{item_bank}{Optional. Item bank data frame to include context about your items.}
+\item{item_bank}{Optional item bank for additional context.}
 }
 \value{
-Character string containing the prompt. Invisibly returns the prompt while
-  displaying it to the console.
+Invisibly returns prompt text.
 }
 \description{
-Generates a prompt that can be used with LLMs (ChatGPT, Claude, etc.) to get 
-customization advice for your inrep study configuration. This is a simple helper
-to facilitate getting external advice on optimizing your study parameters.
+Generates a prompt with your current configuration and inrep package context.
+Copy the output to an LLM (ChatGPT, Claude, etc.) to get customized R code.
+
+\strong{Best Practice for Optimal Results:}
+
+The LLM will provide the most accurate customization advice when one gives it 
+as much context as possible about the inrep functions. Here's the recommended workflow:
+
+\enumerate{
+  \item \strong{Start}: Generate the initial prompt with this function
+  \item \strong{Copy to LLM}: Paste the prompt into ChatGPT/Claude
+  \item \strong{Add Function Context}: If the LLM asks about specific parameters or you 
+        encounter errors, search the inrep source code for those terms
+  \item \strong{Copy Relevant Code}: Add the relevant function code snippets back to your 
+        conversation with the LLM
+  \item \strong{Iterate}: The LLM can now give precise advice based on the actual 
+        implementation details
+}
+
+Example: If one get an error about \code{min_SEM} or wants to understand \code{theta_prior},
+look up those parameters in the inrep documentation or source code and share that context
+with the LLM. This allows the LLM to provide accurate, implementation-specific guidance
+rather than generic advice.
 }
 \examples{
 \dontrun{
-# Create a basic configuration
 config <- create_study_config(
   name = "My Study",
   model = "GRM",
@@ -34,14 +51,6 @@ config <- create_study_config(
   max_items = 20,
   min_SEM = 0.3
 )
-
-# Get customization advice for stopping rules
-generate_llm_prompt(config, focus = "stopping_rules")
-
-# Get general customization advice
 generate_llm_prompt(config, focus = "general")
-
-# Get advice for item selection methods
-generate_llm_prompt(config, focus = "selection")
 }
 }

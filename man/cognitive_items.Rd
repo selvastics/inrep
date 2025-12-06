@@ -29,9 +29,6 @@ Simulated data based on typical cognitive assessment parameters found in
 psychometric literature. Item content represents common cognitive task types
 used in research and clinical practice.
 }
-\usage{
-cognitive_items
-}
 \description{
 A comprehensive item bank for cognitive assessment containing 50 items
 across five cognitive domains, calibrated using the 2PL IRT model.
@@ -57,8 +54,9 @@ the ability spectrum. Discrimination parameters range from 0.8 to 2.4,
 indicating items with varying precision for ability estimation.
 }
 \examples{
+\dontrun{
 # Load the cognitive items dataset
-data(cognitive_items)
+# data(cognitive_items)  # Load dataset when needed
 
 # Examine the structure
 str(cognitive_items)
@@ -81,11 +79,11 @@ if (interactive()) {
   # Launch study (requires Shiny environment)
   # launch_study(config, cognitive_items)
 }
+}
 
 }
 \seealso{
-\code{\link{bfi_items}} for personality assessment items,
+\code{bfi_items} for personality assessment items (use \code{data(bfi_items)}),
 \code{\link{create_study_config}} for study configuration,
 \code{\link{launch_study}} for running assessments
 }
-\keyword{datasets}

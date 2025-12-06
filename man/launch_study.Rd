@@ -12,8 +12,27 @@ launch_study(
   webdav_url = NULL,
   password = NULL,
   save_format = "rds",
-  logger = function(msg, ...) print(msg),
+  logger = function(msg, ...) message(msg),
   study_key = NULL,
+  accessibility = FALSE,
+  admin_dashboard_hook = NULL,
+  max_session_time = 7200,
+  session_save = TRUE,
+  data_preservation_interval = 30,
+  keep_alive_interval = 10,
+  enable_error_recovery = TRUE,
+  debug_mode = FALSE,
+  ui_render_delay = NULL,
+  package_loading_delay = NULL,
+  session_init_delay = NULL,
+  show_loading_screen = NULL,
+  immediate_ui = FALSE,
+  auto_close_time = 300,
+  auto_close_time_unit = "seconds",
+  disable_auto_close = FALSE,
+  port = 3838,
+  launch_browser = FALSE,
+  host = "127.0.0.1",
   ...
 )
 }
@@ -27,7 +46,7 @@ Column structure varies by IRT model (see \strong{Item Bank Requirements} sectio
 \item{custom_css}{Character string containing CSS code for UI customization. 
 When provided, overrides both built-in themes and \code{theme_config} settings.}
 
-\item{theme_config}{Named list of theme parameters (e.g., from \code{\link{launch_theme_editor}}).
+\item{theme_config}{Named list of theme parameters for custom theming.
 Contains CSS variable definitions like \code{primary_color}, \code{font_family}, etc.}
 
 \item{webdav_url}{Character string specifying WebDAV URL for cloud-based result storage,
@@ -48,19 +67,50 @@ Should accept \code{message} and \code{level} parameters.}
 
 \item{study_key}{Character string for unique study identification. Overrides config$study_key.}
 
-\item{...}{Additional parameters passed to Shiny application configuration.}
+\item{accessibility}{Logical indicating whether to enable accessibility features
+including ARIA labels, keyboard navigation, and screen reader support.}
 
 \item{admin_dashboard_hook}{Optional function receiving real-time assessment updates.
 Called with participant progress, ability estimates, and session metrics.}
 
-\item{accessibility}{Logical indicating whether to enable accessibility features
-including ARIA labels, keyboard navigation, and screen reader support.}
+\item{max_session_time}{Maximum session time in seconds (default: 7200 = 2 hours).
+The assessment will automatically terminate after this time to ensure data security.}
+
+\item{session_save}{Logical indicating whether to enable session saving and recovery.}
+
+\item{data_preservation_interval}{Interval for automatic data preservation in seconds (default: 30).}
+
+\item{keep_alive_interval}{Keep-alive ping interval in seconds (default: 10).}
+
+\item{enable_error_recovery}{Logical indicating whether to enable automatic error recovery
+with up to 3 recovery attempts before graceful degradation.}
+
+\item{debug_mode}{Logical indicating whether to enable debug mode (default: FALSE).
+When TRUE, enables keyboard shortcuts for rapid testing: STRG+A (CTRL+A) smart fills current page with
+contextual defaults, STRG+Q (CTRL+Q) turbo auto-fills all pages until results are reached.
+A red debug indicator appears in the bottom-right corner. **Use only for development/testing!**}
+
+\item{port}{Numeric port number for Shiny application (default: 3838).
+The application will be accessible at http://host:port.}
+
+\item{launch_browser}{Logical indicating whether to automatically open browser (default: FALSE).
+When TRUE, automatically launches in browser. When FALSE, returns the Shiny app object for manual execution.}
+
+\item{host}{Character string specifying the host address (default: "127.0.0.1").
+Use "0.0.0.0" for network access or specific IP addresses for remote access.}
+
+\item{...}{Additional parameters passed to Shiny application configuration.}
 }
 \value{
-A Shiny application object that can be run with \code{shiny::runApp()}.
+When \code{launch_browser = TRUE}, launches the Shiny application
+  in the default browser. When \code{launch_browser = FALSE} (default), returns the Shiny app
+  object for manual execution with \code{shiny::runApp()}.
   The app provides a complete assessment interface with real-time adaptation.
 }
 \description{
+NOTE THIS IS UNDER ACTIVE DEVELOPMENT - WE PUT ALL IN ONE FUNCTION FOR NOW
+Why is all in one function? Because you can more easily pass this entire function to an LLM to customize a specific study. 
+I will eventually split this up into smaller functions, but for now it's all in one for convenience. 
 Launches a Shiny-based adaptive or non-adaptive assessment interface that serves as
 a comprehensive wrapper around TAM's psychometric capabilities. All IRT computations
 (ability estimation, item selection, model fitting) are performed by the TAM package,
@@ -267,7 +317,7 @@ The interface supports extensive theming capabilities through multiple mechanism
 \itemize{
   \item \code{theme_config}: Named list with CSS variable definitions
   \item \code{custom_css}: Direct CSS injection for complete control
-  \item \code{\link{launch_theme_editor}}: Interactive theme builder with real-time preview
+  \item \code{\link{get_theme_config}}: Get theme configuration for available themes
 }
 
 \strong{CSS Variables:} Key customization options include:

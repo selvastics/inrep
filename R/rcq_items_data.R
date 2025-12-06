@@ -68,20 +68,24 @@
 NULL
 
 #' @rdname rcq_items_data
+#' @name rcq_old_items
 #' @format Data frame with 30 rows and 6 columns
-"rcq_old_items"
+NULL
 
 #' @rdname rcq_items_data
+#' @name rcqL_old_items
 #' @format Data frame with 68 rows and 6 columns
-"rcqL_old_items"
+NULL
 
 #' @rdname rcq_items_data
+#' @name rcq_items
 #' @format Data frame with 30 rows and 6 columns
-"rcq_items"
+NULL
 
 #' @rdname rcq_items_data
+#' @name rcqL_items
 #' @format Data frame with 68 rows and 6 columns
-"rcqL_items"
+NULL
 
 
 

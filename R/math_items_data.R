@@ -142,8 +142,8 @@
 #' 
 #' @seealso
 #' \itemize{
-#'   \item \code{\link{bfi_items}} for personality assessment items
-#'   \item \code{\link{cognitive_items}} for cognitive assessment items
+#'   \item \code{bfi_items} for personality assessment items (use \code{data(bfi_items)})
+#'   \item \code{cognitive_items} for cognitive assessment items (use \code{data(cognitive_items)})
 #'   \item \code{\link{create_study_config}} for assessment configuration
 #'   \item \code{\link{launch_study}} for running mathematics assessments
 #'   \item \code{\link{validate_item_bank}} for psychometric validation
@@ -155,4 +155,4 @@
 #'   \item Samejima, F. (1997). Graded response model. \emph{Handbook of modern item response theory}, 85-100.
 #'   \item Embretson, S. E., & Reise, S. P. (2000). \emph{Item response theory for psychologists}. Lawrence Erlbaum.
 #' }
-"math_items"
+NULL

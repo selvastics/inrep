@@ -7,18 +7,11 @@
 #' 
 #' @name theme_system
 #' @keywords internal
+NULL
 
 # ============================================================================
 # SECTION 1: THEME DEFINITIONS (from themes.R)
 # ============================================================================
-
-#' Theme Definitions for inrep Package
-#' 
-#' Provides comprehensive theme definitions for the UI
-#' 
-#' @name themes
-#' @docType data
-NULL
 
 #' Get Theme Configuration
 #' 

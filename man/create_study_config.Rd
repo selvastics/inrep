@@ -7,7 +7,8 @@
 create_study_config(
   name = "Personality Assessment",
   demographics = c("Age", "Gender"),
-  study_key = paste0("STUDY_", uuid::UUIDgenerate()),
+  study_key = paste0("STUDY_", if (requireNamespace("uuid", quietly = TRUE))
+    uuid::UUIDgenerate() else paste0("STUDY_", Sys.time())),
   min_SEM = 0.3,
   min_items = 5,
   max_items = NULL,
@@ -28,14 +29,16 @@ create_study_config(
   response_validation_fun = NULL,
   response_ui_type = "radio",
   session_save = FALSE,
-  theme = "Light",
+  show_session_time = FALSE,
+  theme = "Professional",
   language = "en",
   item_translations = NULL,
   report_formats = c("rds", "csv", "json", "pdf"),
   max_session_duration = 60,
   max_response_time = 300,
   cache_enabled = TRUE,
-  parallel_computation = FALSE,
+  parallel_computation = TRUE,
+  fast_item_selection = TRUE,
   feedback_enabled = FALSE,
   theta_grid = seq(-4, 4, length.out = 100),
   show_introduction = TRUE,
@@ -50,6 +53,9 @@ create_study_config(
   debriefing_content = NULL,
   demographic_configs = NULL,
   custom_demographic_ui = NULL,
+  custom_study_flow = NULL,
+  custom_page_configs = NULL,
+  enable_custom_navigation = FALSE,
   study_phases = c("introduction", "briefing", "consent", "demographics", "survey",
     "debriefing"),
   page_transitions = "fade",
@@ -69,6 +75,8 @@ create_study_config(
   integration_config = NULL,
   custom_functions = NULL,
   study_metadata = NULL,
+  participant_report = NULL,
+  min_required_non_age_demographics = 1,
   ...
 )
 }
@@ -95,8 +103,10 @@ full item bank size. Prevents excessive test length.}
 \item{model}{Character string specifying IRT model passed to TAM functions.
 Options: \code{"1PL"}, \code{"2PL"}, \code{"3PL"}, \code{"GRM"}.}
 
-\item{estimation_method}{Character string specifying ability estimation method.
-Primary option: \code{"TAM"}. Alternative compatibility: \code{"MIRT"}, \code{"EAP"}, \code{"WLE"}.}
+\item{estimation_method}{Character string specifying TAM ability estimation method.
+Options: \code{"EAP"} (Expected A Posteriori - Bayesian, stable with few items, default) or
+\code{"WLE"} (Weighted Likelihood Estimation - frequentist, accurate with many items).
+Both methods use the TAM package exclusively.}
 
 \item{recommendation_fun}{Function to generate personalized recommendations based on 
 ability estimates and demographics, or \code{NULL} for default recommendations.}
@@ -120,7 +130,11 @@ for immediate adaptive selection. Allows fixed item administration initially.}
 or \code{NULL} for no fixed items. Useful for anchor items or content requirements.}
 
 \item{adaptive}{Logical indicating whether to use adaptive item selection based on 
-TAM ability estimates. \code{FALSE} results in fixed-order administration.}
+TAM ability estimates. When \code{TRUE} (default), items are selected dynamically 
+based on the participant's estimated ability to maximize information. When \code{FALSE}, 
+items are administered in sequential order from the item bank (non-adaptive mode).
+Note: When \code{adaptive = FALSE}, the assessment simply presents items 1 through 
+\code{max_items} in order, making it a standard fixed-form questionnaire.}
 
 \item{item_groups}{Named list defining item groups for content balancing, 
 or \code{NULL} for no grouping constraints.}
@@ -129,7 +143,7 @@ or \code{NULL} for no grouping constraints.}
 or \code{NULL} for standard interface.}
 
 \item{progress_style}{Character string specifying progress indicator style.
-Options: \code{"bar"}, \code{"circle"}.}
+Options: \code{"bar"}, \code{"circle"}, \code{"modern-circle"}, \code{"enhanced-bar"}, \code{"segmented"}, \code{"minimal"}, \code{"card"}.}
 
 \item{response_validation_fun}{Function to validate participant responses, 
 or \code{NULL} for default validation. Should return logical.}
@@ -140,8 +154,11 @@ Options: \code{"radio"}, \code{"slider"}, \code{"dropdown"}.}
 \item{session_save}{Logical indicating whether to enable session state persistence
 for interrupted session recovery.}
 
+\item{show_session_time}{Logical indicating whether to display session time remaining
+in the top-right corner. Defaults to FALSE for cleaner interface.}
+
 \item{theme}{Character string specifying built-in UI theme. Options: \code{"Light"}, 
-\code{"Midnight"}, \code{"Sunset"}, \code{"Forest"}, \code{"Ocean"}, \code{"Berry"}.}
+\code{"Midnight"}, \code{"Sunset"}, \code{"Forest"}, \code{"Ocean"}, \code{"Berry"}, \code{"Professional"}.}
 
 \item{language}{Character string specifying interface language. 
 Options: \code{"en"}, \code{"de"}, \code{"es"}, \code{"fr"}.}
@@ -161,6 +178,9 @@ for performance optimization.}
 
 \item{parallel_computation}{Logical indicating whether to enable parallel processing
 for TAM estimation procedures when computationally intensive.}
+
+\item{fast_item_selection}{Logical indicating whether to use fast item selection
+algorithm for improved performance in large item banks.}
 
 \item{feedback_enabled}{Logical indicating whether to provide immediate feedback
 after each item response.}
@@ -204,6 +224,24 @@ and display formatting.}
 
 \item{custom_demographic_ui}{Function to generate custom demographic UI,
 or \code{NULL} for default demographic interface.}
+
+\item{custom_study_flow}{Named list defining custom study flow for specific studies
+(e.g., Hildesheim study). Allows specification of exact page order and content.
+Example: \code{list(start_with = "instructions", page_sequence = c("instructions", "demographics", "assessment", "results"))}.
+Defaults to NULL for standard flow.}
+
+\item{custom_page_configs}{Named list providing configuration for each custom page,
+including content, validation rules, and navigation logic.
+Example: \code{list(instructions = list(content = "Custom instructions", validation = "required"))}.
+Defaults to NULL for standard flow.}
+
+\item{enable_custom_navigation}{Logical indicating whether to enable custom page navigation
+for studies requiring specific flow control. Defaults to FALSE for backward compatibility.
+instructions instead of demographics. Defaults to FALSE for backward compatibility.
+that need non-standard flow (e.g., Hildesheim study). Defaults to NULL for standard flow.
+Allows specification of exact page order and subpages (e.g., page_1 = "instructions",
+page_3_1 = "education"). Defaults to NULL for standard flow.
+including content, validation rules, and navigation logic.}
 
 \item{study_phases}{Character vector specifying order of study phases.
 Default: c("introduction", "briefing", "consent", "demographics", "survey", "debriefing").}
@@ -279,6 +317,17 @@ TAM performs all psychometric computations:
 All psychometric modeling is performed exclusively by TAM (Robitzsch et al., 2024).
 \code{inrep} focuses on providing the technological infrastructure and user experience
 layer around TAM's validated statistical procedures.
+
+\strong{HTML Customization:} All page types in custom page flows now support optional
+HTML customization parameters for enhanced styling and layout control:
+\itemize{
+  \item \code{custom_css}/\code{custom_css_en}: Inline CSS for page styling
+  \item \code{html_prefix}/\code{html_prefix_en}: HTML content before main page
+  \item \code{html_suffix}/\code{html_suffix_en}: HTML content after main page
+  \item \code{wrapper_class}: CSS class for content wrapper
+  \item \code{wrapper_style}: Inline styles for content wrapper
+}
+Parameters with \code{_en} suffix are used when language is English.
 }
 \examples{
 \dontrun{
@@ -292,6 +341,17 @@ basic_config <- create_study_config(
   min_SEM = 0.3,
   language = "en",
   theme = "Light"
+)
+
+# Example 1b: Non-Adaptive (Fixed Order) Assessment
+# Items are presented sequentially: 1, 2, 3, 4, 5 from the item bank
+# This creates a standard questionnaire without adaptive item selection
+fixed_config <- create_study_config(
+  name = "Personality Questionnaire",
+  adaptive = FALSE,  # Disable adaptive testing
+  max_items = 5,     # Present exactly 5 items in order
+  theme = "hildesheim",
+  session_save = TRUE
 )
 
 # Example 2: Advanced Research Configuration with Full Customization
