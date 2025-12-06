@@ -2785,30 +2785,46 @@ launch_study <- function(
     })
     
     # Observe store_language_globally for any study that needs it
+    # Guard against rapid repeats and initial firing to avoid render loops
     shiny::observeEvent(input$store_language_globally, {
-      if (!is.null(input$store_language_globally)) {
-        # Store globally for any study that needs language access
-        assign("study_language_preference", input$store_language_globally, envir = .GlobalEnv)
-        cat("Stored language globally:", input$store_language_globally, "\n")
-        
-        # Update language for FUTURE pages only (not current page to prevent loops)
-        new_lang <- input$store_language_globally
-        if (new_lang %in% c("en", "de")) {
-          # Only update if we're NOT on page 1 to prevent re-rendering loops
-          current_page <- rv$current_page %||% 1
-          if (current_page != 1) {
-            current_language(new_lang)
-            rv$language <- new_lang
-            session$userData$language <- new_lang
-            cat("Language switched to:", new_lang, "\n")
-          } else {
-            # For page 1, just store for future use without triggering re-render
-            session$userData$language <- new_lang
-            cat("Language preference stored for future pages:", new_lang, "\n")
-          }
+      # ignore NULLs and empty values early
+      if (is.null(input$store_language_globally) || input$store_language_globally == "") return()
+
+      # Simple de-duplication: skip if identical to last value within short window
+      last_val <- session$userData$last_store_language %||% NULL
+      last_time <- session$userData$last_store_language_time %||% as.POSIXct(0)
+      now_time <- Sys.time()
+      # If same value and last seen less than 1 second ago, ignore to break event storms
+      if (!is.null(last_val) && identical(last_val, input$store_language_globally) && difftime(now_time, last_time, units = "secs") < 1) {
+        # Silently ignore near-duplicate events
+        return()
+      }
+
+      # Record last seen value/time
+      session$userData$last_store_language <- input$store_language_globally
+      session$userData$last_store_language_time <- now_time
+
+      # Store globally for any study that needs language access
+      assign("study_language_preference", input$store_language_globally, envir = .GlobalEnv)
+      cat("Stored language globally:", input$store_language_globally, "\n")
+
+      # Update language for FUTURE pages only (not current page to prevent loops)
+      new_lang <- input$store_language_globally
+      if (new_lang %in% c("en", "de")) {
+        # Only update if we're NOT on page 1 to prevent re-rendering loops
+        current_page <- rv$current_page %||% 1
+        if (current_page != 1) {
+          current_language(new_lang)
+          rv$language <- new_lang
+          session$userData$language <- new_lang
+          cat("Language switched to:", new_lang, "\n")
+        } else {
+          # For page 1, just store for future use without triggering re-render
+          session$userData$language <- new_lang
+          cat("Language preference stored for future pages:", new_lang, "\n")
         }
       }
-    })
+    }, ignoreInit = TRUE)
     
     # Observe PDF download trigger - Universal solution for all studies
     # This uses JavaScript to capture the CURRENT HTML DOM and send it to server for PDF conversion

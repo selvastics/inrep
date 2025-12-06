@@ -3219,10 +3219,17 @@ validate_page_progression <- function(current_page, input, config) {
   # Get current language from config (passed from launch_study)
   current_lang <- config$current_language %||% config$language %||% "de"
   
+  # DEFENSIVE: Ensure page$type is a valid string
+  page_type <- page$type
+  if (is.null(page_type) || length(page_type) == 0 || is.na(page_type)) {
+    page_type <- "custom"  # Default to custom page type
+  }
+  
   # Check based on page type
-  if (page$type == "instructions" && isTRUE(page$consent)) {
-    # Check consent checkbox
-    if (!isTRUE(input$consent_checkbox)) {
+  if (page_type == "instructions" && isTRUE(page$consent)) {
+    # Check consent checkbox - ensure single logical result
+    consent_checked <- isTRUE(input$consent_checkbox)
+    if (!consent_checked) {
       # CRITICAL: Use language-aware consent message
       consent_msg <- if (current_lang == "en") {
         "Please confirm your consent to participate."
@@ -3231,38 +3238,45 @@ validate_page_progression <- function(current_page, input, config) {
       }
       errors <- c(errors, consent_msg)
     }
-  } else if (page$type == "demographics") {
+  } else if (page_type == "demographics") {
     # Check all required demographics
     demo_vars <- page$demographics
-    for (dem in demo_vars) {
-      demo_config <- config$demographic_configs[[dem]]
-      if (isTRUE(demo_config$required)) {
-        input_id <- paste0("demo_", dem)
-        value <- input[[input_id]]
-        
-        # FIX: Handle vectors (checkboxes) safely - check length first
-        is_empty <- is.null(value) || length(value) == 0 || all(value == "") || 
-                    (is.character(value) && length(value) == 1 && nchar(trimws(value)) == 0)
-        
-        if (is_empty) {
-          # Use language-appropriate question text
-          question <- if (current_lang == "en" && !is.null(demo_config$question_en)) {
-            demo_config$question_en
-          } else {
-            demo_config$question %||% dem
+    if (!is.null(demo_vars) && length(demo_vars) > 0) {
+      for (dem in demo_vars) {
+        demo_config <- config$demographic_configs[[dem]]
+        if (isTRUE(demo_config$required)) {
+          input_id <- paste0("demo_", dem)
+          value <- input[[input_id]]
+          
+          # FIX: Handle vectors (checkboxes) safely - check length first, handle NA properly
+          is_empty <- is.null(value) || length(value) == 0 || 
+                      all(is.na(value)) ||
+                      (is.character(value) && all(value == "" | is.na(value))) || 
+                      (is.character(value) && length(value) == 1 && !is.na(value) && nchar(trimws(value)) == 0)
+          
+          # Ensure is_empty is a single logical value
+          is_empty <- isTRUE(is_empty)
+          
+          if (is_empty) {
+            # Use language-appropriate question text
+            question <- if (current_lang == "en" && !is.null(demo_config$question_en)) {
+              demo_config$question_en
+            } else {
+              demo_config$question %||% dem
+            }
+            # Truncate long questions for error message
+            if (nchar(question) > 50) {
+              question <- paste0(substr(question, 1, 47), "...")
+            }
+            # Use current_lang from top of function
+            error_prefix <- if (current_lang == "en") "Please answer: " else "Bitte beantworten Sie: "
+            errors <- c(errors, paste0(error_prefix, question))
+            missing_fields <- c(missing_fields, input_id)
           }
-          # Truncate long questions for error message
-          if (nchar(question) > 50) {
-            question <- paste0(substr(question, 1, 47), "...")
-          }
-          # Use current_lang from top of function
-          error_prefix <- if (current_lang == "en") "Please answer: " else "Bitte beantworten Sie: "
-          errors <- c(errors, paste0(error_prefix, question))
-          missing_fields <- c(missing_fields, input_id)
         }
       }
     }
-  } else if (page$type == "items") {
+  } else if (page_type == "items") {
     # Check all items have responses (only if page$required is not explicitly FALSE)
     if (!isFALSE(page$required)) {
       # Try to get item_bank from config or parent environment
@@ -3296,11 +3310,22 @@ validate_page_progression <- function(current_page, input, config) {
         # Validate selected items have responses
         if (!is.null(items_to_check) && length(items_to_check) > 0) {
           for (i in items_to_check) {
-            # MUST match UI rendering logic at line 1747: item_id <- item$id %||% paste0("item_", actual_idx)
-            item <- item_bank[i, ]
-            item_id <- item$id %||% paste0("item_", i)
+            # DEFENSIVE: Skip invalid indices
+            if (is.na(i) || i < 1 || i > nrow(item_bank)) {
+              next
+            }
             
-            if (is.null(input[[item_id]]) || input[[item_id]] == "") {
+            # MUST match UI rendering logic at line 1747: item_id <- item$id %||% paste0("item_", actual_idx)
+            item <- item_bank[i, , drop = FALSE]
+            item_id <- if(!is.null(item$id) && length(item$id) > 0 && !is.na(item$id[1])) item$id[1] else paste0("item_", i)
+            
+            # DEFENSIVE: Check for null, empty, or NA values safely
+            item_value <- input[[item_id]]
+            is_missing <- is.null(item_value) || 
+                          length(item_value) == 0 || 
+                          (length(item_value) == 1 && (is.na(item_value[1]) || identical(item_value, "")))
+            
+            if (isTRUE(is_missing)) {
               # Use current_lang from top of function
               error_msg <- if (current_lang == "en") {
                 "Please answer all questions on this page."
@@ -3315,46 +3340,26 @@ validate_page_progression <- function(current_page, input, config) {
         }
       }
     }
-  } else if (page$type == "custom" && isTRUE(page$required)) {
+  } else if (page_type == "custom" && isTRUE(page$required)) {
     # Handle custom pages with required fields
     # Check for specific required fields if defined
-    if (!is.null(page$required_fields)) {
+    if (!is.null(page$required_fields) && length(page$required_fields) > 0) {
       for (field in page$required_fields) {
         value <- input[[field]]
-        if (is.null(value) || value == "" || (is.character(value) && nchar(trimws(value)) == 0)) {
-          # Get language
-          current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
+        # DEFENSIVE: Safely check for empty values
+        is_empty <- is.null(value) || length(value) == 0 || 
+                    (length(value) == 1 && (is.na(value[1]) || (is.character(value) && nchar(trimws(value)) == 0)))
+        if (isTRUE(is_empty)) {
+          # Get language - use current_lang from top of function
           labels <- get_language_labels(current_lang)
-          error_msg <- labels$demo_error
+          error_msg <- labels$demo_error %||% (if(current_lang == "en") "Please fill in required fields." else "Bitte füllen Sie die erforderlichen Felder aus.")
           errors <- c(errors, error_msg)
           missing_fields <- c(missing_fields, field)
         }
       }
-    } else {
-      # For custom pages without specific required_fields, check common input patterns
-      # This handles cases like page2 with demo_Teilnahme_Code
-      page_id <- page$id %||% paste0("page_", current_page)
-      
-      # Check for demographic-style inputs (demo_ prefix)
-      if (page_id == "page2") {
-        # Special case for page2 - check for code input
-        code_value <- input$demo_Teilnahme_Code
-        if (is.null(code_value) || trimws(code_value) == "") {
-          current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
-          labels <- get_language_labels(current_lang)
-          error_msg <- labels$demo_error
-          errors <- c(errors, error_msg)
-          missing_fields <- c(missing_fields, "demo_Teilnahme_Code")
-        }
-      } else {
-        # Generic check for other custom pages - look for any input fields
-        # This is a fallback for custom pages that don't specify required_fields
-        # but still need validation
-        current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
-        error_msg <- get_label("demo_error", current_lang)
-        errors <- c(errors, error_msg)
-      }
     }
+    # NOTE: Custom pages without required_fields but required=TRUE are considered valid
+    # This prevents false positives for pages that don't have explicit input requirements
   }
   
   return(list(

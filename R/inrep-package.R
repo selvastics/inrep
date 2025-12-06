@@ -1,8 +1,9 @@
 #' inrep: Instant Reports for Adaptive Assessments
 #'
 #' @description
-#' **inrep** is an R package for psychological assessment 
-#' development with consultation assistance, session management, and 
+#' **inrep** is an R package for psychological assessment. 
+#' \href{https://selvastics.shinyapps.io/inrep-studio/}{\strong{inrep-studio}} provides a Shiny interface to simplify the creation of inrep surveys, as no code needs to be written to configure the study.
+#' Functionalities of this package include, prompt assistance, session management, and 
 #' psychometric capabilities. Built with modern R development practices 
 #' and best practices for external consultation, it provides researchers and 
 #' practitioners with a secure and user-friendly platform for creating, 
@@ -10,12 +11,6 @@
 #'
 #' @section Key Features:
 #'
-#' **Consultation Assistance System**
-#' - Professional Consultation Support: Prompt generation for expert consultation
-#' - Context-Aware Assistance: Guidance that adapts to your specific assessment needs and constraints
-#' - Complexity Scaling: Assistance that scales from basic to expert levels based on your expertise
-#' - Task-Specific Optimization: Specialized prompts for study design, item bank optimization, ability estimation, UI design, analysis planning, and deployment strategy
-#' - Quick Assistance Functions: Immediate guidance for common assessment tasks
 #'
 #' **Session Management**
 #' - Data Persistence: Automatic saving and recovery of participant responses and session state
@@ -29,7 +24,7 @@
 #' - Item Bank Optimization: Tools for improving item quality and measurement precision
 #' - Validation: Built-in psychometric validation and quality assessment
 #'
-#' **User Experience Excellence**
+#' **User Experience**
 #' - Responsive Design: Works seamlessly across desktop, tablet, and mobile devices
 #' - Accessibility First: WCAG 2.1 AA compliance and inclusive design principles
 #' - Intuitive Interface: Clean, modern UI that reduces participant anxiety and improves completion rates
@@ -37,7 +32,7 @@
 #'
 #' @section Consultation Assistance:
 #'
-#' The package includes a consultation assistance system that implements 
+#' The package includes a basic consultation assistance system that implements 
 #' best practices for prompt generation:
 #'
 #' - **`enable_llm_assistance()`**: Enable and configure the consultation assistance system
@@ -174,9 +169,9 @@
 #'
 #' @section License:
 #'
-#' This project is licensed under the MIT License - see the LICENSE file for details.
+#' This project is licensed under the a custom License (Non-Commercial use only) - see the LICENSE file for details.
 
-#' @author inrep Development Team
+#' @author Clievins Selva <selva@uni-hildesheim.de>
 #' @keywords package
 #' @seealso
 #' \code{\link{enable_llm_assistance}}, \code{\link{launch_study}}, 

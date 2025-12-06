@@ -337,7 +337,7 @@ big_five_configs <- list(
 # Then combine results for a complete Big Five profile
 ```
 
-## Best Practices for Item Calibration
+## Few Recommodations for Item Calibration
 
 ### 1. **Data Quality**
 - Ensure sufficient sample size (at least 500-1000 responses per item)
@@ -380,14 +380,3 @@ dif_analysis <- TAM::tam.dif(resp = items, group = demographics$gender)
 # Link parameters across different samples or time points
 linked_params <- TAM::tam.linking(item_pars_list)
 ```
-
-## Conclusion
-
-Calibration is the foundation of accurate adaptive testing. By properly calibrating your item bank with TAM, you ensure that:
-
-- Items are optimally selected based on real measurement properties
-- Ability estimates are precise and reliable
-- The assessment stops efficiently when sufficient information is obtained
-- Results are interpretable and comparable across administrations
-
-The calibrated item bank you create can be reused across multiple studies, providing consistent and reliable measurement of the constructs you're interested in.
