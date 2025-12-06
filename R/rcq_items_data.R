@@ -31,7 +31,7 @@
 #'
 #' @keywords datasets resilience coping German IRT GRM
 #' @name rcq_items_data
-#' @usage data(rcq_old_items); data(rcqL_old_items); data(rcq_items); data(rcqL_items)
+#' @docType data
 #'
 #' @examples
 #' \dontrun{

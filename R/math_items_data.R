@@ -32,9 +32,8 @@
 #'   and psychometric principles for educational assessment.
 #' 
 #' @keywords dataset datasets mathematics education IRT GRM TAM
-#' @name math_items
-#' @usage data(math_items)
 #' @docType data
+#' @name math_items
 #'
 #' @details
 #' This item bank represents typical mathematics assessment content suitable for

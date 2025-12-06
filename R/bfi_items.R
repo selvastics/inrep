@@ -21,8 +21,8 @@
 #'   psychometric research standards for personality assessment.
 #' 
 #' @keywords dataset datasets personality BFI TAM GRM
+#' @docType data
 #' @name bfi_items
-#' @usage data(bfi_items)
 #'
 #' @details
 #' This item bank demonstrates professional standards for IRT-Based Assessments:
