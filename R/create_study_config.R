@@ -1,4 +1,4 @@
-#' Create Study Configuration for IRT-Based Assessment
+#' Create Study Configuration Assessment
 #'
 #' Creates a comprehensive configuration object for adaptive testing studies that utilize 
 #' the TAM package for all psychometric computations. This function configures the parameters 
@@ -664,7 +664,7 @@ create_study_config <- function(
         if (!is.list(input_types) || !all(demographics %in% names(input_types))) {
           stop("input_types must be a named list with entries for all demographics")
         }
-        valid_types <- c("text", "numeric", "select", "radio", "checkbox")
+        valid_types <- c("text", "numeric", "select", "radio", "checkbox", "slider")
         invalid_types <- setdiff(unlist(input_types), valid_types)
         if (length(invalid_types) > 0) {
           stop("Invalid input types: ", paste(invalid_types, collapse = ", "), 

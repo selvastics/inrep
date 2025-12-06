@@ -401,7 +401,7 @@ launch_study(basic_config, bfi_items)
 advanced_config <- create_study_config(
   name = "Cognitive Ability Assessment",
   model = "2PL", 
-  estimation_method = "TAM",
+  estimation_method = "EAP",
   max_items = 20,
   min_items = 10,
   min_SEM = 0.25,
@@ -484,7 +484,7 @@ launch_study(
 research_config <- create_study_config(
   name = "Psychometric Validation Study",
   model = "3PL",
-  estimation_method = "TAM",
+  estimation_method = "EAP",
   min_items = 15,
   max_items = 30,
   min_SEM = 0.2,

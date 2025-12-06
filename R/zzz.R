@@ -65,7 +65,7 @@ utils::globalVariables(c(
     
     # Simple, clean startup message
     packageStartupMessage(
-      "increp ", utils::packageVersion("inrep"), " ready.\n",
+      "inrep ", utils::packageVersion("inrep"), " ready.\n",
       "For help, use: ?inrep or vignette('inrep')"
     )
   }

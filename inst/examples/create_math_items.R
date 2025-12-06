@@ -107,16 +107,22 @@ for (i in 1:nrow(math_items)) {
   math_items$b4[i] <- thresholds[4]
 }
 
-# Save as RDA file
-save(math_items, file = "data/math_items.rda")
+# Save to data directory
+save(math_items, file = "../../data/math_items.rda")
 
-cat("Created math_items dataset with", nrow(math_items), "items\n")
+cat("Math items dataset created successfully!\n")
+cat("Items:", nrow(math_items), "\n")
+cat("Columns:", names(math_items), "\n")
 cat("Domains:", paste(unique(math_items$domain), collapse = ", "), "\n")
 cat("Difficulty levels:", paste(unique(math_items$difficulty_level), collapse = ", "), "\n")
 cat("Grade levels:", paste(unique(math_items$grade_level), collapse = ", "), "\n")
-cat("Discrimination range:", range(math_items$a), "\n")
-cat("Threshold ranges:\n")
-cat("  b1:", range(math_items$b1), "\n")
-cat("  b2:", range(math_items$b2), "\n") 
-cat("  b3:", range(math_items$b3), "\n")
-cat("  b4:", range(math_items$b4), "\n")
+cat("\nUsage:\n")
+cat("config <- create_study_config(\n")
+cat("  name = 'Mathematics Assessment',\n")
+cat("  model = 'GRM',\n")
+cat("  max_items = 20,\n")
+cat("  min_items = 10,\n")
+cat("  criteria = 'MI',\n")
+cat("  theme = 'Educational'\n")
+cat(")\n")
+cat("launch_study(config, math_items)\n")

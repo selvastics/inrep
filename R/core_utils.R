@@ -1,4 +1,4 @@
-#' Core Utilities for increp Package
+#' Core Utilities for inrep Package
 #' 
 #' This file consolidates all core utility functions including:
 #' - Basic utility functions (from utils.R)
@@ -397,9 +397,7 @@ select_next_item_basic_internal <- function(rv, item_bank, config) {
 #' Utility functions for session initialization, validation, and cloud saving.
 #'
 #' @name session_utils
-#' @importFrom logr log_print
 #' @importFrom jsonlite write_json
-#' @importFrom httr PUT authenticate upload_file add_headers status_code
 NULL
 
 #' Initialize Reactive Values for Assessment Session

@@ -270,6 +270,45 @@ select_next_item <- function(rv, item_bank, config) {
     message("No more items available")
     return(NULL)
   }
+
+  # Domain-aware item selection for Big Five (5 separate assessments)
+  if ("domain" %in% names(item_bank) && length(unique(item_bank$domain)) > 1) {
+    # Check if we should focus on a specific domain
+    current_domain <- NULL
+
+    # If we have domain-specific histories, determine which domain to focus on
+    if (!is.null(rv$domain_theta_histories)) {
+      domains <- names(rv$domain_theta_histories)
+      domain_items_administered <- integer(length(domains))
+      names(domain_items_administered) <- domains
+
+      # Count items administered per domain
+      if (length(rv$administered) > 0) {
+        for (domain in domains) {
+          domain_item_indices <- which(item_bank$domain == domain)
+          domain_items_administered[domain] <- sum(rv$administered %in% domain_item_indices)
+        }
+      }
+
+      # Find domain with fewest items administered (to balance)
+      min_items_domain <- names(domain_items_administered)[which.min(domain_items_administered)]
+      current_domain <- min_items_domain
+
+      logger(sprintf("Domain balancing: %s", paste(paste0(names(domain_items_administered), "=", domain_items_administered), collapse=", ")))
+    }
+
+    # Filter available items to current domain if specified
+    if (!is.null(current_domain)) {
+      domain_item_indices <- which(item_bank$domain == current_domain)
+      available <- intersect(available, domain_item_indices)
+
+      if (length(available) == 0) {
+        # No more items in current domain, try next domain
+        logger(sprintf("No more items in domain %s, switching domains", current_domain))
+        available <- setdiff(seq_len(nrow(item_bank)), rv$administered)
+      }
+    }
+  }
   
   # Custom item selection algorithm support
   if (!is.null(config$item_selection_fun) && is.function(config$item_selection_fun)) {

@@ -1,0 +1,382 @@
+---
+title: "How to Calibrate Your Item Bank with inrep"
+author: "inrep"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    theme: cerulean
+    css: styles.css
+vignette: >
+  %\VignetteIndexEntry{How to Calibrate Your Item Bank with inrep}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+THIS IS STILL UNDER ACTIVE DEVELOPMENT.
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+library(inrep)
+```
+
+In this vignette, we will learn how to calibrate your item bank to create more accurate adaptive assessments. We use the Big Five personality inventory from the psych package as our example.
+
+## Installation
+```{r eval=FALSE}
+
+# Install development version from GitHub
+devtools::install_github("selvastics/inrep")
+```
+
+## Let's start by exploring our data
+
+First, let's load and examine the Big Five personality data from the psych package:
+
+```{r load_data, eval=FALSE}
+#install.packages("psych")
+library(psych)
+data(bfi)
+
+# Examine the data structure
+describe(bfi)
+
+#          vars    n  mean    sd median trimmed   mad min max range  skew kurtosis   se
+#A1           1 2784  2.41  1.41      2    2.23  1.48   1   6     5  0.83    -0.31 0.03
+#A2           2 2773  4.80  1.17      5    4.98  1.48   1   6     5 -1.12     1.05 0.02
+#A3           3 2774  4.60  1.30      5    4.79  1.48   1   6     5 -1.00     0.44 0.02
+#A4           4 2781  4.70  1.48      5    4.93  1.48   1   6     5 -1.03     0.04 0.03
+#A5           5 2784  4.56  1.26      5    4.71  1.48   1   6     5 -0.85     0.16 0.02
+#C1           6 2779  4.50  1.24      5    4.64  1.48   1   6     5 -0.85     0.30 0.02
+#C2           7 2776  4.37  1.32      5    4.50  1.48   1   6     5 -0.74    -0.14 0.03
+#C3           8 2780  4.30  1.29      5    4.42  1.48   1   6     5 -0.69    -0.13 0.02
+#C4           9 2774  2.55  1.38      2    2.41  1.48   1   6     5  0.60    -0.62 0.03
+#C5          10 2784  3.30  1.63      3    3.25
+
+items <- bfi[,1:25]
+
+dim(items)
+# [1] 2800   25
+
+# We have 25 items and 2800 participants as basis for our item bank
+```
+
+## Fitting IRT Models with TAM
+
+Now let's fit a Graded Response Model (GRM) to calibrate our items using the TAM package:
+
+```{r fit_grm, eval=FALSE}
+#install.packages("TAM")
+library(TAM)
+
+# Fit a GRM model to the items
+mod <- tam.mml(items) # TAM will recognize our polytomous data type
+summary(mod)
+mod$item  # Here are the item parameters
+
+# Note: This model assumes all BFI items measure one latent dimension
+# In the BFI context, this doesn't make much sense - items measure 5 different dimensions
+# We should fit multidimensional models (see Example 23 in tam.mml of the TAM package)
+```
+
+## Proper Multidimensional Calibration
+
+Since the BFI measures 5 distinct personality dimensions, let's fit separate models for each dimension:
+
+```{r multidimensional_calibration, eval=FALSE}
+# Split items by Big Five dimension
+items_A <- items[, grep("^A", colnames(items))]  # Agreeableness
+items_C <- items[, grep("^C", colnames(items))]  # Conscientiousness
+items_E <- items[, grep("^E", colnames(items))]  # Extraversion
+items_N <- items[, grep("^N", colnames(items))]  # Neuroticism
+items_O <- items[, grep("^O", colnames(items))]  # Openness
+
+# Fit 5 separate GRM models (one per dimension)
+mod_A <- TAM::tam.mml(resp = items_A, control = list(maxiter = 100))
+mod_C <- TAM::tam.mml(resp = items_C, control = list(maxiter = 100))
+mod_E <- TAM::tam.mml(resp = items_E, control = list(maxiter = 100))
+mod_N <- TAM::tam.mml(resp = items_N, control = list(maxiter = 100))
+mod_O <- TAM::tam.mml(resp = items_O, control = list(maxiter = 100))
+
+# Extract item parameters for each dimension
+params_A <- mod_A$item[, c("item", "N", "M", "xsi.item")]
+params_C <- mod_C$item[, c("item", "N", "M", "xsi.item")]
+params_E <- mod_E$item[, c("item", "N", "M", "xsi.item")]
+params_N <- mod_N$item[, c("item", "N", "M", "xsi.item")]
+params_O <- mod_O$item[, c("item", "N", "M", "xsi.item")]
+
+# Add dimension column
+params_A$dimension <- "Agreeableness"
+params_C$dimension <- "Conscientiousness"
+params_E$dimension <- "Extraversion"
+params_N$dimension <- "Neuroticism"
+params_O$dimension <- "Openness"
+
+# Combine all item parameters
+all_params <- rbind(params_A, params_C, params_E, params_N, params_O)
+print(all_params)
+```
+
+
+## Creating Your Calibrated Item Bank
+
+Now that we have calibrated item parameters for each dimension, let's create a proper item bank that inrep can use:
+
+```{r create_item_bank, eval=FALSE}
+# Define Big Five scoring keys (reverse-scored items are prefixed with "-")
+bfi_keys <- list(
+  Agreeableness = c("-A1", "A2", "A3", "A4", "A5"),
+  Conscientiousness = c("C1", "C2", "C3", "-C4", "-C5"),
+  Extraversion = c("-E1", "-E2", "E3", "E4", "E5"),
+  Neuroticism = c("N1", "N2", "N3", "N4", "N5"),
+  Openness = c("O1", "-O2", "O3", "O4", "-O5")
+)
+
+# Derive clean item ids and trait metadata
+trait_item_ids <- lapply(bfi_keys, function(items) gsub("-", "", items))
+target_ids <- unlist(trait_item_ids)
+trait_labels <- rep(names(trait_item_ids), lengths(trait_item_ids))
+trait_sequence <- names(trait_item_ids)
+
+# Provide fallback text if dictionary lookup is unavailable
+fallback_questions <- c(
+  A1 = "Am indifferent to the feelings of others.",
+  A2 = "Inquire about others' well-being.",
+  A3 = "Know how to comfort others.",
+  A4 = "Love children.",
+  A5 = "Make people feel at ease.",
+  C1 = "Am exacting in my work.",
+  C2 = "Continue until everything is perfect.",
+  C3 = "Do things according to a plan.",
+  C4 = "Do things in a half-way manner.",
+  C5 = "Waste my time.",
+  E1 = "Don't talk a lot.",
+  E2 = "Find it difficult to approach others.",
+  E3 = "Know how to captivate people.",
+  E4 = "Make friends easily.",
+  E5 = "Take charge.",
+  N1 = "Get angry easily.",
+  N2 = "Get irritated easily.",
+  N3 = "Have frequent mood swings.",
+  N4 = "Often feel blue.",
+  N5 = "Panic easily.",
+  O1 = "Am full of ideas.",
+  O2 = "Avoid difficult reading material.",
+  O3 = "Carry the conversation to a higher level.",
+  O4 = "Spend time reflecting on things.",
+  O5 = "Will not probe deeply into a subject."
+)
+
+# Helper to load official item wording from psych::bfi.dictionary when available
+load_bfi_questions <- function() {
+  questions <- fallback_questions
+  if (requireNamespace("psych", quietly = TRUE)) {
+    res <- tryCatch(utils::data("bfi.dictionary", package = "psych", envir = environment()), error = function(e) character())
+    if (is.character(res) && length(res) && "bfi.dictionary" %in% res) {
+      dict <- get("bfi.dictionary")
+      if (all(c("name", "item") %in% names(dict))) {
+        lookup <- setNames(as.character(dict$item), as.character(dict$name))
+        overlap <- intersect(names(lookup), target_ids)
+        if (length(overlap)) questions[overlap] <- lookup[overlap]
+      }
+    }
+  }
+  questions[target_ids]
+}
+
+# Flag which items are reverse coded
+derive_reverse_flags <- function(keys) {
+  flags <- setNames(rep(FALSE, length(target_ids)), target_ids)
+  for (items in keys) {
+    for (item in items) {
+      item_id <- gsub("-", "", item)
+      flags[item_id] <- startsWith(item, "-")
+    }
+  }
+  flags
+}
+
+question_lookup <- load_bfi_questions()
+reverse_flags <- derive_reverse_flags(bfi_keys)
+
+# Build item bank using calibrated thresholds (replace with your TAM estimates)
+personality_items <- data.frame(
+  id = target_ids,
+  Question = question_lookup[target_ids],
+  domain = trait_labels,
+  reverse_coded = reverse_flags[target_ids],
+  ResponseCategories = "1,2,3,4,5,6",
+  a = 1,
+  b1 = c(
+    -2.5, -2.8, -2.6, -2.4, -2.3,
+    -2.6, -2.7, -2.5, -2.4, -2.2,
+    -2.7, -2.5, -2.6, -2.8, -2.5,
+    -2.4, -2.6, -2.3, -2.5, -2.2,
+    -2.6, -2.4, -2.5, -2.5, -2.3
+  ),
+  b2 = c(
+    -1.5, -1.7, -1.5, -1.4, -1.3,
+    -1.6, -1.6, -1.4, -1.3, -1.2,
+    -1.5, -1.3, -1.4, -1.5, -1.4,
+    -1.4, -1.5, -1.3, -1.4, -1.3,
+    -1.5, -1.3, -1.4, -1.4, -1.2
+  ),
+  b3 = c(
+    -0.3, -0.2, -0.1, -0.2, -0.1,
+    -0.2, -0.1, 0.0, 0.1, 0.0,
+    -0.1, 0.1, 0.0, -0.1, 0.0,
+    0.1, 0.0, 0.2, 0.1, 0.2,
+    0.0, 0.2, 0.1, 0.1, 0.3
+  ),
+  b4 = c(
+    0.8, 0.9, 1.0, 0.9, 1.0,
+    0.9, 1.0, 1.2, 1.3, 1.1,
+    1.0, 1.2, 1.1, 1.0, 1.1,
+    1.2, 1.1, 1.4, 1.3, 1.4,
+    1.1, 1.3, 1.2, 1.2, 1.4
+  ),
+  b5 = c(
+    1.8, 1.9, 2.0, 2.0, 2.1,
+    2.0, 2.1, 2.2, 2.4, 2.2,
+    2.1, 2.3, 2.2, 2.1, 2.2,
+    2.3, 2.2, 2.5, 2.4, 2.5,
+    2.2, 2.4, 2.3, 2.3, 2.5
+  ),
+  stringsAsFactors = FALSE
+)
+```
+
+## Using Your Calibrated Item Bank with inrep
+
+Now let's create a proper configuration and launch our calibrated assessment:
+
+```{r launch_calibrated_assessment, eval=FALSE}
+# Create a detailed configuration for our calibrated Big Five assessment
+config <- create_study_config(
+  name = "Calibrated Big Five Personality Assessment",
+  model = "GRM",                           # Graded Response Model for our 6-point scale
+  estimation_method = "EAP",               # Expected A Posteriori estimation
+  adaptive = TRUE,                         # Enable adaptive item selection
+  criteria = "MI",                         # Maximum Information criterion
+  min_items = 8,                          # Minimum 8 items before stopping
+  max_items = 15,                         # Maximum 15 items
+  min_SEM = 0.35,                         # Stop when SEM < 0.35
+  theta_prior = c(0, 1),                   # Standard normal prior
+
+  # Session management
+  session_save = TRUE,
+  theme = "Professional",
+
+  # Reporting features
+  participant_report = list(
+    show_theta_plot = TRUE,                # Show ability progression
+    show_response_table = TRUE,            # Show detailed responses
+    show_item_difficulty_trend = TRUE,     # Show item difficulty vs ability
+    show_domain_breakdown = TRUE           # Show performance by domain
+  )
+)
+
+# Launch the calibrated assessment
+launch_study(
+  config = config,
+  item_bank = personality_items,
+  debug_mode = TRUE  # Enable our optimized debug mode
+)
+
+# The assessment will stop after N items have been administered, where N is above
+# the min_items parameter but below max_items. We set SEM = 0.35, which means
+# if this precision criterion is reached before max_items, we stop the assessment.
+```
+
+## Understanding the Calibration Results
+
+The calibrated item bank provides several advantages over using uncalibrated items:
+
+### 1. **Precise Measurement**
+- Each item has properly estimated discrimination (a) and difficulty (b1-b4) parameters
+- The GRM model accounts for the ordered nature of personality responses
+- Threshold parameters (b1-b4) define the boundaries between response categories
+
+### 2. **Adaptive Testing Benefits**
+- Items are selected based on real information content
+- Assessment stops when sufficient precision is achieved
+- More efficient measurement with fewer items
+
+### 3. **Multidimensional Considerations**
+For the BFI context, we could extend this to multidimensional assessment:
+
+```{r multidimensional_example, eval=FALSE}
+# For a true Big Five assessment, we would create separate item banks for each dimension
+# and run separate adaptive assessments, or use a multidimensional IRT model
+
+# Example: Run separate assessments for each Big Five dimension
+big_five_configs <- list(
+  Agreeableness = create_study_config(
+    name = "Agreeableness Assessment",
+    model = "GRM",
+    max_items = 5,
+    min_items = 3,
+    criteria = "FIXED"  # Use all items for this dimension
+  ),
+  Conscientiousness = create_study_config(
+    name = "Conscientiousness Assessment",
+    model = "GRM",
+    max_items = 5,
+    min_items = 3,
+    criteria = "FIXED"
+  ),
+  # ... similar configs for Extraversion, Neuroticism, Openness
+)
+
+# Then combine results for a complete Big Five profile
+```
+
+## Few Recommodations for Item Calibration
+
+### 1. **Data Quality**
+- Ensure sufficient sample size (at least 500-1000 responses per item)
+- Check for missing data patterns and response distributions
+- Validate that items measure what they intend to measure
+
+### 2. **Model Selection**
+- Use GRM for Likert-type personality items (5-7 point scales)
+- Use 2PL/3PL for binary knowledge/ability items
+- Consider model fit statistics before using parameters
+
+### 3. **Parameter Interpretation**
+- **Discrimination (a)**: How well the item distinguishes between ability levels
+- **Difficulty (b)**: Threshold parameters defining category boundaries
+- **Information**: Items with higher information are more useful for measurement
+
+### 4. **Validation**
+- Cross-validate parameters on holdout samples
+- Check item fit statistics
+- Ensure parameters are reasonable and interpretable
+
+## Advanced Calibration Techniques
+
+For more sophisticated calibration, consider:
+
+### 1. **Multidimensional IRT**
+```r
+# Fit multidimensional GRM for Big Five
+multidim_mod <- TAM::tam.mml.2pl(resp = items, Q = Q_matrix)
+```
+
+### 2. **Differential Item Functioning (DIF)**
+```r
+# Check if items function differently across groups
+dif_analysis <- TAM::tam.dif(resp = items, group = demographics$gender)
+```
+
+### 3. **Item Response Theory Linking**
+```r
+# Link parameters across different samples or time points
+linked_params <- TAM::tam.linking(item_pars_list)
+```

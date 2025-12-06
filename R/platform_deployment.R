@@ -863,7 +863,7 @@ deployment_notes="Genericconfigurationforcustomdeployment"
 generate_manifest<-function(study_config,item_bank,deployment_type,contact_info){
 manifest<-list(
 deployment_info=list(
-package_version="1.0.0",
+package_version="0.3.0",
 deployment_type=deployment_type,
 created_at=Sys.time(),
 r_version=paste0(R.version$major,".",R.version$minor)

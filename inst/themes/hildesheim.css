@@ -14,24 +14,5 @@
   --card-shadow: 0 2px 4px rgba(232, 4, 28, 0.08);
   --border-color: #e8041c;
   --accent-color: #e8041c;
-  --logo-url: url('https://www.uni-hildesheim.de/fileadmin/_processed_/b/2/csm_logo-uni_4c_2b7e2e2e2a.png');
 }
 
-/*
- * To display the university logo at the top of your app/page, add this to your UI:
- *   <div class="hildesheim-logo"></div>
- * or in Shiny: tags$div(class = "hildesheim-logo")
- */
-
-/* University logo at the top */
-.hildesheim-logo {
-  width: 260px;
-  height: 60px;
-  background-image: var(--logo-url), url('https://www.uni-hildesheim.de/fileadmin/_processed_/b/2/csm_logo-uni_4c_2b7e2e2e2a.png'); /* fallback for older browsers */
-  background-repeat: no-repeat;
-  background-size: contain;
-  background-position: center top;
-  margin: 24px auto 16px auto;
-  display: block;
-  min-height: 60px;
-}

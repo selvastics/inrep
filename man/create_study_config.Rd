@@ -2,7 +2,7 @@
 % Please edit documentation in R/create_study_config.R
 \name{create_study_config}
 \alias{create_study_config}
-\title{Create Study Configuration for IRT-Based Assessment}
+\title{Create Study Configuration Assessment}
 \usage{
 create_study_config(
   name = "Personality Assessment",
@@ -13,7 +13,7 @@ create_study_config(
   max_items = NULL,
   criteria = "MI",
   model = "GRM",
-  estimation_method = "TAM",
+  estimation_method = "EAP",
   recommendation_fun = NULL,
   theta_prior = c(0, 1),
   stopping_rule = NULL,
@@ -286,7 +286,7 @@ layer around TAM's validated statistical procedures.
 basic_config <- create_study_config(
   name = "Big Five Personality Assessment",
   model = "GRM",
-  estimation_method = "TAM",
+  estimation_method = "EAP",
   demographics = c("Age", "Gender", "Education"),
   max_items = 15,
   min_SEM = 0.3,
@@ -298,7 +298,7 @@ basic_config <- create_study_config(
 research_config <- create_study_config(
   name = "Cognitive Ability Validation Study",
   model = "2PL",
-  estimation_method = "TAM",
+  estimation_method = "EAP",
   min_items = 12,
   max_items = 25,
   min_SEM = 0.25,
@@ -349,7 +349,7 @@ research_config <- create_study_config(
 clinical_config <- create_study_config(
   name = "Depression Screening Instrument",
   model = "GRM",
-  estimation_method = "TAM",
+  estimation_method = "EAP",
   min_items = 8,
   max_items = 15,
   min_SEM = 0.4,  # Slightly higher for clinical screening
@@ -389,7 +389,7 @@ clinical_config <- create_study_config(
 education_config <- create_study_config(
   name = "Mathematics Proficiency Assessment",
   model = "2PL",
-  estimation_method = "TAM",
+  estimation_method = "EAP",
   min_items = 15,
   max_items = 30,
   min_SEM = 0.3,
@@ -428,7 +428,7 @@ education_config <- create_study_config(
 multilingual_config <- create_study_config(
   name = "Cross-Cultural Personality Study",
   model = "GRM",
-  estimation_method = "TAM",
+  estimation_method = "EAP",
   min_items = 20,
   max_items = 40,
   min_SEM = 0.25,

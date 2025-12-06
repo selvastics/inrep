@@ -210,19 +210,3 @@ check_inrep_status <- function() {
   cat("\n")
   invisible(NULL)
 }
-
-# Print help message
-cat("\n")
-cat("==============================================\n")
-cat("inrep Installation Helper Loaded\n")
-cat("==============================================\n")
-cat("\n")
-cat("Available functions:\n")
-cat("  clean_install_inrep()  - Perform clean installation\n")
-cat("  quick_reinstall()      - Quick reinstall from GitHub\n")
-cat("  check_inrep_status()   - Check package status\n")
-cat("  cleanup_inrep_remnants() - Clean up remnants\n")
-cat("\n")
-cat("For clean installation, run:\n")
-cat("  clean_install_inrep()\n")
-cat("\n")

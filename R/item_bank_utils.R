@@ -1,7 +1,8 @@
 #' Validate Item Bank Structure
 #'
 #' @description
-#' Basic validation of item bank structure and compatibility with IRT model.
+#' validation of item bank structure and compatibility with IRT model.
+#' Provides detailed feedback on mismatches and suggests appropriate configurations.
 #'
 #' @param item_bank Data frame containing item bank
 #' @param model IRT model ("GRM", "2PL", "1PL", "3PL")
@@ -13,6 +14,7 @@
 #' data(bfi_items)
 #' validation <- validate_item_bank(bfi_items, "GRM")
 #' print(validation$is_valid)
+#' print(validation$messages)
 #' }
 validate_item_bank <- function(item_bank, model = "GRM") {
   
@@ -29,31 +31,81 @@ validate_item_bank <- function(item_bank, model = "GRM") {
     return(list(is_valid = FALSE, messages = "Item bank must have 'Question' column"))
   }
   
-  # Model-specific validation
+  # Model-specific validation with enhanced feedback
   if (model == "GRM") {
     required_cols <- c("a", "b1", "b2", "b3", "b4")
     missing <- setdiff(required_cols, names(item_bank))
     if (length(missing) > 0) {
-      return(list(
-        is_valid = FALSE, 
-        messages = paste("GRM model requires columns:", paste(missing, collapse = ", "))
-      ))
+      # Check if this might be a binary item bank being used with GRM
+      if (all(c("a", "b") %in% names(item_bank))) {
+        return(list(
+          is_valid = FALSE,
+          messages = paste(
+            "GRM model requires columns:", paste(missing, collapse = ", "), "\n",
+            "Your item bank appears to be for a binary model (has 'a' and 'b' columns).\n",
+            "For binary items, use model = '1PL', '2PL', or '3PL' instead of 'GRM'.\n",
+            "For Likert-scale personality items like bfi_items, use model = 'GRM'."
+          )
+        ))
+      } else {
+        return(list(
+          is_valid = FALSE,
+          messages = paste("GRM model requires columns:", paste(missing, collapse = ", "))
+        ))
+      }
     }
   } else if (model %in% c("2PL", "3PL")) {
     required_cols <- c("a", "b")
     missing <- setdiff(required_cols, names(item_bank))
     if (length(missing) > 0) {
-      return(list(
-        is_valid = FALSE,
-        messages = paste(model, "model requires columns:", paste(missing, collapse = ", "))
-      ))
+      # Check if this might be a GRM item bank being used with binary model
+      if (all(c("a", "b1", "b2", "b3", "b4") %in% names(item_bank))) {
+        return(list(
+          is_valid = FALSE,
+          messages = paste(
+            model, "model requires columns:", paste(missing, collapse = ", "), "\n",
+            "Your item bank appears to be for GRM (has 'b1'-'b4' columns).\n",
+            "For polytomous/Likert items like bfi_items, use model = 'GRM' instead.\n",
+            "Binary models are for right/wrong or 0/1 responses."
+          )
+        ))
+      } else {
+        return(list(
+          is_valid = FALSE,
+          messages = paste(model, "model requires columns:", paste(missing, collapse = ", "))
+        ))
+      }
     }
   } else if (model == "1PL") {
     if (!"b" %in% names(item_bank)) {
-      return(list(is_valid = FALSE, messages = "1PL model requires 'b' column"))
+      # Check if this might be a GRM item bank
+      if (all(c("a", "b1", "b2", "b3", "b4") %in% names(item_bank))) {
+        return(list(
+          is_valid = FALSE,
+          messages = paste(
+            "1PL model requires 'b' column.\n",
+            "Your item bank appears to be for GRM (has 'b1'-'b4' columns).\n",
+            "For polytomous/Likert items like bfi_items, use model = 'GRM' instead.\n",
+            "1PL is for binary (0/1) responses, not Likert scales."
+          )
+        ))
+      } else {
+        return(list(is_valid = FALSE, messages = "1PL model requires 'b' column"))
+      }
+    }
+    # For 1PL, discrimination parameter should be 1 or missing (will be set to 1)
+    if (!"a" %in% names(item_bank)) {
+      message("Note: 1PL model typically uses a=1 for all items. Consider adding 'a' column or the system will set a=1 automatically.")
     }
   }
-  
+
+  # Additional validation for common issues
+  if ("ResponseCategories" %in% names(item_bank)) {
+    if (model != "GRM") {
+      message("Warning: Your item bank has 'ResponseCategories' column, typically used with GRM for Likert-scale items.")
+    }
+  }
+
   # All checks passed
   return(list(is_valid = TRUE, messages = "Item bank validation passed"))
 }

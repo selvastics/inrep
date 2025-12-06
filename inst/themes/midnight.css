@@ -1,17 +1,368 @@
+/* ============================================================================
+   MIDNIGHT THEME - Professional Dark Theme for inrep Package
+   ============================================================================
+   A carefully designed dark theme with optimal contrast and readability.
+   All colors are controlled here for consistency across the entire study.
+   ============================================================================ */
+
 :root {
+  /* Primary Colors */
   --primary-color: #6366f1;
   --secondary-color: #8b5cf6;
-  --background-color: #0f172a;
-  --text-color: #f1f5f9;
-  --font-family: 'Inter', sans-serif;
-  --border-radius: 8px;
-  --progress-bg-color: #1e293b;
+  --accent-color: #a78bfa;
+  
+  /* Background Colors - Layered approach */
+  --background-color: #1e293b;       /* Main card/content background */
+  --background-dark: #0f172a;        /* Page background (darker) */
+  --background-light: #334155;       /* Hover states, sections */
+  
+  /* Text Colors */
+  --text-color: #f1f5f9;            /* Primary text (light) */
+  --text-secondary: #cbd5e1;         /* Secondary text */
+  --text-muted: #94a3b8;            /* Muted text */
+  
+  /* UI Element Colors */
+  --border-color: #475569;
+  --input-background: #1e293b;
+  --input-border: #475569;
+  
+  /* Status Colors */
   --error-color: #ef4444;
   --success-color: #10b981;
   --warning-color: #f59e0b;
   --info-color: #06b6d4;
+  
+  /* Interactive Elements */
   --button-hover-color: #4f46e5;
-  --card-shadow: 0 4px 6px rgba(99, 102, 241, 0.2);
-  --border-color: #334155;
-  --accent-color: #a78bfa;
+  --progress-bg-color: #1e293b;
+  
+  /* Design */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --border-radius: 8px;
+  --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  
+  /* Force dark color scheme for native controls */
+  color-scheme: dark;
+}
+
+/* ============================================================================
+   GLOBAL STYLES
+   ============================================================================ */
+
+html {
+  color-scheme: dark !important;
+}
+
+body {
+  background-color: var(--background-dark) !important;
+  color: var(--text-color) !important;
+  color-scheme: dark !important;
+}
+
+/* ============================================================================
+   CARD COMPONENTS - CRITICAL: NO WHITE BACKGROUNDS!
+   ============================================================================ */
+
+/* All card types must use dark background */
+.card,
+.assessment-card,
+.container > .card,
+.page-wrapper .card,
+.page-wrapper .assessment-card,
+div[class*="card"],
+.demographic-card,
+.instruction-card,
+.consent-card {
+  background-color: var(--background-color) !important;
+  background: var(--background-color) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* NUCLEAR: Override ANY white/light backgrounds */
+div[style*="background: white"],
+div[style*="background:white"],
+div[style*="background-color: white"],
+div[style*="background-color:white"],
+div[style*="background: #fff"],
+div[style*="background:#fff"],
+div[style*="background-color: #fff"],
+div[style*="background-color:#fff"],
+div[style*="background: rgb(255"],
+div[style*="background-color: rgb(255"] {
+  background-color: var(--background-color) !important;
+  background: var(--background-color) !important;
+  color: var(--text-color) !important;
+}
+
+/* Force ALL divs inside cards to respect theme */
+.card *,
+.assessment-card *,
+.card > *,
+.assessment-card > *,
+#page_content .card,
+#page_content .assessment-card,
+#page_content div[class*="card"] {
+  color: inherit !important;
+}
+
+/* ABSOLUTE NUCLEAR: Target the exact demographic/instruction sections */
+body .assessment-card,
+body div.assessment-card,
+html body .assessment-card,
+#page_content .assessment-card,
+.page-wrapper .assessment-card,
+[id*="page"] .assessment-card {
+  background-color: var(--background-color) !important;
+  background: var(--background-color) !important;
+  color: var(--text-color) !important;
+}
+
+/* Kill ANY possible white background at ANY level */
+* {
+  background-color: inherit;
+}
+
+body *:not(input):not(select):not(textarea):not(button) {
+  background-color: transparent;
+}
+
+.assessment-card,
+.card {
+  background-color: var(--background-color) !important;
+}
+
+/* ============================================================================
+   TYPOGRAPHY
+   ============================================================================ */
+
+.card-header,
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-color) !important;
+}
+
+.welcome-text,
+p {
+  color: var(--text-color) !important;
+}
+
+/* Override inline dark text colors */
+[style*="color: #333"],
+[style*="color:#333"],
+[style*="color: #666"],
+[style*="color:#666"] {
+  color: var(--text-color) !important;
+}
+
+/* ============================================================================
+   FORM ELEMENTS
+   ============================================================================ */
+
+/* Labels */
+.input-label,
+label {
+  color: var(--text-color) !important;
+  font-weight: 500;
+}
+
+/* Text Inputs */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+textarea {
+  background-color: var(--input-background) !important;
+  color: var(--text-color) !important;
+  border: 1px solid var(--input-border) !important;
+  border-radius: var(--border-radius);
+  padding: 10px 12px;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="email"]:focus,
+textarea:focus {
+  border-color: var(--primary-color) !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Select Dropdowns */
+select,
+.form-control {
+  background-color: var(--input-background) !important;
+  color: var(--text-color) !important;
+  border: 1px solid var(--input-border) !important;
+  border-radius: var(--border-radius);
+  padding: 10px 32px 10px 12px;
+  color-scheme: dark !important;
+  cursor: pointer;
+}
+
+select:focus {
+  border-color: var(--primary-color) !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Dropdown Options - Note: Limited browser support */
+select option {
+  background-color: var(--input-background) !important;
+  color: var(--text-color) !important;
+  padding: 8px 12px;
+}
+
+select option:hover,
+select option:focus {
+  background-color: var(--background-light) !important;
+}
+
+select option:checked {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+}
+
+/* Shiny-specific selectors */
+.shiny-input-container select,
+.shiny-input-container input {
+  background-color: var(--input-background) !important;
+  color: var(--text-color) !important;
+}
+
+/* ============================================================================
+   RADIO BUTTONS & CHECKBOXES
+   ============================================================================ */
+
+.radio,
+.checkbox,
+.shiny-input-radiogroup,
+.shiny-input-checkboxgroup {
+  background-color: transparent !important;
+}
+
+.radio label,
+.checkbox label,
+.shiny-input-radiogroup label,
+.shiny-input-checkboxgroup label,
+.shiny-options-group label {
+  color: var(--text-color) !important;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: var(--border-radius);
+  transition: background-color 0.2s;
+}
+
+.radio label:hover,
+.checkbox label:hover,
+.shiny-input-radiogroup label:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* ============================================================================
+   BUTTONS
+   ============================================================================ */
+
+.btn,
+button,
+.btn-klee {
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-primary,
+.btn-klee {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: white !important;
+}
+
+.btn-primary:hover,
+.btn-klee:hover {
+  background-color: var(--button-hover-color) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* ============================================================================
+   SPECIAL SECTIONS
+   ============================================================================ */
+
+/* Download Section */
+.download-section {
+  background-color: var(--background-light) !important;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+}
+
+/* Progress Indicators */
+.progress {
+  background-color: var(--progress-bg-color) !important;
+  border-radius: var(--border-radius);
+}
+
+.progress-bar {
+  background-color: var(--primary-color) !important;
+}
+
+/* ============================================================================
+   SCROLLBARS (Webkit)
+   ============================================================================ */
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--background-light);
+}
+
+/* Select dropdown scrollbar */
+select::-webkit-scrollbar {
+  background-color: var(--input-background);
+}
+
+select::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+}
+
+/* ============================================================================
+   ACCESSIBILITY & FOCUS STATES
+   ============================================================================ */
+
+*:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+button:focus,
+.btn:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+}
+
+/* ============================================================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  :root {
+    --border-radius: 6px;
+  }
+  
+  input, select, textarea, button {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
 }

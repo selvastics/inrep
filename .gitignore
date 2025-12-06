@@ -75,8 +75,16 @@ simple_*.R
 final_*.R
 quality_*.R
 package_*.R
+test_user_example.R
+test_language_fix.R
 *.ps1
 *.bat
+
+# Study data (user-specific session data)
+study_data/
+
+# Documentation build artifacts (if they get created)
+inst/docs/
 
 # Development files
 run_*.R

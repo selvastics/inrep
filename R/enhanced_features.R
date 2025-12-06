@@ -428,13 +428,25 @@ create_response_report <- function(config, cat_result, item_bank, include_labels
     
   } else {
     # For binary models, show correct/incorrect with answers
-    dat <- data.frame(
-      Item = item_bank$Question[items],
-      Response = ifelse(responses == 1, "Correct", "Incorrect"),
-      Correct = item_bank$Answer[items],
-      Time = round(cat_result$response_times, 1),
-      check.names = FALSE
-    )
+    # Check if Answer column exists (for compatibility with different item banks)
+    if ("Answer" %in% names(item_bank)) {
+      dat <- data.frame(
+        Item = item_bank$Question[items],
+        Response = ifelse(responses == 1, "Correct", "Incorrect"),
+        Correct = item_bank$Answer[items],
+        Time = round(cat_result$response_times, 1),
+        check.names = FALSE
+      )
+    } else {
+      # For item banks without Answer column (e.g., personality items)
+      dat <- data.frame(
+        Item = item_bank$Question[items],
+        Response = responses,
+        Score = responses,  # For personality items, response is the score
+        Time = round(cat_result$response_times, 1),
+        check.names = FALSE
+      )
+    }
   }
   
   # Add validation metadata
@@ -458,15 +470,22 @@ create_response_report <- function(config, cat_result, item_bank, include_labels
 #' @return List with validation results
 #' @export
 validate_response_report <- function(original_responses, report_data, config) {
-  
+
   if (config$model == "GRM") {
     # For GRM, responses should match exactly
     reported_responses <- report_data$Response
     consistency_check <- all(reported_responses == original_responses)
   } else {
     # For binary models, check scoring consistency
-    reported_binary <- ifelse(report_data$Response == "Correct", 1, 0)
-    consistency_check <- length(reported_binary) == length(original_responses)
+    if ("Correct" %in% names(report_data)) {
+      # Traditional binary model with Answer column
+      reported_binary <- ifelse(report_data$Response == "Correct", 1, 0)
+      consistency_check <- length(reported_binary) == length(original_responses)
+    } else {
+      # For item banks without Answer column (e.g., personality items)
+      reported_responses <- report_data$Response
+      consistency_check <- all(reported_responses == original_responses)
+    }
   }
   
   validation_result <- list(

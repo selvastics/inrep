@@ -537,7 +537,7 @@ validate_demographic_config <- function(config) {
     return(FALSE)
   }
   
-  if (!config$input_type %in% c("text", "numeric", "select", "radio", "checkbox")) {
+  if (!config$input_type %in% c("text", "numeric", "select", "radio", "checkbox", "slider")) {
     return(FALSE)
   }
   
@@ -755,7 +755,8 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
       }
       
       # Translate "Please select..." based on language
-      placeholder_text <- if (current_lang == "en") "Please select..." else "Bitte wählen..."
+      labels <- get_language_labels(current_lang)
+      placeholder_text <- labels$please_select
       
       ui_elements[[demo_name]] <- shiny::div(
         class = "demographic-field",
@@ -770,8 +771,8 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
           condition = paste0("input.", demo_name, " == 'other'"),
           shiny::textInput(
             inputId = paste0(demo_name, "_other"),
-            label = "Please specify:",
-            placeholder = "Enter details..."
+            label = labels$please_specify,
+            placeholder = labels$enter_details
           )
         )
       )
@@ -795,9 +796,48 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
           condition = paste0("input.", demo_name, " == 'other'"),
           shiny::textInput(
             inputId = paste0(demo_name, "_other"),
-            label = "Please specify:",
-            placeholder = "Enter details..."
+            label = labels$please_specify,
+            placeholder = labels$enter_details
           )
+        )
+      )
+      
+    } else if (config$input_type == "slider") {
+      # Get slider parameters from config
+      min_val <- config$min %||% 0
+      max_val <- config$max %||% 100
+      step_val <- config$step %||% 1
+      default_val <- config$default
+      
+      # Get labels for min and max
+      label_min <- if (current_lang == "en") {
+        config$label_min_en %||% config$label_min %||% as.character(min_val)
+      } else {
+        config$label_min %||% as.character(min_val)
+      }
+      
+      label_max <- if (current_lang == "en") {
+        config$label_max_en %||% config$label_max %||% as.character(max_val)
+      } else {
+        config$label_max %||% as.character(max_val)
+      }
+      
+      ui_elements[[demo_name]] <- shiny::div(
+        class = "demographic-field slider-field",
+        shiny::label(question_text, `for` = demo_name),
+        shiny::div(
+          class = "slider-labels",
+          shiny::span(label_min, class = "slider-label-min"),
+          shiny::span(label_max, class = "slider-label-max")
+        ),
+        shiny::sliderInput(
+          inputId = demo_name,
+          label = NULL,
+          min = min_val,
+          max = max_val,
+          value = default_val %||% min_val,
+          step = step_val,
+          width = "100%"
         )
       )
     }
@@ -1423,11 +1463,11 @@ process_page_flow <- function(config, rv, input, output, session, item_bank, ui_
     
     "demographics" = render_demographics_page(current_page, config, rv, ui_labels),
     
-    "items" = render_items_page(current_page, config, rv, item_bank, ui_labels),
+    "items" = render_items_page(current_page, config, rv, item_bank, ui_labels, session),
     
     "custom" = render_custom_page(current_page, config, rv, ui_labels, input),
     
-    "results" = render_results_page(current_page, config, rv, item_bank, ui_labels, auto_close_time, auto_close_time_unit, disable_auto_close),
+    "results" = render_results_page(current_page, config, rv, item_bank, ui_labels, auto_close_time, auto_close_time_unit, disable_auto_close, session),
     
     # Default fallback
     shiny::div(
@@ -1531,11 +1571,16 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
       }
       
       # Check if this demographic item has custom HTML content - LANGUAGE AWARE
+      # FIX: Add length check to prevent vector comparison error
       html_content_to_use <- NULL
-      if (current_lang == "en" && !is.null(demo_config$html_content_en) && demo_config$html_content_en != "") {
+      if (current_lang == "en" && !is.null(demo_config$html_content_en) && 
+          is.character(demo_config$html_content_en) && length(demo_config$html_content_en) == 1 && 
+          demo_config$html_content_en != "") {
         html_content_to_use <- demo_config$html_content_en
         cat("DEBUG: Using English HTML content for", dem, "\n")
-      } else if (!is.null(demo_config$html_content) && demo_config$html_content != "") {
+      } else if (!is.null(demo_config$html_content) && 
+                 is.character(demo_config$html_content) && length(demo_config$html_content) == 1 && 
+                 demo_config$html_content != "") {
         html_content_to_use <- demo_config$html_content
         cat("DEBUG: Using German HTML content for", dem, "\n")
       }
@@ -1551,13 +1596,40 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
       input_id <- paste0("demo_", dem)
     input_type <- config$input_types[[dem]] %||% "text"
     
+    # AUTO-DETECT input type from config if not explicitly set
+    # CRITICAL: Always prioritize demo_config$type for slider to ensure it's not overridden
+    if (!is.null(demo_config$type) && demo_config$type == "slider") {
+      input_type <- "slider"
+    } else if (is.null(input_type) || input_type == "text") {
+      if (!is.null(demo_config$type)) {
+        input_type <- demo_config$type
+      }
+      else if (!is.null(demo_config$options) && length(demo_config$options) > 0) {
+        input_type <- "select"
+      }
+    }
+    
+    
+    # Determine current values including optional "other" text
+    current_main_value <- NULL
+    current_other_value <- NULL
+    if (!is.null(rv$demo_data)) {
+      current_main_value <- rv$demo_data[[dem]]
+      current_other_value <- rv$demo_data[[paste0(dem, "_other")]]
+    }
+    
+    other_input_id <- paste0(input_id, "_other")
+    
     # Pass language to create_demographic_input
     input_element <- create_demographic_input(
       input_id, 
       demo_config, 
       input_type,
-      rv$demo_data[[dem]],
-      current_lang
+      current_main_value,
+      current_lang,
+      demographic_name = dem,
+      current_other_value = current_other_value,
+      other_input_id = other_input_id
     )
     
     shiny::div(
@@ -1589,33 +1661,184 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
 }
 
 #' Render items page with pagination
-render_items_page <- function(page, config, rv, item_bank, ui_labels) {
+render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
   # Get current language
   current_lang <- rv$language %||% config$language %||% "de"
   
   # Get items for this page
+  # Support adaptive item selection when item_indices is NULL or "adaptive"
   if (!is.null(page$item_indices)) {
-    page_items <- item_bank[page$item_indices, ]
+    # Check if item_indices is a function (for dynamic selection)
+    if (is.function(page$item_indices)) {
+      computed_indices <- page$item_indices(rv, item_bank, config)
+      if (!is.null(computed_indices) && length(computed_indices) > 0) {
+        page_items <- item_bank[computed_indices, , drop = FALSE]
+      } else {
+        # Fallback: no items available
+        page_items <- item_bank[integer(0), , drop = FALSE]
+      }
+    } else if (is.character(page$item_indices) && page$item_indices == "adaptive") {
+      # Special marker for adaptive selection
+      if (isTRUE(config$adaptive) && exists("select_next_item", mode = "function")) {
+        # Use adaptive item selection
+        selected_item <- inrep::select_next_item(rv, item_bank, config)
+        if (!is.null(selected_item) && selected_item > 0 && selected_item <= nrow(item_bank)) {
+          page_items <- item_bank[selected_item, , drop = FALSE]
+          
+          # CRITICAL: Cache selected item for response collection using session$userData (non-reactive)
+          # This ensures adaptive responses can be properly saved to rv$responses[selected_item]
+          page_id <- page$id %||% paste0("page_", rv$current_page %||% 1)
+          if (is.null(session$userData$page_selected_items)) {
+            session$userData$page_selected_items <- list()
+          }
+          session$userData$page_selected_items[[page_id]] <- selected_item
+          cat("ADAPTIVE: Cached", page_id, "->", selected_item, "for response collection\n")
+          
+          # Update rv$administered using isolate() to prevent re-render but track selection
+          shiny::isolate({
+            if (is.null(rv$administered)) rv$administered <- integer(0)
+            if (!selected_item %in% rv$administered) {
+              rv$administered <- c(rv$administered, selected_item)
+            }
+          })
+          
+        } else {
+          page_items <- item_bank[integer(0), , drop = FALSE]
+        }
+      } else {
+        # Fallback to sequential if adaptive not available
+        available <- setdiff(seq_len(nrow(item_bank)), rv$administered %||% integer(0))
+        if (length(available) > 0) {
+          selected_item <- min(available)
+          page_items <- item_bank[selected_item, , drop = FALSE]
+          
+          # Cache fallback selection using session$userData (non-reactive)
+          page_id <- page$id %||% paste0("page_", rv$current_page %||% 1)
+          if (is.null(session$userData$page_selected_items)) {
+            session$userData$page_selected_items <- list()
+          }
+          session$userData$page_selected_items[[page_id]] <- selected_item
+          cat("ADAPTIVE FALLBACK: Cached", page_id, "->", selected_item, "for response collection\n")
+          
+          # Update rv$administered using isolate() to prevent re-render
+          shiny::isolate({
+            if (is.null(rv$administered)) rv$administered <- integer(0)
+            if (!selected_item %in% rv$administered) {
+              rv$administered <- c(rv$administered, selected_item)
+            }
+          })
+          
+        } else {
+          page_items <- item_bank[integer(0), , drop = FALSE]
+        }
+      }
+    } else {
+      # Static vector of indices
+      page_items <- item_bank[page$item_indices, , drop = FALSE]
+    }
   } else if (!is.null(page$item_range)) {
     page_items <- item_bank[page$item_range[1]:page$item_range[2], ]
+  } else if (isTRUE(config$adaptive) && is.null(page$item_indices) && is.null(page$item_range)) {
+    # Adaptive mode and no item_indices specified - use adaptive selection
+    # IMPORTANT: Only select once per page to avoid infinite loops
+    # Use page ID and current_page to create unique cache key
+    current_page_num <- rv$current_page %||% 1
+    page_id <- page$id %||% paste0("page_", current_page_num)
+    
+    # Check if we already selected an item for this specific page (using session$userData - non-reactive)
+    if (is.null(session$userData$page_selected_items)) {
+      session$userData$page_selected_items <- list()
+    }
+    
+    if (!is.null(session$userData$page_selected_items[[page_id]])) {
+      # Already selected for this page - use cached selection
+      selected_item <- session$userData$page_selected_items[[page_id]]
+      if (selected_item > 0 && selected_item <= nrow(item_bank)) {
+        page_items <- item_bank[selected_item, , drop = FALSE]
+      } else {
+        page_items <- item_bank[integer(0), , drop = FALSE]
+      }
+    } else {
+      # First time rendering this page - select item ONCE
+      # CRITICAL FIX: Check for custom_item_selection function first (for HilFo study)
+      selected_item <- NULL
+      
+      if (exists("custom_item_selection", mode = "function")) {
+        # Use custom item selection function (e.g., HilFo study adaptive logic)
+        cat("ADAPTIVE: Using custom_item_selection function for page", page_id, "\n")
+        tryCatch({
+          # Pass session for access to non-reactive userData
+          selected_item <- custom_item_selection(rv, item_bank, config, session)
+          cat("ADAPTIVE: custom_item_selection returned item:", selected_item, "\n")
+        }, error = function(e) {
+          cat("ERROR: custom_item_selection failed:", e$message, "\n")
+          selected_item <- NULL
+        })
+      } else if (exists("select_next_item", mode = "function")) {
+        # Fallback to standard item selection
+        selected_item <- inrep::select_next_item(rv, item_bank, config)
+      }
+      
+      if (!is.null(selected_item) && selected_item > 0 && selected_item <= nrow(item_bank)) {
+        # CRITICAL FIX: Use session$userData for ALL adaptive state (100% non-reactive)
+        if (is.null(session$userData$page_selected_items)) {
+          session$userData$page_selected_items <- list()
+        }
+        session$userData$page_selected_items[[page_id]] <- selected_item
+        cat("ADAPTIVE: Cached item", selected_item, "for page", page_id, "\n")
+        
+        # CRITICAL: Track administered items in session$userData ONLY (not rv)
+        # Updating rv$administered triggers re-renders even with isolate()!
+        # custom_item_selection will read from session$userData$administered instead
+        if (is.null(session$userData$administered)) {
+          session$userData$administered <- integer(0)
+        }
+        if (!selected_item %in% session$userData$administered) {
+          session$userData$administered <- c(session$userData$administered, selected_item)
+          cat("ADAPTIVE: Updated session$userData$administered (non-reactive) ->", paste(session$userData$administered, collapse=", "), "\n")
+        }
+        
+        page_items <- item_bank[selected_item, , drop = FALSE]
+      } else {
+        page_items <- item_bank[integer(0), , drop = FALSE]
+      }
+    }
   } else {
     # Use items_per_page to paginate
     items_per_page <- page$items_per_page %||% config$items_per_page %||% 5
     start_idx <- ((rv$item_page %||% 1) - 1) * items_per_page + 1
     end_idx <- min(start_idx + items_per_page - 1, nrow(item_bank))
-    page_items <- item_bank[start_idx:end_idx, ]
+    page_items <- item_bank[start_idx:end_idx, , drop = FALSE]
   }
   
   # Create item UI elements
+  # CRITICAL FIX: For adaptive items, we need to preserve the actual item bank row number
+  # Get the actual row indices from the item_bank to ensure proper ID mapping
+  actual_row_indices <- if (!is.null(rownames(page_items)) && all(grepl("^[0-9]+$", rownames(page_items)))) {
+    as.integer(rownames(page_items))
+  } else {
+    # Fallback: try to match by id field
+    if (!is.null(page_items$id)) {
+      match(page_items$id, item_bank$id)
+    } else {
+      seq_len(nrow(page_items))
+    }
+  }
+  
   item_elements <- lapply(seq_len(nrow(page_items)), function(i) {
     item <- page_items[i, ]
-    item_id <- paste0("item_", item$id %||% i)
+    actual_idx <- actual_row_indices[i]  # Use actual item bank index, not loop index
+    
+    # CRITICAL: Use item$id if available, otherwise use actual item bank row number
+    item_id <- item$id %||% paste0("item_", actual_idx)
+    
+    cat("UI DEBUG: Creating input element - loop i:", i, "actual_idx:", actual_idx, "item$id:", item$id, "final item_id:", item_id, "\n")
     
     # Get question text based on language
     question_text <- if (current_lang == "en" && !is.null(item$Question_EN)) {
       item$Question_EN
     } else {
-      item$Question %||% item$content %||% paste("Item", i)
+      item$Question %||% item$content %||% paste("Item", actual_idx)
     }
     
     # Get response options
@@ -1702,7 +1925,8 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
     }
     
     if (exists("create_filter_page") && !is.null(input)) {
-      return(create_filter_page(input, config))
+      current_lang <- rv$language %||% config$language %||% "de"
+      return(create_filter_page(input, config, current_lang))
     }
   }
   
@@ -1748,7 +1972,239 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
 }
 
 #' Render results page
-render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_close_time = 300, auto_close_time_unit = "seconds", disable_auto_close = FALSE) {
+render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_close_time = 300, auto_close_time_unit = "seconds", disable_auto_close = FALSE, session = NULL) {
+  # GENERIC DEBUG HANDLER: Check for show_personal_results preference
+  # This applies to ALL studies, not just specific ones
+  show_pref <- NULL
+  try({
+    # Debug: Print all available data
+    message("DEBUG: === CHECKING FOR show_personal_results ===")
+    message("DEBUG: demographics is null? ", is.null(rv$demo_data))
+    if (!is.null(rv$demo_data)) {
+      message("DEBUG: demographics class: ", class(rv$demo_data))
+      message("DEBUG: demographics names: ", paste(names(rv$demo_data), collapse=" "))
+      if ("show_personal_results" %in% names(rv$demo_data)) {
+        show_pref <- rv$demo_data[["show_personal_results"]]
+        message("DEBUG: Found show_personal_results in rv$demo_data: ", show_pref)
+      }
+    }
+    # Fallback: check if it exists in demo_data as an atomic vector
+    if (is.null(show_pref) && is.atomic(rv$demo_data) && "show_personal_results" %in% names(rv$demo_data)) {
+      show_pref <- rv$demo_data["show_personal_results"]
+      message("DEBUG: Found show_personal_results in atomic demographics vector: ", show_pref)
+    }
+    # Check if user selected NO
+    if (!is.null(show_pref) && nzchar(as.character(show_pref))) {
+      sp <- tolower(trimws(as.character(show_pref)))
+      message("DEBUG: Normalized show_pref value: ", sp)
+      message("DEBUG: Checking if sp is in 'no', 'n', 'false', '0'")
+      if (sp %in% c("no", "n", "false", "0")) {
+        message("DEBUG: User selected NO - showing thank you message only")
+        
+        # CRITICAL: ALWAYS save/send data even when user doesn't want to see results
+        message("DEBUG: Ensuring data is saved/sent before showing thank you message")
+        
+        # Ensure cat_result is set if not already set
+        if (is.null(rv$cat_result)) {
+          rv$cat_result <- list(
+            theta = if (config$adaptive) rv$current_ability else (if (length(rv$responses) > 0) mean(rv$responses, na.rm = TRUE) else NULL),
+            se = if (config$adaptive) rv$current_se else NULL,
+            responses = rv$responses,
+            administered = rv$administered,
+            response_times = rv$response_times
+          )
+          message("DEBUG: Created cat_result for data saving")
+        }
+        
+        # Force data preservation
+        if (exists("preserve_session_data", mode = "function")) {
+          tryCatch({
+            preserve_session_data(force = TRUE)
+            message("DEBUG: Data preserved when user selected NO")
+          }, error = function(e) {
+            message("WARNING: Data preservation failed when user selected NO: ", e$message)
+          })
+        }
+        
+        # CRITICAL: Call results processor even when user selects NO
+        # This ensures data is processed and uploaded to cloud (works for ANY study with results_processor)
+        # The results processor will generate CSV/report and upload it, we just won't show the HTML
+        # This is GENERIC - works for any study, not just HilFo
+        # CRITICAL: Use caching to prevent running twice (Shiny may re-render the page)
+        # Check if upload already done by completion handler (e.g., HilFo page14a)
+        csv_upload_succeeded <- isTRUE(rv$csv_uploaded) || isTRUE(rv$data_uploaded_to_cloud)
+        if (csv_upload_succeeded) {
+          message("DEBUG: CSV/data upload already completed by completion handler - skipping results processor")
+        }
+        
+        if (!csv_upload_succeeded && !is.null(config$results_processor) && is.function(config$results_processor)) {
+          # Check if results processor has already been called (prevent duplicate execution)
+          results_processor_called <- rv$results_processor_called %||% FALSE
+          if (results_processor_called) {
+            message("DEBUG: Results processor already called - skipping duplicate execution")
+            # Check if CSV upload succeeded by looking for CSV files created recently
+            # Pattern matches: study_results_*.csv, hilfo_results_*.csv, etc. (generic for any study)
+            csv_files <- list.files(pattern = ".*_results_.*\\.csv$", full.names = FALSE)
+            if (length(csv_files) > 0) {
+              # Sort by modification time, get most recent
+              csv_files_info <- file.info(csv_files)
+              most_recent <- rownames(csv_files_info)[which.max(csv_files_info$mtime)]
+              # CRITICAL FIX: Increase to 150 seconds to prevent JSON fallback during slow CSV upload
+              file_age <- as.numeric(Sys.time() - csv_files_info[most_recent, "mtime"], units = "secs")
+              if (file_age < 150 && file_age >= 0) {
+                csv_upload_succeeded <- TRUE
+                message("DEBUG: CSV upload detected (recent file found: ", most_recent, ", age: ", round(file_age, 2), "s)")
+              }
+            }
+          } else {
+            # Mark as called immediately to prevent duplicate execution
+            rv$results_processor_called <- TRUE
+            
+            message("DEBUG: Calling results processor even though user selected NO - to ensure data processing and upload")
+            tryCatch({
+              processor_args <- names(formals(config$results_processor))
+              
+              # Use cat_result if available, otherwise use raw responses
+              responses_to_use <- if (!is.null(rv$cat_result) && !is.null(rv$cat_result$responses)) {
+                rv$cat_result$responses
+              } else {
+                rv$responses
+              }
+              
+              # CRITICAL FIX: Pass REAL session object (not mock) so userData changes persist!
+              # This allows results_processor to store CSV data that download buttons can access
+              # Call results processor - it will process data and upload, but we ignore the HTML return
+              # This is GENERIC - works for any study's results processor
+              if ("session" %in% processor_args) {
+                if ("demographics" %in% processor_args) {
+                  config$results_processor(responses_to_use, item_bank, rv$demo_data, session)  # REAL session!
+                } else {
+                  config$results_processor(responses_to_use, item_bank, session = session)  # REAL session!
+                }
+              } else if ("demographics" %in% processor_args) {
+                config$results_processor(responses_to_use, item_bank, rv$demo_data)
+              } else {
+                config$results_processor(responses_to_use, item_bank)
+              }
+              
+              # Check if CSV upload succeeded by looking for recently created CSV files
+              # (R passes lists by value, so mock_session$userData changes won't be visible)
+              # Look for CSV files with generic results pattern (works for any study)
+              # Pattern matches: study_results_*.csv, hilfo_results_*.csv, etc.
+              csv_files <- list.files(pattern = ".*_results_.*\\.csv$", full.names = FALSE)
+              if (length(csv_files) > 0) {
+                csv_files_info <- file.info(csv_files)
+                most_recent <- rownames(csv_files_info)[which.max(csv_files_info$mtime)]
+                # CRITICAL FIX: Increase time window to 150 seconds to account for slow WebDAV uploads
+                # Previously 5 seconds caused JSON fallback to trigger while CSV upload was still in progress,
+                # resulting in simultaneous uploads competing for bandwidth
+                file_age <- as.numeric(Sys.time() - csv_files_info[most_recent, "mtime"], units = "secs")
+                if (file_age < 150 && file_age >= 0) {
+                  csv_upload_succeeded <- TRUE
+                  message("DEBUG: CSV upload detected (file created: ", most_recent, ", age: ", round(file_age, 2), "s)")
+                }
+              }
+              
+              message("DEBUG: Results processor called successfully - data processing and upload should have completed")
+            }, error = function(e) {
+              message("CRITICAL ERROR: Results processor failed when user selected NO: ", e$message)
+              message("This means data processing/upload may have failed - data preserved locally but may not be in cloud!")
+            })
+          }
+        }
+        
+        # Fallback: Save to cloud via save_session_to_cloud if results processor didn't handle it
+        # (This is for studies where results processor doesn't handle cloud upload)
+        # GENERIC solution - works for any study
+        # Note: If results processor already handled upload (e.g., CSV upload), this is just a backup
+        if (config$session_save) {
+          tryCatch({
+            # Get webdav_url and password from rv (stored there by launch_study)
+            webdav_url_to_use <- rv$webdav_url %||% config$webdav_url
+            webdav_password_to_use <- rv$webdav_password %||% config$webdav_password
+            
+            # Check if CSV upload already succeeded (from results processor OR completion handler)
+            # csv_upload_succeeded is set in the tryCatch block above if results processor stored CSV info
+            # Also check rv$csv_uploaded flag (set by completion handlers like HilFo page14a)
+            upload_already_done <- csv_upload_succeeded || isTRUE(rv$csv_uploaded) || isTRUE(rv$data_uploaded_to_cloud)
+            
+            # Only call JSON fallback if CSV upload didn't happen
+            # This prevents duplicate uploads and authentication errors
+            if (!upload_already_done && exists("save_session_to_cloud", where = asNamespace("inrep"), inherits = FALSE)) {
+              message("DEBUG: Attempting JSON fallback cloud save (CSV upload not detected)")
+              result <- inrep:::save_session_to_cloud(rv, config, webdav_url_to_use, webdav_password_to_use)
+              if (result) {
+                message("DEBUG: Fallback cloud save (JSON) succeeded when user selected NO")
+              } else {
+                message("DEBUG: Fallback cloud save (JSON) failed - this is OK if CSV upload already succeeded")
+              }
+            } else if (upload_already_done) {
+              message("DEBUG: Skipping JSON fallback - CSV/data upload already completed")
+            }
+          }, error = function(e) {
+            # Non-critical error - CSV upload already succeeded, so this is just a backup
+            message("DEBUG: Fallback cloud save (JSON) failed (non-critical): ", e$message)
+            message("DEBUG: This is OK if CSV upload already succeeded")
+          })
+        }
+        
+        # Get current language
+        current_lang <- rv$language %||% config$language %||% "de"
+        is_english <- (current_lang == "en")
+        # Return simple thank you message
+        html_no <- paste0(
+          '<div style="padding:40px; text-align:center; font-family: Arial, sans-serif;">',
+          '<div style="background:#f8f9fa; padding:30px; border-radius:10px; border:1px solid #dee2e6; max-width:600px; margin:0 auto;">',
+          '<h2 style="color:#e8041c; margin-bottom:20px;">', 
+          if (is_english) 'Assessment Complete' else 'Vielen Dank für Ihre Teilnahme!',
+          '</h2>',
+          '<p style="color:#666; font-size:16px; margin-bottom:0;">',
+          if (is_english) 'Your data has been saved successfully.' else 'Ihre Daten wurden erfolgreich gespeichert.',
+          '</p>',
+          '</div>',
+          '</div>',
+          '<style>',
+          '.page-title, .study-title, h1:first-child, .results-title { display: none !important; }',
+          '</style>'
+        )
+        # Convert time to seconds if needed
+        if (auto_close_time_unit == "minutes") {
+          auto_close_seconds <- auto_close_time * 60
+        } else {
+          auto_close_seconds <- auto_close_time
+        }
+        
+        # Create auto-close timer UI if not disabled
+        auto_close_ui <- NULL
+        if (!disable_auto_close && auto_close_seconds > 0) {
+          # Get current language for auto-close messages
+          current_lang <- rv$language %||% config$language %||% "de"
+          
+          # Set language-dependent messages
+          auto_close_title <- if (current_lang == "en") "Session will close automatically" else "Die Sitzung wird automatisch geschlossen"
+          
+          auto_close_ui <- shiny::div(
+            id = "auto-close-timer",
+            class = "auto-close-timer",
+            style = "text-align: center; margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; border: 2px solid #007bff;",
+            shiny::h4(auto_close_title, style = "color: #007bff; margin-bottom: 10px;"),
+            shiny::div(
+              id = "countdown-display",
+              style = "font-size: 24px; font-weight: bold; color: #dc3545; margin-bottom: 10px;",
+              shiny::textOutput("countdown_timer", inline = TRUE)
+            )
+          )
+        }
+        
+        return(shiny::div(
+          class = "assessment-card results-container",
+          shiny::HTML(html_no),
+          auto_close_ui
+        ))
+      }
+    }
+  }, silent = TRUE)
+  
   # Use custom results processor if available
   if (!is.null(config$results_processor) && is.function(config$results_processor)) {
     # Check if function accepts demographics parameter
@@ -1756,24 +2212,57 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
     
     # Use cat_result if available (contains cleaned responses), otherwise use raw responses
     if (!is.null(rv$cat_result) && !is.null(rv$cat_result$responses)) {
-      # Check if processor accepts session parameter for language detection
-      if ("session" %in% processor_args) {
-        # Create a mock session object with language info
-        mock_session <- list(input = list(
-          hilfo_language_preference = rv$language,
-          study_language = rv$language,
-          language = rv$language
-        ))
-        if ("demographics" %in% processor_args) {
-          results_content <- config$results_processor(rv$cat_result$responses, item_bank, rv$demo_data, mock_session)
-        } else {
-          results_content <- config$results_processor(rv$cat_result$responses, item_bank, session = mock_session)
-        }
-      } else if ("demographics" %in% processor_args) {
-        results_content <- config$results_processor(rv$cat_result$responses, item_bank, rv$demo_data)
-      } else {
-        results_content <- config$results_processor(rv$cat_result$responses, item_bank)
+      # CRITICAL: ALWAYS preserve data BEFORE calling results processor
+      if (exists("preserve_session_data", mode = "function")) {
+        tryCatch({
+          preserve_session_data(force = TRUE)
+          message("DEBUG: Data preserved before results processor call (cat_result path)")
+        }, error = function(e) {
+          message("WARNING: Data preservation failed before results processor: ", e$message)
+        })
       }
+      
+      # Wrap results processor in tryCatch to ALWAYS preserve data on error
+      results_content <- tryCatch({
+        # Check if processor accepts session parameter for language detection
+        if ("session" %in% processor_args) {
+          # Create a mock session object with language info
+          mock_session <- list(input = list(
+            hilfo_language_preference = rv$language,
+            study_language = rv$language,
+            language = rv$language
+          ))
+          if ("demographics" %in% processor_args) {
+            config$results_processor(rv$cat_result$responses, item_bank, rv$demo_data, mock_session)
+          } else {
+            config$results_processor(rv$cat_result$responses, item_bank, session = mock_session)
+          }
+        } else if ("demographics" %in% processor_args) {
+          config$results_processor(rv$cat_result$responses, item_bank, rv$demo_data)
+        } else {
+          config$results_processor(rv$cat_result$responses, item_bank)
+        }
+      }, error = function(e) {
+        # CRITICAL: ALWAYS preserve data on error BEFORE returning error message
+        message("CRITICAL ERROR in results processor: ", e$message)
+        message("ALWAYS preserving data before returning error...")
+        if (exists("preserve_session_data", mode = "function")) {
+          tryCatch({
+            preserve_session_data(force = TRUE)
+            message("DEBUG: Data preserved after results processor error (cat_result path)")
+          }, error = function(e2) {
+            message("WARNING: Data preservation failed after results processor error: ", e2$message)
+          })
+        }
+        # Return error message HTML
+        shiny::HTML(paste0(
+          '<div style="padding: 20px; color: red;">',
+          '<h2>Error generating report</h2>',
+          '<p>An error occurred while generating your results, but your data has been saved.</p>',
+          '<p>Error: ', gsub("'", "&apos;", e$message), '</p>',
+          '</div>'
+        ))
+      })
     } else {
       # ROBUST: Ensure all responses are collected before processing
       # Don't remove NA values - they might be valid missing responses
@@ -1797,24 +2286,58 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
       }
       
       if (length(all_responses) > 0) {
-        # Check if processor accepts session parameter for language detection
-        if ("session" %in% processor_args) {
-          # Create a mock session object with language info
-          mock_session <- list(input = list(
-            hilfo_language_preference = rv$language,
-            study_language = rv$language,
-            language = rv$language
-          ))
-          if ("demographics" %in% processor_args) {
-            results_content <- config$results_processor(all_responses, item_bank, rv$demo_data, mock_session)
-          } else {
-            results_content <- config$results_processor(all_responses, item_bank, session = mock_session)
-          }
-        } else if ("demographics" %in% processor_args) {
-          results_content <- config$results_processor(all_responses, item_bank, rv$demo_data)
-        } else {
-          results_content <- config$results_processor(all_responses, item_bank)
+        # CRITICAL: ALWAYS preserve data BEFORE calling results processor
+        # This ensures data is saved even if results processor crashes
+        if (exists("preserve_session_data", mode = "function")) {
+          tryCatch({
+            preserve_session_data(force = TRUE)
+            message("DEBUG: Data preserved before results processor call")
+          }, error = function(e) {
+            message("WARNING: Data preservation failed before results processor: ", e$message)
+          })
         }
+        
+        # Wrap results processor in tryCatch to ALWAYS preserve data on error
+        results_content <- tryCatch({
+          # Check if processor accepts session parameter for language detection
+          if ("session" %in% processor_args) {
+            # Create a mock session object with language info
+            mock_session <- list(input = list(
+              hilfo_language_preference = rv$language,
+              study_language = rv$language,
+              language = rv$language
+            ))
+            if ("demographics" %in% processor_args) {
+              config$results_processor(all_responses, item_bank, rv$demo_data, mock_session)
+            } else {
+              config$results_processor(all_responses, item_bank, session = mock_session)
+            }
+          } else if ("demographics" %in% processor_args) {
+            config$results_processor(all_responses, item_bank, rv$demo_data)
+          } else {
+            config$results_processor(all_responses, item_bank)
+          }
+        }, error = function(e) {
+          # CRITICAL: ALWAYS preserve data on error BEFORE returning error message
+          message("CRITICAL ERROR in results processor: ", e$message)
+          message("ALWAYS preserving data before returning error...")
+          if (exists("preserve_session_data", mode = "function")) {
+            tryCatch({
+              preserve_session_data(force = TRUE)
+              message("DEBUG: Data preserved after results processor error")
+            }, error = function(e2) {
+              message("WARNING: Data preservation failed after results processor error: ", e2$message)
+            })
+          }
+          # Return error message HTML
+          shiny::HTML(paste0(
+            '<div style="padding: 20px; color: red;">',
+            '<h2>Error generating report</h2>',
+            '<p>An error occurred while generating your results, but your data has been saved.</p>',
+            '<p>Error: ', gsub("'", "&apos;", e$message), '</p>',
+            '</div>'
+          ))
+        })
       } else {
         results_content <- shiny::HTML("<p>Keine Antworten zur Auswertung verfügbar.</p>")
       }
@@ -1998,13 +2521,23 @@ render_page_navigation <- function(rv, config, current_page_idx) {
 }
 
 #' Create demographic input element
-create_demographic_input <- function(input_id, demo_config, input_type, current_value = NULL, language = "de") {
+create_demographic_input <- function(input_id,
+                                     demo_config,
+                                     input_type,
+                                     current_value = NULL,
+                                     language = "de",
+                                     demographic_name = NULL,
+                                     current_other_value = NULL,
+                                     other_input_id = NULL) {
   # Debug logging for checkbox issues
   if (input_type == "checkbox" && getOption("inrep.debug", FALSE)) {
     cat("DEBUG: Creating checkbox for", input_id, "\n")
     cat("  Options:", str(demo_config$options), "\n")
     cat("  Current value:", current_value, "\n")
   }
+  
+  demographic_name <- demographic_name %||% demo_config$field_name %||% input_id
+  other_input_id <- other_input_id %||% paste0(input_id, "_other")
   
   # Get language-specific options
   options_to_use <- if (language == "en" && !is.null(demo_config$options_en)) {
@@ -2014,7 +2547,22 @@ create_demographic_input <- function(input_id, demo_config, input_type, current_
   }
   
   # Get language-specific placeholder
-  placeholder_text <- if (language == "en") "Please select..." else "Bitte wählen..."
+  labels <- get_language_labels(language)
+  placeholder_text <- labels$please_select
+  other_label <- if (language == "en" && !is.null(demo_config$other_label_en)) {
+    demo_config$other_label_en
+  } else {
+    demo_config$other_label %||% labels$please_specify
+  }
+  other_placeholder <- if (language == "en" && !is.null(demo_config$other_placeholder_en)) {
+    demo_config$other_placeholder_en
+  } else {
+    demo_config$other_placeholder %||% ""
+  }
+  if (!is.null(current_other_value) && is.na(current_other_value)) {
+    current_other_value <- ""
+  }
+  current_other_value <- current_other_value %||% ""
   
   switch(input_type,
     "text" = shiny::textInput(
@@ -2034,21 +2582,227 @@ create_demographic_input <- function(input_id, demo_config, input_type, current_
       width = "100%"
     ),
     
-    "select" = shiny::selectInput(
-      inputId = input_id,
-      label = NULL,
-      choices = c(setNames("", placeholder_text), options_to_use),
-      selected = current_value %||% "",
-      width = "100%"
-    ),
+    "select" = {
+      select_input <- shiny::selectInput(
+        inputId = input_id,
+        label = NULL,
+        choices = c(setNames("", placeholder_text), options_to_use),
+        selected = current_value %||% "",
+        width = "100%"
+      )
+      
+      if (isTRUE(demo_config$allow_other_text)) {
+        other_container_id <- paste0(other_input_id, "_container")
+        other_container <- shiny::div(
+          id = other_container_id,
+          class = paste("other-field-container", paste0("other-field-", input_id)),
+          style = if (!is.null(current_value) && identical(as.character(current_value), "other")) "" else "display: none;",
+          shiny::textInput(
+            inputId = other_input_id,
+            label = other_label,
+            value = current_other_value,
+            placeholder = other_placeholder,
+            width = "100%"
+          )
+        )
+        
+        toggle_script <- shiny::tags$script(shiny::HTML(sprintf("
+          (function() {
+            function initToggle%1$s() {
+              var selectEl = $('#%1$s');
+              var container = $('#%2$s');
+              if (!container.length) return;
+              
+              function toggleOther(value) {
+                if (value === 'other') {
+                  container.stop(true, true).slideDown(150);
+                } else {
+                  container.stop(true, true).slideUp(150);
+                }
+              }
+              
+              if (selectEl.length) {
+                toggleOther(selectEl.val());
+                selectEl.on('change.inrepOther', function() {
+                  toggleOther($(this).val());
+                });
+              }
+            }
+            
+            if (document.readyState !== 'loading') {
+              initToggle%1$s();
+            } else {
+              document.addEventListener('DOMContentLoaded', initToggle%1$s, { once: true });
+            }
+            
+            $(document).on('shiny:value', function(ev) {
+              if (ev.name === '%1$s') {
+                $('#%1$s').trigger('change.inrepOther');
+              }
+            });
+          })();
+        ", input_id, other_container_id)))
+        
+        shiny::tagList(select_input, other_container, toggle_script)
+      } else {
+        select_input
+      }
+    },
     
-    "radio" = shiny::radioButtons(
-      inputId = input_id,
-      label = NULL,
-      choices = options_to_use,
-      selected = current_value %||% character(0),
-      width = "100%"
-    ),
+    "radio" = {
+      radio_input <- shiny::radioButtons(
+        inputId = input_id,
+        label = NULL,
+        choices = options_to_use,
+        selected = current_value %||% character(0),
+        width = "100%"
+      )
+      
+      if (isTRUE(demo_config$allow_other_text)) {
+        other_container_id <- paste0(other_input_id, "_container")
+        other_container <- shiny::div(
+          id = other_container_id,
+          class = paste("other-field-container", paste0("other-field-", input_id)),
+          style = if (!is.null(current_value) && identical(as.character(current_value), "other")) "" else "display: none;",
+          shiny::textInput(
+            inputId = other_input_id,
+            label = other_label,
+            value = current_other_value,
+            placeholder = other_placeholder,
+            width = "100%"
+          )
+        )
+        
+        toggle_script <- shiny::tags$script(shiny::HTML(sprintf("
+          (function() {
+            function initToggle%1$s() {
+              var radioEls = $('input[name=\"%1$s\"]');
+              var container = $('#%2$s');
+              if (!container.length) return;
+              
+              function toggleOther(value) {
+                if (value === 'other') {
+                  container.stop(true, true).slideDown(150);
+                } else {
+                  container.stop(true, true).slideUp(150);
+                }
+              }
+              
+              if (radioEls.length) {
+                toggleOther(radioEls.filter(':checked').val());
+                radioEls.on('change.inrepOther', function() {
+                  toggleOther($(this).val());
+                });
+              }
+            }
+            
+            if (document.readyState !== 'loading') {
+              initToggle%1$s();
+            } else {
+              document.addEventListener('DOMContentLoaded', initToggle%1$s, { once: true });
+            }
+            
+            $(document).on('shiny:value', function(ev) {
+              if (ev.name === '%1$s') {
+                $('input[name=\"%1$s\"]').trigger('change.inrepOther');
+              }
+            });
+          })();
+        ", input_id, other_container_id)))
+        
+        shiny::tagList(radio_input, other_container, toggle_script)
+      } else {
+        radio_input
+      }
+    },
+    
+        "slider" = {
+      min_val <- if (!is.null(demo_config$min)) demo_config$min else 0
+      max_val <- if (!is.null(demo_config$max)) demo_config$max else 100
+      step_val <- if (!is.null(demo_config$step)) demo_config$step else 1
+      default_val <- NULL
+      if (!is.null(current_value) && !is.na(current_value)) {
+        suppressWarnings({
+          default_val <- as.numeric(current_value)
+        })
+      }
+      if (is.null(default_val) || is.na(default_val)) {
+        default_val <- if (!is.null(demo_config$default)) demo_config$default else round((min_val + max_val) / 2)
+      }
+      # Ensure default within range
+      default_val <- max(min(default_val, max_val), min_val)
+      
+      # Get language-aware labels for slider endpoints
+      label_min <- if (language == "en" && !is.null(demo_config$label_min_en)) {
+        demo_config$label_min_en
+      } else {
+        demo_config$label_min
+      }
+      
+      label_max <- if (language == "en" && !is.null(demo_config$label_max_en)) {
+        demo_config$label_max_en
+      } else {
+        demo_config$label_max
+      }
+      
+      # Create slider with optional labels
+      slider_ui <- shiny::sliderInput(
+        inputId = input_id,
+        label = NULL,
+        min = min_val,
+        max = max_val,
+        value = default_val,
+        step = step_val,
+        width = "100%"
+      )
+      
+      # Wrap with custom CSS to fix overlap and positioning
+      slider_wrapper <- shiny::div(
+        class = "inrep-slider-wrapper",
+        shiny::tags$style(shiny::HTML(sprintf("
+          .inrep-slider-wrapper .irs {
+            margin-top: 15px !important;
+            margin-bottom: 25px !important;
+          }
+          .inrep-slider-wrapper .irs-line,
+          .inrep-slider-wrapper .irs-bar {
+            height: 8px !important;
+          }
+          .inrep-slider-wrapper .irs-handle {
+            width: 20px !important;
+            height: 20px !important;
+            top: 20px !important;
+            cursor: pointer !important;
+          }
+          .inrep-slider-wrapper .irs-min,
+          .inrep-slider-wrapper .irs-max {
+            display: none !important;
+          }
+          .inrep-slider-wrapper .irs-single {
+            top: -5px !important;
+          }
+          .inrep-slider-wrapper .irs-grid {
+            display: none !important;
+          }
+        "))),
+        slider_ui
+      )
+      
+      # Wrap with labels if provided
+      if (!is.null(label_min) || !is.null(label_max)) {
+        shiny::div(
+          slider_wrapper,
+          shiny::div(
+            style = "display: flex; justify-content: space-between; margin-top: -15px; font-size: 12px; color: #666;",
+            shiny::span(label_min %||% ""),
+            shiny::span(label_max %||% "")
+          )
+        )
+      } else {
+        slider_wrapper
+      }
+    },
+    
     
     "checkbox" = {
       if (length(demo_config$options) == 1) {
@@ -2115,14 +2869,53 @@ create_demographic_input <- function(input_id, demo_config, input_type, current_
           value = final_value
         )
       } else {
-        # Multiple checkboxes
-        shiny::checkboxGroupInput(
+        # Multiple checkboxes (checkbox group)
+        labels <- get_language_labels(language)
+        
+        checkbox_ui <- shiny::checkboxGroupInput(
           inputId = input_id,
           label = NULL,
           choices = demo_config$options,
           selected = current_value %||% character(0),
           width = "100%"
         )
+        
+        # Add "other" text field if allow_other_text is TRUE
+        if (!is.null(demo_config$allow_other_text) && demo_config$allow_other_text) {
+          other_label <- if (language == "en" && !is.null(demo_config$other_label_en)) {
+            demo_config$other_label_en
+          } else {
+            demo_config$other_label %||% labels$please_specify
+          }
+          
+          other_placeholder <- if (language == "en" && !is.null(demo_config$other_placeholder_en)) {
+            demo_config$other_placeholder_en
+          } else {
+            demo_config$other_placeholder %||% labels$enter_details
+          }
+          
+          # Use current_other_value if provided, otherwise empty
+          other_value <- current_other_value %||% ""
+          
+          shiny::div(
+            checkbox_ui,
+            shiny::conditionalPanel(
+              condition = sprintf("input.%s && input.%s.includes('other')", input_id, input_id),
+              shiny::div(
+                style = "margin-top: 10px;",
+                shiny::textInput(
+                  inputId = paste0(input_id, "_other"),
+                  label = other_label,
+                  placeholder = other_placeholder,
+                  value = other_value,
+                  width = "100%"
+                )
+              )
+            )
+          )
+        } else {
+          checkbox_ui
+        }
       }
     },
     
@@ -2423,38 +3216,69 @@ validate_page_progression <- function(current_page, input, config) {
   errors <- character()
   missing_fields <- character()
   
+  # Get current language from config (passed from launch_study)
+  current_lang <- config$current_language %||% config$language %||% "de"
+  
+  # DEFENSIVE: Ensure page$type is a valid string
+  page_type <- page$type
+  if (is.null(page_type) || length(page_type) == 0 || is.na(page_type)) {
+    page_type <- "custom"  # Default to custom page type
+  }
+  
   # Check based on page type
-  if (page$type == "instructions" && isTRUE(page$consent)) {
-    # Check consent checkbox
-    if (!isTRUE(input$consent_checkbox)) {
-      errors <- c(errors, "Bitte bestätigen Sie Ihre Einverständnis zur Teilnahme.")
+  if (page_type == "instructions" && isTRUE(page$consent)) {
+    # Check consent checkbox - ensure single logical result
+    consent_checked <- isTRUE(input$consent_checkbox)
+    if (!consent_checked) {
+      # CRITICAL: Use language-aware consent message
+      consent_msg <- if (current_lang == "en") {
+        "Please confirm your consent to participate."
+      } else {
+        "Bitte bestätigen Sie Ihre Einverständnis zur Teilnahme."
+      }
+      errors <- c(errors, consent_msg)
     }
-  } else if (page$type == "demographics") {
+  } else if (page_type == "demographics") {
     # Check all required demographics
     demo_vars <- page$demographics
-    for (dem in demo_vars) {
-      demo_config <- config$demographic_configs[[dem]]
-      if (isTRUE(demo_config$required)) {
-        input_id <- paste0("demo_", dem)
-        value <- input[[input_id]]
-        
-        if (is.null(value) || value == "" || (is.character(value) && nchar(trimws(value)) == 0)) {
-          question <- demo_config$question %||% dem
-          # Truncate long questions for error message
-          if (nchar(question) > 50) {
-            question <- paste0(substr(question, 1, 47), "...")
+    if (!is.null(demo_vars) && length(demo_vars) > 0) {
+      for (dem in demo_vars) {
+        demo_config <- config$demographic_configs[[dem]]
+        if (isTRUE(demo_config$required)) {
+          input_id <- paste0("demo_", dem)
+          value <- input[[input_id]]
+          
+          # FIX: Handle vectors (checkboxes) safely - check length first, handle NA properly
+          is_empty <- is.null(value) || length(value) == 0 || 
+                      all(is.na(value)) ||
+                      (is.character(value) && all(value == "" | is.na(value))) || 
+                      (is.character(value) && length(value) == 1 && !is.na(value) && nchar(trimws(value)) == 0)
+          
+          # Ensure is_empty is a single logical value
+          is_empty <- isTRUE(is_empty)
+          
+          if (is_empty) {
+            # Use language-appropriate question text
+            question <- if (current_lang == "en" && !is.null(demo_config$question_en)) {
+              demo_config$question_en
+            } else {
+              demo_config$question %||% dem
+            }
+            # Truncate long questions for error message
+            if (nchar(question) > 50) {
+              question <- paste0(substr(question, 1, 47), "...")
+            }
+            # Use current_lang from top of function
+            error_prefix <- if (current_lang == "en") "Please answer: " else "Bitte beantworten Sie: "
+            errors <- c(errors, paste0(error_prefix, question))
+            missing_fields <- c(missing_fields, input_id)
           }
-          # Get language from rv or config
-          current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
-          error_prefix <- if (current_lang == "en") "Please answer: " else "Bitte beantworten Sie: "
-          errors <- c(errors, paste0(error_prefix, question))
-          missing_fields <- c(missing_fields, input_id)
         }
       }
     }
-  } else if (page$type == "items") {
-    # Check all items have responses
-    if (!is.null(page$item_indices)) {
+  } else if (page_type == "items") {
+    # Check all items have responses (only if page$required is not explicitly FALSE)
+    if (!isFALSE(page$required)) {
       # Try to get item_bank from config or parent environment
       item_bank <- config$item_bank
       if (is.null(item_bank) && exists("item_bank", envir = parent.frame())) {
@@ -2462,15 +3286,47 @@ validate_page_progression <- function(current_page, input, config) {
       }
       
       if (!is.null(item_bank)) {
-        for (i in page$item_indices) {
-          # Get the actual item from the item bank
-          if (i <= nrow(item_bank)) {
-            item <- item_bank[i, ]
-            # Use the item's id field if available, otherwise use index
-            item_id <- paste0("item_", item$id %||% i)
-            if (is.null(input[[item_id]]) || input[[item_id]] == "") {
-              # Get language
-              current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
+        # Determine which items to check
+        items_to_check <- NULL
+        
+        if (!is.null(page$item_indices)) {
+          # Fixed items page
+          items_to_check <- page$item_indices
+        } else {
+          # Adaptive page (item_indices = NULL) - get from cached selection
+          # This requires access to session$userData$page_selected_items
+          if (exists("session", envir = parent.frame())) {
+            session <- get("session", envir = parent.frame())
+            page_id <- page$id %||% paste0("page_", current_page)
+            
+            if (!is.null(session$userData$page_selected_items) && 
+                !is.null(session$userData$page_selected_items[[page_id]])) {
+              items_to_check <- session$userData$page_selected_items[[page_id]]
+              cat("VALIDATION: Adaptive page", page_id, "- checking item", items_to_check, "\n")
+            }
+          }
+        }
+        
+        # Validate selected items have responses
+        if (!is.null(items_to_check) && length(items_to_check) > 0) {
+          for (i in items_to_check) {
+            # DEFENSIVE: Skip invalid indices
+            if (is.na(i) || i < 1 || i > nrow(item_bank)) {
+              next
+            }
+            
+            # MUST match UI rendering logic at line 1747: item_id <- item$id %||% paste0("item_", actual_idx)
+            item <- item_bank[i, , drop = FALSE]
+            item_id <- if(!is.null(item$id) && length(item$id) > 0 && !is.na(item$id[1])) item$id[1] else paste0("item_", i)
+            
+            # DEFENSIVE: Check for null, empty, or NA values safely
+            item_value <- input[[item_id]]
+            is_missing <- is.null(item_value) || 
+                          length(item_value) == 0 || 
+                          (length(item_value) == 1 && (is.na(item_value[1]) || identical(item_value, "")))
+            
+            if (isTRUE(is_missing)) {
+              # Use current_lang from top of function
               error_msg <- if (current_lang == "en") {
                 "Please answer all questions on this page."
               } else {
@@ -2484,56 +3340,26 @@ validate_page_progression <- function(current_page, input, config) {
         }
       }
     }
-  } else if (page$type == "custom" && isTRUE(page$required)) {
+  } else if (page_type == "custom" && isTRUE(page$required)) {
     # Handle custom pages with required fields
     # Check for specific required fields if defined
-    if (!is.null(page$required_fields)) {
+    if (!is.null(page$required_fields) && length(page$required_fields) > 0) {
       for (field in page$required_fields) {
         value <- input[[field]]
-        if (is.null(value) || value == "" || (is.character(value) && nchar(trimws(value)) == 0)) {
-          # Get language
-          current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
-          error_msg <- if (current_lang == "en") {
-            "Please complete all required fields on this page."
-          } else {
-            "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
-          }
+        # DEFENSIVE: Safely check for empty values
+        is_empty <- is.null(value) || length(value) == 0 || 
+                    (length(value) == 1 && (is.na(value[1]) || (is.character(value) && nchar(trimws(value)) == 0)))
+        if (isTRUE(is_empty)) {
+          # Get language - use current_lang from top of function
+          labels <- get_language_labels(current_lang)
+          error_msg <- labels$demo_error %||% (if(current_lang == "en") "Please fill in required fields." else "Bitte füllen Sie die erforderlichen Felder aus.")
           errors <- c(errors, error_msg)
           missing_fields <- c(missing_fields, field)
         }
       }
-    } else {
-      # For custom pages without specific required_fields, check common input patterns
-      # This handles cases like page2 with demo_Teilnahme_Code
-      page_id <- page$id %||% paste0("page_", current_page)
-      
-      # Check for demographic-style inputs (demo_ prefix)
-      if (page_id == "page2") {
-        # Special case for page2 - check for code input
-        code_value <- input$demo_Teilnahme_Code
-        if (is.null(code_value) || trimws(code_value) == "") {
-          current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
-          error_msg <- if (current_lang == "en") {
-            "Please complete all required fields on this page."
-          } else {
-            "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
-          }
-          errors <- c(errors, error_msg)
-          missing_fields <- c(missing_fields, "demo_Teilnahme_Code")
-        }
-      } else {
-        # Generic check for other custom pages - look for any input fields
-        # This is a fallback for custom pages that don't specify required_fields
-        # but still need validation
-        current_lang <- if (exists("rv") && !is.null(rv$language)) rv$language else "de"
-        error_msg <- if (current_lang == "en") {
-          "Please complete all required fields on this page."
-        } else {
-          "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
-        }
-        errors <- c(errors, error_msg)
-      }
     }
+    # NOTE: Custom pages without required_fields but required=TRUE are considered valid
+    # This prevents false positives for pages that don't have explicit input requirements
   }
   
   return(list(
@@ -2545,15 +3371,16 @@ validate_page_progression <- function(current_page, input, config) {
 
 #' Create filter page with actual functionality
 #' @export
-create_filter_page <- function(input, config) {
+create_filter_page <- function(input, config, language = "de") {
   # Get the selected study program
   studiengang <- input$demo_Studiengang
   
   if (is.null(studiengang) || studiengang == "") {
+    labels <- get_language_labels(language)
     return(shiny::div(
       class = "assessment-card",
       shiny::h3("Filter", class = "card-header"),
-      shiny::p("Bitte wählen Sie zuerst Ihren Studiengang aus.",
+      shiny::p(labels$please_select,
                style = "padding: 20px; color: #dc3545;")
     ))
   }
@@ -2600,11 +3427,8 @@ show_validation_errors <- function(errors, language = "de") {
   if (length(errors) == 0) return(NULL)
   
   # Use passed language or default to German
-  header_text <- if (language == "en") {
-    "Please complete the following:"
-  } else {
-    "Bitte vervollständigen Sie die folgenden Angaben:"
-  }
+  labels <- get_language_labels(language)
+  header_text <- labels$demo_error
   
   shiny::div(
     class = "validation-error",

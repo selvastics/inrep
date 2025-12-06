@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>inrep - Advanced Theme System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.15.3/ace.js"></script>
     <style>
         /* Design tokens - Foundation for theming */
         :root {
@@ -454,14 +455,50 @@
             --theme-name: "Berry";
         }
 
+        /* Code Editor */
+        .code-editor-container {
+            margin: 1rem 0;
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+
+        .code-editor {
+            width: 100%;
+            height: 300px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .editor-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-klee {
+            flex: 1;
+            min-width: 120px;
+        }
+
         /* Responsive Design */
         @media (max-width: 900px) {
             .container {
                 grid-template-columns: 1fr;
             }
-            
+
             .theme-editor {
                 position: static;
+            }
+
+            .editor-controls {
+                flex-direction: column;
+            }
+
+            .btn-klee {
+                width: 100%;
             }
         }
     </style>
@@ -602,121 +639,196 @@
             </div>
             
             <div class="theme-export">
-                <h3><i class="fas fa-code"></i> Theme Export</h3>
-                <p>Add this CSS to your package:</p>
-                <div class="code-block" id="theme-css">
+                <h3><i class="fas fa-code"></i> CSS Editor</h3>
+                <p>Live CSS preview and editing:</p>
+                <div class="code-editor-container">
+                    <div id="css_output" class="code-editor">
 [data-theme="custom"] {
     --body-bg: #f8f9fa;
     --text-primary: #212529;
     --card-bg: #ffffff;
     --primary: #212529;
-    /* ... */
+    /* Add your custom styles here */
 }</div>
-                <button class="btn-klee btn-secondary" id="copy-code">
-                    <i class="fas fa-copy"></i> Copy CSS
-                </button>
+                </div>
+                <div class="editor-controls">
+                    <button class="btn-klee btn-secondary" id="copy-code">
+                        <i class="fas fa-copy"></i> Copy CSS
+                    </button>
+                    <button class="btn-klee btn-secondary" id="export-css">
+                        <i class="fas fa-download"></i> Download CSS
+                    </button>
+                    <button class="btn-klee btn-secondary" id="export-json">
+                        <i class="fas fa-file-code"></i> Export JSON
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
+        // Initialize ACE editor
+        const editor = ace.edit('css_output', {
+            mode: 'ace/mode/css',
+            theme: 'ace/theme/monokai',
+            fontSize: 14,
+            showGutter: true,
+            highlightActiveLine: true,
+            enableBasicAutocompletion: true,
+            enableLiveAutocompletion: true,
+            wrap: true,
+            autoScrollEditorIntoView: true
+        });
+
         // Theme switching
         document.querySelectorAll('.theme-option').forEach(option => {
             option.addEventListener('click', () => {
                 const theme = option.getAttribute('data-theme');
                 document.body.setAttribute('data-theme', theme);
-                
+
                 // Update active state
                 document.querySelectorAll('.theme-option').forEach(opt => {
                     opt.classList.remove('active');
                 });
                 option.classList.add('active');
-                
+
                 // Update theme name display
-                document.querySelector('.theme-name').textContent = 
+                document.querySelector('.theme-name').textContent =
                     document.querySelector(`.theme-option[data-theme="${theme}"] span`).textContent + " Theme";
-                
+
                 // Update theme editor values to current theme
                 updateEditorValues();
+
+                // Update CSS editor
+                updateCSSEditor();
             });
         });
         
-        // Update theme name display
+        // Update theme editor values
         function updateEditorValues() {
             const computed = getComputedStyle(document.documentElement);
-            document.getElementById('primary-color').value = rgbToHex(computed.getPropertyValue('--primary'));
-            document.getElementById('primary-text').value = rgbToHex(computed.getPropertyValue('--primary'));
-            document.getElementById('bg-color').value = rgbToHex(computed.getPropertyValue('--body-bg'));
-            document.getElementById('bg-text').value = rgbToHex(computed.getPropertyValue('--body-bg'));
-            document.getElementById('card-bg-color').value = rgbToHex(computed.getPropertyValue('--card-bg'));
-            document.getElementById('card-bg-text').value = rgbToHex(computed.getPropertyValue('--card-bg'));
-            document.getElementById('text-color').value = rgbToHex(computed.getPropertyValue('--text-primary'));
-            document.getElementById('text-text').value = rgbToHex(computed.getPropertyValue('--text-primary'));
+
+            // Update primary color inputs
+            const primaryColor = rgbToHex(computed.getPropertyValue('--primary-color') || computed.getPropertyValue('--color-primary') || '#007bff');
+            document.getElementById('primary-color').value = primaryColor;
+            document.getElementById('primary-text').value = primaryColor;
+
+            // Update background color inputs
+            const bgColor = rgbToHex(computed.getPropertyValue('--background-color') || computed.getPropertyValue('--color-background') || '#ffffff');
+            document.getElementById('bg-color').value = bgColor;
+            document.getElementById('bg-text').value = bgColor;
+
+            // Update card background color inputs
+            const cardBgColor = rgbToHex(computed.getPropertyValue('--surface-color') || computed.getPropertyValue('--color-surface') || '#f8f9fa');
+            document.getElementById('card-bg-color').value = cardBgColor;
+            document.getElementById('card-bg-text').value = cardBgColor;
+
+            // Update text color inputs
+            const textColor = rgbToHex(computed.getPropertyValue('--text-color') || computed.getPropertyValue('--color-text') || '#212529');
+            document.getElementById('text-color').value = textColor;
+            document.getElementById('text-text').value = textColor;
+        }
+
+        // Update CSS editor with current theme
+        function updateCSSEditor() {
+            const theme = document.body.getAttribute('data-theme') || 'light';
+            const computed = getComputedStyle(document.documentElement);
+
+            let css = `[data-theme="${theme}"] {\n`;
+
+            // Core colors
+            css += `    --primary-color: ${rgbToHex(computed.getPropertyValue('--primary-color') || computed.getPropertyValue('--color-primary') || '#007bff')};\n`;
+            css += `    --secondary-color: ${rgbToHex(computed.getPropertyValue('--secondary-color') || computed.getPropertyValue('--color-secondary') || '#6c757d')};\n`;
+            css += `    --success-color: ${rgbToHex(computed.getPropertyValue('--success-color') || computed.getPropertyValue('--color-success') || '#28a745')};\n`;
+            css += `    --info-color: ${rgbToHex(computed.getPropertyValue('--info-color') || computed.getPropertyValue('--color-info') || '#17a2b8')};\n`;
+            css += `    --warning-color: ${rgbToHex(computed.getPropertyValue('--warning-color') || computed.getPropertyValue('--color-warning') || '#ffc107')};\n`;
+            css += `    --danger-color: ${rgbToHex(computed.getPropertyValue('--danger-color') || computed.getPropertyValue('--color-danger') || '#dc3545')};\n`;
+            css += `    --background-color: ${rgbToHex(computed.getPropertyValue('--background-color') || computed.getPropertyValue('--color-background') || '#ffffff')};\n`;
+            css += `    --surface-color: ${rgbToHex(computed.getPropertyValue('--surface-color') || computed.getPropertyValue('--color-surface') || '#f8f9fa')};\n`;
+            css += `    --text-color: ${rgbToHex(computed.getPropertyValue('--text-color') || computed.getPropertyValue('--color-text') || '#212529')};\n`;
+            css += `    --text-secondary-color: ${rgbToHex(computed.getPropertyValue('--text-secondary-color') || computed.getPropertyValue('--color-text-secondary') || '#6c757d')};\n`;
+            css += `    --border-color: ${rgbToHex(computed.getPropertyValue('--border-color') || computed.getPropertyValue('--color-border') || '#dee2e6')};\n`;
+
+            // Typography
+            css += `    --font-heading: ${computed.getPropertyValue('--font-heading') || computed.getPropertyValue('--font-family') || 'system-ui, sans-serif'};\n`;
+            css += `    --font-body: ${computed.getPropertyValue('--font-body') || computed.getPropertyValue('--font-family') || 'system-ui, sans-serif'};\n`;
+
+            // Layout
+            css += `    --border-radius: ${computed.getPropertyValue('--border-radius') || '8px'};\n`;
+            css += `    --border-width: ${computed.getPropertyValue('--border-width') || '1px'};\n`;
+
+            css += `}\n\n`;
+            css += `/* Generated by inrep Theme Editor */\n`;
+            css += `/* Compatible with both --primary-color and --color-primary naming conventions */\n`;
+
+            editor.setValue(css);
         }
         
         // Helper to convert RGB to HEX
         function rgbToHex(rgb) {
             if (rgb.startsWith('#')) return rgb;
-            
+
             // Extract RGB values
             const match = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*\d+\.?\d*)?\)/);
             if (!match) return '#000000';
-            
+
             const r = parseInt(match[1]);
             const g = parseInt(match[2]);
             const b = parseInt(match[3]);
-            
+
             return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
         }
-        
+
         // Initialize editor values
         updateEditorValues();
-        
+        updateCSSEditor();
+
         // Color picker updates
         document.querySelectorAll('.color-picker').forEach(picker => {
             picker.addEventListener('input', (e) => {
                 const id = e.target.id;
                 const textId = id.replace('color', 'text');
-                document.getElementById(textId).value = e.target.value;
-                
+                if (document.getElementById(textId)) {
+                    document.getElementById(textId).value = e.target.value;
+                }
+
                 // Update CSS variable in real-time
                 const varName = id.replace('-color', '').replace('-', '-');
                 document.documentElement.style.setProperty(`--${varName}`, e.target.value);
+
+                // Update CSS editor
+                updateCSSEditor();
             });
         });
-        
+
         // Text input updates
         document.querySelectorAll('.form-control').forEach(input => {
             input.addEventListener('input', (e) => {
                 const id = e.target.id;
                 if (id.includes('text') && /^#[0-9A-F]{6}$/i.test(e.target.value)) {
                     const pickerId = id.replace('text', 'color');
-                    document.getElementById(pickerId).value = e.target.value;
-                    
+                    if (document.getElementById(pickerId)) {
+                        document.getElementById(pickerId).value = e.target.value;
+                    }
+
                     // Update CSS variable
                     const varName = id.replace('-text', '').replace('-', '-');
                     document.documentElement.style.setProperty(`--${varName}`, e.target.value);
+
+                    // Update CSS editor
+                    updateCSSEditor();
                 }
             });
         });
-        
+
         // Save custom theme
         document.getElementById('save-theme').addEventListener('click', () => {
             const themeName = document.getElementById('custom-theme-name').value || 'custom';
             const themeNameSlug = themeName.toLowerCase().replace(/\s+/g, '-');
-            
-            // Generate CSS for the theme
-            const css = `[data-theme="${themeNameSlug}"] {\n` +
-                `    --body-bg: ${document.getElementById('bg-text').value};\n` +
-                `    --text-primary: ${document.getElementById('text-text').value};\n` +
-                `    --card-bg: ${document.getElementById('card-bg-text').value};\n` +
-                `    --primary: ${document.getElementById('primary-text').value};\n` +
-                `    /* Add more properties as needed */\n` +
-                `}`;
-            
-            // Display generated CSS
-            document.getElementById('theme-css').textContent = css;
-            
+
+            // Generate CSS for the theme using the current editor content
+            const css = editor.getValue();
+
             // Add to theme selector
             const newThemeOption = document.createElement('div');
             newThemeOption.className = 'theme-option';
@@ -724,38 +836,98 @@
             newThemeOption.style.backgroundColor = document.getElementById('bg-text').value;
             newThemeOption.style.color = document.getElementById('text-text').value;
             newThemeOption.innerHTML = `<i class="fas fa-star"></i><span>${themeName}</span>`;
-            
+
             // Add click handler to switch to new theme
             newThemeOption.addEventListener('click', function() {
                 document.body.setAttribute('data-theme', themeNameSlug);
-                
+
                 document.querySelectorAll('.theme-option').forEach(opt => {
                     opt.classList.remove('active');
                 });
                 this.classList.add('active');
-                
+
                 document.querySelector('.theme-name').textContent = themeName + " Theme";
+
+                // Update editor values for the new theme
+                setTimeout(() => {
+                    updateEditorValues();
+                    updateCSSEditor();
+                }, 100);
             });
-            
+
             document.querySelector('.theme-selector').appendChild(newThemeOption);
-            
-            alert(`"${themeName}" theme created! Add it to your package using the CSS above.`);
+
+            alert(`"${themeName}" theme created! The CSS is ready in the editor below.`);
         });
-        
+
         // Copy CSS to clipboard
         document.getElementById('copy-code').addEventListener('click', () => {
+            const cssContent = editor.getValue();
             const textarea = document.createElement('textarea');
-            textarea.value = document.getElementById('theme-css').textContent;
+            textarea.value = cssContent;
             document.body.appendChild(textarea);
             textarea.select();
             document.execCommand('copy');
             document.body.removeChild(textarea);
-            
+
             const originalText = document.getElementById('copy-code').innerHTML;
             document.getElementById('copy-code').innerHTML = '<i class="fas fa-check"></i> Copied!';
             setTimeout(() => {
                 document.getElementById('copy-code').innerHTML = originalText;
             }, 2000);
+        });
+
+        // Export CSS file
+        document.getElementById('export-css').addEventListener('click', () => {
+            const cssContent = editor.getValue();
+            const blob = new Blob([cssContent], { type: 'text/css' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'custom_theme.css';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        // Export JSON configuration
+        document.getElementById('export-json').addEventListener('click', () => {
+            const computed = getComputedStyle(document.documentElement);
+            const themeConfig = {
+                name: document.querySelector('.theme-name').textContent.replace(' Theme', ''),
+                colors: {
+                    primary: rgbToHex(computed.getPropertyValue('--primary-color') || computed.getPropertyValue('--color-primary') || '#007bff'),
+                    secondary: rgbToHex(computed.getPropertyValue('--secondary-color') || computed.getPropertyValue('--color-secondary') || '#6c757d'),
+                    success: rgbToHex(computed.getPropertyValue('--success-color') || computed.getPropertyValue('--color-success') || '#28a745'),
+                    info: rgbToHex(computed.getPropertyValue('--info-color') || computed.getPropertyValue('--color-info') || '#17a2b8'),
+                    warning: rgbToHex(computed.getPropertyValue('--warning-color') || computed.getPropertyValue('--color-warning') || '#ffc107'),
+                    danger: rgbToHex(computed.getPropertyValue('--danger-color') || computed.getPropertyValue('--color-danger') || '#dc3545'),
+                    background: rgbToHex(computed.getPropertyValue('--background-color') || computed.getPropertyValue('--color-background') || '#ffffff'),
+                    surface: rgbToHex(computed.getPropertyValue('--surface-color') || computed.getPropertyValue('--color-surface') || '#f8f9fa'),
+                    text: rgbToHex(computed.getPropertyValue('--text-color') || computed.getPropertyValue('--color-text') || '#212529'),
+                    text_secondary: rgbToHex(computed.getPropertyValue('--text-secondary-color') || computed.getPropertyValue('--color-text-secondary') || '#6c757d'),
+                    border: rgbToHex(computed.getPropertyValue('--border-color') || computed.getPropertyValue('--color-border') || '#dee2e6')
+                },
+                fonts: {
+                    heading: computed.getPropertyValue('--font-heading') || computed.getPropertyValue('--font-family') || 'system-ui, sans-serif',
+                    body: computed.getPropertyValue('--font-body') || computed.getPropertyValue('--font-family') || 'system-ui, sans-serif'
+                },
+                borders: {
+                    radius: computed.getPropertyValue('--border-radius') || '8px',
+                    width: computed.getPropertyValue('--border-width') || '1px'
+                }
+            };
+
+            const blob = new Blob([JSON.stringify(themeConfig, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'theme_config.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         });
     </script>
 </body>

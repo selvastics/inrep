@@ -1,11 +1,9 @@
-#' Comprehensive Multilingual Support for inrep Package
-#'
-#' Provides complete translations for all UI elements, messages, and content
-#' Supports: English (en), German (de), Spanish (es), French (fr)
-#'
-#' @export
+#  Multilingual Support for inrep Package
+#
+# Provides complete translations for all UI elements, messages, and content
+# Supports: English (en), German (de), Spanish (es), French (fr)
 
-# Complete language dictionary for all UI elements
+# Complete language dictionary for all UI elements (internal use only)
 LANGUAGE_DICTIONARY <- list(
   en = list(
     # Basic UI elements
