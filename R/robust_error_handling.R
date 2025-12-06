@@ -454,9 +454,15 @@ get_error_handling_status <- function() {
 #' 
 #' @param backup_interval Backup interval in seconds
 create_periodic_backup <- function(backup_interval = 300) {  # 5 minutes
+  # Check if we're in a Shiny reactive context
+  if (!shiny::isRunning()) {
+    # Not in Shiny context - skip observer creation
+    return(invisible(NULL))
+  }
+  
   # Create backup observer
-  backup_observer <- observe({
-    invalidateLater(backup_interval * 1000)
+  backup_observer <- shiny::observe({
+    shiny::invalidateLater(backup_interval * 1000)
     
     tryCatch({
       # Get current data

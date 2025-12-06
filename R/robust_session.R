@@ -292,13 +292,19 @@ is_session_valid <- function() {
 start_keep_alive_monitoring <- function() {
   if (.session_state$keep_alive_active) return()
   
+  # Check if we're in a Shiny reactive context
+  if (!shiny::isRunning()) {
+    # Not in Shiny context - skip observer creation
+    return(invisible(NULL))
+  }
+  
   .session_state$keep_alive_active <- TRUE
   
   # Create keep-alive observer
-  .session_state$keep_alive_observer <- observe({
+  .session_state$keep_alive_observer <- shiny::observe({
     if (!.session_state$keep_alive_active) return()
     
-    invalidateLater(.session_state$keep_alive_interval * 1000)
+    shiny::invalidateLater(.session_state$keep_alive_interval * 1000)
     
     # Check session validity
     if (!is_session_valid()) {
@@ -353,9 +359,15 @@ stop_keep_alive_monitoring <- function() {
 #' Start Data Preservation Monitoring
 #' 
 start_data_preservation_monitoring <- function() {
+  # Check if we're in a Shiny reactive context
+  if (!shiny::isRunning()) {
+    # Not in Shiny context - skip observer creation
+    return(invisible(NULL))
+  }
+  
   # Create data preservation observer
-  .session_state$data_preservation_observer <- observe({
-    invalidateLater(.session_state$data_preservation_interval * 1000)
+  .session_state$data_preservation_observer <- shiny::observe({
+    shiny::invalidateLater(.session_state$data_preservation_interval * 1000)
     
     # Check if session is still valid
     if (!is_session_valid()) return()
