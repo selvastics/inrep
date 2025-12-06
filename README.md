@@ -1,13 +1,4 @@
-<!--- DISCLAIMER BANNER START --->
-<div align="center" style="background: #f8f9fa; border: 2px solid #d6d8db; border-radius: 12px; padding: 25px; margin: 40px 0; max-width: 900px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); font-family: Arial, sans-serif;">
-  <h2 style="margin: 0 0 15px 0; color: #212529; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">
-    Disclaimer
-  </h2>
-  <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #343a40; text-align: left;">
-    This project is a vibe coding experiment. I did the initial work alone, then expanded it using multiple LLMs. Much of the code is still rough, with some sections containing only minimal working examples as placeholders. Development and refinement are ongoing.
-  </p>
-</div>
-<!--- DISCLAIMER BANNER END --->
+
 
 <table width="100%"><tr>
 <td><h1>inrep: Instant Reports for Adaptive Assessments</h1></td>
