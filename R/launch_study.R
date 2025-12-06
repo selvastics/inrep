@@ -1795,7 +1795,7 @@ launch_study <- function(
 
           shiny::tags$head(
       # CRITICAL: Prevent corner flash - must be FIRST CSS rule
-      shiny::tags$style(HTML("
+      shiny::tags$style(shiny::HTML("
         /* IMMEDIATE CORNER FLASH PREVENTION - Applied before any other CSS */
         * {
           box-sizing: border-box;
@@ -1848,7 +1848,7 @@ launch_study <- function(
 
       
       # Add spinner animation
-      shiny::tags$style(HTML("
+      shiny::tags$style(shiny::HTML("
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
@@ -1861,7 +1861,7 @@ launch_study <- function(
       ")),
       
       # JavaScript to ensure proper positioning
-      shiny::tags$script(HTML("
+      shiny::tags$script(shiny::HTML("
         // Smooth page transition handler
         (function() {
           let isTransitioning = false;
@@ -2040,7 +2040,7 @@ launch_study <- function(
           });
         });
       ")),
-        shiny::tags$style(HTML("
+        shiny::tags$style(shiny::HTML("
           /* Simple full-width fix */
           .full-width-app > .container-fluid {
             padding: 0 15px !important;
@@ -2063,7 +2063,7 @@ launch_study <- function(
           }
         ")),
         shiny::tags$style(type = "text/css", enhanced_css),
-        shiny::tags$style(HTML("
+        shiny::tags$style(shiny::HTML("
         /* Simple centered layout */
         body > .container-fluid {
           padding: 15px !important;
@@ -2369,7 +2369,7 @@ launch_study <- function(
               ")),
         
         # Responsive design CSS
-        shiny::tags$style(HTML("
+        shiny::tags$style(shiny::HTML("
           /* Responsive Layout System */
           @media (max-width: 575px) {
             /* Mobile phones */
@@ -2527,7 +2527,7 @@ launch_study <- function(
       shiny::tags$script(src = "https://cdn.plot.ly/plotly-latest.min.js"),
       # Add custom CSS if provided
       if (!is.null(config$custom_css)) {
-        shiny::tags$style(HTML(config$custom_css))
+        shiny::tags$style(shiny::HTML(config$custom_css))
       }
 
     ),
@@ -2638,7 +2638,7 @@ launch_study <- function(
         style = "min-height: 500px; width: 100%; max-width: 100%; margin: 0 auto; padding: 0; position: relative; overflow: hidden;",
         shiny::uiOutput("page_content"),
         # Global scroll-to-top script that runs on every page load
-        shiny::tags$script(HTML("
+        shiny::tags$script(shiny::HTML("
           // Global scroll-to-top function for web browsers
           function forceScrollToTop() {
             try {
