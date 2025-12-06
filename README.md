@@ -177,10 +177,6 @@ launch_study(config_fixed, bfi_items)
 * Themes and Languages
 * Session Management
 
-## Contributing
-
-See `CONTRIBUTING.md` on GitHub.
-
 ## License
 
 Custom License (Non-Commercial, Attribution, Permission Required)
