@@ -172,10 +172,6 @@ launch_study(config_fixed, bfi_items)
 * Themes and Languages
 * Session Management
 
-## License
-
-Custom License (Non-Commercial, Attribution, Permission Required)
-
 ## Support
 
 **Author:** Clievins Selva
