@@ -178,6 +178,5 @@
 #' \code{\link{create_study_config}}, \code{\link{estimate_ability}}, 
 #' \code{\link{validate_item_bank}}
 #'
-#' @docType package
-#' @name inrep-package
-NULL
+#' @keywords internal
+"_PACKAGE"

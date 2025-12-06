@@ -434,8 +434,6 @@
 #' 
 #' @references Robitzsch A, Kiefer T, Wu M (2024). TAM: Test Analysis Modules. 
 #'   R package version 4.2-21. \url{https://CRAN.R-project.org/package=TAM}
-#' 
-#' }
 #' @seealso \code{\link{launch_study}}, \code{\link{estimate_ability}}, 
 #'   \code{\link{validate_item_bank}}
 #' @importFrom uuid UUIDgenerate
