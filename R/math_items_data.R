@@ -155,11 +155,4 @@
 #'   \item Samejima, F. (1997). Graded response model. \emph{Handbook of modern item response theory}, 85-100.
 #'   \item Embretson, S. E., & Reise, S. P. (2000). \emph{Item response theory for psychologists}. Lawrence Erlbaum.
 #' }
-#' @export
-#' \itemize{
-#'   \item Common Core State Standards Initiative. (2010). Common Core State Standards for Mathematics.
-#'   \item Samejima, F. (1997). Graded response model. \emph{Handbook of modern item response theory}, 85-100.
-#'   \item Embretson, S. E., & Reise, S. P. (2000). \emph{Item response theory for psychologists}. Lawrence Erlbaum.
-#' }
-#' @export
 "math_items"
