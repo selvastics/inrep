@@ -1411,14 +1411,13 @@ run_all_simulations <- function() {
 # SECTION 3: CUSTOM PAGE FLOW (from custom_page_flow.R)
 # ============================================================================
 
-#' Custom Page Flow Support for Multi-Page Studies
+#' Create custom page flow configuration
 #'
-#' This module provides support for custom page flows in studies,
+#' This function provides support for custom page flows in studies,
 #' allowing for complex multi-page questionnaires with progressive display.
 #'
-#' @export
-
-#' Create custom page flow configuration
+#' @param pages List of page configurations
+#' @return A custom page flow configuration object
 #' @export
 create_custom_page_flow <- function(pages) {
   # Validate page structure
