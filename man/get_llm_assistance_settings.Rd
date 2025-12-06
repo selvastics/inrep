@@ -7,15 +7,8 @@
 get_llm_assistance_settings()
 }
 \value{
-Logical indicating whether LLM assistance is enabled.
+Logical.
 }
 \description{
-Check whether LLM assistance prompts are currently enabled.
-}
-\examples{
-\dontrun{
-# Check current status
-is_enabled <- get_llm_assistance_settings()
-print(is_enabled)
-}
+Get LLM Assistance Status
 }

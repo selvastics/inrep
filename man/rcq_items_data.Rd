@@ -7,21 +7,29 @@
 \alias{rcq_items}
 \alias{rcqL_items}
 \title{RCQ Items Data - Resilience and Coping Questionnaire Item Banks}
-\format{Multiple data frames with varying dimensions:
+\format{
+Multiple data frames with varying dimensions:
 \describe{
   \item{\code{rcq_old_items}}{Data frame with 30 rows and 6 columns - Original RCQ items (RCQ_01 + RCQ_02)}
   \item{\code{rcqL_old_items}}{Data frame with 68 rows and 6 columns - Long version RCQL items}
   \item{\code{rcq_items}}{Data frame with 30 rows and 6 columns - Copy of rcq_old_items (for user revision)}
   \item{\code{rcqL_items}}{Data frame with 68 rows and 6 columns - Copy of rcqL_old_items (for user revision)}
-}}
+}
+
+Data frame with 30 rows and 6 columns
+
+Data frame with 68 rows and 6 columns
+
+Data frame with 30 rows and 6 columns
+
+Data frame with 68 rows and 6 columns
+}
+\source{
+Based on resilience and coping research literature, adapted for German-speaking populations.
+NOTE: Items properties are not yet calibrated for accurate measurement in adaptive testing contexts.
+}
 \usage{
-data(rcq_old_items)
-
-data(rcqL_old_items)
-
-data(rcq_items)
-
-data(rcqL_items)
+data(rcq_old_items); data(rcqL_old_items); data(rcq_items); data(rcqL_items)
 }
 \description{
 Comprehensive item banks for resilience and coping assessments in German language.
@@ -73,12 +81,9 @@ rcq_config <- create_study_config(
 # launch_study(rcq_config, item_bank = rcq_old_items)
 }
 }
-\keyword{datasets}
-\keyword{coping}
+\keyword{GRM}
 \keyword{German}
 \keyword{IRT}
-\keyword{GRM}
+\keyword{coping}
+\keyword{datasets}
 \keyword{resilience}
-
-
-

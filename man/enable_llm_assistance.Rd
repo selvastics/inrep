@@ -2,29 +2,18 @@
 % Please edit documentation in R/llm_assistance.R
 \name{enable_llm_assistance}
 \alias{enable_llm_assistance}
-\title{Enable Simple LLM Prompt Generation}
+\title{Enable LLM Prompt Generation}
 \usage{
 enable_llm_assistance(enable = TRUE, verbose = TRUE)
 }
 \arguments{
-\item{enable}{Logical. Enable (TRUE) or disable (FALSE) LLM prompts. Default is TRUE.}
+\item{enable}{Logical. TRUE to enable, FALSE to disable.}
 
-\item{verbose}{Logical. Display status message. Default is TRUE.}
+\item{verbose}{Logical. Display message.}
 }
 \value{
-Invisibly returns the previous setting.
+Previous setting (invisible).
 }
 \description{
-A simple toggle to enable/disable LLM prompt suggestions in inrep functions.
-When enabled, relevant functions may display prompts you can use with external
-LLM services for optimization advice.
-}
-\examples{
-\dontrun{
-# Enable LLM prompt generation
-enable_llm_assistance(TRUE)
-
-# Disable LLM prompt generation
-enable_llm_assistance(FALSE)
-}
+Enable LLM Prompt Generation
 }

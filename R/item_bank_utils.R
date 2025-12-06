@@ -181,7 +181,7 @@ validate_item_bank <- function(item_bank, model = "GRM") {
 #' \itemize{
 #'   \item \code{\link{validate_item_bank}} for comprehensive validation
 #'   \item \code{\link{simulate_item_bank}} for performance testing
-#'   \item \code{\link{bfi_items}} for example item bank
+#'   \item \code{bfi_items} for example item bank (use \code{data(bfi_items)})
 #' }
 #' 
 #' @keywords quality-assurance psychometrics item-analysis

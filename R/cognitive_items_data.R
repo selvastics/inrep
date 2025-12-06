@@ -76,7 +76,9 @@
 #' }
 #'
 #' @seealso 
-#' \code{\link{bfi_items}} for personality assessment items,
+#' \code{bfi_items} for personality assessment items (use \code{data(bfi_items)}),
 #' \code{\link{create_study_config}} for study configuration,
 #' \code{\link{launch_study}} for running assessments
-"cognitive_items"
+#' @name cognitive_items
+#' @docType data
+NULL
