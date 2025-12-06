@@ -31,9 +31,6 @@ Data frame with 40 rows and 10 columns:
 Simulated data based on common mathematics curriculum standards
   and psychometric principles for educational assessment.
 }
-\usage{
-data(math_items)
-}
 \description{
 A comprehensive mathematics item bank containing 40 items across four mathematical
 domains, calibrated using the Graded Response Model (GRM) for adaptive testing

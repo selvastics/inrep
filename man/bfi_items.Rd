@@ -19,9 +19,6 @@ Data frame with 30 rows and 7 columns:
 Simulated data based on validated Big Five Inventory structure and
   psychometric research standards for personality assessment.
 }
-\usage{
-data(bfi_items)
-}
 \description{
 A professionally constructed item bank based on the Big Five Inventory (BFI) structure,
 optimized for use with the Graded Response Model (GRM) in TAM-based adaptive assessments.

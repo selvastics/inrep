@@ -28,9 +28,6 @@ Data frame with 68 rows and 6 columns
 Based on resilience and coping research literature, adapted for German-speaking populations.
 NOTE: Items properties are not yet calibrated for accurate measurement in adaptive testing contexts.
 }
-\usage{
-data(rcq_old_items); data(rcqL_old_items); data(rcq_items); data(rcqL_items)
-}
 \description{
 Comprehensive item banks for resilience and coping assessments in German language.
 Contains multiple versions of RCQ items for different assessment needs, all calibrated
