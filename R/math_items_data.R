@@ -34,6 +34,7 @@
 #' @keywords dataset datasets mathematics education IRT GRM TAM
 #' @name math_items
 #' @usage data(math_items)
+#' @docType data
 #'
 #' @details
 #' This item bank represents typical mathematics assessment content suitable for
@@ -149,6 +150,14 @@
 #' }
 #' 
 #' @references
+#' @references
+#' \itemize{
+#'   \item Common Core State Standards Initiative. (2010). Common Core State Standards for Mathematics.
+#'   \item Samejima, F. (1997). Graded response model. \emph{Handbook of modern item response theory}, 85-100.
+#'   \item Embretson, S. E., & Reise, S. P. (2000). \emph{Item response theory for psychologists}. Lawrence Erlbaum.
+#' }
+#' @export
+NULL
 #' \itemize{
 #'   \item Common Core State Standards Initiative. (2010). Common Core State Standards for Mathematics.
 #'   \item Samejima, F. (1997). Graded response model. \emph{Handbook of modern item response theory}, 85-100.
