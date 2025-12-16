@@ -25,25 +25,15 @@ library(inrep)
 ```
 
 # Welcome to inrep
-Before we start, lets note the following: This project is best described as a vibe coding project. While the initial work was solely done by me, the upscaling of the project and exploration of advanced functionalities were done using several LLMs, which I synthesized. Although much of the code is functional, it is not yet fully polished. Several sections are under active development with minimal working examples implemented as placeholders. Continuous synthesis and refinement are ongoing.
-
-Now lets get started.
-The **inrep** package is a tool for creating and administering adaptive assessments using Item Response Theory (IRT) models. Whether you're an educator, researcher, or assessment professional, inrep provides the tools you need to create adaptive tests with minimal effort.
-Motivation for this tool is to not pay money for collecting data to suvey providers - instead, we can use this tool to create our own assessments and not only that - give the
-participants of a study something in return, that is, an instant report of their responses.
-
-## What Makes inrep Special (adaptive mode)?
-- **Multiple IRT Models**: Support for 1PL, 2PL, 3PL, and Graded Response Model (GRM) through TAM package
-- **Dual Estimation Engines**: It is simple to switch IRT models but TAM is used for ability estimation
-- **Adaptive & Fixed Testing**: Flexible testing modes for different scenarios
-- **UI**: Customizable themes and multilingual support
-- **Research Ready**: Logging and data export capabilities
+This vignette introduces adaptive assessments in **inrep** using IRT-style item banks. It shows how to define an item bank, configure a study, and run an adaptive session in Shiny.
 
 ## Installation
 ```{r eval=FALSE}
+# Install from CRAN
+install.packages("inrep")
 
-# Install development version from GitHub
-devtools::install_github("selvastics/inrep")
+# Or install the development version
+remotes::install_github("selvastics/inrep")
 ```
 
 ## Starting Your First Adaptive Test
@@ -99,7 +89,7 @@ This is extremely useful when:
 ### 1. Item Banks
 Item banks contain the questions and their psychometric properties. Let's examine the built-in item bank:
   
-  ```{r examine_items}
+```{r examine_items}
 # Examine the structure (data already loaded above)
 head(bfi_items, 3)
 cat("Number of items:", nrow(bfi_items), "\n")
@@ -301,7 +291,7 @@ math_knowledge_items <- data.frame(
 
 **Example: Item Bank with Mixed Known/Unknown Parameters**
   
-  ```{r na_parameters_example, eval=FALSE}
+```{r na_parameters_example, eval=FALSE}
 # Item bank with some known and some unknown parameters
 mixed_items <- data.frame(
   item_id = paste0("MIX_", sprintf("%03d", 1:15)),
@@ -347,7 +337,7 @@ config <- create_study_config(
 
 **Parameter Estimation from Data:** After collecting responses, you can estimate parameters using:
   
-  ```r
+```r
 # After running your assessment and collecting data
 # Use TAM package to estimate parameters
 library(TAM)
@@ -363,7 +353,7 @@ library(TAM)
 
 Now let's actually run an assessment with one of our custom item banks to see how it works compared to the first example.
   
-  ```r
+```r
 library(inrep)
 
 # Use our custom work personality item bank
@@ -379,12 +369,12 @@ config <- create_study_config(
 launch_study(config, work_personality_items, debug_mode = TRUE)  # Debug mode enabled
 ```
 
-**You should always use a custom item bank:**
+**In many studies, you will want a custom item bank:**
 - **Specificity**: Items are tailored to your specific research question or population
 - **Relevance**: Questions are more directly applicable to your context
 - **Flexibility**: You can include items that are unique to your needs
-- **Control**: You have complete control over item content and parameters
-- **Advanced functionalities**: Note that it should be relatively easy to update the item parameters on the fly with every new response - stay tuned for further Vignettes.
+- **Control**: You control item content and parameters
+- **Updating parameters**: If needed, item parameters can be updated between runs.
 
 ### 2. Study Configuration
 
@@ -437,8 +427,7 @@ launch_study(config, bfi_items, debug_mode = TRUE)
 
 **Key differences with bfi_items:**
 - Uses pre-calibrated items from Big Five personality research
-- Items are professionally validated and tested
-- All parameters are known and optimized
+- Parameters are included with the dataset
 - Covers established personality domains (Big Five)
 - Items are designed for general population
 

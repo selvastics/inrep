@@ -2,7 +2,7 @@
 % Please edit documentation in R/platform_deployment.R
 \name{launch_to_inrep_platform}
 \alias{launch_to_inrep_platform}
-\title{LaunchStudytoinrepPlatform}
+\title{Create a deployment package for hosting a study}
 \usage{
 launch_to_inrep_platform(
   study_config,
@@ -17,383 +17,82 @@ launch_to_inrep_platform(
 )
 }
 \arguments{
-\item{study_config}{A study configuration object created with \code{create_study_config()}}
+\item{study_config}{A study configuration object created with \code{create_study_config()}.}
 
-\item{item_bank}{A validated item bank dataframe with proper IRT parameters}
+\item{item_bank}{A data frame containing item parameters.}
 
-\item{output_dir}{Character string specifying the output directory for deployment files}
+\item{output_dir}{Character string specifying the output directory for deployment files.}
 
-\item{deployment_type}{Character string specifying deployment target:
-\itemize{
-  \item "inrep_platform" - Official inrep platform (default)
-  \item "posit_connect" - Posit Connect server
-  \item "shinyapps" - ShinyApps.io deployment
-  \item "custom_server" - Custom Shiny server
-  \item "docker" - Docker container deployment
-}}
+\item{deployment_type}{Character string specifying deployment target.
+Supported values: \code{"inrep_platform"}, \code{"posit_connect"}, \code{"shinyapps"},
+\code{"custom_server"}, \code{"docker"}.}
 
-\item{contact_info}{List containing researcher contact information and study details}
+\item{contact_info}{Optional list containing researcher contact information and study details.}
 
-\item{advanced_features}{List of advanced features to include:
-\itemize{
-  \item "multilingual" - Multi-language support
-  \item "accessibility" - Accessibility features
-  \item "mobile_optimized" - Mobile-responsive design
-  \item "real_time_monitoring" - Live study monitoring  
-  \item "automated_reporting" - Automated result generation
-}}
+\item{advanced_features}{Optional list of features to include in the generated assets.}
 
-\item{security_settings}{List of security configurations for professional deployment}
+\item{security_settings}{Optional list of security-related settings to include in the
+generated notes/templates. These are not enforced by the package.}
 
-\item{backup_settings}{List of backup and recovery configurations}
+\item{backup_settings}{Optional list of backup/recovery settings to include in the
+generated notes/templates. These are not enforced by the package.}
 
-\item{validate_deployment}{Logical indicating whether to perform comprehensive validation}
+\item{validate_deployment}{Logical indicating whether to run validation checks (for example,
+item bank validation).}
 }
 \value{
 A list containing:
 \itemize{
-\item \code{deployment_package} - Path to the generated deployment package
-\item \code{validation_report} - Comprehensive validation results
-\item \code{deployment_instructions} - Platform-specific deployment guide
-\item \code{contact_template} - Template for contacting platform maintainer
-\item \code{study_metadata} - Complete study metadata for hosting
+  \item \code{deployment_package} Path to the generated deployment package
+  \item \code{validation_report} Validation results (if enabled)
+  \item \code{deployment_instructions} Platform-specific deployment guide
+  \item \code{contact_template} Template text for contacting a platform maintainer
+  \item \code{study_metadata} Study metadata for hosting
 }
 }
 \description{
-Createsacomprehensivedeploymentpackageforlaunchingadaptiveassessmentstudies
-ontheinrepplatform.Thisfunctiongeneratesallnecessaryfilesandconfigurations
-forprofessionalhostingofTAM-basedadaptiveassessments.Theresultingpackage
-canbedeployedontheofficialinrepplatformoranycompatibleShinyserver.
+Creates a self-contained deployment folder for hosting a study.
+The output includes the study configuration, item bank data, and generated app assets.
 }
 \details{
-Thisfunctioncreatesacompletedeploymentpackagethatincludes:
+The deployment folder contains:
 \itemize{
-\item Study configuration and metadata
-\item Item bank validation and preparation
-\item UI components with professional styling
-\item Assessment logic and scoring algorithms
-\item Results processing and reporting systems
-\item Quality assurance and validation checks
-\item Deployment documentation and instructions
-}
-
-Thegeneratedpackageisdesignedforprofessionaldeploymenton:
-\itemize{
-\item Official inrep platform (contact: selva@uni-hildesheim.de)
-\item Posit Connect/RStudio Connect servers
-\item ShinyApps.io
-\item Custom Shiny Server installations
-\item Docker containers for scalable deployment
-}
-
-Forofficialinrepplatformdeployment,usersshouldcontactthemaintainer
-atselva@uni-hildesheim.dewiththegenerateddeploymentpackageandprovide:
-\itemize{
-\item Brief study description and objectives
-\item Expected study duration and participant numbers
-  \item Special requirements (multilingual support, accessibility, etc.)
-  \item Institutional affiliation and research context
+  \item Study configuration and metadata
+  \item Item bank data and (optional) validation output
+  \item Generated app files and resources
+  \item Deployment notes and instructions
 }
 }
 \examples{
 \dontrun{
-#Example1:Basicdeploymentforinrepplatform
-library(inrep)
 data(bfi_items)
 
-#Createstudyconfiguration
-config<-create_study_config(
-name="BigFivePersonalityAssessment",
-model="GRM",
-max_items=20,
-min_SEM=0.3,
-language="en",
-theme="Professional"
+config <- create_study_config(
+  name = "Example Study",
+  model = "GRM",
+  max_items = 20,
+  min_SEM = 0.3,
+  language = "en",
+  theme = "Professional"
 )
 
-#Preparecontactinformation
-contact_info<-list(
-researcher_name="Dr.JaneSmith",
-institution="UniversityofResearch",
-email="jane.smith@university.edu",
-study_title="AdaptivePersonalityAssessmentStudy",
-study_description="Investigatingpersonalitytraitsusingadaptivetesting",
-expected_duration="4weeks",
-expected_participants=500,
-institutional_approval="IRB-2025-001"
+deployment <- launch_to_inrep_platform(
+  study_config = config,
+  item_bank = bfi_items,
+  output_dir = "deployment_package",
+  deployment_type = "custom_server"
 )
 
-#Launchtoinrepplatform
-deployment<-launch_to_inrep_platform(
-study_config=config,
-item_bank=bfi_items,
-output_dir="deployment_package",
-deployment_type="inrep_platform",
-contact_info=contact_info
-)
-
-#Checkdeploymentresults
-cat("Deploymentpackagecreated:",deployment$deployment_package,"\n")
-cat("Contacttemplate:",deployment$contact_template,"\n")
-}
-
-\dontrun{
-#Example2:Advanceddeploymentwithmultilingualsupport
-library(inrep)
-data(bfi_items)
-
-#Createadvancedconfiguration
-config<-create_study_config(
-name="InternationalPersonalityStudy",
-model="GRM",
-max_items=25,
-min_SEM=0.25,
-language="en",
-theme="International",
-multilingual=TRUE,
-languages=c("en","de","es","fr")
-)
-
-#Advancedfeatures
-advanced_features<-list(
-"multilingual",
-"accessibility",
-"mobile_optimized",
-"real_time_monitoring"
-)
-
-#Contactinformationforinternationalstudy
-contact_info<-list(
-researcher_name="Prof.InternationalResearcher",
-institution="GlobalResearchInstitute",
-email="researcher@global-institute.org",
-study_title="Cross-CulturalPersonalityAssessment",
-study_description="Large-scaleinternationalstudyonpersonalitytraits",
-expected_duration="12weeks",
-expected_participants=2000,
-languages_needed=c("English","German","Spanish","French"),
-special_requirements="GDPRcompliance,accessibilitystandards"
-)
-
-#Launchwithadvancedfeatures
-deployment<-launch_to_inrep_platform(
-study_config=config,
-item_bank=bfi_items,
-output_dir="international_study_deployment",
-deployment_type="inrep_platform",
-contact_info=contact_info,
-advanced_features=advanced_features
-)
-
-#Reviewdeploymentvalidation
-print(deployment$validation_report)
-}
-
-\dontrun{
-#Example3:Clinicaldeploymentwithenhancedsecurity
-library(inrep)
-data(bfi_items)
-
-#Createclinicalconfiguration
-config<-create_study_config(
-name="ClinicalDepressionAssessment",
-model="GRM",
-max_items=15,
-min_SEM=0.2,
-language="en",
-theme="Clinical",
-clinical_mode=TRUE
-)
-
-#Securitysettingsforclinicaldata
-security_settings<-list(
-encryption_level="AES-256",
-data_retention="7_years",
-access_control="role_based",
-audit_logging=TRUE,
-hipaa_compliance=TRUE,
-gdpr_compliance=TRUE
-)
-
-#Clinicalcontactinformation
-contact_info<-list(
-researcher_name="Dr.ClinicalResearcher",
-institution="MedicalCenterHospital",
-email="clinical.researcher@hospital.org",
-study_title="AdaptiveDepressionScreening",
-study_description="Clinicalvalidationofadaptivedepressionassessment",
-expected_duration="6months",
-expected_participants=300,
-clinical_approval="IRB-CLINICAL-2025-005",
-data_sensitivity="high",
-compliance_requirements="HIPAA,GDPR"
-)
-
-#Launchclinicalstudy
-deployment<-launch_to_inrep_platform(
-study_config=config,
-item_bank=bfi_items,
-output_dir="clinical_deployment",
-deployment_type="inrep_platform",
-contact_info=contact_info,
-security_settings=security_settings,
-advanced_features=list("accessibility","real_time_monitoring")
-)
-
-#Verifysecurityconfiguration
-cat("Securityvalidationpassed:",deployment$validation_report$security_check,"\n")
-}
-
-\dontrun{
-#Example4:EducationaldeploymentforPositConnect
-library(inrep)
-data(bfi_items)
-
-#Createeducationalconfiguration
-config<-create_study_config(
-name="StudentPersonalityAssessment",
-model="2PL",
-max_items=30,
-min_SEM=0.4,
-language="en",
-theme="Educational",
-adaptive_feedback=TRUE
-)
-
-#Educationalcontactinformation
-contact_info<-list(
-researcher_name="Prof.EducationResearcher",
-institution="StateUniversity",
-email="education.prof@state-university.edu",
-study_title="StudentPersonalityandAcademicPerformance",
-study_description="Longitudinalstudyofpersonalityandacademicoutcomes",
-expected_duration="1academicyear",
-expected_participants=1000,
-educational_approval="University-IRB-2025-EDU-003"
-)
-
-#LaunchforPositConnect
-deployment<-launch_to_inrep_platform(
-study_config=config,
-item_bank=bfi_items,
-output_dir="educational_deployment",
-deployment_type="posit_connect",
-contact_info=contact_info,
-advanced_features=list("mobile_optimized","automated_reporting")
-)
-
-#Generatedeploymentinstructions
-cat("PositConnectdeploymentguide:",deployment$deployment_instructions,"\n")
-}
-
-\dontrun{
-#Example5:CorporatedeploymentwithDocker
-library(inrep)
-data(bfi_items)
-
-#Createcorporateconfiguration
-config<-create_study_config(
-name="EmployeeAssessmentPlatform",
-model="GRM",
-max_items=20,
-min_SEM=0.3,
-language="en",
-theme="Corporate",
-corporate_mode=TRUE
-)
-
-#Corporatecontactinformation
-contact_info<-list(
-researcher_name="HRAnalyticsTeam",
-institution="GlobalCorporationLtd",
-email="hr.analytics@globalcorp.com",
-study_title="EmployeePersonalityAssessment",
-study_description="Corporatepersonalityassessmentforteambuilding",
-expected_duration="Ongoing",
-expected_participants=5000,
-corporate_approval="HR-STUDY-2025-001",
-deployment_scale="enterprise"
-)
-
-#LaunchwithDockerdeployment
-deployment<-launch_to_inrep_platform(
-study_config=config,
-item_bank=bfi_items,
-output_dir="corporate_deployment",
-deployment_type="docker",
-contact_info=contact_info,
-advanced_features=list("real_time_monitoring","automated_reporting")
-)
-
-#CheckDockerconfiguration
-cat("Dockerdeploymentready:",deployment$deployment_package,"\n")
-cat("Containerconfiguration:",deployment$docker_config,"\n")
-}
-
-\dontrun{
-#Example6:Customserverdeploymentwithbackupsettings
-library(inrep)
-data(bfi_items)
-
-#Createcustomconfiguration
-config<-create_study_config(
-name="ResearchPlatformAssessment",
-model="GRM",
-max_items=25,
-min_SEM=0.25,
-language="en",
-theme="Research",
-custom_styling=TRUE
-)
-
-#Backupsettingsforlong-termstudy
-backup_settings<-list(
-backup_frequency="daily",
-backup_retention="1_year",
-backup_location="cloud_storage",
-automated_backups=TRUE,
-disaster_recovery=TRUE
-)
-
-#Researchcontactinformation
-contact_info<-list(
-researcher_name="ResearchConsortium",
-institution="Multi-UniversityResearchNetwork",
-email="consortium@research-network.org",
-study_title="Large-ScalePersonalityResearch",
-study_description="Multi-sitelongitudinalpersonalitystudy",
-expected_duration="3years",
-expected_participants=10000,
-multi_site=TRUE,
-sites=c("UniversityA","UniversityB","UniversityC")
-)
-
-#Launchwithcustomserverconfiguration
-deployment<-launch_to_inrep_platform(
-study_config=config,
-item_bank=bfi_items,
-output_dir="research_consortium_deployment",
-deployment_type="custom_server",
-contact_info=contact_info,
-backup_settings=backup_settings,
-advanced_features=list("multilingual","real_time_monitoring","automated_reporting")
-)
-
-#Verifybackupconfiguration
-cat("Backupsettingsvalidated:",deployment$validation_report$backup_check,"\n")
+deployment$deployment_package
 }
 
 }
 \references{
-Forofficialinrepplatformdeployment,contact:selva@uni-hildesheim.de
-
-Platformdocumentation:https://inrep-platform.org
-
-Deploymentguides:https://inrep-platform.org/docs/deployment
+See the project documentation for deployment guidance.
 }
 \seealso{
-\code{\link{create_study_config}}forcreatingstudyconfigurations,
-\code{\link{validate_item_bank}}foritembankvalidation,
-\code{\link{build_study_ui}}forUIcomponents,
-\code{\link{create_response_report}}forresultsprocessing
+\code{\link{create_study_config}} for creating study configurations,
+\code{\link{validate_item_bank}} for item bank validation,
+\code{\link{inrep_ui}} for UI components,
+\code{\link{create_response_report}} for results processing.
 }

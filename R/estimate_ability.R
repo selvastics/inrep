@@ -49,26 +49,25 @@
 #' @export
 #' 
 #' @details
-#' \strong{TAM Integration Architecture:} This function implements a comprehensive interface
-#' to TAM's ability estimation procedures without implementing independent psychometric algorithms.
-#' The integration follows established IRT best practices:
+#' \strong{TAM integration:} This function implements an interface to TAM's ability
+#' estimation procedures without implementing independent psychometric algorithms.
 #' 
 #' \strong{Model-Specific TAM Functions:}
 #' \describe{
 #'   \item{\strong{1PL/Rasch Model}}{
-#'     Uses \code{\link[TAM]{tam.mml}} with Rasch constraints (all discriminations = 1).
-#'     Ability estimation via \code{\link[TAM]{tam.wle}} or \code{\link[TAM]{tam.eap}}.
+#'     Uses \code{TAM::tam.mml} with Rasch constraints (all discriminations = 1).
+#'     Ability estimation via \code{TAM::tam.wle} or \code{TAM::tam.eap}.
 #'   }
 #'   \item{\strong{2PL Model}}{
-#'     Uses \code{\link[TAM]{tam.mml.2pl}} with item-specific discrimination parameters.
+#'     Uses \code{TAM::tam.mml.2pl} with item-specific discrimination parameters.
 #'     Supports both WLE and EAP estimation methods.
 #'   }
 #'   \item{\strong{3PL Model}}{
-#'     Uses \code{\link[TAM]{tam.mml.3pl}} including guessing parameters.
+#'     Uses \code{TAM::tam.mml.3pl} including guessing parameters.
 #'     Typically uses EAP estimation due to complexity.
 #'   }
 #'   \item{\strong{GRM (Graded Response Model)}}{
-#'     Uses \code{\link[TAM]{tam.mml}} with polytomous item specifications.
+#'     Uses \code{TAM::tam.mml} with polytomous item specifications.
 #'     Handles ordered categorical responses with multiple thresholds.
 #'   }
 #' }
@@ -80,11 +79,11 @@
 #'     Provides most accurate estimates but computationally intensive.
 #'   }
 #'   \item{\strong{EAP (Expected A Posteriori)}}{
-#'     Bayesian estimation using \code{\link[TAM]{tam.eap}}.
+#'     Bayesian estimation using \code{TAM::tam.eap}.
 #'     Incorporates prior distribution, stable for extreme scores.
 #'   }
 #'   \item{\strong{WLE (Weighted Likelihood)}}{
-#'     Frequentist estimation using \code{\link[TAM]{tam.wle}}.
+#'     Frequentist estimation using \code{TAM::tam.wle}.
 #'     Reduces bias compared to maximum likelihood.
 #'   }
 #'   \item{\strong{MIRT (Compatibility)}}{
@@ -328,8 +327,8 @@
 #'   \item \code{\link{create_study_config}} for configuring estimation parameters
 #'   \item \code{\link{select_next_item}} for adaptive item selection using ability estimates
 #'   \item \code{\link{launch_study}} for complete assessment implementation
-#'   \item \code{\link[TAM]{tam.wle}} for WLE estimation details
-#'   \item \code{\link[TAM]{tam.eap}} for EAP estimation details
+#'   \item \code{TAM::tam.wle} for WLE estimation details
+#'   \item \code{TAM::tam.eap} for EAP estimation details
 #' }
 #' 
 #' @references

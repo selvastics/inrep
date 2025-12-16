@@ -2,16 +2,10 @@
 % Please edit documentation in R/study_management.R
 \name{study_management}
 \alias{study_management}
-\alias{create_default_introduction_content}
+\alias{.inrep_is_debug}
 \title{Study Management for inrep Package}
 \usage{
-create_default_introduction_content(ui_labels = NULL)
-}
-\arguments{
-\item{ui_labels}{Language labels for UI elements}
-}
-\value{
-HTML string with default introduction content
+.inrep_is_debug()
 }
 \description{
 This file consolidates all study management functions including:
@@ -20,8 +14,4 @@ This file consolidates all study management functions including:
 - Custom page flow (from custom_page_flow.R)
 - Flow validation (from custom_page_flow_validation.R)
 }
-\keyword{Content}
-\keyword{Create}
-\keyword{Default}
-\keyword{Introduction}
 \keyword{internal}

@@ -325,9 +325,11 @@ generate_complete_script <- function(user_code, auto_run, console_ready = FALSE,
   essential_functions <- c(
     # Core configuration and validation
     "create_study_config",
+    "validate_model",
     "validate_item_bank",
     "validate_session",
     "validate_demographic_config",
+    "validate_theme",
     
     # Assessment engine
     "launch_study",
@@ -337,7 +339,6 @@ generate_complete_script <- function(user_code, auto_run, console_ready = FALSE,
     # UI components
     "generate_theme_css",
     "get_theme_config",
-    "validate_theme",
     "create_response_ui",
     "create_demographics_ui",
     "inrep_ui",
@@ -351,6 +352,17 @@ generate_complete_script <- function(user_code, auto_run, console_ready = FALSE,
     "generate_uuid",
     "initialize_logging",
     "log_open",
+
+    # Optional hooks used by launch_study (safe no-ops unless enabled)
+    "update_page_start_time",
+    "log_page_time",
+    "log_action",
+    "initialize_comprehensive_dataset",
+    "get_comprehensive_dataset",
+    "update_comprehensive_dataset",
+    "generate_hilfo_filename",
+    "initialize_enhanced_recovery",
+    "initialize_enhanced_security",
     
     # Study flow helpers
     "create_default_introduction_content",

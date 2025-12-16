@@ -8,6 +8,8 @@
 #' @name core_utils
 #' @keywords internal
 
+NULL
+
 # ============================================================================
 # SECTION 1: BASIC UTILITY FUNCTIONS (from utils.R)
 # ============================================================================
@@ -32,10 +34,12 @@ generate_uuid <- function() {
 #' Initialize Logging System
 #'
 #' Initializes the logging system for assessment sessions and research workflows.
-#' This function creates a log file connection and assigns logging functions to the global environment.
+#' This function creates a log file connection and configures inrep's internal logger.
 #'
 #' @param path Optional character string specifying the log file path.
 #'   If NULL, creates a temporary log file in the system temp directory.
+#' @param assign_global Deprecated. Previously assigned \code{log_print} into \code{.GlobalEnv}.
+#'   This is no longer performed; use \code{log_print()} instead.
 #'
 #' @return A list containing:
 #'   \itemize{
@@ -49,135 +53,65 @@ generate_uuid <- function() {
 #' \dontrun{
 #' # Initialize basic logging
 #' log_success <- initialize_logging()
-#' 
+#'
 #' # Initialize with custom file path
 #' log_file <- file.path(tempdir(), "my_assessment.log")
 #' initialize_logging(path = log_file)
-#' 
-#' # Check if logging is working
-#' if (exists("log_print")) {
-#'   log_print("Test message", level = "INFO")
-#'   cat("Logging is active\n")
+#'
+#' # Write a test message
+#' log_print("Test message", level = "INFO")
 #' }
-#' }
-initialize_logging <- function(path = NULL) {
+initialize_logging <- function(path = NULL, assign_global = FALSE) {
   new_path <- if (is.null(path)) {
     file.path(tempdir(), "adaptive_test_default.log")
   } else {
     path
   }
+
+  if (isTRUE(assign_global)) {
+    warning("initialize_logging(assign_global=TRUE) is deprecated and ignored; use log_print() instead.")
+  }
+
   if (!log_open(new_path)) {
     message("Failed to initialize logging, using console output.")
-    assign("log_print", function(msg, level = "INFO") {
+    .inrep_env$log_path <- NULL
+    .inrep_env$log_print <- function(msg, level = "INFO") {
       message(sprintf("[%s] %s", level, msg))
-    }, envir = .GlobalEnv)
+    }
     return(list(success = FALSE, path = NULL, message = "Failed to initialize logging"))
   }
-  assign(".log_path", new_path, envir = .GlobalEnv)
-  assign("log_print", function(msg, level = "INFO") {
-    cat(sprintf("[%s] %s\n", level, msg), file = .log_path, append = TRUE)
-  }, envir = .GlobalEnv)
+  .inrep_env$log_path <- new_path
+  .inrep_env$log_print <- function(msg, level = "INFO") {
+    cat(sprintf("[%s] %s\n", level, msg), file = .inrep_env$log_path, append = TRUE)
+  }
   message("Logging initialized successfully")
   list(success = TRUE, path = new_path, message = "Logging initialized successfully")
 }
 
-#' Advanced Logging Configuration
+#' Write a Log Entry
 #'
-#' Provides comprehensive logging capabilities for research platforms and assessment systems.
-#' This function offers advanced configuration options for structured logging, monitoring,
-#' and audit trail generation in adaptive testing environments.
+#' Writes a log entry using inrep's configured logger. If logging has not been
+#' initialized, this falls back to console output.
 #'
-#' @param path Optional character string specifying the log file path.
-#'   If NULL, creates a temporary log file in the system temp directory.
+#' @param msg Character scalar. Message to write.
+#' @param level Character scalar. Log level label (for example, \code{"INFO"}, \code{"WARNING"}, \code{"ERROR"}).
 #'
-#' @details
-#' The logging system provides advanced configuration options for research environments.
-#' 
-#' @examples
-#' \dontrun{
-#' # Generate a UUID for study identification
-#' study_id <- generate_uuid()
-#' 
-#' # Use in study configuration
-#' config <- create_study_config(
-#'   study_key = paste0("STUDY_", generate_uuid())
-#' )
-#' }
-generate_uuid_internal <- function() {
-  uuid::UUIDgenerate()
-}
-
-#' Initialize Comprehensive Logging System
-#'
-#' Sets up a comprehensive logging system for inrep assessments with multiple
-#' output options, structured formatting, and integration with the logr package.
-#' Provides detailed audit trails for research compliance and debugging.
-#'
-#' @param path Character string specifying file path for log output. If \code{NULL},
-#'   creates a temporary file with timestamp for session-specific logging.
-#' @param level Character string specifying minimum log level to capture.
-#'   Options: \code{"DEBUG"}, \code{"INFO"}, \code{"WARN"}, \code{"ERROR"}.
-#' @param format Character string specifying log format. Options:
-#'   \code{"standard"}, \code{"json"}, \code{"detailed"}.
-#' @param console_output Logical indicating whether to also output to console.
-#'   
-#' @return Logical: \code{TRUE} if logging initialized successfully, \code{FALSE} otherwise.
-#'   On failure, falls back to console-only logging with warning message.
-#' 
 #' @export
-#' 
-#' @details
-#' The logging system provides:
-#' \itemize{
-#'   \item Timestamped entries with session identification
-#'   \item Multiple log levels with filtering capabilities
-#'   \item Structured output formats for automated processing
-#'   \item Integration with assessment workflow tracking
-#'   \item Participant action logging for audit trails
-#'   \item Performance metrics and error tracking
-#' }
-#' 
-#' Log entries include:
-#' \itemize{
-#'   \item Assessment initialization and configuration
-#'   \item Item administration and response capture
-#'   \item Ability estimation and item selection decisions
-#'   \item User interface interactions and navigation
-#'   \item Data validation and quality checks
-#'   \item Session management and termination
-#' }
-#' 
-#' @examples
-#' \dontrun{
-#' # Initialize basic logging
-#' log_success <- initialize_logging()
-#' 
-#' # Initialize with custom file path
-#' log_file <- file.path(tempdir(), "my_assessment.log")
-#' initialize_logging(path = log_file, level = "INFO")
-#' 
-#' # Initialize with JSON format for automated processing
-#' initialize_logging(
-#'   path = "assessment_log.json",
-#'   level = "DEBUG",
-#'   format = "json",
-#'   console_output = TRUE
-#' )
-#' 
-#' # Check if logging is working
-#' if (exists("log_print")) {
-#'   log_print("Test message", level = "INFO")
-#'   cat("Logging is active\n")
-#' }
-#' }
-#' 
-#' @seealso
-#' \itemize{
-#'   \item \code{\link{log_print}} for writing log entries
-#'   \item \code{\link{launch_study}} for assessment execution with logging
-#'   \item \code{logr} package for advanced logging features
-#' }
+log_print <- function(msg, level = "INFO") {
+  if (!exists(".inrep_env", envir = asNamespace("inrep"), inherits = FALSE)) {
+    message(sprintf("[%s] %s", level, msg))
+    return(invisible(FALSE))
+  }
 
+  lp <- tryCatch(.inrep_env$log_print, error = function(e) NULL)
+  if (is.null(lp) || !is.function(lp)) {
+    message(sprintf("[%s] %s", level, msg))
+    return(invisible(FALSE))
+  }
+
+  lp(msg, level = level)
+  invisible(TRUE)
+}
 #' Log Open
 #'
 #' Opens a log file connection.
@@ -339,34 +273,6 @@ select_next_item_basic_internal <- function(rv, item_bank, config) {
   }
   message(sprintf("Selected item %d with information %f", item, max(info, na.rm = TRUE)))
   item
-}#' Null-coalescing Operator
-#' 
-#' Returns the left-hand side if not NULL, otherwise returns the right-hand side
-#' 
-#' @param lhs Left-hand side value
-#' @param rhs Right-hand side value (default)
-#' @return lhs if not NULL, otherwise rhs
-#' @export
-#' @examples
-#' NULL %||% "default"  # Returns "default"
-#' "value" %||% "default"  # Returns "value"
-`%||%` <- function(lhs, rhs) {
-  if (is.null(lhs)) rhs else lhs
-}
-
-#' String Repetition Operator
-#' 
-#' Repeats a string a specified number of times
-#' 
-#' @param string Character string to repeat
-#' @param times Number of times to repeat
-#' @return Character string repeated the specified number of times
-#' @export
-#' @examples
-#' "=" %r% 50  # Returns "=================================================="
-#' "-" %r% 10  # Returns "----------"
-`%r%` <- function(string, times) {
-  paste(rep(string, times), collapse = "")
 }
 
 # ============================================================================
@@ -374,18 +280,35 @@ select_next_item_basic_internal <- function(rv, item_bank, config) {
 # ============================================================================
 
 #' Null-coalescing Operator
-#' 
+#'
 #' Returns the left-hand side if not NULL, otherwise returns the right-hand side
-#' 
-#' @param lhs Left-hand side value
-#' @param rhs Right-hand side value (default)
-#' @return lhs if not NULL, otherwise rhs
+#'
+#' @name null_coalescing_operator
+#' @aliases %||%
+#' @param x Left-hand side value.
+#' @param y Right-hand side value (default).
+#' @return `x` if not NULL, otherwise `y`.
 #' @export
 #' @examples
 #' NULL %||% "default"  # Returns "default"
 #' "value" %||% "default"  # Returns "value"
-`%||%` <- function(lhs, rhs) {
-  if (is.null(lhs)) rhs else lhs
+`%||%` <- function(x, y) {
+  if (is.null(x)) y else x
+}
+
+#' String Repetition Operator
+#'
+#' Repeats a string a specified number of times.
+#'
+#' @param string Character string to repeat.
+#' @param times Number of times to repeat.
+#' @return Character string repeated the specified number of times.
+#' @export
+#' @examples
+#' "=" %r% 50  # Returns "=================================================="
+#' "-" %r% 10  # Returns "----------"
+`%r%` <- function(string, times) {
+  paste(rep(string, times), collapse = "")
 }
 
 # ============================================================================  
@@ -403,46 +326,18 @@ NULL
 #' Initialize Reactive Values for Assessment Session
 #'
 #' @description
-#' Initializes comprehensive reactive values for an adaptive testing session, 
-#' establishing the foundational data structures required for TAM-based psychometric
-#' computations and real-time assessment management.
+#' Initializes the reactive values object used by the Shiny study runtime.
+#' It sets up the fields that track administered items, responses, timing, and
+#' intermediate ability/SE estimates.
 #'
 #' @param config A study configuration object created by \code{\link{create_study_config}}.
 #'   Must contain assessment parameters including model specifications, stopping criteria,
 #'   and optional demographic requirements.
 #'
 #' @details
-#' This function creates a standardized reactive value structure that coordinates
-#' between the user interface and TAM's psychometric functions. The initialization
-#' process establishes:
-#' 
-#' \strong{Session Management:}
-#' \itemize{
-#'   \item Assessment stage tracking (demographics, assessment, completion)
-#'   \item Response collection and validation structures
-#'   \item Real-time ability and standard error tracking
-#'   \item Item administration history and timing data
-#' }
-#' 
-#' \strong{TAM Integration Architecture:}
-#' \itemize{
-#'   \item Ability estimation tracking via TAM's \code{\link[TAM]{tam.wle}}/\code{\link[TAM]{tam.eap}}
-#'   \item Standard error monitoring for stopping criteria
-#'   \item Response pattern management for TAM model fitting
-#'   \item Information caching for adaptive selection algorithms
-#' }
-#' 
-#' \strong{Quality Assurance:}
-#' \itemize{
-#'   \item Response time tracking for engagement monitoring
-#'   \item Error handling and recovery mechanisms
-#'   \item Session validation and integrity checks
-#'   \item Comprehensive audit trail initialization
-#' }
-#' 
-#' The reactive values structure enables seamless integration between Shiny's
-#' reactive programming model and TAM's statistical computations, ensuring
-#' real-time updates without compromising psychometric accuracy.
+#' The returned object is a plain list. Downstream code treats it as a reactive
+#' container (typically a Shiny \code{reactiveValues()} instance) and updates
+#' fields as the session progresses.
 #'
 #' @return A comprehensive list containing initialized reactive values:
 #' \describe{
@@ -552,9 +447,8 @@ init_reactive_values <- function(config) {
 #' Validate Assessment Session State and Handle Cloud Storage
 #'
 #' @description
-#' Performs comprehensive validation of session state including timeout checks,
-#' data integrity verification, and automatic cloud storage for completed sessions.
-#' Ensures session continuity and data preservation throughout the assessment process.
+#' Normalizes the session state object (adds missing fields, applies timeout
+#' reset) and optionally uploads completed sessions to WebDAV.
 #'
 #' @param rv A reactive values object containing current session state, typically
 #'   created by \code{\link{init_reactive_values}}.
@@ -567,56 +461,11 @@ init_reactive_values <- function(config) {
 #'   or \code{NULL} if authentication is not required.
 #'
 #' @details
-#' This function performs multi-level session validation essential for maintaining
-#' assessment integrity and research data quality:
-#' 
-#' \strong{Session State Validation:}
-#' \itemize{
-#'   \item Timeout detection based on configuration parameters
-#'   \item Response pattern integrity and completeness checks
-#'   \item Ability estimation convergence verification
-#'   \item Item administration sequence validation
-#' }
-#' 
-#' \strong{Data Quality Assurance:}
-#' \itemize{
-#'   \item Response time analysis for engagement monitoring
-#'   \item Missing data pattern identification
-#'   \item Unusual response pattern detection (rapid guessing, non-response)
-#'   \item TAM model fit validation for completed assessments
-#' }
-#' 
-#' \strong{Cloud Storage Integration:}
-#' \itemize{
-#'   \item Automatic saving of completed sessions to WebDAV storage
-#'   \item Incremental backup for long assessments
-#'   \item Secure authentication with encrypted transmission
-#'   \item Retry logic for network failures and recovery
-#' }
-#' 
-#' \strong{Session Recovery:}
-#' \itemize{
-#'   \item Invalid session state reset with logging
-#'   \item Graceful degradation for network issues
-#'   \item Preservation of participant progress where possible
-#'   \item Audit trail maintenance for session events
-#' }
-#' 
-#' The validation process integrates with TAM's psychometric functions to ensure
-#' that statistical computations remain valid throughout the assessment process,
-#' particularly important for adaptive testing algorithms that depend on
-#' cumulative response patterns.
+#' If \code{rv} or \code{config} is invalid, a fresh object is created via
+#' \code{init_reactive_values()}. If the session exceeds \code{config$max_session_duration},
+#' the session is reset.
 #'
-#' @return An updated reactive values object with:
-#' \describe{
-#'   \item{\code{validated}}{Boolean indicating successful validation}
-#'   \item{\code{cloud_saved}}{Boolean indicating successful cloud storage}
-#'   \item{\code{error_message}}{Character string with any validation errors}
-#'   \item{\code{warning_message}}{Character string with any validation warnings}
-#'   \item{\code{last_validation}}{Timestamp of most recent validation}
-#'   \item{\code{session_valid}}{Boolean indicating overall session validity}
-#' }
-#' All other reactive values are preserved or updated based on validation results.
+#' @return An updated reactive values object.
 #'
 #' @examples
 #' \dontrun{
@@ -636,18 +485,12 @@ init_reactive_values <- function(config) {
 #' rv_validated <- validate_session(rv, config, NULL, NULL)
 #' rv_validated$session_valid  # TRUE if validation passed
 #' 
-#' # Validate with cloud storage
-#' rv_cloud <- validate_session(
+#' # Optional WebDAV upload (requires httr/jsonlite)
+#' validate_session(
 #'   rv, config,
 #'   webdav_url = "https://cloud.example.com/webdav/",
-#'   password = "secure_password"
+#'   password = Sys.getenv("WEBDAV_PASSWORD")
 #' )
-#' rv_cloud$cloud_saved  # TRUE if successfully saved
-#' 
-#' # Handle validation failure
-#' if (!rv_validated$session_valid) {
-#'   message("Session validation failed: ", rv_validated$error_message)
-#' }
 #' }
 #'
 #' @seealso 
@@ -712,13 +555,12 @@ validate_session <- function(rv, config, webdav_url = NULL, password = NULL) {
   return(rv)
 }
 
-#' Save Assessment Session Data to Academic Cloud Storage
+#' Save Assessment Session Data to WebDAV
 #'
 #' @description
-#' Securely uploads completed assessment session data to WebDAV-compatible cloud
-#' storage with encryption and integrity verification. Designed for research
-#' environments requiring secure, compliant data storage with comprehensive
-#' audit trails and participant privacy protection.
+#' Uploads completed session data as JSON to a WebDAV endpoint using
+#' \code{httr::PUT()}. This is a convenience helper; it does not implement
+#' client-side encryption.
 #'
 #' @param rv A reactive values object containing session data, typically from
 #'   a completed assessment with \code{cat_result} populated.
@@ -731,44 +573,9 @@ validate_session <- function(rv, config, webdav_url = NULL, password = NULL) {
 #'   If \code{NULL}, attempts anonymous access.
 #'
 #' @details
-#' This function provides comprehensive cloud storage capabilities essential for
-#' research data management and institutional compliance:
-#' 
-#' \strong{Data Security and Privacy:}
-#' \itemize{
-#'   \item Base64 encoding for basic data obfuscation (replace with proper encryption in production)
-#'   \item Secure HTTPS transmission with authentication
-#'   \item Temporary file cleanup to prevent local data persistence
-#'   \item Participant identifier anonymization and data minimization
-#' }
-#' 
-#' \strong{Research Data Management:}
-#' \itemize{
-#'   \item Structured JSON format for analysis compatibility
-#'   \item Comprehensive session metadata including timestamps
-#'   \item TAM-derived psychometric results preservation
-#'   \item Response pattern and timing data for quality analysis
-#' }
-#' 
-#' \strong{Institutional Compliance:}
-#' \itemize{
-#'   \item Audit trail creation with detailed logging
-#'   \item IRB-compatible data handling procedures
-#'   \item GDPR-aware data minimization and anonymization
-#'   \item Institutional storage integration via WebDAV protocol
-#' }
-#' 
-#' \strong{Upload Architecture:}
-#' \itemize{
-#'   \item RESTful WebDAV integration for broad compatibility
-#'   \item Automatic retry logic for network resilience
-#'   \item File naming with study keys and timestamps
-#'   \item HTTP status validation and error reporting
-#' }
-#' 
-#' The saved data includes all TAM-computed psychometric results, response
-#' patterns, timing information, and demographic data (if collected), enabling
-#' comprehensive post-hoc analysis while maintaining participant privacy.
+#' The function writes the JSON payload to a temporary file and uploads that
+#' file. It can also convert a Nextcloud/ownCloud public share URL to the
+#' corresponding WebDAV endpoint.
 #'
 #' @return Logical value indicating upload success:
 #' \describe{
@@ -827,9 +634,9 @@ validate_session <- function(rv, config, webdav_url = NULL, password = NULL) {
 #' }
 #'
 #' @section Security Note:
-#' Current implementation uses base64 encoding for data obfuscation. For
-#' production research environments, implement proper encryption using
-#' \code{openssl} or similar cryptographic libraries.
+#' This function uploads plain JSON over HTTP(S). It does not encrypt the payload.
+#' Use HTTPS and server-side access controls. If you require client-side encryption,
+#' encrypt before writing/uploading.
 #'
 #' @seealso 
 #' \code{\link{validate_session}} for session validation,
@@ -858,6 +665,7 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
     return(FALSE)
   }
   
+  temp_file <- NULL
   tryCatch({
     # Ensure all data is properly structured as lists to avoid jsonlite warnings
     session_data <- list(
@@ -873,12 +681,15 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
     # Create JSON data
     json_data <- jsonlite::toJSON(session_data, auto_unbox = TRUE, pretty = TRUE)
     
-    # Use base64 encoding (built-in R function instead of base64enc package)
-    encrypted_data <- base64enc::base64encode(charToRaw(json_data))
-    
     # Create filename with timestamp
-    filename <- sprintf("%s_%s.json", config$study_key %||% "session", format(Sys.time(), "%Y%m%d_%H%M%S"))
+    safe_study_key <- gsub("[^A-Za-z0-9_-]+", "_", config$study_key %||% "session")
+    filename <- sprintf("%s_%s.json", safe_study_key, format(Sys.time(), "%Y%m%d_%H%M%S"))
     temp_file <- file.path(tempdir(), filename)
+    on.exit({
+      if (!is.null(temp_file) && file.exists(temp_file)) {
+        try(file.remove(temp_file), silent = TRUE)
+      }
+    }, add = TRUE)
     
     # Write to temp file
     writeLines(json_data, temp_file)  # Save as plain JSON for now
@@ -891,8 +702,7 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
       # Convert to WebDAV format for public shares
       base_url <- gsub("(https?://[^/]+).*", "\\1", webdav_url)
       webdav_url <- paste0(base_url, "/public.php/webdav/")
-      message(sprintf("Converted to WebDAV URL: %s", webdav_url))
-      message(sprintf("Using share token: %s", share_token))
+      message(sprintf("Converted public share URL to WebDAV endpoint: %s", webdav_url))
     }
     
     # Ensure URL ends with /
@@ -913,11 +723,8 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
       NULL
     }
     
-    # Print authentication info for debugging
     if (!is.null(auth)) {
-      message(sprintf("Using authentication: user='%s', password='%s'", 
-                    if (!is.null(share_token)) share_token else "",
-                    if (!is.null(password)) "***" else ""))
+      message("Authentication configured")
     } else {
       message("No authentication configured")
     }
@@ -936,7 +743,6 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
     # Detailed error reporting
     if (httr::status_code(response) %in% c(200, 201, 204)) {
       message(sprintf("Session data successfully uploaded to %s as %s", webdav_url, filename))
-      file.remove(temp_file)
       return(TRUE)
     } else {
       status_code <- httr::status_code(response)
@@ -967,7 +773,6 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
         message("Could not retrieve server response details")
       })
       
-      file.remove(temp_file)
       return(FALSE)
     }
   }, error = function(e) {
@@ -977,57 +782,19 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
 
 }
 
-#' Resume Assessment Session from Cloud or Local Storage
+#' Resume Assessment Session from Local Storage
 #'
 #' @description
-#' Restores previously saved assessment session data from encrypted files,
-#' enabling continuation of interrupted assessments and comprehensive data
-#' recovery for research continuity. Supports both local and cloud-stored
-#' session files with integrity verification and validation.
+#' Reads session data from a file created by \code{save_session_to_cloud()}.
+#' Supports plain JSON and (legacy) base64-encoded JSON.
 #'
-#' @param file_path Character string specifying the path to the encrypted
-#'   session file. Can be local file path or downloaded cloud storage file.
-#'   File should have been created by \code{\link{save_session_to_cloud}}.
+#' @param file_path Character string specifying the path to a JSON file.
+#'   The file may also contain base64-encoded JSON for legacy backups.
 #'
 #' @details
-#' This function provides comprehensive session restoration capabilities
-#' essential for research environments requiring robust data recovery:
-#' 
-#' \strong{Data Recovery Architecture:}
-#' \itemize{
-#'   \item Encrypted file decryption using base64 decoding (upgrade to proper encryption in production)
-#'   \item JSON structure validation and parsing
-#'   \item Data integrity verification against expected session format
-#'   \item Graceful error handling with detailed logging
-#' }
-#' 
-#' \strong{Session Restoration Process:}
-#' \itemize{
-#'   \item File accessibility and format validation
-#'   \item Decryption and data structure reconstruction
-#'   \item TAM-compatible data format verification
-#'   \item Session state validation for assessment continuation
-#' }
-#' 
-#' \strong{Research Continuity Features:}
-#' \itemize{
-#'   \item Complete psychometric state restoration for TAM integration
-#'   \item Response pattern and timing data preservation
-#'   \item Demographic information recovery
-#'   \item Assessment progress tracking restoration
-#' }
-#' 
-#' \strong{Quality Assurance:}
-#' \itemize{
-#'   \item Data corruption detection and reporting
-#'   \item Version compatibility validation
-#'   \item Comprehensive error logging for debugging
-#'   \item Fallback strategies for partial data recovery
-#' }
-#' 
-#' The restored session data maintains full compatibility with TAM's
-#' psychometric functions, enabling seamless continuation of adaptive
-#' assessments with preserved ability estimates and response histories.
+#' The function first tries to parse the file as JSON. If that fails, it falls
+#' back to base64-decoding the file contents (requires the \code{base64enc}
+#' package) and parsing the decoded text as JSON.
 #'
 #' @return A comprehensive list containing restored session data, or \code{NULL} if restoration fails:
 #' \describe{
@@ -1044,7 +811,7 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
 #' @examples
 #' \dontrun{
 #' # Resume from local file
-#' session_data <- resume_session("path/to/STUDY2024_001_20241201_143022.enc")
+#' session_data <- resume_session("path/to/STUDY2024_001_20241201_143022.json")
 #' 
 #' if (!is.null(session_data)) {
 #'   # Successful restoration
@@ -1064,7 +831,7 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
 #' }
 #' 
 #' # Resume from downloaded cloud file
-#' cloud_file <- "downloads/research_session_backup.enc"
+#' cloud_file <- "downloads/research_session_backup.json"
 #' restored_session <- resume_session(cloud_file)
 #' 
 #' # Validate restored data before proceeding
@@ -1076,13 +843,10 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
 #' }
 #'
 #' @section File Format:
-#' Expected encrypted file format (base64-encoded JSON):
+#' Supported file formats:
 #' \itemize{
-#'   \item Study metadata and identifiers
-#'   \item Complete psychometric state for TAM integration
-#'   \item Response patterns and timing information
-#'   \item Assessment progress and stopping criteria status
-#'   \item Participant demographic information (if collected)
+#'   \item Plain JSON (recommended)
+#'   \item Base64-encoded JSON (legacy)
 #' }
 #'
 #' @section Error Handling:
@@ -1107,9 +871,18 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
 #' @export
 resume_session <- function(file_path) {
   tryCatch({
-    encrypted_data <- readLines(file_path)
-    json_data <- rawToChar(base64enc::base64decode(encrypted_data))
-    session_data <- jsonlite::fromJSON(json_data)
+    raw_text <- paste(readLines(file_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+
+    # Prefer plain JSON; fall back to base64-decoding for legacy files.
+    session_data <- tryCatch({
+      jsonlite::fromJSON(raw_text)
+    }, error = function(e) {
+      if (!requireNamespace("base64enc", quietly = TRUE)) {
+        stop("Failed to parse as JSON and 'base64enc' is not available for legacy decoding")
+      }
+      json_data <- rawToChar(base64enc::base64decode(raw_text))
+      jsonlite::fromJSON(json_data)
+    })
     message("Session successfully restored.")
     session_data
   }, error = function(e) {

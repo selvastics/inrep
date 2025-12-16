@@ -18,7 +18,7 @@
 
 ## Overview
 
-**inrep Studio**  A starting point for building surveys without writing a single line of code. You can set up items, routing, scoring, and labels through an intuitive Shiny interface. This studio exports *inrep* code which runs directly in R.  
+**inrep Studio** is a Shiny app for configuring surveys/assessments using a UI. It can generate *inrep* R code that you can run directly in R.
 Try it out: [inrep-studio](https://selvastics.shinyapps.io/inrep-studio/) (open in a new tab manually)
 
 
@@ -59,7 +59,7 @@ library(inrep)
 ### Step 1: Install R and RStudio
 
 1. **Install R**: [https://cran.r-project.org](https://cran.r-project.org)  
-2. **Install RStudio**: [https://posit.co/download/rstudio-desktop](https://posit.co/download/rstudio-desktop)
+2. **Install RStudio**: [https://posit.co/download/rstudio-desktop/](https://posit.co/download/rstudio-desktop/)
 
 ### Step 2: Install Required System Tools
 

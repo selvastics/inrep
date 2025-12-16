@@ -7,6 +7,8 @@
 #' @name ui_components
 #' @keywords internal
 
+NULL
+
 # ============================================================================
 # SECTION 1: UI HELPER FUNCTIONS (from ui_helper.R)
 # ============================================================================
@@ -108,10 +110,8 @@ inrep_ui <- function(type = c("assessment", "demographics"),
 #' Create Response UI Component for Assessment Items
 #'
 #' @description
-#' Generates standardized Shiny UI components for participant responses to
-#' assessment items. Supports multiple response formats commonly used in
-#' psychometric assessments, with accessibility features and consistent
-#' styling optimized for TAM-based item response modeling.
+#' Generates Shiny UI components for collecting a response to one item.
+#' Supports multiple response formats (radio buttons, dropdown, slider).
 #'
 #' @param item A data frame row containing complete item details including
 #'   question text and response options. Expected columns include:
@@ -122,46 +122,10 @@ inrep_ui <- function(type = c("assessment", "demographics"),
 #'   slider input, \code{"dropdown"} for dropdown selection. Default is \code{"radio"}.
 #'
 #' @details
-#' This function creates standardized response interfaces that integrate
-#' seamlessly with TAM's item response modeling and adaptive testing algorithms:
-#' 
-#' \strong{Response Interface Types:}
-#' \itemize{
-#'   \item \strong{Radio Buttons}: Optimal for 2-5 response options, clear visual selection
-#'   \item \strong{Dropdown}: Space-efficient for items with many response options
-#'   \item \strong{Slider}: Continuous-feel interface for Likert-type scales
-#' }
-#' 
-#' \strong{Psychometric Considerations:}
-#' \itemize{
-#'   \item Response order preservation for TAM parameter estimation
-#'   \item Clear option labeling to minimize response errors
-#'   \item Consistent interaction patterns across assessment items
-#'   \item Validation-ready for missing response detection
-#' }
-#' 
-#' \strong{Accessibility Features:}
-#' \itemize{
-#'   \item Keyboard navigation support for all interface types
-#'   \item Screen reader compatibility with proper labeling
-#'   \item High contrast options and responsive design
-#'   \item Touch-friendly interfaces for mobile devices
-#' }
-#' 
-#' \strong{Research Standards:}
-#' \itemize{
-#'   \item Consistent option presentation across items
-#'   \item Integration with response time tracking
-#'   \item Support for multilingual option labels
-#'   \item Quality assurance through input validation
-#' }
-#' 
-#' The generated UI components automatically integrate with the assessment's
-#' reactive system and TAM-based ability estimation procedures.
+#' The returned UI element is intended to be used inside the study UI where the
+#' server code reads the value from \code{input$item_response}.
 #'
-#' @return A Shiny UI element (radioButtons, sliderInput, or selectInput)
-#'   configured for the specified response type with proper accessibility
-#'   attributes and validation support.
+#' @return A Shiny UI element (\code{radioButtons}, \code{sliderInput}, or \code{selectInput}).
 #'
 #' @examples
 #' \dontrun{
@@ -222,7 +186,7 @@ inrep_ui <- function(type = c("assessment", "demographics"),
 #' }
 #'
 #' @seealso 
-#' \code{\link{create_demographic_input}} for demographic interface components,
+#' \code{create_demographic_input()} for demographic interface components,
 #' \code{\link{launch_study}} for complete assessment workflow,
 #' \code{\link{select_next_item}} for adaptive item selection,
 #' \code{\link{estimate_ability}} for TAM-based ability estimation
@@ -268,10 +232,8 @@ create_response_ui <- function(item, response_ui_type) {
 #' Create Demographics UI Interface for Assessment Workflow
 #'
 #' @description
-#' Generates comprehensive Shiny UI components for demographic data collection
-#' as part of the assessment workflow. Creates standardized input interfaces
-#' that integrate seamlessly with TAM-based psychometric assessments while
-#' maintaining accessibility standards and research best practices.
+#' Generates Shiny UI components for demographic data collection as part of the
+#' assessment workflow.
 #'
 #' @param demographics A character vector specifying demographic fields to
 #'   collect (e.g., \code{c("Age", "Gender", "Education")}). If \code{NULL},
@@ -282,49 +244,14 @@ create_response_ui <- function(item, response_ui_type) {
 #'   \code{list(Age = "numeric", Gender = "select", Education = "text")}.
 #'
 #' @details
-#' This function creates standardized demographic collection interfaces that
-#' support research requirements while maintaining participant experience quality:
-#' 
-#' \strong{Demographic Input Types:}
-#' \itemize{
-#'   \item \strong{Numeric}: Age, years of experience, education years
-#'   \item \strong{Select}: Gender, education level, employment status
-#'   \item \strong{Text}: Open-ended fields like occupation, comments
-#' }
-#' 
-#' \strong{Research Standards:}
-#' \itemize{
-#'   \item Consistent labeling and formatting across studies
-#'   \item Validation-ready for data quality assurance
-#'   \item Integration with IRT-Based Assessment workflows
-#'   \item Support for IRB-compliant data collection practices
-#' }
-#' 
-#' \strong{Accessibility Features:}
-#' \itemize{
-#'   \item Clear labels and logical tab order
-#'   \item Screen reader compatibility
-#'   \item Mobile-responsive design
-#'   \item High contrast and keyboard navigation support
-#' }
-#' 
-#' \strong{Workflow Integration:}
-#' \itemize{
-#'   \item Seamless transition to assessment items
-#'   \item Data validation before proceeding
-#'   \item Integration with session management
-#'   \item Support for resume/save functionality
-#' }
-#' 
-#' The generated interface automatically handles the transition from demographic
-#' collection to the main assessment, ensuring proper data validation and
-#' session state management.
+#' If \code{demographics} is \code{NULL}, the function returns only the start
+#' button to proceed directly to the assessment.
 #'
 #' @return A Shiny UI element containing:
 #' \describe{
 #'   \item{Input components}{Formatted demographic inputs based on specified types}
 #'   \item{Start button}{Action button to proceed to assessment ("Start Test")}
-#'   \item{Validation}{ Built-in validation for required fields}
+#'   \item{Validation}{Basic client-side structure for required fields}
 #' }
 #' If \code{demographics} is \code{NULL}, returns only the "Start Test" button.
 #'
@@ -382,7 +309,7 @@ create_response_ui <- function(item, response_ui_type) {
 #' }
 #'
 #' @seealso 
-#' \code{\link{create_demographic_input}} for individual demographic components,
+#' \code{create_demographic_input()} for individual demographic components,
 #' \code{\link{create_response_ui}} for assessment item interfaces,
 #' \code{\link{launch_study}} for complete assessment workflow,
 #' \code{\link{create_study_config}} for demographic configuration setup

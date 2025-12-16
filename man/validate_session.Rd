@@ -21,62 +21,16 @@ or \code{NULL} to disable cloud saving. Should follow format
 or \code{NULL} if authentication is not required.}
 }
 \value{
-An updated reactive values object with:
-\describe{
-  \item{\code{validated}}{Boolean indicating successful validation}
-  \item{\code{cloud_saved}}{Boolean indicating successful cloud storage}
-  \item{\code{error_message}}{Character string with any validation errors}
-  \item{\code{warning_message}}{Character string with any validation warnings}
-  \item{\code{last_validation}}{Timestamp of most recent validation}
-  \item{\code{session_valid}}{Boolean indicating overall session validity}
-}
-All other reactive values are preserved or updated based on validation results.
+An updated reactive values object.
 }
 \description{
-Performs comprehensive validation of session state including timeout checks,
-data integrity verification, and automatic cloud storage for completed sessions.
-Ensures session continuity and data preservation throughout the assessment process.
+Normalizes the session state object (adds missing fields, applies timeout
+reset) and optionally uploads completed sessions to WebDAV.
 }
 \details{
-This function performs multi-level session validation essential for maintaining
-assessment integrity and research data quality:
-
-\strong{Session State Validation:}
-\itemize{
-  \item Timeout detection based on configuration parameters
-  \item Response pattern integrity and completeness checks
-  \item Ability estimation convergence verification
-  \item Item administration sequence validation
-}
-
-\strong{Data Quality Assurance:}
-\itemize{
-  \item Response time analysis for engagement monitoring
-  \item Missing data pattern identification
-  \item Unusual response pattern detection (rapid guessing, non-response)
-  \item TAM model fit validation for completed assessments
-}
-
-\strong{Cloud Storage Integration:}
-\itemize{
-  \item Automatic saving of completed sessions to WebDAV storage
-  \item Incremental backup for long assessments
-  \item Secure authentication with encrypted transmission
-  \item Retry logic for network failures and recovery
-}
-
-\strong{Session Recovery:}
-\itemize{
-  \item Invalid session state reset with logging
-  \item Graceful degradation for network issues
-  \item Preservation of participant progress where possible
-  \item Audit trail maintenance for session events
-}
-
-The validation process integrates with TAM's psychometric functions to ensure
-that statistical computations remain valid throughout the assessment process,
-particularly important for adaptive testing algorithms that depend on
-cumulative response patterns.
+If \code{rv} or \code{config} is invalid, a fresh object is created via
+\code{init_reactive_values()}. If the session exceeds \code{config$max_session_duration},
+the session is reset.
 }
 \examples{
 \dontrun{
@@ -96,18 +50,12 @@ rv$administered <- c(1, 5, 10, 15, 20)
 rv_validated <- validate_session(rv, config, NULL, NULL)
 rv_validated$session_valid  # TRUE if validation passed
 
-# Validate with cloud storage
-rv_cloud <- validate_session(
+# Optional WebDAV upload (requires httr/jsonlite)
+validate_session(
   rv, config,
   webdav_url = "https://cloud.example.com/webdav/",
-  password = "secure_password"
+  password = Sys.getenv("WEBDAV_PASSWORD")
 )
-rv_cloud$cloud_saved  # TRUE if successfully saved
-
-# Handle validation failure
-if (!rv_validated$session_valid) {
-  message("Session validation failed: ", rv_validated$error_message)
-}
 }
 
 }

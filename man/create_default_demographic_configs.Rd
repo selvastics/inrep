@@ -10,6 +10,9 @@ create_default_demographic_configs(demographics, input_types, ui_labels = NULL)
 \item{demographics}{Character vector of demographic field names}
 
 \item{input_types}{Named list of input types for demographic fields}
+
+\item{ui_labels}{Optional named list of label strings used in placeholders.
+If NULL, defaults are used.}
 }
 \value{
 List of demographic configurations with full control

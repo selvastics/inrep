@@ -12,6 +12,50 @@
 .session_state$max_session_time <- NULL
 .session_state$data_preservation_interval <- 30  # seconds
 .session_state$keep_alive_interval <- 10  # seconds
+.session_state$tracked_objects <- list()
+
+register_session_objects <- function(
+  rv = NULL,
+  config = NULL,
+  item_bank = NULL,
+  responses = NULL,
+  ability_estimates = NULL
+) {
+  if (!is.null(rv)) .session_state$tracked_objects$rv <- rv
+  if (!is.null(config)) .session_state$tracked_objects$config <- config
+  if (!is.null(item_bank)) .session_state$tracked_objects$item_bank <- item_bank
+  if (!is.null(responses)) .session_state$tracked_objects$responses <- responses
+  if (!is.null(ability_estimates)) .session_state$tracked_objects$ability_estimates <- ability_estimates
+
+  invisible(TRUE)
+}
+
+.inrep_redact_list <- function(x) {
+  if (is.null(x)) return(x)
+  if (!is.list(x)) return(x)
+
+  redact_name <- function(nm) {
+    grepl("password|passwd|token|secret|authorization|auth", nm, ignore.case = TRUE)
+  }
+
+  out <- x
+  nms <- names(out)
+  if (!is.null(nms)) {
+    for (i in seq_along(out)) {
+      nm <- nms[[i]]
+      if (!is.null(nm) && nzchar(nm) && redact_name(nm)) {
+        out[[i]] <- "<redacted>"
+      } else {
+        out[[i]] <- .inrep_redact_list(out[[i]])
+      }
+    }
+  } else {
+    for (i in seq_along(out)) {
+      out[[i]] <- .inrep_redact_list(out[[i]])
+    }
+  }
+  out
+}
 
 #' Clean up old session files to prevent conflicts
 #' 
@@ -58,20 +102,11 @@ ensure_complete_data_isolation <- function(session_id) {
     dir.create(session_data_dir, recursive = TRUE)
   }
   
-  # Set session-specific environment variables to prevent data leakage
-  Sys.setenv(INREP_SESSION_ID = session_id)
-  Sys.setenv(INREP_SESSION_DATA_DIR = session_data_dir)
-  
-  # Clear any global variables that might contain data from previous sessions
-  if (exists(".logging_data", envir = .GlobalEnv)) {
-    rm(".logging_data", envir = .GlobalEnv)
-  }
-  
-  # Initialize fresh session-specific logging data
-  .GlobalEnv$.logging_data <- new.env()
-  .GlobalEnv$.logging_data$session_id <- session_id
-  .GlobalEnv$.logging_data$session_start <- Sys.time()
-  .GlobalEnv$.logging_data$current_page_start <- Sys.time()
+  # Initialize fresh session-specific logging data (package state)
+  log_env <- .inrep_reset_logging_data(session_id)
+  log_env$session_id <- session_id
+  log_env$session_start <- Sys.time()
+  log_env$current_page_start <- Sys.time()
   
   # Check for existing session files that might indicate conflicts
   temp_dir <- tempdir()
@@ -110,14 +145,12 @@ cleanup_session_data <- function(session_id) {
       unlink(session_data_dir, recursive = TRUE)
     }
     
-    # Clear session-specific environment variables
-    Sys.unsetenv("INREP_SESSION_ID")
-    Sys.unsetenv("INREP_SESSION_DATA_DIR")
-    
-    # Clear global logging data for this session
-    if (exists(".logging_data", envir = .GlobalEnv)) {
-      rm(".logging_data", envir = .GlobalEnv)
+    # Clear session logging data
+    env <- .inrep_get_env()
+    if (is.null(env$logging_data)) {
+      env$logging_data <- new.env(parent = emptyenv())
     }
+    env$logging_data[[session_id]] <- NULL
     
     log_session_event("SESSION_CLEANUP", sprintf("Cleaned up all data for session: %s", session_id))
   }, error = function(e) {
@@ -437,53 +470,39 @@ get_session_data <- function() {
   # For now, we'll collect common session elements
   
   session_data <- list()
-  
-  # Try to get reactive values if they exist
-  if (exists("rv", envir = .GlobalEnv)) {
+
+  tracked <- .session_state$tracked_objects
+
+  if (!is.null(tracked$rv)) {
     tryCatch({
-      rv <- get("rv", envir = .GlobalEnv)
-      if (!is.null(rv) && is.reactivevalues(rv)) {
+      rv <- tracked$rv
+      if (!is.null(rv) && shiny::is.reactivevalues(rv)) {
         tryCatch({
-          rv_list <- reactiveValuesToList(rv)
-          # Only add if we have actual data
+          rv_list <- shiny::reactiveValuesToList(rv)
+          rv_list <- .inrep_redact_list(rv_list)
           if (!is.null(rv_list) && length(rv_list) > 0) {
             session_data$reactive_values <- rv_list
           }
         }, error = function(e2) {
-          # If reactiveValuesToList fails, skip this data collection
           if (.session_state$enable_logging) {
-            log_session_event("DATA_COLLECTION_ERROR", "Failed to convert reactive values to list", 
+            log_session_event("DATA_COLLECTION_ERROR", "Failed to convert reactive values to list",
                              list(error = e2$message))
           }
         })
       }
     }, error = function(e) {
-      # Log data collection errors to file only for background operations
       if (.session_state$enable_logging) {
-        log_session_event("DATA_COLLECTION_ERROR", "Failed to collect reactive values", 
+        log_session_event("DATA_COLLECTION_ERROR", "Failed to collect reactive values",
                          list(error = e$message))
       }
     })
   }
-  
-  # Try to get other common session objects
+
   common_objects <- c("config", "item_bank", "responses", "ability_estimates")
   for (obj_name in common_objects) {
-    if (exists(obj_name, envir = .GlobalEnv)) {
-      tryCatch({
-        obj <- get(obj_name, envir = .GlobalEnv)
-        # Only add if object has content
-        if (!is.null(obj) && length(obj) > 0) {
-          session_data[[obj_name]] <- obj
-        }
-      }, error = function(e) {
-        # Log data collection errors to file only for background operations
-        if (.session_state$enable_logging) {
-          log_session_event("DATA_COLLECTION_ERROR", 
-                           sprintf("Failed to collect %s", obj_name), 
-                           list(error = e$message))
-        }
-      })
+    obj <- tracked[[obj_name]]
+    if (!is.null(obj) && length(obj) > 0) {
+      session_data[[obj_name]] <- .inrep_redact_list(obj)
     }
   }
   

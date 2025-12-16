@@ -205,18 +205,11 @@ detect_outlier_items <- function(item_bank, discrimination_threshold = 0.2) {
 #' @param model Character string specifying IRT model for simulation.
 #'   Options: "GRM", "2PL", "1PL", "3PL". Default is "GRM".
 #' @param n Integer specifying number of simulated participants. Default is 100.
-#' @param ability_range Numeric vector of length 2 specifying the range of simulated
-#'   abilities. Default is c(-3, 3).
-#' @param max_items Integer specifying maximum items per simulated assessment.
-#'   Default is 20.
 #' 
-#' @return List containing comprehensive simulation results:
+#' @return A list of length \code{n}. Each element contains:
 #' \describe{
-#'   \item{\code{participants}}{List of individual participant results}
-#'   \item{\code{summary}}{Summary statistics across all participants}
-#'   \item{\code{item_usage}}{Item usage frequency across simulations}
-#'   \item{\code{ability_recovery}}{Ability estimation accuracy metrics}
-#'   \item{\code{convergence}}{Convergence statistics for TAM estimation}
+#'   \item{\code{theta}}{Simulated ability value.}
+#'   \item{\code{responses}}{Integer vector of simulated responses (one per item).}
 #' }
 #' 
 #' @export

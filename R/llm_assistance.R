@@ -1,29 +1,11 @@
-#' Generate LLM Customization Prompt
+#' Generate Customization Prompt
 #'
 #' @description
-#' Generates a prompt with your current configuration and inrep package context.
-#' Copy the output to an LLM (ChatGPT, Claude, etc.) to get customized R code.
-#' 
-#' \strong{Best Practice for Optimal Results:}
-#' 
-#' The LLM will provide the most accurate customization advice when one gives it 
-#' as much context as possible about the inrep functions. Here's the recommended workflow:
-#' 
-#' \enumerate{
-#'   \item \strong{Start}: Generate the initial prompt with this function
-#'   \item \strong{Copy to LLM}: Paste the prompt into ChatGPT/Claude
-#'   \item \strong{Add Function Context}: If the LLM asks about specific parameters or you 
-#'         encounter errors, search the inrep source code for those terms
-#'   \item \strong{Copy Relevant Code}: Add the relevant function code snippets back to your 
-#'         conversation with the LLM
-#'   \item \strong{Iterate}: The LLM can now give precise advice based on the actual 
-#'         implementation details
-#' }
-#' 
-#' Example: If one get an error about \code{min_SEM} or wants to understand \code{theta_prior},
-#' look up those parameters in the inrep documentation or source code and share that context
-#' with the LLM. This allows the LLM to provide accurate, implementation-specific guidance
-#' rather than generic advice.
+#' Builds a plain-text prompt that summarizes your current configuration and the relevant
+#' \code{inrep} concepts/parameters. Use it when asking for external review or code generation.
+#'
+#' @details
+#' This function prints the prompt to the console and invisibly returns it.
 #'
 #' @param config Study configuration from \code{\link{create_study_config}}.
 #'   If NULL, generates general context.
@@ -63,7 +45,7 @@ generate_llm_prompt <- function(config = NULL, focus = "general", item_bank = NU
   }
   
   cat("\n", strrep("=", 80), "\n", sep = "")
-  cat("COPY THIS PROMPT TO YOUR LLM (ChatGPT, Claude, etc.)\n")
+  cat("PROMPT (paste into your assistant/tool)\n")
   cat(strrep("=", 80), "\n\n", sep = "")
   cat(prompt)
   cat("\n\n", strrep("=", 80), "\n\n", sep = "")
@@ -78,7 +60,7 @@ build_general_prompt <- function() {
     "I'm using the inrep R package for adaptive assessments (IRT-based, uses TAM).\n\n",
     
     "=== WHAT I WANT ===\n",
-    "[Describe your customization goal here]\n\n",
+    "[Describe your goal here]\n\n",
     
     "=== THREE README EXAMPLES FROM inrep ===\n\n",
     
@@ -458,7 +440,7 @@ enable_llm_assistance <- function(enable = TRUE, verbose = TRUE) {
   previous <- getOption("inrep.llm_assistance", FALSE)
   options(inrep.llm_assistance = enable)
   if (verbose) {
-    message(if (enable) "LLM prompts enabled" else "LLM prompts disabled")
+    message(if (enable) "Prompt generation enabled" else "Prompt generation disabled")
   }
   invisible(previous)
 }

@@ -14,8 +14,6 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-THIS IS STILL UNDER ACTIVE DEVELOPMENT.
-
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -30,9 +28,11 @@ In this vignette, we will learn how to calibrate your item bank to create more a
 
 ## Installation
 ```{r eval=FALSE}
+# Install from CRAN
+install.packages("inrep")
 
-# Install development version from GitHub
-devtools::install_github("selvastics/inrep")
+# Or install the development version
+remotes::install_github("selvastics/inrep")
 ```
 
 ## Let's start by exploring our data
@@ -286,7 +286,7 @@ config <- create_study_config(
 launch_study(
   config = config,
   item_bank = personality_items,
-  debug_mode = TRUE  # Enable our optimized debug mode
+  debug_mode = TRUE  # Enable debug mode
 )
 
 # The assessment will stop after N items have been administered, where N is above

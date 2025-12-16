@@ -35,42 +35,14 @@ A comprehensive list containing initialized reactive values:
 }
 }
 \description{
-Initializes comprehensive reactive values for an adaptive testing session, 
-establishing the foundational data structures required for TAM-based psychometric
-computations and real-time assessment management.
+Initializes the reactive values object used by the Shiny study runtime.
+It sets up the fields that track administered items, responses, timing, and
+intermediate ability/SE estimates.
 }
 \details{
-This function creates a standardized reactive value structure that coordinates
-between the user interface and TAM's psychometric functions. The initialization
-process establishes:
-
-\strong{Session Management:}
-\itemize{
-  \item Assessment stage tracking (demographics, assessment, completion)
-  \item Response collection and validation structures
-  \item Real-time ability and standard error tracking
-  \item Item administration history and timing data
-}
-
-\strong{TAM Integration Architecture:}
-\itemize{
-  \item Ability estimation tracking via TAM's \code{\link[TAM]{tam.wle}}/\code{\link[TAM]{tam.eap}}
-  \item Standard error monitoring for stopping criteria
-  \item Response pattern management for TAM model fitting
-  \item Information caching for adaptive selection algorithms
-}
-
-\strong{Quality Assurance:}
-\itemize{
-  \item Response time tracking for engagement monitoring
-  \item Error handling and recovery mechanisms
-  \item Session validation and integrity checks
-  \item Comprehensive audit trail initialization
-}
-
-The reactive values structure enables seamless integration between Shiny's
-reactive programming model and TAM's statistical computations, ensuring
-real-time updates without compromising psychometric accuracy.
+The returned object is a plain list. Downstream code treats it as a reactive
+container (typically a Shiny \code{reactiveValues()} instance) and updates
+fields as the session progresses.
 }
 \examples{
 \dontrun{

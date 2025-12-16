@@ -2,7 +2,7 @@
 % Please edit documentation in R/core_utils.R
 \name{save_session_to_cloud}
 \alias{save_session_to_cloud}
-\title{Save Assessment Session Data to Academic Cloud Storage}
+\title{Save Assessment Session Data to WebDAV}
 \usage{
 save_session_to_cloud(rv, config, webdav_url = NULL, password = NULL)
 }
@@ -28,50 +28,14 @@ Logical value indicating upload success:
 }
 }
 \description{
-Securely uploads completed assessment session data to WebDAV-compatible cloud
-storage with encryption and integrity verification. Designed for research
-environments requiring secure, compliant data storage with comprehensive
-audit trails and participant privacy protection.
+Uploads completed session data as JSON to a WebDAV endpoint using
+\code{httr::PUT()}. This is a convenience helper; it does not implement
+client-side encryption.
 }
 \details{
-This function provides comprehensive cloud storage capabilities essential for
-research data management and institutional compliance:
-
-\strong{Data Security and Privacy:}
-\itemize{
-  \item Base64 encoding for basic data obfuscation (replace with proper encryption in production)
-  \item Secure HTTPS transmission with authentication
-  \item Temporary file cleanup to prevent local data persistence
-  \item Participant identifier anonymization and data minimization
-}
-
-\strong{Research Data Management:}
-\itemize{
-  \item Structured JSON format for analysis compatibility
-  \item Comprehensive session metadata including timestamps
-  \item TAM-derived psychometric results preservation
-  \item Response pattern and timing data for quality analysis
-}
-
-\strong{Institutional Compliance:}
-\itemize{
-  \item Audit trail creation with detailed logging
-  \item IRB-compatible data handling procedures
-  \item GDPR-aware data minimization and anonymization
-  \item Institutional storage integration via WebDAV protocol
-}
-
-\strong{Upload Architecture:}
-\itemize{
-  \item RESTful WebDAV integration for broad compatibility
-  \item Automatic retry logic for network resilience
-  \item File naming with study keys and timestamps
-  \item HTTP status validation and error reporting
-}
-
-The saved data includes all TAM-computed psychometric results, response
-patterns, timing information, and demographic data (if collected), enabling
-comprehensive post-hoc analysis while maintaining participant privacy.
+The function writes the JSON payload to a temporary file and uploads that
+file. It can also convert a Nextcloud/ownCloud public share URL to the
+corresponding WebDAV endpoint.
 }
 \section{Data Structure}{
 
@@ -89,9 +53,9 @@ The uploaded JSON contains:
 
 \section{Security Note}{
 
-Current implementation uses base64 encoding for data obfuscation. For
-production research environments, implement proper encryption using
-\code{openssl} or similar cryptographic libraries.
+This function uploads plain JSON over HTTP(S). It does not encrypt the payload.
+Use HTTPS and server-side access controls. If you require client-side encryption,
+encrypt before writing/uploading.
 }
 
 \examples{

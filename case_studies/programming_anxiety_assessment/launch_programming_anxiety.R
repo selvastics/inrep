@@ -1056,7 +1056,7 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
         '<div style="background-color: #f8f9fa; padding: 30px; border-radius: 8px; text-align: center; margin-top: 30px; border: 1px solid #e9ecef;">',
         '<h2 style="color: #495057; margin-top: 0; font-size: 22px; font-weight: 400;">Thank You for Participating</h2>',
         '<p style="color: #495057; font-size: 16px; margin: 15px 0; line-height: 1.6;">Your participation contributes to our understanding of programming anxiety and helps improve educational experiences for future students.</p>',
-        '<p style="color: #6c757d; font-size: 14px; margin: 15px 0 0 0;">Your responses have been securely stored and anonymized for research purposes.</p>',
+        '<p style="color: #6c757d; font-size: 14px; margin: 15px 0 0 0;">Data handling depends on how this study is hosted and configured. Review the study information provided by the researcher for details.</p>',
         '</div>',
 
         '</div>'

@@ -74,7 +74,7 @@ including ARIA labels, keyboard navigation, and screen reader support.}
 Called with participant progress, ability estimates, and session metrics.}
 
 \item{max_session_time}{Maximum session time in seconds (default: 7200 = 2 hours).
-The assessment will automatically terminate after this time to ensure data security.}
+The assessment will automatically terminate after this time to limit session duration.}
 
 \item{session_save}{Logical indicating whether to enable session saving and recovery.}
 
@@ -89,6 +89,28 @@ with up to 3 recovery attempts before graceful degradation.}
 When TRUE, enables keyboard shortcuts for rapid testing: STRG+A (CTRL+A) smart fills current page with
 contextual defaults, STRG+Q (CTRL+Q) turbo auto-fills all pages until results are reached.
 A red debug indicator appears in the bottom-right corner. **Use only for development/testing!**}
+
+\item{ui_render_delay}{Optional numeric delay (in seconds) before rendering the main UI.
+If NULL, no additional delay is applied.}
+
+\item{package_loading_delay}{Optional numeric delay (in seconds) used when deferring
+package loading for immediate UI startup.}
+
+\item{session_init_delay}{Optional numeric delay (in seconds) before initializing
+session state.}
+
+\item{show_loading_screen}{Logical indicating whether to show a simple loading
+screen when using delayed startup.}
+
+\item{immediate_ui}{Logical indicating whether to render the UI immediately and
+load heavier components in the background.}
+
+\item{auto_close_time}{Numeric. Time until auto-close after the final results page.
+Used only for custom page flows that include results pages.}
+
+\item{auto_close_time_unit}{Character. Either \code{"seconds"} or \code{"minutes"}.}
+
+\item{disable_auto_close}{Logical. If TRUE, disables automatic closing.}
 
 \item{port}{Numeric port number for Shiny application (default: 3838).
 The application will be accessible at http://host:port.}
@@ -105,27 +127,26 @@ Use "0.0.0.0" for network access or specific IP addresses for remote access.}
 When \code{launch_browser = TRUE}, launches the Shiny application
   in the default browser. When \code{launch_browser = FALSE} (default), returns the Shiny app
   object for manual execution with \code{shiny::runApp()}.
-  The app provides a complete assessment interface with real-time adaptation.
+  The app provides an assessment interface with optional adaptation.
 }
 \description{
-NOTE THIS IS UNDER ACTIVE DEVELOPMENT - WE PUT ALL IN ONE FUNCTION FOR NOW
-Why is all in one function? Because you can more easily pass this entire function to an LLM to customize a specific study. 
-I will eventually split this up into smaller functions, but for now it's all in one for convenience. 
+Implementation note: currently implemented as a single function and will be
+refactored into smaller internal helpers.
 Launches a Shiny-based adaptive or non-adaptive assessment interface that serves as
-a comprehensive wrapper around TAM's psychometric capabilities. All IRT computations
-(ability estimation, item selection, model fitting) are performed by the TAM package,
-while this function provides the interactive interface, workflow management, and
-integration layer for comprehensive research workflows.
+a wrapper around optional psychometric backends (for example, TAM). When available,
+IRT computations (ability estimation, item selection, model fitting) are delegated to
+the backend, while this function provides the interactive interface and workflow
+management.
 }
 \details{
 \strong{Psychometric Foundation:} All statistical computations are performed by the
 TAM package (Robitzsch et al., 2024). \code{inrep} serves as an integration framework
 that orchestrates TAM's capabilities within an interactive research workflow:
 \itemize{
-  \item IRT model fitting: \code{\link[TAM]{tam.mml}}, \code{\link[TAM]{tam.mml.2pl}}, \code{\link[TAM]{tam.mml.3pl}}
-  \item Ability estimation: \code{\link[TAM]{tam.wle}}, \code{\link[TAM]{tam.eap}}
-  \item Item information: \code{\link[TAM]{IRT.informationCurves}}
-  \item Model diagnostics: \code{\link[TAM]{tam.fit}}
+  \item IRT model fitting: \code{TAM::tam.mml}, \code{TAM::tam.mml.2pl}, \code{TAM::tam.mml.3pl}
+  \item Ability estimation: \code{TAM::tam.wle}
+  \item Item information: \code{TAM::IRT.informationCurves}
+  \item Model diagnostics: \code{TAM::tam.fit}
 }
 
 \strong{Framework Architecture:} \code{inrep} provides the following integration capabilities:
@@ -137,36 +158,18 @@ that orchestrates TAM's capabilities within an interactive research workflow:
   \item Result export in multiple formats with cloud storage integration
 }
 
-\strong{Assessment Features:} This function provides comprehensive computerized 
-adaptive testing (CAT) capabilities including:
+\strong{Capabilities:}
 \itemize{
-  \item Multilingual interface support (English, German, Spanish, French)
-  \item Configurable demographic data collection with validation
-  \item Adaptive and non-adaptive administration modes
-  \item Support for multiple IRT models (1PL/Rasch, 2PL, 3PL, GRM)
-  \item Advanced item selection algorithms (Maximum Information, Weighted, Random)
-  \item Real-time ability estimation using TAM's EAP and WLE methods
-  \item Comprehensive result reporting with theta estimates, standard errors, and diagnostics
-  \item Session state management with save/restore capabilities for interrupted sessions
-  \item Enterprise-grade logging and audit trails via \code{logr} package
-  \item Responsive design with accessibility compliance (WCAG 2.1 guidelines)
-}
-
-\strong{Advanced Features:}
-\itemize{
-  \item \strong{Real-time monitoring:} Use \code{admin_dashboard_hook} to receive live updates
-    on participant progress, ability distribution patterns, and session metrics
-  \item \strong{Accessibility compliance:} Enable \code{accessibility = TRUE} for ARIA labels,
-    keyboard navigation, screen reader support, and high contrast options
-  \item \strong{Cloud integration:} Specify \code{webdav_url} for automatic result backup
-    to institutional cloud storage systems with secure authentication
-  \item \strong{Quality monitoring:} Built-in detection of response patterns, engagement metrics,
-    and data quality indicators with automatic flagging of suspicious sessions
+  \item Runs a Shiny-based assessment flow (fixed or adaptive)
+  \item Optional demographics collection
+  \item Ability estimation and item selection via optional psychometric backends (e.g., TAM)
+  \item Optional session save/restore helpers
+  \item Optional logging when \code{logr} is available
 }
 }
 \section{Cloud Storage Configuration}{
 
-The framework supports automatic backup of assessment results to WebDAV-compatible cloud storage:
+Optional upload of completed session data to a WebDAV-compatible endpoint.
 
 \strong{Setup Requirements:}
 \itemize{
@@ -176,20 +179,11 @@ The framework supports automatic backup of assessment results to WebDAV-compatib
   \item Network connectivity required for cloud functionality
 }
 
-\strong{Compatible Services:}
-\itemize{
-  \item Academic cloud storage (e.g., \code{"https://sync.academiccloud.de/..."})
-  \item Institutional WebDAV servers (\code{"https://university.edu/webdav/..."})
-  \item Nextcloud/ownCloud instances with WebDAV enabled
-  \item Commercial WebDAV providers (Box, Dropbox Business, etc.)
-}
-
-\strong{Security Best Practices:}
+\strong{Operational Notes:}
 \itemize{
   \item Use environment variables for passwords: \code{password = Sys.getenv("WEBDAV_PASS")}
-  \item Ensure WebDAV endpoints use HTTPS for encrypted transmission
+  \item Prefer HTTPS endpoints
   \item Use dedicated access tokens rather than account passwords when possible
-  \item Test connectivity before launching large-scale studies
 }
 
 \strong{Usage Examples:}
@@ -233,141 +227,11 @@ devtools::install_github("selvastics/inrep")
 }
 }
 
-\section{Performance Optimization}{
+\section{Notes}{
 
-For large-scale deployments and high-performance requirements:
-
-\strong{Computational Settings:}
-\itemize{
-  \item Enable \code{parallel_computation = TRUE} in config for faster TAM estimation
-  \item Use \code{cache_enabled = TRUE} to cache item information calculations
-  \item Specify optimal \code{theta_grid} density based on precision requirements
-  \item Consider \code{auto_scaling = TRUE} for cloud-based deployments
-}
-
-\strong{Monitoring Tools:}
-\itemize{
-  \item Built-in profiling tools track estimation times and memory usage
-  \item Real-time performance metrics available through admin dashboard
-  \item Automatic detection of computational bottlenecks and warnings
-  \item Session timeout management prevents resource exhaustion
-}
-
-\strong{Scalability Considerations:}
-\itemize{
-  \item Recommended concurrent user limits: 50-100 depending on server specifications
-  \item Database storage recommended for studies with >1000 participants  
-  \item Load balancing support for enterprise deployments
-  \item Memory management optimizations for long-running sessions
-}
-}
-
-\section{Validation and Quality Assurance}{
-
-The framework includes comprehensive validation and quality control mechanisms:
-
-\strong{Real-time Response Quality:}
-\itemize{
-  \item Rapid response detection based on item-specific timing thresholds
-  \item Response pattern analysis for detecting careless responding
-  \item Engagement metrics including time-on-task and interaction patterns
-  \item Automatic flagging of suspicious response sequences
-}
-
-\strong{Psychometric Quality:}
-\itemize{
-  \item Model fit diagnostics through TAM's \code{\link[TAM]{tam.fit}} procedures
-  \item Person fit statistics for identifying aberrant response patterns
-  \item Item functioning analysis with exposure rate monitoring
-  \item Ability estimate stability tracking across administered items
-}
-
-\strong{Data Integrity:}
-\itemize{
-  \item Comprehensive audit trails with timestamped action logging
-  \item Session state validation and recovery mechanisms
-  \item Automatic data backup and redundancy for critical assessments
-  \item GDPR-compliant data handling with participant consent management
-}
-
-\strong{Research Standards Compliance:}
-\itemize{
-  \item Follows Standards for Educational and Psychological Testing (AERA, APA, NCME, 2014)
-  \item Implements International Test Commission Guidelines for Computer-Based Testing
-  \item Supports institutional IRB requirements with built-in consent frameworks
-  \item Accessibility compliance with WCAG 2.1 AA standards when enabled
-}
-}
-
-\section{Theme Customization}{
-
-The interface supports extensive theming capabilities through multiple mechanisms:
-
-\strong{Built-in Themes:} Six professionally designed themes are available:
-\itemize{
-  \item \code{"Light"}: Clean, minimalist design with high contrast
-  \item \code{"Midnight"}: Dark theme optimized for low-light environments  
-  \item \code{"Sunset"}: Warm color palette with orange and red accents
-  \item \code{"Forest"}: Nature-inspired greens with earthy tones
-  \item \code{"Ocean"}: Cool blues and teals for calming effect
-  \item \code{"Berry"}: Purple and magenta palette for creative applications
-}
-
-\strong{Custom Themes:} Create custom themes through:
-\itemize{
-  \item \code{theme_config}: Named list with CSS variable definitions
-  \item \code{custom_css}: Direct CSS injection for complete control
-  \item \code{\link{get_theme_config}}: Get theme configuration for available themes
-}
-
-\strong{CSS Variables:} Key customization options include:
-\itemize{
-  \item \code{--primary-color}: Main interface accent color
-  \item \code{--background-color}: Page and component backgrounds
-  \item \code{--text-color}: Primary text color for readability
-  \item \code{--font-family}: Typography selection (web-safe fonts recommended)
-  \item \code{--border-radius}: Corner rounding for modern appearance
-  \item \code{--button-hover-color}: Interactive element feedback
-}
-
-CSS customization takes precedence in this order: \code{custom_css} > \code{theme_config} > built-in themes.
-}
-
-\section{Progress Visualization}{
-
-The interface provides multiple progress visualization styles to enhance user experience:
-
-\strong{Available Progress Styles:}
-\itemize{
-  \item \code{"modern-circle"}: Enhanced circular progress with smooth animations (default)
-  \item \code{"enhanced-bar"}: Gradient-filled linear progress bar with shimmer effect
-  \item \code{"segmented"}: Step-by-step visual indicator with numbered segments
-  \item \code{"minimal"}: Clean, unobtrusive progress display
-  \item \code{"card"}: Prominent progress display in card format
-  \item \code{"circle"}: Legacy circular progress (backward compatible)
-  \item \code{"bar"}: Legacy linear progress bar (backward compatible)
-}
-
-\strong{Usage Examples:}
-\preformatted{
-# Use modern circular progress (default)
-config <- create_study_config(
-  name = "My Assessment",
-  progress_style = "modern-circle"
-)
-
-# Use segmented progress for step-by-step feedback
-config <- create_study_config(
-  name = "Long Assessment",
-  progress_style = "segmented"
-)
-
-# Use minimal progress for clean interface
-config <- create_study_config(
-  name = "Simple Assessment",
-  progress_style = "minimal"
-)
-}
+Most runtime behavior is configured via \code{create_study_config()} (e.g.,
+caching/parallel settings, theme options, progress display). For WebDAV upload
+behavior and security notes, see \code{save_session_to_cloud()}.
 }
 
 \section{Item Bank Requirements}{
@@ -501,7 +365,7 @@ launch_study(
   theme_config = custom_theme_config
 )
 
-# Example 4: Enterprise Clinical Assessment
+# Example 4: Clinical Assessment Example
 clinical_config <- create_study_config(
   name = "Clinical Depression Screening",
   model = "GRM",
@@ -510,20 +374,17 @@ clinical_config <- create_study_config(
   demographics = c("Age", "Gender", "Previous_Treatment"),
   theme = "Clinical",
   language = "en",
-  enterprise_security = TRUE,
-  audit_logging = TRUE,
-  quality_monitoring = TRUE,
   session_save = TRUE,
   max_session_duration = 30
 )
 
-# Launch with cloud storage and comprehensive logging
+# Launch with cloud storage and logging
 launch_study(
   config = clinical_config,
   item_bank = depression_items,
   save_format = "json",
-  webdav_url = "https://secure-storage.hospital.edu/assessments/",
-  password = Sys.getenv("CLINICAL_WEBDAV_PASSWORD"),
+  webdav_url = "https://your-webdav.example/assessments/",
+  password = Sys.getenv("WEBDAV_PASSWORD"),
   logger = function(msg, level = "INFO") {
     timestamp <- format(Sys.time(), "\%Y-\%m-\%d \%H:\%M:\%S")
     cat(sprintf("[\%s] \%s: \%s\n", timestamp, level, msg))

@@ -93,7 +93,7 @@ generate_report_plots <- function(study_data, study_config, output_dir) {
   if (length(theta_history) > 1) {
     theta_plot <- create_theta_progression_plot(theta_history)
     theta_file <- file.path(output_dir, "theta_progression.png")
-    ggsave(theta_file, theta_plot, width = 8, height = 6, dpi = 300)
+    ggplot2::ggsave(theta_file, theta_plot, width = 8, height = 6, dpi = 300)
     plots$theta_progression <- theta_file
   }
   
@@ -101,7 +101,7 @@ generate_report_plots <- function(study_data, study_config, output_dir) {
   if (length(responses) > 0) {
     response_plot <- create_response_pattern_plot(responses)
     response_file <- file.path(output_dir, "response_pattern.png")
-    ggsave(response_file, response_plot, width = 8, height = 6, dpi = 300)
+    ggplot2::ggsave(response_file, response_plot, width = 8, height = 6, dpi = 300)
     plots$response_pattern <- response_file
   }
   
@@ -109,7 +109,7 @@ generate_report_plots <- function(study_data, study_config, output_dir) {
   if (any(grepl("BFI_", names(study_data)))) {
     radar_plot <- create_personality_radar_plot(study_data)
     radar_file <- file.path(output_dir, "personality_radar.png")
-    ggsave(radar_file, radar_plot, width = 8, height = 8, dpi = 300)
+    ggplot2::ggsave(radar_file, radar_plot, width = 8, height = 8, dpi = 300)
     plots$personality_radar <- radar_file
   }
   
@@ -117,7 +117,7 @@ generate_report_plots <- function(study_data, study_config, output_dir) {
   if (any(grepl("ProgrammingAnxiety|PA", names(study_data)))) {
     anxiety_plot <- create_anxiety_plot(study_data)
     anxiety_file <- file.path(output_dir, "programming_anxiety.png")
-    ggsave(anxiety_file, anxiety_plot, width = 8, height = 6, dpi = 300)
+    ggplot2::ggsave(anxiety_file, anxiety_plot, width = 8, height = 6, dpi = 300)
     plots$programming_anxiety <- anxiety_file
   }
   
@@ -170,14 +170,14 @@ create_rmd_content <- function(study_data, study_config, plot_files, language = 
     "",
     ifelse(is_english, 
            "This report presents the results of your participation in the inrep assessment study. The assessment utilized advanced psychometric methods to provide accurate and reliable measurements of your abilities and characteristics.",
-           "Dieser Bericht präsentiert die Ergebnisse Ihrer Teilnahme an der inrep-Bewertungsstudie. Die Bewertung nutzte fortgeschrittene psychometrische Methoden, um genaue und zuverlässige Messungen Ihrer Fähigkeiten und Eigenschaften zu liefern."),
+           "Dieser Bericht pr\u00E4sentiert die Ergebnisse Ihrer Teilnahme an der inrep-Bewertungsstudie. Die Bewertung nutzte fortgeschrittene psychometrische Methoden, um genaue und zuverl\u00E4ssige Messungen Ihrer F\u00E4higkeiten und Eigenschaften zu liefern."),
     "",
     "## " %+% ifelse(is_english, "Assessment Details", "Bewertungsdetails"),
     "",
     "- **" %+% ifelse(is_english, "Study Name", "Studienname") %+% ":** " %+% study_name,
     "- **" %+% ifelse(is_english, "Date", "Datum") %+% ":** `r format(Sys.Date(), \"%Y-%m-%d\")`",
     "- **" %+% ifelse(is_english, "Items Administered", "Verwaltete Items") %+% ":** " %+% length(responses),
-    "- **" %+% ifelse(is_english, "Ability Estimate (θ)", "Fähigkeitsschätzung (θ)") %+% ":** " %+% sprintf("%.3f", theta_estimate),
+    "- **" %+% ifelse(is_english, "Ability Estimate (\u03B8)", "F\u00E4higkeitssch\u00E4tzung (\u03B8)") %+% ":** " %+% sprintf("%.3f", theta_estimate),
     "- **" %+% ifelse(is_english, "Standard Error", "Standardfehler") %+% ":** " %+% sprintf("%.3f", theta_se),
     ""
   )
@@ -212,13 +212,13 @@ create_rmd_content <- function(study_data, study_config, plot_files, language = 
     "",
     "## " %+% ifelse(is_english, "Detailed Results", "Detaillierte Ergebnisse"),
     "",
-    "### " %+% ifelse(is_english, "Ability Estimation", "Fähigkeitsschätzung"),
+    "### " %+% ifelse(is_english, "Ability Estimation", "F\u00E4higkeitssch\u00E4tzung"),
     "",
     "Your estimated ability level is **" %+% sprintf("%.3f", theta_estimate) %+% "** with a standard error of **" %+% sprintf("%.3f", theta_se) %+% "**.",
     "",
     ifelse(is_english,
            "This estimate is based on your responses to " %+% length(responses) %+% " items using advanced Item Response Theory (IRT) methods.",
-           "Diese Schätzung basiert auf Ihren Antworten zu " %+% length(responses) %+% " Items unter Verwendung fortgeschrittener Item-Response-Theory (IRT) Methoden."),
+           "Diese Sch\u00E4tzung basiert auf Ihren Antworten zu " %+% length(responses) %+% " Items unter Verwendung fortgeschrittener Item-Response-Theory (IRT) Methoden."),
     ""
   )
   
@@ -226,11 +226,11 @@ create_rmd_content <- function(study_data, study_config, plot_files, language = 
   if (any(grepl("BFI_", names(study_data)))) {
     content <- c(content,
       "",
-      "### " %+% ifelse(is_english, "Personality Profile (Big Five)", "Persönlichkeitsprofil (Big Five)"),
+      "### " %+% ifelse(is_english, "Personality Profile (Big Five)", "Pers\u00F6nlichkeitsprofil (Big Five)"),
       "",
       ifelse(is_english,
              "Your personality profile based on the Big Five personality dimensions:",
-             "Ihr Persönlichkeitsprofil basierend auf den Big Five Persönlichkeitsdimensionen:"),
+             "Ihr Pers\u00F6nlichkeitsprofil basierend auf den Big Five Pers\u00F6nlichkeitsdimensionen:"),
       ""
     )
     
@@ -288,13 +288,13 @@ create_rmd_content <- function(study_data, study_config, plot_files, language = 
     "",
     ifelse(is_english,
            "This report was generated using the inrep (Instant Reports) package for adaptive psychological assessments. The assessment utilized Item Response Theory (IRT) methods for ability estimation and item selection.",
-           "Dieser Bericht wurde mit dem inrep (Instant Reports) Paket für adaptive psychologische Bewertungen erstellt. Die Bewertung nutzte Item-Response-Theory (IRT) Methoden für Fähigkeitsschätzung und Itemauswahl."),
+           "Dieser Bericht wurde mit dem inrep (Instant Reports) Paket f\u00FCr adaptive psychologische Bewertungen erstellt. Die Bewertung nutzte Item-Response-Theory (IRT) Methoden f\u00FCr F\u00E4higkeitssch\u00E4tzung und Itemauswahl."),
     "",
     "---",
     "",
     ifelse(is_english,
            "*Thank you for participating in this study!*",
-           "*Vielen Dank für Ihre Teilnahme an dieser Studie!*")
+           "*Vielen Dank f\u00FCr Ihre Teilnahme an dieser Studie!*")
   )
   
   return(content)
@@ -367,9 +367,9 @@ create_report_css <- function() {
 
 get_plot_title <- function(plot_name, is_english) {
   titles <- list(
-    theta_progression = ifelse(is_english, "Ability Progression", "Fähigkeitsentwicklung"),
+    theta_progression = ifelse(is_english, "Ability Progression", "F\u00E4higkeitsentwicklung"),
     response_pattern = ifelse(is_english, "Response Pattern", "Antwortmuster"),
-    personality_radar = ifelse(is_english, "Personality Profile", "Persönlichkeitsprofil"),
+    personality_radar = ifelse(is_english, "Personality Profile", "Pers\u00F6nlichkeitsprofil"),
     programming_anxiety = ifelse(is_english, "Programming Anxiety", "Programmierangst")
   )
   return(titles[[plot_name]] %||% plot_name)
@@ -377,9 +377,9 @@ get_plot_title <- function(plot_name, is_english) {
 
 get_plot_caption <- function(plot_name, is_english) {
   captions <- list(
-    theta_progression = ifelse(is_english, "Development of ability estimate during assessment", "Entwicklung der Fähigkeitsschätzung während der Bewertung"),
-    response_pattern = ifelse(is_english, "Pattern of responses across items", "Antwortmuster über die Items"),
-    personality_radar = ifelse(is_english, "Personality profile across Big Five dimensions", "Persönlichkeitsprofil über Big Five Dimensionen"),
+    theta_progression = ifelse(is_english, "Development of ability estimate during assessment", "Entwicklung der F\u00E4higkeitssch\u00E4tzung w\u00E4hrend der Bewertung"),
+    response_pattern = ifelse(is_english, "Pattern of responses across items", "Antwortmuster \u00FCber die Items"),
+    personality_radar = ifelse(is_english, "Personality profile across Big Five dimensions", "Pers\u00F6nlichkeitsprofil \u00FCber Big Five Dimensionen"),
     programming_anxiety = ifelse(is_english, "Programming anxiety and related factors", "Programmierangst und verwandte Faktoren")
   )
   return(captions[[plot_name]] %||% "")
@@ -388,7 +388,7 @@ get_plot_caption <- function(plot_name, is_english) {
 get_trait_name <- function(trait, is_english) {
   names <- list(
     BFI_Extraversion = ifelse(is_english, "Extraversion", "Extraversion"),
-    BFI_Agreeableness = ifelse(is_english, "Agreeableness", "Verträglichkeit"),
+    BFI_Agreeableness = ifelse(is_english, "Agreeableness", "Vertr\u00E4glichkeit"),
     BFI_Conscientiousness = ifelse(is_english, "Conscientiousness", "Gewissenhaftigkeit"),
     BFI_Neuroticism = ifelse(is_english, "Neuroticism", "Neurotizismus"),
     BFI_Openness = ifelse(is_english, "Openness", "Offenheit")
@@ -410,7 +410,7 @@ get_anxiety_factor_name <- function(factor, is_english) {
   names <- list(
     ProgrammingAnxiety = ifelse(is_english, "Programming Anxiety", "Programmierangst"),
     PSQ_Stress = ifelse(is_english, "Stress", "Stress"),
-    MWS_Studierfaehigkeiten = ifelse(is_english, "Study Skills", "Studierfähigkeiten"),
+    MWS_Studierfaehigkeiten = ifelse(is_english, "Study Skills", "Studierf\u00E4higkeiten"),
     Statistik = ifelse(is_english, "Statistics", "Statistik")
   )
   return(names[[factor]] %||% factor)
@@ -446,9 +446,9 @@ generate_recommendations <- function(study_data, is_english) {
     )
   } else {
     recommendations <- c(recommendations,
-      "- Entwickeln Sie weiterhin Ihre Fähigkeiten in Bereichen von Interesse",
-      "- Erwägen Sie zusätzliche Unterstützung in Bereichen, in denen Sie sich weniger sicher fühlen",
-      "- Regelmäßige Übung und Feedback können die Leistung verbessern"
+      "- Entwickeln Sie weiterhin Ihre F\u00E4higkeiten in Bereichen von Interesse",
+      "- Erw\u00E4gen Sie zus\u00E4tzliche Unterst\u00FCtzung in Bereichen, in denen Sie sich weniger sicher f\u00FChlen",
+      "- Regelm\u00E4\u00DFige \u00DCbung und Feedback k\u00F6nnen die Leistung verbessern"
     )
   }
   

@@ -3,10 +3,13 @@ Type: Package
 Title: Instant Reports for Adaptive Assessments
 Version: 0.3.0
 Date: 2025-12-06
+Author: Clievins Selva [aut, cre] (<https://orcid.org/0000-0001-9980-7127>)
 Authors@R: person(given = "Clievins", family = "Selva", email = "selva@uni-hildesheim.de", role = c("aut", "cre"), comment = c(ORCID = "0000-0001-9980-7127"))
-Author: Clievins Selva [aut, cre] (<ORCID = "0000-0001-9980-7127">)
 Maintainer: Clievins Selva <selva@uni-hildesheim.de>
-Description: A framework for adaptive testing using Item Response Theory (IRT) models. Provides web-based interfaces for test administration via 'Shiny', supports multiple IRT models including the Graded Response Model through 'TAM' integration, implements adaptive item selection algorithms, includes external consultation assistance for user guidance and study configuration, website theme customization for automatic branding, and reporting capabilities. Designed for psychological assessments, educational testing, and survey research with large item pools. All psychometric computations are performed by the 'TAM' package, with 'inrep' serving as a modern workflow and interface layer. Includes complete replication of 'TAM' examples with improved usability and professional reporting capabilities.
+Description: A framework for administering assessments with web-based interfaces via 'Shiny'.
+    Supports fixed and adaptive testing workflows, item bank validation, item selection,
+    reporting utilities, and optional parallel processing helpers. Intended for
+    psychological, educational, and survey research use cases.
 URL: https://github.com/selvastics/inrep
 BugReports: https://github.com/selvastics/inrep/issues
 Depends: R (>= 4.1.0)
@@ -14,7 +17,6 @@ Imports:
     shiny (>= 1.7.0),
     later (>= 1.3.0),
     rmarkdown (>= 2.0),
-    methods,
     stats,
     utils,
     graphics,
@@ -23,6 +25,8 @@ Imports:
     jsonlite (>= 1.8.0),
     DT (>= 0.20)
 Suggests:
+    future,
+    future.apply,
     httr,
     logr (>= 1.2.0),
     ggplot2 (>= 3.4.0),
@@ -37,11 +41,16 @@ Suggests:
     pdftools (>= 0.40.0),
     kableExtra (>= 1.3.0),
     knitr (>= 1.40.0),
+    mirt,
+    readr,
+    remotes,
+    rstudioapi,
     tinytex (>= 0.40.0),
     testthat (>= 3.0.0)
-License: C + file LICENSE
+License: MIT + file LICENSE
 Encoding: UTF-8
 Language: en-US
 LazyData: true
 Config/testthat/edition: 3
 RoxygenNote: 7.3.3
+VignetteBuilder: knitr

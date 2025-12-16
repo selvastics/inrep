@@ -5,7 +5,7 @@
 \alias{.session_state}
 \title{Robust Session Management for Sensitive Participant Data}
 \format{
-An object of class \code{environment} of length 6.
+An object of class \code{environment} of length 7.
 }
 \usage{
 .session_state

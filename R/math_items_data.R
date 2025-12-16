@@ -50,7 +50,7 @@
 #' 
 #' \strong{Psychometric Properties:}
 #' \itemize{
-#'   \item Discrimination parameters (a) optimized for educational assessment
+#'   \item Discrimination parameters (a) provided as example values
 #'   \item Threshold parameters properly ordered for valid GRM implementation
 #'   \item 5-point response scale suitable for mathematics confidence ratings
 #'   \item Coverage across multiple difficulty levels and grade ranges

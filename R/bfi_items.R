@@ -1,63 +1,30 @@
 #' Big Five Inventory Item Bank for IRT-Based Assessments
 #'
 #' @description
-#' A professionally constructed item bank based on the Big Five Inventory (BFI) structure,
-#' optimized for use with the Graded Response Model (GRM) in TAM-based adaptive assessments.
-#' This dataset provides a comprehensive foundation for personality research and demonstrates
-#' best practices for item bank construction in the \code{inrep} package.
+#' A simulated example item bank with item text, response options, and GRM-style
+#' item parameters. It is used in \code{inrep} examples and vignettes.
 #'
 #' @format Data frame with 30 rows and 7 columns:
 #' \describe{
-#'   \item{\code{Question}}{Item text (character). Professional personality assessment items}
+#'   \item{\code{Question}}{Item text (character)}
 #'   \item{\code{ResponseCategories}}{Comma-separated response categories (e.g., "1,2,3,4,5")}
-#'   \item{\code{a}}{Discrimination parameter (numeric). Controls item's ability to differentiate}
-#'   \item{\code{b1}}{First threshold parameter (numeric). Boundary between categories 1-2}
-#'   \item{\code{b2}}{Second threshold parameter (numeric). Boundary between categories 2-3}
-#'   \item{\code{b3}}{Third threshold parameter (numeric). Boundary between categories 3-4}
-#'   \item{\code{b4}}{Fourth threshold parameter (numeric). Boundary between categories 4-5}
+#'   \item{\code{a}}{Discrimination parameter (numeric)}
+#'   \item{\code{b1}}{Threshold parameter (numeric)}
+#'   \item{\code{b2}}{Threshold parameter (numeric)}
+#'   \item{\code{b3}}{Threshold parameter (numeric)}
+#'   \item{\code{b4}}{Threshold parameter (numeric)}
 #' }
 #' 
-#' @source Simulated data based on validated Big Five Inventory structure and
-#'   psychometric research standards for personality assessment.
+#' @source Simulated data.
 #' 
 #' @keywords dataset datasets personality BFI TAM GRM
 #' @docType data
 #' @name bfi_items
 #'
 #' @details
-#' This item bank demonstrates professional standards for IRT-Based Assessments:
-#' 
-#' \strong{Psychometric Properties:}
-#' \itemize{
-#'   \item Discrimination parameters (a) range from 0.5 to 2.5 for optimal differentiation
-#'   \item Threshold parameters (b1-b4) are properly ordered and scaled
-#'   \item Response categories follow standard 5-point Likert format
-#'   \item Items cover all Big Five personality domains comprehensively
-#' }
-#' 
-#' \strong{TAM Compatibility:}
-#' \itemize{
-#'   \item Fully compatible with TAM's \code{\link[TAM]{tam.mml}} functions
-#'   \item Proper GRM parameter structure for polytomous items
-#'   \item Validated response category formatting
-#'   \item Optimized for adaptive testing algorithms
-#' }
-#' 
-#' \strong{Research Applications:}
-#' \itemize{
-#'   \item Personality assessment in clinical and research settings
-#'   \item Adaptive testing algorithm development and validation
-#'   \item Cross-cultural personality research
-#'   \item Educational demonstrations of IRT principles
-#' }
-#' 
-#' \strong{Quality Assurance Features:}
-#' \itemize{
-#'   \item Built-in outlier detection with \code{\link{detect_outlier_items}}
-#'   \item Simulation capabilities with \code{\link{simulate_item_bank}}
-#'   \item Metadata support for advanced item management
-#'   \item Validation tools for research integrity
-#' }
+#' The parameters and item texts are provided for demonstration. If you need an
+#' officially validated instrument, use the licensed/validated materials for
+#' your study and fit item parameters accordingly.
 #'
 #' @examples
 #' \dontrun{
@@ -176,7 +143,7 @@
 #'   # Overall assessment
 #'   cat("\nOverall Assessment:\n")
 #'   if (low_disc == 0 && high_disc < 3 && threshold_issues == 0) {
-#'     cat("  [OK] Item bank meets professional standards\n")
+#'     cat("  [OK] Item bank passes these checks\n")
 #'   } else {
 #'     cat("  WARNING: Item bank may need review\n")
 #'   }
@@ -273,7 +240,7 @@
 #'   \item \code{\link{validate_item_bank}} for validating item bank structure
 #'   \item \code{\link{create_study_config}} for configuring assessments
 #'   \item \code{\link{launch_study}} for running assessments with this item bank
-#'   \item \code{\link[TAM]{tam.mml}} for TAM's GRM estimation procedures
+#'   \item \code{TAM::tam.mml} for TAM's GRM estimation procedures
 #' }
 #' @keywords datasets
 NULL

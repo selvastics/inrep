@@ -7,15 +7,15 @@
 string \%r\% times
 }
 \arguments{
-\item{string}{Character string to repeat}
+\item{string}{Character string to repeat.}
 
-\item{times}{Number of times to repeat}
+\item{times}{Number of times to repeat.}
 }
 \value{
-Character string repeated the specified number of times
+Character string repeated the specified number of times.
 }
 \description{
-Repeats a string a specified number of times
+Repeats a string a specified number of times.
 }
 \examples{
 "=" \%r\% 50  # Returns "=================================================="

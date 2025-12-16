@@ -2,7 +2,7 @@
 % Please edit documentation in R/create_study_config.R
 \name{create_study_config}
 \alias{create_study_config}
-\title{Create Study Configuration Assessment}
+\title{Create Study Configuration}
 \usage{
 create_study_config(
   name = "Personality Assessment",
@@ -200,17 +200,16 @@ about study procedures, ethics, and expectations.}
 \item{briefing_content}{Character string containing HTML content for briefing,
 or \code{NULL} for default academic briefing.}
 
-\item{show_consent}{Logical indicating whether to display informed consent form
-with GDPR/DSGVO compliance options.}
+\item{show_consent}{Logical indicating whether to display an informed consent page.}
 
 \item{consent_content}{Character string containing HTML consent form content,
-or \code{NULL} for default GDPR-compliant consent.}
+or \code{NULL} for a default template (review and edit for your study).}
 
-\item{show_gdpr_compliance}{Logical indicating whether to include GDPR/DSGVO
-data protection information and consent checkboxes.}
+\item{show_gdpr_compliance}{Logical indicating whether to include a GDPR/DSGVO
+data protection information page/template.}
 
-\item{gdpr_content}{Character string containing GDPR/DSGVO compliance text,
-or \code{NULL} for default German/EU compliant text.}
+\item{gdpr_content}{Character string containing GDPR/DSGVO information text,
+or \code{NULL} for a default template (review and edit for your study).}
 
 \item{show_debriefing}{Logical indicating whether to display debriefing page
 after study completion with study purpose and resources.}
@@ -236,12 +235,7 @@ Example: \code{list(instructions = list(content = "Custom instructions", validat
 Defaults to NULL for standard flow.}
 
 \item{enable_custom_navigation}{Logical indicating whether to enable custom page navigation
-for studies requiring specific flow control. Defaults to FALSE for backward compatibility.
-instructions instead of demographics. Defaults to FALSE for backward compatibility.
-that need non-standard flow (e.g., Hildesheim study). Defaults to NULL for standard flow.
-Allows specification of exact page order and subpages (e.g., page_1 = "instructions",
-page_3_1 = "education"). Defaults to NULL for standard flow.
-including content, validation rules, and navigation logic.}
+for studies requiring specific flow control. Defaults to FALSE for backward compatibility.}
 
 \item{study_phases}{Character vector specifying order of study phases.
 Default: c("introduction", "briefing", "consent", "demographics", "survey", "debriefing").}
@@ -252,6 +246,47 @@ between study phases. Options: "fade", "slide", "none".}
 \item{enable_back_navigation}{Logical indicating whether participants can
 navigate back to previous pages.}
 
+\item{unknown_param_handling}{Logical indicating whether to allow and handle missing
+item parameters by applying defaults.}
+
+\item{param_initialization_method}{Character string specifying how missing parameters
+are initialized (for example, \code{"smart_defaults"}).}
+
+\item{auto_initialize_unknowns}{Logical indicating whether missing parameters are
+filled automatically when possible.}
+
+\item{calibration_mode}{Logical indicating whether to enable calibration-oriented
+settings (for example, relaxed stopping rules).}
+
+\item{study_pages}{Optional list defining an explicit page structure.}
+
+\item{page_contents}{Optional list of per-page content definitions.}
+
+\item{advanced_demographics}{Optional list providing advanced demographic collection
+configuration.}
+
+\item{ui_config}{Optional list of UI-related configuration.}
+
+\item{language_config}{Optional list of language-related configuration.}
+
+\item{data_config}{Optional list of data export/storage configuration.}
+
+\item{quality_config}{Optional list of quality checks configuration.}
+
+\item{analytics_config}{Optional list of analytics configuration.}
+
+\item{integration_config}{Optional list of integration settings.}
+
+\item{custom_functions}{Optional named list of custom hooks/callbacks.}
+
+\item{study_metadata}{Optional named list of metadata to attach to the configuration.}
+
+\item{participant_report}{Optional configuration controlling participant-facing
+report generation.}
+
+\item{min_required_non_age_demographics}{Integer specifying the minimum number of
+required demographic fields other than age.}
+
 \item{...}{Additional parameters captured and included in configuration object
 for custom extensions and advanced features.}
 }
@@ -260,10 +295,10 @@ Named list containing complete study configuration with all specified parameters
   and computed defaults. Compatible with \code{\link{launch_study}} and other inrep functions.
 }
 \description{
-Creates a comprehensive configuration object for adaptive testing studies that utilize 
-the TAM package for all psychometric computations. This function configures the parameters 
-that control how \code{inrep} interfaces with TAM's statistical functions and manages
-the overall assessment workflow, session management, and result reporting.
+Creates a configuration object for adaptive (or fixed-form) assessment studies.
+Psychometric computations can be performed by optional backends (for example, TAM)
+when available. The configuration controls assessment workflow, session handling,
+and reporting.
 }
 \details{
 \strong{TAM Integration Architecture:} This configuration object serves as the primary
@@ -271,10 +306,10 @@ interface layer between \code{inrep}'s workflow management and TAM's psychometri
 
 \strong{Core TAM Parameters:}
 \itemize{
-  \item \code{model}: Determines which TAM function to invoke (\code{\link[TAM]{tam.mml}}, 
-    \code{\link[TAM]{tam.mml.2pl}}, \code{\link[TAM]{tam.mml.3pl}})
+  \item \code{model}: Determines which TAM function to invoke (\code{TAM::tam.mml},
+    \code{TAM::tam.mml.2pl}, \code{TAM::tam.mml.3pl}).
   \item \code{estimation_method}: Controls TAM's ability estimation procedures 
-    (\code{\link[TAM]{tam.wle}}, \code{\link[TAM]{tam.eap}})
+    (\code{TAM::tam.wle}, \code{TAM::tam.eap}).
   \item \code{theta_prior}: Prior distribution parameters passed to TAM's Bayesian procedures
   \item \code{min_SEM}: Stopping criterion based on TAM's standard error calculations
   \item \code{theta_grid}: Grid specification for TAM's numerical integration algorithms
@@ -303,7 +338,7 @@ TAM performs all psychometric computations:
   \item Automatic validation of parameter ranges for TAM compatibility
   \item Response time monitoring and rapid-response detection
   \item Session timeout management and graceful degradation
-  \item Comprehensive audit logging for research compliance
+  \item Optional event logging for troubleshooting and monitoring
 }
 
 \strong{Multilingual Support:} Language configuration affects:
@@ -405,7 +440,7 @@ research_config <- create_study_config(
   }
 )
 
-# Example 3: Clinical Assessment with Enterprise Features
+# Example 3: Clinical Assessment Example
 clinical_config <- create_study_config(
   name = "Depression Screening Instrument",
   model = "GRM",
@@ -430,7 +465,7 @@ clinical_config <- create_study_config(
   response_ui_type = "radio",
   progress_style = "bar",
   
-  # Enterprise security
+  # Session settings
   session_save = TRUE,
   max_session_duration = 20,
   

@@ -2,10 +2,20 @@
 % Please edit documentation in R/study_management.R
 \name{create_filter_page}
 \alias{create_filter_page}
-\title{Create filter page with actual functionality}
+\title{Create Filter Page}
 \usage{
 create_filter_page(input, config, language = "de")
 }
+\arguments{
+\item{input}{Shiny \code{input} object.}
+
+\item{config}{Study configuration (used for language and flow context).}
+
+\item{language}{Language code (default \code{"de"}).}
+}
+\value{
+A Shiny UI object.
+}
 \description{
-Create filter page with actual functionality
+Builds a study-specific filter page used in some custom page flows.
 }
