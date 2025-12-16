@@ -2,14 +2,13 @@
 % Please edit documentation in R/core_utils.R
 \name{resume_session}
 \alias{resume_session}
-\title{Resume Assessment Session from Cloud or Local Storage}
+\title{Resume Assessment Session from Local Storage}
 \usage{
 resume_session(file_path)
 }
 \arguments{
-\item{file_path}{Character string specifying the path to the encrypted
-session file. Can be local file path or downloaded cloud storage file.
-File should have been created by \code{\link{save_session_to_cloud}}.}
+\item{file_path}{Character string specifying the path to a JSON file.
+The file may also contain base64-encoded JSON for legacy backups.}
 }
 \value{
 A comprehensive list containing restored session data, or \code{NULL} if restoration fails:
@@ -25,60 +24,20 @@ A comprehensive list containing restored session data, or \code{NULL} if restora
 }
 }
 \description{
-Restores previously saved assessment session data from encrypted files,
-enabling continuation of interrupted assessments and comprehensive data
-recovery for research continuity. Supports both local and cloud-stored
-session files with integrity verification and validation.
+Reads session data from a file created by \code{save_session_to_cloud()}.
+Supports plain JSON and (legacy) base64-encoded JSON.
 }
 \details{
-This function provides comprehensive session restoration capabilities
-essential for research environments requiring robust data recovery:
-
-\strong{Data Recovery Architecture:}
-\itemize{
-  \item Encrypted file decryption using base64 decoding (upgrade to proper encryption in production)
-  \item JSON structure validation and parsing
-  \item Data integrity verification against expected session format
-  \item Graceful error handling with detailed logging
-}
-
-\strong{Session Restoration Process:}
-\itemize{
-  \item File accessibility and format validation
-  \item Decryption and data structure reconstruction
-  \item TAM-compatible data format verification
-  \item Session state validation for assessment continuation
-}
-
-\strong{Research Continuity Features:}
-\itemize{
-  \item Complete psychometric state restoration for TAM integration
-  \item Response pattern and timing data preservation
-  \item Demographic information recovery
-  \item Assessment progress tracking restoration
-}
-
-\strong{Quality Assurance:}
-\itemize{
-  \item Data corruption detection and reporting
-  \item Version compatibility validation
-  \item Comprehensive error logging for debugging
-  \item Fallback strategies for partial data recovery
-}
-
-The restored session data maintains full compatibility with TAM's
-psychometric functions, enabling seamless continuation of adaptive
-assessments with preserved ability estimates and response histories.
+The function first tries to parse the file as JSON. If that fails, it falls
+back to base64-decoding the file contents (requires the \code{base64enc}
+package) and parsing the decoded text as JSON.
 }
 \section{File Format}{
 
-Expected encrypted file format (base64-encoded JSON):
+Supported file formats:
 \itemize{
-  \item Study metadata and identifiers
-  \item Complete psychometric state for TAM integration
-  \item Response patterns and timing information
-  \item Assessment progress and stopping criteria status
-  \item Participant demographic information (if collected)
+  \item Plain JSON (recommended)
+  \item Base64-encoded JSON (legacy)
 }
 }
 
@@ -96,7 +55,7 @@ Function returns \code{NULL} and logs detailed error information for:
 \examples{
 \dontrun{
 # Resume from local file
-session_data <- resume_session("path/to/STUDY2024_001_20241201_143022.enc")
+session_data <- resume_session("path/to/STUDY2024_001_20241201_143022.json")
 
 if (!is.null(session_data)) {
   # Successful restoration
@@ -116,7 +75,7 @@ if (!is.null(session_data)) {
 }
 
 # Resume from downloaded cloud file
-cloud_file <- "downloads/research_session_backup.enc"
+cloud_file <- "downloads/research_session_backup.json"
 restored_session <- resume_session(cloud_file)
 
 # Validate restored data before proceeding

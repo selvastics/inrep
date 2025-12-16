@@ -2,42 +2,11 @@
 % Please edit documentation in R/core_utils.R
 \name{core_utils}
 \alias{core_utils}
-\alias{generate_uuid}
 \title{Core Utilities for inrep Package}
-\usage{
-generate_uuid()
-}
-\value{
-Character string containing a UUID.
-}
 \description{
 This file consolidates all core utility functions including:
 - Basic utility functions (from utils.R)
 - Custom operators (from utils_operators.R)  
 - Session management utilities (from session_utils.R)
 }
-\examples{
-\dontrun{
-# Generate a UUID for a study
-study_id <- generate_uuid()
-cat("Generated UUID:", study_id, "\n")
-}
-}
-\keyword{(UUID)}
-\keyword{Generate}
-\keyword{Generates}
-\keyword{This}
-\keyword{UUID}
-\keyword{a}
-\keyword{around}
-\keyword{configurations.}
-\keyword{convenience}
-\keyword{for}
-\keyword{identifier}
 \keyword{internal}
-\keyword{is}
-\keyword{study}
-\keyword{unique}
-\keyword{universally}
-\keyword{uuid::UUIDgenerate().}
-\keyword{wrapper}

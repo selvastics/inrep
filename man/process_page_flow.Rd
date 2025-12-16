@@ -2,7 +2,7 @@
 % Please edit documentation in R/study_management.R
 \name{process_page_flow}
 \alias{process_page_flow}
-\title{Process custom page flow for UI rendering}
+\title{Process Custom Page Flow for UI Rendering}
 \usage{
 process_page_flow(
   config,
@@ -18,6 +18,33 @@ process_page_flow(
   disable_auto_close = FALSE
 )
 }
+\arguments{
+\item{config}{Study configuration created by \code{create_study_config()}.}
+
+\item{rv}{Reactive values/state object used by the runtime.}
+
+\item{input}{Shiny \code{input} object.}
+
+\item{output}{Shiny \code{output} object.}
+
+\item{session}{Shiny session.}
+
+\item{item_bank}{Data frame containing the item bank.}
+
+\item{ui_labels}{Named list of UI labels.}
+
+\item{logger}{Function used for logging (typically created by \code{initialize_logging()}).}
+
+\item{auto_close_time}{Numeric. Time until auto-close after the final results page.}
+
+\item{auto_close_time_unit}{Character. Either \code{"seconds"} or \code{"minutes"}.}
+
+\item{disable_auto_close}{Logical. If TRUE, disables automatic closing.}
+}
+\value{
+A Shiny UI object for the current page, or NULL if no custom page flow is configured.
+}
 \description{
-Process custom page flow for UI rendering
+Renders the current page of a custom study flow defined in
+\code{config$custom_page_flow}.
 }

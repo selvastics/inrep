@@ -10,7 +10,7 @@ create_default_gdpr_content(ui_labels = NULL)
 \item{ui_labels}{Language labels for UI elements}
 }
 \value{
-HTML string with default GDPR compliance content
+HTML string with a default GDPR/DSGVO information template
 }
 \description{
 Create Default GDPR Content

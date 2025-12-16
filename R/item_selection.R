@@ -59,8 +59,8 @@
 #' 
 #' \strong{Information Calculation Pipeline:}
 #' \itemize{
-#'   \item Uses current ability estimate from TAM functions (\code{\link[TAM]{tam.wle}}, \code{\link[TAM]{tam.eap}})
-#'   \item Calculates item information using TAM's \code{\link[TAM]{IRT.informationCurves}}
+#'   \item Uses current ability estimate from TAM functions (\code{TAM::tam.wle}, \code{TAM::tam.eap}).
+#'   \item Calculates item information using TAM's \code{TAM::IRT.informationCurves}.
 #'   \item Applies selection criteria based on psychometric principles
 #'   \item Returns item index for \code{inrep} workflow management
 #' }

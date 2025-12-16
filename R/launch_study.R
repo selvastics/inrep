@@ -1,13 +1,12 @@
 #' Launch Adaptive Study Interface
 #'
-#' NOTE THIS IS UNDER ACTIVE DEVELOPMENT - WE PUT ALL IN ONE FUNCTION FOR NOW
-#' Why is all in one function? Because you can more easily pass this entire function to an LLM to customize a specific study. 
-#' I will eventually split this up into smaller functions, but for now it's all in one for convenience. 
+#' Implementation note: currently implemented as a single function and will be
+#' refactored into smaller internal helpers.
 #' Launches a Shiny-based adaptive or non-adaptive assessment interface that serves as
-#' a comprehensive wrapper around TAM's psychometric capabilities. All IRT computations
-#' (ability estimation, item selection, model fitting) are performed by the TAM package,
-#' while this function provides the interactive interface, workflow management, and
-#' integration layer for comprehensive research workflows.
+#' a wrapper around optional psychometric backends (for example, TAM). When available,
+#' IRT computations (ability estimation, item selection, model fitting) are delegated to
+#' the backend, while this function provides the interactive interface and workflow
+#' management.
 #'
 #' @export
 #' @param config A list containing study configuration parameters created by \code{\link{create_study_config}}.
@@ -36,7 +35,7 @@
 #'   including ARIA labels, keyboard navigation, and screen reader support.
 #' @param study_key Character string for unique study identification. Overrides config$study_key.
 #' @param max_session_time Maximum session time in seconds (default: 7200 = 2 hours).
-#'   The assessment will automatically terminate after this time to ensure data security.
+#'   The assessment will automatically terminate after this time to limit session duration.
 #' @param session_save Logical indicating whether to enable session saving and recovery.
 #' @param data_preservation_interval Interval for automatic data preservation in seconds (default: 30).
 #' @param keep_alive_interval Keep-alive ping interval in seconds (default: 10).
@@ -46,6 +45,20 @@
 #'   When TRUE, enables keyboard shortcuts for rapid testing: STRG+A (CTRL+A) smart fills current page with
 #'   contextual defaults, STRG+Q (CTRL+Q) turbo auto-fills all pages until results are reached.
 #'   A red debug indicator appears in the bottom-right corner. **Use only for development/testing!**
+#' @param ui_render_delay Optional numeric delay (in seconds) before rendering the main UI.
+#'   If NULL, no additional delay is applied.
+#' @param package_loading_delay Optional numeric delay (in seconds) used when deferring
+#'   package loading for immediate UI startup.
+#' @param session_init_delay Optional numeric delay (in seconds) before initializing
+#'   session state.
+#' @param show_loading_screen Logical indicating whether to show a simple loading
+#'   screen when using delayed startup.
+#' @param immediate_ui Logical indicating whether to render the UI immediately and
+#'   load heavier components in the background.
+#' @param auto_close_time Numeric. Time until auto-close after the final results page.
+#'   Used only for custom page flows that include results pages.
+#' @param auto_close_time_unit Character. Either \code{"seconds"} or \code{"minutes"}.
+#' @param disable_auto_close Logical. If TRUE, disables automatic closing.
 #' @param port Numeric port number for Shiny application (default: 3838).
 #'   The application will be accessible at http://host:port.
 #' @param launch_browser Logical indicating whether to automatically open browser (default: FALSE).
@@ -57,17 +70,17 @@
 #' @return When \code{launch_browser = TRUE}, launches the Shiny application
 #'   in the default browser. When \code{launch_browser = FALSE} (default), returns the Shiny app
 #'   object for manual execution with \code{shiny::runApp()}.
-#'   The app provides a complete assessment interface with real-time adaptation.
+#'   The app provides an assessment interface with optional adaptation.
 #'
 #' @details
 #' \strong{Psychometric Foundation:} All statistical computations are performed by the
 #' TAM package (Robitzsch et al., 2024). \code{inrep} serves as an integration framework
 #' that orchestrates TAM's capabilities within an interactive research workflow:
 #' \itemize{
-#'   \item IRT model fitting: \code{\link[TAM]{tam.mml}}, \code{\link[TAM]{tam.mml.2pl}}, \code{\link[TAM]{tam.mml.3pl}}
-#'   \item Ability estimation: \code{\link[TAM]{tam.wle}}, \code{\link[TAM]{tam.eap}}
-#'   \item Item information: \code{\link[TAM]{IRT.informationCurves}}
-#'   \item Model diagnostics: \code{\link[TAM]{tam.fit}}
+#'   \item IRT model fitting: \code{TAM::tam.mml}, \code{TAM::tam.mml.2pl}, \code{TAM::tam.mml.3pl}
+#'   \item Ability estimation: \code{TAM::tam.wle}
+#'   \item Item information: \code{TAM::IRT.informationCurves}
+#'   \item Model diagnostics: \code{TAM::tam.fit}
 #' }
 #' 
 #' \strong{Framework Architecture:} \code{inrep} provides the following integration capabilities:
@@ -79,35 +92,17 @@
 #'   \item Result export in multiple formats with cloud storage integration
 #' }
 #'
-#' \strong{Assessment Features:} This function provides comprehensive computerized 
-#' adaptive testing (CAT) capabilities including:
+#' \strong{Capabilities:}
 #' \itemize{
-#'   \item Multilingual interface support (English, German, Spanish, French)
-#'   \item Configurable demographic data collection with validation
-#'   \item Adaptive and non-adaptive administration modes
-#'   \item Support for multiple IRT models (1PL/Rasch, 2PL, 3PL, GRM)
-#'   \item Advanced item selection algorithms (Maximum Information, Weighted, Random)
-#'   \item Real-time ability estimation using TAM's EAP and WLE methods
-#'   \item Comprehensive result reporting with theta estimates, standard errors, and diagnostics
-#'   \item Session state management with save/restore capabilities for interrupted sessions
-#'   \item Enterprise-grade logging and audit trails via \code{logr} package
-#'   \item Responsive design with accessibility compliance (WCAG 2.1 guidelines)
-#' }
-#'
-#' \strong{Advanced Features:}
-#' \itemize{
-#'   \item \strong{Real-time monitoring:} Use \code{admin_dashboard_hook} to receive live updates
-#'     on participant progress, ability distribution patterns, and session metrics
-#'   \item \strong{Accessibility compliance:} Enable \code{accessibility = TRUE} for ARIA labels,
-#'     keyboard navigation, screen reader support, and high contrast options
-#'   \item \strong{Cloud integration:} Specify \code{webdav_url} for automatic result backup
-#'     to institutional cloud storage systems with secure authentication
-#'   \item \strong{Quality monitoring:} Built-in detection of response patterns, engagement metrics,
-#'     and data quality indicators with automatic flagging of suspicious sessions
+#'   \item Runs a Shiny-based assessment flow (fixed or adaptive)
+#'   \item Optional demographics collection
+#'   \item Ability estimation and item selection via optional psychometric backends (e.g., TAM)
+#'   \item Optional session save/restore helpers
+#'   \item Optional logging when \code{logr} is available
 #' }
 #' 
 #' @section Cloud Storage Configuration:
-#' The framework supports automatic backup of assessment results to WebDAV-compatible cloud storage:
+#' Optional upload of completed session data to a WebDAV-compatible endpoint.
 #' 
 #' \strong{Setup Requirements:}
 #' \itemize{
@@ -116,21 +111,12 @@
 #'   \item Password should be the access token or credential for your WebDAV service
 #'   \item Network connectivity required for cloud functionality
 #' }
-#' 
-#' \strong{Compatible Services:}
-#' \itemize{
-#'   \item Academic cloud storage (e.g., \code{"https://sync.academiccloud.de/..."})
-#'   \item Institutional WebDAV servers (\code{"https://university.edu/webdav/..."})
-#'   \item Nextcloud/ownCloud instances with WebDAV enabled
-#'   \item Commercial WebDAV providers (Box, Dropbox Business, etc.)
-#' }
-#' 
-#' \strong{Security Best Practices:}
+#'
+#' \strong{Operational Notes:}
 #' \itemize{
 #'   \item Use environment variables for passwords: \code{password = Sys.getenv("WEBDAV_PASS")}
-#'   \item Ensure WebDAV endpoints use HTTPS for encrypted transmission
+#'   \item Prefer HTTPS endpoints
 #'   \item Use dedicated access tokens rather than account passwords when possible
-#'   \item Test connectivity before launching large-scale studies
 #' }
 #' 
 #' \strong{Usage Examples:}
@@ -171,134 +157,10 @@
 #'   \item Network connectivity for cloud storage features (optional)
 #' }
 #'
-#' @section Performance Optimization:
-#' For large-scale deployments and high-performance requirements:
-#' 
-#' \strong{Computational Settings:}
-#' \itemize{
-#'   \item Enable \code{parallel_computation = TRUE} in config for faster TAM estimation
-#'   \item Use \code{cache_enabled = TRUE} to cache item information calculations
-#'   \item Specify optimal \code{theta_grid} density based on precision requirements
-#'   \item Consider \code{auto_scaling = TRUE} for cloud-based deployments
-#' }
-#' 
-#' \strong{Monitoring Tools:}
-#' \itemize{
-#'   \item Built-in profiling tools track estimation times and memory usage
-#'   \item Real-time performance metrics available through admin dashboard
-#'   \item Automatic detection of computational bottlenecks and warnings
-#'   \item Session timeout management prevents resource exhaustion
-#' }
-#' 
-#' \strong{Scalability Considerations:}
-#' \itemize{
-#'   \item Recommended concurrent user limits: 50-100 depending on server specifications
-#'   \item Database storage recommended for studies with >1000 participants  
-#'   \item Load balancing support for enterprise deployments
-#'   \item Memory management optimizations for long-running sessions
-#' }
-#'
-#' @section Validation and Quality Assurance:
-#' The framework includes comprehensive validation and quality control mechanisms:
-#' 
-#' \strong{Real-time Response Quality:}
-#' \itemize{
-#'   \item Rapid response detection based on item-specific timing thresholds
-#'   \item Response pattern analysis for detecting careless responding
-#'   \item Engagement metrics including time-on-task and interaction patterns
-#'   \item Automatic flagging of suspicious response sequences
-#' }
-#' 
-#' \strong{Psychometric Quality:}
-#' \itemize{
-#'   \item Model fit diagnostics through TAM's \code{\link[TAM]{tam.fit}} procedures
-#'   \item Person fit statistics for identifying aberrant response patterns
-#'   \item Item functioning analysis with exposure rate monitoring
-#'   \item Ability estimate stability tracking across administered items
-#' }
-#' 
-#' \strong{Data Integrity:}
-#' \itemize{
-#'   \item Comprehensive audit trails with timestamped action logging
-#'   \item Session state validation and recovery mechanisms
-#'   \item Automatic data backup and redundancy for critical assessments
-#'   \item GDPR-compliant data handling with participant consent management
-#' }
-#' 
-#' \strong{Research Standards Compliance:}
-#' \itemize{
-#'   \item Follows Standards for Educational and Psychological Testing (AERA, APA, NCME, 2014)
-#'   \item Implements International Test Commission Guidelines for Computer-Based Testing
-#'   \item Supports institutional IRB requirements with built-in consent frameworks
-#'   \item Accessibility compliance with WCAG 2.1 AA standards when enabled
-#' }
-#'
-#' @section Theme Customization:
-#' The interface supports extensive theming capabilities through multiple mechanisms:
-#' 
-#' \strong{Built-in Themes:} Six professionally designed themes are available:
-#' \itemize{
-#'   \item \code{"Light"}: Clean, minimalist design with high contrast
-#'   \item \code{"Midnight"}: Dark theme optimized for low-light environments  
-#'   \item \code{"Sunset"}: Warm color palette with orange and red accents
-#'   \item \code{"Forest"}: Nature-inspired greens with earthy tones
-#'   \item \code{"Ocean"}: Cool blues and teals for calming effect
-#'   \item \code{"Berry"}: Purple and magenta palette for creative applications
-#' }
-#' 
-#' \strong{Custom Themes:} Create custom themes through:
-#' \itemize{
-#'   \item \code{theme_config}: Named list with CSS variable definitions
-#'   \item \code{custom_css}: Direct CSS injection for complete control
-#'   \item \code{\link{get_theme_config}}: Get theme configuration for available themes
-#' }
-#' 
-#' \strong{CSS Variables:} Key customization options include:
-#' \itemize{
-#'   \item \code{--primary-color}: Main interface accent color
-#'   \item \code{--background-color}: Page and component backgrounds
-#'   \item \code{--text-color}: Primary text color for readability
-#'   \item \code{--font-family}: Typography selection (web-safe fonts recommended)
-#'   \item \code{--border-radius}: Corner rounding for modern appearance
-#'   \item \code{--button-hover-color}: Interactive element feedback
-#' }
-#' 
-#' CSS customization takes precedence in this order: \code{custom_css} > \code{theme_config} > built-in themes.
-#'
-#' @section Progress Visualization:
-#' The interface provides multiple progress visualization styles to enhance user experience:
-#' 
-#' \strong{Available Progress Styles:}
-#' \itemize{
-#'   \item \code{"modern-circle"}: Enhanced circular progress with smooth animations (default)
-#'   \item \code{"enhanced-bar"}: Gradient-filled linear progress bar with shimmer effect
-#'   \item \code{"segmented"}: Step-by-step visual indicator with numbered segments
-#'   \item \code{"minimal"}: Clean, unobtrusive progress display
-#'   \item \code{"card"}: Prominent progress display in card format
-#'   \item \code{"circle"}: Legacy circular progress (backward compatible)
-#'   \item \code{"bar"}: Legacy linear progress bar (backward compatible)
-#' }
-#' 
-#' \strong{Usage Examples:}
-#' \preformatted{
-#' # Use modern circular progress (default)
-#' config <- create_study_config(
-#'   name = "My Assessment",
-#'   progress_style = "modern-circle"
-#' )
-#' 
-#' # Use segmented progress for step-by-step feedback
-#' config <- create_study_config(
-#'   name = "Long Assessment",
-#'   progress_style = "segmented"
-#' )
-#' 
-#' # Use minimal progress for clean interface
-#' config <- create_study_config(
-#'   name = "Simple Assessment",
-#'   progress_style = "minimal"
-#' )
-#' }
+#' @section Notes:
+#' Most runtime behavior is configured via \code{create_study_config()} (e.g.,
+#' caching/parallel settings, theme options, progress display). For WebDAV upload
+#' behavior and security notes, see \code{save_session_to_cloud()}.
 #'
 #' @section Item Bank Requirements:
 #' The \code{item_bank} data frame must conform to TAM package specifications with 
@@ -429,7 +291,7 @@
 #'   theme_config = custom_theme_config
 #' )
 #' 
-#' # Example 4: Enterprise Clinical Assessment
+#' # Example 4: Clinical Assessment Example
 #' clinical_config <- create_study_config(
 #'   name = "Clinical Depression Screening",
 #'   model = "GRM",
@@ -438,20 +300,17 @@
 #'   demographics = c("Age", "Gender", "Previous_Treatment"),
 #'   theme = "Clinical",
 #'   language = "en",
-#'   enterprise_security = TRUE,
-#'   audit_logging = TRUE,
-#'   quality_monitoring = TRUE,
 #'   session_save = TRUE,
 #'   max_session_duration = 30
 #' )
 #' 
-#' # Launch with cloud storage and comprehensive logging
+#' # Launch with cloud storage and logging
 #' launch_study(
 #'   config = clinical_config,
 #'   item_bank = depression_items,
 #'   save_format = "json",
-#'   webdav_url = "https://secure-storage.hospital.edu/assessments/",
-#'   password = Sys.getenv("CLINICAL_WEBDAV_PASSWORD"),
+#'   webdav_url = "https://your-webdav.example/assessments/",
+#'   password = Sys.getenv("WEBDAV_PASSWORD"),
 #'   logger = function(msg, level = "INFO") {
 #'     timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
 #'     cat(sprintf("[%s] %s: %s\n", timestamp, level, msg))
@@ -550,7 +409,7 @@ launch_study <- function(
     if (current_lang == "en") {
       return("Please complete all required fields.\nPlease answer all questions on this page.")
     } else {
-      return("Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite.")
+      return("Bitte vervollst\u00E4ndigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite.")
     }
   }
   
@@ -979,19 +838,6 @@ launch_study <- function(
     }
   }
   
-  safe_tam_eap <- function(...) {
-    if (available_packages$TAM) {
-      tryCatch({
-        TAM::tam.eap(...)
-      }, error = function(e) {
-        logger(sprintf("TAM::tam.eap error: %s", e$message), level = "ERROR")
-        stop(sprintf("TAM computation failed: %s", e$message))
-      })
-    } else {
-      stop("TAM package not available")
-    }
-  }
-  
   # Create safe plotting function
   safe_render_plot <- function(expr, ...) {
     if (!is.null(available_packages) && isTRUE(available_packages[["ggplot2"]])) {
@@ -1000,9 +846,9 @@ launch_study <- function(
         if (!requireNamespace("ggplot2", quietly = TRUE)) {
           stop("ggplot2 package not available")
         }
-        ggplot2::renderPlot(expr, ...)
+        shiny::renderPlot(expr, ...)
       }, error = function(e) {
-        logger(sprintf("ggplot2::renderPlot error: %s", e$message), level = "ERROR")
+        logger(sprintf("shiny::renderPlot error: %s", e$message), level = "ERROR")
         # Fallback to text output
         shiny::renderText({
           "Plot rendering failed - displaying data as text instead"
@@ -1788,7 +1634,7 @@ launch_study <- function(
            });
            
                      // DIRECT CONTENT DISPLAY - No loading screens, maximum efficiency
-          console.log('✅ Direct content display - no loading animations');
+          console.log('\u2705 Direct content display - no loading animations');
         })();
       "))
     ),
@@ -2599,14 +2445,8 @@ launch_study <- function(
     # CRITICAL: Session isolation - ensure each user gets a completely fresh session
     if (exists(".force_new_session") && .force_new_session) {
       # Clear any existing session data to prevent session sharing
-      if (exists(".logging_data", envir = .GlobalEnv)) {
-        rm(".logging_data", envir = .GlobalEnv)
-      }
-      
-      # Clear any existing session state
-      if (exists("session_config", envir = .GlobalEnv)) {
-        rm("session_config", envir = .GlobalEnv)
-      }
+      session$userData$logging_data <- NULL
+      session$userData$comprehensive_dataset <- NULL
       
       # Force new session initialization
       .needs_session_init <<- TRUE
@@ -2700,16 +2540,11 @@ launch_study <- function(
             logger(sprintf("Generated session-specific participant code: %s", study_key), level = "INFO")
           }
           
-          # Ensure complete data isolation by clearing any global state
-          if (exists(".logging_data", envir = .GlobalEnv)) {
-            rm(".logging_data", envir = .GlobalEnv)
-          }
-          
-          # Initialize fresh session-specific logging data
-          .GlobalEnv$.logging_data <- new.env()
-          .GlobalEnv$.logging_data$session_id <- unique_session_id
-          .GlobalEnv$.logging_data$session_start <- Sys.time()
-          .GlobalEnv$.logging_data$current_page_start <- Sys.time()
+          # Initialize fresh session-specific logging data (server scope)
+          session$userData$logging_data <- new.env(parent = emptyenv())
+          session$userData$logging_data$session_id <- unique_session_id
+          session$userData$logging_data$session_start <- Sys.time()
+          session$userData$logging_data$current_page_start <- Sys.time()
           
           logger(sprintf("Complete data isolation ensured for session: %s", unique_session_id), level = "INFO")
           
@@ -2773,8 +2608,8 @@ launch_study <- function(
         # Update config language
         config$language <<- new_lang
         
-        # Store globally for studies that need access to language preference
-        assign("study_language_preference", new_lang, envir = .GlobalEnv)
+        # Store in session only
+        session$userData$study_language_preference <- new_lang
         
         # Log the change
         cat("Language switched to:", new_lang, "\n")
@@ -2804,8 +2639,8 @@ launch_study <- function(
       session$userData$last_store_language <- input$store_language_globally
       session$userData$last_store_language_time <- now_time
 
-      # Store globally for any study that needs language access
-      assign("study_language_preference", input$store_language_globally, envir = .GlobalEnv)
+      # Store in session only
+      session$userData$study_language_preference <- input$store_language_globally
       cat("Stored language globally:", input$store_language_globally, "\n")
 
       # Update language for FUTURE pages only (not current page to prevent loops)
@@ -2830,7 +2665,7 @@ launch_study <- function(
     # This uses JavaScript to capture the CURRENT HTML DOM and send it to server for PDF conversion
     # NO recalculation happens - we screenshot what's already rendered
     shiny::observeEvent(input$download_pdf_trigger, {
-      cat("PDF download triggered\n")
+      if (isTRUE(getOption("inrep.debug", FALSE))) cat("PDF download triggered\n")
       
       # Show notification that PDF is being generated
       shiny::showNotification("Capturing report for PDF...", type = "message", duration = 3)
@@ -2883,7 +2718,7 @@ launch_study <- function(
     
     # Step 2: Trigger browser print dialog (simple and always works!)
     shiny::observeEvent(input$pdf_html_content, {
-      cat("PDF download: Using browser print dialog\n")
+      if (isTRUE(getOption("inrep.debug", FALSE))) cat("PDF download: Using browser print dialog\n")
       
       tryCatch({
         # Just trigger browser print - user can save as PDF
@@ -2902,15 +2737,15 @@ launch_study <- function(
     
     # Observe CSV download trigger - Universal solution for all studies
     shiny::observeEvent(input$download_csv_trigger, {
-      cat("CSV download triggered\n")
+      if (isTRUE(getOption("inrep.debug", FALSE))) cat("CSV download triggered\n")
       
       # DEBUG: Check what's available in session
-      cat("DEBUG: session$userData keys available:", names(session$userData), "\n")
-      cat("DEBUG: hilfo_complete_data exists:", !is.null(session$userData$hilfo_complete_data), "\n")
-      cat("DEBUG: hilfo_csv_file exists:", !is.null(session$userData$hilfo_csv_file), "\n")
+      if (isTRUE(getOption("inrep.debug", FALSE))) cat("DEBUG: session$userData keys available:", names(session$userData), "\n")
+      if (isTRUE(getOption("inrep.debug", FALSE))) cat("DEBUG: hilfo_complete_data exists:", !is.null(session$userData$hilfo_complete_data), "\n")
+      if (isTRUE(getOption("inrep.debug", FALSE))) cat("DEBUG: hilfo_csv_file exists:", !is.null(session$userData$hilfo_csv_file), "\n")
       if (!is.null(session$userData$hilfo_csv_file)) {
-        cat("DEBUG: hilfo_csv_file path:", session$userData$hilfo_csv_file, "\n")
-        cat("DEBUG: file exists:", file.exists(session$userData$hilfo_csv_file), "\n")
+        if (isTRUE(getOption("inrep.debug", FALSE))) cat("DEBUG: hilfo_csv_file path:", session$userData$hilfo_csv_file, "\n")
+        if (isTRUE(getOption("inrep.debug", FALSE))) cat("DEBUG: file exists:", file.exists(session$userData$hilfo_csv_file), "\n")
       }
       
       shiny::showNotification("Generating CSV export...", type = "message", duration = 2)
@@ -2919,12 +2754,12 @@ launch_study <- function(
         # CRITICAL: Check if study-specific complete_data exists (from results processor)
         # This ensures download uses the EXACT same data that was uploaded to cloud
         if (!is.null(session$userData$hilfo_complete_data)) {
-          cat("CRITICAL: Using stored complete_data from results processor (same as cloud upload)\n")
+          if (isTRUE(getOption("inrep.debug", FALSE))) cat("CRITICAL: Using stored complete_data from results processor (same as cloud upload)\n")
           csv_data <- session$userData$hilfo_complete_data
           
           # If file exists, use it directly (same file that was uploaded)
           if (!is.null(session$userData$hilfo_csv_file) && file.exists(session$userData$hilfo_csv_file)) {
-            cat("CRITICAL: Using same CSV file that was uploaded to cloud:", session$userData$hilfo_csv_file, "\n")
+            if (isTRUE(getOption("inrep.debug", FALSE))) cat("CRITICAL: Using same CSV file that was uploaded to cloud:", session$userData$hilfo_csv_file, "\n")
             csv_content <- readLines(session$userData$hilfo_csv_file, warn = FALSE)
             
             # Trigger download via JavaScript using the same file
@@ -2949,7 +2784,7 @@ launch_study <- function(
           }
           
           # If file doesn't exist, generate from stored complete_data
-          cat("CRITICAL: File not found, generating CSV from stored complete_data\n")
+          if (isTRUE(getOption("inrep.debug", FALSE))) cat("CRITICAL: File not found, generating CSV from stored complete_data\n")
           temp_csv <- tempfile(fileext = ".csv")
           write.csv(csv_data, temp_csv, row.names = FALSE, na = "")
           csv_content <- readLines(temp_csv, warn = FALSE)
@@ -3143,6 +2978,17 @@ launch_study <- function(
   # This ensures cloud save works even when user selects "no" to see results
   rv$webdav_url <- webdav_url
   rv$webdav_password <- password
+
+  # Register session objects for robust preservation (avoid .GlobalEnv scraping)
+  tryCatch({
+    if (exists("register_session_objects") && is.function(register_session_objects)) {
+      register_session_objects(
+        rv = rv,
+        config = config,
+        item_bank = item_bank
+      )
+    }
+  }, error = function(e) {})
   
   # CRITICAL: Ensure complete session isolation - each user gets fresh data
   # Generate unique session ID first
@@ -3256,14 +3102,14 @@ launch_study <- function(
       # Initialize comprehensive dataset system (if functions are available)
     if (exists("initialize_comprehensive_dataset", mode = "function")) {
       tryCatch({
-        comprehensive_dataset <- initialize_comprehensive_dataset(config, item_bank, effective_study_key)
+        comprehensive_dataset <- initialize_comprehensive_dataset(config, item_bank, effective_study_key, session = session)
         rv$comprehensive_dataset <- comprehensive_dataset
         logger("Comprehensive dataset initialized successfully", level = "INFO")
         
         # Initialize page start time for logging
         if (config$log_data %||% FALSE && exists("update_page_start_time", mode = "function")) {
           tryCatch({
-            update_page_start_time("page_1")
+            update_page_start_time("page_1", session = session)
           }, error = function(e) {
             logger(sprintf("Failed to initialize page start time: %s", e$message), level = "WARNING")
           })
@@ -3614,7 +3460,7 @@ launch_study <- function(
         
                   # STABLE container with IMMEDIATE positioning
           shiny::div(
-            id = "stable-page-container", # ← NEVER CHANGES!
+            id = "stable-page-container", # \u2190 NEVER CHANGES!
             class = "page-wrapper",
             style = "width: 100% !important; max-width: 1200px !important; margin: 0 auto !important; position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; transform: none !important; display: block !important;",
           base::switch(stage,
@@ -3652,8 +3498,8 @@ launch_study <- function(
                       
                       # CHECK FOR HTML CONTENT - NEW FEATURE!
                       if (!base::is.null(demo_config) && !base::is.null(demo_config$html_content)) {
-                        cat("DEBUG: Found HTML content in demographics stage for", dem, "\n")
-                        cat("DEBUG: HTML content length:", nchar(demo_config$html_content), "\n")
+                        if (isTRUE(getOption("inrep.debug", FALSE))) cat("DEBUG: Found HTML content in demographics stage for", dem, "\n")
+                        if (isTRUE(getOption("inrep.debug", FALSE))) cat("DEBUG: HTML content length:", nchar(demo_config$html_content), "\n")
                         
                         # Return raw HTML content instead of normal form field
                         return(shiny::div(
@@ -4038,10 +3884,21 @@ launch_study <- function(
                          shiny::div(
                            style = "display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;",
                            progress_ui,
-                                                     shiny::p(
-                            sprintf(ui_labels$question_progress %||% "Question %d of %d", base::length(rv$administered) + 1, config$max_items),
-                            style = "text-align: center; margin: 15px 0; width: 100%;"
-                          )
+                                                    shiny::p(
+                                                      base::tryCatch(
+                                                        base::sprintf(
+                                                          ui_labels$question_progress %||% "Question %d of %d",
+                                                          base::length(rv$administered) + 1,
+                                                          config$max_items
+                                                        ),
+                                                        error = function(e) base::sprintf(
+                                                          "Question %d of %d",
+                                                          base::length(rv$administered) + 1,
+                                                          config$max_items
+                                                        )
+                                                      ),
+                                                      style = "text-align: center; margin: 15px 0; width: 100%;"
+                                                    )
                          ),
                          shiny::div(class = "test-question", item$Question),
                          shiny::div(class = "radio-group-container", response_ui),
@@ -4219,6 +4076,75 @@ launch_study <- function(
         ""
       }
     })
+
+    # Auto-close countdown observer (runs only when enabled).
+    # Stored in session$userData to prevent duplicate observers.
+    if (is.null(session$userData$countdown_observer)) {
+      countdown_observer <- shiny::observe({
+        if (!isTRUE(rv$auto_close_timer_active) || is.null(rv$countdown_time)) {
+          return(NULL)
+        }
+
+        if (rv$countdown_time > 0) {
+          rv$countdown_time <- rv$countdown_time - 1
+          shiny::invalidateLater(1000, session)
+          return(NULL)
+        }
+
+        # Time's up - close the app/tab/browser
+        logger("Auto-close timer expired - closing app/tab/browser", level = "INFO")
+        rv$auto_close_timer_active <- FALSE
+
+        # Universal auto-close JavaScript (best-effort; browser-dependent)
+        auto_close_js <- "
+        (function() {
+          try {
+            window.close();
+          } catch(e) {
+            try {
+              if (window.opener) {
+                window.opener = null;
+                window.close();
+              } else {
+                window.location.href = 'about:blank';
+              }
+            } catch(e2) {
+              try {
+                alert('Session completed. Please close this tab.');
+                window.location.href = 'about:blank';
+              } catch(e3) {
+                document.body.innerHTML = '<div style=\"text-align: center; padding: 50px; font-size: 18px;\">Session completed. Please close this tab.</div>';
+              }
+            }
+          }
+        })();
+        "
+
+        if (requireNamespace("shinyjs", quietly = TRUE)) {
+          tryCatch({
+            shinyjs::runjs(auto_close_js)
+          }, error = function(e) {
+            logger(sprintf("Auto-close failed: %s", e$message), level = "WARNING")
+          })
+        } else {
+          logger("shinyjs not available for auto-close", level = "WARNING")
+        }
+
+        logger("Stopping Shiny app and terminating R process after study completion", level = "INFO")
+        tryCatch({
+          later::later(function() {
+            shiny::stopApp()
+            if (!interactive()) {
+              quit(save = "no", status = 0)
+            }
+          }, delay = 3)
+        }, error = function(e) {
+          logger(sprintf("App stop failed: %s", e$message), level = "ERROR")
+          shiny::stopApp()
+        })
+      })
+      session$userData$countdown_observer <- countdown_observer
+    }
     
     output$theta_plot <- shiny::renderPlot({
       logger(sprintf("Plot rendering triggered - adaptive: %s, theta_history length: %d", config$adaptive, base::length(rv$theta_history)))
@@ -4357,9 +4283,7 @@ launch_study <- function(
       }
       # Use enhanced reporting when requested
       pr <- config$participant_report %||% list()
-      if (isTRUE(pr$use_enhanced_report) && exists("create_response_report", where = asNamespace("inrep"), inherits = FALSE)) {
-        dat <- inrep:::create_response_report(config, rv$cat_result, item_bank)
-      } else if (isTRUE(pr$use_enhanced_report) && exists("create_response_report")) {
+      if (isTRUE(pr$use_enhanced_report)) {
         dat <- create_response_report(config, rv$cat_result, item_bank)
       } else {
         dat <- if (config$model == "GRM") {
@@ -4521,7 +4445,7 @@ launch_study <- function(
           # Use comprehensive dataset if available, otherwise fall back to original method
           tryCatch({
             if (exists("get_comprehensive_dataset", mode = "function")) {
-              comprehensive_data <- get_comprehensive_dataset()
+              comprehensive_data <- get_comprehensive_dataset(session = session)
               if (!is.null(comprehensive_data)) {
                 # Use comprehensive dataset for export
                 utils::write.csv(comprehensive_data, file, row.names = FALSE)
@@ -4570,7 +4494,7 @@ launch_study <- function(
       content = function(file) {
         tryCatch({
           if (exists("get_comprehensive_dataset", mode = "function")) {
-            comprehensive_data <- get_comprehensive_dataset()
+            comprehensive_data <- get_comprehensive_dataset(session = session)
             if (!is.null(comprehensive_data)) {
               utils::write.csv(comprehensive_data, file, row.names = FALSE)
               logger("Comprehensive dataset downloaded successfully", level = "INFO")
@@ -4610,7 +4534,7 @@ launch_study <- function(
           log_data <- input$log_input_change
           current_page_id <- paste0("page_", rv$current_page)
           if (exists("log_action", mode = "function")) {
-            log_action("input_change", log_data, current_page_id)
+            log_action("input_change", log_data, current_page_id, session = session)
           }
         }, error = function(e) {
           logger(sprintf("Failed to log input change: %s", e$message), level = "WARNING")
@@ -4623,7 +4547,7 @@ launch_study <- function(
           log_data <- input$log_button_click
           current_page_id <- paste0("page_", rv$current_page)
           if (exists("log_action", mode = "function")) {
-            log_action("button_click", log_data, current_page_id)
+            log_action("button_click", log_data, current_page_id, session = session)
           }
         }, error = function(e) {
           logger(sprintf("Failed to log button click: %s", e$message), level = "WARNING")
@@ -4637,7 +4561,7 @@ launch_study <- function(
           current_page_id <- paste0("page_", rv$current_page)
           action_type <- if (log_data$hidden) "tab_switch_away" else "tab_switch_back"
           if (exists("log_action", mode = "function")) {
-            log_action(action_type, log_data, current_page_id)
+            log_action(action_type, log_data, current_page_id, session = session)
           }
         }, error = function(e) {
           logger(sprintf("Failed to log visibility change: %s", e$message), level = "WARNING")
@@ -4650,7 +4574,7 @@ launch_study <- function(
           log_data <- input$log_mouse_activity
           current_page_id <- paste0("page_", rv$current_page)
           if (exists("log_action", mode = "function")) {
-            log_action("mouse_activity", log_data, current_page_id)
+            log_action("mouse_activity", log_data, current_page_id, session = session)
           }
         }, error = function(e) {
           logger(sprintf("Failed to log mouse activity: %s", e$message), level = "WARNING")
@@ -4752,7 +4676,7 @@ launch_study <- function(
           # Update comprehensive dataset (if function is available)
           if (length(page_data) > 0 && exists("update_comprehensive_dataset", mode = "function")) {
             tryCatch({
-              update_comprehensive_dataset("demographics", page_data, stage = rv$stage, current_page = rv$current_page)
+              update_comprehensive_dataset("demographics", page_data, stage = rv$stage, current_page = rv$current_page, session = session)
               logger("Updated comprehensive dataset with demographic data", level = "DEBUG")
             }, error = function(e) {
               logger(sprintf("Failed to update comprehensive dataset with demographics: %s", e$message), level = "WARNING")
@@ -4840,7 +4764,7 @@ launch_study <- function(
             if (length(page_data) > 0) {
                               if (exists("update_comprehensive_dataset", mode = "function")) {
                   tryCatch({
-                    update_comprehensive_dataset("items", page_data, stage = rv$stage, current_page = rv$current_page)
+                    update_comprehensive_dataset("items", page_data, stage = rv$stage, current_page = rv$current_page, session = session)
                     logger("Updated comprehensive dataset with item responses", level = "DEBUG")
                   }, error = function(e) {
                     logger(sprintf("Failed to update comprehensive dataset with item responses: %s", e$message), level = "WARNING")
@@ -4871,7 +4795,7 @@ launch_study <- function(
           if (length(page_data) > 0) {
                           if (exists("update_comprehensive_dataset", mode = "function")) {
                 tryCatch({
-                  update_comprehensive_dataset("custom_page", page_data, page_id = page_id, stage = rv$stage, current_page = rv$current_page)
+                  update_comprehensive_dataset("custom_page", page_data, page_id = page_id, stage = rv$stage, current_page = rv$current_page, session = session)
                   logger("Updated comprehensive dataset with custom page data", level = "DEBUG")
                 }, error = function(e) {
                   logger(sprintf("Failed to update comprehensive dataset with custom page data: %s", e$message), level = "WARNING")
@@ -4895,8 +4819,8 @@ launch_study <- function(
           if (exists("log_page_time") && exists("update_page_start_time")) {
             tryCatch({
               current_page_id <- paste0("page_", rv$current_page)
-              time_spent <- as.numeric(difftime(Sys.time(), .logging_data$current_page_start, units = "secs"))
-              log_page_time(current_page_id, time_spent)
+              time_spent <- as.numeric(difftime(Sys.time(), session$userData$logging_data$current_page_start, units = "secs"))
+              log_page_time(current_page_id, time_spent, session = session)
             }, error = function(e) {
               logger(sprintf("Failed to log page time: %s", e$message), level = "WARNING")
             })
@@ -4933,7 +4857,7 @@ launch_study <- function(
           if (exists("update_page_start_time")) {
             tryCatch({
               new_page_id <- paste0("page_", rv$current_page)
-              update_page_start_time(new_page_id)
+              update_page_start_time(new_page_id, session = session)
             }, error = function(e) {
               logger(sprintf("Failed to update page start time: %s", e$message), level = "WARNING")
             })
@@ -4964,8 +4888,8 @@ launch_study <- function(
         if (exists("log_page_time") && exists("update_page_start_time")) {
           tryCatch({
             current_page_id <- paste0("page_", rv$current_page)
-            time_spent <- as.numeric(difftime(Sys.time(), .logging_data$current_page_start, units = "secs"))
-            log_page_time(current_page_id, time_spent)
+            time_spent <- as.numeric(difftime(Sys.time(), session$userData$logging_data$current_page_start, units = "secs"))
+            log_page_time(current_page_id, time_spent, session = session)
           }, error = function(e) {
             logger(sprintf("Failed to log page time: %s", e$message), level = "WARNING")
           })
@@ -4995,7 +4919,7 @@ launch_study <- function(
           if (exists("update_page_start_time")) {
             tryCatch({
               new_page_id <- paste0("page_", rv$current_page)
-              update_page_start_time(new_page_id)
+              update_page_start_time(new_page_id, session = session)
             }, error = function(e) {
               logger(sprintf("Failed to update page start time: %s", e$message), level = "WARNING")
             })
@@ -5019,6 +4943,11 @@ launch_study <- function(
     
     shiny::observeEvent(input$submit_study, {
       if (rv$stage == "custom_page_flow") {
+        # Identify results pages (supports multi-part results sections)
+        results_indices <- which(vapply(config$custom_page_flow, function(p) identical(p$type, "results"), logical(1)))
+        first_results_idx <- if (length(results_indices) > 0) results_indices[1] else length(config$custom_page_flow)
+        last_results_idx <- if (length(results_indices) > 0) results_indices[length(results_indices)] else length(config$custom_page_flow)
+
         # Validate final page before submission
         validation_passed <- TRUE
         
@@ -5069,7 +4998,7 @@ launch_study <- function(
           return()  # Don't proceed if validation fails
         }
         
-        # Collect final page data (could be demographics or items)
+        # Collect current page data (could be demographics or items)
         current_page <- config$custom_page_flow[[rv$current_page]]
         
         if (current_page$type == "demographics") {
@@ -5087,7 +5016,7 @@ launch_study <- function(
           # Update comprehensive dataset with final demographic data
           if (length(page_data) > 0 && exists("update_comprehensive_dataset", mode = "function")) {
             tryCatch({
-              update_comprehensive_dataset("demographics", page_data, stage = rv$stage, current_page = rv$current_page)
+              update_comprehensive_dataset("demographics", page_data, stage = rv$stage, current_page = rv$current_page, session = session)
             }, error = function(e) {
               logger(sprintf("Failed to update comprehensive dataset with final demographics: %s", e$message), level = "WARNING")
             })
@@ -5147,7 +5076,7 @@ launch_study <- function(
             # Update comprehensive dataset with final item responses
             if (length(page_data) > 0 && exists("update_comprehensive_dataset", mode = "function")) {
               tryCatch({
-                update_comprehensive_dataset("items", page_data, stage = rv$stage, current_page = rv$current_page)
+                update_comprehensive_dataset("items", page_data, stage = rv$stage, current_page = rv$current_page, session = session)
               }, error = function(e) {
                 logger(sprintf("Failed to update comprehensive dataset with final item responses: %s", e$message), level = "WARNING")
               })
@@ -5179,7 +5108,24 @@ launch_study <- function(
           }
         }
         
-        # Generate results
+        # If we're already on a results page, treat this as a final "finish" action
+        # (e.g., start auto-close timer) and do not reset navigation.
+        if (!is.null(current_page$type) && identical(current_page$type, "results")) {
+          # Only start auto-close from the last results page.
+          if (isTRUE(rv$current_page == last_results_idx) && !disable_auto_close && auto_close_time > 0) {
+            if (auto_close_time_unit == "minutes") {
+              auto_close_seconds <- auto_close_time * 60
+            } else {
+              auto_close_seconds <- auto_close_time
+            }
+            rv$countdown_time <- auto_close_seconds
+            rv$auto_close_timer_active <- TRUE
+            logger(sprintf("Auto-close timer started: %d seconds", auto_close_seconds), level = "INFO")
+          }
+          return()
+        }
+
+        # Generate results summary object (results pages will render; final results page will perform side effects)
         if (!is.null(config$results_processor)) {
           rv$cat_result <- list(
             theta = rv$current_ability,
@@ -5198,111 +5144,22 @@ launch_study <- function(
               administered = 1:length(all_responses)
             )
             if (exists("update_comprehensive_dataset", mode = "function")) {
-              update_comprehensive_dataset("results", results_data, stage = "results", current_page = length(config$custom_page_flow))
+              update_comprehensive_dataset("results", results_data, stage = "results", current_page = length(config$custom_page_flow), session = session)
               logger("Updated comprehensive dataset with final results", level = "INFO")
             }
           }, error = function(e) {
             logger(sprintf("Failed to update comprehensive dataset with final results: %s", e$message), level = "WARNING")
           })
           
-          # Move to last page (results)
-          rv$current_page <- length(config$custom_page_flow)
-          rv$stage <- "custom_page_flow"  # Stay in custom flow to show results page
+          # Route into the FIRST results page (supports multiple results pages)
+          rv$current_page <- first_results_idx
+          rv$stage <- "custom_page_flow"  # Stay in custom flow to show results pages
           
           # Scroll to top of page when showing results (enhanced for mobile/app)
           scroll_to_top_enhanced()
           
-          # Start auto-close timer if enabled
-          if (!disable_auto_close && auto_close_time > 0) {
-            # Convert time to seconds if needed
-            if (auto_close_time_unit == "minutes") {
-              auto_close_seconds <- auto_close_time * 60
-            } else {
-              auto_close_seconds <- auto_close_time
-            }
-            
-            # Initialize countdown timer
-            rv$countdown_time <- auto_close_seconds
-            rv$auto_close_timer_active <- TRUE
-            
-            logger(sprintf("Auto-close timer started: %d seconds", auto_close_seconds), level = "INFO")
-            
-            # Start countdown timer with universal auto-close
-            countdown_observer <- shiny::observe({
-              if (isTRUE(rv$auto_close_timer_active) && rv$countdown_time > 0) {
-                # Update countdown
-                rv$countdown_time <- rv$countdown_time - 1
-                
-                # Schedule next update
-                shiny::invalidateLater(1000, session)
-              } else if (isTRUE(rv$auto_close_timer_active) && rv$countdown_time <= 0) {
-                # Time's up - close the app/tab/browser
-                logger("Auto-close timer expired - closing app/tab/browser", level = "INFO")
-                rv$auto_close_timer_active <- FALSE
-                
-                # Universal auto-close JavaScript that works everywhere
-                auto_close_js <- "
-                (function() {
-                  try {
-                    // Method 1: Close current tab/window (works in most browsers)
-                    window.close();
-                  } catch(e) {
-                    try {
-                      // Method 2: Try to close the window
-                      if (window.opener) {
-                        window.opener = null;
-                        window.close();
-                      } else {
-                        // Method 3: Redirect to blank page (fallback)
-                        window.location.href = 'about:blank';
-                      }
-                    } catch(e2) {
-                      try {
-                        // Method 4: Show close message and redirect
-                        alert('Session completed. Please close this tab.');
-                        window.location.href = 'about:blank';
-                      } catch(e3) {
-                        // Method 5: Final fallback - just show message
-                        document.body.innerHTML = '<div style=\"text-align: center; padding: 50px; font-size: 18px;\">Session completed. Please close this tab.</div>';
-                      }
-                    }
-                  }
-                })();
-                "
-                
-                # Execute auto-close JavaScript
-                if (requireNamespace("shinyjs", quietly = TRUE)) {
-                  tryCatch({
-                    shinyjs::runjs(auto_close_js)
-                  }, error = function(e) {
-                    logger(sprintf("Auto-close failed: %s", e$message), level = "WARNING")
-                  })
-                } else {
-                  logger("shinyjs not available for auto-close", level = "WARNING")
-                }
-                
-                # Stop the Shiny app and terminate R script
-                logger("Stopping Shiny app and terminating R process after study completion", level = "INFO")
-                tryCatch({
-                  # Schedule app stop after a brief delay to allow data save
-                  later::later(function() {
-                    shiny::stopApp()
-                    # Force quit R process if running in background
-                    if (!interactive()) {
-                      quit(save = "no", status = 0)
-                    }
-                  }, delay = 3)
-                }, error = function(e) {
-                  logger(sprintf("App stop failed: %s", e$message), level = "ERROR")
-                  # Fallback: immediate stop
-                  shiny::stopApp()
-                })
-              }
-            })
-            
-            # Store observer to prevent memory leaks
-            session$userData$countdown_observer <- countdown_observer
-          }
+          # Auto-close timer is started on the last results page when the user finishes.
+          # (See the auto-close countdown observer.)
         }
         
         logger("Study completed via custom page flow")
@@ -5366,7 +5223,7 @@ launch_study <- function(
         # Convert to list format for comprehensive dataset
         if (exists("update_comprehensive_dataset", mode = "function")) {
           demo_list <- as.list(rv$demo_data)
-          update_comprehensive_dataset("demographics", demo_list, stage = rv$stage, current_page = rv$current_page)
+          update_comprehensive_dataset("demographics", demo_list, stage = rv$stage, current_page = rv$current_page, session = session)
           logger("Updated comprehensive dataset with demographic data", level = "DEBUG")
         }
       }, error = function(e) {
@@ -5817,13 +5674,7 @@ launch_study <- function(
         # Save session to cloud if enabled
         if (config$session_save && !base::is.null(webdav_url)) {
           logger("Attempting to save session to cloud...")
-          if (exists("save_session_to_cloud", where = asNamespace("inrep"), inherits = FALSE)) {
-            inrep:::save_session_to_cloud(rv, config, webdav_url, password)
-          } else if (exists("save_session_to_cloud")) {
-            save_session_to_cloud(rv, config, webdav_url, password)
-          } else {
-            logger("save_session_to_cloud function not found.")
-          }
+          save_session_to_cloud(rv, config, webdav_url, password)
         }
       } else {
         # ROBUST NEXT ITEM SELECTION WITH ERROR RECOVERY
@@ -5865,7 +5716,7 @@ launch_study <- function(
               administered = rv$administered
             )
             if (exists("update_comprehensive_dataset", mode = "function")) {
-              update_comprehensive_dataset("results", results_data, stage = "results", current_page = rv$current_page)
+              update_comprehensive_dataset("results", results_data, stage = "results", current_page = rv$current_page, session = session)
               logger("Updated comprehensive dataset with assessment results", level = "INFO")
             }
           }, error = function(e) {
@@ -5908,13 +5759,7 @@ launch_study <- function(
           # Save session to cloud if enabled
           if (config$session_save && !base::is.null(webdav_url)) {
             logger("Attempting to save session to cloud...")
-            if (exists("save_session_to_cloud", where = asNamespace("inrep"), inherits = FALSE)) {
-              inrep:::save_session_to_cloud(rv, config, webdav_url, password)
-            } else if (exists("save_session_to_cloud")) {
-              save_session_to_cloud(rv, config, webdav_url, password)
-            } else {
-              logger("save_session_to_cloud function not found.")
-            }
+            save_session_to_cloud(rv, config, webdav_url, password)
           }
         } else {
           rv$start_time <- base::Sys.time()
@@ -6178,7 +6023,7 @@ launch_study <- function(
   # Final session cleanup setup
   if (session_save) {
     # Set up global cleanup on package unload
-    .GlobalEnv$.inrep_cleanup_on_exit <- function() {
+    .inrep_set_cleanup_hook(function() {
       if (exists("cleanup_session") && is.function(cleanup_session)) {
         tryCatch({
           cleanup_session(save_final_data = TRUE)
@@ -6187,13 +6032,11 @@ launch_study <- function(
           logger(sprintf("Final cleanup failed: %s", e$message), level = "ERROR")
         })
       }
-    }
+    })
     
     # Register cleanup function
     reg.finalizer(environment(), function(env) {
-      if (exists(".inrep_cleanup_on_exit", envir = .GlobalEnv)) {
-        .GlobalEnv$.inrep_cleanup_on_exit()
-      }
+      .inrep_run_cleanup_hook()
     }, onexit = TRUE)
   }
 

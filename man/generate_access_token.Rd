@@ -7,7 +7,7 @@
 generate_access_token()
 }
 \value{
-Secure access token
+Access token
 }
 \description{
 Generate Access Token

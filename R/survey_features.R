@@ -460,9 +460,16 @@ generate_participant_id <- function() {
 
 #' Generate Access Token
 #' 
-#' @return Secure access token
+#' @return Access token
 generate_access_token <- function() {
-  paste(sample(c(LETTERS, letters, 0:9), 32, replace = TRUE), collapse = "")
+  seed <- paste(
+    uuid::UUIDgenerate(),
+    format(Sys.time(), "%Y%m%d%H%M%S%OS6"),
+    Sys.getpid(),
+    paste(stats::runif(8), collapse = ","),
+    sep = ":"
+  )
+  digest::digest(seed, algo = "sha256", serialize = FALSE)
 }
 
 #' Data Export Functions

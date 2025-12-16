@@ -2,11 +2,14 @@
 ^\.Rproj\.user$
 ^\.git$
 ^\.github$
+^\.gitignore$
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
 ^\.lintr$
 ^\.vscode$
+^\.\.Rcheck$
+^case_studies$
 ^\.venv$
 ^.*\.ps1$
 ^.*\.bat$

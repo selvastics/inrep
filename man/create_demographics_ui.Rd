@@ -21,54 +21,17 @@ A Shiny UI element containing:
 \describe{
   \item{Input components}{Formatted demographic inputs based on specified types}
   \item{Start button}{Action button to proceed to assessment ("Start Test")}
-  \item{Validation}{ Built-in validation for required fields}
+  \item{Validation}{Basic client-side structure for required fields}
 }
 If \code{demographics} is \code{NULL}, returns only the "Start Test" button.
 }
 \description{
-Generates comprehensive Shiny UI components for demographic data collection
-as part of the assessment workflow. Creates standardized input interfaces
-that integrate seamlessly with TAM-based psychometric assessments while
-maintaining accessibility standards and research best practices.
+Generates Shiny UI components for demographic data collection as part of the
+assessment workflow.
 }
 \details{
-This function creates standardized demographic collection interfaces that
-support research requirements while maintaining participant experience quality:
-
-\strong{Demographic Input Types:}
-\itemize{
-  \item \strong{Numeric}: Age, years of experience, education years
-  \item \strong{Select}: Gender, education level, employment status
-  \item \strong{Text}: Open-ended fields like occupation, comments
-}
-
-\strong{Research Standards:}
-\itemize{
-  \item Consistent labeling and formatting across studies
-  \item Validation-ready for data quality assurance
-  \item Integration with IRT-Based Assessment workflows
-  \item Support for IRB-compliant data collection practices
-}
-
-\strong{Accessibility Features:}
-\itemize{
-  \item Clear labels and logical tab order
-  \item Screen reader compatibility
-  \item Mobile-responsive design
-  \item High contrast and keyboard navigation support
-}
-
-\strong{Workflow Integration:}
-\itemize{
-  \item Seamless transition to assessment items
-  \item Data validation before proceeding
-  \item Integration with session management
-  \item Support for resume/save functionality
-}
-
-The generated interface automatically handles the transition from demographic
-collection to the main assessment, ensuring proper data validation and
-session state management.
+If \code{demographics} is \code{NULL}, the function returns only the start
+button to proceed directly to the assessment.
 }
 \section{Data Validation}{
 
@@ -129,7 +92,7 @@ research_ui <- create_demographics_ui(research_demographics, research_types)
 
 }
 \seealso{
-\code{\link{create_demographic_input}} for individual demographic components,
+\code{create_demographic_input()} for individual demographic components,
 \code{\link{create_response_ui}} for assessment item interfaces,
 \code{\link{launch_study}} for complete assessment workflow,
 \code{\link{create_study_config}} for demographic configuration setup

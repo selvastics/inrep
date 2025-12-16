@@ -19,10 +19,9 @@ knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 ```
 
 # Welcome to inrep
-Before we start, lets note the following: This project is best described as a vibe coding project. While the initial work was solely done by me, the upscaling of the project and exploration of advanced functionalities were done using several LLMs, which I synthesized. Although much of the code is functional, it is not yet fully polished. Several sections are under active development with minimal working examples implemented as placeholders. Continuous synthesis and refinement are ongoing.
+This vignette shows how to run a fixed-form (non-adaptive) assessment using **inrep**. It covers creating a study configuration, launching a Shiny study, and exporting responses.
 
-Now lets get started.
-At its core, **inrep** is a package for creating and administering assessments. View "getting-started-with-adaptive-assessments.Rmd" to see the more advanced functionalities. Motivation for this tool is to not pay money for collecting data to suvey providers - instead, we can use this tool to create our own assessments and not only that - give theparticipants of a study something in return, that is, an instant report of their responses.
+For adaptive testing examples, see \code{adaptive-assessments-getting-started.Rmd}.
 
 ## Installation
 
@@ -104,13 +103,13 @@ launch_study(config_fixed, debug_mode = TRUE)
 
 Use this for quick testing during development!
 
-## Advanced Research-Grade Assessments
+## Example Research Assessments
 
-Based on the University of Hildesheim HilFo study, here are examples of how to create professional research assessments.
+Based on the University of Hildesheim HilFo study, here are examples of how to create research assessments.
 
 ### Bilingual Research Study (Like HilFo)
 
-This example shows how to create a comprehensive bilingual study with multiple assessment types:
+This example shows how to create a bilingual study with multiple assessment types:
 
 ```{r bilingual_research_study, eval=FALSE}
 # =============================================================================
@@ -118,7 +117,7 @@ This example shows how to create a comprehensive bilingual study with multiple a
 # Inspired by University of Hildesheim HilFo Study
 # =============================================================================
 
-# Define comprehensive demographics (German/English bilingual)
+# Define demographics (German/English bilingual)
 demographic_configs <- list(
     Einverständnis = list(
         question = "Einverständniserklärung",
@@ -673,7 +672,7 @@ academic_config <- create_study_config(
 launch_study(academic_config, bfi_items, debug_mode = TRUE)
 ```
 
-## Essential Functions and Best Practices
+## Core Functions and Operational Notes
 
 ### Core Configuration Functions
 - `create_study_config()`: Main configuration function for all study parameters
@@ -726,14 +725,13 @@ config <- create_study_config(
 )
 ```
 
-### Some practices I would recommend for inrep assessments so far
+### Operational Notes
 
-1. **Always include informed consent** with clear participation information
-2. **Always ask if participants want to receive a report** note that assessment results can be triggering.
-2. **Use bilingual support** for international studies - allow partipants to switch language during the assessment
-3. **Implement proper reverse coding** for negatively worded items
-4. **Calculate composite scores** from subscale means
-5. **Validate item banks** before deployment
-6. **Use session management** for participant convenience
-7. **Export multiple formats** (CSV, JSON, RDS) for analysis flexibility
-8. **Test thoroughly** in different browsers and devices
+1. Include informed consent text appropriate for your study.
+2. If you provide participant-facing reports, consider making them optional and word them carefully.
+3. If you run multilingual studies, enable language switching and validate translations.
+4. Set up reverse coding for negatively worded items and verify the scoring.
+5. Validate the item bank structure before running a study.
+6. Decide whether to enable session save/restore based on your deployment model.
+7. Export data in the formats you need (CSV/JSON/RDS).
+8. Test the UI in the browsers/devices you expect participants to use.

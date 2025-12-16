@@ -17,53 +17,15 @@ interface. Options: \code{"radio"} for radio buttons, \code{"slider"} for
 slider input, \code{"dropdown"} for dropdown selection. Default is \code{"radio"}.}
 }
 \value{
-A Shiny UI element (radioButtons, sliderInput, or selectInput)
-  configured for the specified response type with proper accessibility
-  attributes and validation support.
+A Shiny UI element (\code{radioButtons}, \code{sliderInput}, or \code{selectInput}).
 }
 \description{
-Generates standardized Shiny UI components for participant responses to
-assessment items. Supports multiple response formats commonly used in
-psychometric assessments, with accessibility features and consistent
-styling optimized for TAM-based item response modeling.
+Generates Shiny UI components for collecting a response to one item.
+Supports multiple response formats (radio buttons, dropdown, slider).
 }
 \details{
-This function creates standardized response interfaces that integrate
-seamlessly with TAM's item response modeling and adaptive testing algorithms:
-
-\strong{Response Interface Types:}
-\itemize{
-  \item \strong{Radio Buttons}: Optimal for 2-5 response options, clear visual selection
-  \item \strong{Dropdown}: Space-efficient for items with many response options
-  \item \strong{Slider}: Continuous-feel interface for Likert-type scales
-}
-
-\strong{Psychometric Considerations:}
-\itemize{
-  \item Response order preservation for TAM parameter estimation
-  \item Clear option labeling to minimize response errors
-  \item Consistent interaction patterns across assessment items
-  \item Validation-ready for missing response detection
-}
-
-\strong{Accessibility Features:}
-\itemize{
-  \item Keyboard navigation support for all interface types
-  \item Screen reader compatibility with proper labeling
-  \item High contrast options and responsive design
-  \item Touch-friendly interfaces for mobile devices
-}
-
-\strong{Research Standards:}
-\itemize{
-  \item Consistent option presentation across items
-  \item Integration with response time tracking
-  \item Support for multilingual option labels
-  \item Quality assurance through input validation
-}
-
-The generated UI components automatically integrate with the assessment's
-reactive system and TAM-based ability estimation procedures.
+The returned UI element is intended to be used inside the study UI where the
+server code reads the value from \code{input$item_response}.
 }
 \section{Response Validation}{
 
@@ -129,7 +91,7 @@ response_interface <- create_response_ui(current_item, config$response_ui_type)
 
 }
 \seealso{
-\code{\link{create_demographic_input}} for demographic interface components,
+\code{create_demographic_input()} for demographic interface components,
 \code{\link{launch_study}} for complete assessment workflow,
 \code{\link{select_next_item}} for adaptive item selection,
 \code{\link{estimate_ability}} for TAM-based ability estimation

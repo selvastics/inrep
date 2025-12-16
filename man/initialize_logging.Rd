@@ -4,11 +4,14 @@
 \alias{initialize_logging}
 \title{Initialize Logging System}
 \usage{
-initialize_logging(path = NULL)
+initialize_logging(path = NULL, assign_global = FALSE)
 }
 \arguments{
 \item{path}{Optional character string specifying the log file path.
 If NULL, creates a temporary log file in the system temp directory.}
+
+\item{assign_global}{Deprecated. Previously assigned \code{log_print} into \code{.GlobalEnv}.
+This is no longer performed; use \code{log_print()} instead.}
 }
 \value{
 A list containing:
@@ -20,7 +23,7 @@ A list containing:
 }
 \description{
 Initializes the logging system for assessment sessions and research workflows.
-This function creates a log file connection and assigns logging functions to the global environment.
+This function creates a log file connection and configures inrep's internal logger.
 }
 \examples{
 \dontrun{
@@ -31,10 +34,7 @@ log_success <- initialize_logging()
 log_file <- file.path(tempdir(), "my_assessment.log")
 initialize_logging(path = log_file)
 
-# Check if logging is working
-if (exists("log_print")) {
-  log_print("Test message", level = "INFO")
-  cat("Logging is active\n")
-}
+# Write a test message
+log_print("Test message", level = "INFO")
 }
 }

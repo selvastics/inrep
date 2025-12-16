@@ -416,7 +416,7 @@ create_response_report <- function(config, cat_result, item_bank, include_labels
         "en" = c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"),
         "de" = c("Stark ablehnen", "Ablehnen", "Neutral", "Zustimmen", "Stark zustimmen"),
         "es" = c("Totalmente en desacuerdo", "En desacuerdo", "Neutral", "De acuerdo", "Totalmente de acuerdo"),
-        "fr" = c("Fortement en désaccord", "En désaccord", "Neutre", "D'accord", "Fortement d'accord")
+        "fr" = c("Fortement en d\u00E9saccord", "En d\u00E9saccord", "Neutre", "D'accord", "Fortement d'accord")
       )
       
       # Add response labels column

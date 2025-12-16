@@ -10,31 +10,30 @@
 .error_handling_state$recovery_attempts <- 0
 .error_handling_state$max_recovery_attempts <- 3
 
-#' Initialize Robust Error Handling
-#' 
-#' @param max_recovery_attempts Maximum number of recovery attempts
-#' @param enable_auto_recovery Whether to enable automatic recovery
-#' @return List with error handling configuration
+#' @noRd
 initialize_robust_error_handling <- function(
   max_recovery_attempts = 3,
-  enable_auto_recovery = TRUE
+  enable_auto_recovery = TRUE,
+  set_global_handlers = FALSE
 ) {
   .error_handling_state$max_recovery_attempts <- max_recovery_attempts
   .error_handling_state$enable_auto_recovery <- enable_auto_recovery
   .error_handling_state$error_count <- 0
   .error_handling_state$recovery_attempts <- 0
   
-  # Set up global error handler
-  options(error = robust_error_handler)
-  
-  # Set up warning handler (only if function exists)
-  if (exists("robust_warning_handler") && is.function(robust_warning_handler)) {
-    tryCatch({
-      options(warning.expression = quote(robust_warning_handler))
-    }, error = function(e) {
-      # Silently fail if warning handler can't be set
-      .error_handling_state$warning_handler_available <- FALSE
-    })
+  # Global handlers are opt-in; do not override the user's session by default.
+  if (isTRUE(set_global_handlers)) {
+    .error_handling_state$previous_error_option <- getOption("error")
+    .error_handling_state$previous_warning_expression <- getOption("warning.expression")
+    options(error = robust_error_handler)
+
+    if (exists("robust_warning_handler") && is.function(robust_warning_handler)) {
+      tryCatch({
+        options(warning.expression = quote(robust_warning_handler))
+      }, error = function(e) {
+        .error_handling_state$warning_handler_available <- FALSE
+      })
+    }
   }
   
   return(list(
@@ -187,22 +186,7 @@ emergency_save_current_data <- function() {
 #' @return List with current environment data
 get_current_environment_data <- function() {
   data <- list()
-  
-  # Try to get common objects
-  common_objects <- c("rv", "config", "item_bank", "responses", "ability_estimates", 
-                      "current_item", "participant_id", "session_data")
-  
-  for (obj_name in common_objects) {
-    if (exists(obj_name, envir = .GlobalEnv)) {
-      tryCatch({
-        obj <- get(obj_name, envir = .GlobalEnv)
-        data[[obj_name]] <- obj
-      }, error = function(e) {
-        # Skip if we can't get the object
-      })
-    }
-  }
-  
+
   # Add error context
   data$error_context <- list(
     error_count = .error_handling_state$error_count,

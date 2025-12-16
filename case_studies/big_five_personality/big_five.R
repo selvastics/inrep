@@ -546,7 +546,7 @@ create_bfi_report <- function(responses, item_bank, demographics = NULL, session
     
     # Data Privacy
     '<div style="background: #fff3cd; padding: 16px; border-left: 4px solid #ffc107; border-radius: 4px; margin-bottom: 24px;">',
-    '<p style="margin: 0; color: #856404; line-height: 1.6;"><strong>Data Privacy:</strong> Your responses have been securely uploaded to cloud storage for research purposes. All data is stored anonymously without personal identifiers.</p>',
+    '<p style="margin: 0; color: #856404; line-height: 1.6;"><strong>Data Privacy:</strong> Data handling depends on how this study is hosted and configured. Review the study information provided by the researcher for details.</p>',
     '</div>',
     
     # Thank You

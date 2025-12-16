@@ -6,7 +6,7 @@
 \usage{
 create_survey_config(
   name = "Survey",
-  description = "A comprehensive survey",
+  description = "Survey",
   language = "en",
   theme = "professional",
   max_questions = 100,
@@ -62,7 +62,7 @@ create_survey_config(
 
 \item{accessibility_mode}{Enable accessibility features}
 
-\item{gdpr_compliant}{GDPR compliance mode}
+\item{gdpr_compliant}{Logical flag for including GDPR/DSGVO-related fields/templates.}
 
 \item{custom_css}{Custom CSS styling}
 
@@ -84,5 +84,5 @@ create_survey_config(
 Survey configuration object
 }
 \description{
-Creates a comprehensive configuration for surveys with advanced features
+Creates a configuration list for surveys.
 }

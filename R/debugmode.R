@@ -2,9 +2,7 @@
 #' @keywords internal
 #' @export
 generate_debug_mode_js <- function(debug_mode = FALSE) {
-  cat("DEBUG R: generate_debug_mode_js called with debug_mode =", debug_mode, "\n")
   if (!debug_mode) return(NULL)
-  cat("DEBUG R: Creating debug mode script\n")
 
   return(shiny::tags$script(shiny::HTML("
     console.log('*** DEBUG MODE STARTED ***');
@@ -227,7 +225,7 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
             const label = utils.getInputLabel(cb).toLowerCase();
             
             // Universal consent detection patterns
-            return /consent|agree|akzept|zustimm|confirm|bestät|einverstanden|zustimmung/i.test(id + ' ' + name + ' ' + label) ||
+            return /consent|agree|akzept|zustimm|confirm|bestat|bestaet|einverstanden|zustimmung/i.test(id + ' ' + name + ' ' + label) ||
                    id.includes('consent') || id.includes('agree') ||
                    name.includes('consent') || name.includes('agree');
           });
@@ -280,7 +278,7 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
             if (checkbox.checked) return; // Already checked
             
             const label = utils.getInputLabel(checkbox).toLowerCase();
-            const isConsent = /agree|consent|akzept|zustimm|confirm|bestät|einverstanden/i.test(label) ||
+            const isConsent = /agree|consent|akzept|zustimm|confirm|bestat|bestaet|einverstanden/i.test(label) ||
                               checkbox.id.toLowerCase().includes('consent') ||
                               checkbox.id.toLowerCase().includes('agree');
             const shouldCheck = isConsent || Math.random() > 0.5;
@@ -329,7 +327,7 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
             let chosenIndex;
             if (isLikert) {
               const middleIndex = Math.floor(group.length / 2);
-              // Pick middle ± 1 randomly
+              // Pick middle +/- 1 randomly
               const variance = Math.random() < 0.5 ? 0 : (Math.random() < 0.5 ? -1 : 1);
               chosenIndex = Math.max(0, Math.min(group.length - 1, middleIndex + variance));
             } else {
@@ -397,7 +395,7 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
               const conditionalPatterns = [
                 'zusatz', 'other', 'specify', 'anders', 'sonstig', 'sonstige',
                 'detail', 'please', 'bitte', 'weitere', 'weitere angaben',
-                'andere', 'ernährung', 'ernährungsform', 'specify', 'other',
+                'andere', 'ernaehrung', 'ernaehrungsform', 'specify', 'other',
                 'please specify', 'bitte angeben', 'weitere informationen'
               ];
               
@@ -561,7 +559,7 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
         // Priority 1: Exact text matches (including German)
         const nextKeywords = ['next', 'weiter', 'submit', 'senden', 'continue', 'fortfahren', 
                              'start', 'beginnen', 'weiter zum', 'weiter zur', 'fortsetzen',
-                             'bestätigen', 'confirm', 'proceed', 'los geht', 'starten'];
+                             'bestaetigen', 'confirm', 'proceed', 'los geht', 'starten'];
         for (const btn of buttons) {
           if (!utils.isVisible(btn) || btn.disabled) continue;
           
@@ -593,7 +591,7 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
         }
         
         // Priority 3: Visible primary/action button (excluding back/cancel/download)
-        const excludeKeywords = ['back', 'zurück', 'cancel', 'abbrechen', 'download', 'pdf', 'save', 'print', 
+        const excludeKeywords = ['back', 'zurueck', 'cancel', 'abbrechen', 'download', 'pdf', 'save', 'print', 
                                 'csv', 'export', 'herunterladen', 'speichern', 'exportieren', 'json', 'rds'];
         for (const btn of buttons) {
           if (!utils.isVisible(btn) || btn.disabled) continue;
@@ -628,7 +626,7 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
         const hasResultsContent = (content.includes('result') && (content.includes('score') || content.includes('theta'))) ||
                content.includes('abgeschlossen') ||
                (content.includes('thank') && content.includes('complete')) ||
-               content.includes('danke für ihre teilnahme') ||
+               content.includes('danke fuer ihre teilnahme') ||
                content.includes('vielen dank') ||
                content.includes('results') ||
                content.includes('ergebnis') ||
@@ -711,7 +709,7 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
                   const conditionalPatterns = [
                     'zusatz', 'other', 'specify', 'anders', 'sonstig', 'sonstige',
                     'detail', 'please', 'bitte', 'weitere', 'weitere angaben',
-                    'andere', 'ernährung', 'ernährungsform', 'specify', 'other',
+                    'andere', 'ernaehrung', 'ernaehrungsform', 'specify', 'other',
                     'please specify', 'bitte angeben', 'weitere informationen'
                   ];
                   

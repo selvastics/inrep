@@ -2,11 +2,20 @@
 % Please edit documentation in R/study_management.R
 \name{validate_page_progression}
 \alias{validate_page_progression}
-\title{Validation for Custom Page Flow}
+\title{Validate a Page Before Navigation}
 \usage{
 validate_page_progression(current_page, input, config)
 }
+\arguments{
+\item{current_page}{Integer index of the current page in \code{config$custom_page_flow}.}
+
+\item{input}{Shiny \code{input} object.}
+
+\item{config}{Study configuration created by \code{create_study_config()}.}
+}
+\value{
+List with elements \code{valid}, \code{errors}, and \code{missing_fields}.
+}
 \description{
-Ensures all required fields are filled before allowing progression
-Validate page before allowing navigation
+Validates required fields for the current page in \code{config$custom_page_flow}.
 }

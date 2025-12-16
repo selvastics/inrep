@@ -2,7 +2,7 @@
 % Please edit documentation in R/llm_assistance.R
 \name{generate_llm_prompt}
 \alias{generate_llm_prompt}
-\title{Generate LLM Customization Prompt}
+\title{Generate Customization Prompt}
 \usage{
 generate_llm_prompt(config = NULL, focus = "general", item_bank = NULL)
 }
@@ -18,29 +18,11 @@ If NULL, generates general context.}
 Invisibly returns prompt text.
 }
 \description{
-Generates a prompt with your current configuration and inrep package context.
-Copy the output to an LLM (ChatGPT, Claude, etc.) to get customized R code.
-
-\strong{Best Practice for Optimal Results:}
-
-The LLM will provide the most accurate customization advice when one gives it 
-as much context as possible about the inrep functions. Here's the recommended workflow:
-
-\enumerate{
-  \item \strong{Start}: Generate the initial prompt with this function
-  \item \strong{Copy to LLM}: Paste the prompt into ChatGPT/Claude
-  \item \strong{Add Function Context}: If the LLM asks about specific parameters or you 
-        encounter errors, search the inrep source code for those terms
-  \item \strong{Copy Relevant Code}: Add the relevant function code snippets back to your 
-        conversation with the LLM
-  \item \strong{Iterate}: The LLM can now give precise advice based on the actual 
-        implementation details
+Builds a plain-text prompt that summarizes your current configuration and the relevant
+\code{inrep} concepts/parameters. Use it when asking for external review or code generation.
 }
-
-Example: If one get an error about \code{min_SEM} or wants to understand \code{theta_prior},
-look up those parameters in the inrep documentation or source code and share that context
-with the LLM. This allows the LLM to provide accurate, implementation-specific guidance
-rather than generic advice.
+\details{
+This function prints the prompt to the console and invisibly returns it.
 }
 \examples{
 \dontrun{

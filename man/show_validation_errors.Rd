@@ -2,10 +2,18 @@
 % Please edit documentation in R/study_management.R
 \name{show_validation_errors}
 \alias{show_validation_errors}
-\title{Show validation errors in UI}
+\title{Show Validation Errors in UI}
 \usage{
 show_validation_errors(errors, language = "de")
 }
+\arguments{
+\item{errors}{Character vector of error messages.}
+
+\item{language}{Language code (default \code{"de"}).}
+}
+\value{
+A Shiny UI object, or NULL if \code{errors} is empty.
+}
 \description{
-Show validation errors in UI
+Renders a list of validation error messages.
 }

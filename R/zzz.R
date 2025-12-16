@@ -15,10 +15,10 @@ utils::globalVariables(c(
   "get_participant", "grid", "Item", "list_participants", "polygon",
   "print.inrep_config", "print.professional_survey", "remove_participant",
   "SE", "send_invitation", "send_reminder", "Theta", "update_participant"
+  ,"Count", "Difficulty", "Domain", "Order", "Response", "score", "trait", "value"
 ))
 
-# Package namespace environment
-.inrep_env <- new.env(parent = emptyenv())
+# Package namespace environment is initialized in R/aaa_inrep_env.R
 
 #' On Load Hook
 #' 
@@ -105,23 +105,22 @@ utils::globalVariables(c(
 #' 
 #' @keywords internal
 cleanup_package_state <- function() {
-  # Clean up global environments used by modules
+  # Clean up internal environments used by modules (package namespace only)
   envs_to_clean <- c(
     ".session_state",
-    ".security_state", 
+    ".security_state",
     ".performance_state",
     ".recovery_state",
     ".survey_state",
     ".ux_state"
   )
-  
+
   for (env_name in envs_to_clean) {
-    if (exists(env_name, envir = .GlobalEnv)) {
-      env <- get(env_name, envir = .GlobalEnv)
+    if (exists(env_name, inherits = FALSE)) {
+      env <- get(env_name, inherits = FALSE)
       if (is.environment(env)) {
         rm(list = ls(env), envir = env)
       }
-      rm(list = env_name, envir = .GlobalEnv)
     }
   }
   
@@ -135,9 +134,9 @@ cleanup_package_state <- function() {
     }
   }
   
-  # Clear any cached data
-  if (exists(".inrep_cache", envir = .GlobalEnv)) {
-    rm(".inrep_cache", envir = .GlobalEnv)
+  # Clear internal cached data
+  if (exists(".inrep_env", inherits = FALSE) && is.environment(.inrep_env)) {
+    rm(list = ls(.inrep_env), envir = .inrep_env)
   }
   
   invisible(NULL)
@@ -233,7 +232,7 @@ force_detach_inrep <- function(restart = FALSE) {
     
     if (restart) {
       message("Please restart R to complete the cleanup.")
-      if (interactive() && rstudioapi::isAvailable()) {
+      if (interactive() && requireNamespace("rstudioapi", quietly = TRUE) && rstudioapi::isAvailable()) {
         rstudioapi::restartSession()
       }
     }

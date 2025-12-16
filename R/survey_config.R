@@ -1,6 +1,6 @@
 #' Create Survey Configuration
 #' 
-#' Creates a comprehensive configuration for surveys with advanced features
+#' Creates a configuration list for surveys.
 #' 
 #' @param name Survey name
 #' @param description Survey description
@@ -17,7 +17,7 @@
 #' @param randomization Enable question randomization
 #' @param mobile_optimized Optimize for mobile devices
 #' @param accessibility_mode Enable accessibility features
-#' @param gdpr_compliant GDPR compliance mode
+#' @param gdpr_compliant Logical flag for including GDPR/DSGVO-related fields/templates.
 #' @param custom_css Custom CSS styling
 #' @param custom_js Custom JavaScript
 #' @param export_formats Data export formats
@@ -31,7 +31,7 @@
 #' @export
 create_survey_config <- function(
   name = "Survey",
-  description = "A comprehensive survey",
+  description = "Survey",
   language = "en",
   theme = "professional",
   max_questions = 100,
