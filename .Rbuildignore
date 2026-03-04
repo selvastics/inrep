@@ -25,3 +25,5 @@
 ^dev/.*$
 ^dev$
 ^\.Rlib/.*$
+^data/create_rcq_data\.R$
+^data-raw$
