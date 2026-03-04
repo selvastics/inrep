@@ -10,9 +10,6 @@ suppressPackageStartupMessages({
 # Define the %||% operator for null coalescing
 `%||%` <- function(x, y) if (is.null(x)) y else x
 # WebDAV configuration
-#WEBDAV_BASE <- "https://fh-muenster.sciebo.de/public.php/webdav/"
-#WEBDAV_USER <- "Vince"
-#WEBDAV_PASS <- "J9QKQBJqnRzDnxG"
 WEBDAV_BASE   <- "https://sync.academiccloud.de/public.php/webdav/"
 WEBDAV_USER   <- "Km4R44qFHamr9zS"   # share token
 WEBDAV_PASS   <- "inreptest"         # password (if set for the public link)
