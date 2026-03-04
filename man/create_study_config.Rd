@@ -77,6 +77,7 @@ create_study_config(
   study_metadata = NULL,
   participant_report = NULL,
   min_required_non_age_demographics = 1,
+  exclude_from_recording = NULL,
   ...
 )
 }
@@ -286,6 +287,11 @@ report generation.}
 
 \item{min_required_non_age_demographics}{Integer specifying the minimum number of
 required demographic fields other than age.}
+
+\item{exclude_from_recording}{Optional character vector of demographic field names
+to exclude from data-recording validation. By default every field listed in
+\code{demographics} must map to a recorded variable in the final data; listing
+a field here suppresses the warning for that specific field.}
 
 \item{...}{Additional parameters captured and included in configuration object
 for custom extensions and advanced features.}
