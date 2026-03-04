@@ -2083,17 +2083,14 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
               # This allows results_processor to store CSV data that download buttons can access
               # Call results processor - it will process data and upload, but we ignore the HTML return
               # This is GENERIC - works for any study's results processor
-              if ("session" %in% processor_args) {
-                if ("demographics" %in% processor_args) {
-                  config$results_processor(responses_to_use, item_bank, rv$demo_data, session)  # REAL session!
-                } else {
-                  config$results_processor(responses_to_use, item_bank, session = session)  # REAL session!
-                }
-              } else if ("demographics" %in% processor_args) {
-                config$results_processor(responses_to_use, item_bank, rv$demo_data)
-              } else {
-                config$results_processor(responses_to_use, item_bank)
-              }
+              # ROBUST: Build named argument list based on what the processor accepts
+              rp_call_args2 <- list(responses = responses_to_use, item_bank = item_bank)
+              if ("demographics" %in% processor_args) rp_call_args2$demographics <- rv$demo_data
+              if ("session"      %in% processor_args) rp_call_args2$session      <- session
+              if ("rv"           %in% processor_args) rp_call_args2$rv           <- rv
+              if ("input"        %in% processor_args) rp_call_args2$input        <- if (!is.null(session)) session$input else NULL
+              if ("config"       %in% processor_args) rp_call_args2$config       <- config
+              do.call(config$results_processor, rp_call_args2)
               
               # Check if CSV upload succeeded by looking for recently created CSV files
               # (R passes lists by value, so mock_session$userData changes won't be visible)
@@ -2257,27 +2254,17 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
       
       # Wrap results processor in tryCatch to ALWAYS preserve data on error
       results_content <- tryCatch({
-        if ("page" %in% processor_args) {
-          if ("session" %in% processor_args && "demographics" %in% processor_args) {
-            results_processor(rv$cat_result$responses, item_bank, rv$demo_data, processor_session, page = page)
-          } else if ("session" %in% processor_args) {
-            results_processor(rv$cat_result$responses, item_bank, session = processor_session, page = page)
-          } else if ("demographics" %in% processor_args) {
-            results_processor(rv$cat_result$responses, item_bank, rv$demo_data, page = page)
-          } else {
-            results_processor(rv$cat_result$responses, item_bank, page = page)
-          }
-        } else if ("session" %in% processor_args) {
-          if ("demographics" %in% processor_args) {
-            results_processor(rv$cat_result$responses, item_bank, rv$demo_data, processor_session)
-          } else {
-            results_processor(rv$cat_result$responses, item_bank, session = processor_session)
-          }
-        } else if ("demographics" %in% processor_args) {
-          results_processor(rv$cat_result$responses, item_bank, rv$demo_data)
-        } else {
-          results_processor(rv$cat_result$responses, item_bank)
-        }
+        # ROBUST: Build a named argument list based on what the processor accepts.
+        # This ensures rv, input und other params are passed when the processor
+        # defines them, without breaking processors that only accept (responses, item_bank).
+        rp_call_args <- list(responses = rv$cat_result$responses, item_bank = item_bank)
+        if ("demographics" %in% processor_args) rp_call_args$demographics <- rv$demo_data
+        if ("session"      %in% processor_args) rp_call_args$session      <- processor_session
+        if ("rv"           %in% processor_args) rp_call_args$rv           <- rv
+        if ("input"        %in% processor_args) rp_call_args$input        <- if (!is.null(session)) session$input else NULL
+        if ("page"         %in% processor_args) rp_call_args$page         <- page
+        if ("config"       %in% processor_args) rp_call_args$config       <- config
+        do.call(results_processor, rp_call_args)
       }, error = function(e) {
         # CRITICAL: ALWAYS preserve data on error BEFORE returning error message
         message("CRITICAL ERROR in results processor: ", e$message)
@@ -2333,27 +2320,15 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
         
         # Wrap results processor in tryCatch to ALWAYS preserve data on error
         results_content <- tryCatch({
-          if ("page" %in% processor_args) {
-            if ("session" %in% processor_args && "demographics" %in% processor_args) {
-              results_processor(all_responses, item_bank, rv$demo_data, processor_session, page = page)
-            } else if ("session" %in% processor_args) {
-              results_processor(all_responses, item_bank, session = processor_session, page = page)
-            } else if ("demographics" %in% processor_args) {
-              results_processor(all_responses, item_bank, rv$demo_data, page = page)
-            } else {
-              results_processor(all_responses, item_bank, page = page)
-            }
-          } else if ("session" %in% processor_args) {
-            if ("demographics" %in% processor_args) {
-              results_processor(all_responses, item_bank, rv$demo_data, processor_session)
-            } else {
-              results_processor(all_responses, item_bank, session = processor_session)
-            }
-          } else if ("demographics" %in% processor_args) {
-            results_processor(all_responses, item_bank, rv$demo_data)
-          } else {
-            results_processor(all_responses, item_bank)
-          }
+          # ROBUST: Build named argument list based on what the processor accepts
+          rp_call_args3 <- list(responses = all_responses, item_bank = item_bank)
+          if ("demographics" %in% processor_args) rp_call_args3$demographics <- rv$demo_data
+          if ("session"      %in% processor_args) rp_call_args3$session      <- processor_session
+          if ("rv"           %in% processor_args) rp_call_args3$rv           <- rv
+          if ("input"        %in% processor_args) rp_call_args3$input        <- if (!is.null(session)) session$input else NULL
+          if ("page"         %in% processor_args) rp_call_args3$page         <- page
+          if ("config"       %in% processor_args) rp_call_args3$config       <- config
+          do.call(results_processor, rp_call_args3)
         }, error = function(e) {
           # CRITICAL: ALWAYS preserve data on error BEFORE returning error message
           message("CRITICAL ERROR in results processor: ", e$message)

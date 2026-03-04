@@ -2829,8 +2829,21 @@ launch_study <- function(
           study_language = rv$language %||% "en"
         )
         
-        # Add demographics
+        # Add demographics (with last-chance input fallback)
         if (!is.null(rv$demo_data)) {
+          # Last-chance: fill any still-empty demo fields from Shiny input
+          if (!is.null(config$demographics)) {
+            for (dem_name in config$demographics) {
+              v <- rv$demo_data[[dem_name]]
+              if (is.null(v) || (length(v) == 1 && (is.na(v) || trimws(as.character(v)) == ""))) {
+                fallback <- tryCatch(input[[paste0("demo_", dem_name)]], error = function(e) NULL)
+                if (!is.null(fallback) && nchar(trimws(as.character(fallback))) > 0) {
+                  rv$demo_data[[dem_name]] <- trimws(as.character(fallback))
+                  cat("CSV FALLBACK: Recovered demo field", dem_name, "from input\n")
+                }
+              }
+            }
+          }
           for (name in names(rv$demo_data)) {
             csv_data[[name]] <- rv$demo_data[[name]]
           }
@@ -4807,12 +4820,61 @@ launch_study <- function(
         # Call completion handler for ALL page types (custom, demographics, items, etc.)
         if (!is.null(current_page$completion_handler) && is.function(current_page$completion_handler)) {
           tryCatch({
-            # Pass session, rv, inputs, and config for maximum flexibility
-            current_page$completion_handler(session, rv, input, config)
+            # ROBUST: Inspect handler formals and pass NAMED arguments so that
+            # handlers written as function(input, rv, ...) or
+            # function(session, rv, input, config) both work correctly.
+            handler_args <- tryCatch(names(formals(current_page$completion_handler)), error = function(e) NULL)
+            if (!is.null(handler_args)) {
+              call_args <- list()
+              if ("session" %in% handler_args) call_args$session <- session
+              if ("input"   %in% handler_args) call_args$input   <- input
+              if ("inputs"  %in% handler_args) call_args$inputs  <- input   # alias used by some studies (e.g. HilFo)
+              if ("rv"      %in% handler_args) call_args$rv      <- rv
+              if ("config"  %in% handler_args) call_args$config  <- config
+              do.call(current_page$completion_handler, call_args)
+            } else {
+              # Fallback: pass all four positionally (legacy behaviour)
+              current_page$completion_handler(session, rv, input, config)
+            }
             logger(sprintf("Called completion handler for %s page", current_page$type), level = "DEBUG")
           }, error = function(e) {
             logger(sprintf("Error in completion handler for %s page: %s", current_page$type, e$message), level = "WARNING")
           })
+        }
+
+        # ROBUST FALLBACK: Automatically collect any demo_* text/textarea inputs
+        # from custom pages into rv$demo_data. This ensures text fields are never
+        # lost even if the completion_handler is missing, mis-signed, or errors out.
+        if (!is.null(config$demographics) && length(config$demographics) > 0) {
+          if (is.null(rv$demo_data) || !is.list(rv$demo_data)) {
+            rv$demo_data <- stats::setNames(
+              as.list(rep(NA, length(config$demographics))),
+              config$demographics
+            )
+          }
+          for (dem_name in config$demographics) {
+            input_id <- paste0("demo_", dem_name)
+            val <- tryCatch(input[[input_id]], error = function(e) NULL)
+            if (!is.null(val) && !identical(val, "")) {
+              current_val <- rv$demo_data[[dem_name]]
+              # Only overwrite if the current value is missing / empty
+              is_current_empty <- is.null(current_val) ||
+                (length(current_val) == 1 && (is.na(current_val) || trimws(as.character(current_val)) == ""))
+              if (is_current_empty) {
+                rv$demo_data[[dem_name]] <- trimws(as.character(val))
+                logger(sprintf("Auto-collected demo field '%s' = '%s' from input", dem_name, trimws(as.character(val))), level = "DEBUG")
+              }
+            }
+          }
+          # Also sync participant_code from common demographic fields
+          for (code_field in c("Teilnahme_Code", "participant_code", "code", "Code")) {
+            if (!is.null(rv$demo_data[[code_field]]) &&
+                !is.na(rv$demo_data[[code_field]]) &&
+                nchar(trimws(as.character(rv$demo_data[[code_field]]))) > 0) {
+              rv$participant_code <- trimws(as.character(rv$demo_data[[code_field]]))
+              break
+            }
+          }
         }
         
                   # Log page time before moving
@@ -5127,6 +5189,40 @@ launch_study <- function(
 
         # Generate results summary object (results pages will render; final results page will perform side effects)
         if (!is.null(config$results_processor)) {
+          # FINAL SAFETY NET: Last-chance collection of ALL demo_* inputs before
+          # building cat_result.  This catches text fields that were never picked up
+          # by any completion_handler for ANY reason.
+          if (!is.null(config$demographics) && length(config$demographics) > 0) {
+            if (is.null(rv$demo_data) || !is.list(rv$demo_data)) {
+              rv$demo_data <- stats::setNames(
+                as.list(rep(NA, length(config$demographics))),
+                config$demographics
+              )
+            }
+            for (dem_name in config$demographics) {
+              input_id <- paste0("demo_", dem_name)
+              val <- tryCatch(input[[input_id]], error = function(e) NULL)
+              if (!is.null(val) && !identical(trimws(as.character(val)), "")) {
+                current_val <- rv$demo_data[[dem_name]]
+                is_current_empty <- is.null(current_val) ||
+                  (length(current_val) == 1 && (is.na(current_val) || trimws(as.character(current_val)) == ""))
+                if (is_current_empty) {
+                  rv$demo_data[[dem_name]] <- trimws(as.character(val))
+                  logger(sprintf("FINAL SAFETY NET: Collected demo field '%s' = '%s'", dem_name, trimws(as.character(val))), level = "INFO")
+                }
+              }
+            }
+            # Warn about any still-missing demographics (respecting exclude_from_recording)
+            excluded_fields <- config$exclude_from_recording %||% character(0)
+            for (dem_name in config$demographics) {
+              if (dem_name %in% excluded_fields) next
+              v <- rv$demo_data[[dem_name]]
+              if (is.null(v) || (length(v) == 1 && (is.na(v) || trimws(as.character(v)) == ""))) {
+                logger(sprintf("WARNING: Demographic field '%s' is still empty at results stage. Check that 'demo_%s' input exists in your custom pages.", dem_name, dem_name), level = "WARNING")
+              }
+            }
+          }
+
           rv$cat_result <- list(
             theta = rv$current_ability,
             se = rv$current_se,
