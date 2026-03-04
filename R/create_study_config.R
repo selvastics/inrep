@@ -151,6 +151,10 @@
 #'   report generation.
 #' @param min_required_non_age_demographics Integer specifying the minimum number of
 #'   required demographic fields other than age.
+#' @param exclude_from_recording Optional character vector of demographic field names
+#'   to exclude from data-recording validation. By default every field listed in
+#'   \code{demographics} must map to a recorded variable in the final data; listing
+#'   a field here suppresses the warning for that specific field.
 #' @param ... Additional parameters captured and included in configuration object
 #'   for custom extensions and advanced features.
 #'
@@ -531,6 +535,7 @@ create_study_config <- function(
     # NEW: Participant report controls and demographic requirement
     participant_report = NULL,
     min_required_non_age_demographics = 1,
+    exclude_from_recording = NULL,
     ...
 ) {
   # Set default options to avoid inrep package reference issues
@@ -783,6 +788,11 @@ create_study_config <- function(
         use_enhanced_report = TRUE
       ),
       min_required_non_age_demographics = min_required_non_age_demographics,
+      
+      # Fields to exclude from data-recording validation.
+      # By default all demographics must map to a recorded variable;
+      # list field names here to suppress the warning for specific fields.
+      exclude_from_recording = exclude_from_recording,
       
       # Enhanced study flow features
       show_introduction = show_introduction,

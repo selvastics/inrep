@@ -157,11 +157,11 @@ rcqL_old_items <- data.frame(
         "Ich fühle mich dazu berufen, alle meine persönlichen Ziele zu erreichen."
     ),
     ResponseCategories = rep("1,2,3,4,5,6,7", 68),
-    a = runif(68, 0.8, 1.5),  # Random discrimination parameters for RCQL items
-    b1 = runif(68, -3.0, -1.5),  # Random threshold parameters
-    b2 = runif(68, -1.5, -0.5),
-    b3 = runif(68, -0.5, 0.5),
-    b4 = runif(68, 0.5, 2.0),
+    a = stats::runif(68, 0.8, 1.5),  # Random discrimination parameters for RCQL items
+    b1 = stats::runif(68, -3.0, -1.5),  # Random threshold parameters
+    b2 = stats::runif(68, -1.5, -0.5),
+    b3 = stats::runif(68, -0.5, 0.5),
+    b4 = stats::runif(68, 0.5, 2.0),
     stringsAsFactors = FALSE
 )
 

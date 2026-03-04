@@ -1,5 +1,5 @@
 # =============================================================================
-# UMA STUDY -
+# UMA STUDY - POST-SUPERVISION VERSION (NACH ABSCHLUSS DER SUPERVISION)
 # =============================================================================
 # Load required packages
 suppressPackageStartupMessages({
@@ -10,12 +10,14 @@ suppressPackageStartupMessages({
 # Define the %||% operator for null coalescing
 `%||%` <- function(x, y) if (is.null(x)) y else x
 # WebDAV configuration
-WEBDAV_URL <- "https://sync.academiccloud.de/public.php/webdav/"
-WEBDAV_PASSWORD <- "inreptest"
-WEBDAV_SHARE_TOKEN <- "Y51QPXzJVLWSAcb"
-
+#WEBDAV_BASE <- "https://fh-muenster.sciebo.de/public.php/webdav/"
+#WEBDAV_USER <- "Vince"
+#WEBDAV_PASS <- "J9QKQBJqnRzDnxG"
+WEBDAV_BASE   <- "https://sync.academiccloud.de/public.php/webdav/"
+WEBDAV_USER   <- "Km4R44qFHamr9zS"   # share token
+WEBDAV_PASS   <- "inreptest"         # password (if set for the public link)
 # =============================================================================
-# ITEM BANK -
+# ITEM BANK - NON-ADAPTIVE VERSION (NO IRT PARAMETERS)
 # =============================================================================
 all_items <- data.frame(
   id = paste0("Item_", sprintf("%02d", 1:30)),
@@ -31,38 +33,38 @@ all_items <- data.frame(
     "Mir ist bewusst, inwiefern frühere Erfahrungen der jungen Männer Beratungsgespräche beeinflussen können.",
     "Mir ist bewusst, inwiefern mein eigenes Stresslevel Beratungsgespräche beeinflussen kann.",
     "Mir ist bewusst, inwiefern kulturelle & sprachliche Hintergründe die Interaktionen prägen können.",
-    
+
     # Abschnitt 2 (Items 11-15)
     "Ich habe genügend Zeit, alle von mir für sinnvoll erachteten Beratungsgespräche zu führen.",
     "Ich habe geeignete räumliche Bedingungen für Beratungsgespräche zur Verfügung.",
     "Ich habe die Möglichkeit, mich bei Bedarf mit Kolleg*innen zur Vorbereitung auf Beratungsgespräche auszutauschen.",
     "Ich habe die Möglichkeit, meine geführten Beratungsgespräche bei Bedarf mit Kolleg*innen zu reflektieren.",
     "Ich habe viele Positiv-Beispiele gelungener Beratungsgespräche meiner Kolleg*innen mitbekommen.",
-    
+
     # Abschnitt 2 (Items 16-20)
     "Ich achte darauf, wie meine nonverbale Kommunikation (z.B. Mimik, Gestik) in Beratungsgesprächen wirkt.",
     "Ich achte darauf, meine Wortwahl sensibel an meinen Klienten anzupassen.",
     "Ich kann durch die Gestaltung des Gesprächssettings die Atmosphäre beeinflussen.",
     "Ich kann durch meine Vorbereitung (z.B. Unterlagen, Zeitplanung) die Qualität der Beratung beeinflussen.",
     "Ich kann in den Beratungsgesprächen immer geeignete Methoden einsetzen.",
-    
+
     # Abschnitt 3 (Items 21-23)
     "Mir ist bewusst, inwiefern gelungene Beratung ein Zusammenspiel von beeinflussbaren und nicht beeinflussbaren Faktoren ist.",
     "Ich habe das Gefühl, meinen Einfluss realistisch einschätzen zu können.",
     "Ich akzeptiere Dinge, die ich nicht beeinflussen kann.",
-    
+
     # Abschnitt 3 (Items 24-27) - With stem
     "…eine langfristige persönliche Lebensperspektive entwickeln konnten.",
     "…umsetzbare Ideen für erste Schritte nach dem Auszug haben.",
     "…zugängliche Ansprechstellen für mögliche Unterstützung kennengelernt haben.",
     "…Problemlösefähigkeiten verbessern konnten.",
-    
+
     # Abschnitt 4 (Items 28-30)
     "Ich habe das Gefühl, dass ich die jungen Männer in den ersten Monaten nach dem Auszug gut begleiten kann.",
     "Ich habe das Gefühl, dass ich den jungen Männer im Stationären Wohnen ausreichend helfen kann.",
     "Ich habe das Gefühl, dass ich positiven Einfluss auf die Entwicklung der langfristigen persönlichen Lebensperspektive der UMA nehmen kann."
   ),
-  # : Use Option columns for 7-point scale
+  # NON-ADAPTIVE: Use Option columns for 7-point scale
   Option1 = "stimme überhaupt nicht zu",
   Option2 = "stimme nicht zu",
   Option3 = "stimme eher nicht zu",
@@ -107,11 +109,11 @@ demographic_configs <- list(
 # INPUT TYPES
 # =============================================================================
 input_types <- list(
-  Teilnahme_Code = "text",
-  Feedback_Thema = "text",
-  Feedback_Mehr = "text",
+  Teilnahme_Code        = "text",
+  Feedback_Thema        = "text",
+  Feedback_Mehr         = "text",
   Feedback_Organisation = "text",
-  Feedback_Methodik = "text"
+  Feedback_Methodik     = "text"
 )
 # Add input types for all items
 for (i in 1:30) {
@@ -123,9 +125,9 @@ for (i in 1:30) {
 custom_page_flow <- list(
   # Page 1: Welcome - Post-Supervision
   list(
-    id = "page1",
-    type = "custom",
-    title = "",
+    id      = "page1",
+    type    = "custom",
+    title   = "",
     content = paste0(
       '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
       '<h2 style="color: #2c3e50;">Herzlich Willkommen zur Befragung über die Beratung Unbegleiteter Minderjähriger Ausländer (UMA) in der Akademie Klausenhof nach Abschluss der fünf Supervisionssitzungen!</h2>',
@@ -141,29 +143,19 @@ custom_page_flow <- list(
       '<p>Bei Fragen melde dich gerne unter <a href="mailto:ju002893@fh-muenster.de">ju002893@fh-muenster.de</a></p>',
       '<hr style="margin: 30px 0; border: 1px solid #ddd;">',
       '<p style="font-weight: bold; text-align: center; color: #2c3e50; font-size: 18px;">',
-      'Mit dem Klick auf „Weiter" startet die Befragung.',
+      'Mit dem Klick auf \u201eWeiter\u201c startet die Befragung.',
       '</p>',
       '</div>'
     )
   ),
-  
+
   # Page 2: Code Input Page
   list(
-    id = "page2",
-    type = "custom",
-    title = "",
+    id       = "page2",
+    type     = "custom",
+    title    = "",
     required = TRUE,
-    content = paste0(
-      '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
-      '<h3 style="color: #2c3e50;">Teilnahme-Code</h3>',
-      '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">',
-      '<p><strong>Ersten Buchstaben des Vornamens deiner Mutter (z.B. Karla = K)</strong></p>',
-      '<p><strong>Ersten Buchstaben des Vornamens deines Vaters (z.B. Yusuf = Y)</strong></p>',
-      '<p><strong>Geburtsmonat (z.B. September = 09)</strong></p>',
-      '<p style="margin-top: 20px; font-weight: bold; color: #3498db;">Es entsteht ein Code = KY09</p>',
-      '</div>',
-      '</div>'
-    ),
+    content  = "",
     render_function = function(input, output, session, rv) {
       shiny::div(
         class = "assessment-card",
@@ -183,114 +175,113 @@ custom_page_flow <- list(
           ),
           shiny::div(
             style = "margin: 20px 0;",
-            shiny::tags$label(
-              `for` = "demo_Teilnahme_Code",
-              style = "display: block; margin-bottom: 10px; font-weight: bold;",
-              "Bitte geben Sie Ihren persönlichen Code ein (wie bei der ersten Befragung):"
-            ),
-            shiny::tags$input(
-              type = "text",
-              id = "demo_Teilnahme_Code",
-              name = "demo_Teilnahme_Code",
+            shiny::textInput(
+              inputId     = "demo_Teilnahme_Code",
+              label       = shiny::tags$span(
+                style = "font-weight: bold;",
+                "Bitte geben Sie Ihren pers\u00f6nlichen Code ein (wie bei der ersten Befragung):"
+              ),
+              value       = "",
               placeholder = "z.B. KY09",
-              style = "width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 4px; font-size: 16px;"
+              width       = "100%"
             )
           )
         )
       )
     },
-    completion_handler = function(input, rv) {
-      if (!is.null(input$demo_Teilnahme_Code) && !is.null(rv)) {
-        rv$demo_data <- list(Teilnahme_Code = input$demo_Teilnahme_Code)
-        rv$demo_Teilnahme_Code <- input$demo_Teilnahme_Code
-        rv$participant_code <- input$demo_Teilnahme_Code
-        message("Saved demographic Teilnahme_Code: ", input$demo_Teilnahme_Code)
+    completion_handler = function(input, rv, ...) {
+      code_val <- trimws(input$demo_Teilnahme_Code %||% "")
+      if (!is.null(rv) && nchar(code_val) > 0) {
+        if (is.null(rv$demo_data) || !is.list(rv$demo_data)) rv$demo_data <- list()
+        rv$demo_data$Teilnahme_Code <- code_val
+        rv$demo_Teilnahme_Code      <- code_val
+        rv$participant_code         <- code_val
+        message("Saved Teilnahme_Code: ", code_val)
       }
     }
   ),
-  
+
   # Page 3: Abschnitt 1 von 4 - Items 1-5
   list(
-    id = "page3",
-    type = "items",
-    title = "Abschnitt 1 von 4",
+    id           = "page3",
+    type         = "items",
+    title        = "Abschnitt 1 von 4",
     instructions = paste0(
-      
       "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema ",
-      "„Langfristige persönliche Lebensperspektive der Unbegleiteten Minderjährigen Ausländer (UMA).“"
+      "\u201eLangfristige pers\u00f6nliche Lebensperspektive der Unbegleiteten Minderj\u00e4hrigen Ausl\u00e4nder (UMA).\u201c"
     ),
     item_indices = 1:5,
-    scale_type = "likert"
+    scale_type   = "likert"
   ),
-  
+
   # Page 4: Abschnitt 1 - Items 6-10
   list(
-    id = "page4",
-    type = "items",
-    title = "Abschnitt 1 von 4 (Fortsetzung)",
-    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema „Langfristige persönliche Lebensperspektive der UMA“",
+    id           = "page4",
+    type         = "items",
+    title        = "Abschnitt 1 von 4 (Fortsetzung)",
+    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema \u201eLangfristige pers\u00f6nliche Lebensperspektive der UMA\u201c",
     item_indices = 6:10,
-    scale_type = "likert"
+    scale_type   = "likert"
   ),
-  
+
   # Page 5: Abschnitt 2 von 4 - Items 11-15
   list(
-    id = "page5",
-    type = "items",
-    title = "Abschnitt 2 von 4",
-    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema „Langfristige persönliche Lebensperspektive der UMA“",
+    id           = "page5",
+    type         = "items",
+    title        = "Abschnitt 2 von 4",
+    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema \u201eLangfristige pers\u00f6nliche Lebensperspektive der UMA\u201c",
     item_indices = 11:15,
-    scale_type = "likert"
+    scale_type   = "likert"
   ),
-  
+
   # Page 6: Abschnitt 2 - Items 16-20
   list(
-    id = "page6",
-    type = "items",
-    title = "Abschnitt 2 von 4 (Fortsetzung)",
-    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema „Langfristige persönliche Lebensperspektive der UMA“",
+    id           = "page6",
+    type         = "items",
+    title        = "Abschnitt 2 von 4 (Fortsetzung)",
+    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema \u201eLangfristige pers\u00f6nliche Lebensperspektive der UMA\u201c",
     item_indices = 16:20,
-    scale_type = "likert"
+    scale_type   = "likert"
   ),
-  
+
   # Page 7: Abschnitt 3 von 4 - Items 21-23
   list(
-    id = "page7",
-    type = "items",
-    title = "Abschnitt 3 von 4",
-    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema „Langfristige persönliche Lebensperspektive der UMA“",
+    id           = "page7",
+    type         = "items",
+    title        = "Abschnitt 3 von 4",
+    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema \u201eLangfristige pers\u00f6nliche Lebensperspektive der UMA\u201c",
     item_indices = 21:23,
-    scale_type = "likert"
+    scale_type   = "likert"
   ),
-  
+
   # Page 8: Abschnitt 3 - Items 24-27 (with stem)
   list(
-    id = "page8",
-    type = "items",
-    title = "Abschnitt 3 von 4 (Fortsetzung)",
+    id           = "page8",
+    type         = "items",
+    title        = "Abschnitt 3 von 4 (Fortsetzung)",
     instructions = paste0(
-      "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema „Langfristige persönliche Lebensperspektive der UMA“\n\n",
-      "Ich habe den Eindruck, dass die jungen Männer durch meine Beratungsarbeit…"
+      "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema \u201eLangfristige pers\u00f6nliche Lebensperspektive der UMA\u201c\n\n",
+      "Ich habe den Eindruck, dass die jungen M\u00e4nner durch meine Beratungsarbeit\u2026"
     ),
     item_indices = 24:27,
-    scale_type = "likert"
+    scale_type   = "likert"
   ),
-  
+
   # Page 9: Abschnitt 4 - Items 28-30
   list(
-    id = "page9",
-    type = "items",
-    title = "Abschnitt 4 von 4",
-    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema „Langfristige persönliche Lebensperspektive der UMA“",
+    id           = "page9",
+    type         = "items",
+    title        = "Abschnitt 4 von 4",
+    instructions = "Folgende Aussagen beziehen sich auf Beratungsgespräche zum Thema \u201eLangfristige pers\u00f6nliche Lebensperspektive der UMA\u201c",
     item_indices = 28:30,
-    scale_type = "likert"
+    scale_type   = "likert"
   ),
-  
+
   # Page 10: Feedback - Open Feedback Questions
   list(
-    id = "page10",
-    type = "custom",
-    title = "Feedback zur Supervision",
+    id      = "page10",
+    type    = "custom",
+    title   = "Feedback zur Supervision",
     content = "",
     render_function = function(input, output, session, rv) {
       shiny::div(
@@ -299,96 +290,82 @@ custom_page_flow <- list(
         shiny::h3("Feedback zur Supervision", class = "card-header"),
         shiny::div(
           style = "padding: 20px;",
-          
+
           # Question 1
           shiny::div(
             style = "margin-bottom: 30px;",
-            shiny::tags$label(
-              `for` = "demo_Feedback_Thema",
-              style = "display: block; margin-bottom: 10px; font-weight: bold;",
-              "1. Bei welchem Teil-Thema in der Supervision konntest du am meisten für deine Arbeit mitnehmen?"
-            ),
-            shiny::tags$textarea(
-              id = "demo_Feedback_Thema",
-              name = "demo_Feedback_Thema",
-              rows = "4",
-              style = "width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 4px; font-size: 14px; font-family: inherit;"
+            shiny::textAreaInput(
+              inputId = "demo_Feedback_Thema",
+              label   = shiny::tags$span(
+                style = "font-weight: bold;",
+                "1. Bei welchem Teil-Thema in der Supervision konntest du am meisten f\u00fcr deine Arbeit mitnehmen?"
+              ),
+              value = "", rows = 4, width = "100%"
             )
           ),
-          
+
           # Question 2
           shiny::div(
             style = "margin-bottom: 30px;",
-            shiny::tags$label(
-              `for` = "demo_Feedback_Mehr",
-              style = "display: block; margin-bottom: 10px; font-weight: bold;",
-              "2. Welches (Teil-)Thema hättest du dir gewünscht, in der Supervision mehr zu bearbeiten?"
-            ),
-            shiny::tags$textarea(
-              id = "demo_Feedback_Mehr",
-              name = "demo_Feedback_Mehr",
-              rows = "4",
-              style = "width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 4px; font-size: 14px; font-family: inherit;"
+            shiny::textAreaInput(
+              inputId = "demo_Feedback_Mehr",
+              label   = shiny::tags$span(
+                style = "font-weight: bold;",
+                "2. Welches (Teil-)Thema h\u00e4ttest du dir gew\u00fcnscht, in der Supervision mehr zu bearbeiten?"
+              ),
+              value = "", rows = 4, width = "100%"
             )
           ),
-          
+
           # Question 3
           shiny::div(
             style = "margin-bottom: 30px;",
-            shiny::tags$label(
-              `for` = "demo_Feedback_Organisation",
-              style = "display: block; margin-bottom: 10px; font-weight: bold;",
-              "3. Welche Rückmeldung möchtest du zum organisatorischen Ablauf der Supervision geben?"
-            ),
-            shiny::tags$textarea(
-              id = "demo_Feedback_Organisation",
-              name = "demo_Feedback_Organisation",
-              rows = "4",
-              style = "width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 4px; font-size: 14px; font-family: inherit;"
+            shiny::textAreaInput(
+              inputId = "demo_Feedback_Organisation",
+              label   = shiny::tags$span(
+                style = "font-weight: bold;",
+                "3. Welche R\u00fcckmeldung m\u00f6chtest du zum organisatorischen Ablauf der Supervision geben?"
+              ),
+              value = "", rows = 4, width = "100%"
             )
           ),
-          
+
           # Question 4
           shiny::div(
             style = "margin-bottom: 30px;",
-            shiny::tags$label(
-              `for` = "demo_Feedback_Methodik",
-              style = "display: block; margin-bottom: 10px; font-weight: bold;",
-              "4. Welche Rückmeldung möchtest du zum methodischen Vorgehen in der Supervision geben?"
-            ),
-            shiny::tags$textarea(
-              id = "demo_Feedback_Methodik",
-              name = "demo_Feedback_Methodik",
-              rows = "4",
-              style = "width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 4px; font-size: 14px; font-family: inherit;"
+            shiny::textAreaInput(
+              inputId = "demo_Feedback_Methodik",
+              label   = shiny::tags$span(
+                style = "font-weight: bold;",
+                "4. Welche R\u00fcckmeldung m\u00f6chtest du zum methodischen Vorgehen in der Supervision geben?"
+              ),
+              value = "", rows = 4, width = "100%"
             )
           )
         )
       )
     },
-    completion_handler = function(input, rv) {
+    completion_handler = function(input, rv, ...) {
       if (!is.null(rv)) {
-        if (is.null(rv$demo_data)) {
-          rv$demo_data <- list()
-        }
-        rv$demo_data$Feedback_Thema <- input$demo_Feedback_Thema %||% ""
-        rv$demo_data$Feedback_Mehr <- input$demo_Feedback_Mehr %||% ""
+        if (is.null(rv$demo_data)) rv$demo_data <- list()
+        rv$demo_data$Feedback_Thema        <- input$demo_Feedback_Thema        %||% ""
+        rv$demo_data$Feedback_Mehr         <- input$demo_Feedback_Mehr         %||% ""
         rv$demo_data$Feedback_Organisation <- input$demo_Feedback_Organisation %||% ""
-        rv$demo_data$Feedback_Methodik <- input$demo_Feedback_Methodik %||% ""
+        rv$demo_data$Feedback_Methodik     <- input$demo_Feedback_Methodik     %||% ""
         message("Saved feedback data")
       }
     }
   ),
-  
+
   # Page 11: Thank You / Results
   list(
-    id = "page11",
-    type = "results",
-    title = "",
-    submit_data = TRUE,
-    pass_demographics = TRUE,
+    id                   = "page11",
+    type                 = "results",
+    title                = "",
+    submit_data          = TRUE,
+    pass_demographics    = TRUE,
     include_demographics = TRUE,
-    save_demographics = TRUE
+    save_demographics    = TRUE
   )
 )
 # =============================================================================
@@ -405,7 +382,7 @@ custom_css <- '
     margin: 20px auto !important;
     width: 100% !important;
   }
- 
+
   /* Radio buttons - smaller and left-aligned */
   input[type="radio"] {
     width: 16px !important;
@@ -414,7 +391,7 @@ custom_css <- '
     cursor: pointer !important;
     flex-shrink: 0 !important;
   }
- 
+
   /* Box styling for labels - left-aligned with radio */
   .shiny-options-group label {
     display: flex !important;
@@ -432,13 +409,13 @@ custom_css <- '
     line-height: 1.4 !important;
     text-align: left !important;
   }
- 
+
   /* Hover effect */
   .shiny-options-group label:hover {
     border-color: #3498db !important;
     background: #f0f8ff !important;
   }
- 
+
   /* Selected state */
   .shiny-options-group input[type="radio"]:checked + label,
   .shiny-options-group label:has(input[type="radio"]:checked) {
@@ -447,13 +424,13 @@ custom_css <- '
     color: #1976d2 !important;
     font-weight: 500 !important;
   }
- 
+
   /* Textarea styling */
   textarea {
     font-family: inherit !important;
     resize: vertical !important;
   }
- 
+
   /* Responsive design */
   @media (max-width: 768px) {
     .shiny-options-group {
@@ -470,38 +447,36 @@ custom_css <- '
 # DATA SAVE FUNCTION
 # =============================================================================
 save_to_cloud <- function(data = NULL, filename = NULL, ...) {
-  if (is.null(data) || is.null(filename)) {
-    return(FALSE)
-  }
-  
+  if (is.null(data) || is.null(filename)) return(FALSE)
+
   tryCatch({
     # Save locally first
     local_file <- file.path("data", filename)
     if (!dir.exists("data")) dir.create("data")
     write.csv(data, local_file, row.names = FALSE)
-    
-    # Upload to INREP WebDAV
+
+    # Upload to WebDAV
     if (requireNamespace("httr", quietly = TRUE)) {
       library(httr)
-      upload_url <- paste0(WEBDAV_URL, filename)
-      
+      upload_url <- paste0(WEBDAV_BASE, filename)
+
       response <- httr::PUT(
-        url = upload_url,
+        url  = upload_url,
         body = httr::upload_file(local_file),
-        httr::authenticate(WEBDAV_SHARE_TOKEN, WEBDAV_PASSWORD, type = "basic"),
+        httr::authenticate(WEBDAV_USER, WEBDAV_PASS, type = "basic"),
         httr::add_headers(
-          "Content-Type" = "text/csv",
+          "Content-Type"     = "text/csv",
           "X-Requested-With" = "XMLHttpRequest"
         )
       )
-      
+
       if (httr::status_code(response) %in% c(200, 201, 204)) {
-        message("✓ Data successfully uploaded to INREP cloud!")
-        message(" File: ", filename)
-        message(" URL: ", upload_url)
+        message("\u2713 Data successfully uploaded to cloud!")
+        message("  File: ", filename)
+        message("  URL: ", upload_url)
       }
     }
-    
+
     return(TRUE)
   }, error = function(e) {
     message("Error saving data: ", e$message)
@@ -513,105 +488,104 @@ save_to_cloud <- function(data = NULL, filename = NULL, ...) {
 # =============================================================================
 create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NULL, input = NULL, ...) {
   # Generate filename with timestamp
-  timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+  timestamp  <- format(Sys.time(), "%Y%m%d_%H%M%S")
   session_id <- paste0(sample(letters, 8), collapse = "")
-  filename <- paste0("UMA_POST_", timestamp, "_", session_id, ".csv")
-  
-  # Get participant code
+  filename   <- paste0("UMA_POST_", timestamp, "_", session_id, ".csv")
+
+  # Helper: treat NULL, NA, and "" all as "empty"
+  is_empty <- function(x) is.null(x) || length(x) == 0 || all(is.na(x)) || all(trimws(as.character(x)) == "")
+
+  # ── 1. Try demographics argument ──────────────────────────────────────────
   participant_code <- NULL
-  
-  # Try different sources for participant code
   if (!is.null(demographics)) {
     if (is.list(demographics) && !is.null(demographics$Teilnahme_Code)) {
-      participant_code <- demographics$Teilnahme_Code
+      participant_code <- trimws(as.character(demographics$Teilnahme_Code))
     } else if (is.atomic(demographics) && length(demographics) > 0) {
-      participant_code <- demographics[1]
+      participant_code <- trimws(as.character(demographics[1]))
     }
   }
-  
-  if (is.null(participant_code) && !is.null(rv)) {
-    if (!is.null(rv$demo_data) && !is.null(rv$demo_data$Teilnahme_Code)) {
-      participant_code <- rv$demo_data$Teilnahme_Code
-    } else if (!is.null(rv$demo_Teilnahme_Code)) {
-      participant_code <- rv$demo_Teilnahme_Code
-    } else if (!is.null(rv$participant_code)) {
-      participant_code <- rv$participant_code
+
+  # ── 2. Try rv reactive values ─────────────────────────────────────────────
+  if (is_empty(participant_code)) {
+    if (!is.null(rv)) {
+      if (!is.null(rv$demo_data) && !is.null(rv$demo_data$Teilnahme_Code)) {
+        participant_code <- trimws(as.character(rv$demo_data$Teilnahme_Code))
+      } else if (!is.null(rv$demo_Teilnahme_Code)) {
+        participant_code <- trimws(as.character(rv$demo_Teilnahme_Code))
+      } else if (!is.null(rv$participant_code)) {
+        participant_code <- trimws(as.character(rv$participant_code))
+      }
     }
   }
-  
-  if (is.null(participant_code)) {
+
+  # ── 3. Final fallback: read directly from Shiny input ────────────────────
+  if (is_empty(participant_code)) {
+    if (!is.null(input)) {
+      code_direct <- tryCatch(input$demo_Teilnahme_Code, error = function(e) NULL)
+      if (!is_empty(code_direct)) {
+        participant_code <- trimws(as.character(code_direct))
+      }
+    }
+  }
+
+  if (is_empty(participant_code)) {
     participant_code <- "UNKNOWN"
   }
-  
-  # Get feedback data
-  feedback_thema <- ""
-  feedback_mehr <- ""
+
+  # ── Feedback ──────────────────────────────────────────────────────────────
+  feedback_thema        <- ""
+  feedback_mehr         <- ""
   feedback_organisation <- ""
-  feedback_methodik <- ""
-  
+  feedback_methodik     <- ""
+
   if (!is.null(rv) && !is.null(rv$demo_data)) {
-    feedback_thema <- rv$demo_data$Feedback_Thema %||% ""
-    feedback_mehr <- rv$demo_data$Feedback_Mehr %||% ""
+    feedback_thema        <- rv$demo_data$Feedback_Thema        %||% ""
+    feedback_mehr         <- rv$demo_data$Feedback_Mehr         %||% ""
     feedback_organisation <- rv$demo_data$Feedback_Organisation %||% ""
-    feedback_methodik <- rv$demo_data$Feedback_Methodik %||% ""
+    feedback_methodik     <- rv$demo_data$Feedback_Methodik     %||% ""
   }
-  
-  # Create comprehensive data frame
+
+  # ── Build data frame ──────────────────────────────────────────────────────
   data <- data.frame(
-    # Study metadata
-    session_id = session_id,
-    timestamp = Sys.time(),
-    study_name = "UMA Befragung - Post-Supervision",
-    study_phase = "POST",
-    
-    # Participant information
-    participant_code = participant_code,
-    
-    # Study completion info
-    total_items = 30,
-    items_completed = if(!is.null(responses)) length(responses) else 0,
-    completion_rate = if(!is.null(responses)) round(length(responses) / 30 * 100, 2) else 0,
-    
-    # Feedback questions
-    feedback_thema = feedback_thema,
-    feedback_mehr = feedback_mehr,
+    session_id            = session_id,
+    timestamp             = Sys.time(),
+    study_name            = "UMA Befragung - Post-Supervision",
+    study_phase           = "POST",
+    participant_code      = participant_code,
+    total_items           = 30,
+    items_completed       = if (!is.null(responses)) length(responses) else 0,
+    completion_rate       = if (!is.null(responses)) round(length(responses) / 30 * 100, 2) else 0,
+    feedback_thema        = feedback_thema,
+    feedback_mehr         = feedback_mehr,
     feedback_organisation = feedback_organisation,
-    feedback_methodik = feedback_methodik,
-    
+    feedback_methodik     = feedback_methodik,
     stringsAsFactors = FALSE
   )
-  
-  # Add all item responses
+
+  # ── Add item responses ────────────────────────────────────────────────────
   if (!is.null(responses) && length(responses) > 0) {
-    if (length(responses) < 30) {
-      responses <- c(responses, rep(NA, 30 - length(responses)))
-    } else if (length(responses) > 30) {
-      responses <- responses[1:30]
-    }
-    
+    if (length(responses) < 30) responses <- c(responses, rep(NA, 30 - length(responses)))
+    if (length(responses) > 30) responses <- responses[1:30]
     for (i in 1:30) {
-      item_name <- paste0("Item_", sprintf("%02d", i))
-      data[[item_name]] <- responses[i]
+      data[[paste0("Item_", sprintf("%02d", i))]] <- responses[i]
     }
   } else {
     for (i in 1:30) {
-      item_name <- paste0("Item_", sprintf("%02d", i))
-      data[[item_name]] <- NA
+      data[[paste0("Item_", sprintf("%02d", i))]] <- NA
     }
   }
-  
-  # Add response scale info
-  data$response_scale <- "1=stimme überhaupt nicht zu, 2=stimme nicht zu, 3=stimme eher nicht zu, 4=weder noch, 5=stimme eher zu, 6=stimme zu, 7=stimme voll und ganz zu"
-  
+
+  data$response_scale <- "1=stimme \u00fcberhaupt nicht zu, 2=stimme nicht zu, 3=stimme eher nicht zu, 4=weder noch, 5=stimme eher zu, 6=stimme zu, 7=stimme voll und ganz zu"
+
   # Save to cloud
   save_to_cloud(data, filename)
-  
+
   # Return thank you message
   return(shiny::HTML(paste0(
     '<div style="padding: 40px; text-align: center;">',
     '<h2 style="color: #2c3e50;">Du hast es geschafft!</h2>',
-    '<p style="font-size: 18px; margin: 30px 0;">Vielen Dank für deine Teilnahme!</p>',
-    '<p style="font-size: 14px; color: #999;">(Du kannst die Seite nun schließen.)</p>',
+    '<p style="font-size: 18px; margin: 30px 0;">Vielen Dank f\u00fcr deine Teilnahme!</p>',
+    '<p style="font-size: 14px; color: #999;">(Du kannst die Seite nun schlie\u00dfen.)</p>',
     '</div>'
   )))
 }
@@ -620,57 +594,55 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
 # =============================================================================
 validate_page <- function(page_id, input, rv) {
   current_page_idx <- rv$current_page %||% 1
-  current_page <- rv$config$custom_page_flow[[current_page_idx]]
-  
-  if (is.null(current_page)) {
-    return(list(valid = TRUE))
-  }
-  
-  # Check if this is a required custom page
+  current_page     <- rv$config$custom_page_flow[[current_page_idx]]
+
+  if (is.null(current_page)) return(list(valid = TRUE))
+
   if (current_page$type == "custom" && isTRUE(current_page$required)) {
     if (page_id == "page2" || current_page$id == "page2") {
-      code_value <- input$demo_Teilnahme_Code
-      if (is.null(code_value) || trimws(code_value) == "") {
+      code_value <- trimws(input$demo_Teilnahme_Code %||% "")
+      if (is.na(code_value) || nchar(code_value) == 0) {
         return(list(
-          valid = FALSE,
-          message = "Bitte vervollständigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
+          valid   = FALSE,
+          message = "Bitte vervollst\u00e4ndigen Sie die folgenden Angaben:\nBitte beantworten Sie alle Fragen auf dieser Seite."
         ))
       }
     }
   }
-  
+
   return(list(valid = TRUE))
 }
 # =============================================================================
 # STUDY CONFIGURATION
 # =============================================================================
 study_config <- inrep::create_study_config(
-  name = "UMA Befragung - Post-Supervision",
-  theme = "inrep",
-  custom_page_flow = custom_page_flow,
-  demographics = c("Teilnahme_Code", "Feedback_Thema", "Feedback_Mehr", "Feedback_Organisation", "Feedback_Methodik"),
-  demographic_configs = demographic_configs,
-  input_types = input_types,
-  results_processor = create_uma_report,
-  validation_function = validate_page,
-  
+  name                   = "UMA Befragung - Post-Supervision",
+  theme                  = "inrep",
+  custom_page_flow       = custom_page_flow,
+  demographics           = c("Teilnahme_Code", "Feedback_Thema", "Feedback_Mehr",
+                              "Feedback_Organisation", "Feedback_Methodik"),
+  demographic_configs    = demographic_configs,
+  input_types            = input_types,
+  results_processor      = create_uma_report,
+  validation_function    = validate_page,
+
   # Study flow settings
-  adaptive = FALSE,
-  fixed_items = 1:30,
-  response_ui_type = "radio",
-  language = "de",
-  
+  adaptive               = FALSE,
+  fixed_items            = 1:30,
+  response_ui_type       = "radio",
+  language               = "de",
+
   # Data management settings
-  log_data = FALSE,
-  session_save = TRUE,
-  cloud_storage = FALSE,
-  
+  log_data               = FALSE,
+  session_save           = TRUE,
+  cloud_storage          = FALSE,
+
   # UI settings
-  show_progress = TRUE,
-  progress_style = "minimal",
-  bilingual = FALSE,
-  enable_audio = FALSE,
-  
+  show_progress          = TRUE,
+  progress_style         = "minimal",
+  bilingual              = FALSE,
+  enable_audio           = FALSE,
+
   # Performance settings
   initialize_immediately = TRUE
 )
@@ -678,10 +650,10 @@ study_config <- inrep::create_study_config(
 # LAUNCH STUDY
 # =============================================================================
 inrep::launch_study(
-  config = study_config,
-  item_bank = all_items,
-  custom_css = custom_css,
-  auto_close_time = 15,
+  config               = study_config,
+  item_bank            = all_items,
+  custom_css           = custom_css,
+  auto_close_time      = 15,
   auto_close_time_unit = "seconds",
-  disable_auto_close = FALSE
+  disable_auto_close   = FALSE
 )

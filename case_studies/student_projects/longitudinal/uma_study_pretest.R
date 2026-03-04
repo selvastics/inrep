@@ -186,13 +186,15 @@ custom_page_flow <- list(
         )
       )
     },
-    completion_handler = function(input, rv) {
+    completion_handler = function(input, rv, ...) {
       # Store the participant code in multiple places to ensure it's available
-      if (!is.null(input$demo_Teilnahme_Code) && !is.null(rv)) {
-        rv$demo_data <- list(Teilnahme_Code = input$demo_Teilnahme_Code)
-        rv$demo_Teilnahme_Code <- input$demo_Teilnahme_Code
-        rv$participant_code <- input$demo_Teilnahme_Code
-        message("Saved demographic Teilnahme_Code: ", input$demo_Teilnahme_Code)
+      code_val <- trimws(input$demo_Teilnahme_Code %||% "")
+      if (!is.null(rv) && nchar(code_val) > 0) {
+        if (is.null(rv$demo_data) || !is.list(rv$demo_data)) rv$demo_data <- list()
+        rv$demo_data$Teilnahme_Code <- code_val
+        rv$demo_Teilnahme_Code <- code_val
+        rv$participant_code <- code_val
+        message("Saved demographic Teilnahme_Code: ", code_val)
         message("Stored in rv$demo_data, rv$demo_Teilnahme_Code, and rv$participant_code")
       }
     }
