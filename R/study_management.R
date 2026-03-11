@@ -2137,7 +2137,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
             # This prevents duplicate uploads and authentication errors
             if (!upload_already_done) {
               .inrep_debug_message("DEBUG: Attempting JSON fallback cloud save (CSV upload not detected)")
-              result <- save_session_to_cloud(rv, config, webdav_url_to_use, webdav_password_to_use)
+              result <- save_session_to_cloud(rv, config, webdav_url_to_use, webdav_password_to_use, session = session)
               if (result) {
                 .inrep_debug_message("DEBUG: Fallback cloud save (JSON) succeeded when user selected NO")
               } else {

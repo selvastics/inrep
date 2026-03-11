@@ -385,12 +385,27 @@ save_to_cloud <- function(data = NULL, filename = NULL, ...) {
         message("✓ Data successfully uploaded to INREP cloud!")
         message("  File: ", filename)
         message("  URL: ", upload_url)
+        return(TRUE)
+      } else {
+        status_code <- httr::status_code(response)
+        message("✗ Cloud upload FAILED (HTTP ", status_code, ")")
+        message("  File: ", filename)
+        message("  URL: ", upload_url)
+        if (status_code == 403) message("  Reason: Access forbidden - check share permissions (upload not allowed)")
+        else if (status_code == 401) message("  Reason: Authentication failed - check credentials")
+        else if (status_code == 404) message("  Reason: URL not found - check WebDAV endpoint")
+        warning("WebDAV upload failed with HTTP ", status_code, " - data saved locally in ", local_file,
+                call. = FALSE, immediate. = TRUE)
+        return(FALSE)
       }
+    } else {
+      message("httr package not available - data saved locally only in ", local_file)
+      return(FALSE)
     }
-    
-    return(TRUE)
   }, error = function(e) {
     message("Error saving data: ", e$message)
+    warning("WebDAV upload failed: ", e$message, " - check local data folder",
+            call. = FALSE, immediate. = TRUE)
     return(FALSE)
   })
 }

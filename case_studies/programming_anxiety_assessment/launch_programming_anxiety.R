@@ -608,15 +608,6 @@ for (i in 2:28) {
     )
 }
 
-# Add results page
-custom_page_flow[[length(custom_page_flow) + 1]] <- list(
-    id = "results",
-    type = "results",
-    title = "Your Results / Ihre Ergebnisse",
-    title_en = "Your Results",
-    results_processor = create_programming_anxiety_report
-)
-
 # =============================================================================
 # REPORTING FUNCTION WITH COMPREHENSIVE ANALYSIS
 # =============================================================================
@@ -1265,6 +1256,15 @@ custom_item_selection <- function(rv, item_bank, config, session = NULL) {
     message(sprintf("WARNING: No item selected. effective_count=%d", effective_count))
     return(NULL)
 }
+
+# Add results page (must come after function definitions)
+custom_page_flow[[length(custom_page_flow) + 1]] <- list(
+    id = "results",
+    type = "results",
+    title = "Your Results / Ihre Ergebnisse",
+    title_en = "Your Results",
+    results_processor = create_programming_anxiety_report
+)
 
 # =============================================================================
 # STUDY CONFIGURATION

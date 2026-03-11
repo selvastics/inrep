@@ -1,3 +1,5 @@
+
+
 # =============================================================================
 # UMA STUDY - POST-SUPERVISION VERSION (NACH ABSCHLUSS DER SUPERVISION)
 # =============================================================================
@@ -10,9 +12,17 @@ suppressPackageStartupMessages({
 # Define the %||% operator for null coalescing
 `%||%` <- function(x, y) if (is.null(x)) y else x
 # WebDAV configuration
-WEBDAV_BASE   <- "https://sync.academiccloud.de/public.php/webdav/"
-WEBDAV_USER   <- "Km4R44qFHamr9zS"   # share token
-WEBDAV_PASS   <- "inreptest"         # password (if set for the public link)
+#WEBDAV_BASE   <- "https://sync.academiccloud.de/public.php/webdav/"
+#WEBDAV_USER   <- "Km4R44qFHamr9zS"   # share token
+#WEBDAV_PASS   <- "inreptest"         # password (if set for the public link)
+
+WEBDAV_BASE   <- "https://fh-muenster.sciebo.de/public.php/webdav/"
+WEBDAV_USER   <- "83mMpcTASFKH6e3"   # share token
+WEBDAV_PASS   <- "vince"         # password (if set for the public link)
+
+# mind you, this folder needs premission to upload etc. 
+
+
 # =============================================================================
 # ITEM BANK - NON-ADAPTIVE VERSION (NO IRT PARAMETERS)
 # =============================================================================
@@ -30,32 +40,32 @@ all_items <- data.frame(
     "Mir ist bewusst, inwiefern frühere Erfahrungen der jungen Männer Beratungsgespräche beeinflussen können.",
     "Mir ist bewusst, inwiefern mein eigenes Stresslevel Beratungsgespräche beeinflussen kann.",
     "Mir ist bewusst, inwiefern kulturelle & sprachliche Hintergründe die Interaktionen prägen können.",
-
+    
     # Abschnitt 2 (Items 11-15)
     "Ich habe genügend Zeit, alle von mir für sinnvoll erachteten Beratungsgespräche zu führen.",
     "Ich habe geeignete räumliche Bedingungen für Beratungsgespräche zur Verfügung.",
     "Ich habe die Möglichkeit, mich bei Bedarf mit Kolleg*innen zur Vorbereitung auf Beratungsgespräche auszutauschen.",
     "Ich habe die Möglichkeit, meine geführten Beratungsgespräche bei Bedarf mit Kolleg*innen zu reflektieren.",
     "Ich habe viele Positiv-Beispiele gelungener Beratungsgespräche meiner Kolleg*innen mitbekommen.",
-
+    
     # Abschnitt 2 (Items 16-20)
     "Ich achte darauf, wie meine nonverbale Kommunikation (z.B. Mimik, Gestik) in Beratungsgesprächen wirkt.",
     "Ich achte darauf, meine Wortwahl sensibel an meinen Klienten anzupassen.",
     "Ich kann durch die Gestaltung des Gesprächssettings die Atmosphäre beeinflussen.",
     "Ich kann durch meine Vorbereitung (z.B. Unterlagen, Zeitplanung) die Qualität der Beratung beeinflussen.",
     "Ich kann in den Beratungsgesprächen immer geeignete Methoden einsetzen.",
-
+    
     # Abschnitt 3 (Items 21-23)
     "Mir ist bewusst, inwiefern gelungene Beratung ein Zusammenspiel von beeinflussbaren und nicht beeinflussbaren Faktoren ist.",
     "Ich habe das Gefühl, meinen Einfluss realistisch einschätzen zu können.",
     "Ich akzeptiere Dinge, die ich nicht beeinflussen kann.",
-
+    
     # Abschnitt 3 (Items 24-27) - With stem
     "…eine langfristige persönliche Lebensperspektive entwickeln konnten.",
     "…umsetzbare Ideen für erste Schritte nach dem Auszug haben.",
     "…zugängliche Ansprechstellen für mögliche Unterstützung kennengelernt haben.",
     "…Problemlösefähigkeiten verbessern konnten.",
-
+    
     # Abschnitt 4 (Items 28-30)
     "Ich habe das Gefühl, dass ich die jungen Männer in den ersten Monaten nach dem Auszug gut begleiten kann.",
     "Ich habe das Gefühl, dass ich den jungen Männer im Stationären Wohnen ausreichend helfen kann.",
@@ -145,7 +155,7 @@ custom_page_flow <- list(
       '</div>'
     )
   ),
-
+  
   # Page 2: Code Input Page
   list(
     id       = "page2",
@@ -197,7 +207,7 @@ custom_page_flow <- list(
       }
     }
   ),
-
+  
   # Page 3: Abschnitt 1 von 4 - Items 1-5
   list(
     id           = "page3",
@@ -210,7 +220,7 @@ custom_page_flow <- list(
     item_indices = 1:5,
     scale_type   = "likert"
   ),
-
+  
   # Page 4: Abschnitt 1 - Items 6-10
   list(
     id           = "page4",
@@ -220,7 +230,7 @@ custom_page_flow <- list(
     item_indices = 6:10,
     scale_type   = "likert"
   ),
-
+  
   # Page 5: Abschnitt 2 von 4 - Items 11-15
   list(
     id           = "page5",
@@ -230,7 +240,7 @@ custom_page_flow <- list(
     item_indices = 11:15,
     scale_type   = "likert"
   ),
-
+  
   # Page 6: Abschnitt 2 - Items 16-20
   list(
     id           = "page6",
@@ -240,7 +250,7 @@ custom_page_flow <- list(
     item_indices = 16:20,
     scale_type   = "likert"
   ),
-
+  
   # Page 7: Abschnitt 3 von 4 - Items 21-23
   list(
     id           = "page7",
@@ -250,7 +260,7 @@ custom_page_flow <- list(
     item_indices = 21:23,
     scale_type   = "likert"
   ),
-
+  
   # Page 8: Abschnitt 3 - Items 24-27 (with stem)
   list(
     id           = "page8",
@@ -263,7 +273,7 @@ custom_page_flow <- list(
     item_indices = 24:27,
     scale_type   = "likert"
   ),
-
+  
   # Page 9: Abschnitt 4 - Items 28-30
   list(
     id           = "page9",
@@ -273,7 +283,7 @@ custom_page_flow <- list(
     item_indices = 28:30,
     scale_type   = "likert"
   ),
-
+  
   # Page 10: Feedback - Open Feedback Questions
   list(
     id      = "page10",
@@ -287,7 +297,7 @@ custom_page_flow <- list(
         shiny::h3("Feedback zur Supervision", class = "card-header"),
         shiny::div(
           style = "padding: 20px;",
-
+          
           # Question 1
           shiny::div(
             style = "margin-bottom: 30px;",
@@ -300,7 +310,7 @@ custom_page_flow <- list(
               value = "", rows = 4, width = "100%"
             )
           ),
-
+          
           # Question 2
           shiny::div(
             style = "margin-bottom: 30px;",
@@ -313,7 +323,7 @@ custom_page_flow <- list(
               value = "", rows = 4, width = "100%"
             )
           ),
-
+          
           # Question 3
           shiny::div(
             style = "margin-bottom: 30px;",
@@ -326,7 +336,7 @@ custom_page_flow <- list(
               value = "", rows = 4, width = "100%"
             )
           ),
-
+          
           # Question 4
           shiny::div(
             style = "margin-bottom: 30px;",
@@ -353,7 +363,7 @@ custom_page_flow <- list(
       }
     }
   ),
-
+  
   # Page 11: Thank You / Results
   list(
     id                   = "page11",
@@ -445,18 +455,18 @@ custom_css <- '
 # =============================================================================
 save_to_cloud <- function(data = NULL, filename = NULL, ...) {
   if (is.null(data) || is.null(filename)) return(FALSE)
-
+  
   tryCatch({
     # Save locally first
     local_file <- file.path("data", filename)
     if (!dir.exists("data")) dir.create("data")
     write.csv(data, local_file, row.names = FALSE)
-
+    
     # Upload to WebDAV
     if (requireNamespace("httr", quietly = TRUE)) {
       library(httr)
       upload_url <- paste0(WEBDAV_BASE, filename)
-
+      
       response <- httr::PUT(
         url  = upload_url,
         body = httr::upload_file(local_file),
@@ -466,17 +476,32 @@ save_to_cloud <- function(data = NULL, filename = NULL, ...) {
           "X-Requested-With" = "XMLHttpRequest"
         )
       )
-
+      
       if (httr::status_code(response) %in% c(200, 201, 204)) {
         message("\u2713 Data successfully uploaded to cloud!")
         message("  File: ", filename)
         message("  URL: ", upload_url)
+        return(TRUE)
+      } else {
+        status_code <- httr::status_code(response)
+        message("\u2717 Cloud upload FAILED (HTTP ", status_code, ")")
+        message("  File: ", filename)
+        message("  URL: ", upload_url)
+        if (status_code == 403) message("  Reason: Access forbidden - check share permissions (upload not allowed)")
+        else if (status_code == 401) message("  Reason: Authentication failed - check credentials")
+        else if (status_code == 404) message("  Reason: URL not found - check WebDAV endpoint")
+        warning("WebDAV upload failed with HTTP ", status_code, " - data saved locally in ", local_file,
+                call. = FALSE, immediate. = TRUE)
+        return(FALSE)
       }
+    } else {
+      message("httr package not available - data saved locally only in ", local_file)
+      return(FALSE)
     }
-
-    return(TRUE)
   }, error = function(e) {
     message("Error saving data: ", e$message)
+    warning("WebDAV upload failed: ", e$message, " - check local data folder", 
+            call. = FALSE, immediate. = TRUE)
     return(FALSE)
   })
 }
@@ -488,10 +513,10 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
   timestamp  <- format(Sys.time(), "%Y%m%d_%H%M%S")
   session_id <- paste0(sample(letters, 8), collapse = "")
   filename   <- paste0("UMA_POST_", timestamp, "_", session_id, ".csv")
-
+  
   # Helper: treat NULL, NA, and "" all as "empty"
   is_empty <- function(x) is.null(x) || length(x) == 0 || all(is.na(x)) || all(trimws(as.character(x)) == "")
-
+  
   # ── 1. Try demographics argument ──────────────────────────────────────────
   participant_code <- NULL
   if (!is.null(demographics)) {
@@ -501,7 +526,7 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
       participant_code <- trimws(as.character(demographics[1]))
     }
   }
-
+  
   # ── 2. Try rv reactive values ─────────────────────────────────────────────
   if (is_empty(participant_code)) {
     if (!is.null(rv)) {
@@ -514,7 +539,7 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
       }
     }
   }
-
+  
   # ── 3. Final fallback: read directly from Shiny input ────────────────────
   if (is_empty(participant_code)) {
     if (!is.null(input)) {
@@ -524,24 +549,24 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
       }
     }
   }
-
+  
   if (is_empty(participant_code)) {
     participant_code <- "UNKNOWN"
   }
-
+  
   # ── Feedback ──────────────────────────────────────────────────────────────
   feedback_thema        <- ""
   feedback_mehr         <- ""
   feedback_organisation <- ""
   feedback_methodik     <- ""
-
+  
   if (!is.null(rv) && !is.null(rv$demo_data)) {
     feedback_thema        <- rv$demo_data$Feedback_Thema        %||% ""
     feedback_mehr         <- rv$demo_data$Feedback_Mehr         %||% ""
     feedback_organisation <- rv$demo_data$Feedback_Organisation %||% ""
     feedback_methodik     <- rv$demo_data$Feedback_Methodik     %||% ""
   }
-
+  
   # ── Build data frame ──────────────────────────────────────────────────────
   data <- data.frame(
     session_id            = session_id,
@@ -558,7 +583,7 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
     feedback_methodik     = feedback_methodik,
     stringsAsFactors = FALSE
   )
-
+  
   # ── Add item responses ────────────────────────────────────────────────────
   if (!is.null(responses) && length(responses) > 0) {
     if (length(responses) < 30) responses <- c(responses, rep(NA, 30 - length(responses)))
@@ -571,12 +596,12 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
       data[[paste0("Item_", sprintf("%02d", i))]] <- NA
     }
   }
-
+  
   data$response_scale <- "1=stimme \u00fcberhaupt nicht zu, 2=stimme nicht zu, 3=stimme eher nicht zu, 4=weder noch, 5=stimme eher zu, 6=stimme zu, 7=stimme voll und ganz zu"
-
+  
   # Save to cloud
   save_to_cloud(data, filename)
-
+  
   # Return thank you message
   return(shiny::HTML(paste0(
     '<div style="padding: 40px; text-align: center;">',
@@ -592,9 +617,9 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
 validate_page <- function(page_id, input, rv) {
   current_page_idx <- rv$current_page %||% 1
   current_page     <- rv$config$custom_page_flow[[current_page_idx]]
-
+  
   if (is.null(current_page)) return(list(valid = TRUE))
-
+  
   if (current_page$type == "custom" && isTRUE(current_page$required)) {
     if (page_id == "page2" || current_page$id == "page2") {
       code_value <- trimws(input$demo_Teilnahme_Code %||% "")
@@ -606,7 +631,7 @@ validate_page <- function(page_id, input, rv) {
       }
     }
   }
-
+  
   return(list(valid = TRUE))
 }
 # =============================================================================
@@ -617,29 +642,29 @@ study_config <- inrep::create_study_config(
   theme                  = "inrep",
   custom_page_flow       = custom_page_flow,
   demographics           = c("Teilnahme_Code", "Feedback_Thema", "Feedback_Mehr",
-                              "Feedback_Organisation", "Feedback_Methodik"),
+                             "Feedback_Organisation", "Feedback_Methodik"),
   demographic_configs    = demographic_configs,
   input_types            = input_types,
   results_processor      = create_uma_report,
   validation_function    = validate_page,
-
+  
   # Study flow settings
   adaptive               = FALSE,
   fixed_items            = 1:30,
   response_ui_type       = "radio",
   language               = "de",
-
+  
   # Data management settings
   log_data               = FALSE,
   session_save           = TRUE,
   cloud_storage          = FALSE,
-
+  
   # UI settings
   show_progress          = TRUE,
   progress_style         = "minimal",
   bilingual              = FALSE,
   enable_audio           = FALSE,
-
+  
   # Performance settings
   initialize_immediately = TRUE
 )
