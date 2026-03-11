@@ -5770,7 +5770,7 @@ launch_study <- function(
         # Save session to cloud if enabled
         if (config$session_save && !base::is.null(webdav_url)) {
           logger("Attempting to save session to cloud...")
-          save_session_to_cloud(rv, config, webdav_url, password)
+          save_session_to_cloud(rv, config, webdav_url, password, session = session)
         }
       } else {
         # ROBUST NEXT ITEM SELECTION WITH ERROR RECOVERY
@@ -5855,7 +5855,7 @@ launch_study <- function(
           # Save session to cloud if enabled
           if (config$session_save && !base::is.null(webdav_url)) {
             logger("Attempting to save session to cloud...")
-            save_session_to_cloud(rv, config, webdav_url, password)
+            save_session_to_cloud(rv, config, webdav_url, password, session = session)
           }
         } else {
           rv$start_time <- base::Sys.time()

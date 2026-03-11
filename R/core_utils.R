@@ -571,6 +571,8 @@ validate_session <- function(rv, config, webdav_url = NULL, password = NULL) {
 #'   cloud saving is skipped.
 #' @param password Character string containing password for WebDAV authentication.
 #'   If \code{NULL}, attempts anonymous access.
+#' @param session Optional Shiny session object. When provided, upload success or
+#'   failure will be shown to the user via \code{shiny::showNotification()}.
 #'
 #' @details
 #' The function writes the JSON payload to a temporary file and uploads that
@@ -654,9 +656,20 @@ validate_session <- function(rv, config, webdav_url = NULL, password = NULL) {
 #' RFC 2518. Internet Engineering Task Force.
 #'
 #' @export
-save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL) {
+save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL, session = NULL) {
+  # Helper to notify user in Shiny UI (if session is available)
+  notify_user <- function(msg, type = "error") {
+    if (!is.null(session) && inherits(session, "ShinySession")) {
+      tryCatch(
+        shiny::showNotification(msg, type = type, duration = if (type == "error") 10 else 5),
+        error = function(e) NULL
+      )
+    }
+  }
+
   if (!requireNamespace("httr", quietly = TRUE) || !requireNamespace("jsonlite", quietly = TRUE)) {
     message("Required packages 'httr' and 'jsonlite' are not installed")
+    notify_user("Cloud upload failed: required packages 'httr' and 'jsonlite' are not installed.")
     return(FALSE)
   }
   
@@ -664,6 +677,9 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
     message("No WebDAV URL provided, skipping cloud save")
     return(FALSE)
   }
+
+  # Store filename for notification messages
+  upload_filename <- NULL
   
   temp_file <- NULL
   tryCatch({
@@ -743,6 +759,10 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
     # Detailed error reporting
     if (httr::status_code(response) %in% c(200, 201, 204)) {
       message(sprintf("Session data successfully uploaded to %s as %s", webdav_url, filename))
+      notify_user(
+        paste0("\u2713 Data successfully uploaded to cloud! (File: ", filename, ")"),
+        type = "message"
+      )
       return(TRUE)
     } else {
       status_code <- httr::status_code(response)
@@ -751,7 +771,7 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
       # Provide specific error messages based on status code
       error_msg <- switch(as.character(status_code),
         "401" = "Authentication failed - check share token and password",
-        "403" = "Access forbidden - check share permissions",
+        "403" = "Access forbidden - check share permissions (upload not allowed)",
         "404" = "URL not found - check WebDAV URL format",
         "405" = "Method not allowed - server doesn't support PUT",
         "409" = "Conflict - file may already exist",
@@ -762,6 +782,10 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
       )
       
       message(sprintf("Error details: %s", error_msg))
+      notify_user(
+        paste0("\u2717 Cloud upload FAILED (HTTP ", status_code, "): ", error_msg),
+        type = "error"
+      )
       
       # Try to get response body for more details
       tryCatch({
@@ -777,6 +801,10 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
     }
   }, error = function(e) {
     message(sprintf("Error saving session to cloud: %s", e$message))
+    notify_user(
+      paste0("\u2717 Cloud upload FAILED: ", e$message),
+      type = "error"
+    )
     return(FALSE)
   })
 
