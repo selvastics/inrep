@@ -21,9 +21,7 @@
 **inrep Studio** is a Shiny app for configuring surveys/assessments using a UI. It can generate *inrep* R code that you can run directly in R.
 Try it out: [inrep-studio](https://selvastics.shinyapps.io/inrep-studio/)
 
-
-![inrep demo](man\figures\prev2025-12-06_181825.png)
-
+![inrep demo](man/figures/prev2025-12-06_181825.png)
 
 **inrep** provides Shiny-based test administration, adaptive item selection, and reporting, with TAM integration for psychometric estimation. It supports adaptive and fixed questionnaires, session recovery, and export to common formats (CSV, JSON, SPSS, PDF). Themes and multilingual labels allow UI customization for different deployments.
 
