@@ -22,7 +22,7 @@
 Try it out: [inrep-studio](https://selvastics.shinyapps.io/inrep-studio/)
 
 
-![inrep demo](man/figures/prev2025-12-06%20181825.png)
+![inrep demo](man/figures/prev2025-12-06_20181825.png)
 
 
 **inrep** provides Shiny-based test administration, adaptive item selection, and reporting, with TAM integration for psychometric estimation. It supports adaptive and fixed questionnaires, session recovery, and export to common formats (CSV, JSON, SPSS, PDF). Themes and multilingual labels allow UI customization for different deployments.
