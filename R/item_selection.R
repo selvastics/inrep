@@ -227,7 +227,6 @@ select_next_item <- function(rv, item_bank, config) {
       rv$administered <- integer(0)
       rv$responses <- list()
       rv$current_ability <- config$theta_prior[1] %||% 0
-      rv$item_info_cache <- list()
       rv$item_counter <- 0
       rv$session_start <- Sys.time()
     }
@@ -358,28 +357,6 @@ select_next_item <- function(rv, item_bank, config) {
     return(NULL)
   }
   
-  # Fast item information computation with optimized caching
-  item_info <- function(theta, item_idx) {
-    if (!isTRUE(config$cache_enabled)) return(compute_item_info(theta, item_idx, item_bank, config))
-    
-    # Use rounded theta for better cache hit rates
-    theta_rounded <- round(theta, 2)
-    cache_key <- paste(theta_rounded, item_idx, sep = ":")
-    
-    if (!is.null(rv$item_info_cache[[cache_key]])) {
-      return(rv$item_info_cache[[cache_key]])
-    }
-    
-    info <- compute_item_info(theta, item_idx, item_bank, config)
-    rv$item_info_cache[[cache_key]] <- if (is.finite(info)) info else 0
-    return(info)
-  }
-  
-  compute_item_info <- function(theta, item_idx, item_bank, config) {
-    # Delegate to the canonical implementation in parallel_utils.R
-    compute_item_info_single(theta, item_idx, item_bank, config)
-  }
-  
   group_weights <- if (!is.null(config$item_groups)) {
     group_counts <- table(sapply(rv$administered, function(i) {
       for (g in names(config$item_groups)) if (i %in% config$item_groups[[g]]) return(g)
@@ -389,121 +366,19 @@ select_next_item <- function(rv, item_bank, config) {
     setNames(weights[names(config$item_groups)] %||% 1, names(config$item_groups))
   } else rep(1, length(available))
   
-  # Capture current ability safely to avoid reactive access in parallel workers
-  current_theta <- tryCatch(rv$current_ability, error = function(e) config$theta_prior[1] %||% 0)
-  if (requireNamespace("shiny", quietly = TRUE)) {
-    current_theta <- base::tryCatch(shiny::isolate(rv$current_ability), error = function(e) current_theta)
-  }
+  # Current ability estimate
+  current_theta <- rv$current_ability %||% config$theta_prior[1] %||% 0
   if (!is.numeric(current_theta) || !is.finite(current_theta)) {
     current_theta <- config$theta_prior[1] %||% 0
   }
   
-  # Fast pre-computation for common theta values (warm-up cache)
-  if (isTRUE(config$cache_enabled) && length(available) > 5) {
-    # Pre-compute information for nearby theta values to improve cache hits
-    theta_values <- c(current_theta, current_theta + 0.1, current_theta - 0.1, 
-                     current_theta + 0.2, current_theta - 0.2)
-    theta_values <- round(theta_values, 2)
-    
-    for (theta_val in theta_values) {
-      if (is.finite(theta_val)) {
-        for (item_idx in available[1:min(5, length(available))]) {  # Pre-compute for first 5 items
-          cache_key <- paste(theta_val, item_idx, sep = ":")
-          if (is.null(rv$item_info_cache[[cache_key]])) {
-            info_val <- compute_item_info(theta_val, item_idx, item_bank, config)
-            rv$item_info_cache[[cache_key]] <- if (is.finite(info_val)) info_val else 0
-          }
-        }
-      }
-    }
-  }
-  
-  # Enhanced parallel caching for multiple items
-  if (isTRUE(config$cache_enabled) && isTRUE(config$parallel_computation) && length(available) > 10) {
-    # Pre-compute and cache information for multiple items in parallel
-    parallel_env <- initialize_parallel_env(config, "item_selection")
-    
-    tryCatch({
-      # Check which items need computation
-      cache_keys <- paste(round(current_theta, 2), available, sep = ":")
-      uncached_items <- available[!sapply(cache_keys, function(key) !is.null(rv$item_info_cache[[key]]))]
-      
-      if (length(uncached_items) > 5) {  # Only parallelize if enough items
-        # Parallel computation for uncached items
-        if (parallel_env$method == "future") {
-          future.apply::future_vapply(uncached_items, function(i) {
-            info_val <- compute_item_info(current_theta, i, item_bank, config)
-            cache_key <- paste(round(current_theta, 2), i, sep = ":")
-            rv$item_info_cache[[cache_key]] <<- if (is.finite(info_val)) info_val else 0
-            return(info_val)
-          }, numeric(1), future.seed = TRUE)
-        } else if (parallel_env$method == "parallel") {
-          parallel::clusterExport(parallel_env$cluster, 
-                                c("current_theta", "item_bank", "config", "compute_item_info"), 
-                                envir = environment())
-          parallel::parSapply(parallel_env$cluster, uncached_items, function(i) {
-            info_val <- compute_item_info(current_theta, i, item_bank, config)
-            cache_key <- paste(round(current_theta, 2), i, sep = ":")
-            rv$item_info_cache[[cache_key]] <<- if (is.finite(info_val)) info_val else 0
-            return(info_val)
-          })
-        }
-      }
-    }, finally = {
-      parallel_env$cleanup()
-    })
-  }
-  
-  # Compute item information
-  if (isTRUE(config$parallel_computation)) {
-    if (!requireNamespace("parallel", quietly = TRUE)) {
-      message("Parallel package not available, falling back to sequential computation")
-      info <- vapply(available, function(i) item_info(current_theta, i), numeric(1))
-    } else {
-      # Enhanced parallel processing with better resource management
-      cores <- base::tryCatch(parallel::detectCores(), error = function(e) 2)
-      n_workers <- max(1, min(cores - 1, min(4, length(available))))  # Limit workers based on available items
-      
-      # Use future package if available for better parallel processing
-      if (requireNamespace("future", quietly = TRUE) && requireNamespace("future.apply", quietly = TRUE)) {
-        # Set up future plan for parallel processing
-        old_plan <- future::plan()
-        future::plan(future::multisession, workers = n_workers)
-        on.exit(future::plan(old_plan), add = TRUE)
-        
-        # Parallel computation using future.apply
-        info <- future.apply::future_vapply(available, function(i) {
-          compute_item_info(current_theta, i, item_bank, config)
-        }, numeric(1), future.seed = TRUE)
-        
-      } else {
-        # Fallback to base parallel processing
-        cl <- parallel::makeCluster(n_workers, type = "PSOCK")
-        on.exit(parallel::stopCluster(cl), add = TRUE)
-        
-        # Export necessary functions and data to workers
-        parallel::clusterExport(cl, c("item_bank", "config", "compute_item_info", "current_theta"), envir = environment())
-        parallel::clusterEvalQ(cl, {
-          # Load required packages on workers
-          if (requireNamespace("TAM", quietly = TRUE)) library(TAM)
-        })
-        
-        info <- parallel::parSapply(cl, available, function(i) {
-          compute_item_info(current_theta, i, item_bank, config)
-        })
-      }
-      
-      # Update cache with parallel results
-      if (isTRUE(config$cache_enabled)) {
-        for (idx in seq_along(available)) {
-          cache_key <- base::paste(current_theta, available[idx], sep = ":")
-          rv$item_info_cache[[cache_key]] <- if (is.finite(info[idx])) info[idx] else 0
-        }
-      }
-    }
-  } else {
-    info <- vapply(available, function(i) item_info(current_theta, i), numeric(1))
-  }
+  # Compute item information for all available items
+  # Direct vapply — compute_item_info_single runs in <0.05ms per item,
+
+  # so parallelization overhead far exceeds the computation itself
+  info <- vapply(available, function(i) {
+    compute_item_info_single(current_theta, i, item_bank, config)
+  }, numeric(1))
   
   # Handle invalid information values
   if (length(info) == 0 || all(is.na(info) | info <= 0)) {
@@ -623,15 +498,21 @@ fast_select_next_item <- function(rv, item_bank, config, max_compute = 15) {
   available <- setdiff(seq_len(nrow(item_bank)), rv$administered)
   if (length(available) == 0) return(NULL)
   
-  # For very small item banks, use regular selection
-  if (length(available) <= 5) {
-    return(select_next_item(rv, item_bank, config))
+  # Pre-adaptive phase: random selection before enough responses for stable estimation
+  n_administered <- length(rv$administered)
+  adaptive_start <- config$adaptive_start %||% config$min_items %||% 5
+  if (isTRUE(config$adaptive) && n_administered < adaptive_start) {
+    item <- sample(available, 1)
+    message(sprintf("Selected random item %d (pre-adaptive phase, %d/%d)", item, n_administered + 1, adaptive_start))
+    return(item)
   }
+  
+  # For very small remaining pools, pick the best from all of them
+  if (length(available) <= 5) max_compute <- length(available)
   
   # Fast sampling strategy
   if (length(available) > max_compute) {
-    # Sample a subset for faster computation
-    available <- sample(available, min(max_compute, length(available)))
+    available <- sample(available, max_compute)
   }
   
   # Get current ability
