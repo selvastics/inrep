@@ -45,6 +45,10 @@ docs/pkgdown/
 # Allow docs folder for enhancement documentation
 # docs/
 
+# IDE / CI folders (not part of the R package)
+.github/
+.vscode/
+
 # translation temp files
 po/*~
 

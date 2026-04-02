@@ -4,7 +4,13 @@
 \alias{save_session_to_cloud}
 \title{Save Assessment Session Data to WebDAV}
 \usage{
-save_session_to_cloud(rv, config, webdav_url = NULL, password = NULL)
+save_session_to_cloud(
+  rv,
+  config,
+  webdav_url = NULL,
+  password = NULL,
+  session = NULL
+)
 }
 \arguments{
 \item{rv}{A reactive values object containing session data, typically from
@@ -19,6 +25,9 @@ cloud saving is skipped.}
 
 \item{password}{Character string containing password for WebDAV authentication.
 If \code{NULL}, attempts anonymous access.}
+
+\item{session}{Optional Shiny session object. When provided, upload success or
+failure will be shown to the user via \code{shiny::showNotification()}.}
 }
 \value{
 Logical value indicating upload success:

@@ -2,7 +2,7 @@
 % Please edit documentation in R/llm_assistance.R
 \name{generate_llm_prompt}
 \alias{generate_llm_prompt}
-\title{Generate Customization Prompt}
+\title{Generate Customization Prompt (Deprecated)}
 \usage{
 generate_llm_prompt(config = NULL, focus = "general", item_bank = NULL)
 }
@@ -18,8 +18,12 @@ If NULL, generates general context.}
 Invisibly returns prompt text.
 }
 \description{
-Builds a plain-text prompt that summarizes your current configuration and the relevant
-\code{inrep} concepts/parameters. Use it when asking for external review or code generation.
+\strong{Deprecated.} Use
+\href{https://selvastics.shinyapps.io/inrep-studio/}{inrep-studio} instead
+to configure studies interactively via a GUI.
+
+Builds a plain-text prompt that summarizes your current configuration and the
+relevant \code{inrep} concepts/parameters.
 }
 \details{
 This function prints the prompt to the console and invisibly returns it.
