@@ -776,6 +776,7 @@ create_study_config <- function(
       report_formats = report_formats,
       max_session_duration = max_session_duration,
       max_response_time = max_response_time,
+      fast_item_selection = fast_item_selection,
       cache_enabled = cache_enabled,
       parallel_computation = parallel_computation,
       feedback_enabled = feedback_enabled,
