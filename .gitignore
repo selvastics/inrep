@@ -48,7 +48,7 @@ docs/pkgdown/
 # IDE / CI folders (not part of the R package)
 .github/
 .vscode/
-
+.data-raw/
 # translation temp files
 po/*~
 
