@@ -1,7 +1,7 @@
 #' Robust Session Management for Sensitive Participant Data
 #' 
 #' This module provides robust session handling with automatic data preservation,
-#' keep-alive functionality, and comprehensive logging to ensure data integrity
+#' keep-alive functionality, and  logging to ensure data integrity
 #' during assessments.
 
 # Global session state
@@ -164,7 +164,7 @@ cleanup_session_data <- function(session_id) {
 #' @param max_session_time Maximum session time in seconds (default: 7200 = 2 hours)
 #' @param data_preservation_interval Interval for automatic data preservation in seconds
 #' @param keep_alive_interval Keep-alive ping interval in seconds
-#' @param enable_logging Whether to enable comprehensive logging
+#' @param enable_logging Whether to enable  logging
 #' @return List with session configuration
 initialize_robust_session <- function(
   max_session_time = 7200,

@@ -896,7 +896,7 @@ generate_theme_css <- function(theme_name = "light") {
 
 #' Get Theme CSS
 #'
-#' Loads theme CSS from file system with comprehensive support
+#' Loads theme CSS from file system
 #'
 #' @param theme Theme name or configuration
 #' @param custom_css Additional custom CSS

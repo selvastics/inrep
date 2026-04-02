@@ -411,7 +411,7 @@ research_config <- create_study_config(
   criteria = "MI",  # Maximum Information selection
   theta_prior = c(0, 1.2),  # Slightly wider prior for diverse population
   
-  # Comprehensive demographics
+  #  demographics
   demographics = c("Age", "Gender", "Education", "Native_Language", "Country"),
   input_types = list(
     Age = "numeric",

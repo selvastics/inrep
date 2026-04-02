@@ -30,7 +30,7 @@ Based on resilience and coping research literature, adapted for German-speaking 
 NOTE: Items properties are not yet calibrated for accurate measurement in adaptive testing contexts.
 }
 \description{
-Comprehensive item banks for resilience and coping assessments in German language.
+item banks for resilience and coping assessments in German language.
 Contains multiple versions of RCQ items for different assessment needs, all calibrated
 for use with Item Response Theory (IRT) models, particularly the Graded Response Model (GRM).
 }

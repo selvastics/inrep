@@ -12,7 +12,7 @@ Must contain assessment parameters including model specifications, stopping crit
 and optional demographic requirements.}
 }
 \value{
-A comprehensive list containing initialized reactive values:
+A  list containing initialized reactive values:
 \describe{
   \item{\code{stage}}{Current assessment stage ("demographics", "assessment", "complete")}
   \item{\code{demographics}}{Named list for demographic data collection (if specified)}

@@ -302,7 +302,7 @@ custom_page_flow <- list(
     )
 )
 
-# Create the comprehensive study configuration
+# Create the  study configuration
 research_config <- create_study_config(
     name = "University Research Study",
     theme = "Professional",
@@ -343,7 +343,7 @@ This example demonstrates how to create an educational assessment with automatic
 # EDUCATIONAL ASSESSMENT WITH AUTOMATIC SCORING
 # =============================================================================
 
-# Define comprehensive demographics for students
+# Define  demographics for students
 student_demographics <- list(
     Student_ID = list(
         question = "Student ID",

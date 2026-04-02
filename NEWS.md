@@ -2,16 +2,6 @@
 
 ## Bug fixes
 
-- Fixed sign error in Samejima GRM boundary probability formula across three
-  independent locations (`parallel_utils.R`, `item_selection.R`,
-  `core_utils.R`). The old formula used `exp(a*(theta - b))` instead of
-  `exp(-a*(theta - b))`, producing negative middle-category probabilities and
-  effectively zeroing out GRM item information in adaptive selection.
-
-- Replaced incorrect GRM information approximation `a^2 * sum(P*(1-P))` with
-  the correct Samejima formula `sum(dP^2 / P)` using boundary-curve
-  derivatives.
-
 - `fast_select_next_item()` previously used the 2PL formula for all models
   including GRM; now delegates to `compute_item_info_single()`.
 
@@ -23,6 +13,16 @@
 - Replaced em dashes (non-ASCII) in `platform_deployment.R` with `--`.
 
 - Added `rsconnect` to `Suggests` to resolve undeclared import warning.
+
+- Fixed sign error in Samejima GRM boundary probability formula across three
+  independent locations (`parallel_utils.R`, `item_selection.R`,
+  `core_utils.R`). The old formula used `exp(a*(theta - b))` instead of
+  `exp(-a*(theta - b))`, producing negative middle-category probabilities and
+  effectively zeroing out GRM item information in adaptive selection.
+
+- Replaced incorrect GRM information approximation `a^2 * sum(P*(1-P))` with
+  the correct Samejima formula `sum(dP^2 / P)` using boundary-curve
+  derivatives.
 
 ## Breaking / deprecation
 

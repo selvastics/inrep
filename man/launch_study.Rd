@@ -154,7 +154,7 @@ that orchestrates TAM's capabilities within an interactive research workflow:
   \item Interactive web interface powered by Shiny (Chang et al., 2021)
   \item Real-time data collection and session management
   \item Bidirectional interface between user interactions and TAM computations
-  \item Workflow orchestration with comprehensive logging via \code{logr} package
+  \item Workflow orchestration with logging via \code{logr} package
   \item Result export in multiple formats with cloud storage integration
 }
 

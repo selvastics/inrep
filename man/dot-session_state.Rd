@@ -12,7 +12,7 @@ An object of class \code{environment} of length 7.
 }
 \description{
 This module provides robust session handling with automatic data preservation,
-keep-alive functionality, and comprehensive logging to ensure data integrity
+keep-alive functionality, and  logging to ensure data integrity
 during assessments.
 }
 \keyword{datasets}

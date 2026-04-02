@@ -130,7 +130,7 @@ selection using ability estimates and item information calculations from TAM:
 \itemize{
   \item Validates item availability and constraints
   \item Handles edge cases (no available items, timeout)
-  \item Provides comprehensive logging of selection decisions
+  \item Logs selection decisions
   \item Implements graceful degradation for unusual scenarios
 }
 

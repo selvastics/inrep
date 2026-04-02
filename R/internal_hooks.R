@@ -86,7 +86,7 @@ log_action <- function(action_type, data = NULL, page_id = NULL, session = NULL)
   invisible(TRUE)
 }
 
-initialize_comprehensive_dataset <- function(config, item_bank, study_key, session = NULL) {
+initialize_session_dataset <- function(config, item_bank, study_key, session = NULL) {
   if (is.null(session) && shiny::isRunning()) {
     session <- shiny::getDefaultReactiveDomain()
   }
@@ -114,21 +114,21 @@ initialize_comprehensive_dataset <- function(config, item_bank, study_key, sessi
     n_items = if (!is.null(item_bank)) nrow(item_bank) else NA_integer_
   )
 
-  session$userData$comprehensive_dataset <- dataset
+  session$userData$session_dataset <- dataset
   dataset
 }
 
-get_comprehensive_dataset <- function(session = NULL) {
+get_session_dataset <- function(session = NULL) {
   if (is.null(session) && shiny::isRunning()) {
     session <- shiny::getDefaultReactiveDomain()
   }
   if (is.null(session) || is.null(session$userData)) {
     return(NULL)
   }
-  session$userData$comprehensive_dataset %||% NULL
+  session$userData$session_dataset %||% NULL
 }
 
-update_comprehensive_dataset <- function(section, data, page_id = NULL, stage = NULL, current_page = NULL, session = NULL) {
+update_session_dataset <- function(section, data, page_id = NULL, stage = NULL, current_page = NULL, session = NULL) {
   if (is.null(session) && shiny::isRunning()) {
     session <- shiny::getDefaultReactiveDomain()
   }
@@ -136,7 +136,7 @@ update_comprehensive_dataset <- function(section, data, page_id = NULL, stage = 
     return(invisible(FALSE))
   }
 
-  ds <- session$userData$comprehensive_dataset %||% NULL
+  ds <- session$userData$session_dataset %||% NULL
   if (is.null(ds)) {
     ds <- data.frame(
       section = character(0),
@@ -175,7 +175,7 @@ update_comprehensive_dataset <- function(section, data, page_id = NULL, stage = 
   )
 
   attr(ds, "meta") <- meta
-  session$userData$comprehensive_dataset <- ds
+  session$userData$session_dataset <- ds
   invisible(TRUE)
 }
 

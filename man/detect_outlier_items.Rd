@@ -23,7 +23,7 @@ This function flags items with low discrimination parameters or problematic thre
 ordering that could affect TAM-based ability estimation and adaptive testing performance.
 }
 \details{
-This function performs comprehensive quality assessment of item banks:
+This function checks item banks for potential issues:
 
 \strong{Detection Criteria:}
 \itemize{
@@ -74,7 +74,7 @@ cat("Removed:", nrow(bfi_items) - nrow(clean_items), "items\n")
 }
 \seealso{
 \itemize{
-  \item \code{\link{validate_item_bank}} for comprehensive validation
+  \item \code{\link{validate_item_bank}} for structural validation
   \item \code{\link{simulate_item_bank}} for performance testing
   \item \code{bfi_items} for example item bank (use \code{data(bfi_items)})
 }

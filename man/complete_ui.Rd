@@ -32,7 +32,7 @@ Complete Shiny UI object
 \description{
 Ultimate single function that handles all UI aspects for adaptive testing.
 Includes themes, accessibility, responsive design, demographics, assessment items,
-progress tracking, and complete study flow in one comprehensive function.
+progress tracking, and complete study flow in one function.
 }
 \examples{
 \dontrun{

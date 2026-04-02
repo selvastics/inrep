@@ -1,7 +1,7 @@
 #' RCQ Items Data - Resilience and Coping Questionnaire Item Banks
 #'
 #' @description
-#' Comprehensive item banks for resilience and coping assessments in German language.
+#'  item banks for resilience and coping assessments in German language.
 #' Contains multiple versions of RCQ items for different assessment needs, all calibrated
 #' for use with Item Response Theory (IRT) models, particularly the Graded Response Model (GRM).
 #'

@@ -11,7 +11,7 @@ resume_session(file_path)
 The file may also contain base64-encoded JSON for legacy backups.}
 }
 \value{
-A comprehensive list containing restored session data, or \code{NULL} if restoration fails:
+A  list containing restored session data, or \code{NULL} if restoration fails:
 \describe{
   \item{\code{study_key}}{Original study identifier}
   \item{\code{timestamp}}{Original session timestamp}

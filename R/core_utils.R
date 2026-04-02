@@ -314,7 +314,7 @@ NULL
 #' container (typically a Shiny \code{reactiveValues()} instance) and updates
 #' fields as the session progresses.
 #'
-#' @return A comprehensive list containing initialized reactive values:
+#' @return A  list containing initialized reactive values:
 #' \describe{
 #'   \item{\code{stage}}{Current assessment stage ("demographics", "assessment", "complete")}
 #'   \item{\code{demographics}}{Named list for demographic data collection (if specified)}
@@ -799,7 +799,7 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
 #' back to base64-decoding the file contents (requires the \code{base64enc}
 #' package) and parsing the decoded text as JSON.
 #'
-#' @return A comprehensive list containing restored session data, or \code{NULL} if restoration fails:
+#' @return A  list containing restored session data, or \code{NULL} if restoration fails:
 #' \describe{
 #'   \item{\code{study_key}}{Original study identifier}
 #'   \item{\code{timestamp}}{Original session timestamp}

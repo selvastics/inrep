@@ -129,7 +129,7 @@ validate_item_bank <- function(item_bank, model = "GRM") {
 #' @export
 #' 
 #' @details
-#' This function performs comprehensive quality assessment of item banks:
+#' This function checks item banks for potential issues:
 #' 
 #' \strong{Detection Criteria:}
 #' \itemize{
@@ -179,7 +179,7 @@ validate_item_bank <- function(item_bank, model = "GRM") {
 #' 
 #' @seealso
 #' \itemize{
-#'   \item \code{\link{validate_item_bank}} for comprehensive validation
+#'   \item \code{\link{validate_item_bank}} for structural validation
 #'   \item \code{\link{simulate_item_bank}} for performance testing
 #'   \item \code{bfi_items} for example item bank (use \code{data(bfi_items)})
 #' }
@@ -196,9 +196,8 @@ detect_outlier_items <- function(item_bank, discrimination_threshold = 0.2) {
 #' Simulate Adaptive Testing Performance on Item Bank
 #'
 #' @description
-#' Runs comprehensive simulation to validate item bank performance and assess the quality
-#' of adaptive testing algorithms. This function generates realistic assessment scenarios
-#' to evaluate item bank effectiveness and identify potential issues before deployment.
+#' Simulates adaptive test administration to assess item bank quality
+#' and identify potential issues before deployment.
 #'
 #' @param item_bank Data frame containing item parameters compatible with TAM.
 #'   Must include all required columns for the specified IRT model.
@@ -215,7 +214,7 @@ detect_outlier_items <- function(item_bank, discrimination_threshold = 0.2) {
 #' @export
 #' 
 #' @details
-#' This function provides comprehensive validation of item bank performance:
+#' Simulation process:
 #' 
 #' \strong{Simulation Process:}
 #' \itemize{

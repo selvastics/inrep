@@ -18,7 +18,7 @@ initialize_robust_session(
 
 \item{keep_alive_interval}{Keep-alive ping interval in seconds}
 
-\item{enable_logging}{Whether to enable comprehensive logging}
+\item{enable_logging}{Whether to enable  logging}
 }
 \value{
 List with session configuration

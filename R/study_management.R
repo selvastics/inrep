@@ -1010,7 +1010,7 @@ simulate_clinical_studies <- function() {
   # Scenario 2: Anxiety assessment with branching
   tryCatch({
     config2 <- create_study_config(
-      name = "Comprehensive Anxiety Assessment",
+      name = "Anxiety Assessment",
       model = "2PL",
       max_items = 50,
       min_items = 20,
@@ -1320,7 +1320,7 @@ simulate_extreme_studies <- function() {
 #' 
 #' Executes all simulation scenarios and identifies errors
 #' 
-#' @return Comprehensive results with error analysis
+#' @return Results list with error analysis
 #' @export
 run_all_simulations <- function() {
   all_results <- list()

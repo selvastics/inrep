@@ -2,7 +2,7 @@
 
 #' Generate PDF Report for inrep Studies
 #'
-#' Creates comprehensive PDF reports with images, charts, and detailed analysis
+#' Creates  PDF reports with images, charts, and detailed analysis
 #' for inrep study results.
 #'
 #' @param study_data List containing study results and participant data

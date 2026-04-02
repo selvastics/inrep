@@ -57,7 +57,7 @@ The demographics UI integrates with the main assessment workflow:
 
 \examples{
 \dontrun{
-# Comprehensive demographics collection
+# Demographics collection
 demographics <- c("Age", "Gender", "Education", "Experience")
 input_types <- list(
   Age = "numeric",
