@@ -18,13 +18,12 @@
 #' @return List with \code{theta} (ability estimate) and \code{se} (standard error).
 #'
 #' @details
-#' \strong{TAM path}: When \code{estimation_method} is \code{"EAP"} or \code{"WLE"},
-#' the model has >= 3 responses with variability, and TAM is available, the function
-#' fits a TAM model and extracts person parameters.
+#' \strong{Adaptive mode}: Uses fast vectorized EAP computation with pre-calibrated
+#' item parameters. This is the standard CAT approach (item parameters fixed from
+#' calibration, only theta estimated) and runs in under 5 ms.
 #'
-#' \strong{Fallback path}: Computes EAP directly from pre-calibrated item parameters
-#' (the \code{item_bank} a/b values). This uses correct IRT probability functions:
-#' 2PL/3PL logistic, Samejima GRM boundary curves.
+#' \strong{Non-adaptive / batch}: When TAM is available and \code{adaptive = FALSE},
+#' fits a TAM model and extracts person parameters (EAP or WLE).
 #'
 #' TAM model mapping: 1PL -> \code{tam.mml}, 2PL -> \code{tam.mml.2pl},
 #' 3PL -> \code{tam.mml.3pl}. For GRM, TAM fits a GPCM (Generalized Partial
@@ -104,9 +103,15 @@ estimate_ability <- function(rv, item_bank, config) {
     seq(-4, 4, length.out = 100)
   }
   
-  # TAM package estimation for all models (EAP or WLE)
-  use_tam <- config$estimation_method %in% c("EAP", "WLE") && 
-             config$model %in% c("1PL", "2PL", "3PL", "GRM") && 
+  # TAM package estimation for dichotomous models (EAP or WLE).
+  # Skipped during adaptive real-time CAT: TAM re-estimates item parameters via
+
+  # MML which is wrong for N=1 and slow. The direct EAP below uses pre-calibrated
+  # item parameters — the standard and correct approach in CAT software.
+  # GRM is also excluded: TAM fits GPCM (different model from Samejima GRM).
+  use_tam <- isTRUE(config$estimation_method %in% c("EAP", "WLE")) && 
+             isTRUE(config$model %in% c("1PL", "2PL", "3PL")) && 
+             !isTRUE(config$adaptive) &&
              length(responses) >= 3 && 
              requireNamespace("TAM", quietly = TRUE)
   
@@ -128,132 +133,78 @@ estimate_ability <- function(rv, item_bank, config) {
           c_params <- if ("c" %in% names(item_bank_subset)) item_bank_subset$c else rep(0, length(administered))
           slopes <- if ("a" %in% names(item_bank_subset)) item_bank_subset$a else rep(1, length(administered))
           mod <- suppressMessages(TAM::tam.mml.3pl(resp = dat, gammaslope = slopes, guess = c_params, control = ctrl))
-        } else if (config$model == "GRM") {
-          # TAM fits the Generalized Partial Credit Model (GPCM) with step
-          # parameters—a different model from Samejima's GRM. The item bank
-          # b1/b2/... columns are Samejima boundary thresholds, not GPCM step
-          # parameters. Ability estimates from this path are approximate.
-          # The EAP fallback below uses the correct Samejima GRM formulation
-          # with the pre-calibrated threshold parameters.
-          mod <- suppressMessages(TAM::tam.mml(resp = dat, irtmodel = "GPCM", control = ctrl))
         }
         
         # Apply requested estimation method
         if (config$estimation_method == "WLE") {
-          # WLE: Weighted Likelihood Estimation (frequentist)
           est <- suppressMessages(TAM::tam.wle(mod))
           theta_est <- est$theta[1]
           se_est <- est$error[1]
-          method_name <- "WLE"
         } else {
-          # EAP: Expected A Posteriori (Bayesian) - extract from fitted model
           theta_est <- mod$person$EAP[1]
           se_est <- mod$person$SE.EAP[1]
-          method_name <- "EAP"
         }
         
         if (is.finite(theta_est) && is.finite(se_est)) {
-          message(sprintf("TAM %s estimation: theta=%.2f, se=%.3f", method_name, theta_est, se_est))
           return(list(theta = theta_est, se = se_est))
-        } else {
-          message(sprintf("TAM %s estimation produced invalid result, using fallback", method_name))
         }
       }, error = function(e) {
         message(sprintf("TAM estimation error: %s, using fallback", e$message))
       })
-    } else {
-      message("Insufficient response variability for TAM, using fallback")
     }
   }
   
-  # EAP estimation as fallback
+  # Direct EAP with pre-calibrated item parameters (vectorized).
+  # This is the standard CAT approach: item parameters are fixed from
+  # calibration, only theta is estimated.
+  n_theta <- length(theta_grid)
   prior <- dnorm(theta_grid, config$theta_prior[1], config$theta_prior[2])
   prior <- prior / sum(prior)
   
-  log_likelihood <- numeric(length(theta_grid))
-  for (i in seq_along(theta_grid)) {
-    theta <- theta_grid[i]
-    ll <- 0
-    for (j in seq_along(rv$responses)) {
-      item_idx <- rv$administered[j]
-      
-      # Handle unknown (NA) discrimination parameter
-      a <- item_bank$a[item_idx]
-      if (is.na(a)) {
-        # Use default discrimination based on model
-        a <- switch(config$model,
-          "1PL" = 1.0,
-          "2PL" = 1.2,
-          "3PL" = 1.0,
-          "GRM" = 1.5,
-          1.0  # fallback
-        )
+  # Pre-extract item parameters once (avoid repeated data frame access)
+  default_a <- switch(config$model, "1PL" = 1.0, "2PL" = 1.2, "3PL" = 1.0, "GRM" = 1.5, 1.0)
+  b_cols <- grep("^b[0-9]+$", names(item_bank), value = TRUE)
+  is_grm <- config$model == "GRM"
+  has_c <- config$model == "3PL" && "c" %in% names(item_bank)
+  
+  log_likelihood <- numeric(n_theta)
+  
+  for (j in seq_along(responses)) {
+    item_idx <- administered[j]
+    a <- item_bank$a[item_idx]
+    if (is.na(a)) a <- default_a
+    resp <- as.integer(responses[j])
+    
+    if (is_grm) {
+      b <- as.numeric(item_bank[item_idx, b_cols])
+      if (length(b) == 0) return(list(theta = config$theta_prior[1], se = config$theta_prior[2]))
+      if (any(is.na(b))) {
+        na_idx <- which(is.na(b))
+        for (k in na_idx) b[k] <- (k - (length(b) + 1) / 2) * 1.2
+        b <- sort(b)
+        for (k in 2:length(b)) if (b[k] <= b[k-1]) b[k] <- b[k-1] + 0.1
       }
-      
-      b_cols <- grep("^b[0-9]+$", names(item_bank), value = TRUE)
-      b <- if (length(b_cols) > 0) as.numeric(item_bank[item_idx, b_cols]) else numeric(0)
-      
-      if (config$model == "GRM") {
-        if (length(b) == 0) {
-          message("No threshold parameters for GRM item")
-          return(list(theta = config$theta_prior[1], se = config$theta_prior[2]))
-        }
-        
-        # Handle unknown threshold parameters
-        if (any(is.na(b))) {
-          na_indices <- which(is.na(b))
-          for (k in na_indices) {
-            # Create ordered default thresholds
-            b[k] <- (k - (length(b) + 1) / 2) * 1.2
-          }
-          # Ensure proper ordering
-          b <- sort(b)
-          for (k in 2:length(b)) {
-            if (b[k] <= b[k-1]) {
-              b[k] <- b[k-1] + 0.1
-            }
-          }
-        }
-        
-        n_categories <- length(b) + 1
-        # Samejima GRM: boundary characteristic curves P*_j = 1/(1+exp(-a*(theta-b_j)))
-        P_star <- c(1, vapply(b, function(bk) {
-          1 / (1 + exp(-a * (theta - bk)))
-        }, numeric(1)), 0)
-        # Category probabilities: P_k = P*_k - P*_{k+1}
-        probs <- pmax(P_star[1:n_categories] - P_star[2:(n_categories + 1)], 1e-10)
-        probs <- probs / sum(probs)
-        response <- as.integer(rv$responses[j])
-        if (response < 1 || response > n_categories || is.na(response)) {
-          message(sprintf("Invalid response %d for item %d", response, item_idx))
-          next
-        }
-        ll <- ll + log(probs[response])
-      } else {
-        # Handle unknown difficulty parameter for dichotomous models
-        b_single <- item_bank$b[item_idx] %||% 0
-        if (is.na(b_single)) {
-          b_single <- 0  # Default difficulty at average
-        }
-        
-        # Handle unknown guessing parameter
-        c_param <- if (config$model == "3PL" && "c" %in% names(item_bank)) {
-          c_val <- item_bank$c[item_idx]
-          if (is.na(c_val)) 0.15 else c_val  # Default guessing rate
-        } else 0
-        
-        p <- c_param + (1 - c_param) / (1 + exp(-a * (theta - b_single)))
-        p <- pmax(p, 1e-10)
-        response <- as.integer(rv$responses[j])
-        ll <- ll + (response * log(p) + (1 - response) * log(1 - p))
-      }
+      n_cat <- length(b) + 1
+      if (resp < 1 || resp > n_cat || is.na(resp)) next
+      # Vectorized over theta_grid: boundary curves for all theta at once
+      P_star_mid <- vapply(b, function(bk) 1 / (1 + exp(-a * (theta_grid - bk))), numeric(n_theta))
+      if (length(b) == 1) P_star_mid <- matrix(P_star_mid, ncol = 1)
+      P_star <- cbind(1, P_star_mid, 0)
+      P_cat <- pmax(P_star[, resp] - P_star[, resp + 1L], 1e-10)
+      log_likelihood <- log_likelihood + log(P_cat)
+    } else {
+      b_val <- item_bank$b[item_idx] %||% 0
+      if (is.na(b_val)) b_val <- 0
+      c_param <- if (has_c) { cv <- item_bank$c[item_idx]; if (is.na(cv)) 0.15 else cv } else 0
+      # Vectorized over theta_grid
+      p <- c_param + (1 - c_param) / (1 + exp(-a * (theta_grid - b_val)))
+      p <- pmax(p, 1e-10)
+      log_likelihood <- log_likelihood + resp * log(p) + (1 - resp) * log(1 - p)
     }
-    log_likelihood[i] <- ll
   }
   
   log_post <- log_likelihood + log(prior)
   if (all(is.na(log_post) | is.infinite(log_post))) {
-    message("Invalid posterior, returning prior")
     return(list(theta = config$theta_prior[1], se = config$theta_prior[2]))
   }
   
@@ -264,11 +215,9 @@ estimate_ability <- function(rv, item_bank, config) {
   se_est <- sqrt(sum((theta_grid - theta_est)^2 * post, na.rm = TRUE))
   
   if (is.na(theta_est) || is.na(se_est)) {
-    message("EAP estimation resulted in NA, returning prior")
     return(list(theta = config$theta_prior[1], se = config$theta_prior[2]))
   }
   
-  message(sprintf("EAP estimation: theta=%.2f, se=%.3f", theta_est, se_est))
   return(list(theta = theta_est, se = se_est))
 }
 

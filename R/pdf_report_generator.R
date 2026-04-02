@@ -435,23 +435,20 @@ extract_anxiety_scores <- function(study_data) {
 }
 
 generate_recommendations <- function(study_data, is_english) {
-  recommendations <- c()
-  
-  # Add general recommendations based on data
+  # Placeholder — replace with study-specific recommendations
   if (is_english) {
-    recommendations <- c(recommendations,
-      "- Continue developing your skills in areas of interest",
-      "- Consider seeking additional support in areas where you feel less confident",
-      "- Regular practice and feedback can help improve performance"
+    recommendations <- c(
+      "- Recommendation 1",
+      "- Recommendation 2",
+      "- Recommendation 3"
     )
   } else {
-    recommendations <- c(recommendations,
-      "- Entwickeln Sie weiterhin Ihre F\u00E4higkeiten in Bereichen von Interesse",
-      "- Erw\u00E4gen Sie zus\u00E4tzliche Unterst\u00FCtzung in Bereichen, in denen Sie sich weniger sicher f\u00FChlen",
-      "- Regelm\u00E4\u00DFige \u00DCbung und Feedback k\u00F6nnen die Leistung verbessern"
+    recommendations <- c(
+      "- Empfehlung 1",
+      "- Empfehlung 2",
+      "- Empfehlung 3"
     )
   }
-  
   return(paste(recommendations, collapse = "\n"))
 }
 

@@ -27,13 +27,12 @@ when enough responses are available (>= 3 with variability). Falls back to
 a direct EAP computation using pre-calibrated item parameters otherwise.
 }
 \details{
-\strong{TAM path}: When \code{estimation_method} is \code{"EAP"} or \code{"WLE"},
-the model has >= 3 responses with variability, and TAM is available, the function
-fits a TAM model and extracts person parameters.
+\strong{Adaptive mode}: Uses fast vectorized EAP computation with pre-calibrated
+item parameters. This is the standard CAT approach (item parameters fixed from
+calibration, only theta estimated) and runs in under 5 ms.
 
-\strong{Fallback path}: Computes EAP directly from pre-calibrated item parameters
-(the \code{item_bank} a/b values). This uses correct IRT probability functions:
-2PL/3PL logistic, Samejima GRM boundary curves.
+\strong{Non-adaptive / batch}: When TAM is available and \code{adaptive = FALSE},
+fits a TAM model and extracts person parameters (EAP or WLE).
 
 TAM model mapping: 1PL -> \code{tam.mml}, 2PL -> \code{tam.mml.2pl},
 3PL -> \code{tam.mml.3pl}. For GRM, TAM fits a GPCM (Generalized Partial

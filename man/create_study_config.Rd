@@ -128,8 +128,9 @@ Options: \code{"text"}, \code{"numeric"}, \code{"select"}, \code{"radio"}, \code
 \item{scoring_fun}{Function to score item responses, or \code{NULL} for default scoring.
 Should accept response and correct answer, return numeric score.}
 
-\item{adaptive_start}{Integer item number to begin adaptive selection, or \code{NULL} 
-for immediate adaptive selection. Allows fixed item administration initially.}
+\item{adaptive_start}{Integer item number at which adaptive (Fisher-information)
+selection begins. Items before this threshold are selected randomly for warm-up.
+Defaults to \code{min_items} (typically 3--5). Set to 1 for immediate adaptive selection.}
 
 \item{fixed_items}{Integer vector of item indices that must be administered, 
 or \code{NULL} for no fixed items. Useful for anchor items or content requirements.}
@@ -437,13 +438,14 @@ research_config <- create_study_config(
     ability_level <- cut(theta, breaks = c(-Inf, -0.5, 0.5, Inf), 
                         labels = c("Developing", "Proficient", "Advanced"))
     
+    # Replace placeholders with study-specific recommendations
     recommendations <- switch(ability_level,
-      "Developing" = c("Focus on foundational skills", 
-                      "Consider additional practice materials"),
-      "Proficient" = c("Continue current learning approach", 
-                      "Explore intermediate challenges"),
-      "Advanced" = c("Seek advanced coursework", 
-                    "Consider mentoring others")
+      "Developing" = c("Recommendation 1 (developing)",
+                      "Recommendation 2 (developing)"),
+      "Proficient" = c("Recommendation 1 (proficient)",
+                      "Recommendation 2 (proficient)"),
+      "Advanced" = c("Recommendation 1 (advanced)",
+                    "Recommendation 2 (advanced)")
     )
     
     return(recommendations)
