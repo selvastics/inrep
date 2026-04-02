@@ -48,7 +48,11 @@ docs/pkgdown/
 # IDE / CI folders (not part of the R package)
 .github/
 .vscode/
+
+# Raw data scripts (produce the /data/ artefacts; source not needed in package)
+/data-raw/
 .data-raw/
+
 # translation temp files
 po/*~
 
