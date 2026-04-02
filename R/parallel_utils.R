@@ -100,13 +100,26 @@ parallel_item_info <- function(theta, item_indices, item_bank, config, parallel_
 
 #' Single Item Information Computation
 #'
-#' Computes information for a single item (used in parallel processing).
+#' Computes Fisher information for a single item at a given ability level.
+#' This is the canonical implementation used by all item selection functions.
+#'
+#' Supports 1PL, 2PL, 3PL (dichotomous) and Samejima GRM (polytomous).
+#' GRM support is experimental: item selection uses Samejima boundary-curve
+#' formulas with pre-calibrated threshold parameters (b1, b2, ...), but TAM
+#' fits a GPCM (step parameters) internally, so there is a model mismatch
+#' for TAM-based ability estimation. 1PL/2PL/3PL are fully supported.
+#'
+#' For GRM, uses the Samejima information formula:
+#' \eqn{I(\theta) = \sum_k [P'_k(\theta)]^2 / P_k(\theta)},
+#' where \eqn{P_k} are category probabilities derived from boundary
+#' characteristic curves \eqn{P^*_j(\theta) = 1/(1+\exp(-a(\theta-b_j)))}.
 #'
 #' @param theta Ability estimate
-#' @param item_idx Item index
-#' @param item_bank Item bank data frame
-#' @param config Study configuration
-#' @return Information value
+#' @param item_idx Item index (row number in item_bank)
+#' @param item_bank Data frame containing item parameters (a, b for 2PL; a, b, c
+#'   for 3PL; a, b1, b2, ... for GRM)
+#' @param config Study configuration with \code{$model} element
+#' @return Numeric information value (non-negative)
 #' @export
 compute_item_info_single <- function(theta, item_idx, item_bank, config) {
   # Handle unknown (NA) discrimination parameter
@@ -161,18 +174,26 @@ compute_item_info_single <- function(theta, item_idx, item_bank, config) {
     q <- 1 - p
     (a^2 * (p - c_param)^2 * q) / (p * (1 - c_param)^2)
   } else if (config$model == "GRM") {
-    n_categories <- length(b_thresholds) + 1
-    if (n_categories < 2) {
+    # Samejima Graded Response Model information
+    # Reference: Samejima, F. (1969). Estimation of latent ability using a
+    # response pattern of graded scores. Psychometrika Monograph Supplement, 17.
+    n_cat <- length(b_thresholds) + 1
+    if (n_cat < 2) {
       return(0)
     }
-    probs <- numeric(n_categories)
-    probs[1] <- 1 / (1 + exp(a * (theta - b_thresholds[1])))
-    for (k in 2:(n_categories - 1)) {
-      probs[k] <- 1 / (1 + exp(a * (theta - b_thresholds[k - 1]))) -
-        1 / (1 + exp(a * (theta - b_thresholds[k])))
-    }
-    probs[n_categories] <- 1 - 1 / (1 + exp(a * (theta - b_thresholds[n_categories - 1])))
-    a^2 * sum(probs * (1 - probs), na.rm = TRUE)
+    # Boundary characteristic curves: P*_j(theta) = 1/(1+exp(-a*(theta-b_j)))
+    # with P*_0 = 1 and P*_{K+1} = 0
+    P_star <- c(1, vapply(b_thresholds, function(bk) {
+      1 / (1 + exp(-a * (theta - bk)))
+    }, numeric(1)), 0)
+    # Category probabilities: P_k = P*_k - P*_{k+1}
+    P_cat <- pmax(P_star[1:n_cat] - P_star[2:(n_cat + 1)], 1e-10)
+    # Derivatives of boundary curves: dP*_j/dtheta = a * P*_j * (1 - P*_j)
+    dP_star <- c(0, a * P_star[2:(n_cat)] * (1 - P_star[2:(n_cat)]), 0)
+    # Category probability derivatives: dP_k = dP*_k - dP*_{k+1}
+    dP_cat <- dP_star[1:n_cat] - dP_star[2:(n_cat + 1)]
+    # Information: I(theta) = sum( [dP_k]^2 / P_k )
+    sum(dP_cat^2 / P_cat)
   } else {
     p <- 1 / (1 + exp(-a * (theta - b)))
     a^2 * p * (1 - p)

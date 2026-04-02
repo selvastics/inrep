@@ -139,16 +139,14 @@ selection using ability estimates and item information calculations from TAM:
   \item{\strong{1PL/Rasch}}{Information depends only on item difficulty relative to ability}
   \item{\strong{2PL}}{Information varies by both difficulty and discrimination}
   \item{\strong{3PL}}{Information affected by guessing parameter, especially at low ability}
-  \item{\strong{GRM}}{Information calculated across response categories and thresholds}
+  \item{\strong{GRM (experimental)}}{Uses Samejima boundary-curve information with
+    pre-calibrated threshold parameters. TAM fits GPCM (step parameters) for
+    ability estimation, which is a different parameterization.}
 }
 
-All information calculations utilize TAM's validated IRT implementations.
-\code{inrep} provides the selection logic, constraint management, and workflow integration.
-\itemize{
-  \item Maintains proportional representation across content areas
-  \item Prevents over-selection from any single domain
-  \item Ensures comprehensive coverage of construct
-}
+1PL/2PL/3PL information is computed via \code{\link{compute_item_info_single}}.
+Item selection logic, constraint management, and workflow integration are
+handled by inrep.
 
 \strong{Exposure Control:} Automatic exposure rate management:
 \itemize{

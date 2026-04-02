@@ -823,12 +823,6 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
   ))
 }
 
-# Helper function for NULL coalescing
-`%||%` <- function(x, y) {
-  if (is.null(x)) y else x
-}
-
-
 # ============================================================================
 # SECTION 2: STUDY SIMULATIONS (from study_simulations.R)
 # ============================================================================

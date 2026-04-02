@@ -19,6 +19,11 @@
 #'   \code{"MI"} (Maximum Information), \code{"RANDOM"}, \code{"WEIGHTED"}, \code{"MFI"} (Maximum Fisher Information).
 #' @param model Character string specifying IRT model passed to TAM functions.
 #'   Options: \code{"1PL"}, \code{"2PL"}, \code{"3PL"}, \code{"GRM"}.
+#'   1PL/2PL/3PL are fully supported via TAM. GRM is experimental: TAM
+#'   internally fits a GPCM (step parameters), which differs from the
+#'   Samejima GRM parameterization (boundary thresholds b1, b2, ...) used in
+#'   the item bank. The EAP fallback and item selection use correct Samejima
+#'   formulas with pre-calibrated parameters.
 #' @param estimation_method Character string specifying TAM ability estimation method.
 #'   Options: \code{"EAP"} (Expected A Posteriori - Bayesian, stable with few items, default) or
 #'   \code{"WLE"} (Weighted Likelihood Estimation - frequentist, accurate with many items).

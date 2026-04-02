@@ -10,5 +10,5 @@ get_llm_assistance_settings()
 Logical.
 }
 \description{
-Get LLM Assistance Status
+\strong{Deprecated.} Part of the LLM prompt generation workflow.
 }

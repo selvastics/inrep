@@ -22,12 +22,13 @@ Shiny app that can generate \strong{inrep} configuration code.
 }
 }
 
-\section{Optional LLM prompt generation}{
+\section{Interactive Configuration (inrep-studio)}{
 
-\code{enable_llm_assistance()} enables functions that generate plain-text prompts (see
-\code{generate_llm_prompt()}). These prompts are meant to be pasted into an external
-LLM or review process. \strong{inrep} does not call external services from these
-functions.
+\href{https://selvastics.shinyapps.io/inrep-studio/}{inrep-studio} is an interactive
+Shiny app for building study configurations via a GUI. It generates ready-to-run
+\code{inrep} R code. This replaces the earlier LLM prompt generation workflow
+(\code{enable_llm_assistance()} and \code{generate_llm_prompt()}), which is now
+soft-deprecated.
 }
 
 \section{Core Assessment Functions}{
@@ -46,10 +47,6 @@ functions.
 
 
 \preformatted{
-# (Optional) enable prompt generation for external review
-enable_llm_assistance(enable = TRUE)
-# generate_llm_prompt(config)  # prints a prompt to paste into an external tool
-
 # Launch a study
 config <- create_study_config(name = "My Study", model = "GRM")
 launch_study(config, bfi_items, session_save = TRUE)
@@ -88,9 +85,8 @@ This project is licensed under the MIT License.
 }
 
 \seealso{
-\code{\link{enable_llm_assistance}}, \code{\link{launch_study}}, 
-\code{\link{create_study_config}}, \code{\link{estimate_ability}}, 
-\code{\link{validate_item_bank}}
+\code{\link{launch_study}}, \code{\link{create_study_config}},
+\code{\link{estimate_ability}}, \code{\link{validate_item_bank}}
 }
 \author{
 Clievins Selva <selva@uni-hildesheim.de>

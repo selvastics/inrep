@@ -204,33 +204,8 @@ select_next_item_basic_internal <- function(rv, item_bank, config) {
     if (!is.null(rv$item_info_cache[[cache_key]])) {
       return(rv$item_info_cache[[cache_key]])
     }
-    a <- item_bank$a[item_idx]
-    b <- item_bank$b[item_idx] %||% 0
-    c_param <- if (config$model == "3PL" && "c" %in% names(item_bank)) item_bank$c[item_idx] else 0
-    b_thresholds <- if (config$model == "GRM") {
-      b_cols <- grep("^b[0-9]+$", names(item_bank), value = TRUE)
-      as.numeric(item_bank[item_idx, b_cols])
-    } else NULL
-    info <- if (config$model == "3PL") {
-      p <- c_param + (1 - c_param) / (1 + exp(-a * (theta - b)))
-      q <- 1 - p
-      (a^2 * (p - c_param)^2 * q) / (p * (1 - c_param)^2)
-    } else if (config$model == "GRM") {
-      n_categories <- length(b_thresholds) + 1
-      probs <- numeric(n_categories)
-      probs[1] <- 1 / (1 + exp(a * (theta - b_thresholds[1])))
-      for (k in 2:(n_categories - 1)) {
-        probs[k] <- 1 / (1 + exp(a * (theta - b_thresholds[k - 1]))) -
-          1 / (1 + exp(a * (theta - b_thresholds[k])))
-      }
-      probs[n_categories] <- 1 - 1 / (1 + exp(a * (theta - b_thresholds[n_categories - 1])))
-      probs <- pmax(probs, 1e-10)
-      probs <- probs / sum(probs)
-      a^2 * sum(probs * (1 - probs))
-    } else {
-      p <- 1 / (1 + exp(-a * (theta - b)))
-      a^2 * p * (1 - p)
-    }
+    # Delegate to canonical implementation in parallel_utils.R
+    info <- compute_item_info_single(theta, item_idx, item_bank, config)
     rv$item_info_cache[[cache_key]] <- info
     info
   }

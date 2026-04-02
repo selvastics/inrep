@@ -132,16 +132,14 @@
 #'   \item{\strong{1PL/Rasch}}{Information depends only on item difficulty relative to ability}
 #'   \item{\strong{2PL}}{Information varies by both difficulty and discrimination}
 #'   \item{\strong{3PL}}{Information affected by guessing parameter, especially at low ability}
-#'   \item{\strong{GRM}}{Information calculated across response categories and thresholds}
+#'   \item{\strong{GRM (experimental)}}{Uses Samejima boundary-curve information with
+#'     pre-calibrated threshold parameters. TAM fits GPCM (step parameters) for
+#'     ability estimation, which is a different parameterization.}
 #' }
 #' 
-#' All information calculations utilize TAM's validated IRT implementations.
-#' \code{inrep} provides the selection logic, constraint management, and workflow integration.
-#' \itemize{
-#'   \item Maintains proportional representation across content areas
-#'   \item Prevents over-selection from any single domain
-#'   \item Ensures comprehensive coverage of construct
-#' }
+#' 1PL/2PL/3PL information is computed via \code{\link{compute_item_info_single}}.
+#' Item selection logic, constraint management, and workflow integration are
+#' handled by inrep.
 #' 
 #' \strong{Exposure Control:} Automatic exposure rate management:
 #' \itemize{
@@ -378,80 +376,8 @@ select_next_item <- function(rv, item_bank, config) {
   }
   
   compute_item_info <- function(theta, item_idx, item_bank, config) {
-    # Handle unknown (NA) discrimination parameter
-    a <- item_bank$a[item_idx]
-    if (is.na(a)) {
-      # Use default discrimination based on model
-      a <- switch(config$model,
-        "1PL" = 1.0,
-        "2PL" = 1.2,
-        "3PL" = 1.0,
-        "GRM" = 1.5,
-        1.0  # fallback
-      )
-    }
-    
-    # Handle unknown difficulty/threshold parameters
-    if (config$model == "GRM") {
-      b_cols <- grep("^b[0-9]+$", names(item_bank), value = TRUE)
-      if (length(b_cols) == 0) {
-        message("No b thresholds found for GRM model")
-        return(0)
-      }
-      b_thresholds <- as.numeric(item_bank[item_idx, b_cols])
-      
-      # Replace any NA thresholds with defaults
-      if (any(is.na(b_thresholds))) {
-        na_indices <- which(is.na(b_thresholds))
-        for (i in na_indices) {
-          # Create ordered default thresholds
-          b_thresholds[i] <- (i - (length(b_thresholds) + 1) / 2) * 1.2
-        }
-        # Ensure proper ordering
-        b_thresholds <- sort(b_thresholds)
-        for (i in 2:length(b_thresholds)) {
-          if (b_thresholds[i] <= b_thresholds[i-1]) {
-            b_thresholds[i] <- b_thresholds[i-1] + 0.1
-          }
-        }
-      }
-    } else {
-      # Handle unknown difficulty parameter for dichotomous models
-      b <- item_bank$b[item_idx] %||% 0
-      if (is.na(b)) {
-        b <- 0  # Default difficulty at average
-      }
-    }
-    
-    # Handle unknown guessing parameter
-    c_param <- if (config$model == "3PL" && "c" %in% names(item_bank)) {
-      c_val <- item_bank$c[item_idx]
-      if (is.na(c_val)) 0.15 else c_val  # Default guessing rate
-    } else 0
-    
-    info <- if (config$model == "3PL") {
-      p <- c_param + (1 - c_param) / (1 + exp(-a * (theta - b)))
-      q <- 1 - p
-      (a^2 * (p - c_param)^2 * q) / (p * (1 - c_param)^2)
-    } else if (config$model == "GRM") {
-      n_categories <- length(b_thresholds) + 1
-      if (n_categories < 2) {
-        message("Invalid number of categories for GRM model")
-        return(0)
-      }
-      probs <- numeric(n_categories)
-      probs[1] <- 1 / (1 + exp(a * (theta - b_thresholds[1])))
-      for (k in 2:(n_categories - 1)) {
-        probs[k] <- 1 / (1 + exp(a * (theta - b_thresholds[k - 1]))) -
-          1 / (1 + exp(a * (theta - b_thresholds[k])))
-      }
-      probs[n_categories] <- 1 - 1 / (1 + exp(a * (theta - b_thresholds[n_categories - 1])))
-      a^2 * sum(probs * (1 - probs), na.rm = TRUE)
-    } else {
-      p <- 1 / (1 + exp(-a * (theta - b)))
-      a^2 * p * (1 - p)
-    }
-    if (is.finite(info) && info > 0) info else 0
+    # Delegate to the canonical implementation in parallel_utils.R
+    compute_item_info_single(theta, item_idx, item_bank, config)
   }
   
   group_weights <- if (!is.null(config$item_groups)) {
@@ -711,16 +637,10 @@ fast_select_next_item <- function(rv, item_bank, config, max_compute = 15) {
   current_theta <- rv$current_ability %||% config$theta_prior[1] %||% 0
   if (!is.finite(current_theta)) current_theta <- 0
   
-  # Fast information computation with minimal overhead
+  # Fast information computation — delegates to compute_item_info_single
+  # for model-appropriate formulas (2PL, 3PL, GRM)
   info <- vapply(available, function(i) {
-    # Simple information calculation without complex caching
-    a <- item_bank$a[i] %||% 1.0
-    b <- item_bank$b[i] %||% 0
-    if (is.na(a)) a <- 1.0
-    if (is.na(b)) b <- 0
-    
-    p <- 1 / (1 + exp(-a * (current_theta - b)))
-    a^2 * p * (1 - p)
+    compute_item_info_single(current_theta, i, item_bank, config)
   }, numeric(1))
   
   # Quick selection

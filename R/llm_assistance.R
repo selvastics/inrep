@@ -1,8 +1,12 @@
-#' Generate Customization Prompt
+#' Generate Customization Prompt (Deprecated)
 #'
 #' @description
-#' Builds a plain-text prompt that summarizes your current configuration and the relevant
-#' \code{inrep} concepts/parameters. Use it when asking for external review or code generation.
+#' \strong{Deprecated.} Use
+#' \href{https://selvastics.shinyapps.io/inrep-studio/}{inrep-studio} instead
+#' to configure studies interactively via a GUI.
+#'
+#' Builds a plain-text prompt that summarizes your current configuration and the
+#' relevant \code{inrep} concepts/parameters.
 #'
 #' @details
 #' This function prints the prompt to the console and invisibly returns it.
@@ -429,7 +433,12 @@ build_general_customization_prompt <- function(config, item_bank) {
 }
 
 
-#' Enable LLM Prompt Generation
+#' Enable LLM Prompt Generation (Deprecated)
+#'
+#' @description
+#' \strong{Deprecated.} Use
+#' \href{https://selvastics.shinyapps.io/inrep-studio/}{inrep-studio} instead
+#' to configure studies interactively via a GUI.
 #'
 #' @param enable Logical. TRUE to enable, FALSE to disable.
 #' @param verbose Logical. Display message.
@@ -440,13 +449,18 @@ enable_llm_assistance <- function(enable = TRUE, verbose = TRUE) {
   previous <- getOption("inrep.llm_assistance", FALSE)
   options(inrep.llm_assistance = enable)
   if (verbose) {
-    message(if (enable) "Prompt generation enabled" else "Prompt generation disabled")
+    msg <- if (enable) "Prompt generation enabled" else "Prompt generation disabled"
+    msg <- paste0(msg, " (note: this feature is deprecated; ",
+                  "consider using inrep-studio for interactive configuration)")
+    message(msg)
   }
   invisible(previous)
 }
 
 
 #' Get LLM Assistance Status
+#'
+#' @description \strong{Deprecated.} Part of the LLM prompt generation workflow.
 #' @return Logical.
 #' @export
 get_llm_assistance_settings <- function() {

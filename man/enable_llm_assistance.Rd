@@ -2,7 +2,7 @@
 % Please edit documentation in R/llm_assistance.R
 \name{enable_llm_assistance}
 \alias{enable_llm_assistance}
-\title{Enable LLM Prompt Generation}
+\title{Enable LLM Prompt Generation (Deprecated)}
 \usage{
 enable_llm_assistance(enable = TRUE, verbose = TRUE)
 }
@@ -15,5 +15,7 @@ enable_llm_assistance(enable = TRUE, verbose = TRUE)
 Previous setting (invisible).
 }
 \description{
-Enable LLM Prompt Generation
+\strong{Deprecated.} Use
+\href{https://selvastics.shinyapps.io/inrep-studio/}{inrep-studio} instead
+to configure studies interactively via a GUI.
 }

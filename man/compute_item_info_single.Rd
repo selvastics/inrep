@@ -9,15 +9,29 @@ compute_item_info_single(theta, item_idx, item_bank, config)
 \arguments{
 \item{theta}{Ability estimate}
 
-\item{item_idx}{Item index}
+\item{item_idx}{Item index (row number in item_bank)}
 
-\item{item_bank}{Item bank data frame}
+\item{item_bank}{Data frame containing item parameters (a, b for 2PL; a, b, c
+for 3PL; a, b1, b2, ... for GRM)}
 
-\item{config}{Study configuration}
+\item{config}{Study configuration with \code{$model} element}
 }
 \value{
-Information value
+Numeric information value (non-negative)
 }
 \description{
-Computes information for a single item (used in parallel processing).
+Computes Fisher information for a single item at a given ability level.
+This is the canonical implementation used by all item selection functions.
+}
+\details{
+Supports 1PL, 2PL, 3PL (dichotomous) and Samejima GRM (polytomous).
+GRM support is experimental: item selection uses Samejima boundary-curve
+formulas with pre-calibrated threshold parameters (b1, b2, ...), but TAM
+fits a GPCM (step parameters) internally, so there is a model mismatch
+for TAM-based ability estimation. 1PL/2PL/3PL are fully supported.
+
+For GRM, uses the Samejima information formula:
+\eqn{I(\theta) = \sum_k [P'_k(\theta)]^2 / P_k(\theta)},
+where \eqn{P_k} are category probabilities derived from boundary
+characteristic curves \eqn{P^*_j(\theta) = 1/(1+\exp(-a(\theta-b_j)))}.
 }

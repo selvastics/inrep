@@ -155,7 +155,7 @@ launch_study(config_fixed, bfi_items)
 
 * **Study management:** `launch_study()`, `create_study_config()`
 * **IRT analysis:** `estimate_ability()`, `select_next_item()`, `validate_item_bank()`
-* **Extensions:**  `enable_llm_assistance()`
+* **Interactive setup:** [inrep-studio](https://selvastics.shinyapps.io/inrep-studio/) (GUI-based configuration)
 
 ## Example Datasets
 
