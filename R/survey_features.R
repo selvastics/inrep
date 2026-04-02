@@ -1,6 +1,6 @@
 #'  Survey Features Module
 #' 
-#' Implements comprehensive survey features including advanced logic, 
+#' Implements survey features including advanced logic, 
 #' participant management, and data handling
 #' 
 #' @name survey_features
@@ -30,7 +30,7 @@ initialize_survey_features <- function(config = list()) {
 
 #' Create Survey with Advanced Features
 #' 
-#' Creates a comprehensive survey with all features
+#' Creates a survey with all features
 #' 
 #' @param survey_config Survey configuration
 #' @param questions List of questions

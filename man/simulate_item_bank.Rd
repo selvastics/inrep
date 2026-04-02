@@ -23,12 +23,11 @@ A list of length \code{n}. Each element contains:
 }
 }
 \description{
-Runs comprehensive simulation to validate item bank performance and assess the quality
-of adaptive testing algorithms. This function generates realistic assessment scenarios
-to evaluate item bank effectiveness and identify potential issues before deployment.
+Simulates adaptive test administration to assess item bank quality
+and identify potential issues before deployment.
 }
 \details{
-This function provides comprehensive validation of item bank performance:
+Simulation process:
 
 \strong{Simulation Process:}
 \itemize{

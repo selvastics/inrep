@@ -5,6 +5,6 @@
 \alias{survey_features}
 \title{Survey Features Module}
 \description{
-Implements comprehensive survey features including advanced logic, 
+Implements survey features including advanced logic, 
 participant management, and data handling
 }

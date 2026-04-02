@@ -382,7 +382,7 @@ instructions_content<-c(instructions_content,
 "-Setupmonitoringandlogging",
 "",
 "4.**TestandLaunch**",
-"-Performcomprehensivetesting",
+"-Performfunctionaltesting",
 "-Configureuseraccessandpermissions",
 "-Launchstudywithparticipantrecruitment"
 )

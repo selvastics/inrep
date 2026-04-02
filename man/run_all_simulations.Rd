@@ -7,7 +7,7 @@
 run_all_simulations()
 }
 \value{
-Comprehensive results with error analysis
+Results list with error analysis
 }
 \description{
 Executes all simulation scenarios and identifies errors

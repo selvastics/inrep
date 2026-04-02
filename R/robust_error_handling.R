@@ -1,6 +1,6 @@
 #' Robust Error Handling and Recovery for Sensitive Participant Data
 #' 
-#' This module provides comprehensive error handling, automatic recovery,
+#' This module provides  error handling, automatic recovery,
 #' and data preservation mechanisms to ensure assessment stability.
 
 # Global error handling state

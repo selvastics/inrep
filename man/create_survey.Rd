@@ -19,5 +19,5 @@ create_survey(survey_config, questions, logic_rules = NULL, quotas = NULL)
 Survey object
 }
 \description{
-Creates a comprehensive survey with all features
+Creates a survey with all features
 }

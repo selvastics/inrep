@@ -27,6 +27,6 @@ generate_inrep_pdf_report(
 Path to generated PDF file
 }
 \description{
-Creates comprehensive PDF reports with images, charts, and detailed analysis
+Creates  PDF reports with images, charts, and detailed analysis
 for inrep study results.
 }

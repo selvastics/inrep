@@ -88,7 +88,7 @@
 #'   \item Interactive web interface powered by Shiny (Chang et al., 2021)
 #'   \item Real-time data collection and session management
 #'   \item Bidirectional interface between user interactions and TAM computations
-#'   \item Workflow orchestration with comprehensive logging via \code{logr} package
+#'   \item Workflow orchestration with logging via \code{logr} package
 #'   \item Result export in multiple formats with cloud storage integration
 #' }
 #'
@@ -1030,7 +1030,7 @@ launch_study <- function(
         logger("Session saving enabled (basic mode)", level = "INFO")
       }
       
-      # Log comprehensive session initialization (with fallback)
+      # Log session initialization (with fallback)
       if (session_save && exists("log_session_event") && is.function(log_session_event)) {
         tryCatch({
           log_session_event(
@@ -1394,7 +1394,7 @@ launch_study <- function(
     }
   ")
   
-  # Get language labels from the comprehensive multilingual system
+  # Get language labels from the multilingual system
   # Start with default language (German for Hildesheim)
   default_language <- config$language %||% "de"
   ui_labels <- get_language_labels(default_language)
@@ -2446,7 +2446,7 @@ launch_study <- function(
     if (exists(".force_new_session") && .force_new_session) {
       # Clear any existing session data to prevent session sharing
       session$userData$logging_data <- NULL
-      session$userData$comprehensive_dataset <- NULL
+      session$userData$session_dataset <- NULL
       
       # Force new session initialization
       .needs_session_init <<- TRUE
@@ -3112,12 +3112,12 @@ launch_study <- function(
   rv$config <- config  # Store config in rv for access by validation functions
   rv$language <- config$language %||% "de"  # Initialize language in rv
   
-      # Initialize comprehensive dataset system (if functions are available)
-    if (exists("initialize_comprehensive_dataset", mode = "function")) {
+      # Initialize session dataset system (if functions are available)
+    if (exists("initialize_session_dataset", mode = "function")) {
       tryCatch({
-        comprehensive_dataset <- initialize_comprehensive_dataset(config, item_bank, effective_study_key, session = session)
-        rv$comprehensive_dataset <- comprehensive_dataset
-        logger("Comprehensive dataset initialized successfully", level = "INFO")
+        session_dataset <- initialize_session_dataset(config, item_bank, effective_study_key, session = session)
+        rv$session_dataset <- session_dataset
+        logger("Session dataset initialized", level = "INFO")
         
         # Initialize page start time for logging
         if (config$log_data %||% FALSE && exists("update_page_start_time", mode = "function")) {
@@ -3128,10 +3128,10 @@ launch_study <- function(
           })
         }
       }, error = function(e) {
-        logger(sprintf("Failed to initialize comprehensive dataset: %s", e$message), level = "WARNING")
+        logger(sprintf("Failed to initialize session dataset: %s", e$message), level = "WARNING")
       })
     } else {
-      logger("Comprehensive dataset functions not available - using basic data storage", level = "INFO")
+      logger("Session dataset functions not available - using basic data storage", level = "INFO")
     }
   rv$stage <- if (!is.null(config$custom_page_flow)) {
     "custom_page_flow"
@@ -4066,7 +4066,7 @@ launch_study <- function(
                        results_content <- base::c(results_content, base::list(
                          shiny::div(class = "nav-buttons",
                                     shiny::downloadButton("save_report", ui_labels$save_button, class = "btn-klee"),
-                                    shiny::downloadButton("download_comprehensive_dataset", "Download Complete Dataset", class = "btn-klee"),
+                                    shiny::downloadButton("download_session_dataset", "Download Complete Dataset", class = "btn-klee"),
                                     shiny::actionButton("restart_test", ui_labels$restart_button, class = "btn-klee",
                                                        onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
                          )
@@ -4455,14 +4455,14 @@ launch_study <- function(
         } else if (save_format == "rds") {
           base::saveRDS(report_data, file)
         } else if (save_format == "csv") {
-          # Use comprehensive dataset if available, otherwise fall back to original method
+          # Use session dataset if available, otherwise fall back to original method
           tryCatch({
-            if (exists("get_comprehensive_dataset", mode = "function")) {
-              comprehensive_data <- get_comprehensive_dataset(session = session)
-              if (!is.null(comprehensive_data)) {
-                # Use comprehensive dataset for export
-                utils::write.csv(comprehensive_data, file, row.names = FALSE)
-                logger("Exported comprehensive dataset to CSV", level = "INFO")
+            if (exists("get_session_dataset", mode = "function")) {
+              session_data <- get_session_dataset(session = session)
+              if (!is.null(session_data)) {
+                # Use session dataset for export
+                utils::write.csv(session_data, file, row.names = FALSE)
+                logger("Exported session dataset to CSV", level = "INFO")
               } else {
                 # Fall back to original method
               flat_data <- base::data.frame(
@@ -4479,7 +4479,7 @@ launch_study <- function(
               }
             }
           }, error = function(e) {
-            logger(sprintf("Failed to export comprehensive dataset, using fallback: %s", e$message), level = "WARNING")
+            logger(sprintf("Failed to export session dataset, using fallback: %s", e$message), level = "WARNING")
             # Fall back to original method
             flat_data <- base::data.frame(
               Timestamp = report_data$timestamp,
@@ -4499,18 +4499,18 @@ launch_study <- function(
       }
     )
     
-    # Comprehensive dataset download handler
-    output$download_comprehensive_dataset <- shiny::downloadHandler(
+    # Session dataset download handler
+    output$download_session_dataset <- shiny::downloadHandler(
       filename = function() {
-        base::paste0("comprehensive_dataset_", config$study_key %||% "study", "_", base::format(base::Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
+        base::paste0("session_data_", config$study_key %||% "study", "_", base::format(base::Sys.time(), "%Y%m%d_%H%M%S"), ".csv")
       },
       content = function(file) {
         tryCatch({
-          if (exists("get_comprehensive_dataset", mode = "function")) {
-            comprehensive_data <- get_comprehensive_dataset(session = session)
-            if (!is.null(comprehensive_data)) {
-              utils::write.csv(comprehensive_data, file, row.names = FALSE)
-              logger("Comprehensive dataset downloaded successfully", level = "INFO")
+          if (exists("get_session_dataset", mode = "function")) {
+            session_data <- get_session_dataset(session = session)
+            if (!is.null(session_data)) {
+              utils::write.csv(session_data, file, row.names = FALSE)
+              logger("Session dataset downloaded successfully", level = "INFO")
             } else {
               # Fallback to basic data
             basic_data <- data.frame(
@@ -4523,11 +4523,11 @@ launch_study <- function(
               responses = paste(rv$cat_result$responses, collapse = ";")
             )
             utils::write.csv(basic_data, file, row.names = FALSE)
-            logger("Downloaded basic dataset (comprehensive dataset not available)", level = "WARNING")
+            logger("Downloaded basic dataset (session dataset not available)", level = "WARNING")
             }
           }
         }, error = function(e) {
-          logger(sprintf("Failed to download comprehensive dataset: %s", e$message), level = "ERROR")
+          logger(sprintf("Failed to download session dataset: %s", e$message), level = "ERROR")
           # Create minimal fallback
           fallback_data <- data.frame(
             error = "Dataset download failed",
@@ -4686,13 +4686,13 @@ launch_study <- function(
             }
           }
           
-          # Update comprehensive dataset (if function is available)
-          if (length(page_data) > 0 && exists("update_comprehensive_dataset", mode = "function")) {
+          # Update session dataset (if function is available)
+          if (length(page_data) > 0 && exists("update_session_dataset", mode = "function")) {
             tryCatch({
-              update_comprehensive_dataset("demographics", page_data, stage = rv$stage, current_page = rv$current_page, session = session)
-              logger("Updated comprehensive dataset with demographic data", level = "DEBUG")
+              update_session_dataset("demographics", page_data, stage = rv$stage, current_page = rv$current_page, session = session)
+              logger("Updated session dataset with demographic data", level = "DEBUG")
             }, error = function(e) {
-              logger(sprintf("Failed to update comprehensive dataset with demographics: %s", e$message), level = "WARNING")
+              logger(sprintf("Failed to update session dataset with demographics: %s", e$message), level = "WARNING")
             })
           }
         }
@@ -4773,14 +4773,14 @@ launch_study <- function(
               }
             }
             
-            # Update comprehensive dataset
+            # Update session dataset
             if (length(page_data) > 0) {
-                              if (exists("update_comprehensive_dataset", mode = "function")) {
+                              if (exists("update_session_dataset", mode = "function")) {
                   tryCatch({
-                    update_comprehensive_dataset("items", page_data, stage = rv$stage, current_page = rv$current_page, session = session)
-                    logger("Updated comprehensive dataset with item responses", level = "DEBUG")
+                    update_session_dataset("items", page_data, stage = rv$stage, current_page = rv$current_page, session = session)
+                    logger("Updated session dataset with item responses", level = "DEBUG")
                   }, error = function(e) {
-                    logger(sprintf("Failed to update comprehensive dataset with item responses: %s", e$message), level = "WARNING")
+                    logger(sprintf("Failed to update session dataset with item responses: %s", e$message), level = "WARNING")
                   })
                 }
             }
@@ -4804,14 +4804,14 @@ launch_study <- function(
             }
           }
           
-          # Update comprehensive dataset
+          # Update session dataset
           if (length(page_data) > 0) {
-                          if (exists("update_comprehensive_dataset", mode = "function")) {
+                          if (exists("update_session_dataset", mode = "function")) {
                 tryCatch({
-                  update_comprehensive_dataset("custom_page", page_data, page_id = page_id, stage = rv$stage, current_page = rv$current_page, session = session)
-                  logger("Updated comprehensive dataset with custom page data", level = "DEBUG")
+                  update_session_dataset("custom_page", page_data, page_id = page_id, stage = rv$stage, current_page = rv$current_page, session = session)
+                  logger("Updated session dataset with custom page data", level = "DEBUG")
                 }, error = function(e) {
-                  logger(sprintf("Failed to update comprehensive dataset with custom page data: %s", e$message), level = "WARNING")
+                  logger(sprintf("Failed to update session dataset with custom page data: %s", e$message), level = "WARNING")
                 })
               }
           }
@@ -5075,12 +5075,12 @@ launch_study <- function(
             }
           }
           
-          # Update comprehensive dataset with final demographic data
-          if (length(page_data) > 0 && exists("update_comprehensive_dataset", mode = "function")) {
+          # Update session dataset with final demographic data
+          if (length(page_data) > 0 && exists("update_session_dataset", mode = "function")) {
             tryCatch({
-              update_comprehensive_dataset("demographics", page_data, stage = rv$stage, current_page = rv$current_page, session = session)
+              update_session_dataset("demographics", page_data, stage = rv$stage, current_page = rv$current_page, session = session)
             }, error = function(e) {
-              logger(sprintf("Failed to update comprehensive dataset with final demographics: %s", e$message), level = "WARNING")
+              logger(sprintf("Failed to update session dataset with final demographics: %s", e$message), level = "WARNING")
             })
           }
         } else if (current_page$type == "items") {
@@ -5135,12 +5135,12 @@ launch_study <- function(
               }
             }
             
-            # Update comprehensive dataset with final item responses
-            if (length(page_data) > 0 && exists("update_comprehensive_dataset", mode = "function")) {
+            # Update session dataset with final item responses
+            if (length(page_data) > 0 && exists("update_session_dataset", mode = "function")) {
               tryCatch({
-                update_comprehensive_dataset("items", page_data, stage = rv$stage, current_page = rv$current_page, session = session)
+                update_session_dataset("items", page_data, stage = rv$stage, current_page = rv$current_page, session = session)
               }, error = function(e) {
-                logger(sprintf("Failed to update comprehensive dataset with final item responses: %s", e$message), level = "WARNING")
+                logger(sprintf("Failed to update session dataset with final item responses: %s", e$message), level = "WARNING")
               })
             }
           }
@@ -5232,19 +5232,19 @@ launch_study <- function(
             demo_data = rv$demo_data
           )
           
-          # Update comprehensive dataset with final results
+          # Update session dataset with final results
           tryCatch({
             results_data <- list(
               theta = rv$current_ability,
               se = rv$current_se,
               administered = 1:length(all_responses)
             )
-            if (exists("update_comprehensive_dataset", mode = "function")) {
-              update_comprehensive_dataset("results", results_data, stage = "results", current_page = length(config$custom_page_flow), session = session)
-              logger("Updated comprehensive dataset with final results", level = "INFO")
+            if (exists("update_session_dataset", mode = "function")) {
+              update_session_dataset("results", results_data, stage = "results", current_page = length(config$custom_page_flow), session = session)
+              logger("Updated session dataset with final results", level = "INFO")
             }
           }, error = function(e) {
-            logger(sprintf("Failed to update comprehensive dataset with final results: %s", e$message), level = "WARNING")
+            logger(sprintf("Failed to update session dataset with final results: %s", e$message), level = "WARNING")
           })
           
           # Route into the FIRST results page (supports multiple results pages)
@@ -5314,16 +5314,16 @@ launch_study <- function(
       })
       base::names(rv$demo_data) <- config$demographics
       
-      # Update comprehensive dataset with demographic data
+      # Update session dataset with demographic data
       tryCatch({
-        # Convert to list format for comprehensive dataset
-        if (exists("update_comprehensive_dataset", mode = "function")) {
+        # Convert to list format for session dataset
+        if (exists("update_session_dataset", mode = "function")) {
           demo_list <- as.list(rv$demo_data)
-          update_comprehensive_dataset("demographics", demo_list, stage = rv$stage, current_page = rv$current_page, session = session)
-          logger("Updated comprehensive dataset with demographic data", level = "DEBUG")
+          update_session_dataset("demographics", demo_list, stage = rv$stage, current_page = rv$current_page, session = session)
+          logger("Updated session dataset with demographic data", level = "DEBUG")
         }
       }, error = function(e) {
-        logger(sprintf("Failed to update comprehensive dataset with demographics: %s", e$message), level = "WARNING")
+        logger(sprintf("Failed to update session dataset with demographics: %s", e$message), level = "WARNING")
       })
       
       # More flexible demographic validation - allow some empty fields
@@ -5804,19 +5804,19 @@ launch_study <- function(
           rv$stage = "results"
           logger("No more items available, proceeding to results")
           
-          # Update comprehensive dataset with final results
+          # Update session dataset with final results
           tryCatch({
             results_data <- list(
               theta = rv$current_ability,
               se = rv$current_se,
               administered = rv$administered
             )
-            if (exists("update_comprehensive_dataset", mode = "function")) {
-              update_comprehensive_dataset("results", results_data, stage = "results", current_page = rv$current_page, session = session)
-              logger("Updated comprehensive dataset with assessment results", level = "INFO")
+            if (exists("update_session_dataset", mode = "function")) {
+              update_session_dataset("results", results_data, stage = "results", current_page = rv$current_page, session = session)
+              logger("Updated session dataset with assessment results", level = "INFO")
             }
           }, error = function(e) {
-            logger(sprintf("Failed to update comprehensive dataset with assessment results: %s", e$message), level = "WARNING")
+            logger(sprintf("Failed to update session dataset with assessment results: %s", e$message), level = "WARNING")
           })
           
           # Scroll to top of page when showing results
@@ -5966,7 +5966,7 @@ launch_study <- function(
       rv$error_message <- "Select recovery option:"
     })
     
-    # COMPREHENSIVE ERROR RECOVERY SYSTEM - ENSURES ASSESSMENT NEVER STOPS
+    # ERROR RECOVERY SYSTEM - ENSURES ASSESSMENT NEVER STOPS
     shiny::observeEvent(input$retry_continue, {
       if (session_save && exists("attempt_error_recovery") && is.function(attempt_error_recovery)) {
         tryCatch({

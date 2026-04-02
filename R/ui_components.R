@@ -257,7 +257,7 @@ create_response_ui <- function(item, response_ui_type) {
 #'
 #' @examples
 #' \dontrun{
-#' # Comprehensive demographics collection
+#' # Demographics collection
 #' demographics <- c("Age", "Gender", "Education", "Experience")
 #' input_types <- list(
 #'   Age = "numeric",
@@ -362,7 +362,7 @@ create_demographics_ui <- function(demographics, input_types) {
 #'
 #' Ultimate single function that handles all UI aspects for adaptive testing.
 #' Includes themes, accessibility, responsive design, demographics, assessment items,
-#' progress tracking, and complete study flow in one comprehensive function.
+#' progress tracking, and complete study flow in one function.
 #'
 #' @param config Study configuration object
 #' @param item_bank Item bank data frame
@@ -395,7 +395,7 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
           list(Question = ui_labels$loading_question, ResponseCategories = "1,2,3,4,5")
   }
   
-  # Get language labels from the comprehensive multilingual system
+  # Get language labels from the multilingual system
   ui_labels <- get_language_labels(config$language %||% "en")
   
 

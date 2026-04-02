@@ -17,5 +17,5 @@ get_theme_css(theme = "Light", custom_css = NULL, theme_config = NULL)
 CSS string
 }
 \description{
-Loads theme CSS from file system with comprehensive support
+Loads theme CSS from file system
 }
