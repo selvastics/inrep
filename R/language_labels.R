@@ -681,7 +681,7 @@ get_language_labels <- function(language = "en") {
 #' @param language Language code (en, de, es, fr)
 #' @param fallback Fallback value if label not found
 #' @return Label text
-#' @export
+#' @keywords internal
 get_label <- function(label_key, language = "en", fallback = NULL) {
   labels <- get_language_labels(language)
   result <- labels[[label_key]]

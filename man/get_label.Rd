@@ -19,3 +19,4 @@ Label text
 \description{
 Retrieves a specific label for a given language
 }
+\keyword{internal}

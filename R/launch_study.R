@@ -361,11 +361,10 @@
 #'   save_format = "json",
 #'   webdav_url = "https://sync.academiccloud.de/index.php/s/Y51QPXzJVLWSAcb",
 #'   password = "inreptest",
-#'   study_key = paste0("HILDESHEIM_", UUIDgenerate())
+#'   study_key = paste0("HILDESHEIM_", generate_uuid())
 #' )
 #' }
 #' @importFrom shiny shinyApp fluidPage tags div numericInput selectInput actionButton downloadButton uiOutput renderUI plotOutput h2 h3 h4 p tagList
-#' @importFrom DT datatable DTOutput renderDT formatStyle
 
 #' @importFrom jsonlite write_json
 launch_study <- function(
@@ -592,15 +591,6 @@ launch_study <- function(
     }, error = function(e) {
       logger("Could not install 'later' package. Performance may be reduced.", level = "INFO")
     })
-  }
-  
-  # Check for UUID if study_key uses UUIDgenerate
-  if (!missing(study_key) && is.character(study_key)) {
-    if (grepl("UUIDgenerate", deparse(substitute(study_key)))) {
-      if (!requireNamespace("uuid", quietly = TRUE)) {
-        stop("Package 'uuid' is required for UUIDgenerate(). Please install it with: install.packages('uuid')")
-      }
-    }
   }
   
   # Input validation
@@ -2522,7 +2512,7 @@ launch_study <- function(
           random_suffix <- paste(sample(c(letters, LETTERS, 0:9), 12, replace = TRUE), collapse = "")
           machine_id <- Sys.info()["nodename"]
           combined_string <- paste(timestamp, process_id, random_suffix, machine_id, sep = "_")
-          hash_suffix <- substr(digest::digest(combined_string, algo = "md5"), 1, 8)
+          hash_suffix <- substring(paste0(as.hexmode(sample(256, 4, replace = TRUE) - 1L), collapse = ""), 1, 8)
           unique_session_id <- paste0("SESS_", timestamp, "_", process_id, "_", hash_suffix)
           
           session_config <<- list(
@@ -2973,15 +2963,9 @@ launch_study <- function(
       }, delay = 0.001)
     }
     
-      # Generate UUID-based study key if needed
+      # Generate study key
   generate_study_key <- function() {
-    if (requireNamespace("uuid", quietly = TRUE)) {
-      return(uuid::UUIDgenerate())
-    } else {
-      # Fallback to timestamp-based key
-      return(paste0("study_", format(Sys.time(), "%Y%m%d_%H%M%S_"), 
-                    paste0(sample(c(letters, 0:9), 8, replace = TRUE), collapse = "")))
-    }
+    generate_uuid()
   }
   
   # IMMEDIATE SYNCHRONOUS INITIALIZATION - No reactive dependencies

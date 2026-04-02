@@ -10,13 +10,5 @@ generate_uuid()
 Character string containing a UUID.
 }
 \description{
-Generates a universally unique identifier (UUID) for study configurations.
-This is a convenience wrapper around uuid::UUIDgenerate().
-}
-\examples{
-\dontrun{
-# Generate a UUID for a study
-study_id <- generate_uuid()
-cat("Generated UUID:", study_id, "\n")
-}
+Generates a universally unique identifier using base R random sampling.
 }

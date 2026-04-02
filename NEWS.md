@@ -1,3 +1,26 @@
+# inrep 0.3.2 (2026-04-02)
+
+## Dependency cleanup
+
+- Dropped `uuid` and `digest` from Imports; replaced with base R
+  implementations (`generate_uuid()` now uses random hex sampling,
+  session hashing uses `as.hexmode()`).
+
+- Moved `DT` and `rmarkdown` from Imports to Suggests. Both were already
+  guarded with `requireNamespace()` checks; no functional change.
+
+- Removed `%||%` export — base R >= 4.1.0 provides `base::%||%`.
+  Eliminates masking conflict with `purrr::%||%` and `base::%||%`.
+
+- Removed `get_label()` export — only used internally for multilingual
+  label lookup. Eliminates masking conflict with `sjlabelled::get_label`.
+
+- Removed `%r%` export — unused string-repetition operator.
+
+- Net effect: Imports reduced from 10 packages to 5 (`shiny`, `later`,
+  `stats`, `utils`, `graphics`, `jsonlite`). Cleaner `library(inrep)` with
+  no masking messages.
+
 # inrep 0.3.1 (2026-04-02)
 
 ## Bug fixes
