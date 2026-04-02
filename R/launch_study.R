@@ -36,7 +36,8 @@
 #' @param study_key Character string for unique study identification. Overrides config$study_key.
 #' @param max_session_time Maximum session time in seconds (default: 7200 = 2 hours).
 #'   The assessment will automatically terminate after this time to limit session duration.
-#' @param session_save Logical indicating whether to enable session saving and recovery.
+#' @param session_save Logical indicating whether to enable session saving and recovery
+#'   (default: \code{FALSE}). Enable for production deployments that need crash recovery.
 #' @param data_preservation_interval Interval for automatic data preservation in seconds (default: 30).
 #' @param keep_alive_interval Keep-alive ping interval in seconds (default: 10).
 #' @param enable_error_recovery Logical indicating whether to enable automatic error recovery
@@ -336,12 +337,13 @@
 #'   parallel_computation = TRUE,
 #'   feedback_enabled = TRUE,
 #'   recommendation_fun = function(theta, demographics, responses) {
+#'     # Replace placeholders with study-specific recommendations
 #'     if (theta > 1.0) {
-#'       return(c("Excellent performance", "Consider advanced materials"))
+#'       return(c("Recommendation 1 (high)", "Recommendation 2 (high)"))
 #'     } else if (theta > 0) {
-#'       return(c("Good performance", "Continue current approach"))
+#'       return(c("Recommendation 1 (mid)", "Recommendation 2 (mid)"))
 #'     } else {
-#'       return(c("Additional support recommended", "Review fundamentals"))
+#'       return(c("Recommendation 1 (low)", "Recommendation 2 (low)"))
 #'     }
 #'   }
 #' )
@@ -380,7 +382,7 @@ launch_study <- function(
     accessibility = FALSE,
     admin_dashboard_hook = NULL,
     max_session_time = 7200,
-    session_save = TRUE,
+    session_save = FALSE,
     data_preservation_interval = 30,
     keep_alive_interval = 10,
     enable_error_recovery = TRUE,
@@ -1050,12 +1052,11 @@ launch_study <- function(
   if ("discrimination" %in% names(item_bank) && !"a" %in% names(item_bank)) item_bank$a <- item_bank$discrimination
   if ("difficulty" %in% names(item_bank) && !"b" %in% names(item_bank)) item_bank$b <- item_bank$difficulty
   
-  # Validate item bank; allow list return and log
+  # Validate item bank; stop if critical mismatch detected
   validation <- inrep::validate_item_bank(item_bank, config$model)
-  if (is.list(validation)) {
-    if (!isTRUE(validation$is_valid)) {
-      logger("Item bank validation reported issues; proceeding with best-effort normalization", level = "WARNING")
-    }
+  if (is.list(validation) && !isTRUE(validation$is_valid)) {
+    stop(paste0("Item bank / model mismatch:\n", paste(validation$messages, collapse = "\n")),
+         call. = FALSE)
   }
   
   # DEFER model conversion - will be done in server after UI shows
@@ -1071,7 +1072,7 @@ launch_study <- function(
   
   # Add default values for missing config parameters
   if (base::is.null(config$adaptive_start)) {
-    config$adaptive_start <- base::ceiling((config$max_items %||% config$min_items) / 2)
+    config$adaptive_start <- config$min_items %||% 3
     logger(base::sprintf("Setting default adaptive_start: %d", config$adaptive_start))
   }
 
@@ -5685,16 +5686,8 @@ launch_study <- function(
         })
       }
       
-      # ROBUST DATA PRESERVATION WITH ERROR RECOVERY
-      if (session_save && exists("preserve_session_data") && is.function(preserve_session_data)) {
-        tryCatch({
-          preserve_session_data()
-          logger("Response data automatically preserved", level = "INFO")
-        }, error = function(e) {
-          logger(sprintf("Automatic data preservation failed (non-critical): %s", e$message), level = "WARNING")
-          # Don't break the assessment for data preservation failures
-        })
-      }
+      # Data preservation handled by observeEvent(rv$responses) to avoid
+      # blocking page transitions with synchronous disk I/O.
       
             # FINAL SAFETY NET - ENSURE SUBMISSION LOCK IS ALWAYS RESET
       if (rv$submission_in_progress) {

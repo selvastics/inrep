@@ -38,8 +38,9 @@
 #'   Options: \code{"text"}, \code{"numeric"}, \code{"select"}, \code{"radio"}, \code{"checkbox"}.
 #' @param scoring_fun Function to score item responses, or \code{NULL} for default scoring.
 #'   Should accept response and correct answer, return numeric score.
-#' @param adaptive_start Integer item number to begin adaptive selection, or \code{NULL} 
-#'   for immediate adaptive selection. Allows fixed item administration initially.
+#' @param adaptive_start Integer item number at which adaptive (Fisher-information)
+#'   selection begins. Items before this threshold are selected randomly for warm-up.
+#'   Defaults to \code{min_items} (typically 3--5). Set to 1 for immediate adaptive selection.
 #' @param fixed_items Integer vector of item indices that must be administered, 
 #'   or \code{NULL} for no fixed items. Useful for anchor items or content requirements.
 #' @param adaptive Logical indicating whether to use adaptive item selection based on 
@@ -293,13 +294,14 @@
 #'     ability_level <- cut(theta, breaks = c(-Inf, -0.5, 0.5, Inf), 
 #'                         labels = c("Developing", "Proficient", "Advanced"))
 #'     
+#'     # Replace placeholders with study-specific recommendations
 #'     recommendations <- switch(ability_level,
-#'       "Developing" = c("Focus on foundational skills", 
-#'                       "Consider additional practice materials"),
-#'       "Proficient" = c("Continue current learning approach", 
-#'                       "Explore intermediate challenges"),
-#'       "Advanced" = c("Seek advanced coursework", 
-#'                     "Consider mentoring others")
+#'       "Developing" = c("Recommendation 1 (developing)",
+#'                       "Recommendation 2 (developing)"),
+#'       "Proficient" = c("Recommendation 1 (proficient)",
+#'                       "Recommendation 2 (proficient)"),
+#'       "Advanced" = c("Recommendation 1 (advanced)",
+#'                     "Recommendation 2 (advanced)")
 #'     )
 #'     
 #'     return(recommendations)
@@ -699,13 +701,14 @@ create_study_config <- function(
     # Set default functions if not provided
     if (is.null(recommendation_fun)) {
       recommendation_fun <- function(theta, demographics, item_responses) {
+        # Placeholder — replace with study-specific recommendations
         if (!is.numeric(theta) || length(theta) == 0 || is.na(theta)) theta <- 0
         if (theta < -1) {
-          c("Focus on foundational skills", "Seek supportive resources", "Consider additional practice")
+          c("Recommendation 1 (low range)", "Recommendation 2 (low range)")
         } else if (theta < 1) {
-          c("Engage in balanced development", "Explore intermediate challenges", "Build on current strengths")
+          c("Recommendation 1 (mid range)", "Recommendation 2 (mid range)")
         } else {
-          c("Pursue advanced opportunities", "Apply skills in complex scenarios", "Consider mentoring others")
+          c("Recommendation 1 (high range)", "Recommendation 2 (high range)")
         }
       }
     }
@@ -737,13 +740,9 @@ create_study_config <- function(
       }
     }
     
-    # Set default adaptive_start
+    # Set default adaptive_start (standard CAT warm-up: 3 random items)
     if (is.null(adaptive_start)) {
-      adaptive_start <- if (!is.null(max_items)) {
-        max(1, ceiling(max_items / 2))
-      } else {
-        max(1, ceiling(min_items / 2))
-      }
+      adaptive_start <- min_items %||% 3
     }
     
     # Create core configuration

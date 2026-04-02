@@ -389,6 +389,15 @@ select_next_item <- function(rv, item_bank, config) {
     setNames(weights[names(config$item_groups)] %||% 1, names(config$item_groups))
   } else rep(1, length(available))
   
+  # Capture current ability safely to avoid reactive access in parallel workers
+  current_theta <- tryCatch(rv$current_ability, error = function(e) config$theta_prior[1] %||% 0)
+  if (requireNamespace("shiny", quietly = TRUE)) {
+    current_theta <- base::tryCatch(shiny::isolate(rv$current_ability), error = function(e) current_theta)
+  }
+  if (!is.numeric(current_theta) || !is.finite(current_theta)) {
+    current_theta <- config$theta_prior[1] %||% 0
+  }
+  
   # Fast pre-computation for common theta values (warm-up cache)
   if (isTRUE(config$cache_enabled) && length(available) > 5) {
     # Pre-compute information for nearby theta values to improve cache hits
@@ -446,14 +455,6 @@ select_next_item <- function(rv, item_bank, config) {
   }
   
   # Compute item information
-  # Capture current ability safely to avoid reactive access in parallel workers
-  current_theta <- tryCatch(rv$current_ability, error = function(e) config$theta_prior[1] %||% 0)
-  if (requireNamespace("shiny", quietly = TRUE)) {
-    current_theta <- base::tryCatch(shiny::isolate(rv$current_ability), error = function(e) current_theta)
-  }
-  if (!is.numeric(current_theta) || !is.finite(current_theta)) {
-    current_theta <- config$theta_prior[1] %||% 0
-  }
   if (isTRUE(config$parallel_computation)) {
     if (!requireNamespace("parallel", quietly = TRUE)) {
       message("Parallel package not available, falling back to sequential computation")

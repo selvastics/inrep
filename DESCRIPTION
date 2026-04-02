@@ -1,8 +1,8 @@
 Package: inrep
 Type: Package
 Title: Instant Reports for Adaptive Assessments
-Version: 0.3.2
-Date: 2026-04-02
+Version: 0.3.3
+Date: 2026-04-03
 Author: Clievins Selva [aut, cre] (<https://orcid.org/0000-0001-9980-7127>)
 Authors@R: person(given = "Clievins", family = "Selva", email = "selva@uni-hildesheim.de", role = c("aut", "cre"), comment = c(ORCID = "0000-0001-9980-7127"))
 Maintainer: Clievins Selva <selva@uni-hildesheim.de>

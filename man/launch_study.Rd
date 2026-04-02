@@ -17,7 +17,7 @@ launch_study(
   accessibility = FALSE,
   admin_dashboard_hook = NULL,
   max_session_time = 7200,
-  session_save = TRUE,
+  session_save = FALSE,
   data_preservation_interval = 30,
   keep_alive_interval = 10,
   enable_error_recovery = TRUE,
@@ -76,7 +76,8 @@ Called with participant progress, ability estimates, and session metrics.}
 \item{max_session_time}{Maximum session time in seconds (default: 7200 = 2 hours).
 The assessment will automatically terminate after this time to limit session duration.}
 
-\item{session_save}{Logical indicating whether to enable session saving and recovery.}
+\item{session_save}{Logical indicating whether to enable session saving and recovery
+(default: \code{FALSE}). Enable for production deployments that need crash recovery.}
 
 \item{data_preservation_interval}{Interval for automatic data preservation in seconds (default: 30).}
 
@@ -410,12 +411,13 @@ research_config <- create_study_config(
   parallel_computation = TRUE,
   feedback_enabled = TRUE,
   recommendation_fun = function(theta, demographics, responses) {
+    # Replace placeholders with study-specific recommendations
     if (theta > 1.0) {
-      return(c("Excellent performance", "Consider advanced materials"))
+      return(c("Recommendation 1 (high)", "Recommendation 2 (high)"))
     } else if (theta > 0) {
-      return(c("Good performance", "Continue current approach"))
+      return(c("Recommendation 1 (mid)", "Recommendation 2 (mid)"))
     } else {
-      return(c("Additional support recommended", "Review fundamentals"))
+      return(c("Recommendation 1 (low)", "Recommendation 2 (low)"))
     }
   }
 )

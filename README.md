@@ -23,7 +23,7 @@ Try it out: [inrep-studio](https://selvastics.shinyapps.io/inrep-studio/)
 
 ![inrep demo](man/figures/prev2025-12-06_181825.png)
 
-**inrep** provides Shiny-based test administration, adaptive item selection, and reporting, with TAM integration for psychometric estimation. It supports adaptive and fixed questionnaires, session recovery, and export to common formats (CSV, JSON, SPSS, PDF). Themes and multilingual labels allow UI customization for different deployments.
+**inrep** (instant reports) provides Shiny-based test administration, adaptive item selection, and reporting, with TAM integration for psychometric estimation. It thereby supports adaptive and fixed questionnaires, session recovery, and export to common formats (CSV, JSON, SPSS, PDF). Themes and multilingual labels allow UI customization for different deployments.
 
 <!-- Demo: See the package in action! -->
 ![inrep demo](man/figures/inrep_previewer.gif)
@@ -100,6 +100,25 @@ The package requires R ≥ 4.1.0 and integrates mainly with the following packag
 
 ## Quick Start
 
+### Non-Adaptive Testing (Fixed questionnaire)
+
+```r
+library(inrep)
+data(bfi_items)
+
+# Traditional questionnaire with fixed item order
+config_fixed <- create_study_config(
+  name = "Personality Questionnaire",
+  adaptive = FALSE,        # Disable adaptive testing
+  max_items = 5,          # Show exactly 5 items in order
+  theme = "hildesheim",   # University theme
+  session_save = TRUE     # Enable recovery
+)
+
+# Launch the study
+launch_study(config_fixed, bfi_items)
+```
+
 ### Adaptive Testing (IRT-based)
 
 ```r
@@ -120,25 +139,6 @@ config <- create_study_config(
 
 # Launch the study
 launch_study(config, bfi_items)
-```
-
-### Non-Adaptive Testing (Fixed questionnaire)
-
-```r
-library(inrep)
-data(bfi_items)
-
-# Traditional questionnaire with fixed item order
-config_fixed <- create_study_config(
-  name = "Personality Questionnaire",
-  adaptive = FALSE,        # Disable adaptive testing
-  max_items = 5,          # Show exactly 5 items in order
-  theme = "hildesheim",   # University theme
-  session_save = TRUE     # Enable recovery
-)
-
-# Launch the study
-launch_study(config_fixed, bfi_items)
 ```
 
 ## Theme Customization 
