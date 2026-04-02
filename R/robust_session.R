@@ -227,7 +227,7 @@ generate_session_id <- function() {
   
   # Create a hash of all components for additional uniqueness
   combined_string <- paste(timestamp, process_id, random_suffix, machine_id, sep = "_")
-  hash_suffix <- substr(digest::digest(combined_string, algo = "md5"), 1, 8)
+  hash_suffix <- substring(paste0(as.hexmode(sample(256, 4, replace = TRUE) - 1L), collapse = ""), 1, 8)
   
   paste0("SESS_", timestamp, "_", process_id, "_", hash_suffix)
 }

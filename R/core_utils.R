@@ -16,19 +16,19 @@ NULL
 
 #' Generate UUID
 #'
-#' Generates a universally unique identifier (UUID) for study configurations.
-#' This is a convenience wrapper around uuid::UUIDgenerate().
+#' Generates a universally unique identifier using base R random sampling.
 #'
 #' @return Character string containing a UUID.
 #' @export
-#' @examples
-#' \dontrun{
-#' # Generate a UUID for a study
-#' study_id <- generate_uuid()
-#' cat("Generated UUID:", study_id, "\n")
-#' }
 generate_uuid <- function() {
-  uuid::UUIDgenerate()
+  hex <- c(0:9, "a", "b", "c", "d", "e", "f")
+  paste0(
+    paste0(sample(hex, 8, replace = TRUE), collapse = ""), "-",
+    paste0(sample(hex, 4, replace = TRUE), collapse = ""), "-",
+    "4", paste0(sample(hex, 3, replace = TRUE), collapse = ""), "-",
+    sample(c("8", "9", "a", "b"), 1), paste0(sample(hex, 3, replace = TRUE), collapse = ""), "-",
+    paste0(sample(hex, 12, replace = TRUE), collapse = "")
+  )
 }
 
 #' Initialize Logging System
@@ -254,34 +254,14 @@ select_next_item_basic_internal <- function(rv, item_bank, config) {
 # SECTION 2: CUSTOM OPERATORS (from utils_operators.R)
 # ============================================================================
 
-#' Null-coalescing Operator
-#'
-#' Returns the left-hand side if not NULL, otherwise returns the right-hand side
-#'
-#' @name null_coalescing_operator
-#' @aliases %||%
-#' @param x Left-hand side value.
-#' @param y Right-hand side value (default).
-#' @return `x` if not NULL, otherwise `y`.
-#' @export
-#' @examples
-#' NULL %||% "default"  # Returns "default"
-#' "value" %||% "default"  # Returns "value"
+# Internal null-coalescing operator (base R >= 4.1.0 provides base::%||%;
+# this definition is kept only for compatibility within the package namespace)
+#' @keywords internal
 `%||%` <- function(x, y) {
   if (is.null(x)) y else x
 }
 
-#' String Repetition Operator
-#'
-#' Repeats a string a specified number of times.
-#'
-#' @param string Character string to repeat.
-#' @param times Number of times to repeat.
-#' @return Character string repeated the specified number of times.
-#' @export
-#' @examples
-#' "=" %r% 50  # Returns "=================================================="
-#' "-" %r% 10  # Returns "----------"
+#' @keywords internal
 `%r%` <- function(string, times) {
   paste(rep(string, times), collapse = "")
 }

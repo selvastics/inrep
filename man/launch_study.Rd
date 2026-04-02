@@ -435,7 +435,7 @@ launch_study(
   save_format = "json",
   webdav_url = "https://sync.academiccloud.de/index.php/s/Y51QPXzJVLWSAcb",
   password = "inreptest",
-  study_key = paste0("HILDESHEIM_", UUIDgenerate())
+  study_key = paste0("HILDESHEIM_", generate_uuid())
 )
 }
 }

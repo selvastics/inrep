@@ -7,8 +7,7 @@
 create_study_config(
   name = "Personality Assessment",
   demographics = c("Age", "Gender"),
-  study_key = paste0("STUDY_", if (requireNamespace("uuid", quietly = TRUE))
-    uuid::UUIDgenerate() else paste0("STUDY_", Sys.time())),
+  study_key = paste0("STUDY_", generate_uuid()),
   min_SEM = 0.3,
   min_items = 5,
   max_items = NULL,

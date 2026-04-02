@@ -515,12 +515,8 @@ logger <- function(message, level = 'INFO') {
 
 # Simplified UUID generation
 generate_uuid_standalone <- function() {
-  if (requireNamespace('uuid', quietly = TRUE)) {
-    uuid::UUIDgenerate()
-  } else {
     # Fallback UUID generation
     paste0(sample(c(letters, 0:9), 32, replace = TRUE), collapse = '')
-  }
 }
 "
 

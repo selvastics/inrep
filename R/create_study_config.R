@@ -459,12 +459,11 @@
 #'   R package version 4.2-21. \url{https://CRAN.R-project.org/package=TAM}
 #' @seealso \code{\link{launch_study}}, \code{\link{estimate_ability}}, 
 #'   \code{\link{validate_item_bank}}
-#' @importFrom uuid UUIDgenerate
 #' @export
 create_study_config <- function(
     name = "Personality Assessment",
     demographics = c("Age", "Gender"),
-    study_key = paste0("STUDY_", if (requireNamespace("uuid", quietly = TRUE)) uuid::UUIDgenerate() else paste0("STUDY_", Sys.time())),
+    study_key = paste0("STUDY_", generate_uuid()),
     min_SEM = 0.3,
     min_items = 5,
     max_items = NULL,
