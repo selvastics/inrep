@@ -141,16 +141,6 @@ config <- create_study_config(
 launch_study(config, bfi_items)
 ```
 
-## Theme Customization 
-
-![inrep themes](man/figures/inrep_themes.png)
-
-> **Themes:** `inrep` supports multiple default UI themes for customizing assessment components.  
-> In addition to built-in options, users can extract CSS styles from institutional websites  
-> or define fully custom themes through direct CSS editing.  
->  
-> New themes are added incrementally. Contributions are welcome to share themes that can be made available to other users.
-
 ## Main Functions
 
 * **Study management:** `launch_study()`, `create_study_config()`
