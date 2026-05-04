@@ -1,0 +1,45 @@
+﻿/* =============================================================================
+   CAL THEME for inrep — Cal.com design system
+   Gray page canvas (#f3f4f6), clean blue accents (#3b82f6), scheduling clarity.
+   Source: VoltAgent/awesome-design-md > cal
+   ============================================================================= */
+
+:root {
+  --primary-color: #3b82f6;
+  --secondary-color: #2563eb;
+  --background-color: #f3f4f6;
+  --surface-color: #ffffff;
+  --text-color: #111827;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --hover-color: #f9fafb;
+  --focus-color: #3b82f6;
+  --font-family: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --border-radius: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04);
+  --shadow-hover: 0 4px 12px rgba(0,0,0,0.10), 0 8px 24px rgba(59,130,246,0.06);
+
+}
+
+body { font-family: var(--font-family); background: var(--background-color) !important; color: var(--text-color) !important; font-size: 0.9375rem; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+.assessment-card { background: var(--surface-color) !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; box-shadow: var(--shadow) !important; transition: box-shadow 0.2s ease !important; }
+.assessment-card:hover { box-shadow: var(--shadow-hover) !important; }
+h1, h2, h3, h4, h5, h6, .card-header { color: var(--text-color) !important; font-weight: 700 !important; letter-spacing: -0.01em !important; }
+.welcome-text, p, .question-text { color: var(--text-secondary) !important; }
+
+.btn-klee, .action-button.btn-klee { background: var(--primary-color) !important; color: #ffffff !important; border: none !important; border-radius: var(--border-radius) !important; font-family: var(--font-family) !important; font-weight: 600 !important; box-shadow: 0 1px 3px rgba(59,130,246,0.25) !important; }
+.btn-klee:hover { background: var(--secondary-color) !important; }
+.btn-klee:disabled { background: #9ca3af !important; }
+.btn-primary { background: var(--primary-color) !important; border-color: var(--primary-color) !important; }
+
+.shiny-input-radiogroup label { background: #f9fafb !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; }
+.shiny-input-radiogroup label:hover { background: #eff6ff !important; border-color: #93c5fd !important; }
+.form-control, input.form-control, select.form-control { background: var(--surface-color) !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; }
+.form-control:focus, input:focus, select:focus { border-color: var(--primary-color) !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.12) !important; outline: none !important; }
+.progress-bar-container { background: #dbeafe !important; border-radius: 2.5px !important; }
+.progress-bar-fill { background: var(--primary-color) !important; height: 100% !important; }
+.dimension-score { border-left: 4px solid var(--primary-color) !important; background: #eff6ff !important; }
+.dimension-fill { background: var(--primary-color) !important; }
+.footer { border-top-color: var(--border-color) !important; color: var(--text-secondary) !important; }
+*:focus { outline: 2px solid var(--focus-color) !important; outline-offset: 2px !important; }

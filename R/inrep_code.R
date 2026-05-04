@@ -381,18 +381,16 @@ generate_complete_script <- function(user_code, auto_run, console_ready = FALSE,
   )
   
   # Extract function definitions
-  function_code <- character()
-  
-  for (fn_name in essential_functions) {
+  function_parts <- lapply(essential_functions, function(fn_name) {
     if (exists(fn_name, where = asNamespace("inrep"), inherits = FALSE)) {
       fn_obj <- get(fn_name, envir = asNamespace("inrep"))
       if (is.function(fn_obj)) {
-        # Get the complete function definition with proper formatting
         fn_def <- paste(deparse(fn_obj), collapse = "\n")
-        function_code <- c(function_code, paste0(fn_name, " <- ", fn_def))
+        paste0(fn_name, " <- ", fn_def)
       }
     }
-  }
+  })
+  function_code <- unlist(Filter(Negate(is.null), function_parts))
   
   # Extract built-in datasets that might be referenced
   data_extraction <- "

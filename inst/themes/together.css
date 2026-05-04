@@ -1,0 +1,46 @@
+﻿/* =============================================================================
+   TOGETHER THEME for inrep — Together AI design system
+   Slate-blue page canvas (#f8fafc), cool indigo accents (#4f46e5),
+   technical/blueprint feel. Cool-toned throughout.
+   Source: VoltAgent/awesome-design-md > together
+   ============================================================================= */
+
+:root {
+  --primary-color: #4f46e5;
+  --secondary-color: #4338ca;
+  --background-color: #f8fafc;
+  --surface-color: #f1f5f9;
+  --text-color: #0f172a;
+  --text-secondary: #475569;
+  --border-color: #cbd5e1;
+  --hover-color: #e2e8f0;
+  --focus-color: #4f46e5;
+  --font-family: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --border-radius: 8px;
+  --shadow: 0 1px 3px rgba(15,23,42,0.07), 0 4px 16px rgba(15,23,42,0.04);
+  --shadow-hover: 0 4px 14px rgba(79,70,229,0.10), 0 8px 28px rgba(15,23,42,0.07);
+
+}
+
+body { font-family: var(--font-family); background: var(--background-color) !important; color: var(--text-color) !important; font-size: 0.9375rem; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+.assessment-card { background: var(--surface-color) !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; box-shadow: var(--shadow) !important; transition: box-shadow 0.2s ease !important; }
+.assessment-card:hover { box-shadow: var(--shadow-hover) !important; }
+h1, h2, h3, h4, h5, h6, .card-header { color: var(--text-color) !important; font-weight: 700 !important; letter-spacing: -0.01em !important; }
+.welcome-text, p, .question-text { color: var(--text-secondary) !important; }
+
+.btn-klee, .action-button.btn-klee { background: var(--primary-color) !important; color: #ffffff !important; border: none !important; border-radius: var(--border-radius) !important; font-family: var(--font-family) !important; font-weight: 600 !important; box-shadow: 0 1px 4px rgba(79,70,229,0.25) !important; }
+.btn-klee:hover { background: var(--secondary-color) !important; }
+.btn-klee:disabled { background: #94a3b8 !important; }
+.btn-primary { background: var(--primary-color) !important; border-color: var(--primary-color) !important; }
+
+.shiny-input-radiogroup label { background: #ffffff !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; }
+.shiny-input-radiogroup label:hover { background: #eef2ff !important; border-color: #a5b4fc !important; }
+.form-control, input.form-control, select.form-control { background: #ffffff !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; }
+.form-control:focus, input:focus, select:focus { border-color: var(--primary-color) !important; box-shadow: 0 0 0 3px rgba(79,70,229,0.12) !important; outline: none !important; }
+.progress-bar-container { background: #dde5f5 !important; border-radius: 2.5px !important; }
+.progress-bar-fill { background: var(--primary-color) !important; height: 100% !important; }
+.dimension-score { border-left: 4px solid var(--primary-color) !important; background: #eef2ff !important; }
+.dimension-fill { background: var(--primary-color) !important; }
+.footer { border-top-color: var(--border-color) !important; color: var(--text-secondary) !important; }
+*:focus { outline: 2px solid var(--focus-color) !important; outline-offset: 2px !important; }

@@ -1,0 +1,107 @@
+﻿/* =============================================================================
+   SUPERHUMAN THEME for inrep — Superhuman design system
+   Deep purple-navy canvas (#0f0f17), always-on purple glow halos on ALL cards,
+   keyboard-first premium feel. Purple glow intensifies on hover.
+   Source: VoltAgent/awesome-design-md > superhuman
+   ============================================================================= */
+html { color-scheme: dark !important; }
+
+:root {
+  --primary-color: #6c63ff;
+  --secondary-color: #5b52e8;
+  --background-color: #0f0f17;
+  --surface-color: #16162a;
+  --text-color: #f0f0ff;
+  --text-secondary: #9090b0;
+  --border-color: rgba(108,99,255,0.20);
+  --hover-color: #1e1e30;
+  --focus-color: #6c63ff;
+  --success-color: #4cd080;
+  --error-color: #ff5c5c;
+  --font-family: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --border-radius: 10px;
+  --shadow: rgba(108,99,255,0.10) 0px 0px 32px, rgba(0,0,0,0.70) 0px 4px 20px;
+  --shadow-hover: rgba(108,99,255,0.25) 0px 0px 48px, rgba(0,0,0,0.80) 0px 8px 32px;
+
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--background-color) !important;
+  color: var(--text-color) !important;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+[style*="background-color: white"], [style*="background-color:#fff"],
+[style*="background: white"], [style*="background-color: #ffffff"],
+[style*="background-color:#ffffff"] { background-color: var(--surface-color) !important; color: var(--text-color) !important; }
+
+/* Always-on purple glow halo on cards — KEY signature */
+.assessment-card {
+  background: var(--surface-color) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: var(--shadow) !important;
+  transition: box-shadow 0.3s ease !important;
+}
+.assessment-card:hover { border-color: rgba(108,99,255,0.45) !important; box-shadow: var(--shadow-hover) !important; }
+
+h1, h2, h3, h4, h5, h6, .card-header {
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.015em !important;
+}
+.welcome-text, p, .question-text { color: var(--text-secondary) !important; }
+
+/* Purple button with glow */
+.btn-klee, .action-button.btn-klee {
+  background: var(--primary-color) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: var(--border-radius) !important;
+  font-family: var(--font-family) !important;
+  font-weight: 600 !important;
+  box-shadow: 0 0 20px rgba(108,99,255,0.40) !important;
+  transition: all 0.2s ease !important;
+}
+.btn-klee:hover { background: var(--secondary-color) !important; box-shadow: 0 0 36px rgba(108,99,255,0.60) !important; }
+.btn-klee:disabled { background: var(--hover-color) !important; box-shadow: none !important; color: var(--text-secondary) !important; }
+.btn-primary { background: var(--primary-color) !important; border-color: var(--primary-color) !important; }
+
+.shiny-input-radiogroup label {
+  background: var(--hover-color) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+}
+.shiny-input-radiogroup label:hover { border-color: rgba(108,99,255,0.50) !important; background: rgba(108,99,255,0.08) !important; box-shadow: 0 0 12px rgba(108,99,255,0.10) !important; }
+
+.form-control, input.form-control, select.form-control {
+  background: var(--hover-color) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+  color-scheme: dark !important;
+}
+.form-control:focus, input:focus, select:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 2px rgba(108,99,255,0.20), 0 0 12px rgba(108,99,255,0.15) !important;
+  outline: none !important;
+}
+
+.progress-bar-container { background: rgba(108,99,255,0.15) !important; border-radius: 2.5px !important; }
+.progress-bar-fill { background: var(--primary-color) !important; height: 100% !important; box-shadow: 0 0 8px rgba(108,99,255,0.70) !important; }
+
+.dimension-score { border-left: 4px solid var(--primary-color) !important; background: rgba(108,99,255,0.08) !important; }
+.dimension-fill { background: var(--primary-color) !important; }
+.footer { border-top-color: var(--border-color) !important; color: var(--text-secondary) !important; }
+
+::-webkit-scrollbar { width: 6px; background: var(--background-color); }
+::-webkit-scrollbar-thumb { background: rgba(108,99,255,0.30); border-radius: 3px; }
+*:focus { outline: 2px solid var(--focus-color) !important; outline-offset: 2px !important; }

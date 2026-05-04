@@ -1,0 +1,53 @@
+﻿/* =============================================================================
+   VOLTAGENT THEME for inrep — VoltAgent design system
+   Abyss-black canvas, emerald neon glow (#00d992) on buttons, progress, hover.
+   Electric agentic energy. Source: VoltAgent/awesome-design-md > voltagent
+   ============================================================================= */
+html { color-scheme: dark !important; }
+
+:root {
+  --primary-color: #00d992;
+  --secondary-color: #00b87a;
+  --background-color: #050507;
+  --surface-color: #0e0e12;
+  --text-color: #f2f2f2;
+  --text-secondary: #b8b3b0;
+  --border-color: #2a2a30;
+  --hover-color: #141418;
+  --focus-color: #00d992;
+  --font-family: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --border-radius: 8px;
+  --shadow: 0 0 0 1px rgba(0,217,146,0.06), 0 4px 20px rgba(0,0,0,0.90);
+  --shadow-hover: 0 0 0 1px rgba(0,217,146,0.20), 0 0 32px rgba(0,217,146,0.08), 0 8px 32px rgba(0,0,0,0.95);
+
+}
+
+body { font-family: var(--font-family); background: var(--background-color) !important; color: var(--text-color) !important; font-size: 0.9375rem; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+[style*="background-color: white"], [style*="background-color:#fff"], [style*="background: white"], [style*="background-color: #ffffff"], [style*="background-color:#ffffff"] { background-color: var(--surface-color) !important; color: var(--text-color) !important; }
+
+.assessment-card { background: var(--surface-color) !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; box-shadow: var(--shadow) !important; transition: all 0.25s ease !important; }
+.assessment-card:hover { border-color: rgba(0,217,146,0.25) !important; box-shadow: var(--shadow-hover) !important; }
+h1, h2, h3, h4, h5, h6, .card-header { color: var(--text-color) !important; font-family: var(--font-family) !important; font-weight: 700 !important; }
+.welcome-text, p, .question-text { color: var(--text-secondary) !important; }
+
+/* Emerald glow button */
+.btn-klee, .action-button.btn-klee { background: var(--primary-color) !important; color: #000000 !important; border: none !important; border-radius: var(--border-radius) !important; font-family: var(--font-family) !important; font-weight: 700 !important; box-shadow: 0 0 16px rgba(0,217,146,0.35) !important; transition: all 0.2s ease !important; }
+.btn-klee:hover { background: var(--secondary-color) !important; box-shadow: 0 0 32px rgba(0,217,146,0.55) !important; }
+.btn-klee:disabled { background: #2a2a30 !important; color: #666 !important; box-shadow: none !important; }
+.btn-primary { background: var(--primary-color) !important; border-color: var(--primary-color) !important; color: #000000 !important; }
+
+.shiny-input-radiogroup label { background: var(--hover-color) !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; }
+.shiny-input-radiogroup label:hover { border-color: rgba(0,217,146,0.40) !important; background: rgba(0,217,146,0.06) !important; }
+.form-control, input.form-control, select.form-control { background: var(--hover-color) !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; color-scheme: dark !important; }
+.form-control:focus, input:focus, select:focus { border-color: var(--primary-color) !important; box-shadow: 0 0 0 2px rgba(0,217,146,0.20) !important; outline: none !important; }
+
+.progress-bar-container { background: var(--border-color) !important; border-radius: 2px !important; }
+.progress-bar-fill { background: var(--primary-color) !important; height: 100% !important; box-shadow: 0 0 8px rgba(0,217,146,0.60) !important; }
+.dimension-score { border-left: 3px solid var(--primary-color) !important; background: rgba(0,217,146,0.06) !important; }
+.dimension-fill { background: var(--primary-color) !important; }
+.footer { border-top-color: var(--border-color) !important; color: var(--text-secondary) !important; }
+
+::-webkit-scrollbar { width: 5px; background: var(--background-color); } ::-webkit-scrollbar-thumb { background: rgba(0,217,146,0.25); border-radius: 3px; }
+*:focus { outline: none !important; } button:focus, input:focus, select:focus { box-shadow: 0 0 0 2px rgba(0,217,146,0.40) !important; }

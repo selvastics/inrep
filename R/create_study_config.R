@@ -16,7 +16,34 @@
 #' @param max_items Integer maximum number of items to administer, or \code{NULL} to use 
 #'   full item bank size. Prevents excessive test length.
 #' @param criteria Character string specifying item selection criterion. Options:
-#'   \code{"MI"} (Maximum Information), \code{"RANDOM"}, \code{"WEIGHTED"}, \code{"MFI"} (Maximum Fisher Information).
+#'   \code{"MI"}, \code{"MEI"}, \code{"RANDOM"}, \code{"WEIGHTED"}, \code{"MFI"}.
+#'
+#'   \strong{\code{"MI"} — Maximum Information (default):} Selects the item with the
+#'   highest Fisher information evaluated at the current point estimate
+#'   \eqn{\hat{\theta}}. Standard in operational CAT; computationally cheap.
+#'   \emph{Limitation}: Fisher information is an expected quantity over the response
+#'   distribution and is evaluated at a single point. When the ability estimate is
+#'   uncertain (early items, short tests), \eqn{\hat{\theta}} may sit far from the true
+#'   ability, and MI optimises for the wrong region of the scale.
+#'
+#'   \strong{\code{"MEI"} — Maximum Expected Information (recommended for short tests):}
+#'   Integrates Fisher information over the posterior distribution
+#'   \eqn{p(\theta \mid \hat{\theta}, SE)}, selecting items that are informative across
+#'   the entire plausible ability range, not just at the point estimate. Substantially
+#'   better than MI when \code{max_items < 15} or during the first 5-10 items of any
+#'   assessment, when \eqn{SE > 0.5} is typical. For long assessments (30+ items) where
+#'   \eqn{SE < 0.3} by mid-test, MI and MEI converge and the extra computation of MEI
+#'   is unnecessary. Adds ~21x the per-item computation of MI (still sub-millisecond
+#'   for typical banks of 10-100 items). Reference: Veerkamp & Berger (1997),
+#'   \emph{Journal of Educational and Behavioral Statistics}, 22(2), 203-226.
+#'
+#'   \strong{\code{"WEIGHTED"}}: Combines information maximisation with content
+#'   balancing weights. Useful when item groups must be proportionally represented.
+#'
+#'   \strong{\code{"MFI"}}: Exposure-penalised MI. Reduces overexposure of
+#'   high-information items using an empirical frequency penalty.
+#'
+#'   \strong{\code{"RANDOM"}}: Random selection; useful as a no-adaptation baseline.
 #' @param model Character string specifying IRT model passed to TAM functions.
 #'   Options: \code{"1PL"}, \code{"2PL"}, \code{"3PL"}, \code{"GRM"}.
 #'   1PL/2PL/3PL are fully supported via TAM. GRM is experimental: TAM
@@ -589,8 +616,14 @@ create_study_config <- function(
       validation_errors <- c(validation_errors, "max_items must be NULL or a positive integer")
     }
     
-    if (!criteria %in% c("MI", "RANDOM", "WEIGHTED", "MFI")) {
-      validation_errors <- c(validation_errors, "criteria must be one of: MI, RANDOM, WEIGHTED, MFI")
+    if (!criteria %in% c("MI", "MEI", "RANDOM", "WEIGHTED", "MFI")) {
+      validation_errors <- c(validation_errors, paste0(
+        "criteria must be one of: MI, MEI, RANDOM, WEIGHTED, MFI\n",
+        "  MI       = Maximum Information at point estimate (fast; best for long tests)\n",
+        "  MEI      = Maximum Expected Information over posterior (robust; best for short tests)\n",
+        "  WEIGHTED = Information + content-balancing weights\n",
+        "  MFI      = Exposure-penalised MI\n",
+        "  RANDOM   = Random selection (baseline/comparison)"))
     }
     
     # Use smart model validation

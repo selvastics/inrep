@@ -1,0 +1,108 @@
+﻿/* =============================================================================
+   CLAUDE THEME for inrep — Anthropic Claude design system
+   Warm cream canvas (#faf9f5), coral buttons (#cc785c), SERIF headings (Georgia),
+   coral-to-teal gradient progress bar. Thoughtful and literary.
+   Source: VoltAgent/awesome-design-md > claude
+   ============================================================================= */
+
+:root {
+  --primary-color: #cc785c;
+  --secondary-color: #a9583e;
+  --background-color: #faf9f5;
+  --surface-color: #efe9de;
+  --text-color: #1e1b18;
+  --text-secondary: #6c6a64;
+  --border-color: #d9d2ca;
+  --hover-color: #e8e2d8;
+  --focus-color: #cc785c;
+  --success-color: #5db872;
+  --error-color: #c64545;
+  --font-family: 'Georgia', 'Times New Roman', serif;
+  --font-heading: 'Georgia', 'Times New Roman', serif;
+  --font-body: 'Georgia', 'Times New Roman', serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --border-radius: 8px;
+  --shadow: 0 1px 4px rgba(100,80,60,0.08), 0 4px 16px rgba(100,80,60,0.06);
+  --shadow-hover: 0 2px 8px rgba(100,80,60,0.12), 0 8px 24px rgba(100,80,60,0.10);
+
+}
+
+body {
+  font-family: var(--font-sans) !important;
+  background: var(--background-color) !important;
+  color: var(--text-color) !important;
+  font-size: 1rem;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+.assessment-card {
+  background: var(--surface-color) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: var(--shadow) !important;
+  transition: box-shadow 0.25s ease !important;
+}
+.assessment-card:hover { box-shadow: var(--shadow-hover) !important; }
+
+/* SERIF headings — key distinguishing feature */
+h1, h2, h3, h4, h5, h6, .card-header, .section-title {
+  font-family: var(--font-heading) !important;
+  font-weight: 700 !important;
+  color: var(--text-color) !important;
+  letter-spacing: -0.01em !important;
+  font-style: normal !important;
+}
+.welcome-text, p, .question-text {
+  font-family: var(--font-sans) !important;
+  color: var(--text-secondary) !important;
+  line-height: 1.75 !important;
+}
+
+/* CORAL button */
+.btn-klee, .action-button.btn-klee {
+  background: var(--primary-color) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: var(--border-radius) !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 500 !important;
+  box-shadow: 0 1px 3px rgba(204,120,92,0.3) !important;
+  transition: background 0.2s ease, box-shadow 0.2s ease !important;
+}
+.btn-klee:hover { background: var(--secondary-color) !important; box-shadow: 0 2px 8px rgba(204,120,92,0.4) !important; }
+.btn-klee:disabled { background: #c4b8ae !important; box-shadow: none !important; }
+.btn-primary { background: var(--primary-color) !important; border-color: var(--primary-color) !important; }
+
+.shiny-input-radiogroup label {
+  background: rgba(250,249,245,0.8) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  color: var(--text-color) !important;
+  font-family: var(--font-sans) !important;
+  transition: background 0.15s ease, border-color 0.15s ease !important;
+}
+.shiny-input-radiogroup label:hover { background: var(--hover-color) !important; border-color: var(--primary-color) !important; }
+
+.form-control, input.form-control, select.form-control {
+  background: #ffffff !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  color: var(--text-color) !important;
+  font-family: var(--font-sans) !important;
+}
+.form-control:focus, input:focus, select:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 3px rgba(204,120,92,0.15) !important;
+  outline: none !important;
+}
+
+/* Coral-to-teal gradient progress — key signature */
+.progress-bar-container { background: var(--border-color) !important; border-radius: 3px !important; }
+.progress-bar-fill { background: linear-gradient(90deg, #cc785c, #5db8a6) !important; height: 100% !important; border-radius: 3px !important; }
+
+.dimension-score { border-left: 4px solid var(--primary-color) !important; background: rgba(204,120,92,0.06) !important; }
+.dimension-fill { background: linear-gradient(90deg, #cc785c, #5db8a6) !important; }
+.footer { border-top-color: var(--border-color) !important; color: var(--text-secondary) !important; }
+
+*:focus { outline: 2px solid var(--focus-color) !important; outline-offset: 2px !important; }

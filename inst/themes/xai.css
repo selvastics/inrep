@@ -1,0 +1,55 @@
+﻿/* =============================================================================
+   XAI THEME for inrep — xAI design system
+   Pure black (#000000) canvas, white buttons, 2px ultra-thin progress bar.
+   Zero decoration. Maximum signal-to-noise. Stark monochrome.
+   Source: VoltAgent/awesome-design-md > xai
+   ============================================================================= */
+html { color-scheme: dark !important; }
+
+:root {
+  --primary-color: #ffffff;
+  --secondary-color: #cccccc;
+  --background-color: #000000;
+  --surface-color: #111111;
+  --text-color: #ffffff;
+  --text-secondary: #888888;
+  --border-color: #222222;
+  --hover-color: #1a1a1a;
+  --focus-color: #ffffff;
+  --success-color: #44ff44;
+  --error-color: #ff4444;
+  --font-family: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --border-radius: 4px;
+  --shadow: none;
+
+}
+
+body { font-family: var(--font-family); background: var(--background-color) !important; color: var(--text-color) !important; font-size: 0.9375rem; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+[style*="background-color: white"], [style*="background-color:#fff"], [style*="background: white"], [style*="background-color: #ffffff"], [style*="background-color:#ffffff"] { background-color: var(--surface-color) !important; color: var(--text-color) !important; }
+
+.assessment-card { background: var(--surface-color) !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; box-shadow: none !important; }
+.assessment-card:hover { border-color: #444444 !important; }
+h1, h2, h3, h4, h5, h6, .card-header { color: var(--text-color) !important; font-family: var(--font-family) !important; font-weight: 600 !important; letter-spacing: -0.01em !important; }
+.welcome-text, p, .question-text { color: var(--text-secondary) !important; }
+
+/* White button — stark inversion */
+.btn-klee, .action-button.btn-klee { background: #ffffff !important; color: #000000 !important; border: none !important; border-radius: var(--border-radius) !important; font-family: var(--font-family) !important; font-weight: 600 !important; box-shadow: none !important; transition: background 0.12s ease !important; }
+.btn-klee:hover { background: #e0e0e0 !important; }
+.btn-klee:disabled { background: #333333 !important; color: #666666 !important; }
+.btn-primary { background: #ffffff !important; border-color: #ffffff !important; color: #000000 !important; }
+
+.shiny-input-radiogroup label { background: var(--hover-color) !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; }
+.shiny-input-radiogroup label:hover { border-color: #555555 !important; background: #222222 !important; }
+.form-control, input.form-control, select.form-control { background: #111111 !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; color-scheme: dark !important; }
+.form-control:focus, input:focus, select:focus { border-color: #555555 !important; box-shadow: none !important; outline: none !important; }
+
+/* 2px ultra-thin progress */
+.progress-bar-container { background: var(--border-color) !important; border-radius: 0 !important; }
+.progress-bar-fill { background: #ffffff !important; height: 100% !important; border-radius: 0 !important; }
+.dimension-score { border-left: 3px solid #ffffff !important; background: rgba(255,255,255,0.04) !important; }
+.dimension-fill { background: #ffffff !important; }
+.footer { border-top-color: var(--border-color) !important; color: var(--text-secondary) !important; }
+::-webkit-scrollbar { width: 4px; background: #000; } ::-webkit-scrollbar-thumb { background: #333; }
+*:focus { outline: 1px solid #555555 !important; outline-offset: 2px !important; }

@@ -103,17 +103,19 @@ estimate_ability <- function(rv, item_bank, config) {
     seq(-4, 4, length.out = 100)
   }
   
-  # TAM package estimation for dichotomous models (EAP or WLE).
-  # Skipped during adaptive real-time CAT: TAM re-estimates item parameters via
-
-  # MML which is wrong for N=1 and slow. The direct EAP below uses pre-calibrated
-  # item parameters — the standard and correct approach in CAT software.
-  # GRM is also excluded: TAM fits GPCM (different model from Samejima GRM).
-  use_tam <- isTRUE(config$estimation_method %in% c("EAP", "WLE")) && 
-             isTRUE(config$model %in% c("1PL", "2PL", "3PL")) && 
-             !isTRUE(config$adaptive) &&
-             length(responses) >= 3 && 
-             requireNamespace("TAM", quietly = TRUE)
+  # This helper estimates theta for a single respondent. TAM's tam.mml* family
+  # performs marginal maximum likelihood estimation of item parameters and latent
+  # distribution, which is not valid for a single response pattern. For this
+  # single-person path we therefore always use the direct EAP fallback below,
+  # which treats item parameters as fixed calibration inputs.
+  use_tam <- FALSE
+  if (isTRUE(config$estimation_method %in% c("EAP", "WLE")) &&
+      isTRUE(config$model %in% c("1PL", "2PL", "3PL")) &&
+      !isTRUE(config$adaptive) &&
+      length(responses) >= 3 &&
+      requireNamespace("TAM", quietly = TRUE)) {
+    message("estimate_ability(): falling back to direct EAP because TAM tam.mml* is not valid for single-person online estimation.")
+  }
   
   if (use_tam) {
     # Require variability to avoid degenerate fits
@@ -331,13 +333,9 @@ estimate_ability_mirt <- function(responses, administered, item_bank, model = "2
         # Create threshold parameters
         if ("d1" %in% names(item_params)) {
           # Use explicit threshold parameters if available
-          thresholds <- c()
-          for (k in 1:max_score) {
-            thresh_name <- paste0("d", k)
-            if (thresh_name %in% names(item_params)) {
-              thresholds <- c(thresholds, item_params[[thresh_name]][i])
-            }
-          }
+          thresh_names <- paste0("d", seq_len(max_score))
+          avail_thresh <- thresh_names[thresh_names %in% names(item_params)]
+          thresholds <- vapply(avail_thresh, function(nm) item_params[[nm]][i], numeric(1))
           if (length(thresholds) == 0) {
             thresholds <- seq(b_param - 1.5, b_param + 1.5, length.out = max_score)
           }

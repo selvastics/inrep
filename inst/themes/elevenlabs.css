@@ -1,0 +1,51 @@
+﻿/* =============================================================================
+   ELEVENLABS THEME for inrep — ElevenLabs design system
+   Deep black canvas (#0a0a0a), purple primary (#7c3aed), cinematic glow
+   on both cards and buttons. Audio/voice production aesthetic.
+   Source: VoltAgent/awesome-design-md > elevenlabs
+   ============================================================================= */
+html { color-scheme: dark !important; }
+
+:root {
+  --primary-color: #7c3aed;
+  --secondary-color: #6d28d9;
+  --background-color: #0a0a0a;
+  --surface-color: #111111;
+  --text-color: #f9fafb;
+  --text-secondary: #9ca3af;
+  --border-color: rgba(124,58,237,0.18);
+  --hover-color: #1a1a1a;
+  --focus-color: #7c3aed;
+  --font-family: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --border-radius: 10px;
+  --shadow: 0 0 24px rgba(124,58,237,0.12), 0 4px 20px rgba(0,0,0,0.80);
+  --shadow-hover: 0 0 40px rgba(124,58,237,0.22), 0 8px 32px rgba(0,0,0,0.90);
+
+}
+
+body { font-family: var(--font-family); background: var(--background-color) !important; color: var(--text-color) !important; font-size: 0.9375rem; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+
+[style*="background-color: white"], [style*="background-color:#fff"], [style*="background: white"], [style*="background-color: #ffffff"], [style*="background-color:#ffffff"] { background-color: var(--surface-color) !important; color: var(--text-color) !important; }
+
+.assessment-card { background: var(--surface-color) !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; box-shadow: var(--shadow) !important; transition: all 0.25s ease !important; }
+.assessment-card:hover { box-shadow: var(--shadow-hover) !important; border-color: rgba(124,58,237,0.35) !important; }
+h1, h2, h3, h4, h5, h6, .card-header { color: var(--text-color) !important; font-weight: 700 !important; }
+.welcome-text, p, .question-text { color: var(--text-secondary) !important; }
+
+.btn-klee, .action-button.btn-klee { background: var(--primary-color) !important; color: #ffffff !important; border: none !important; border-radius: var(--border-radius) !important; font-family: var(--font-family) !important; font-weight: 600 !important; box-shadow: 0 0 20px rgba(124,58,237,0.40) !important; transition: all 0.2s ease !important; }
+.btn-klee:hover { background: var(--secondary-color) !important; box-shadow: 0 0 36px rgba(124,58,237,0.60) !important; }
+.btn-klee:disabled { background: #2a2a2a !important; box-shadow: none !important; color: #666666 !important; }
+.btn-primary { background: var(--primary-color) !important; border-color: var(--primary-color) !important; }
+
+.shiny-input-radiogroup label { background: var(--hover-color) !important; border: 1px solid rgba(124,58,237,0.20) !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; }
+.shiny-input-radiogroup label:hover { border-color: rgba(124,58,237,0.50) !important; background: rgba(124,58,237,0.06) !important; }
+.form-control, input.form-control, select.form-control { background: var(--hover-color) !important; border: 1px solid rgba(124,58,237,0.20) !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; color-scheme: dark !important; }
+.form-control:focus, input:focus, select:focus { border-color: var(--primary-color) !important; box-shadow: 0 0 0 2px rgba(124,58,237,0.20) !important; outline: none !important; }
+.progress-bar-container { background: rgba(124,58,237,0.15) !important; border-radius: 2px !important; }
+.progress-bar-fill { background: var(--primary-color) !important; height: 100% !important; box-shadow: 0 0 8px rgba(124,58,237,0.60) !important; }
+.dimension-score { border-left: 4px solid var(--primary-color) !important; background: rgba(124,58,237,0.07) !important; }
+.dimension-fill { background: var(--primary-color) !important; }
+.footer { border-top-color: var(--border-color) !important; color: var(--text-secondary) !important; }
+::-webkit-scrollbar { width: 5px; background: var(--background-color); } ::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.30); border-radius: 3px; }
+*:focus { outline: 2px solid var(--focus-color) !important; outline-offset: 2px !important; }

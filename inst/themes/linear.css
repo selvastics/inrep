@@ -1,0 +1,109 @@
+﻿/* =============================================================================
+   LINEAR THEME for inrep — Linear design system
+   Abyss-dark canvas (#010102), lavender accent (#5e6ad2), ultra-thin 3px
+   progress bar, dense Inter typography. Speed and focus.
+   Source: VoltAgent/awesome-design-md > linear
+   ============================================================================= */
+html { color-scheme: dark !important; }
+
+:root {
+  --primary-color: #5e6ad2;
+  --secondary-color: #4f5cba;
+  --background-color: #010102;
+  --surface-color: #0f1011;
+  --text-color: #f7f8f8;
+  --text-secondary: #9ba1a9;
+  --border-color: #23252a;
+  --hover-color: #1a1c20;
+  --focus-color: #5e6ad2;
+  --success-color: #2da44e;
+  --error-color: #f85149;
+  --font-family: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --border-radius: 8px;
+  --shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 4px 16px rgba(0,0,0,0.8);
+  --shadow-hover: 0 0 0 1px rgba(94,106,210,0.30), 0 4px 24px rgba(0,0,0,0.9);
+
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--background-color) !important;
+  color: var(--text-color) !important;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Nuclear inline-style overrides for dark theme */
+[style*="background-color: white"], [style*="background-color:#fff"],
+[style*="background: white"], [style*="background-color: #ffffff"],
+[style*="background-color:#ffffff"] { background-color: var(--surface-color) !important; color: var(--text-color) !important; }
+
+.assessment-card {
+  background: var(--surface-color) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: var(--shadow) !important;
+  transition: box-shadow 0.2s ease !important;
+}
+.assessment-card:hover { box-shadow: var(--shadow-hover) !important; }
+
+h1, h2, h3, h4, h5, h6, .card-header {
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+  font-size-adjust: none !important;
+}
+.welcome-text, p, .question-text { color: var(--text-secondary) !important; line-height: 1.6 !important; }
+
+.btn-klee, .action-button.btn-klee {
+  background: var(--primary-color) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: var(--border-radius) !important;
+  font-family: var(--font-family) !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.005em !important;
+  box-shadow: 0 0 0 1px rgba(94,106,210,0.30) !important;
+  transition: background 0.15s ease !important;
+}
+.btn-klee:hover { background: var(--secondary-color) !important; }
+.btn-klee:disabled { background: var(--hover-color) !important; color: var(--text-secondary) !important; }
+.btn-primary { background: var(--primary-color) !important; border-color: var(--primary-color) !important; }
+
+.shiny-input-radiogroup label {
+  background: var(--hover-color) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+}
+.shiny-input-radiogroup label:hover { border-color: rgba(94,106,210,0.50) !important; background: rgba(94,106,210,0.08) !important; }
+
+.form-control, input.form-control, select.form-control {
+  background: var(--hover-color) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+  color-scheme: dark !important;
+}
+.form-control:focus, input:focus, select:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 2px rgba(94,106,210,0.20) !important;
+  outline: none !important;
+}
+
+.progress-bar-container { background: var(--border-color) !important; border-radius: 1.5px !important; }
+.progress-bar-fill { background: var(--primary-color) !important; height: 100% !important; border-radius: 1.5px !important; }
+
+.dimension-score { border-left: 3px solid var(--primary-color) !important; background: rgba(94,106,210,0.08) !important; }
+.dimension-fill { background: var(--primary-color) !important; }
+.footer { border-top-color: var(--border-color) !important; color: var(--text-secondary) !important; }
+
+::-webkit-scrollbar { width: 4px; background: var(--background-color); }
+::-webkit-scrollbar-thumb { background: var(--border-color); }
+*:focus { outline: 2px solid var(--focus-color) !important; outline-offset: 2px !important; }

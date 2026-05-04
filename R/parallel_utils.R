@@ -332,7 +332,7 @@ export_data_format <- function(data, format, output_dir) {
         if (requireNamespace("readr", quietly = TRUE)) {
           readr::write_csv(data, filename)
         } else {
-          write.csv(data, filename, row.names = FALSE)
+          write.csv(data, filename, row.names = FALSE, fileEncoding = "UTF-8")
         }
         list(format = "csv", file = filename, success = TRUE)
       },

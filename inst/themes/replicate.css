@@ -1,0 +1,48 @@
+﻿/* =============================================================================
+   REPLICATE THEME for inrep — Replicate design system
+   Pure white canvas, near-black typography, focus-only blue accent.
+   Monochrome discipline. Blue appears ONLY on focus states.
+   Source: VoltAgent/awesome-design-md > replicate
+   ============================================================================= */
+
+:root {
+  --primary-color: #09090b;
+  --secondary-color: #18181b;
+  --background-color: #ffffff;
+  --surface-color: #fafafa;
+  --text-color: #09090b;
+  --text-secondary: #71717a;
+  --border-color: #e4e4e7;
+  --hover-color: #f4f4f5;
+  --focus-color: #0070f3;
+  --font-family: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --border-radius: 6px;
+  --shadow: 0 1px 2px rgba(0,0,0,0.05), 0 2px 8px rgba(0,0,0,0.04);
+  --shadow-hover: 0 2px 6px rgba(0,0,0,0.08), 0 6px 20px rgba(0,0,0,0.06);
+
+}
+
+body { font-family: var(--font-family); background: var(--background-color) !important; color: var(--text-color) !important; font-size: 0.9375rem; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+.assessment-card { background: var(--surface-color) !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; box-shadow: var(--shadow) !important; transition: box-shadow 0.2s ease !important; }
+.assessment-card:hover { box-shadow: var(--shadow-hover) !important; }
+h1, h2, h3, h4, h5, h6, .card-header { color: var(--text-color) !important; font-weight: 600 !important; letter-spacing: -0.015em !important; }
+.welcome-text, p, .question-text { color: var(--text-secondary) !important; }
+
+/* Near-black button — color comes only from focus */
+.btn-klee, .action-button.btn-klee { background: #09090b !important; color: #ffffff !important; border: none !important; border-radius: var(--border-radius) !important; font-family: var(--font-family) !important; font-weight: 500 !important; box-shadow: none !important; }
+.btn-klee:hover { background: #18181b !important; }
+.btn-klee:disabled { background: #e4e4e7 !important; color: #a1a1aa !important; }
+.btn-primary { background: #09090b !important; border-color: #09090b !important; }
+
+.shiny-input-radiogroup label { background: #ffffff !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; }
+.shiny-input-radiogroup label:hover { background: var(--hover-color) !important; border-color: #a1a1aa !important; }
+.form-control, input.form-control, select.form-control { background: var(--surface-color) !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; }
+/* Blue only on focus — key signature */
+.form-control:focus, input:focus, select:focus { border-color: var(--focus-color) !important; box-shadow: 0 0 0 3px rgba(0,112,243,0.12) !important; outline: none !important; }
+.progress-bar-container { background: var(--border-color) !important; border-radius: 2px !important; }
+.progress-bar-fill { background: #09090b !important; height: 100% !important; }
+.dimension-score { border-left: 3px solid #09090b !important; background: #f4f4f5 !important; }
+.dimension-fill { background: #09090b !important; }
+.footer { border-top-color: var(--border-color) !important; color: var(--text-secondary) !important; }
+*:focus { outline: 2px solid var(--focus-color) !important; outline-offset: 2px !important; }

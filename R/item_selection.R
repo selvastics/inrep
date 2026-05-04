@@ -372,10 +372,24 @@ select_next_item <- function(rv, item_bank, config) {
     current_theta <- config$theta_prior[1] %||% 0
   }
   
-  # Compute item information for all available items
+  # ---------------------------------------------------------------------------
+  # Item information computation (point estimate at current_theta)
+  #
+  # All criteria except MEI use Fisher information evaluated at hat_theta:
+  #   I_i(hat_theta) = -E[d^2 ln L / dtheta^2] at theta = hat_theta
+  #
+  # This is the classical MI approach and is accurate once SE is small
+  # (roughly after 10+ items, or SE < 0.40). In the early stages of a short
+  # assessment SE is often 0.5-0.8 logits, meaning hat_theta may sit far from
+  # the true ability — MI then optimises for the wrong region.
+  #
+  # MEI (Maximum Expected Information) avoids this by integrating I_i(theta)
+  # over the posterior p(theta | hat_theta, SE). It is handled as a separate
+  # branch below and does NOT depend on this pre-computed `info` vector.
+  #
   # Direct vapply — compute_item_info_single runs in <0.05ms per item,
-
-  # so parallelization overhead far exceeds the computation itself
+  # so parallelization overhead far exceeds the computation itself.
+  # ---------------------------------------------------------------------------
   info <- vapply(available, function(i) {
     compute_item_info_single(current_theta, i, item_bank, config)
   }, numeric(1))
@@ -386,37 +400,70 @@ select_next_item <- function(rv, item_bank, config) {
     return(sample(available, 1))
   }
   
-  # Fast item selection with early termination
+  # Item selection from already-computed information values.
   item <- if (config$criteria == "RANDOM") {
     sample(available, 1)
   } else if (config$criteria == "MI") {
-    # Fast MI selection: find items with high information without computing all
-    if (length(available) > 20) {
-      # For large item banks, sample a subset for faster selection
-      sample_size <- min(15, length(available))
-      sampled_items <- sample(available, sample_size)
-      sampled_info <- info[available %in% sampled_items]
-      top_items <- sampled_items[sampled_info >= 0.9 * max(sampled_info, na.rm = TRUE)]
-      if (length(top_items) == 0) {
-        top_items <- sampled_items[which.max(sampled_info)]
-      }
-      sample(top_items, 1)
+    # Maximum Information at the point estimate hat_theta.
+    # Optimal when SE is already small (long tests, late-stage items).
+    # For short assessments or early items where SE > 0.5, consider MEI,
+    # which integrates over the ability posterior and is more robust to
+    # early-stage estimation uncertainty. See Veerkamp & Berger (1997).
+    max_info <- max(info, na.rm = TRUE)
+    top_items <- available[info >= max_info]
+    if (length(top_items) == 0) {
+      message("No items meet MI criteria, selecting random item")
+      sample(available, 1)
     } else {
-      # For small item banks, use all items
-      top_items <- available[info >= 0.95 * max(info, na.rm = TRUE)]
-      if (length(top_items) == 0) {
-        message("No items meet MI criteria, selecting random item")
-        sample(available, 1)
-      } else {
-        sample(top_items, 1)
-      }
+      sample(top_items, 1)
+    }
+  } else if (config$criteria == "MEI") {
+    # Maximum Expected Information — integrates Fisher information over the
+    # posterior p(theta | hat_theta, SE) rather than at the single point
+    # estimate hat_theta.
+    #
+    # When to prefer MEI over MI:
+    #   - Short assessments (max_items < 15): SE stays large throughout,
+    #     so point-estimate information is an unreliable proxy.
+    #   - Early items in any CAT (typically items 1–5): hat_theta is driven
+    #     by the prior and SE ~ 1.0; MEI selects items informative across
+    #     the whole plausible ability range.
+    #   - Personality/psychological scales where individual precision matters
+    #     and each item has non-trivial cost (participant burden).
+    #
+    # When MI is sufficient (MEI adds computational cost without benefit):
+    #   - Long assessments (30+ items): SE < 0.30 by mid-test, MI and MEI
+    #     converge.
+    #
+    # Algorithm: 21-point Normal quadrature spanning ±3 posterior SDs.
+    # Posterior approximated as N(hat_theta, SE^2) — exact under normal-normal
+    # conjugacy, a good approximation for EAP estimates.
+    se_post <- if (!is.null(rv$ability_se) && is.numeric(rv$ability_se) &&
+                    is.finite(rv$ability_se) && rv$ability_se > 0) rv$ability_se else 1.0
+    mei_grid    <- seq(current_theta - 3 * se_post,
+                       current_theta + 3 * se_post,
+                       length.out = 21)
+    mei_weights <- dnorm(mei_grid, current_theta, se_post)
+    mei_weights <- mei_weights / sum(mei_weights)   # normalise to sum to 1
+    info_mei <- vapply(available, function(i) {
+      sum(mei_weights * vapply(mei_grid, function(t)
+        compute_item_info_single(t, i, item_bank, config), numeric(1)))
+    }, numeric(1))
+    if (all(is.na(info_mei) | info_mei <= 0)) {
+      message("No valid MEI values, falling back to random selection")
+      sample(available, 1)
+    } else {
+      top_items <- available[info_mei >= max(info_mei, na.rm = TRUE)]
+      if (length(top_items) == 0) sample(available, 1) else sample(top_items, 1)
     }
   } else if (config$criteria == "WEIGHTED") {
     group_indices <- sapply(available, function(i) {
       for (g in names(config$item_groups)) if (i %in% config$item_groups[[g]]) return(g)
       "Other"
     })
-    probs <- info * (group_weights[group_indices] %||% 1)
+    weight_values <- group_weights[group_indices]
+    weight_values[is.na(weight_values)] <- 1
+    probs <- info * weight_values
     if (length(probs) == 0 || all(is.na(probs) | probs <= 0)) {
       message("Invalid probabilities for WEIGHTED criteria, selecting random item")
       return(sample(available, 1))
@@ -424,6 +471,7 @@ select_next_item <- function(rv, item_bank, config) {
     probs <- probs / sum(probs, na.rm = TRUE)
     sample(available, 1, prob = probs)
   } else if (config$criteria == "MFI") {
+    message("MFI currently uses an exposure-penalized approximation rather than calibrated Sympson-Hetter exposure control.")
     exposure <- table(rv$administered) / max(1, length(rv$administered))
     exposure_penalty <- vapply(available, function(i) {
       1 - 0.5 * (exposure[as.character(i)] %||% 0)
@@ -520,11 +568,18 @@ fast_select_next_item <- function(rv, item_bank, config, max_compute = 15) {
   if (!is.finite(current_theta)) current_theta <- 0
   
   # Fast information computation — delegates to compute_item_info_single
-  # for model-appropriate formulas (2PL, 3PL, GRM)
+  # for model-appropriate formulas (2PL, 3PL, GRM).
+  # Note: fast_select_next_item uses point-estimate MI for all criteria,
+  # including when config$criteria == "MEI". The fast path is designed for
+  # large banks (100+ items) where a random subsample of max_compute items
+  # is evaluated. Full MEI quadrature (21 grid points per item) on a
+  # subsampled pool would add negligible psychometric benefit over MI
+  # because the subsample already introduces randomness; use select_next_item()
+  # directly when you need full MEI behaviour.
   info <- vapply(available, function(i) {
     compute_item_info_single(current_theta, i, item_bank, config)
   }, numeric(1))
-  
+
   # Quick selection
   if (all(is.na(info) | info <= 0)) {
     return(sample(available, 1))

@@ -1598,13 +1598,28 @@ launch_study <- function(
             });
           });
           
-          // Start observing immediately
-          observer.observe(document.body, {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ['style', 'class']
-          });
+          // MAINTENANCE NOTE (2026-05-03): Transition stability depends on
+          // attaching this observer only when document.body exists.
+          // If you change observer startup, keep this guard or startup may fail
+          // with 'observe ... parameter 1 is not of type Node', which can break
+          // first-render timing and reintroduce page-transition flicker.
+          // Start observing only when a valid target node exists
+          function startCenterObserver() {
+            var target = document.body;
+            if (target && target.nodeType === 1) {
+              observer.observe(target, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['style', 'class']
+              });
+            }
+          }
+          if (document.body && document.body.nodeType === 1) {
+            startCenterObserver();
+          } else {
+            document.addEventListener('DOMContentLoaded', startCenterObserver, { once: true });
+          }
           
           // PERIODIC ENFORCEMENT - every 100ms
           setInterval(function() {
@@ -1754,8 +1769,11 @@ launch_study <- function(
           
           // Also position the main study UI immediately
           setTimeout(function() {
-            document.getElementById('study_ui').className += ' positioned';
-            document.getElementById('study_ui').style.visibility = 'visible';
+            var studyUi = document.getElementById('study_ui');
+            if (studyUi) {
+              studyUi.classList.add('positioned');
+              studyUi.style.visibility = 'visible';
+            }
           }, 1);
           
           // Simple transition function with debouncing
@@ -1805,6 +1823,10 @@ launch_study <- function(
               $('.page-wrapper').addClass('positioned');
             });
             
+            // MAINTENANCE NOTE (2026-05-03): This study_ui-specific handler and
+            // the generic shiny:value handler above work together.
+            // Keep ordering and visibility writes consistent, otherwise old/new
+            // page DOM can race and briefly flash in the corner during swaps.
             // Handle stage transitions with immediate positioning
             $(document).on('shiny:value', function(event) {
               if (event.name === 'study_ui') {
@@ -1872,8 +1894,11 @@ launch_study <- function(
           
           // Additional immediate positioning on page load
           window.addEventListener('load', function() {
-            document.getElementById('study_ui').className += ' positioned';
-            document.getElementById('study_ui').style.visibility = 'visible';
+            var studyUi = document.getElementById('study_ui');
+            if (studyUi) {
+              studyUi.classList.add('positioned');
+              studyUi.style.visibility = 'visible';
+            }
           });
         });
       ")),
@@ -3171,6 +3196,40 @@ launch_study <- function(
       logger(base::sprintf("Failed to restore session: %s", e$message))
     })
   }
+
+  # Unified storage pipeline for all session persistence paths.
+  run_storage_pipeline <- function(trigger = "event", force = FALSE, include_cloud = FALSE) {
+    if (!isTRUE(session_save) || !isTRUE(config$session_save)) {
+      return(invisible(FALSE))
+    }
+
+    preserved <- FALSE
+
+    if (exists("preserve_session_data") && is.function(preserve_session_data)) {
+      preserved <- isTRUE(tryCatch({
+        preserve_session_data(force = force)
+      }, error = function(e) {
+        logger(sprintf("Storage pipeline preserve failed [%s]: %s", trigger, e$message), level = "ERROR")
+        FALSE
+      }))
+    }
+
+    tryCatch({
+      base::saveRDS(shiny::reactiveValuesToList(rv), session_file)
+    }, error = function(e) {
+      logger(sprintf("Storage pipeline local save failed [%s]: %s", trigger, e$message), level = "WARNING")
+    })
+
+    if (isTRUE(include_cloud) && !base::is.null(webdav_url)) {
+      tryCatch({
+        save_session_to_cloud(rv, config, webdav_url, password, session = session)
+      }, error = function(e) {
+        logger(sprintf("Storage pipeline cloud save failed [%s]: %s", trigger, e$message), level = "WARNING")
+      })
+    }
+
+    invisible(preserved)
+  }
   
   logger("rv initialized IMMEDIATELY (synchronous) - no observe needed", level = "DEBUG")
     
@@ -3185,14 +3244,8 @@ launch_study <- function(
             rv$stage = "timeout"
             logger("Session timed out due to maximum session time", level = "WARNING")
             
-            # Force final data preservation
-            if (exists("preserve_session_data") && is.function(preserve_session_data)) {
-              tryCatch({
-                preserve_session_data(force = TRUE)
-              }, error = function(e) {
-                logger(sprintf("Final data preservation failed: %s", e$message), level = "WARNING")
-              })
-            }
+            # Force final data preservation through unified storage pipeline.
+            run_storage_pipeline(trigger = "session_timeout", force = TRUE, include_cloud = FALSE)
             
             # Close browser/tab first
             tryCatch({
@@ -3247,12 +3300,8 @@ launch_study <- function(
       # Automatic data preservation - converted to event-based instead of timer-based
       # This prevents page jumping while still preserving data on important events
       observe_data_preservation <- function() {
-        if (rv$session_active && exists("preserve_session_data") && is.function(preserve_session_data)) {
-          tryCatch({
-            preserve_session_data()
-          }, error = function(e) {
-            logger(sprintf("Data preservation failed: %s", e$message), level = "ERROR")
-          })
+        if (rv$session_active) {
+          run_storage_pipeline(trigger = "event_monitor", force = FALSE, include_cloud = FALSE)
         }
       }
       
@@ -3348,15 +3397,9 @@ launch_study <- function(
       if (session_save) {
         logger("Session ending - cleaning up and preserving final data", level = "INFO")
         
-        # Always try to preserve data first
-        if (exists("preserve_session_data", mode = "function")) {
-          tryCatch({
-            preserve_session_data(force = TRUE)
-            logger("Data preserved on session end", level = "INFO")
-          }, error = function(e) {
-            logger(sprintf("Data preservation failed on session end: %s", e$message), level = "ERROR")
-          })
-        }
+        # Always preserve data through unified pipeline first.
+        run_storage_pipeline(trigger = "session_end", force = TRUE, include_cloud = FALSE)
+        logger("Data preserved on session end", level = "INFO")
         
         # Then try cleanup if available
         if (exists("cleanup_session") && is.function(cleanup_session)) {
@@ -4582,11 +4625,7 @@ launch_study <- function(
     
     shiny::observe({
       if (config$session_save) {
-        base::tryCatch({
-          base::saveRDS(shiny::reactiveValuesToList(rv), session_file)
-        }, error = function(e) {
-          logger(base::sprintf("Failed to save session: %s", e$message))
-        })
+        run_storage_pipeline(trigger = "reactive_state", force = FALSE, include_cloud = FALSE)
       }
     })
     
@@ -5734,21 +5773,8 @@ launch_study <- function(
           })
         }
         
-        # Final robust data preservation
-        if (session_save && exists("preserve_session_data") && is.function(preserve_session_data)) {
-          tryCatch({
-            preserve_session_data(force = TRUE)
-            logger("Final assessment data preserved", level = "INFO")
-          }, error = function(e) {
-            logger(sprintf("Final data preservation failed: %s", e$message), level = "ERROR")
-          })
-        }
-        
-        # Save session to cloud if enabled
-        if (config$session_save && !base::is.null(webdav_url)) {
-          logger("Attempting to save session to cloud...")
-          save_session_to_cloud(rv, config, webdav_url, password, session = session)
-        }
+        run_storage_pipeline(trigger = "assessment_complete_stopping", force = TRUE, include_cloud = TRUE)
+        logger("Final assessment data preserved", level = "INFO")
       } else {
         # ROBUST NEXT ITEM SELECTION WITH ERROR RECOVERY
         next_item_result <- base::tryCatch({
@@ -5819,21 +5845,8 @@ launch_study <- function(
             })
           }
           
-          # Final robust data preservation
-          if (session_save && exists("preserve_session_data") && is.function(preserve_session_data)) {
-            tryCatch({
-              preserve_session_data(force = TRUE)
-              logger("Final assessment data preserved", level = "INFO")
-            }, error = function(e) {
-              logger(sprintf("Final data preservation failed: %s", e$message), level = "ERROR")
-            })
-          }
-          
-          # Save session to cloud if enabled
-          if (config$session_save && !base::is.null(webdav_url)) {
-            logger("Attempting to save session to cloud...")
-            save_session_to_cloud(rv, config, webdav_url, password, session = session)
-          }
+          run_storage_pipeline(trigger = "assessment_complete_no_items", force = TRUE, include_cloud = TRUE)
+          logger("Final assessment data preserved", level = "INFO")
         } else {
           rv$start_time <- base::Sys.time()
           if (config$response_ui_type == "slider") {
@@ -6011,15 +6024,8 @@ launch_study <- function(
         session_duration <- as.numeric(difftime(Sys.time(), rv$start_time, units = "secs"))
         if (session_duration > 3600) {  # 1 hour
           logger("Long session detected - performing health check", level = "INFO")
-          # Force data preservation
-          if (session_save && exists("preserve_session_data") && is.function(preserve_session_data)) {
-            tryCatch({
-              preserve_session_data(force = TRUE)
-              logger("Health check data preservation completed", level = "INFO")
-            }, error = function(e) {
-              logger(sprintf("Health check data preservation failed: %s", e$message), level = "WARNING")
-            })
-          }
+          run_storage_pipeline(trigger = "health_check", force = TRUE, include_cloud = FALSE)
+          logger("Health check data preservation completed", level = "INFO")
         }
       }
     }

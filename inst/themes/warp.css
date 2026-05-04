@@ -1,0 +1,113 @@
+﻿/* =============================================================================
+   WARP THEME for inrep — Warp terminal design system
+   Terminal dark (#121212), teal accent (#01a899), MONOSPACE font on ALL elements
+   including headings, labels, buttons. Pure terminal block feel.
+   Source: VoltAgent/awesome-design-md > warp
+   ============================================================================= */
+html { color-scheme: dark !important; }
+
+:root {
+  --primary-color: #01a899;
+  --secondary-color: #018f82;
+  --background-color: #121212;
+  --surface-color: #1c1c1c;
+  --text-color: #d4d4d4;
+  --text-secondary: #888888;
+  --border-color: #2a2a2a;
+  --hover-color: #1e1e1e;
+  --focus-color: #01a899;
+  --success-color: #01a899;
+  --error-color: #f14c4c;
+  --font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SFMono-Regular', 'Consolas', monospace;
+  --font-body: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SFMono-Regular', 'Consolas', monospace;
+  --border-radius: 4px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.70);
+  --shadow-hover: 0 0 0 1px rgba(1,168,153,0.30), 0 4px 16px rgba(0,0,0,0.80);
+
+}
+
+/* MONOSPACE on everything */
+body, h1, h2, h3, h4, h5, h6, p, span, div, label, input, select, textarea, button,
+.btn, .shiny-input-container, .shiny-input-container label, .form-control,
+.question-text, .welcome-text, .card-header, .section-title {
+  font-family: var(--font-family) !important;
+}
+
+body {
+  background: var(--background-color) !important;
+  color: var(--text-color) !important;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: auto;
+  font-variant-ligatures: none !important;
+}
+
+[style*="background-color: white"], [style*="background-color:#fff"],
+[style*="background: white"], [style*="background-color: #ffffff"],
+[style*="background-color:#ffffff"] { background-color: var(--surface-color) !important; color: var(--text-color) !important; }
+
+.assessment-card {
+  background: var(--surface-color) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: var(--shadow) !important;
+  transition: border-color 0.15s ease !important;
+}
+.assessment-card:hover { border-color: rgba(1,168,153,0.40) !important; box-shadow: var(--shadow-hover) !important; }
+
+h1, h2, h3, h4, h5, h6, .card-header {
+  color: var(--text-color) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+}
+.welcome-text, p, .question-text { color: var(--text-secondary) !important; }
+
+/* Teal button — monospace font */
+.btn-klee, .action-button.btn-klee {
+  background: var(--primary-color) !important;
+  color: #000000 !important;
+  border: none !important;
+  border-radius: var(--border-radius) !important;
+  font-family: var(--font-family) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.03em !important;
+  box-shadow: none !important;
+  transition: background 0.12s ease !important;
+}
+.btn-klee:hover { background: var(--secondary-color) !important; }
+.btn-klee:disabled { background: #3a3a3a !important; color: #666666 !important; }
+.btn-primary { background: var(--primary-color) !important; border-color: var(--primary-color) !important; color: #000000 !important; }
+
+.shiny-input-radiogroup label {
+  background: var(--hover-color) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+}
+.shiny-input-radiogroup label:hover { border-color: rgba(1,168,153,0.45) !important; background: rgba(1,168,153,0.06) !important; color: var(--primary-color) !important; }
+
+.form-control, input.form-control, select.form-control {
+  background: #1e1e1e !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+  color-scheme: dark !important;
+}
+.form-control:focus, input:focus, select:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 1px rgba(1,168,153,0.30) !important;
+  outline: none !important;
+}
+
+.progress-bar-container { background: var(--border-color) !important; border-radius: 1px !important; }
+.progress-bar-fill { background: var(--primary-color) !important; height: 100% !important; border-radius: 1px !important; }
+
+.dimension-score { border-left: 3px solid var(--primary-color) !important; background: rgba(1,168,153,0.06) !important; }
+.dimension-fill { background: var(--primary-color) !important; }
+.footer { border-top-color: var(--border-color) !important; color: var(--text-secondary) !important; }
+
+::-webkit-scrollbar { width: 5px; background: var(--background-color); }
+::-webkit-scrollbar-thumb { background: #3a3a3a; }
+*:focus { outline: 1px solid var(--focus-color) !important; outline-offset: 1px !important; }

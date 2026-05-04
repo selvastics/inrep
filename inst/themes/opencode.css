@@ -1,0 +1,50 @@
+﻿/* =============================================================================
+   OPENCODE THEME for inrep — OpenCode/Vercel v0 design system
+   Navy-slate canvas (#0f172a), code-blue accent (#60a5fa), VS Code-inspired.
+   Source: VoltAgent/awesome-design-md > opencode
+   ============================================================================= */
+html { color-scheme: dark !important; }
+
+:root {
+  --primary-color: #60a5fa;
+  --secondary-color: #3b82f6;
+  --background-color: #0f172a;
+  --surface-color: #1e293b;
+  --text-color: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border-color: #334155;
+  --hover-color: #1e293b;
+  --focus-color: #60a5fa;
+  --font-family: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --border-radius: 8px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.50), 0 1px 3px rgba(0,0,0,0.40);
+  --shadow-hover: 0 4px 16px rgba(0,0,0,0.70), 0 0 1px rgba(96,165,250,0.20);
+
+}
+
+body { font-family: var(--font-family); background: var(--background-color) !important; color: var(--text-color) !important; font-size: 0.9375rem; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+[style*="background-color: white"], [style*="background-color:#fff"], [style*="background: white"], [style*="background-color: #ffffff"], [style*="background-color:#ffffff"] { background-color: var(--surface-color) !important; color: var(--text-color) !important; }
+
+.assessment-card { background: var(--surface-color) !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; box-shadow: var(--shadow) !important; transition: box-shadow 0.2s ease !important; }
+.assessment-card:hover { box-shadow: var(--shadow-hover) !important; border-color: #4b6280 !important; }
+h1, h2, h3, h4, h5, h6, .card-header { color: var(--text-color) !important; font-weight: 600 !important; }
+.welcome-text, p, .question-text { color: var(--text-secondary) !important; }
+
+.btn-klee, .action-button.btn-klee { background: var(--primary-color) !important; color: #0f172a !important; border: none !important; border-radius: var(--border-radius) !important; font-family: var(--font-family) !important; font-weight: 600 !important; box-shadow: none !important; }
+.btn-klee:hover { background: var(--secondary-color) !important; }
+.btn-klee:disabled { background: #334155 !important; color: #64748b !important; }
+.btn-primary { background: var(--primary-color) !important; border-color: var(--primary-color) !important; color: #0f172a !important; }
+
+.shiny-input-radiogroup label { background: #0f172a !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; }
+.shiny-input-radiogroup label:hover { border-color: #60a5fa !important; background: rgba(96,165,250,0.06) !important; }
+.form-control, input.form-control, select.form-control { background: #0f172a !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; color-scheme: dark !important; }
+.form-control:focus, input:focus, select:focus { border-color: var(--primary-color) !important; box-shadow: 0 0 0 2px rgba(96,165,250,0.20) !important; outline: none !important; }
+.progress-bar-container { background: var(--border-color) !important; border-radius: 2px !important; }
+.progress-bar-fill { background: var(--primary-color) !important; height: 100% !important; }
+.dimension-score { border-left: 3px solid var(--primary-color) !important; background: rgba(96,165,250,0.07) !important; }
+.dimension-fill { background: var(--primary-color) !important; }
+.footer { border-top-color: var(--border-color) !important; color: var(--text-secondary) !important; }
+::-webkit-scrollbar { width: 5px; background: var(--background-color); } ::-webkit-scrollbar-thumb { background: #334155; }
+*:focus { outline: 2px solid var(--focus-color) !important; outline-offset: 2px !important; }

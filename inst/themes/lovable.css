@@ -1,0 +1,101 @@
+﻿/* =============================================================================
+   LOVABLE THEME for inrep — Lovable design system
+   Gradient buttons (#ec4899 to #9333ea), 12px radius, pink glow box-shadows,
+   soft white canvas. Joyful and expressive.
+   Source: VoltAgent/awesome-design-md > lovable
+   ============================================================================= */
+
+:root {
+  --primary-color: #ec4899;
+  --secondary-color: #9333ea;
+  --background-color: #fafafa;
+  --surface-color: #ffffff;
+  --text-color: #1a1a2e;
+  --text-secondary: #6b7280;
+  --border-color: #f0e6f6;
+  --hover-color: #fdf2f9;
+  --focus-color: #ec4899;
+  --success-color: #22c55e;
+  --error-color: #ef4444;
+  --font-family: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --border-radius: 12px;
+  --shadow: 0 2px 12px rgba(236,72,153,0.08), 0 4px 24px rgba(0,0,0,0.04);
+  --shadow-hover: 0 4px 20px rgba(236,72,153,0.18), 0 8px 32px rgba(147,51,234,0.10);
+
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--background-color) !important;
+  color: var(--text-color) !important;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+.assessment-card {
+  background: var(--surface-color) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: var(--shadow) !important;
+  transition: box-shadow 0.25s ease !important;
+}
+.assessment-card:hover { box-shadow: var(--shadow-hover) !important; }
+
+h1, h2, h3, h4, h5, h6, .card-header {
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+  font-weight: 700 !important;
+}
+.welcome-text, p, .question-text { color: var(--text-secondary) !important; }
+
+/* Pink-purple GRADIENT button + glow */
+.btn-klee, .action-button.btn-klee {
+  background: linear-gradient(135deg, #ec4899 0%, #a855f7 60%, #9333ea 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: var(--border-radius) !important;
+  font-family: var(--font-family) !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 10px rgba(236,72,153,0.30), 0 4px 20px rgba(147,51,234,0.20) !important;
+  transition: all 0.2s ease !important;
+}
+.btn-klee:hover {
+  background: linear-gradient(135deg, #f472b6 0%, #c084fc 60%, #a855f7 100%) !important;
+  box-shadow: 0 4px 20px rgba(236,72,153,0.45), 0 8px 32px rgba(147,51,234,0.30) !important;
+}
+.btn-klee:disabled { background: #e5e7eb !important; box-shadow: none !important; color: #9ca3af !important; }
+.btn-primary { background: linear-gradient(135deg, #ec4899, #9333ea) !important; border-color: #ec4899 !important; }
+
+.shiny-input-radiogroup label {
+  background: #ffffff !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+  transition: all 0.15s ease !important;
+}
+.shiny-input-radiogroup label:hover { background: var(--hover-color) !important; border-color: #ec4899 !important; box-shadow: 0 0 0 2px rgba(236,72,153,0.12) !important; }
+
+.form-control, input.form-control, select.form-control {
+  background: #ffffff !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+}
+.form-control:focus, input:focus, select:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 3px rgba(236,72,153,0.15) !important;
+  outline: none !important;
+}
+
+.progress-bar-container { background: #f0e6f6 !important; border-radius: 6px !important; }
+.progress-bar-fill { background: linear-gradient(90deg, #ec4899, #9333ea) !important; height: 100% !important; border-radius: 6px !important; }
+
+.dimension-score { border-left: 4px solid #ec4899 !important; background: #fdf2f9 !important; }
+.dimension-fill { background: linear-gradient(90deg, #ec4899, #9333ea) !important; }
+.footer { border-top-color: var(--border-color) !important; color: var(--text-secondary) !important; }
+
+*:focus { outline: 2px solid var(--focus-color) !important; outline-offset: 2px !important; }
