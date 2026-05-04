@@ -128,7 +128,7 @@ launch_to_inrep_platform <- function(study_config,
 
   # Validate item bank
   if (validate_deployment) {
-    validation_results <- validate_item_bank(item_bank, model = study_config$model)
+    validation_results <- validate_item_bank(item_bank, model = study_config$model, adaptive = isTRUE(study_config$adaptive))
     deployment_results$validation_report$item_bank_validation <- validation_results
   }
 

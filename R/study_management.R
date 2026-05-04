@@ -2203,7 +2203,47 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
       }
     }
   }, silent = TRUE)
-  
+
+  # ── show_scale_scores = FALSE ─────────────────────────────────────────────
+  # When reporting is switched off, the results page acts as a pure offboarding
+  # (thank-you) page.  The results_processor is still called for data-upload
+  # side effects on the FINAL results page; its HTML output is discarded.
+  if (!isTRUE(config$show_scale_scores %||% TRUE)) {
+    rp_offboard <- page$results_processor %||% config$results_processor
+    if (isTRUE(is_final_results_page) &&
+        !is.null(rp_offboard) && is.function(rp_offboard) &&
+        !isTRUE(rv$final_results_side_effects_done)) {
+      tryCatch({
+        rp_ob_args  <- list(responses  = rv$cat_result$responses %||% rv$responses,
+                            item_bank  = item_bank)
+        rp_ob_fargs <- names(formals(rp_offboard))
+        if ("demographics" %in% rp_ob_fargs) rp_ob_args$demographics <- rv$demo_data
+        if ("session"      %in% rp_ob_fargs) rp_ob_args$session      <- session
+        if ("rv"           %in% rp_ob_fargs) rp_ob_args$rv           <- rv
+        if ("config"       %in% rp_ob_fargs) rp_ob_args$config       <- config
+        do.call(rp_offboard, rp_ob_args)
+        rv$final_results_side_effects_done <- TRUE
+      }, error = function(e) {
+        message("Results processor side effects (show_scale_scores=FALSE): ", e$message)
+      })
+    }
+    current_lang_ob <- rv$language %||% config$language %||% "en"
+    is_en_ob <- identical(current_lang_ob, "en")
+    html_ob <- paste0(
+      '<div style="padding:40px;text-align:center;font-family:Arial,sans-serif;">',
+      '<div style="background:#f8f9fa;padding:30px;border-radius:10px;',
+      'border:1px solid #dee2e6;max-width:600px;margin:0 auto;">',
+      '<h2 style="color:#495057;margin-bottom:20px;">',
+      if (is_en_ob) 'Thank You' else 'Vielen Dank', '</h2>',
+      '<p style="color:#666;font-size:16px;margin-bottom:0;">',
+      if (is_en_ob) 'Your responses have been recorded. Thank you for your participation.'
+                 else 'Ihre Antworten wurden gespeichert. Vielen Dank f\u00FCr Ihre Teilnahme.',
+      '</p></div></div>'
+    )
+    return(shiny::div(class = "assessment-card results-container", shiny::HTML(html_ob)))
+  }
+  # ─────────────────────────────────────────────────────────────────────────
+
   # Page-level override is allowed (e.g., multi-part results)
   results_processor <- page$results_processor %||% config$results_processor
 

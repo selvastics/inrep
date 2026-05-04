@@ -1,4 +1,4 @@
----
+﻿---
 title: "Getting Started with inrep"
 author: "inrep Development Team"
 date: "`r Sys.Date()`"
@@ -19,61 +19,73 @@ knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 
 inrep runs browser-based questionnaire studies. You describe the questions, page order, and demographic fields. inrep handles the interface, page transitions, and data collection.
 
-This vignette covers a **fixed-form study** — every participant sees the same items in the same order. For reporting and visualisation, see **Vignette 2**. For adaptive item selection, see **Vignette 3**.
+This vignette covers a **non-adaptive study** — every participant sees the same items in the same order. For reporting and visualization, see **Vignette 2**. For adaptive item selection, see **Vignette 3**.
+
+---
 
 ## Installation
+
+Here we load `inrep`. In most setups, this runs quietly unless an install issue appears.
 
 ```{r install}
 # Install devtools first if you don't have it yet
 if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
 
-devtools::install_github("selvastics/inrep")
+# devtools::install_github("selvastics/inrep")
 library(inrep)
 ```
 
-------------------------------------------------------------------------
+---
 
 # How a study is built
 
-Every inrep study script assembles the same four pieces, always in this order:
+Every inrep study script assembles the same four pieces, by default in this order:
 
 1. **Item bank** — a data frame with one row per questionnaire item.
 2. **Demographics** — a named list defining the background questions. Optional.
 3. **Page flow** — a list controlling what participants see on each screen and in what order.
 4. **Config + launch** — `create_study_config()` sets all study-level options; `launch_study()` starts the study.
 
-Parts 1–3 build each piece in isolation. Part 4 assembles them into one script.
+Parts 1–3 build each piece in isolation. Part 4 assembles them into one complete script.
 
-------------------------------------------------------------------------
+---
 
 # Part 1: The item bank
 
-The item bank is a plain R data frame — one row per question. inrep ships two built-in banks:
+The item bank is a plain R data frame with one row per question. inrep ships two built-in banks:
 
-- **`bfi_items`** — 30 personality items on a 5-point Likert scale, covering the Big Five. All required columns are already filled in.
+- **`bfi_items`** — 30 personality items on a 5-point Likert scale.
 - **`math_items`** — binary mathematics items (correct / incorrect).
+
+## 1.1 Looking at the built-in bank
+
+Here we see the first rows of the item bank: question text and response options. For now, we ignore the other parameter columns because they are only used in adaptive testing (Vignette 3).
 
 ```{r load_bfi}
 library(inrep)
 data(bfi_items)
 
-head(bfi_items[, c("id", "Question", "ResponseCategories", "domain")], 3)
+head(bfi_items)
 ```
 
-## 1.1 Required columns
+## 1.2 Required columns
 
-| Column | When required | What it holds |
-|---|---|---|
-| `id` | Always | A stable label used to reference this item throughout the study. |
+Every item bank must have at least these columns:
+
+| Column | Required | What it holds |
+|------------------------|----------|----------------------------------------------|
 | `Question` | Always | The text shown to participants. For bilingual studies use `Question_DE` and `Question_EN`. |
 | `ResponseCategories` | Always | The response options as a quoted comma-separated string, e.g. `"1,2,3,4,5"`. |
-| `a`, `b` / `b1..b4` | Always | Numeric columns required by the data format. **For a fixed-form study these have no effect on what participants see** — set `a = 1` and `b = 0` as placeholders and auto-fill `b1..b4` from `b`. They only matter for adaptive scoring (Vignette 3). |
+| `id` | Recommended | A stable label used to reference this item in scoring. |
 | `domain` | Recommended | Which subscale this item belongs to. Used for grouped scoring. |
 | `reverse_coded` | Recommended | `TRUE` for negatively-worded items that need flipping before averaging. |
+| `a`, `b`, `b1`–`b4` | Adaptive only | IRT parameter columns used for adaptive item selection and ability estimation. Not needed for fixed-form studies — the package skips these checks automatically when `adaptive = FALSE`. See Vignette 3. |
 
 > **`ResponseCategories` — why a string?** Use `"1,2,3,4,5"` rather than `c(1,2,3,4,5)` so the labels survive CSV export and re-import unchanged. For a 7-point scale: `"1,2,3,4,5,6,7"`.
 
-## 1.2 Building an item bank
+## 1.3 Building your own item bank
+
+When we run this chunk, we get a six-item data frame. For a fixed-form study, this is enough.
 
 ```{r custom_personality}
 library(inrep)
@@ -89,29 +101,23 @@ my_items <- data.frame(
     "I get distracted from my goals easily."
   ),
   ResponseCategories = "1,2,3,4,5",
-  a      = 1,
-  b      = 0,
-  domain = "Conscientiousness",
+  domain        = "Conscientiousness",
   reverse_coded = c(FALSE, TRUE, FALSE, TRUE, FALSE, TRUE),
   stringsAsFactors = FALSE
 )
-
-# Auto-fill the four boundary columns — always run this for Likert banks
-my_items$b1 <- my_items$b - 1.5
-my_items$b2 <- my_items$b - 0.5
-my_items$b3 <- my_items$b + 0.5
-my_items$b4 <- my_items$b + 1.5
 ```
 
-For a right/wrong knowledge test, use `model = "2PL"` and only `a` and `b` — no boundary columns needed:
+For a right/wrong knowledge test, use `ResponseCategories = "0,1"`. The `a` and `b` columns shown below are IRT parameters — only needed if you later switch this bank to adaptive mode:
+
+Here we get a six-row right/wrong item bank with two domains.
 
 ```{r custom_binary}
 knowledge_items <- data.frame(
   id       = paste0("Q", 1:6),
   Question = c(
-    "What is 15 + 27?",  "What is 7 × 9?",
-    "Solve: 2x + 3 = 11", "What is √144?",
-    "What is 25% of 200?", "What is 2³?"
+    "What is 15 + 27?",  "What is 7 x 9?",
+    "Solve: 2x + 3 = 11", "What is sqrt(144)?",
+    "What is 25% of 200?", "What is 2^3?"
   ),
   ResponseCategories = "0,1",
   a      = 1,
@@ -121,9 +127,7 @@ knowledge_items <- data.frame(
 )
 ```
 
-> **Column mismatch error?** If `launch_study()` shows *"GRM model requires columns: b1, b2, b3, b4"* it means the Likert item bank is missing the four boundary columns. Run the `b1..b4` auto-fill lines above. If using a binary (right/wrong) bank, switch to `model = "2PL"` in `create_study_config()`.
-
-------------------------------------------------------------------------
+---
 
 # Part 2: The page flow
 
@@ -132,15 +136,17 @@ knowledge_items <- data.frame(
 ## 2.1 Four page types
 
 | `type` | What participants see |
-|---|---|
+|----------------|-------------------------------------------------------|
 | `"custom"` | Free HTML — intro, consent, transition text, or debriefing. |
 | `"demographics"` | A form built automatically from `demographic_configs`. |
 | `"items"` | Questionnaire items drawn from the item bank by row index. |
-| `"results"` | The final display — built-in score table and/or a custom results function. |
+| `"results"` | The final screen — built-in score table and/or a custom results function. |
 
 Every page entry needs `id`, `type`, `title`, and `title_en`.
 
 ## 2.2 Defining pages
+
+Here we define four page objects. Nothing renders yet; we combine them in Part 4.
 
 ```{r page_examples}
 # Welcome screen
@@ -163,13 +169,13 @@ demos_page <- list(
   required     = TRUE
 )
 
-# Items — reference rows by index
+# Items — reference rows by position
 items_page <- list(
   id              = "block_1",
   type            = "items",
   title           = "Questions",
   title_en        = "Questions",
-  item_indices    = 1:6,              # rows 1–6 of the item bank
+  item_indices    = 1:6,              # rows 1-6 of the item bank
   scale_type      = "likert",
   instructions    = "Rate how well each statement describes you.",
   instructions_en = "Rate how well each statement describes you."
@@ -192,17 +198,20 @@ results_page <- list(
 
 `report_metrics` is the simplest scoring path: list which item IDs belong to each scale and inrep computes the means and shows a built-in table. For custom charts, reverse-coded scoring, or richer HTML feedback, use a `results_processor` function — covered in Vignette 2.
 
-> **Robust indices.** `item_indices = 1:6` points to rows, not item IDs. If items are added or reordered, those positions shift. Compute from IDs or domain labels instead:
-> ```r
+> **Robust indices.** `item_indices = 1:6` points to rows, not item IDs. If items are added or reordered, those positions shift. Compute from IDs or domain labels instead so they stay correct after any reordering:
+>
+> ``` r
 > c_idx <- which(my_items$id %in% paste0("C", 1:6))
 > e_idx <- which(bfi_items$domain == "Extraversion")
 > ```
 
-------------------------------------------------------------------------
+---
 
 # Part 3: Demographics
 
 `demographic_configs` is a named list — one entry per background question. Entry names are what you reference in page definitions. Field types: `"number"`, `"select"`, `"checkbox"`, `"slider"`, `"text"`.
+
+When we run this chunk, we create a named list of demographic fields. It is used later in `create_study_config()`.
 
 ```{r demo_configs}
 demographic_configs <- list(
@@ -246,31 +255,54 @@ demographic_configs <- list(
 )
 ```
 
-> **Slider values** are stored in `demographics`, not `responses`. `responses[30]` for a slider field returns `NA` silently. Vignette 2 covers reading demographic values.
+> **Slider values** are stored in the demographics output, not the responses vector. Reading a slider field from `responses[30]` returns `NA` silently. Vignette 2 covers reading demographic values.
 
-`create_study_config()` takes two related arguments: `demographics` (field IDs to activate) and `demographic_configs` (the full definitions). Pass both:
+`create_study_config()` takes two related arguments: `demographics` (the field IDs to activate) and `demographic_configs` (the full definitions). Pass both:
+
+This snippet shows exactly where the two demographics arguments go in `create_study_config()`.
 
 ```{r demos_wiring}
 study_config <- create_study_config(
-  # ...
+  # ... other arguments ...
   demographics        = names(demographic_configs),
   demographic_configs = demographic_configs
 )
 ```
 
-**Bilingual:** set `bilingual = TRUE` and pair every participant-facing string with an `_en` variant. inrep adds a language toggle automatically. Don't implement language switching via custom JavaScript — Shiny re-renders reset JS state.
+**Bilingual studies:** set `bilingual = TRUE` and pair every participant-facing string with an `_en` variant. inrep adds a language toggle automatically. Do not implement language switching via custom JavaScript — Shiny re-renders reset JS state.
 
-------------------------------------------------------------------------
+---
+
+# Part 3b: Themes
+
+Pass one theme name to `create_study_config(theme = ...)`. That is all that is needed.
+
+**Core themes:** `"Light"`, `"Midnight"`, `"Sunset"`, `"Forest"`, `"Ocean"`, `"Berry"`, `"Professional"`, `"hildesheim"`
+
+**Additional themes** — inspired by popular AI tool interfaces and sourced from their public design systems: `"claude"`, `"opencode"`, `"xai"`, `"mistral"`, `"notion"`, `"linear"`, `"vercel"`, `"stripe"`, `"raycast"`, `"warp"`, `"paper"`, `"sepia"`, `"dark-mode"`, `"high-contrast"`, `"colorblind-safe"`, `"dyslexia-friendly"`, `"large-text"`, and more.
+
+```{r themes}
+# Pass any theme name as a string — the complete study below uses "hildesheim"
+create_study_config(name = "Demo", theme = "hildesheim", adaptive = FALSE)
+create_study_config(name = "Demo", theme = "claude",     adaptive = FALSE)
+create_study_config(name = "Demo", theme = "Light",      adaptive = FALSE)
+```
+
+---
 
 # Part 4: A complete study
 
-Everything above, assembled into one script.
+Everything above, assembled into one script. This example follows the pattern of the **Hildesheim study** (`case_studies/hildesheim_study/HilFo.R`) — the most fully-featured study in the package: bilingual DE/EN, the `"hildesheim"` theme, `session_save = TRUE` for resumable sessions, and a results page that can show or hide scores per participant.
 
-`launch_study()` starts a local Shiny server and opens the study in your default browser. The R console shows `Listening on http://127.0.0.1:XXXX` and stays busy until you stop it (Stop button in RStudio, or Escape in the console).
+`launch_study()` starts a local server and opens the study in your default browser. The R console shows `Listening on http://127.0.0.1:XXXX` and stays busy until you stop it (Stop button in RStudio, or Escape in the console).
 
-With `session_save = TRUE` and `report_formats = c("csv", "json")`, responses are written to `study_data/` in your working directory (`getwd()`).
+With `session_save = TRUE` and `report_formats = c("csv", "json")`, responses are written to `study_data/` in your working directory.
 
-**Debug shortcuts** (only when `debug_mode = TRUE`, red indicator bottom-right): **Ctrl+A** fills the current page; **Ctrl+Q** fills all pages and jumps to results.
+This getting-started example keeps demographic fields optional so the flow never blocks at page 2 during a first test run. In production studies, set required fields back to `TRUE`.
+
+**Debug shortcuts** (only when `debug_mode = TRUE`, red indicator bottom-right): **Ctrl+A** fills the current page; **Ctrl+Q** fills all pages and jumps straight to the results screen.
+
+When we run this chunk, the study opens in your browser and the R console shows `Listening on http://127.0.0.1:XXXX`. During testing, use **Ctrl+Q** to jump to results. Set `debug_mode = FALSE` before sharing with participants.
 
 ```{r complete_study}
 library(inrep)
@@ -297,14 +329,14 @@ demographic_configs <- list(
     question    = "I agree to participate voluntarily and anonymously.",
     question_en = "I agree to participate voluntarily and anonymously.",
     type        = "checkbox",
-    required    = TRUE
+    required    = FALSE
   ),
 
   age = list(
     question    = "How old are you?",
     question_en = "How old are you?",
     type        = "number",
-    required    = TRUE
+    required    = FALSE
   ),
 
   gender = list(
@@ -315,7 +347,7 @@ demographic_configs <- list(
                    "Diverse" = "d", "Prefer not to say" = "na"),
     options_en = c("Female" = "f", "Male" = "m",
                    "Diverse" = "d", "Prefer not to say" = "na"),
-    required   = TRUE
+    required   = FALSE
   ),
 
   show_results = list(
@@ -324,13 +356,13 @@ demographic_configs <- list(
     type        = "select",
     options    = c("Yes" = "yes", "No" = "no"),
     options_en = c("Yes" = "yes", "No"  = "no"),
-    required   = TRUE
+    required   = FALSE
   )
 )
 
 # ============================================================
 # 3. Page flow
-# Compute indices from domain labels — stays correct if bfi_items is reordered later
+# Compute indices from domain labels — stays correct if bfi_items is reordered
 # ============================================================
 ext_idx <- which(bfi_items$domain == "Extraversion")
 neu_idx <- which(bfi_items$domain == "Neuroticism")
@@ -355,7 +387,7 @@ custom_page_flow <- list(
   list(id = "demos",   type = "demographics",
        title = "About you", title_en = "About you",
        demographics = names(demographic_configs),
-       required = TRUE),
+      required = FALSE),
 
   list(id = "block_1", type = "items",
        title = "Part 1 of 2", title_en = "Part 1 of 2",
@@ -388,10 +420,10 @@ custom_page_flow <- list(
 )
 
 # ============================================================
-# 4. Study config
+# 4. Study config  (Hildesheim-style: bilingual, branded theme)
 # ============================================================
 study_config <- create_study_config(
-  name                = "Personality Study",
+  name                = "Personality Study – Hildesheim",
   custom_page_flow    = custom_page_flow,
   demographics        = names(demographic_configs),
   demographic_configs = demographic_configs,
@@ -399,12 +431,15 @@ study_config <- create_study_config(
   adaptive            = FALSE,
   min_items           = length(c(ext_idx, neu_idx)),
   max_items           = length(c(ext_idx, neu_idx)),
-  language            = "en",
-  bilingual           = FALSE,
+  # Hildesheim-style settings:
+  theme               = "hildesheim",   # University of Hildesheim brand colours
+  language            = "de",           # primary language German
+  bilingual           = TRUE,           # adds DE/EN toggle to every page
   response_ui_type    = "radio",
   progress_style      = "bar",
-  session_save        = TRUE,
-  report_formats      = c("csv", "json")
+  session_save        = TRUE,           # sessions can be resumed if interrupted
+  report_formats      = c("csv", "json"),
+  show_scale_scores   = TRUE            # set FALSE to show offboarding only
 )
 
 # ============================================================
@@ -414,21 +449,3 @@ study_config <- create_study_config(
 # ============================================================
 launch_study(config = study_config, item_bank = bfi_items, debug_mode = TRUE)
 ```
-
-------------------------------------------------------------------------
-
-# Common pitfalls
-
-1. **`GRM model requires columns: b1, b2, b3, b4`** — The default model is `"GRM"` but the data frame only has `b`. Run the four `b1..b4` auto-fill lines from Part 1, or switch to `model = "2PL"` for binary items.
-
-2. **Hard-coded item indices break when the bank changes** — `item_indices = 1:6` points to rows, not IDs. Compute indices with `which(items$id %in% ...)` or `which(items$domain == "...")` so they survive reordering.
-
-3. **Slider answers are not in `responses`** — Slider values land in `demographics`. `responses[30]` for a slider field returns `NA` silently. Vignette 2 covers reading demographic values.
-
-4. **`bilingual = TRUE` without `_en` variants** — Every participant-facing string needs a matching `_en` field. Without it, both languages show the same text.
-
-5. **`debug_mode = TRUE` in a live study** — Participants can bypass all questions with Ctrl+Q and submit random data. Use `debug_mode = FALSE` (the default) before sharing the URL.
-
-6. **`report_metrics` and `item_indices` use different reference systems** — `item_indices = 1:6` refers to row positions; `items = c("BFI_01", ...)` refers to item IDs. Don't mix them.
-
-7. **`results_processor` passed as a string** — `results_processor = "my_fn"` is silently ignored. Pass the function object: `results_processor = my_fn`. Vignette 2 covers this.
