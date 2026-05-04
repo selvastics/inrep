@@ -1,0 +1,47 @@
+﻿/* =============================================================================
+   INTERCOM THEME for inrep — Intercom design system
+   Warm cream page background (#f5f1ec), Fin orange CTAs (#ff5600),
+   warm taupe borders, generous rounded corners.
+   Source: VoltAgent/awesome-design-md > intercom
+   ============================================================================= */
+
+:root {
+  --primary-color: #ff5600;
+  --secondary-color: #e04b00;
+  --background-color: #f5f1ec;
+  --surface-color: #ffffff;
+  --text-color: #1c1c1c;
+  --text-secondary: #66625d;
+  --border-color: #d8d3cc;
+  --hover-color: #ede9e3;
+  --focus-color: #ff5600;
+  --font-family: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --border-radius: 10px;
+  --shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-hover: 0 2px 8px rgba(0,0,0,0.10), 0 8px 28px rgba(0,0,0,0.08);
+
+}
+
+body { font-family: var(--font-family); background: var(--background-color) !important; color: var(--text-color) !important; font-size: 0.9375rem; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+.assessment-card { background: var(--surface-color) !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; box-shadow: var(--shadow) !important; transition: box-shadow 0.2s ease !important; }
+.assessment-card:hover { box-shadow: var(--shadow-hover) !important; }
+h1, h2, h3, h4, h5, h6, .card-header { color: var(--text-color) !important; font-weight: 700 !important; }
+.welcome-text, p, .question-text { color: var(--text-secondary) !important; }
+
+/* Orange CTA */
+.btn-klee, .action-button.btn-klee { background: var(--primary-color) !important; color: #ffffff !important; border: none !important; border-radius: var(--border-radius) !important; font-family: var(--font-family) !important; font-weight: 600 !important; box-shadow: 0 1px 4px rgba(255,86,0,0.25) !important; transition: background 0.15s ease !important; }
+.btn-klee:hover { background: var(--secondary-color) !important; box-shadow: 0 2px 8px rgba(255,86,0,0.35) !important; }
+.btn-klee:disabled { background: #c8c4be !important; box-shadow: none !important; }
+.btn-primary { background: var(--primary-color) !important; border-color: var(--primary-color) !important; }
+
+.shiny-input-radiogroup label { background: #faf8f5 !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; }
+.shiny-input-radiogroup label:hover { background: var(--hover-color) !important; border-color: var(--primary-color) !important; }
+.form-control, input.form-control, select.form-control { background: #ffffff !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; }
+.form-control:focus, input:focus, select:focus { border-color: var(--primary-color) !important; box-shadow: 0 0 0 3px rgba(255,86,0,0.12) !important; outline: none !important; }
+.progress-bar-container { background: var(--border-color) !important; border-radius: 2.5px !important; }
+.progress-bar-fill { background: var(--primary-color) !important; height: 100% !important; }
+.dimension-score { border-left: 4px solid var(--primary-color) !important; background: rgba(255,86,0,0.04) !important; }
+.dimension-fill { background: var(--primary-color) !important; }
+.footer { border-top-color: var(--border-color) !important; color: var(--text-secondary) !important; }
+*:focus { outline: 2px solid var(--focus-color) !important; outline-offset: 2px !important; }

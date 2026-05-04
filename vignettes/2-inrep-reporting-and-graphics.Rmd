@@ -1,0 +1,1108 @@
+---
+title: "Scoring and Reporting in inrep"
+author: "inrep Development Team"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    theme: cerulean
+vignette: >
+  %\VignetteIndexEntry{Scoring and Reporting in inrep}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+library(inrep)
+data(bfi_items)
+
+# Add helper columns used throughout this vignette
+bfi_items$id <- paste0("BFI_", sprintf("%02d", seq_len(nrow(bfi_items))))
+bfi_items$domain <- rep(
+  c("Extraversion", "Agreeableness", "Conscientiousness", "Neuroticism", "Openness"),
+  each = 6
+)
+bfi_items$reverse_coded <- rep(c(FALSE, TRUE, FALSE, TRUE, FALSE, FALSE), times = 5)
+
+# One simulated participant — used in every live preview below
+set.seed(42)
+responses    <- sample(1:5, nrow(bfi_items), replace = TRUE)
+demographics <- list(
+  age                   = 24,
+  gender                = "f",
+  stress_level          = 65,
+  show_personal_results = "yes"
+)
+
+# Shared scoring helper defined once, called from every processor
+score_scale <- function(ids, responses, item_bank, max_response = 5) {
+  idx <- match(ids, item_bank$id)
+  raw <- responses[idx]
+  rev <- item_bank$reverse_coded[idx]
+  raw[rev] <- (max_response + 1) - raw[rev]
+  if (sum(!is.na(raw)) < 2) NA_real_ else mean(raw, na.rm = TRUE)
+}
+
+# SD helper used in Part 7
+safe_sd <- function(x) { v <- x[!is.na(x)]; if (length(v) < 2) NA_real_ else sd(v) }
+
+# Reference population — used in Part 6 and the Part 3 norm curve preview
+set.seed(100)
+norm_pop <- data.frame(
+  Extraversion      = pmin(5, pmax(1, rnorm(300, 3.2, 0.7))),
+  Agreeableness     = pmin(5, pmax(1, rnorm(300, 3.7, 0.6))),
+  Conscientiousness = pmin(5, pmax(1, rnorm(300, 3.5, 0.6))),
+  Neuroticism       = pmin(5, pmax(1, rnorm(300, 2.9, 0.8))),
+  Openness          = pmin(5, pmax(1, rnorm(300, 3.4, 0.6)))
+)
+pct_rank <- function(score, reference) {
+  if (is.na(score) || length(reference) < 5) return(NA_real_)
+  round(mean(reference < score, na.rm = TRUE) * 100)
+}
+
+# Dimension names and scores for previews
+dims   <- c("Extraversion", "Agreeableness", "Conscientiousness", "Neuroticism", "Openness")
+scores <- setNames(lapply(dims, function(d)
+  score_scale(bfi_items$id[bfi_items$domain == d], responses, bfi_items)), dims)
+```
+
+# Why a results page matters
+
+Participants in mandatory-credit studies have no inherent reason to engage. Filtering — attention checks, response-time thresholds — removes the least careful but shrinks the sample without fixing the root cause.
+
+A results page creates an incentive to engage before responses are recorded: a profile participants can keep, a score chart that communicates something real, a simple confirmation that their data was saved. This vignette explains the two functions that build that page and how to go from a plain score table to embedded charts.
+
+------------------------------------------------------------------------
+
+# Two processors at a glance
+
+inrep gives you two optional functions:
+
+| Function | Runs when | Returns | For whom |
+|---|---|---|---|
+| `results_processor` | Participant reaches the results page | `shiny::HTML()` | The participant |
+| `csv_processor` | Each row is written to disk | Modified `csv_data` data frame | The researcher |
+
+Skip both and participants see a plain thank-you screen; the saved CSV contains only raw item responses. Add them and you get personalized feedback and analysis-ready scale scores in the download. Neither is required; each is independent of the other.
+
+------------------------------------------------------------------------
+
+# Part 1: The results_processor
+
+## 1.1 Signature — what you receive
+
+```{r p1_sig, eval = FALSE}
+my_report <- function(
+    responses,           # numeric vector; one value per item_bank row
+    item_bank,           # the data frame you passed to launch_study()
+    demographics = NULL, # named list from the demographics page
+    session      = NULL  # live Shiny session (NULL when testing offline)
+) {
+  # ... compute scores, build HTML ...
+  shiny::HTML("<p>...</p>")   # MUST return shiny::HTML()
+  # shiny::HTML() tells Shiny it is safe to insert this content as raw HTML.
+  # Returning a plain character string will silently produce nothing.
+}
+```
+
+What each argument contains:
+
+- **`responses`** — numeric, aligned to `item_bank` row order. In adaptive studies the vector may be shorter than `nrow(item_bank)`. Always pad defensively before scoring.
+- **`item_bank`** — the same data frame passed to `launch_study()`. Match items by `id`, not by hard-coded position.
+- **`demographics`** — named list. Visual analogue sliders arrive here, **not** in `responses`.
+- **`session`** — the live Shiny session. `session$input$language` gives the current UI language for bilingual reports (Part 4).
+
+## 1.2 A minimal working example
+
+```{r p1_minimal}
+minimal_report <- function(responses, item_bank,
+                           demographics = NULL, session = NULL) {
+  n <- nrow(item_bank)
+  if (length(responses) < n)
+    responses <- c(responses, rep(NA, n - length(responses)))
+  responses <- as.numeric(responses)
+
+  overall <- round(mean(responses, na.rm = TRUE), 2)
+  n_done  <- sum(!is.na(responses))
+
+  shiny::HTML(paste0(
+    "<div style='padding:40px;text-align:center;font-family:sans-serif;'>",
+    "<h2>Thank you for participating!</h2>",
+    "<p>You completed <strong>", n_done, "</strong> items.</p>",
+    "<p>Overall mean response: <strong>", overall, "</strong> (scale 1–5)</p>",
+    "<p style='color:#888;font-size:0.9em;'>Your responses have been saved.</p>",
+    "</div>"
+  ))
+}
+```
+
+Here is exactly what the participant sees on the last page:
+
+```{r p1_preview, results = "asis", echo = FALSE}
+cat('<div style="border:2px solid #4A90D9;border-radius:6px;margin:20px 0;overflow:hidden;">')
+cat('<div style="background:#4A90D9;color:white;padding:6px 16px;font-size:12px;font-weight:bold;letter-spacing:.5px;">PARTICIPANT VIEW</div>')
+cat(as.character(minimal_report(responses, bfi_items, demographics, NULL)))
+cat('</div>')
+```
+
+## 1.3 How to wire it up
+
+```{r p1_wire, eval = FALSE}
+config <- inrep::create_study_config(
+  name              = "BFI pilot",
+  model             = "GRM",
+  max_items         = 10,
+  results_processor = minimal_report   # function object, NOT "minimal_report"
+)
+inrep::launch_study(config = config, item_bank = bfi_items, debug_mode = TRUE)
+```
+
+## 1.4 Two rules that trip everyone up
+
+**Rule 1:** `results_processor = "minimal_report"` (a string) is **silently ignored**. Pass the function object directly.
+
+**Rule 2:** Set the processor at the **config level** only. Setting it inside a `custom_page_flow` entry does nothing.
+
+------------------------------------------------------------------------
+
+# Part 2: Scoring
+
+## 2.1 Scoring by item ID
+
+The `responses` vector is aligned to `item_bank` row order. The safest scoring strategy looks up items by ID, not by position. If you add items, reorder rows, or run an adaptive study that selects items in a different sequence each time, positions shift but IDs do not.
+
+`score_scale()` and `scores` are defined in this document's setup chunk. They look up items by ID, apply reverse coding from the `reverse_coded` column, and return the mean:
+
+```{r p2_scores}
+round(unlist(scores), 2)
+```
+
+## 2.2 Reverse coding
+
+Items flagged `reverse_coded = TRUE` are handled automatically by `score_scale()`. The rule is `(max + 1) − response`. Apply reverse coding before aggregating — reversing after averaging produces wrong results.
+
+## 2.3 Slider data is not in `responses`
+
+This bites everyone the first time. Visual analogue sliders (0–100) are demographic items; they arrive in `demographics`, not `responses`. To put them on a 1–5 scale alongside Likert items:
+
+```{r p2_slider}
+slider_raw <- as.numeric(demographics$stress_level)   # 0-100
+stat_score <- round((slider_raw / 100) * 4 + 1, 2)   # rescale 0-100 to 1-5
+stat_score
+```
+
+## 2.4 The defensive skeleton every processor needs
+
+`tryCatch()` is R's way of catching errors: if anything inside it throws, execution jumps to the `error = function(e)` block instead of crashing the whole results page. Without it, one unexpected `NA` or type mismatch kills the entire participant-facing display. Without padding, partial responses produce silently wrong scores. Use this as the outer shell:
+
+```{r p2_skeleton, eval = FALSE}
+my_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
+  tryCatch({
+
+    # 1. Detect language (NULL session = offline testing = default to English)
+    is_english <- is.null(session) || identical(session$input$language, "en")
+
+    # 2. Pad and coerce — always, before any scoring
+    n <- nrow(item_bank)
+    if (length(responses) < n)
+      responses <- c(responses, rep(NA, n - length(responses)))
+    responses <- as.numeric(responses)
+
+    # 3. Score, build HTML ...
+
+    shiny::HTML("<div>...</div>")
+
+  }, error = function(e) {
+    shiny::HTML(sprintf(
+      "<div style='padding:20px;color:#900;'>
+         <h3>Report could not be generated</h3>
+         <p>%s</p></div>", e$message))
+  })
+}
+```
+
+------------------------------------------------------------------------
+
+# Part 3: Visualizing scores
+
+Five techniques cover essentially everything participants ever need to see. They go from cheapest (HTML, no library, instant) to most powerful (embedded ggplot, full plotting capability, ~50 KB per chart). Pick the cheapest one that does what you need.
+
+> **These helper functions are not built in to inrep.** They are defined as code in this vignette for you to copy. Copy the function bodies you want into your own study script (or into a separate `helpers.R` file that you `source()` before calling `launch_study()`).
+
+| Technique | Library? | Best for |
+|---|---|---|
+| HTML table | none | Score summaries, M / SD tables |
+| HTML/CSS progress bars | none | Score-relative-to-max, quick profiles |
+| Inline SVG radar | none | Profile shape across three or more scales |
+| Inline SVG norm curve | none | "Where you fall" on a bell curve against a reference sample |
+| Embedded ggplot PNG | ggplot2 + base64enc | Anything ggplot does |
+
+All examples below assume the `scores` list computed in Part 2.
+
+## 3.1 HTML table (the baseline)
+
+Always include a table. It survives screenshots, screen readers, and copy-paste in a way no chart does.
+
+```{r p3_table_fn}
+score_table_html <- function(scores, lang = "en") {
+  rows <- vapply(names(scores), function(k) {
+    v <- if (is.na(scores[[k]])) "&mdash;" else sprintf("%.2f", scores[[k]])
+    sprintf(
+      "<tr>
+         <td style='padding:10px;border-bottom:1px solid #eee;'>%s</td>
+         <td style='padding:10px;text-align:center;font-weight:bold;'>%s</td>
+       </tr>", k, v)
+  }, character(1))
+
+  paste0(
+    "<table style='width:100%;max-width:480px;margin:8px auto;border-collapse:collapse;",
+    "font-family:system-ui,sans-serif;'>",
+    "<thead><tr style='background:#f8fafc;border-bottom:2px solid #e5e7eb;'>",
+    "<th style='padding:10px;text-align:left;'>",
+    if (lang == "en") "Scale" else "Skala",
+    "</th>",
+    "<th style='padding:10px;text-align:center;'>",
+    if (lang == "en") "Mean" else "Wert",
+    "</th></tr></thead>",
+    "<tbody>", paste(rows, collapse = ""), "</tbody>",
+    "</table>"
+  )
+}
+```
+
+```{r p3_table_preview, results = "asis", echo = FALSE}
+cat('<div style="border:2px solid #4A90D9;border-radius:6px;margin:20px 0;overflow:hidden;">')
+cat('<div style="background:#4A90D9;color:white;padding:6px 16px;font-size:12px;font-weight:bold;">PARTICIPANT VIEW — score table</div>')
+cat(score_table_html(scores))
+cat('</div>')
+```
+
+## 3.2 HTML/CSS progress bars
+
+No library. A `<div>` with a colored inner `<div>`. Looks crisp on every device.
+
+```{r p3_bars_fn}
+score_row_with_bar <- function(label, score, sd_val = NA_real_,
+                               max_response = 5, color = "#4A90D9") {
+  pct      <- if (is.na(score)) 0 else round(100 * score / max_response)
+  m_str    <- if (is.na(score))  "—" else sprintf("%.2f", score)
+  sd_str   <- if (is.na(sd_val)) "—" else sprintf("%.2f", sd_val)
+
+  sprintf(
+    "<tr style='border-bottom:1px solid #f3f4f6;'>
+       <td style='padding:10px 14px;font-weight:500;'>%s</td>
+       <td style='padding:10px 14px;text-align:center;color:%s;font-weight:600;'>%s</td>
+       <td style='padding:10px 14px;text-align:center;color:#6b7280;'>%s</td>
+       <td style='padding:10px 14px;'>
+         <div style='background:#e5e7eb;border-radius:4px;height:8px;overflow:hidden;'>
+           <div style='background:%s;height:100%%;width:%d%%;border-radius:4px;'></div>
+         </div>
+       </td>
+     </tr>",
+    label, color, m_str, sd_str, color, pct)
+}
+
+scores_bar_table <- function(scores, sds = NULL, lang = "en") {
+  if (is.null(sds)) sds <- setNames(rep(NA_real_, length(scores)), names(scores))
+  rows <- vapply(names(scores),
+    function(k) score_row_with_bar(k, scores[[k]], sds[[k]]),
+    character(1))
+
+  paste0(
+    "<div style='background:#fff;border:1px solid #e5e7eb;border-radius:8px;",
+    "overflow:hidden;max-width:640px;margin:8px auto;'>",
+    "<table style='width:100%;border-collapse:collapse;font-family:system-ui,sans-serif;'>",
+    "<thead><tr style='background:#f9fafb;border-bottom:2px solid #e5e7eb;'>",
+    "<th style='padding:12px 14px;text-align:left;'>",
+    if (lang == "en") "Scale" else "Skala", "</th>",
+    "<th style='padding:12px 14px;text-align:center;'>M</th>",
+    "<th style='padding:12px 14px;text-align:center;'>SD</th>",
+    "<th style='padding:12px 14px;width:35%;'></th>",
+    "</tr></thead><tbody>", paste(rows, collapse = ""), "</tbody></table>",
+    "<div style='padding:8px 14px;background:#f9fafb;border-top:1px solid #e5e7eb;",
+    "font-size:0.75rem;color:#9ca3af;'><em>",
+    if (lang == "en") "M = Mean. Scale: 1–5." else "M = Mittelwert. Skala: 1–5.",
+    "</em></div></div>"
+  )
+}
+```
+
+```{r p3_bars_preview, results = "asis", echo = FALSE}
+sds_example <- setNames(
+  sapply(dims, function(d)
+    sd(responses[match(bfi_items$id[bfi_items$domain == d], bfi_items$id)], na.rm = TRUE)),
+  dims)
+cat('<div style="border:2px solid #27AE60;border-radius:6px;margin:20px 0;overflow:hidden;">')
+cat('<div style="background:#27AE60;color:white;padding:6px 16px;font-size:12px;font-weight:bold;">PARTICIPANT VIEW — M/SD bar table</div>')
+cat(scores_bar_table(scores, sds_example))
+cat('</div>')
+```
+
+## 3.3 Inline SVG radar
+
+When you have three or more scales, a radar chart shows the shape of a profile in a way bars do not. No library required — the chart is built as a plain HTML string.
+
+```{r p3_radar_fn}
+svg_radar <- function(scores, max_response = 5, color = "#4A90D9",
+                      track = "#e5e7eb", text_color = "#374151", size = 280) {
+  vals   <- unlist(scores)
+  labels <- names(scores)[!is.na(vals)]
+  vals   <- vals[!is.na(vals)]
+  if (length(vals) < 3) return("")   # need at least 3 axes
+
+  n  <- length(labels)
+  vb <- 240; cx <- 120; cy <- 120; r <- 85
+  angles <- seq(0, 2 * pi, length.out = n + 1)[1:n] - pi / 2
+
+  bg <- paste(sprintf(
+    "<circle cx='%g' cy='%g' r='%g' fill='none' stroke='%s' stroke-width='1'/>",
+    cx, cy, r * c(1, 0.66, 0.33), track), collapse = "")
+
+  axes <- vapply(seq_along(angles), function(i) {
+    x2 <- cx + r * cos(angles[i]); y2 <- cy + r * sin(angles[i])
+    lx <- cx + (r + 22) * cos(angles[i]); ly <- cy + (r + 22) * sin(angles[i])
+    sprintf(
+      "<line x1='%g' y1='%g' x2='%g' y2='%g'
+             stroke='%s' stroke-width='1' stroke-dasharray='3,3'/>
+       <text x='%g' y='%g' text-anchor='middle'
+             font-family='system-ui' font-size='11'
+             fill='%s' dominant-baseline='middle'>%s</text>",
+      cx, cy, x2, y2, track, lx, ly, text_color, labels[i])
+  }, character(1))
+
+  vn  <- vals / max_response
+  pts <- paste(sprintf("%g,%g",
+    cx + r * vn * cos(angles), cy + r * vn * sin(angles)), collapse = " ")
+  dots <- vapply(seq_along(angles), function(i)
+    sprintf("<circle cx='%g' cy='%g' r='4' fill='%s' stroke='white' stroke-width='1.5'/>",
+            cx + r * vn[i] * cos(angles[i]), cy + r * vn[i] * sin(angles[i]), color),
+    character(1))
+
+  rgb_str <- paste(col2rgb(color), collapse = ",")
+  paste0(
+    "<svg viewBox='0 0 ", vb, " ", vb, "' xmlns='http://www.w3.org/2000/svg' ",
+    "style='width:100%;max-width:", size, "px;display:block;margin:16px auto;'>",
+    bg, paste(axes, collapse = ""),
+    sprintf("<polygon points='%s' fill='rgba(%s,0.22)' stroke='%s'
+                     stroke-width='2' stroke-linejoin='round'/>", pts, rgb_str, color),
+    paste(dots, collapse = ""), "</svg>")
+}
+```
+
+The radar gracefully degrades: fewer than three non-NA scales returns an empty string instead of a broken one-axis chart.
+
+```{r p3_radar_preview, results = "asis", echo = FALSE}
+cat('<div style="border:2px solid #E74C3C;border-radius:6px;margin:20px 0;overflow:hidden;">')
+cat('<div style="background:#E74C3C;color:white;padding:6px 16px;font-size:12px;font-weight:bold;">PARTICIPANT VIEW — SVG radar chart</div>')
+cat(svg_radar(scores))
+cat('</div>')
+```
+
+## 3.4 Inline SVG norm curve
+
+A bell curve with the participant's score marked and the area to the left shaded shows
+"where you fall" in a reference population at a glance. No library needed.
+
+```{r p3_normcurve_fn}
+svg_norm_curve <- function(score, norm_mean, norm_sd,
+                           label       = "Reference population",
+                           color       = "#4A90D9",
+                           shade_color = "rgba(74,144,217,0.20)",
+                           max_response = 5,
+                           width = 480, height = 130) {
+  if (is.na(score) || is.na(norm_mean) || is.na(norm_sd) || norm_sd <= 0) return("")
+
+  # Draw \u00b13.5 SD around the norm mean, clipped to valid scale bounds
+  x_lo <- max(1, norm_mean - 3.5 * norm_sd)
+  x_hi <- min(max_response, norm_mean + 3.5 * norm_sd)
+  score <- max(x_lo, min(x_hi, score))   # clip score to drawn range
+
+  pad_l <- 28; pad_r <- 28; pad_t <- 22; pad_b <- 36
+  plot_w <- width  - pad_l - pad_r
+  plot_h <- height - pad_t - pad_b
+
+  to_x <- function(v) pad_l + plot_w * (v - x_lo) / (x_hi - x_lo)
+  max_d <- dnorm(norm_mean, norm_mean, norm_sd)
+  to_y  <- function(d) height - pad_b - plot_h * (d / max_d)
+
+  # 80-point curve
+  xs <- seq(x_lo, x_hi, length.out = 80)
+  ds <- dnorm(xs, norm_mean, norm_sd)
+  pts <- paste(sprintf("%g,%g", to_x(xs), to_y(ds)), collapse = " ")
+
+  # Shaded area up to the participant's score
+  xs_s <- c(xs[xs < score], score)
+  ds_s <- c(dnorm(xs_s[-length(xs_s)], norm_mean, norm_sd), dnorm(score, norm_mean, norm_sd))
+  base_y <- height - pad_b
+  shade_pts <- paste(c(
+    sprintf("%g,%g", to_x(xs_s[1]),  base_y),
+    sprintf("%g,%g", to_x(xs_s),     to_y(ds_s)),
+    sprintf("%g,%g", to_x(xs_s[length(xs_s)]), base_y)
+  ), collapse = " ")
+
+  # Axis ticks
+  tick_vals <- seq(ceiling(x_lo), floor(x_hi))
+  ticks <- vapply(tick_vals, function(k) {
+    sprintf(
+      "<line x1='%g' y1='%g' x2='%g' y2='%g' stroke='#9ca3af' stroke-width='1'/>
+       <text x='%g' y='%g' text-anchor='middle' font-family='system-ui'
+             font-size='10' fill='#6b7280'>%g</text>",
+      to_x(k), base_y, to_x(k), base_y + 4,
+      to_x(k), base_y + 16, k)
+  }, character(1))
+
+  # Participant marker: vertical line + dot + score label
+  px  <- to_x(score)
+  pct <- round(pnorm(score, norm_mean, norm_sd) * 100)
+  marker <- sprintf(
+    "<line x1='%g' y1='%g' x2='%g' y2='%g' stroke='%s' stroke-width='2' stroke-dasharray='3,3'/>
+     <circle cx='%g' cy='%g' r='5' fill='%s' stroke='white' stroke-width='1.5'/>
+     <text x='%g' y='%g' text-anchor='middle' font-family='system-ui'
+           font-size='11' font-weight='600' fill='%s'>%.2f (%d%%)</text>",
+    px, to_y(max_d * 0.08), px, base_y, color,
+    px, base_y, color,
+    px, pad_t + 2, color, score, pct)
+
+  # Label below the chart
+  lbl <- sprintf(
+    "<text x='%g' y='%g' text-anchor='middle' font-family='system-ui'
+           font-size='10' fill='#9ca3af'>%s (M = %.2f, SD = %.2f)</text>",
+    width / 2, height - 2, label, norm_mean, norm_sd)
+
+  paste0(
+    "<svg viewBox='0 0 ", width, " ", height, "' xmlns='http://www.w3.org/2000/svg'",
+    " style='width:100%;max-width:", width, "px;display:block;margin:12px auto;'>",
+    # Baseline
+    sprintf("<line x1='%g' y1='%g' x2='%g' y2='%g' stroke='#e5e7eb' stroke-width='1'/>",
+            to_x(x_lo), base_y, to_x(x_hi), base_y),
+    # Shaded area
+    "<polygon points='", shade_pts, "' fill='", shade_color, "'/>",
+    # Curve
+    "<polyline points='", pts, "' fill='none' stroke='", color,
+    "' stroke-width='2' stroke-linecap='round'/>",
+    # Ticks
+    paste(ticks, collapse = ""),
+    # Marker
+    marker, lbl,
+    "</svg>"
+  )
+}
+```
+
+```{r p3_normcurve_preview, results = "asis", echo = FALSE}
+cat('<div style="border:2px solid #8E44AD;border-radius:6px;margin:20px 0;overflow:hidden;">')
+cat('<div style="background:#8E44AD;color:white;padding:6px 16px;font-size:12px;font-weight:bold;">PARTICIPANT VIEW \u2014 SVG norm curve (Extraversion)</div>')
+norm_E <- norm_pop$Extraversion
+cat(svg_norm_curve(scores$Extraversion, mean(norm_E), sd(norm_E),
+                   label = "Reference population (N = 300)"))
+cat('</div>')
+```
+
+The shaded region is the proportion of the reference sample scoring **at or below** this
+participant. The percentage shown at the marker (e.g. 72%) is a directly readable
+percentile — no additional explanation needed on the page.
+
+## 3.5 Embedding a ggplot
+
+When inline SVG is not enough — boxplots, density curves, scatter — render a ggplot to a temporary PNG and base64-encode it. Every embedded chart adds roughly 20–50 KB; for five charts on one page, prefer SVG.
+
+```{r p3_ggplot, eval = FALSE}
+gg_to_html <- function(p, width = 8, height = 4, dpi = 150) {
+  if (!requireNamespace("ggplot2",   quietly = TRUE)) return("")
+  if (!requireNamespace("base64enc", quietly = TRUE)) return("")
+  f <- tempfile(fileext = ".png")
+  on.exit(unlink(f), add = TRUE)
+  ggplot2::ggsave(f, p, width = width, height = height, dpi = dpi, bg = "white")
+  b64 <- base64enc::base64encode(f)
+  sprintf(
+    "<img src='data:image/png;base64,%s' alt='chart'
+     style='width:100%%;max-width:760px;display:block;margin:16px auto;'>", b64)
+}
+
+# Inside results_processor:
+sdf <- data.frame(dim = names(scores), score = unlist(scores))
+p   <- ggplot2::ggplot(sdf, ggplot2::aes(x = dim, y = score)) +
+  ggplot2::geom_col(fill = "#4A90D9", width = 0.6) +
+  ggplot2::geom_hline(yintercept = 3, linetype = "dashed", color = "#aaa") +
+  ggplot2::scale_y_continuous(limits = c(0, 5.5), breaks = 1:5) +
+  ggplot2::labs(x = NULL, y = "Score (1–5)") +
+  ggplot2::theme_minimal(base_size = 13)
+
+img_html <- gg_to_html(p)
+```
+
+For five charts on one page, prefer SVG — each ggplot PNG adds 20\u201350 KB,
+whereas the SVG functions above add roughly 2\u20135 KB each.
+
+------------------------------------------------------------------------
+
+# Part 4: Branching the report
+
+## 4.1 Privacy opt-out
+
+Some participants want to contribute data without receiving personal feedback. Add a yes/no demographic field and check it **before any scoring or plotting** — there is no point building charts the participant will never see.
+
+```{r p4_privacy}
+privacy_aware_report <- function(responses, item_bank,
+                                 demographics = NULL, session = NULL) {
+  is_english <- is.null(session) || identical(session$input$language, "en")
+
+  # Check first; build nothing if opted out
+  opted_out <- isTRUE(
+    tolower(as.character(demographics$show_personal_results)) %in%
+      c("no", "n", "false", "0")
+  )
+  if (opted_out) {
+    return(shiny::HTML(
+      if (is_english)
+        "<div style='padding:40px;text-align:center;font-family:sans-serif;'>
+           <h2>Assessment complete</h2>
+           <p>Thank you. Your data has been saved.</p></div>"
+      else
+        "<div style='padding:40px;text-align:center;font-family:sans-serif;'>
+           <h2>Vielen Dank!</h2>
+           <p>Ihre Daten wurden gespeichert.</p></div>"
+    ))
+  }
+
+  # Participant opted in — proceed with scoring and display
+  shiny::HTML("<p>... personalized report here ...</p>")
+}
+```
+
+## 4.2 Language detection
+
+Build one labels list at the top of the processor and reference `L$title`, `L$note`, etc. throughout. Never scatter `if (is_english) "Score" else "Wert"` through the HTML strings — you will miss one.
+
+```{r p4_labels}
+bilingual_report <- function(responses, item_bank,
+                             demographics = NULL, session = NULL) {
+  is_english <- is.null(session) || identical(session$input$language, "en")
+
+  L <- if (is_english) {
+    list(
+      title  = "Your Personality Profile",
+      note   = "Scale: 1 = strongly disagree, 5 = strongly agree",
+      thanks = "Thank you for participating!",
+      labels = c(Extraversion      = "Extraversion",
+                 Agreeableness     = "Agreeableness",
+                 Conscientiousness = "Conscientiousness",
+                 Neuroticism       = "Neuroticism",
+                 Openness          = "Openness")
+    )
+  } else {
+    list(
+      title  = "Ihr Persönlichkeitsprofil",
+      note   = "Skala: 1 = stimme gar nicht zu, 5 = stimme voll zu",
+      thanks = "Vielen Dank für Ihre Teilnahme!",
+      labels = c(Extraversion      = "Extraversion",
+                 Agreeableness     = "Verträglichkeit",
+                 Conscientiousness = "Gewissenhaftigkeit",
+                 Neuroticism       = "Neurotizismus",
+                 Openness          = "Offenheit")
+    )
+  }
+
+  n <- nrow(item_bank)
+  if (length(responses) < n)
+    responses <- c(responses, rep(NA, n - length(responses)))
+  responses <- as.numeric(responses)
+
+  dims <- names(L$labels)
+  sc   <- sapply(dims, function(d)
+    score_scale(item_bank$id[item_bank$domain == d], responses, item_bank))
+
+  rows <- vapply(dims, function(d) {
+    s <- if (is.na(sc[d])) "&mdash;" else sprintf("%.2f", sc[d])
+    sprintf(
+      "<tr>
+         <td style='padding:10px;border-bottom:1px solid #eee;'>%s</td>
+         <td style='padding:10px;text-align:center;font-weight:bold;'>%s</td>
+       </tr>", L$labels[[d]], s)
+  }, character(1))
+
+  shiny::HTML(paste0(
+    "<div style='padding:24px;max-width:700px;margin:0 auto;font-family:sans-serif;'>",
+    "<h2 style='text-align:center;'>", L$title, "</h2>",
+    "<p style='text-align:center;color:#888;font-size:.9em;'>", L$note, "</p>",
+    "<table style='width:100%;border-collapse:collapse;'>",
+    paste(rows, collapse = ""), "</table>",
+    "<p style='text-align:center;margin-top:20px;color:#4A90D9;'>", L$thanks, "</p>",
+    "</div>"
+  ))
+}
+```
+
+```{r p4_bilingual_preview, results = "asis", echo = FALSE}
+cat('<div style="border:2px solid #27AE60;border-radius:6px;margin:20px 0;overflow:hidden;">')
+cat('<div style="background:#27AE60;color:white;padding:6px 16px;font-size:12px;font-weight:bold;">PARTICIPANT VIEW — bilingual report (English branch)</div>')
+cat(as.character(bilingual_report(responses, bfi_items, demographics, NULL)))
+cat('</div>')
+```
+
+------------------------------------------------------------------------
+
+# Part 5: The csv_processor
+
+`results_processor` decides what the participant sees. `csv_processor` decides what goes into the saved CSV file. They are independent — you can have either, both, or neither.
+
+## 5.1 Signature
+
+```{r p5_sig, eval = FALSE}
+my_csv <- function(
+    csv_data,     # one-row data.frame — will be written to the CSV
+    responses,    # same vector as in results_processor
+    demographics, # same list
+    item_bank     # same data frame
+) {
+  # Add columns to csv_data, then return it
+  csv_data
+}
+```
+
+Without a `csv_processor`, your CSV contains raw item responses (`BFI_01 = 4`, `BFI_02 = 2`, …). With one, it can also contain scale scores, subscale means, or any derived variable you want analysis-ready in the download.
+
+## 5.2 Example: adding BFI scale scores
+
+```{r p5_csv_fn}
+bfi_csv_processor <- function(csv_data, responses, demographics, item_bank) {
+  if (is.null(responses) || length(responses) == 0) return(csv_data)
+  n <- nrow(item_bank)
+  if (length(responses) < n)
+    responses <- c(responses, rep(NA, n - length(responses)))
+  responses <- as.numeric(responses)
+
+  dims <- c("Extraversion", "Agreeableness", "Conscientiousness",
+            "Neuroticism",  "Openness")
+  for (d in dims) {
+    ids <- item_bank$id[item_bank$domain == d]
+    csv_data[[paste0("BFI_", d)]] <- score_scale(ids, responses, item_bank)
+  }
+
+  # Slider: rescale 0-100 → 1-5 and store alongside item responses
+  sl <- suppressWarnings(as.numeric(demographics$stress_level))
+  csv_data$stress_1to5 <- if (!is.na(sl)) round(sl / 100 * 4 + 1, 2) else NA_real_
+
+  csv_data
+}
+```
+
+Verify what would be added for the simulated participant:
+
+```{r p5_check}
+dummy_row  <- data.frame(participant_id = "demo", stringsAsFactors = FALSE)
+result_row <- bfi_csv_processor(dummy_row, responses, demographics, bfi_items)
+result_row[, grep("^BFI_|stress", names(result_row)), drop = FALSE]
+```
+
+## 5.3 Attaching both processors
+
+```{r p5_attach, eval = FALSE}
+config <- inrep::create_study_config(
+  name              = "BFI study",
+  model             = "GRM",
+  max_items         = 10,
+  results_processor = bilingual_report,   # what the participant sees
+  csv_processor     = bfi_csv_processor   # what the researcher gets
+)
+```
+
+Define `score_scale()` once (in a shared helper or a setup chunk) and call it from both processors. If you change a reverse-coding rule, you change it in one place.
+
+------------------------------------------------------------------------
+
+# Part 6: Comparing against norms
+
+"Your score is 3.4" is informative. "Your score is 3.4 — higher than 68 % of participants who completed this study" is engaging. Two approaches cover all situations:
+
+| Approach | Works on day 1? | Gets richer over time? |
+|---|---|---|
+| Fixed norm data | Yes | No — fixed reference |
+| Live data folder | After first participant | Yes, automatically |
+
+## 6.1 Fixed norm data
+
+Generate a reference population once and ship it with the study. `norm_pop`, `pct_rank()`, and `safe_sd()` are defined in this document's setup chunk and available throughout. Current percentiles for the simulated participant:
+
+```{r p6_norms}
+percentiles <- sapply(names(norm_pop),
+  function(d) pct_rank(scores[[d]], norm_pop[[d]]))
+percentiles
+```
+
+Part 7 shows a complete implementation combining `pct_rank()` with the SVG radar and norm curve.
+
+## 6.2 Live data folder
+
+As your study runs, inrep writes one CSV per participant to an export folder. Each new participant's report can compare against **all prior participants** by reading that folder at report-generation time:
+
+```{r p6_live_loader}
+load_prior_data <- function(data_folder, score_cols) {
+  if (is.null(data_folder) || !dir.exists(data_folder)) return(NULL)
+  files <- list.files(data_folder, pattern = "[.]csv$", full.names = TRUE)
+  if (length(files) == 0) return(NULL)
+  rows <- lapply(files, function(f)
+    tryCatch(read.csv(f)[, intersect(score_cols, names(read.csv(f))), drop = FALSE],
+             error = function(e) NULL))
+  rows <- Filter(Negate(is.null), rows)
+  if (length(rows) == 0) return(NULL)
+  do.call(rbind, rows)
+}
+```
+
+The processor is a **closure** that captures the folder path. Every time it fires it reads the current state of the folder — including all responses written since the study started — and falls back to the fixed norm population until enough real data accumulates:
+
+```{r p6_live_processor, eval = FALSE}
+make_live_processor <- function(data_folder = NULL, norm_fallback = norm_pop) {
+  score_cols <- paste0("BFI_",
+    c("Extraversion", "Agreeableness", "Conscientiousness", "Neuroticism", "Openness"))
+
+  function(responses, item_bank, demographics = NULL, session = NULL) {
+    prior <- load_prior_data(data_folder, score_cols)
+    ref   <- if (!is.null(prior) && nrow(prior) >= 10) prior else norm_fallback
+
+    n <- nrow(item_bank)
+    if (length(responses) < n)
+      responses <- c(responses, rep(NA, n - length(responses)))
+    responses <- as.numeric(responses)
+
+    dims <- c("Extraversion", "Agreeableness", "Conscientiousness",
+              "Neuroticism",  "Openness")
+    sc   <- setNames(sapply(dims, function(d)
+      score_scale(item_bank$id[item_bank$domain == d], responses, item_bank)), dims)
+    pcts <- setNames(sapply(dims, function(d)
+      pct_rank(sc[d], ref[[paste0("BFI_", d)]])), dims)
+
+    note <- if (!is.null(prior) && nrow(prior) >= 10)
+      paste0("Compared to ", nrow(ref), " participants who completed this study before you")
+    else
+      paste0("Compared to a reference population (N = ", nrow(ref), ")")
+
+    # ... build HTML table the same way as norm_report() above ...
+    shiny::HTML(paste0("<p>", note, "</p>"))
+  }
+}
+
+# Wire up — switches from fixed norms to real data automatically after 10 responses
+config <- inrep::create_study_config(
+  name              = "BFI longitudinal",
+  model             = "GRM",
+  max_items         = 10,
+  results_processor = make_live_processor(data_folder = "data/collected",
+                                          norm_fallback = norm_pop),
+  csv_processor     = bfi_csv_processor
+)
+```
+
+------------------------------------------------------------------------
+
+# Part 7: A complete assembled example
+
+Everything above in one runnable study. Bilingual Big Five study with demographics, two item blocks, privacy opt-out, SVG radar, M/SD bar table, and an enriched CSV. Copy it, save as `app.R`, and run.
+
+```{r p7_full, eval = FALSE}
+# ============================================================
+# Big Five study — runnable inrep launch script
+# ============================================================
+library(inrep)
+library(shiny)
+
+# ---- 1. Item bank ----
+data(bfi_items)
+bfi_items$id <- paste0("BFI_", sprintf("%02d", seq_len(nrow(bfi_items))))
+bfi_items$domain <- rep(
+  c("Extraversion", "Agreeableness", "Conscientiousness", "Neuroticism", "Openness"),
+  each = 6
+)
+bfi_items$reverse_coded <- rep(c(FALSE, TRUE, FALSE, TRUE, FALSE, FALSE), times = 5)
+
+# ---- 2. Scoring helpers — defined once, used by both processors ----
+score_scale <- function(ids, responses, item_bank, max_response = 5) {
+  idx <- match(ids, item_bank$id)
+  raw <- responses[idx]
+  rev <- item_bank$reverse_coded[idx]
+  raw[rev] <- (max_response + 1) - raw[rev]
+  if (sum(!is.na(raw)) < 2) NA_real_ else mean(raw, na.rm = TRUE)
+}
+safe_sd <- function(x) { v <- x[!is.na(x)]; if (length(v) < 2) NA_real_ else sd(v) }
+pct_rank <- function(score, reference) {
+  if (is.na(score) || length(reference) < 5) return(NA_real_)
+  round(mean(reference < score, na.rm = TRUE) * 100)
+}
+
+# ---- 3. Reference population (300 synthetic participants) ----
+set.seed(100)
+norm_pop <- data.frame(
+  Extraversion      = pmin(5, pmax(1, rnorm(300, 3.2, 0.7))),
+  Agreeableness     = pmin(5, pmax(1, rnorm(300, 3.7, 0.6))),
+  Conscientiousness = pmin(5, pmax(1, rnorm(300, 3.5, 0.6))),
+  Neuroticism       = pmin(5, pmax(1, rnorm(300, 2.9, 0.8))),
+  Openness          = pmin(5, pmax(1, rnorm(300, 3.4, 0.6)))
+)
+
+# ---- 4. Demographics ----
+demographic_configs <- list(
+  age = list(
+    question    = "How old are you?", question_en = "How old are you?",
+    type = "number", required = TRUE
+  ),
+  gender = list(
+    question    = "What is your gender?", question_en = "What is your gender?",
+    type = "select",
+    options    = c("Female" = "f", "Male" = "m", "Diverse" = "d"),
+    options_en = c("Female" = "f", "Male" = "m", "Diverse" = "d"),
+    required   = TRUE
+  ),
+  show_personal_results = list(
+    question    = "Would you like to see your personality profile at the end?",
+    question_en = "Would you like to see your personality profile at the end?",
+    type = "select",
+    options    = c("Yes" = "yes", "No" = "no"),
+    options_en = c("Yes" = "yes", "No"  = "no"),
+    required   = TRUE
+  )
+)
+
+# ---- 5. Page flow ----
+ext_idx <- which(bfi_items$domain == "Extraversion")
+neu_idx <- which(bfi_items$domain == "Neuroticism")
+
+custom_page_flow <- list(
+  list(id = "intro",  type = "custom",
+       title = "Welcome", title_en = "Welcome",
+       content    = "<h2>Welcome</h2><p>This takes about 5 minutes.</p>",
+       content_en = "<h2>Welcome</h2><p>This takes about 5 minutes.</p>"),
+  list(id = "demos",  type = "demographics",
+       title = "About you", title_en = "About you",
+       demographics = names(demographic_configs), required = TRUE),
+  list(id = "block_1", type = "items",
+       title = "Block 1", title_en = "Block 1",
+       item_indices    = ext_idx, scale_type = "likert",
+       instructions    = "Rate how well each statement describes you.",
+       instructions_en = "Rate how well each statement describes you."),
+  list(id = "block_2", type = "items",
+       title = "Block 2", title_en = "Block 2",
+       item_indices    = neu_idx, scale_type = "likert",
+       instructions    = "Rate how well each statement describes you.",
+       instructions_en = "Rate how well each statement describes you."),
+  list(id = "results", type = "results",
+       title = "Your profile", title_en = "Your profile",
+       show_radar_chart  = FALSE,
+       show_scale_scores = FALSE,
+       results_text_en = "Thank you for participating.")
+)
+
+# ---- 6. Study config ----
+study_config <- inrep::create_study_config(
+  name                = "Big Five Study",
+  custom_page_flow    = custom_page_flow,
+  demographics        = names(demographic_configs),
+  demographic_configs = demographic_configs,
+  model               = "GRM",
+  adaptive            = FALSE,
+  min_items           = length(c(ext_idx, neu_idx)),
+  max_items           = length(c(ext_idx, neu_idx)),
+  language            = "en",
+  bilingual           = FALSE,
+  response_ui_type    = "radio",
+  progress_style      = "bar",
+  session_save        = TRUE
+)
+
+# ---- 7. results_processor: radar + M/SD bar table + norm distribution ----
+#
+# This processor assembles three complementary visualizations on a single page:
+#   1. SVG radar — shows profile shape across all dimensions at a glance
+#   2. M/SD bar table with percentile column — precise numbers + comparison
+#   3. SVG norm curve for the highest-scoring dimension — "where you fall"
+#
+# Together they answer the three questions every participant asks:
+#   "What are my scores?" → table
+#   "What does my profile look like?" → radar
+#   "How do I compare?" → norm curve + percentile column
+study_config$results_processor <- function(responses, item_bank,
+                                           demographics = NULL, session = NULL) {
+  tryCatch({
+    is_english <- is.null(session) || identical(session$input$language, "en")
+
+    # Privacy check before anything else
+    opted_out <- isTRUE(
+      tolower(as.character(demographics$show_personal_results)) %in%
+        c("no", "n", "false", "0"))
+    if (opted_out) {
+      return(shiny::HTML(
+        "<div style='padding:40px;text-align:center;font-family:sans-serif;'>
+           <h2>Thank you. Your data has been saved.</h2></div>"
+      ))
+    }
+
+    # Pad and coerce
+    n <- nrow(item_bank)
+    if (length(responses) < n)
+      responses <- c(responses, rep(NA, n - length(responses)))
+    responses <- as.numeric(responses)
+    n_done    <- sum(!is.na(responses))
+
+    # Score all five dimensions
+    dims <- c("Extraversion", "Agreeableness", "Conscientiousness",
+              "Neuroticism",  "Openness")
+    sc   <- setNames(sapply(dims, function(d)
+      score_scale(item_bank$id[item_bank$domain == d], responses, item_bank)), dims)
+    sds  <- setNames(sapply(dims, function(d) {
+      idx <- match(item_bank$id[item_bank$domain == d], item_bank$id)
+      safe_sd(responses[idx])
+    }), dims)
+    pcts <- setNames(sapply(dims, function(d)
+      pct_rank(sc[d], norm_pop[[d]])), dims)
+
+    # -- Plot 1: SVG radar (profile shape) -----------------------------------
+    radar_html <- paste0(
+      "<h3 style='text-align:center;font-family:system-ui,sans-serif;",
+      "color:#2c3e50;margin:24px 0 4px;'>Profile</h3>",
+      "<p style='text-align:center;font-family:system-ui,sans-serif;",
+      "font-size:.85em;color:#9ca3af;margin:0 0 4px;'>",
+      "Profile shape across all five dimensions (scale 1–5)</p>",
+      svg_radar(sc)
+    )
+
+    # -- Plot 2: M/SD bar table with percentile column -----------------------
+    rows <- vapply(dims, function(d) {
+      pct    <- if (!is.na(pcts[d])) pcts[d] else 0
+      bar_w  <- max(0, min(100, pct))
+      m_str  <- if (is.na(sc[d]))   "—" else sprintf("%.2f", sc[d])
+      sd_str <- if (is.na(sds[d]))  "—" else sprintf("%.2f", sds[d])
+      p_str  <- if (is.na(pcts[d])) "?" else paste0(pcts[d], "%")
+      sprintf(
+        "<tr style='border-bottom:1px solid #f3f4f6;'>
+           <td style='padding:10px 14px;font-weight:500;font-family:system-ui;'>%s</td>
+           <td style='padding:10px 14px;text-align:center;font-weight:600;color:#4A90D9;
+                      font-family:system-ui;'>%s</td>
+           <td style='padding:10px 14px;text-align:center;color:#6b7280;
+                      font-family:system-ui;'>%s</td>
+           <td style='padding:10px 14px;text-align:center;color:#27AE60;
+                      font-weight:600;font-family:system-ui;'>%s</td>
+           <td style='padding:10px 14px;'>
+             <div style='background:#e5e7eb;border-radius:4px;height:7px;'>
+               <div style='background:#27AE60;height:100%%;border-radius:4px;width:%d%%;'></div>
+             </div>
+           </td>
+         </tr>", d, m_str, sd_str, p_str, bar_w)
+    }, character(1))
+
+    table_html <- paste0(
+      "<h3 style='text-align:center;font-family:system-ui,sans-serif;",
+      "color:#2c3e50;margin:24px 0 4px;'>Scores &amp; Comparison</h3>",
+      "<p style='text-align:center;font-family:system-ui,sans-serif;",
+      "font-size:.85em;color:#9ca3af;margin:0 0 8px;'>",
+      "Compared to a reference population of 300 participants</p>",
+      "<div style='border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;",
+      "max-width:700px;margin:0 auto;'>",
+      "<table style='width:100%;border-collapse:collapse;'>",
+      "<thead><tr style='background:#f9fafb;border-bottom:2px solid #e5e7eb;'>",
+      "<th style='padding:12px 14px;text-align:left;font-family:system-ui;'>Scale</th>",
+      "<th style='padding:12px 14px;text-align:center;font-family:system-ui;'>M</th>",
+      "<th style='padding:12px 14px;text-align:center;font-family:system-ui;'>SD</th>",
+      "<th style='padding:12px 14px;text-align:center;font-family:system-ui;'>Pct.</th>",
+      "<th style='padding:12px 14px;width:25%;font-family:system-ui;'></th>",
+      "</tr></thead><tbody>", paste(rows, collapse = ""), "</tbody></table>",
+      "<div style='padding:8px 14px;background:#f9fafb;border-top:1px solid #e5e7eb;",
+      "font-size:0.75rem;color:#9ca3af;font-family:system-ui;'><em>",
+      "M = Mean. SD = Standard deviation. Scale: 1–5. ",
+      "Pct. = percentile relative to reference population (N = 300).",
+      "</em></div></div>"
+    )
+
+    # -- Plot 3: SVG norm curve for the highest-scoring dimension ------------
+    top_dim  <- dims[which.max(sc)]
+    curve_html <- ""
+    if (!is.na(sc[top_dim]) && top_dim %in% names(norm_pop)) {
+      ref_vec   <- norm_pop[[top_dim]]
+      curve_html <- paste0(
+        "<h3 style='text-align:center;font-family:system-ui,sans-serif;",
+        "color:#2c3e50;margin:24px 0 4px;'>Where You Fall: ", top_dim, "</h3>",
+        "<p style='text-align:center;font-family:system-ui,sans-serif;",
+        "font-size:.85em;color:#9ca3af;margin:0 0 4px;'>",
+        "Your score on the dimension where you scored highest, ",
+        "relative to the reference sample</p>",
+        svg_norm_curve(
+          score        = sc[top_dim],
+          norm_mean    = mean(ref_vec, na.rm = TRUE),
+          norm_sd      = sd(ref_vec,   na.rm = TRUE),
+          label        = paste0("Reference population (N = 300)"),
+          color        = "#8E44AD",
+          shade_color  = "rgba(142,68,173,0.18)"
+        )
+      )
+    }
+
+    # -- Assemble all three panels -------------------------------------------
+    shiny::HTML(paste0(
+      "<div style='max-width:760px;margin:0 auto;padding:24px 16px;'>",
+      "<h2 style='text-align:center;color:#2c3e50;margin:0 0 4px 0;",
+      "font-family:system-ui,sans-serif;font-weight:700;'>Your Big Five Profile</h2>",
+      "<p style='text-align:center;font-family:system-ui,sans-serif;",
+      "font-size:.85em;color:#9ca3af;margin:0 0 16px 0;'>Based on ",
+      n_done, " items</p>",
+      radar_html,
+      table_html,
+      curve_html,
+      "</div>"
+    ))
+
+  }, error = function(e) {
+    shiny::HTML(sprintf(
+      "<div style='padding:20px;color:#900;'>
+         <h3>Report could not be generated</h3>
+         <p>%s</p></div>", e$message))
+  })
+}
+
+# ---- 8. csv_processor — adds BFI scale scores to the saved CSV ----
+study_config$csv_processor <- function(csv_data, responses, demographics, item_bank) {
+  if (is.null(responses) || length(responses) == 0) return(csv_data)
+  n <- nrow(item_bank)
+  if (length(responses) < n)
+    responses <- c(responses, rep(NA, n - length(responses)))
+  responses <- as.numeric(responses)
+
+  dims <- c("Extraversion", "Agreeableness", "Conscientiousness",
+            "Neuroticism",  "Openness")
+  for (d in dims)
+    csv_data[[paste0("BFI_", d)]] <-
+      score_scale(item_bank$id[item_bank$domain == d], responses, item_bank)
+  csv_data
+}
+
+# ---- 9. Launch ----
+inrep::launch_study(
+  config     = study_config,
+  item_bank  = bfi_items,
+  debug_mode = FALSE
+)
+```
+
+------------------------------------------------------------------------
+
+# Common pitfalls
+
+1. **`results_processor = "my_fn"` is silently ignored.** Pass the function object, not a string. `results_processor = my_fn`.
+
+2. **Setting `results_processor` inside a `custom_page_flow` entry does nothing.** It must be attached at the config level: `study_config$results_processor <- my_fn`.
+
+3. **Returning anything other than `shiny::HTML(...)`.** Returning a plain string or a list causes the results page to display raw R output. Always wrap the final value.
+
+4. **Forgetting `tryCatch`.** A single exception in the processor kills the entire results page. Wrap everything.
+
+5. **Not padding `responses`.** In adaptive studies and partial completions, `length(responses)` is less than `nrow(item_bank)`. Pad with `rep(NA, ...)` before scoring.
+
+6. **Scoring sliders from `responses`.** Slider values are in `demographics`, not `responses`. Reading `responses[30]` for a slider silently returns `NA`.
+
+7. **Building the entire report before the privacy opt-out check.** Check `show_personal_results` at the very top of the processor, before any scoring or plotting. A participant who declines feedback should not trigger 60 KB of chart generation.
+
+8. **Hard-coding language strings inside HTML.** Define one `L` (labels) list at the top of the processor and reference `L$title`, `L$note`, etc. throughout. Scattering `if (is_english) "Score" else "Wert"` through the HTML strings means you will miss one.
+
+9. **Using position-based scoring (`responses[1:6]`).** Positions shift when items are reordered or an adaptive study selects items in a different sequence. Always use `match(ids, item_bank$id)` to look up items by ID.
+
+10. **Two results pages, one custom processor, expecting different content on each.** The same `results_processor` runs on every results page. Pin rich content to one results page at the end; use `report_metrics` for intermediate summary pages.

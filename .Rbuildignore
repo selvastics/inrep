@@ -2,6 +2,7 @@
 ^\.Rproj\.user$
 ^\.git$
 ^\.github$
+^\.claude$
 ^\.gitignore$
 ^_pkgdown\.yml$
 ^docs$
@@ -26,3 +27,5 @@
 ^dev$
 ^\.Rlib/.*$
 ^data-raw$
+^inst/theme_editor$
+^inst/examples$

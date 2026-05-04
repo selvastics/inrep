@@ -1,0 +1,52 @@
+﻿/* =============================================================================
+   RAYCAST THEME for inrep — Raycast design system
+   macOS dark chrome (#1c1c1e), vibrant red-orange accent (#ff6363),
+   10px macOS-native border-radius, borderless flat radio buttons.
+   Source: VoltAgent/awesome-design-md > raycast
+   ============================================================================= */
+html { color-scheme: dark !important; }
+
+:root {
+  --primary-color: #ff6363;
+  --secondary-color: #e04444;
+  --background-color: #1c1c1e;
+  --surface-color: #2c2c2e;
+  --text-color: #f2f2f7;
+  --text-secondary: #aeaeb2;
+  --border-color: #3a3a3c;
+  --hover-color: #3a3a3c;
+  --focus-color: #ff6363;
+  --font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  --font-body: -apple-system, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  --border-radius: 10px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.50);
+  --shadow-hover: 0 4px 18px rgba(0,0,0,0.70);
+
+}
+
+body { font-family: var(--font-family); background: var(--background-color) !important; color: var(--text-color) !important; font-size: 0.9375rem; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+[style*="background-color: white"], [style*="background-color:#fff"], [style*="background: white"], [style*="background-color: #ffffff"], [style*="background-color:#ffffff"] { background-color: var(--surface-color) !important; color: var(--text-color) !important; }
+
+.assessment-card { background: var(--surface-color) !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; box-shadow: var(--shadow) !important; transition: box-shadow 0.2s ease !important; }
+.assessment-card:hover { box-shadow: var(--shadow-hover) !important; }
+h1, h2, h3, h4, h5, h6, .card-header { color: var(--text-color) !important; font-family: var(--font-family) !important; font-weight: 700 !important; }
+.welcome-text, p, .question-text { color: var(--text-secondary) !important; }
+
+.btn-klee, .action-button.btn-klee { background: var(--primary-color) !important; color: #ffffff !important; border: none !important; border-radius: var(--border-radius) !important; font-family: var(--font-family) !important; font-weight: 600 !important; box-shadow: 0 1px 4px rgba(255,99,99,0.35) !important; }
+.btn-klee:hover { background: var(--secondary-color) !important; box-shadow: 0 2px 8px rgba(255,99,99,0.50) !important; }
+.btn-klee:disabled { background: #3a3a3c !important; color: #636366 !important; }
+.btn-primary { background: var(--primary-color) !important; border-color: var(--primary-color) !important; }
+
+/* No border on radio labels — flat macOS style */
+.shiny-input-radiogroup label { background: #3a3a3c !important; border: none !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; }
+.shiny-input-radiogroup label:hover { background: #48484a !important; color: var(--primary-color) !important; }
+.form-control, input.form-control, select.form-control { background: var(--hover-color) !important; border: 1px solid transparent !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; color-scheme: dark !important; }
+.form-control:focus, input:focus, select:focus { border-color: var(--primary-color) !important; box-shadow: 0 0 0 2px rgba(255,99,99,0.20) !important; outline: none !important; }
+.progress-bar-container { background: var(--border-color) !important; border-radius: 2.5px !important; }
+.progress-bar-fill { background: var(--primary-color) !important; height: 100% !important; }
+.dimension-score { border-left: 4px solid var(--primary-color) !important; background: rgba(255,99,99,0.07) !important; }
+.dimension-fill { background: var(--primary-color) !important; }
+.footer { border-top-color: var(--border-color) !important; color: var(--text-secondary) !important; }
+::-webkit-scrollbar { width: 5px; background: var(--background-color); } ::-webkit-scrollbar-thumb { background: #48484a; border-radius: 3px; }
+*:focus { outline: 2px solid var(--focus-color) !important; outline-offset: 2px !important; }

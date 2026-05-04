@@ -643,7 +643,7 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
       study_key = config$study_key %||% "unknown_study",
       timestamp = as.character(Sys.time()),
       cat_result = if (is.null(rv$cat_result)) list() else as.list(rv$cat_result),
-      demographics = if (is.null(rv$demographics)) list() else as.list(rv$demographics),
+      demographics = if (is.null(rv$demo_data)) list() else as.list(rv$demo_data),
       response_times = if (is.null(rv$response_times)) list() else as.list(rv$response_times),
       theta_history = if (is.null(rv$theta_history)) list() else as.list(rv$theta_history),
       se_history = if (is.null(rv$se_history)) list() else as.list(rv$se_history)
@@ -662,8 +662,10 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
       }
     }, add = TRUE)
     
-    # Write to temp file
-    writeLines(json_data, temp_file)  # Save as plain JSON for now
+    # Write to temp file as UTF-8
+    con <- file(temp_file, open = "w", encoding = "UTF-8")
+    writeLines(json_data, con)
+    close(con)
     
     # Handle different URL formats
     share_token <- NULL

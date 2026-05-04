@@ -1,0 +1,103 @@
+﻿/* =============================================================================
+   OLLAMA THEME for inrep — Ollama design system
+   White canvas, pure black text, MONOSPACE font everywhere (JetBrains Mono),
+   zero shadows, hairline borders. Terminal CLI on white background.
+   Source: VoltAgent/awesome-design-md > ollama
+   ============================================================================= */
+
+:root {
+  --primary-color: #000000;
+  --secondary-color: #333333;
+  --background-color: #ffffff;
+  --surface-color: #f9f9f9;
+  --text-color: #000000;
+  --text-secondary: #666666;
+  --border-color: #e0e0e0;
+  --hover-color: #f5f5f5;
+  --focus-color: #000000;
+  --success-color: #006600;
+  --error-color: #cc0000;
+  --font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', 'Consolas', monospace;
+  --font-body: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', 'Consolas', monospace;
+  --border-radius: 4px;
+  --shadow: none;
+
+}
+
+/* MONOSPACE on all elements */
+body, h1, h2, h3, h4, h5, h6, p, span, div, label, input, select, textarea, button,
+.btn, .shiny-input-container, .shiny-input-container label, .form-control,
+.question-text, .welcome-text, .card-header, .section-title {
+  font-family: var(--font-family) !important;
+}
+
+body {
+  background: var(--background-color) !important;
+  color: var(--text-color) !important;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  font-variant-ligatures: none !important;
+}
+
+/* No shadow — hairline border only */
+.assessment-card {
+  background: var(--surface-color) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: none !important;
+}
+.assessment-card:hover { background: #f5f5f5 !important; }
+
+h1, h2, h3, h4, h5, h6, .card-header {
+  color: var(--text-color) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+}
+.welcome-text, p, .question-text { color: var(--text-secondary) !important; }
+
+.btn-klee, .action-button.btn-klee {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: var(--border-radius) !important;
+  font-family: var(--font-family) !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+  transition: background 0.12s ease !important;
+}
+.btn-klee:hover { background: #333333 !important; }
+.btn-klee:disabled { background: #cccccc !important; color: #666666 !important; }
+.btn-primary { background: #000000 !important; border-color: #000000 !important; }
+
+.shiny-input-radiogroup label {
+  background: #ffffff !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+}
+.shiny-input-radiogroup label:hover { background: var(--hover-color) !important; border-color: #999999 !important; }
+
+.form-control, input.form-control, select.form-control {
+  background: #ffffff !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+}
+.form-control:focus, input:focus, select:focus {
+  border-color: #000000 !important;
+  box-shadow: none !important;
+  outline: 2px solid #000000 !important;
+  outline-offset: 0 !important;
+}
+
+.progress-bar-container { background: var(--border-color) !important; border-radius: 0 !important; }
+.progress-bar-fill { background: #000000 !important; height: 100% !important; border-radius: 0 !important; }
+
+.dimension-score { border-left: 3px solid #000000 !important; background: #f5f5f5 !important; }
+.dimension-fill { background: #000000 !important; }
+.footer { border-top-color: var(--border-color) !important; color: var(--text-secondary) !important; }
+
+*:focus { outline: 2px solid #000000 !important; outline-offset: 1px !important; }

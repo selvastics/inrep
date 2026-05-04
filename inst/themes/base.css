@@ -1,0 +1,304 @@
+/* =============================================================================
+   BASE STRUCTURAL CSS — inrep package
+
+   Loaded BEFORE every theme file.  Theme CSS only overrides visual properties
+   (colour, font-family, shadow, border-radius, border-colour).  All
+   spacing, sizing, and typographic scale live here so every study layout is
+   consistent regardless of theme.
+
+   Fluid sizing uses CSS clamp(preferred, viewport-fraction, max) so the UI
+   fills whatever window is available — from a narrow 320 px iframe to a
+   wide 1440 px desktop.  HilFo is the reference design at full width.
+   ============================================================================= */
+
+/* ---------------------------------------------------------------------------
+   Box model & global resets
+   --------------------------------------------------------------------------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: auto;
+}
+
+body {
+  margin: 0;
+  padding: clamp(0.5rem, 2.5vw, 1.25rem);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+   Main Shiny containers — centred, full-width within 1 200 px
+   --------------------------------------------------------------------------- */
+.container-fluid {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 clamp(0.5rem, 2vw, 1rem);
+}
+
+#main-study-container,
+#study_ui,
+.shiny-html-output,
+.shiny-bound-output {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ---------------------------------------------------------------------------
+   Assessment card — primary content surface
+   --------------------------------------------------------------------------- */
+.assessment-card {
+  width: 100%;
+  max-width: min(800px, 95vw);
+  margin: clamp(0.75rem, 3vh, 1.5rem) auto clamp(1rem, 4vh, 2rem) auto;
+  padding: clamp(1.25rem, 5vw, 2.5rem);
+}
+
+/* ---------------------------------------------------------------------------
+   Card header / section titles
+   --------------------------------------------------------------------------- */
+.card-header,
+h1.card-header,
+h2.card-header,
+h3.card-header {
+  font-size: clamp(1.25rem, 3.5vw, 1.75rem);
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: clamp(1rem, 3vh, 1.5rem);
+  line-height: 1.3;
+}
+
+/* ---------------------------------------------------------------------------
+   Primary action button — WCAG 2.5.8 minimum touch target 44 × 44 px
+   --------------------------------------------------------------------------- */
+.btn-klee,
+.action-button.btn-klee {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(10px, 2.5vw, 12px) clamp(20px, 4vw, 28px);
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
+  min-height: 44px;
+  min-width: 120px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Bootstrap btn-primary used by Shiny's next-page buttons */
+.btn-primary {
+  padding: clamp(10px, 2.5vw, 12px) clamp(20px, 4vw, 28px);
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
+  min-height: 44px;
+}
+
+/* ---------------------------------------------------------------------------
+   Button group (nav-buttons)
+   --------------------------------------------------------------------------- */
+.nav-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(0.5rem, 2vw, 1rem);
+  flex-wrap: wrap;
+  margin-top: clamp(1.25rem, 4vh, 2rem);
+}
+
+/* ---------------------------------------------------------------------------
+   Radio option labels — vertically stacked, clearly tap-able
+   --------------------------------------------------------------------------- */
+.shiny-input-radiogroup .radio,
+.shiny-input-radiogroup label {
+  display: block;
+  padding: clamp(10px, 2.5vw, 12px) clamp(12px, 3vw, 16px);
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
+  margin: clamp(6px, 1.5vw, 8px) 0;
+  margin-left: 0;
+  cursor: pointer;
+  position: relative;
+}
+
+/* ---------------------------------------------------------------------------
+   Form inputs
+   --------------------------------------------------------------------------- */
+.form-control,
+input.form-control,
+select.form-control,
+textarea.form-control {
+  padding: clamp(8px, 2vw, 10px) clamp(10px, 2.5vw, 14px);
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
+  min-height: 42px;
+  width: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+   Question and welcome text
+   --------------------------------------------------------------------------- */
+.question-text,
+.welcome-text {
+  font-size: clamp(0.9375rem, 2.5vw, 1rem);
+  line-height: 1.7;
+  margin-bottom: clamp(1rem, 3vh, 1.5rem);
+}
+
+/* ---------------------------------------------------------------------------
+   Progress bar — HilFo reference: 10 px height, 1.5 rem vertical margin
+   --------------------------------------------------------------------------- */
+.progress-bar-container {
+  width: 100%;
+  height: clamp(6px, 1.5vw, 10px);
+  border-radius: 5px;
+  overflow: hidden;
+  margin: clamp(1rem, 3vh, 1.5rem) 0;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+/* ---------------------------------------------------------------------------
+   Dimension score bars (results page)
+   --------------------------------------------------------------------------- */
+.dimension-score {
+  padding: clamp(0.875rem, 3vw, 1.25rem);
+  margin: clamp(0.625rem, 2vh, 1rem) 0;
+}
+
+.dimension-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.dimension-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+/* ---------------------------------------------------------------------------
+   Footer
+   --------------------------------------------------------------------------- */
+.footer {
+  text-align: center;
+  margin-top: clamp(1.5rem, 5vh, 2rem);
+  padding-top: clamp(0.875rem, 3vh, 1.25rem);
+}
+
+/* ---------------------------------------------------------------------------
+   Form-group spacing
+   --------------------------------------------------------------------------- */
+.form-group {
+  margin-bottom: clamp(1rem, 3vw, 1.25rem);
+}
+
+/* ---------------------------------------------------------------------------
+   Error / validation states
+   --------------------------------------------------------------------------- */
+.shiny-input-container.has-error input,
+.shiny-input-container.has-error select,
+.shiny-input-container.has-error textarea {
+  border-width: 2px;
+  border-style: solid;
+  border-color: #dc3545;
+}
+
+.shiny-input-container.has-error label {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+/* ---------------------------------------------------------------------------
+   Screen-reader-only utility
+   --------------------------------------------------------------------------- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Mobile — full-width CTAs, stacked nav
+   --------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+  .btn-klee,
+  .action-button.btn-klee,
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    margin: 4px 0;
+  }
+
+  .nav-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Touch targets — WCAG 2.5.8
+   --------------------------------------------------------------------------- */
+@media (hover: none) and (pointer: coarse) {
+  .btn-klee,
+  .btn-primary,
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced motion
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Print
+   --------------------------------------------------------------------------- */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+    padding: 0;
+  }
+
+  .btn,
+  button,
+  .nav-buttons {
+    display: none !important;
+  }
+
+  .assessment-card {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    max-width: none;
+    padding: 1rem;
+  }
+
+  .question-text {
+    font-weight: bold;
+    margin-bottom: 1rem;
+  }
+}

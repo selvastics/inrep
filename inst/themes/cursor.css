@@ -1,0 +1,47 @@
+﻿/* =============================================================================
+   CURSOR THEME for inrep — Cursor IDE design system
+   Warm cream canvas (#f7f7f4), orange CTAs sparingly, clean IDE feel.
+   Code blocks in JetBrains Mono; body/UI in Inter.
+   Source: VoltAgent/awesome-design-md > cursor
+   ============================================================================= */
+
+:root {
+  --primary-color: #f54e00;
+  --secondary-color: #d94300;
+  --background-color: #f7f7f4;
+  --surface-color: #ffffff;
+  --text-color: #1a1a1a;
+  --text-secondary: #555555;
+  --border-color: #e0dfda;
+  --hover-color: #f0f0ec;
+  --focus-color: #f54e00;
+  --font-family: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --border-radius: 6px;
+  --shadow: 0 1px 4px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04);
+  --shadow-hover: 0 2px 8px rgba(0,0,0,0.10), 0 8px 24px rgba(0,0,0,0.06);
+
+}
+
+body { font-family: var(--font-family); background: var(--background-color) !important; color: var(--text-color) !important; font-size: 0.9375rem; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+.assessment-card { background: var(--surface-color) !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; box-shadow: var(--shadow) !important; transition: box-shadow 0.2s ease !important; }
+.assessment-card:hover { box-shadow: var(--shadow-hover) !important; }
+h1, h2, h3, h4, h5, h6, .card-header { color: var(--text-color) !important; font-weight: 600 !important; }
+.welcome-text, p, .question-text { color: var(--text-secondary) !important; }
+code, pre { font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', monospace !important; }
+
+.btn-klee, .action-button.btn-klee { background: var(--primary-color) !important; color: #ffffff !important; border: none !important; border-radius: var(--border-radius) !important; font-family: var(--font-family) !important; font-weight: 600 !important; box-shadow: 0 1px 4px rgba(245,78,0,0.25) !important; }
+.btn-klee:hover { background: var(--secondary-color) !important; }
+.btn-klee:disabled { background: #c8c8c4 !important; }
+.btn-primary { background: var(--primary-color) !important; border-color: var(--primary-color) !important; }
+
+.shiny-input-radiogroup label { background: #fafaf7 !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; }
+.shiny-input-radiogroup label:hover { background: var(--hover-color) !important; border-color: var(--primary-color) !important; }
+.form-control, input.form-control, select.form-control { background: var(--surface-color) !important; border: 1px solid var(--border-color) !important; border-radius: var(--border-radius) !important; color: var(--text-color) !important; font-family: var(--font-family) !important; }
+.form-control:focus, input:focus, select:focus { border-color: var(--primary-color) !important; box-shadow: 0 0 0 2px rgba(245,78,0,0.12) !important; outline: none !important; }
+.progress-bar-container { background: #e0dfda !important; border-radius: 2.5px !important; }
+.progress-bar-fill { background: var(--primary-color) !important; height: 100% !important; }
+.dimension-score { border-left: 4px solid var(--primary-color) !important; background: rgba(245,78,0,0.04) !important; }
+.dimension-fill { background: var(--primary-color) !important; }
+.footer { border-top-color: var(--border-color) !important; color: var(--text-secondary) !important; }
+*:focus { outline: 2px solid var(--focus-color) !important; outline-offset: 2px !important; }

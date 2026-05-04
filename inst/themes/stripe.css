@@ -1,0 +1,105 @@
+﻿/* =============================================================================
+   STRIPE THEME for inrep — Stripe design system
+   Off-white canvas (#f6f9fc), purple-indigo gradient buttons, Stripe-signature
+   multi-layer shadow on cards, tight 4px radius, Inter.
+   Source: VoltAgent/awesome-design-md > stripe
+   ============================================================================= */
+
+:root {
+  --primary-color: #533afd;
+  --secondary-color: #4434d4;
+  --background-color: #f6f9fc;
+  --surface-color: #ffffff;
+  --text-color: #0a2540;
+  --text-secondary: #425466;
+  --border-color: #e6ebf1;
+  --hover-color: #f0f4f8;
+  --focus-color: #533afd;
+  --success-color: #24b47e;
+  --error-color: #cd3d64;
+  --warning-color: #e8a813;
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --border-radius: 4px;
+  --shadow: 0 2px 4px rgba(83,58,253,0.06), 0 4px 16px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+  --shadow-hover: 0 4px 12px rgba(83,58,253,0.14), 0 8px 32px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.06);
+
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--background-color) !important;
+  color: var(--text-color) !important;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.assessment-card {
+  background: var(--surface-color) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: var(--shadow) !important;
+  transition: box-shadow 0.2s ease !important;
+}
+.assessment-card:hover { box-shadow: var(--shadow-hover) !important; }
+
+h1, h2, h3, h4, h5, h6, .card-header {
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.015em !important;
+}
+.welcome-text, p, .question-text { color: var(--text-secondary) !important; }
+
+/* GRADIENT BUTTON — Stripe signature */
+.btn-klee, .action-button.btn-klee {
+  background: linear-gradient(135deg, #7166fb 0%, #533afd 50%, #4434d4 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: var(--border-radius) !important;
+  font-family: var(--font-family) !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 3px rgba(83,58,253,0.25), 0 3px 8px rgba(83,58,253,0.20) !important;
+  transition: box-shadow 0.2s ease, transform 0.1s ease !important;
+  text-shadow: none !important;
+}
+.btn-klee:hover {
+  background: linear-gradient(135deg, #8478ff 0%, #6450ff 50%, #533afd 100%) !important;
+  box-shadow: 0 2px 6px rgba(83,58,253,0.35), 0 6px 18px rgba(83,58,253,0.30) !important;
+}
+.btn-klee:disabled { background: #c4cdd6 !important; box-shadow: none !important; }
+.btn-primary { background: linear-gradient(135deg, #533afd, #4434d4) !important; border-color: #533afd !important; }
+.btn-primary:hover { background: linear-gradient(135deg, #6450ff, #533afd) !important; }
+
+.shiny-input-radiogroup label {
+  background: #ffffff !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+.shiny-input-radiogroup label:hover { border-color: #533afd !important; box-shadow: 0 0 0 2px rgba(83,58,253,0.10) !important; background: #f8f6ff !important; }
+
+.form-control, input.form-control, select.form-control {
+  background: #ffffff !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+}
+.form-control:focus, input:focus, select:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 3px rgba(83,58,253,0.15) !important;
+  outline: none !important;
+}
+
+.progress-bar-container { background: #e6ebf1 !important; border-radius: 2px !important; }
+.progress-bar-fill { background: linear-gradient(90deg, #533afd, #7c6aff) !important; height: 100% !important; }
+
+.dimension-score { border-left: 4px solid var(--primary-color) !important; background: #f8f6ff !important; }
+.dimension-fill { background: linear-gradient(90deg, #533afd, #7c6aff) !important; }
+.footer { border-top-color: var(--border-color) !important; color: var(--text-secondary) !important; }
+
+*:focus { outline: 2px solid var(--focus-color) !important; outline-offset: 2px !important; }

@@ -1,0 +1,706 @@
+---
+title: "Adaptive Testing with inrep"
+author: "inrep Development Team"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    theme: cerulean
+vignette: >
+  %\VignetteIndexEntry{Adaptive Testing with inrep}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  eval     = FALSE
+)
+library(inrep)
+```
+
+# What adaptive testing adds
+
+A fixed-form questionnaire asks everyone the same questions in the same order. A participant who scores very high on Extraversion and one who scores very low will both answer the same middle-difficulty items — items that are highly informative for average participants but provide little information about those at the extremes.
+
+Computerised adaptive testing (CAT) solves this by selecting each item individually. After each response the study estimates the participant's trait level (θ, "theta") and selects the next item that provides the most information at that estimate. Items that would add little new information — because they are too easy, too hard, or similar to one already answered — are skipped. The result: the same measurement precision as a full-length test, in fewer items, for every participant.
+
+inrep implements CAT over Shiny. You enable it with one parameter, define how precise the estimate must be before stopping, and inrep handles everything else — the theta estimation loop, the item selection, the stopping check.
+
+This vignette assumes you have read Vignette 1 (item banks, page flow, demographics) and Vignette 2 (results_processor, scoring). Adaptive testing is a layer on top of those foundations.
+
+------------------------------------------------------------------------
+
+# One parameter to flip
+
+The difference between a fixed-form and an adaptive study is one line:
+
+```{r adaptive_flag}
+# Fixed-form
+config_fixed <- create_study_config(
+  name      = "Personality Study",
+  model     = "GRM",
+  adaptive  = FALSE,   # <-- fixed
+  max_items = 30
+)
+
+# Adaptive
+config_adaptive <- create_study_config(
+  name      = "Personality Study",
+  model     = "GRM",
+  adaptive  = TRUE,    # <-- adaptive
+  criteria  = "MI",    # item selection method
+  min_items = 5,       # never stop before 5 items
+  max_items = 20,      # never exceed 20 items
+  min_SEM   = 0.32     # stop when SE(θ) < 0.32
+)
+```
+
+When `adaptive = TRUE`, each participant sees a different sequence of items drawn from the full item bank, stopping as soon as the precision criterion is met. When `adaptive = FALSE`, every participant sees the same items in the same order.
+
+Everything else in the study — demographics, page flow, results_processor, csv_processor — works identically regardless of which mode you choose.
+
+------------------------------------------------------------------------
+
+# Part 1: Configuration for adaptive studies
+
+## 1.1 The adaptive parameters
+
+| Parameter | What it controls | Typical values |
+|---|---|---|
+| `adaptive` | Enables CAT | `TRUE` |
+| `criteria` | Item selection method | `"MI"` or `"MEI"` (see below) |
+| `min_items` | Minimum items before stopping | 5–10 |
+| `max_items` | Hard ceiling on item count | 15–30 |
+| `min_SEM` | Stop when SE(θ) falls below this | 0.25–0.40 |
+
+  > **How to choose `min_SEM`.** SE(θ) is on the theta scale, which has a standard-normal prior (mean = 0, SD = 1). An SE of 0.40 is roughly the precision of a well-designed 7-item fixed-form scale. SE = 0.30 matches a good 15-item scale. SE = 0.25 is the level of a long 25-item scale. For most applied personality and clinical research, **0.32–0.35 is a sensible default** — tighter than `0.40` (which can stop after only 3–4 items) but achievable without needing 20+ items.
+| `estimation_method` | Theta estimation algorithm | `"EAP"` (default) |
+| `theta_prior` | Prior distribution for EAP | `c(0, 1)` — standard normal |
+| `stopping_rule` | Custom stopping function | see Part 1.3 |
+
+## 1.2 Item selection: MI vs. MEI
+
+**How do you choose between `"MI"` and `"MEI"`?**
+
+`"MI"` (Maximum Information) selects the item with the highest Fisher information evaluated at the *current point estimate* $\hat\theta$. This is the classical CAT criterion: computationally cheap and accurate once $\hat\theta$ is stable. **It works well when many items have already been administered and SE is small (≤ 0.40).**
+
+There is a subtlety worth understanding: Fisher information is an *expected* quantity, averaged over the response distribution at a given $\theta$. When SE is large (typically 0.5–0.8 in the first 5–10 items), $\hat\theta$ is imprecise and MI may select items that are optimal for the *wrong* region of the ability scale. For a 5-item personality scale, SE never gets small — the first item is selected while SE ≈ 1.0 (pure prior).
+
+`"MEI"` (Maximum Expected Information) addresses this directly by integrating $I(\theta)$ over the posterior $p(\theta \mid \hat\theta, SE)$:
+$$\text{MEI}_i = \int I_i(\theta)\, p(\theta \mid \hat\theta, SE)\, d\theta$$
+This selects items that are informative across the *full plausible range* of true ability, not just at the point estimate. The difference is largest in the early stages of short assessments.
+
+**Rule of thumb:**
+
+- `max_items < 15` (short personality/clinical scales): use `"MEI"`
+- `max_items ≥ 20` (long CATs): use `"MI"` — the estimates converge after ~10 items
+- Early-stage warm-up items: always random regardless of criterion (controlled by `adaptive_start`)
+
+Reference: Veerkamp & Berger (1997). Some new item selection criteria for adaptive testing. *Journal of Educational and Behavioral Statistics*, 22(2), 203–226.
+
+```{r mi_config}
+# Short 5-item scale — MEI recommended
+config_short <- create_study_config(
+  name             = "Short Extraversion Scale",
+  model            = "GRM",
+  adaptive         = TRUE,
+  criteria         = "MEI",   # integrates over posterior; better for short tests
+  estimation_method = "EAP",
+  theta_prior      = c(0, 1),
+  min_items        = 3,
+  max_items        = 5,
+  min_SEM          = 0.32
+)
+
+# Long 20-item CAT — MI is fine
+config <- create_study_config(
+  name             = "Adaptive Big Five Study",
+  model            = "GRM",
+  adaptive         = TRUE,
+  criteria         = "MI",    # point-estimate MI; accurate once SE is small
+  estimation_method = "EAP",
+  theta_prior      = c(0, 1),
+  min_items        = 8,
+  max_items        = 20,
+  min_SEM          = 0.32
+)
+```
+
+## 1.3 Stopping rules
+
+Three stopping conditions work in combination: the assessment continues until **all three are satisfied**:
+
+1. At least `min_items` items have been administered.
+2. SE(θ) < `min_SEM` (precision criterion met).
+3. Not yet reached `max_items` (which always stops the assessment regardless of precision).
+
+For more control, write a custom stopping function. It receives the study's reactive-values object (`rv`), the item bank, and the config; it returns `TRUE` to stop or `FALSE` to continue:
+
+```{r custom_stop}
+# Custom stopping rule: stop after 10+ items if precision is high,
+# OR always stop at 25 items even if precision is not yet reached.
+# NOTE: rv$administered and rv$current_se are internal fields.
+# They work in the current package version but check release notes on updates.
+custom_stopping <- function(rv, item_bank, config) {
+  n_admin <- length(rv$administered)
+
+  if (n_admin >= 25) return(TRUE)                        # hard ceiling
+  if (n_admin >= 10 && rv$current_se < 0.30) return(TRUE)  # precision reached
+
+  return(FALSE)
+}
+
+config_custom <- create_study_config(
+  name         = "Custom Stopping Study",
+  model        = "GRM",
+  adaptive     = TRUE,
+  criteria     = "MI",
+  stopping_rule = custom_stopping,
+  max_items    = 25
+)
+```
+
+------------------------------------------------------------------------
+
+# Part 2: Reading ability estimates in the results page
+
+The single biggest difference between a fixed-form and an adaptive results page is that you now have a theta estimate and its standard error — two numbers that summarise the entire adaptive session.
+
+## 2.1 Where theta lives
+
+After an adaptive session, theta and its SE are stored in `rv` (the reactive-values store inrep passes to your `results_processor`). `rv` is an internal session object — think of it as a named list that inrep updates after each item is answered. Your processor never creates or modifies `rv`; inrep simply passes it in so you can read the current ability estimate. The exact field names can vary slightly across package versions, so wrap the lookup defensively:
+
+```{r get_theta}
+get_theta <- function(rv, responses) {
+  if (is.null(rv)) return(list(theta = NA_real_, se = NA_real_, n = 0L))
+
+  theta <- rv$current_ability
+  se    <- if (!is.null(rv$ability_se)) rv$ability_se else rv$current_se
+
+  # Fallback: some versions store the result in rv$cat_result
+  if (is.null(theta) && !is.null(rv$cat_result)) {
+    theta <- rv$cat_result$theta
+    se    <- rv$cat_result$se
+  }
+
+  n <- if (!is.null(rv$administered)) length(rv$administered)
+       else sum(!is.na(responses))
+
+  list(
+    theta = if (is.null(theta)) NA_real_ else theta,
+    se    = if (is.null(se))    NA_real_ else se,
+    n     = n
+  )
+}
+```
+
+Use it at the top of your processor:
+
+```{r use_get_theta}
+my_adaptive_report <- function(responses, item_bank,
+                               demographics = NULL, session = NULL) {
+  tryCatch({
+
+    est <- get_theta(rv = session, responses = responses)
+    # est$theta  — the ability estimate
+    # est$se     — standard error of the estimate
+    # est$n      — number of items administered
+
+    # ... build HTML ...
+    shiny::HTML("<div>...</div>")
+
+  }, error = function(e) {
+    shiny::HTML(sprintf("<p style='color:#900;'>Error: %s</p>", e$message))
+  })
+}
+```
+
+## 2.2 Displaying theta: an SVG gauge
+
+A horizontal gauge with a confidence interval band is the conventional display for an adaptive ability estimate:
+
+```{r theta_gauge}
+svg_theta_gauge <- function(theta, se,
+                            theta_min = -3, theta_max = 3,
+                            color = "#2c3e50", band_color = "#FBBF24",
+                            width = 520, height = 110) {
+  if (is.na(theta)) return("")
+
+  pad_l <- 30; pad_r <- 30; pad_t <- 28; pad_b <- 30
+  plot_w <- width - pad_l - pad_r
+  bar_y  <- pad_t + 12
+
+  to_x <- function(x) pad_l + plot_w * (x - theta_min) / (theta_max - theta_min)
+
+  ci_lo <- to_x(max(theta_min, theta - 1.96 * se))
+  ci_hi <- to_x(min(theta_max, theta + 1.96 * se))
+
+  ticks <- vapply(theta_min:theta_max, function(k) {
+    x <- to_x(k)
+    sprintf(
+      "<line x1='%g' y1='%g' x2='%g' y2='%g' stroke='#9ca3af' stroke-width='1'/>
+       <text x='%g' y='%g' text-anchor='middle' font-family='system-ui'
+             font-size='10' fill='#6b7280'>%d</text>",
+      x, bar_y + 18, x, bar_y + 24,
+      x, bar_y + 38, k)
+  }, character(1))
+
+  paste0(
+    "<svg viewBox='0 0 ", width, " ", height, "' xmlns='http://www.w3.org/2000/svg' ",
+    "style='width:100%;max-width:", width, "px;display:block;margin:16px auto;'>",
+    # Track
+    sprintf("<line x1='%g' y1='%g' x2='%g' y2='%g'
+                   stroke='#e5e7eb' stroke-width='8' stroke-linecap='round'/>",
+            to_x(theta_min), bar_y + 18, to_x(theta_max), bar_y + 18),
+    # 95% CI band
+    sprintf("<line x1='%g' y1='%g' x2='%g' y2='%g'
+                   stroke='%s' stroke-width='8' stroke-linecap='round' opacity='0.7'/>",
+            ci_lo, bar_y + 18, ci_hi, bar_y + 18, band_color),
+    # Point estimate
+    sprintf("<circle cx='%g' cy='%g' r='8' fill='%s' stroke='white' stroke-width='2'/>",
+            to_x(theta), bar_y + 18, color),
+    # Labels
+    sprintf("<text x='%g' y='%g' text-anchor='middle' font-family='system-ui'
+                   font-size='14' font-weight='700' fill='%s'>θ = %.2f</text>",
+            to_x(theta), pad_t, color, theta),
+    sprintf("<text x='%g' y='%g' text-anchor='middle' font-family='system-ui'
+                   font-size='11' fill='#6b7280'>SE = %.2f</text>",
+            to_x(theta), pad_t + 12, se),
+    paste(ticks, collapse = ""),
+    "</svg>"
+  )
+}
+```
+
+The yellow band shows the 95% confidence interval around the estimate. The dot is the point estimate. Tick marks run from –3 to +3 on the standard theta scale.
+
+------------------------------------------------------------------------
+
+# Part 3: Calibrating your item bank
+
+Invented IRT parameters produce biased theta estimates. The whole value of adaptive testing comes from items whose parameters describe real response patterns — calibrated on actual data.
+
+This part covers the calibration workflow from raw response data to a production-ready item bank. You need R's **TAM** package: `install.packages("TAM")`.
+
+## 3.1 Why calibration matters
+
+An item's discrimination parameter (`a`) describes how sharply it separates participants along the latent trait. Its threshold parameters (`b1..b4`) describe where on the trait scale each response-category boundary lies. If you invent these numbers, the adaptive algorithm selects items based on fictional information curves, theta estimates are biased, and the standard errors no longer reflect actual precision. The assessment looks valid and produces plausible numbers — but those numbers do not mean what you think they mean.
+
+For pilot studies and tutorials, auto-deriving thresholds from a single difficulty parameter (Vignette 1, Part 1.1) is fine. For any study where theta estimates matter — clinical screening, selection, longitudinal tracking — calibrate from data.
+
+## 3.2 Sample size requirements
+
+| Model | Practical minimum |
+|---|---|
+| GRM (5-point, 4 thresholds) | 250–500 responses per threshold boundary ≈ 1 000–2 500 per item |
+| 2PL (binary) | ~500 responses per item |
+| 1PL / Rasch | ~200 responses per item |
+
+Item fit diagnostics matter more than raw N. A large sample does not rescue misfitting items.
+
+## 3.3 Fitting a GRM with TAM
+
+**Reverse-code before calibrating.** Fitting TAM on items with mixed polarity produces inconsistent threshold estimates. Apply reverse coding to the response matrix before calling `tam.mml()`.
+
+```{r tam_calibration}
+library(psych)
+data(bfi)
+
+# The 25 BFI items (columns 1-25)
+items <- bfi[, 1:25]
+
+# Reverse-coding keys (prefix "-" = reverse on a 6-point scale)
+bfi_keys <- list(
+  Agreeableness     = c("-A1",  "A2",  "A3",  "A4",  "A5"),
+  Conscientiousness = c( "C1",  "C2",  "C3", "-C4", "-C5"),
+  Extraversion      = c("-E1", "-E2",  "E3",  "E4",  "E5"),
+  Neuroticism       = c( "N1",  "N2",  "N3",  "N4",  "N5"),
+  Openness          = c( "O1", "-O2",  "O3",  "O4", "-O5")
+)
+
+reverse_code <- function(mat, keys) {
+  rev_ids <- gsub("-", "", keys[startsWith(keys, "-")])
+  for (id in rev_ids)
+    if (id %in% colnames(mat)) mat[, id] <- 7 - mat[, id]   # 6-point scale
+  mat
+}
+
+# Sub-matrices per dimension, reverse-coded
+items_E <- reverse_code(items[, grep("^E", colnames(items))], bfi_keys$Extraversion)
+items_N <- items[, grep("^N", colnames(items))]   # no reverse items in N
+# ... repeat for A, C, O
+
+library(TAM)
+
+# Fit a GRM to each dimension separately
+mod_E <- TAM::tam.mml(resp = items_E, control = list(maxiter = 200))
+mod_N <- TAM::tam.mml(resp = items_N, control = list(maxiter = 200))
+# mod_A, mod_C, mod_O ...
+```
+
+Fitting separate models per dimension is more appropriate than a single multidimensional model when each dimension will be administered as its own adaptive subtest.
+
+## 3.4 Extracting threshold parameters
+
+```{r extract_thresholds}
+# TAM::tam.threshold() returns one row per item, one column per category
+# For a 6-point scale: columns Cat1..Cat6 — Cat1 is a dummy lower bound (~-12); use Cat2..Cat6
+thresholds_E <- TAM::tam.threshold(mod_E)
+print(thresholds_E)   # rows = items, columns = Cat1..Cat6 (6-point scale)
+                      # Cat1 is a dummy lower bound (~-12) — discard it; use Cat2..Cat6 as b1..b5
+# For default tam.mml() (Rasch): a = 1 for all items
+# For 2PL fit: mod$item contains discrimination
+print(mod_E$item)
+```
+
+The threshold values from `TAM::tam.threshold()` are what go into the `b1, b2, ...` columns of your inrep item bank. Never invent them and never hard-code values from a different sample.
+
+## 3.5 Checking item fit
+
+Calibration is not done when `tam.mml()` returns. Item fit statistics decide whether the parameters are trustworthy:
+
+```{r item_fit}
+# Compute fit statistics for the Extraversion model
+fit_E <- TAM::tam.fit(mod_E)
+print(fit_E$itemfit)
+
+# Rule of thumb: flag INFIT MNSQ outside [0.6, 1.4]
+bad_items <- fit_E$itemfit$item[
+  fit_E$itemfit$Infit > 1.4 | fit_E$itemfit$Infit < 0.6
+]
+cat("Potentially misfitting items:", paste(bad_items, collapse = ", "), "\n")
+```
+
+Items with MNSQ far from 1.0 mean the model does not describe their response patterns well. Revise the item wording or remove them from the bank before deployment. High-misfit items reduce the accuracy of adaptive selection.
+
+## 3.6 Building the calibrated item bank
+
+After extracting thresholds and removing misfitting items, assemble the final item bank:
+
+```{r build_calibrated_bank}
+# Example: Extraversion dimension, 5 items, 6-point scale (5 thresholds)
+# Threshold values come from TAM::tam.threshold(mod_E) — not invented
+
+extraversion_items <- data.frame(
+  id = c("E1", "E2", "E3", "E4", "E5"),
+  Question = c(
+    "Don't talk a lot.",
+    "Find it difficult to approach others.",
+    "Know how to captivate people.",
+    "Make friends easily.",
+    "Take charge."
+  ),
+  domain        = "Extraversion",
+  reverse_coded = c(TRUE, TRUE, FALSE, FALSE, FALSE),
+  ResponseCategories = "1,2,3,4,5,6",
+  a  = 1,                                         # default for Rasch; use 2PL for varying a
+  b1 = c(-2.7, -2.5, -2.6, -2.8, -2.5),
+  b2 = c(-1.5, -1.3, -1.4, -1.5, -1.4),
+  b3 = c(-0.1,  0.1,  0.0, -0.1,  0.0),
+  b4 = c( 1.0,  1.2,  1.1,  1.0,  1.1),
+  b5 = c( 2.1,  2.3,  2.2,  2.1,  2.2),
+  stringsAsFactors = FALSE
+)
+
+# Validate before use
+tryCatch(
+  validate_item_bank(extraversion_items, "GRM"),
+  error = function(e) stop("Item bank validation failed: ", e$message)
+)
+```
+
+------------------------------------------------------------------------
+
+# Part 4: A complete adaptive study
+
+Everything above, assembled. Copy it, save as `app.R`, and run.
+
+```{r complete_adaptive}
+library(inrep)
+library(shiny)
+
+# ---- 1. Item bank (use your calibrated bank here) ----
+data(bfi_items)
+
+bfi_items$id <- paste0("BFI_", sprintf("%02d", seq_len(nrow(bfi_items))))
+bfi_items$domain <- rep(
+  c("Extraversion", "Agreeableness", "Conscientiousness", "Neuroticism", "Openness"),
+  each = 6
+)
+bfi_items$reverse_coded <- rep(c(FALSE, TRUE, FALSE, TRUE, FALSE, FALSE), times = 5)
+
+# ---- 2. Scoring helpers ----
+score_scale <- function(ids, responses, item_bank, max_response = 5) {
+  idx <- match(ids, item_bank$id)
+  raw <- responses[idx]
+  rev <- item_bank$reverse_coded[idx]
+  raw[rev] <- (max_response + 1) - raw[rev]
+  if (sum(!is.na(raw)) < 2) NA_real_ else mean(raw, na.rm = TRUE)
+}
+
+get_theta <- function(rv, responses) {
+  if (is.null(rv)) return(list(theta = NA_real_, se = NA_real_, n = 0L))
+  theta <- rv$current_ability
+  se    <- if (!is.null(rv$ability_se)) rv$ability_se else rv$current_se
+  if (is.null(theta) && !is.null(rv$cat_result)) {
+    theta <- rv$cat_result$theta
+    se    <- rv$cat_result$se
+  }
+  n <- if (!is.null(rv$administered)) length(rv$administered) else sum(!is.na(responses))
+  list(theta = if (is.null(theta)) NA_real_ else theta,
+       se    = if (is.null(se))    NA_real_ else se,
+       n     = n)
+}
+
+# ---- 3. Demographics ----
+demographic_configs <- list(
+  age = list(
+    question = "How old are you?", question_en = "How old are you?",
+    type = "number", required = TRUE
+  ),
+  show_personal_results = list(
+    question    = "Would you like to see your results at the end?",
+    question_en = "Would you like to see your results at the end?",
+    type = "select",
+    options    = c("Yes" = "yes", "No" = "no"),
+    options_en = c("Yes" = "yes", "No"  = "no"),
+    required   = TRUE
+  )
+)
+
+# ---- 4. Page flow ----
+custom_page_flow <- list(
+
+  list(id = "intro",   type = "custom",
+       title = "Welcome", title_en = "Welcome",
+       content    = paste0(
+         "<h2>Welcome</h2>",
+         "<p>This adaptive personality questionnaire adapts to your responses. ",
+         "You will answer between 5 and 20 questions. ",
+         "Most participants finish in under 4 minutes.</p>"
+       ),
+       content_en = paste0(
+         "<h2>Welcome</h2>",
+         "<p>This adaptive personality questionnaire adapts to your responses. ",
+         "You will answer between 5 and 20 questions. ",
+         "Most participants finish in under 4 minutes.</p>"
+       )),
+
+  list(id = "demos",   type = "demographics",
+       title = "About you", title_en = "About you",
+       demographics = names(demographic_configs), required = TRUE),
+
+  list(id = "items",   type = "items",
+       title = "Questions", title_en = "Questions",
+       item_indices    = seq_len(nrow(bfi_items)),
+       scale_type      = "likert",
+       instructions    = "Rate how well each statement describes you.",
+       instructions_en = "Rate how well each statement describes you."),
+
+  list(id = "results", type = "results",
+       title = "Your results", title_en = "Your results",
+       show_radar_chart  = FALSE,
+       show_scale_scores = FALSE,
+       results_text_en   = "Thank you for participating.")
+)
+
+# ---- 5. Study config ----
+study_config <- inrep::create_study_config(
+  name                = "Adaptive Personality Study",
+  custom_page_flow    = custom_page_flow,
+  demographics        = names(demographic_configs),
+  demographic_configs = demographic_configs,
+  model               = "GRM",
+  adaptive            = TRUE,        # enable CAT
+  criteria            = "MI",        # Maximum Information item selection
+  estimation_method   = "EAP",
+  theta_prior         = c(0, 1),
+  min_items           = 5,
+  max_items           = 20,
+  min_SEM             = 0.35,
+  language            = "en",
+  bilingual           = FALSE,
+  response_ui_type    = "radio",
+  progress_style      = "bar",
+  session_save        = TRUE
+)
+
+# ---- 6. svg_theta_gauge — needed by the results_processor below ----
+svg_theta_gauge <- function(theta, se,
+                            theta_min = -3, theta_max = 3,
+                            color = "#2c3e50", band_color = "#FBBF24",
+                            width = 520, height = 110) {
+  if (is.na(theta)) return("")
+  pad_l <- 30; pad_r <- 30; pad_t <- 28; pad_b <- 30
+  plot_w <- width - pad_l - pad_r; bar_y <- pad_t + 12
+  to_x <- function(x) pad_l + plot_w * (x - theta_min) / (theta_max - theta_min)
+  ci_lo <- to_x(max(theta_min, theta - 1.96 * se))
+  ci_hi <- to_x(min(theta_max, theta + 1.96 * se))
+  ticks <- vapply(theta_min:theta_max, function(k) {
+    x <- to_x(k)
+    sprintf(
+      "<line x1='%g' y1='%g' x2='%g' y2='%g' stroke='#9ca3af' stroke-width='1'/>
+       <text x='%g' y='%g' text-anchor='middle' font-family='system-ui'
+             font-size='10' fill='#6b7280'>%d</text>",
+      x, bar_y + 18, x, bar_y + 24, x, bar_y + 38, k)
+  }, character(1))
+  paste0(
+    "<svg viewBox='0 0 ", width, " ", height, "' xmlns='http://www.w3.org/2000/svg' ",
+    "style='width:100%;max-width:", width, "px;display:block;margin:16px auto;'>",
+    sprintf("<line x1='%g' y1='%g' x2='%g' y2='%g'
+                   stroke='#e5e7eb' stroke-width='8' stroke-linecap='round'/>",
+            to_x(theta_min), bar_y + 18, to_x(theta_max), bar_y + 18),
+    sprintf("<line x1='%g' y1='%g' x2='%g' y2='%g'
+                   stroke='%s' stroke-width='8' stroke-linecap='round' opacity='0.7'/>",
+            ci_lo, bar_y + 18, ci_hi, bar_y + 18, band_color),
+    sprintf("<circle cx='%g' cy='%g' r='8' fill='%s' stroke='white' stroke-width='2'/>",
+            to_x(theta), bar_y + 18, color),
+    sprintf("<text x='%g' y='%g' text-anchor='middle' font-family='system-ui'
+                   font-size='14' font-weight='700' fill='%s'>θ = %.2f</text>",
+            to_x(theta), pad_t, color, theta),
+    sprintf("<text x='%g' y='%g' text-anchor='middle' font-family='system-ui'
+                   font-size='11' fill='#6b7280'>SE = %.2f</text>",
+            to_x(theta), pad_t + 12, se),
+    paste(ticks, collapse = ""), "</svg>"
+  )
+}
+
+# ---- 7. results_processor — theta gauge + scale scores ----
+study_config$results_processor <- function(responses, item_bank,
+                                           demographics = NULL, session = NULL) {
+  tryCatch({
+
+    # Privacy check first
+    opted_out <- isTRUE(
+      tolower(as.character(demographics$show_personal_results)) %in%
+        c("no", "n", "false", "0"))
+    if (opted_out) {
+      return(shiny::HTML(
+        "<div style='padding:40px;text-align:center;font-family:sans-serif;'>
+           <h2>Thank you. Your data has been saved.</h2></div>"
+      ))
+    }
+
+    # Pad and coerce
+    n <- nrow(item_bank)
+    if (length(responses) < n)
+      responses <- c(responses, rep(NA, n - length(responses)))
+    responses <- as.numeric(responses)
+
+    # Get theta estimate
+    est <- get_theta(session, responses)
+
+    # Score subscales from administered items only (non-NA responses)
+    dims  <- c("Extraversion", "Agreeableness", "Conscientiousness",
+               "Neuroticism",  "Openness")
+    sc    <- setNames(sapply(dims, function(d)
+      score_scale(item_bank$id[item_bank$domain == d], responses, item_bank)), dims)
+
+    # Build theta gauge (inline SVG)
+    gauge_html <- if (!is.na(est$theta)) {
+      paste0(
+        "<div style='max-width:520px;margin:0 auto;'>",
+        "<h3 style='text-align:center;margin:0 0 4px 0;font-family:sans-serif;",
+        "color:#2c3e50;'>Ability Estimate</h3>",
+        "<p style='text-align:center;font-family:sans-serif;font-size:.85em;",
+        "color:#888;margin:0 0 8px 0;'>Based on ", est$n, " items administered.</p>",
+        svg_theta_gauge(est$theta, est$se),
+        "</div>"
+      )
+    } else ""
+
+    # Build subscale table (only dimensions with at least 2 non-NA responses)
+    rows <- vapply(dims, function(d) {
+      s <- if (is.na(sc[d])) "—" else sprintf("%.2f", sc[d])
+      sprintf(
+        "<tr style='border-bottom:1px solid #f3f4f6;'>
+           <td style='padding:10px 14px;font-weight:500;'>%s</td>
+           <td style='padding:10px 14px;text-align:center;
+                       font-weight:600;color:#4A90D9;'>%s</td>
+         </tr>", d, s)
+    }, character(1))
+
+    table_html <- paste0(
+      "<div style='background:#fff;border:1px solid #e5e7eb;border-radius:8px;",
+      "overflow:hidden;max-width:480px;margin:16px auto;'>",
+      "<table style='width:100%;border-collapse:collapse;font-family:system-ui,sans-serif;'>",
+      "<thead><tr style='background:#f9fafb;border-bottom:2px solid #e5e7eb;'>",
+      "<th style='padding:12px 14px;text-align:left;'>Scale</th>",
+      "<th style='padding:12px 14px;text-align:center;'>Mean</th>",
+      "</tr></thead><tbody>", paste(rows, collapse = ""), "</tbody></table>",
+      "<div style='padding:8px 14px;background:#f9fafb;border-top:1px solid #e5e7eb;",
+      "font-size:.75rem;color:#9ca3af;'><em>",
+      "Scores computed from administered items only. Scale: 1–5.",
+      "</em></div></div>"
+    )
+
+    shiny::HTML(paste0(
+      "<div style='max-width:760px;margin:0 auto;padding:24px 16px;'>",
+      "<h2 style='text-align:center;color:#2c3e50;margin:0 0 20px 0;",
+      "font-family:sans-serif;font-weight:700;'>Your Results</h2>",
+      gauge_html,
+      "<h3 style='text-align:center;font-family:sans-serif;color:#374151;",
+      "margin:20px 0 4px 0;'>Subscale Scores</h3>",
+      table_html,
+      "</div>"
+    ))
+
+  }, error = function(e) {
+    shiny::HTML(sprintf(
+      "<div style='padding:20px;color:#900;font-family:sans-serif;'>
+         <h3>Report could not be generated</h3>
+         <p>%s</p></div>", e$message))
+  })
+}
+
+# ---- 9. csv_processor — store theta alongside scale scores ----
+study_config$csv_processor <- function(csv_data, responses, demographics, item_bank) {
+  if (is.null(responses) || length(responses) == 0) return(csv_data)
+  n <- nrow(item_bank)
+  if (length(responses) < n)
+    responses <- c(responses, rep(NA, n - length(responses)))
+  responses <- as.numeric(responses)
+
+  dims <- c("Extraversion", "Agreeableness", "Conscientiousness",
+            "Neuroticism",  "Openness")
+  for (d in dims)
+    csv_data[[paste0("BFI_", d)]] <-
+      score_scale(item_bank$id[item_bank$domain == d], responses, item_bank)
+
+  csv_data$items_administered <- sum(!is.na(responses))
+  csv_data
+}
+
+# ---- 10. Launch ----
+inrep::launch_study(
+  config     = study_config,
+  item_bank  = bfi_items,
+  debug_mode = FALSE
+)
+```
+
+------------------------------------------------------------------------
+
+# Common pitfalls
+
+1. **Invented IRT parameters.** Auto-derived thresholds (Vignette 1, Option A) are fine for pilots. For any study where theta estimates are used for decisions — clinical, educational, selection — calibrate from real data with TAM.
+
+2. **Fitting TAM on un-reverse-coded items.** Mixing positively and negatively worded items in the same model inflates or deflates threshold estimates in inconsistent directions. Always reverse-code before `tam.mml()`.
+
+3. **Wrong threshold count.** A *k*-category GRM item needs *k* − 1 thresholds. A 6-point BFI scale needs `b1..b5`. Providing four thresholds for a 6-point scale produces incorrect item information curves.
+
+4. **Ignoring item fit.** Items with MNSQ outside [0.6, 1.4] mean the model does not describe their response patterns. CAT selects items based on their information functions — misfitting items have wrong information curves, so adaptive selection becomes meaningless. Check `TAM::tam.fit()` before deploying.
+
+5. **Relying on `rv` field names without a fallback.** `rv$current_ability`, `rv$ability_se`, and `rv$administered` are internal names that can change across package versions. The `get_theta()` helper in Part 2.1 uses a multi-field fallback chain to handle this.
+
+6. **Setting `min_SEM` below the item bank's achievable precision.** If no item in the bank can discriminate at the required precision level for a given theta range, the adaptive loop will administer items until `max_items` without meeting the SEM criterion. Check that your item bank has sufficient information across the intended theta range before setting `min_SEM`.
+
+7. **Scoring by position in an adaptive study.** The adaptive algorithm selects items in a different order for each participant. `responses[1:6]` does not reliably refer to the same items across participants. Always use `match(ids, item_bank$id)`.
+
+8. **Expecting `length(responses) == nrow(item_bank)`.** An adaptive study that stops at 8 items produces a `responses` vector of length 8 (or `nrow(item_bank)` with NAs for unadministered items, depending on the version). The `get_theta()` helper and the padding step in the processor skeleton handle both cases.
+
+9. **Comparing adaptive subscale scores across participants without noting item counts.** Two participants with the same subscale mean may have answered a different number of items in that dimension. The CSV processor in Part 4 stores `items_administered` for this reason — include it in your analysis.

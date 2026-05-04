@@ -1,0 +1,101 @@
+﻿/* =============================================================================
+   MISTRAL THEME for inrep — Mistral AI design system
+   Warm ivory canvas (#fffaeb), near-zero border-radius (2px), UPPERCASE bold
+   buttons, amber-tinted shadows. Sharp and no-nonsense.
+   Source: VoltAgent/awesome-design-md > mistral
+   ============================================================================= */
+
+:root {
+  --primary-color: #fa520f;
+  --secondary-color: #d94400;
+  --background-color: #fffaeb;
+  --surface-color: #fffdf5;
+  --text-color: #1c1c1c;
+  --text-secondary: #5a5a5a;
+  --border-color: #e8d48a;
+  --hover-color: #fff3cc;
+  --focus-color: #fa520f;
+  --success-color: #2a7d2e;
+  --error-color: #cc2a2a;
+  --font-family: 'Inter', Arial, system-ui, sans-serif;
+  --font-body: 'Inter', Arial, system-ui, sans-serif;
+  --border-radius: 2px;
+  --shadow: 2px 2px 0px rgba(200,150,30,0.15), 0 2px 8px rgba(200,150,30,0.08);
+  --shadow-hover: 3px 3px 0px rgba(200,150,30,0.25), 0 4px 14px rgba(200,150,30,0.12);
+
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--background-color) !important;
+  color: var(--text-color) !important;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.assessment-card {
+  background: var(--surface-color) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: var(--shadow) !important;
+  transition: box-shadow 0.2s ease !important;
+}
+.assessment-card:hover { box-shadow: var(--shadow-hover) !important; }
+
+h1, h2, h3, h4, h5, h6, .card-header {
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.01em !important;
+}
+.welcome-text, p, .question-text { color: var(--text-secondary) !important; }
+
+/* UPPERCASE BOLD button with 2px radius — key signature */
+.btn-klee, .action-button.btn-klee {
+  background: var(--primary-color) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: var(--border-radius) !important;
+  font-family: var(--font-family) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  box-shadow: 2px 2px 0 rgba(200,150,30,0.25) !important;
+  transition: background 0.12s ease, box-shadow 0.12s ease !important;
+}
+.btn-klee:hover { background: var(--secondary-color) !important; box-shadow: 3px 3px 0 rgba(200,150,30,0.35) !important; }
+.btn-klee:disabled { background: #c8c8c0 !important; box-shadow: none !important; }
+.btn-primary { background: var(--primary-color) !important; border-color: var(--primary-color) !important; }
+.btn-primary span { text-transform: uppercase !important; font-weight: 800 !important; letter-spacing: 0.08em !important; }
+
+.shiny-input-radiogroup label {
+  background: #fffdf5 !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+}
+.shiny-input-radiogroup label:hover { background: var(--hover-color) !important; border-color: var(--primary-color) !important; }
+
+.form-control, input.form-control, select.form-control {
+  background: #fffdf5 !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius) !important;
+  color: var(--text-color) !important;
+  font-family: var(--font-family) !important;
+}
+.form-control:focus, input:focus, select:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 2px rgba(250,82,15,0.15) !important;
+  outline: none !important;
+}
+
+.progress-bar-container { background: #e8d48a !important; border-radius: 1px !important; }
+.progress-bar-fill { background: var(--primary-color) !important; height: 100% !important; border-radius: 1px !important; }
+
+.dimension-score { border-left: 4px solid var(--primary-color) !important; background: rgba(250,82,15,0.04) !important; }
+.dimension-fill { background: var(--primary-color) !important; }
+.footer { border-top-color: var(--border-color) !important; color: var(--text-secondary) !important; }
+
+*:focus { outline: 2px solid var(--focus-color) !important; outline-offset: 2px !important; }

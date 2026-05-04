@@ -3315,8 +3315,14 @@ validate_page_progression <- function(current_page, input, config) {
           }
         }
         
+        # MAINTENANCE NOTE (2026-05-03): Keep item-page errors de-duplicated.
+        # The UI should show one page-level message ("answer all questions")
+        # while still collecting ALL missing_fields for per-input highlighting.
+        # Re-adding per-item identical messages causes repeated bullet lines and
+        # confusing validation output.
         # Validate selected items have responses
         if (!is.null(items_to_check) && length(items_to_check) > 0) {
+          item_page_error_added <- FALSE
           for (i in items_to_check) {
             # DEFENSIVE: Skip invalid indices
             if (is.na(i) || i < 1 || i > nrow(item_bank)) {
@@ -3334,15 +3340,18 @@ validate_page_progression <- function(current_page, input, config) {
                           (length(item_value) == 1 && (is.na(item_value[1]) || identical(item_value, "")))
             
             if (isTRUE(is_missing)) {
-              # Use current_lang from top of function
-              error_msg <- if (current_lang == "en") {
-                "Please answer all questions on this page."
-              } else {
-                "Bitte beantworten Sie alle Fragen auf dieser Seite."
+              # Add the page-level message once, but keep tracking each missing
+              # field so UI highlighting can still mark all unanswered items.
+              if (!item_page_error_added) {
+                error_msg <- if (current_lang == "en") {
+                  "Please answer all questions on this page."
+                } else {
+                  "Bitte beantworten Sie alle Fragen auf dieser Seite."
+                }
+                errors <- c(errors, error_msg)
+                item_page_error_added <- TRUE
               }
-              errors <- c(errors, error_msg)
               missing_fields <- c(missing_fields, item_id)
-              # Don't break, collect all missing fields for highlighting
             }
           }
         }

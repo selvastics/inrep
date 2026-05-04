@@ -47,6 +47,7 @@ docs/pkgdown/
 
 # IDE / CI folders (not part of the R package)
 .github/
+.claude/
 .vscode/
 
 # Raw data scripts (produce the /data/ artefacts; source not needed in package)
@@ -111,5 +112,7 @@ MIRT_*.md
 # Changelog files
 changelog.txt
 
-# Local R library
+# Local R library (both naming conventions)
 .Rlib/
+Rlibs/
+rlibs/

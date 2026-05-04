@@ -1,0 +1,893 @@
+﻿---
+title: "How to Calibrate Your Item Bank with inrep"
+author: "inrep"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    theme: cerulean
+vignette: >
+  %\VignetteIndexEntry{How to Calibrate Your Item Bank with inrep}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5,
+  eval = FALSE
+)
+```
+
+## Overview
+
+**Item calibration** is the process of estimating IRT model parameters -- item location
+(difficulty), discrimination, and for polytomous items the threshold boundaries -- from
+empirical response data. Calibrated parameters are what transform a list of questions
+into a proper item bank that an adaptive assessment engine can use.
+
+This vignette walks through a full calibration workflow using the **Big Five Inventory
+(BFI)** from the `psych` package as the target questionnaire. The BFI uses a 6-point
+Likert scale and measures five personality dimensions (Agreeableness, Conscientiousness,
+Extraversion, Neuroticism, Openness). It is publicly available and well-validated,
+making it ideal for illustrating calibration from start to finish.
+
+`inrep` also ships a built-in dataset, `bfi_items`, but that object serves a different
+purpose: it is a **simulated, pre-calibrated 30-item demonstration bank** with 5 response
+categories. This vignette instead starts from the raw 25-item `psych::bfi` responses and
+shows how a calibrated bank is produced in the first place.
+
+**Scenario**: We calibrate item parameters from the 2,436-person BFI dataset in
+`psych::bfi`. Those calibrated parameters are the prior that inrep uses when a new
+individual completes the deployed study -- each participant is scored against the
+pre-calibrated bank in real time and receives a results page. All code is fully
+reproducible.
+
+> **Note on running this vignette.** All code chunks have `eval = FALSE` because TAM
+> model fitting takes several minutes to run. Expected outputs are shown as inline
+> comments. To reproduce everything yourself, copy each chunk into a fresh R session
+> and run them in order.
+
+---
+
+## 1. Prerequisites
+
+```{r packages}
+# Install these packages first if you don't have them yet:
+# install.packages(c("psych", "TAM"))
+# devtools::install_github("selvastics/inrep")
+library(psych)   # source of BFI item data
+library(TAM)     # IRT model fitting and diagnostics
+library(inrep)   # adaptive assessment framework
+```
+
+---
+
+## 2. Load and Inspect the Data
+
+```{r load_data}
+data(bfi)
+
+# BFI items are columns 1-25 (A1-A5, C1-C5, E1-E5, N1-N5, O1-O5)
+# Columns 26-28: gender, education, age (not used in calibration)
+items_raw <- bfi[, 1:25]
+
+cat("Dimensions:", nrow(items_raw), "respondents x", ncol(items_raw), "items\n")
+cat("Scale range: 1 to", max(items_raw, na.rm = TRUE), "(6-point Likert)\n")
+cat("Complete cases:", sum(complete.cases(items_raw)), "\n")
+
+psych::describe(items_raw)[, c("n", "mean", "sd", "skew", "kurtosis")]
+```
+
+---
+
+## 3. Reverse Coding
+
+Seven BFI items are reverse-scored: a *low* rating reflects *high* standing on the
+trait. We reverse-code **before** calibration and before the dimensionality check.
+Mixing polarities in a factor analysis or IRT model produces threshold parameters
+that are inconsistent in sign and breaks model fit.
+
+```{r reverse_code}
+# Reverse-scored items in the psych BFI (6-point scale: recoded as 7 - x)
+#   A1  "Am indifferent to the feelings of others"
+#   C4  "Do things in a half-way manner"
+#   C5  "Waste my time"
+#   E1  "Don't talk a lot"
+#   E2  "Find it difficult to approach others"
+#   O2  "Avoid difficult reading material"
+#   O5  "Will not probe deeply into a subject"
+reverse_items <- c("A1", "C4", "C5", "E1", "E2", "O2", "O5")
+
+items_rc <- items_raw
+for (i in reverse_items) {
+  items_rc[[i]] <- 7 - items_raw[[i]]
+}
+
+# Listwise deletion: keep only complete cases
+items_rc <- items_rc[complete.cases(items_rc), ]
+cat("N after listwise deletion:", nrow(items_rc), "\n")
+# N after listwise deletion: 2436
+```
+
+> **Missing data**: TAM's EM algorithm handles within-row missingness under MAR
+> via partial likelihoods -- listwise deletion is not required. We use it here
+> for pedagogical simplicity. For studies with substantial or non-ignorable
+> missingness, consider multiple imputation before calibration.
+
+---
+
+## 4. Dimensionality Check
+
+Before fitting five separate unidimensional models, we confirm the five-factor structure
+in the data. Calibrating items together that belong to different dimensions violates
+local independence and biases parameter estimates.
+
+```{r dim_check_parallel}
+# Parallel analysis to determine the number of factors
+# n.iter = 20 for speed; increase to 100 for publication-level work
+fa_para <- psych::fa.parallel(
+  items_rc, fm = "ml", fa = "fa", n.iter = 20,
+  main = "Parallel analysis -- BFI 25 items"
+)
+# Expected result: eigenvalues for 5 factors exceed the simulated reference line
+```
+
+```{r dim_check_omega}
+# Define the five BFI subscales
+dims <- list(
+  Agreeableness     = c("A1", "A2", "A3", "A4", "A5"),
+  Conscientiousness = c("C1", "C2", "C3", "C4", "C5"),
+  Extraversion      = c("E1", "E2", "E3", "E4", "E5"),
+  Neuroticism       = c("N1", "N2", "N3", "N4", "N5"),
+  Openness          = c("O1", "O2", "O3", "O4", "O5")
+)
+
+# Within-scale omega confirms adequate unidimensionality per dimension
+# omega_h >= 0.50 and omega_t >= 0.70 are acceptable thresholds
+for (d in names(dims)) {
+  om <- psych::omega(items_rc[, dims[[d]]], plot = FALSE)
+  cat(sprintf("%-20s  omega_h = %.3f   omega_t = %.3f\n",
+              d, om$omega_h, om$omega.tot))
+}
+```
+
+```
+# Expected output (approximate; omega uses simulation so minor variation is normal):
+# Agreeableness         omega_h = 0.69   omega_t = 0.76
+# Conscientiousness     omega_h = 0.63   omega_t = 0.78
+# Extraversion          omega_h = 0.67   omega_t = 0.80
+# Neuroticism           omega_h = 0.73   omega_t = 0.85
+# Openness              omega_h = 0.56   omega_t = 0.67
+```
+
+All five scales clear the omega_h >= 0.50 threshold. We proceed with separate
+unidimensional PCMs for each dimension.
+
+---
+
+## 5. Calibrated Parameters as the Prior for Deployment
+
+Once calibration is complete, the item bank parameters are fixed. They serve as the
+**prior** for every subsequent individual who completes the study. When a participant
+runs the deployed assessment via `launch_study()`, inrep estimates their theta in real
+time using `estimate_ability()` and the calibrated bank -- it does not re-fit the IRT
+model. The participant then sees a personalized results page.
+
+Periodic re-calibration (re-running `tam.mml()` on a larger or refreshed dataset) is a
+maintenance task, not a per-participant operation. When genuine new response data are
+available, merge them with the original calibration sample and re-run the workflow from
+Section 6 onwards:
+
+```{r recalibrate_workflow, eval=FALSE}
+# When genuine new data arrive from a later collection wave:
+data_wave2     <- read.csv("wave2_responses.csv")    # real new participants
+cal_combined   <- rbind(items_rc, data_wave2)         # genuine additional information
+# ... then re-run from Section 6 with cal_combined as input
+```
+
+For the remainder of this vignette we use `items_rc` (N = 2,436) as the calibration
+sample.
+
+---
+
+## 6. Fitting the Calibration Models
+
+We fit **separate models for each Big Five dimension** because the five dimensions are
+theoretically distinct latent traits (confirmed by the dimensionality check in Section 4).
+A joint 25-item unidimensional model would violate local independence.
+
+### 6a. Partial Credit Model (PCM, Rasch family) -- recommended for personality scales
+
+`TAM::tam.mml()` with polytomous responses fits the **Partial Credit Model**, the
+polytomous generalization of the Rasch model (Masters, 1982) that constrains all item
+discrimination parameters to 1. We use it as the starting point for personality
+questionnaires because:
+
+- Items are written to be equally discriminating by design.
+- Rasch models provide interval-level measurement and are easier to validate.
+- Estimation is faster and more stable than GPCM for small-to-moderate samples.
+
+```{r fit_pcm}
+models <- list()
+for (d in names(dims)) {
+  sub <- items_rc[, dims[[d]]]
+  sub <- sub[complete.cases(sub), ]   # per-dimension listwise: best practice for real data
+                                      # (items_rc is already complete, so this is a no-op
+                                      # here; shown for generalizability to workflows
+                                      # with partial item-level missingness)
+  mod <- TAM::tam.mml(
+    resp    = sub,
+    verbose = FALSE,
+    control = list(maxiter = 500, convD = 0.001)
+  )
+  models[[d]] <- mod
+  cat(d, "| log-likelihood:", round(mod$ic$loglike, 1),
+      "| AIC:", round(mod$ic$AIC, 1), "\n")
+}
+```
+
+```
+# Agreeableness     | log-likelihood: -17520.9 | AIC: 35103.9
+# Conscientiousness | log-likelihood: -18497.5 | AIC: 37056.9
+# Extraversion      | log-likelihood: -19021.3 | AIC: 38104.7
+# Neuroticism       | log-likelihood: -19376.4 | AIC: 38814.8
+# Openness          | log-likelihood: -17895.8 | AIC: 35853.7
+```
+
+---
+
+## 7. Extracting Threshold Parameters
+
+`TAM::tam.threshold()` returns the **boundary thresholds** -- the theta values where
+a respondent is equally likely to choose a response below vs. at-or-above that
+boundary. For a 6-point BFI scale, TAM internally creates a theoretical response
+category 0 (since raw responses range 1-6), which produces **six threshold columns
+(Cat1-Cat6)**:
+
+- **Cat1 = -12**: the theoretical threshold between "would respond 0" and "would
+  respond 1." Because no BFI respondent ever answers 0, TAM estimates this boundary
+  at the extreme lower end (-12). Discard Cat1.
+- **Cat2-Cat6 = b1-b5**: the five substantive thresholds for the 1->2, 2->3, 3->4,
+  4->5, 5->6 transitions. These map directly to the `b1, b2, b3, b4, b5` columns
+  inrep expects.
+
+```{r extract_thresholds}
+thresholds <- lapply(models, TAM::tam.threshold)
+lapply(thresholds, round, 3)
+```
+
+```
+# $Agreeableness
+#    Cat1   Cat2   Cat3   Cat4   Cat5  Cat6
+# A1  -12 -2.140 -1.215 -0.734 -0.374 0.478
+# A2  -12 -2.281 -1.470 -1.173 -0.581 0.622
+# A3  -12 -1.889 -1.230 -0.948 -0.408 0.787
+# A4  -12 -1.740 -1.042 -0.817 -0.421 0.202
+# A5  -12 -2.287 -1.318 -0.928 -0.313 0.891
+#
+# $Conscientiousness
+#    Cat1   Cat2   Cat3   Cat4   Cat5  Cat6
+# C1  -12 -2.199 -1.424 -0.974 -0.309 1.055
+# C2  -12 -2.185 -1.207 -0.801 -0.171 1.134
+# C3  -12 -2.218 -1.213 -0.810 -0.047 1.282
+# C4  -12 -2.422 -1.335 -0.659 -0.212 0.705
+# C5  -12 -1.509 -0.607 -0.024  0.254 1.033
+#
+# $Extraversion
+#    Cat1   Cat2   Cat3   Cat4   Cat5  Cat6
+# E1  -12 -1.551 -0.766 -0.302  0.030 0.815
+# E2  -12 -1.505 -0.738 -0.150  0.146 1.036
+# E3  -12 -1.847 -1.046 -0.551  0.310 1.548
+# E4  -12 -1.808 -1.018 -0.696 -0.298 0.833
+# E5  -12 -2.072 -1.195 -0.804 -0.202 1.074
+#
+# $Neuroticism
+#    Cat1   Cat2   Cat3   Cat4  Cat5  Cat6
+# N1  -12 -0.911 -0.054  0.347 0.972 1.863
+# N2  -12 -1.536 -0.547 -0.128 0.639 1.652
+# N3  -12 -1.201 -0.232  0.097 0.762 1.767
+# N4  -12 -1.263 -0.251  0.152 0.841 1.679
+# N5  -12 -0.883 -0.033  0.314 0.901 1.672
+#
+# $Openness
+#    Cat1   Cat2   Cat3   Cat4   Cat5  Cat6
+# O1  -12 -2.531 -1.536 -1.102 -0.459 0.536
+# O2  -12 -1.493 -0.852 -0.428 -0.150 0.552
+# O3  -12 -1.885 -1.266 -0.869 -0.130 1.077
+# O4  -12 -2.012 -1.288 -1.033 -0.590 0.282
+# O5  -12 -1.961 -1.195 -0.698 -0.258 0.683
+```
+
+**Reading the thresholds**: For A1 (reverse-coded), b1 = -2.133 means respondents
+with theta < -2.133 are more likely to choose response category 1. At b5 = 0.462,
+P(X >= 6) = 0.5 -- respondents at this theta have a 50% chance of choosing category
+6 vs. any lower category; above b5, category 6 becomes the most likely response.
+Neuroticism thresholds are higher (nearer to 0) because most general-population
+respondents score in the low-to-moderate range on neuroticism items.
+
+---
+
+## 8. Evaluating Item Fit
+
+We do not skip item fit -- even if TAM converges cleanly, individual items may misfit.
+
+```{r item_fit}
+# Compute fit statistics for each dimension
+fit_stats <- lapply(models, TAM::tam.fit)
+
+# Infit MNSQ -- primary diagnostic (information-weighted):
+#   Acceptable range: 0.6 - 1.4
+#   > 1.4 : unpredictable / noisy responses
+#   < 0.6 : overly predictable / item redundancy
+#
+# Outfit MNSQ -- unweighted; more sensitive to unexpected extreme responses
+
+# Aggregate to item level for Agreeableness
+fi_A <- fit_stats$Agreeableness$itemfit
+fi_A$item <- sub("_Cat.*", "", fi_A$parameter)
+item_fit_A <- aggregate(cbind(Infit, Outfit) ~ item, data = fi_A, FUN = mean)
+print(round(item_fit_A, 3))
+```
+
+```
+#   item  Infit Outfit
+# 1   A1  0.945  2.928   <- Outfit far outside [0.6, 1.4]; Infit within range
+# 2   A2  0.788  1.214
+# 3   A3  0.777  0.780
+# 4   A4  0.898  1.330
+# 5   A5  0.829  1.436
+```
+
+> **A1**: Infit = 0.95 is within the acceptable range; Outfit = 2.93 far exceeds
+> the upper bound of 1.4. Outfit is more sensitive to unexpected responses at the
+> extremes of the trait continuum -- here driven by the very low frequency of
+> "1" responses on A1 (a floor effect). In the function below we flag using
+> **Infit** as the primary criterion, which is standard practice for Rasch-family
+> models. If Outfit elevation is a concern, inspect the category frequency
+> distribution and consider collapsing the lowest two response categories.
+
+```{r flag_misfitting}
+flag_misfitting <- function(fit_obj, lo = 0.6, hi = 1.4) {
+  fi <- fit_obj$itemfit
+  fi$item <- sub("_Cat.*", "", fi$parameter)
+  agg     <- aggregate(Infit ~ item, data = fi, FUN = mean)
+  flagged <- agg$item[agg$Infit > hi | agg$Infit < lo]
+  if (length(flagged) == 0) cat("  All items within Infit range [0.6, 1.4].\n")
+  else cat("  Infit-flagged:", paste(flagged, collapse = ", "), "\n")
+}
+
+for (d in names(fit_stats)) {
+  cat(d, ":\n"); flag_misfitting(fit_stats[[d]])
+}
+```
+
+```
+# Agreeableness     : All items within Infit range [0.6, 1.4].
+# Conscientiousness : All items within Infit range [0.6, 1.4].
+# Extraversion      : All items within Infit range [0.6, 1.4].
+# Neuroticism       : All items within Infit range [0.6, 1.4].
+# Openness          : All items within Infit range [0.6, 1.4].
+```
+
+All 25 BFI items pass the Infit criterion. The parameters from Section 7 are trustworthy
+for use in an adaptive item bank.
+
+---
+
+## 9. Calibration for Binary Items: 1PL and 2PL
+
+When the item bank contains **binary (correct/incorrect) items** -- knowledge tests,
+diagnostic screeners -- we use a different model family.
+
+### 9a. 1PL (Rasch) for binary items
+
+```{r binary_1pl}
+# Simulate binary knowledge items with varying discrimination (0/1, correct/incorrect)
+# We use a 2PL data-generating model so that anova(mod_1pl, mod_2pl) shows a real
+# likelihood-ratio gain when we compare models in 9b.
+set.seed(7)
+n_items <- 20; n_resp <- 500
+slopes  <- runif(n_items, 0.5, 2.0)   # varying discrimination
+diff    <- runif(n_items, -2, 2)       # varying difficulty
+theta   <- rnorm(n_resp)
+prob    <- sapply(seq_len(n_items), function(j) plogis(slopes[j] * (theta - diff[j])))
+binary_data <- matrix(
+  rbinom(n_resp * n_items, 1, prob),
+  nrow = n_resp, ncol = n_items,
+  dimnames = list(NULL, paste0("item_", seq_len(n_items)))
+)
+
+# Fit 1PL (Rasch): discrimination constrained to 1 for all items
+mod_1pl <- TAM::tam.mml(resp = binary_data, verbose = FALSE)
+
+# Item locations (b parameters)
+b_1pl <- mod_1pl$item[, "xsi.item"]
+round(b_1pl, 3)
+```
+
+### 9b. 2PL for binary items
+
+When items are expected to differ in discriminating power (mixed content, varying
+cognitive demand), we use 2PL, which adds a per-item discrimination parameter `a`.
+Because the data above were generated with varying slopes, `anova(mod_1pl, mod_2pl)`
+will show a real likelihood-ratio gain here.
+
+```{r binary_2pl}
+mod_2pl <- TAM::tam.mml.2pl(resp = binary_data, verbose = FALSE)
+
+# Difficulty parameters
+b_2pl <- mod_2pl$item[, "xsi.item"]
+
+# Discrimination (slope) parameters
+# For binary 2PL in TAM >= 4.x, slopes are stored in the column "B.Cat1.Dim1"
+# Use grep() as a safeguard if column names change across minor versions:
+a_col <- grep("^B\\.Cat1", names(mod_2pl$item), value = TRUE)[1]
+a_2pl <- mod_2pl$item[, a_col]
+
+round(data.frame(a = a_2pl, b = b_2pl), 3)
+```
+
+```{r compare_models}
+# Compare 1PL and 2PL via AIC/BIC and likelihood-ratio test
+anova(mod_1pl, mod_2pl)
+```
+
+> **When to prefer 2PL**: Use it when items plausibly differ in discriminating
+> power -- cognitive tests, diagnostic screeners, or mixed-format banks. For
+> personality questionnaires written to a consistent style, PCM/1PL is more
+> principled and parsimonious.
+
+---
+
+## 10. Building the inrep Item Bank
+
+We assemble the item bank **programmatically from calibration output** rather than
+hardcoding threshold values -- this ensures the bank always reflects the most recent
+calibration run.
+
+```{r build_item_bank}
+item_questions <- c(
+  A1 = "Am indifferent to the feelings of others.",   # reverse-scored
+  A2 = "Inquire about others' well-being.",
+  A3 = "Know how to comfort others.",
+  A4 = "Love children.",
+  A5 = "Make people feel at ease.",
+  C1 = "Am exacting in my work.",
+  C2 = "Continue until everything is perfect.",
+  C3 = "Do things according to a plan.",
+  C4 = "Do things in a half-way manner.",              # reverse-scored
+  C5 = "Waste my time.",                               # reverse-scored
+  E1 = "Don't talk a lot.",                            # reverse-scored
+  E2 = "Find it difficult to approach others.",        # reverse-scored
+  E3 = "Know how to captivate people.",
+  E4 = "Make friends easily.",
+  E5 = "Take charge.",
+  N1 = "Get angry easily.",
+  N2 = "Get irritated easily.",
+  N3 = "Have frequent mood swings.",
+  N4 = "Often feel blue.",
+  N5 = "Panic easily.",
+  O1 = "Am full of ideas.",
+  O2 = "Avoid difficult reading material.",            # reverse-scored
+  O3 = "Carry the conversation to a higher level.",
+  O4 = "Spend time reflecting on things.",
+  O5 = "Will not probe deeply into a subject."         # reverse-scored
+)
+
+# Programmatic threshold extraction
+# For BFI 1-6 data, tam.threshold() returns 6 columns (Cat1-Cat6).
+# Cat1 = theoretical lower-bound (~-12); b1-b5 = Cat2-Cat6.
+thresh_mat <- do.call(rbind, lapply(names(dims), function(d) {
+  th <- thresholds[[d]]
+  # Drop Cat1 (the extreme lower-bound column); keep Cat2-Cat6 = b1-b5
+  th[, colnames(th) != "Cat1", drop = FALSE]
+}))
+colnames(thresh_mat) <- paste0("b", 1:5)
+
+bfi_item_bank <- data.frame(
+  id                 = names(item_questions),
+  Question           = unname(item_questions),
+  domain             = rep(names(dims), each = 5),
+  reverse_coded      = names(item_questions) %in% reverse_items,
+  ResponseCategories = "1,2,3,4,5,6",
+  a                  = 1,   # PCM: discrimination fixed at 1 (Rasch constraint)
+  thresh_mat,
+  stringsAsFactors   = FALSE
+)
+
+# First, run the package's built-in structure validator
+validation <- validate_item_bank(bfi_item_bank, model = "GRM")
+print(validation$is_valid)
+print(validation$messages)
+
+if (!validation$is_valid) {
+  stop(paste(validation$messages, collapse = "\n"))
+}
+
+# Second, run an explicit monotonicity check.
+# validate_item_bank() confirms required columns and model compatibility;
+# this additional check confirms threshold ordering within each item.
+mono_ok <- apply(bfi_item_bank[, paste0("b", 1:5)], 1, function(r) all(diff(r) > 0))
+cat("All items monotone:", all(mono_ok), "\n")
+# All items monotone: TRUE
+```
+
+> **Monotonicity is a hard requirement.** `validate_item_bank()` checks that the
+> bank is structurally compatible with the target model, but it does not verify
+> threshold ordering. If b1 > b2 for any item, the GRM
+> probability function becomes non-monotone and produces negative item information.
+> Always run this check before deploying a bank in inrep.
+
+Do **not** use `inrep::bfi_items` as a parameter benchmark for this bank. The shipped
+dataset is a simulated 30-item, 5-category demonstration object, whereas the bank
+constructed here is a 25-item, 6-category calibration derived from `psych::bfi`.
+The right comparison is conceptual: this vignette shows how a deployable item bank is
+created from raw responses before functions like `launch_study()` and `estimate_ability()`
+can use it.
+
+---
+
+## 11. Launching an Adaptive Assessment with the Calibrated Bank
+
+### Single-dimension: Extraversion
+
+```{r launch_extraversion}
+extra_bank <- bfi_item_bank[bfi_item_bank$domain == "Extraversion", ]
+
+config_extra <- create_study_config(
+  name              = "Extraversion Adaptive Assessment",
+  model             = "GRM",
+  adaptive          = TRUE,
+  criteria          = "MI",        # Maximum Information item selection
+  min_items         = 3,
+  max_items         = 5,
+  min_SEM           = 0.30,        # stop when SE(theta) < 0.30
+  theme             = "hildesheim",
+  language          = "en"
+)
+
+# Item selection criteria — what the choices mean
+# ------------------------------------------------
+# "MI"  (default) — Maximum Information at the point estimate hat_theta.
+#   Fast and standard in operational CAT. Works well once SE is small
+#   (long tests, 20+ items). Early in a short assessment SE is typically
+#   0.5-0.8, so hat_theta is imprecise and MI may optimize for the wrong
+#   ability region.
+#
+# "MEI" — Maximum Expected Information. Integrates I(theta) over the
+#   posterior p(theta | hat_theta, SE), selecting items that are informative
+#   across the *full plausible range* of true ability. Substantially more
+#   accurate than MI for short scales (< 15 items) where SE stays large.
+#   For long tests (30+ items) MI and MEI converge; use MI there.
+#   Reference: Veerkamp & Berger (1997), J. Educ. Behav. Stat. 22(2).
+#
+# "WEIGHTED" — Information × content-balance weights. Useful when item
+#   groups must be proportionally represented.
+#
+# "MFI" — Exposure-penalised MI, to avoid overexposure of high-info items.
+#
+# Rule of thumb: use "MEI" when max_items < 15; use "MI" otherwise.
+
+launch_study(config_extra, extra_bank)
+
+# Note: with max_items equal to the bank size, every item is administered;
+# adaptivity here only optimizes administration order. Real adaptive
+# deployments truncate well below the bank size -- see the full 25-item
+# example below for a more realistic adaptive setup.
+```
+
+### Full 25-item non-adaptive assessment
+
+```{r launch_full_bfi}
+config_full <- create_study_config(
+  name     = "BFI-25 Personality Assessment",
+  model    = "GRM",
+  adaptive = FALSE,    # fixed sequential order
+  max_items = 25,
+  theme    = "hildesheim",
+  language = "en"
+)
+
+launch_study(config_full, bfi_item_bank)
+```
+
+---
+
+## 12. Model Selection Reference
+
+| Situation | Response format | TAM function | inrep `model` |
+|---|---|---|---|
+| Personality / Likert (equal discrimination) | Polytomous | `tam.mml()` | `"GRM"` |
+| Ability / knowledge (equal discrimination) | Binary 0/1 | `tam.mml()` | `"1PL"` |
+| Ability / knowledge (varying discrimination) | Binary 0/1 | `tam.mml.2pl()` | `"2PL"` |
+| Multiple-choice with guessing | Binary 0/1 | `tam.mml.3pl()` | `"3PL"` |
+
+**Note on GRM vs. GPCM**: inrep's item selection engine (`compute_item_info_single()`)
+uses the **Samejima GRM** parameterization with boundary thresholds (b1, b2, ...).
+TAM's `tam.mml()` for polytomous data fits the **Partial Credit Model** / GPCM with
+step parameters. `TAM::tam.threshold()` converts those step parameters to boundary
+thresholds, which is why we always use `tam.threshold()` output -- never raw `xsi`
+parameters -- when building an inrep item bank for GRM.
+
+---
+
+## 13. Common Pitfalls
+
+| Mistake | Consequence | Fix |
+|---|---|---|
+| Skipping reverse coding | Threshold signs flip; model fits wrong direction | Apply `7 - x` before `tam.mml()` |
+| Skipping dimensionality check | Local independence violated; biased parameters | Run `fa.parallel()` + `omega()` per scale |
+| Using invented threshold values | Biased theta estimates; meaningless information curves | Extract from `TAM::tam.threshold()` |
+| Skipping `validate_item_bank()` | Structural mismatches reach runtime | Run `validate_item_bank(bank, model = "GRM")` before deployment |
+| Fitting one model to all 25 items | Local independence violated | Fit separate models per dimension |
+| Ignoring item fit | Misfitting items corrupt ability estimates | Check Infit MNSQ; flag outside [0.6, 1.4] |
+| Non-monotone thresholds in bank | Negative item information; adaptive selection breaks | Run monotonicity check per item |
+| Deploying on a different population | Parameter drift; SEM underestimated | Re-calibrate or link parameters |
+| Reporting plausible values as individual scores | PVs are random posterior draws, not point estimates | Use EAP or WLE for individual reporting (see Section 16) |
+| Inflating N by resampling | No new information; overstates precision | Use genuine new participants |
+
+---
+
+## 14. Further Diagnostics and Next Steps
+
+```{r test_information}
+# Test information function for the Extraversion bank
+mod_E     <- models$Extraversion
+theta_seq <- seq(-4, 4, by = 0.1)
+info      <- TAM::IRT.informationCurves(mod_E, theta = theta_seq)
+
+plot(theta_seq, rowSums(info$test_info_curves),
+     type = "l", lwd = 2, col = "#3498db",
+     xlab = expression(theta), ylab = "Test Information",
+     main = "Extraversion -- Test Information Function (N=2436, PCM)")
+abline(h = 1 / 0.30^2, lty = 2, col = "grey50")   # SEM = 1/sqrt(info) = 0.30
+legend("topright",
+  c("Test information", "SEM = 0.30 reference"),
+       lty = c(1, 2), col = c("#3498db", "grey50"))
+```
+
+Additional analyses to consider:
+
+- **DIF analysis**: TAM does not include a dedicated DIF function. Use
+  `difR::difMH()` for Mantel-Haenszel DIF on binary items, `lordif::lordif()` for
+  ordinal DIF on Likert items, or the separate-group calibration approach in Section 15e.
+- **Person fit**: `TAM::tam.personfit()` -- flag aberrant response patterns in
+  deployment data.
+- **Equating / linking across waves**: `TAM::tam.linking()` fits linking models
+  across a list of TAM model objects (see `?TAM::tam.linking`); `sirt::linking.haberman()`
+  (Haberman mean-mean / mean-sigma) and the `equateIRT` package are also widely used.
+- **Cross-validation**: hold out 20% of your calibration sample, refit, compare
+  parameter estimates for stability.
+
+---
+
+## 15. Constraining Parameters During Calibration
+
+Constraints fix one or more IRT parameters to known values (from a prior calibration
+study) or force parameters to be equal across items or groups. In TAM, individual
+parameter fixing uses `xsi.fixed` (for step/difficulty parameters) or `B.fixed`
+(for slope parameters in 2PL models).
+
+> **Clarification on `constraint`**: The `constraint` argument in `tam.mml()` is
+> for specifying the *normalization constraint type* (default `"cases"`), not for
+> pinning individual parameter values. Use `xsi.fixed` for fixed-value constraints.
+
+### 15a. Fixed-value constraints: anchoring an item to a prior calibration
+
+```{r constraints_identify}
+sub_E <- items_rc[, c("E1", "E2", "E3", "E4", "E5")]
+
+# Step 1: fit the unconstrained model to identify xsi parameter indices
+mod_E_free <- TAM::tam.mml(resp = sub_E, verbose = FALSE)
+
+# For BFI 1-6 data, TAM creates 6 xsi parameters per item (Cat1-Cat6).
+# Row names follow the pattern "itemname_CatK":
+cat("xsi parameter names for E1 (first 6 rows):\n")
+print(rownames(mod_E_free$xsi)[grepl("^E1_", rownames(mod_E_free$xsi))])
+```
+
+```
+# [1] "E1_Cat1" "E1_Cat2" "E1_Cat3" "E1_Cat4" "E1_Cat5" "E1_Cat6"
+```
+
+```{r constraints_anchor}
+# Step 2: fix E1's xsi step parameters to values from a prior calibration.
+# This holds E1 as an anchor item so the theta scale does not drift across waves.
+#
+# IMPORTANT: xsi.fixed pins PCM *step parameters* (the delta's), NOT the
+# Thurstonian boundary thresholds returned by tam.threshold(). For polytomous
+# items these are different quantities -- fixing threshold values as if they were
+# steps produces the wrong response surface. Always source anchor values from
+# mod_prior$xsi[..., "xsi"], not from tam.threshold() output.
+#
+# Here we use mod_E_free's own xsi as a stand-in for a "prior calibration" to
+# illustrate the syntax; in practice substitute your previously saved xsi values.
+e1_idx_b   <- which(rownames(mod_E_free$xsi) %in% paste0("E1_Cat", 2:6))
+e1_xsi_ref <- mod_E_free$xsi[paste0("E1_Cat", 2:6), "xsi"]   # step parameters
+
+mod_E_anchored <- TAM::tam.mml(
+  resp      = sub_E,
+  xsi.fixed = cbind(e1_idx_b, e1_xsi_ref),
+  verbose   = FALSE
+)
+# E1 parameters are now fixed; E2-E5 are estimated freely
+round(mod_E_anchored$xsi[grepl("^E1_", rownames(mod_E_anchored$xsi)), ], 3)
+```
+
+> **When to use anchor constraints**: re-calibration with new data, linking across
+> collection waves, and confirmatory studies where item parameters are already
+> published. Always verify that anchored items still show acceptable fit in the
+> new sample before trusting the remaining free parameters.
+
+### 15b. Fixing a slope in a binary 2PL model
+
+For 2PL models, discrimination parameters live in the B matrix and are fixed via
+`B.fixed`.
+
+```{r constraints_b_fixed}
+# B.fixed: 4-column matrix -- item, category, dimension, value
+# For unidimensional binary 2PL:
+#   column 1 = item index
+#   column 2 = category (2 for Cat1, the discrimination column)
+#   column 3 = dimension (1 for unidimensional models)
+#   column 4 = fixed value
+# To fix item 1's discrimination to 1.5:
+B_fixed_mat <- matrix(c(1, 2, 1, 1.5), nrow = 1)   # item, cat, dim, value
+
+mod_2pl_anchored <- TAM::tam.mml.2pl(
+  resp    = binary_data,
+  B.fixed = B_fixed_mat,
+  verbose = FALSE
+)
+# Check: item 1 discrimination should now be ~1.5
+round(mod_2pl_anchored$item[1, grep("^B\\.Cat1", names(mod_2pl_anchored$item))], 3)
+```
+
+### 15c. Rating Scale Model: testing equal step structure
+
+The **Rating Scale Model** (RSM, `irtmodel = "RSM"`) is a special case of PCM where
+all items share the same set of step difficulties. It is more restrictive than PCM
+but useful as a parsimony check.
+
+```{r constraints_rsm}
+# Valid TAM irtmodel values: "1PL" (default PCM), "GPCM", "RSM", "PCM2"
+mod_rsm <- TAM::tam.mml(
+  resp     = sub_E,
+  irtmodel = "RSM",
+  verbose  = FALSE
+)
+
+# Likelihood-ratio test: PCM (more general) vs RSM (constrained)
+anova(mod_rsm, mod_E_free)
+# Significant chi-squared => PCM is better fit; retain per-item thresholds
+```
+
+### 15d. GPCM: freely estimated discrimination per item
+
+If item discriminations are expected to vary (heterogeneous item pool), fit the
+Generalized Partial Credit Model.
+
+```{r constraints_gpcm}
+mod_gpcm <- TAM::tam.mml(
+  resp     = sub_E,
+  irtmodel = "GPCM",
+  verbose  = FALSE
+)
+
+# Compare PCM (a = 1 fixed) vs GPCM (a freely estimated per item)
+anova(models$Extraversion, mod_gpcm)
+# For BFI items PCM typically fits as well as GPCM, justifying the simpler model
+```
+
+### 15e. Simple DIF detection via separate-group calibration
+
+TAM does not include a built-in DIF function. The most direct approach for
+polytomous items is separate-group calibration plus parameter comparison.
+
+```{r constraints_dif}
+# Gender-stratified separate-group calibration
+# gender from bfi$gender is aligned to items_rc row-for-row (both N = 2436)
+gender <- bfi$gender[complete.cases(bfi[, 1:25])]   # 1 = male, 2 = female
+
+mod_male   <- TAM::tam.mml(items_rc[gender == 1, c("E1","E2","E3","E4","E5")],
+                            verbose = FALSE)
+mod_female <- TAM::tam.mml(items_rc[gender == 2, c("E1","E2","E3","E4","E5")],
+                            verbose = FALSE)
+
+# Flag items where location differs by more than 0.5 logits between groups
+dif_delta  <- mod_male$item[, "xsi.item"] - mod_female$item[, "xsi.item"]
+cat("E item DIF (male - female location):\n")
+print(round(dif_delta, 3))
+flagged_dif <- which(abs(dif_delta) > 0.5)
+if (length(flagged_dif)) {
+  cat("DIF-flagged items:", paste(names(flagged_dif), collapse = ", "), "\n")
+}
+
+# For formal DIF tests: difR::difMH() (binary) or lordif::lordif() (ordinal)
+# install.packages(c("difR", "lordif"))
+```
+
+---
+
+## 16. Calibration Scores vs. Individual Scores: A Critical Distinction
+
+### The core distinction
+
+`TAM::tam.mml()` uses **marginal maximum likelihood** -- it integrates over the
+latent theta distribution to estimate item parameters. The algorithm produces
+accurate *item* parameters; it does not produce individual ability estimates
+as a byproduct.
+
+Two tools that *look* like individual scores but are not appropriate for individual
+reporting:
+
+- **Plausible values (PVs)** are random draws from the posterior
+  $\tilde{\theta} \sim p(\theta \mid \mathbf{y}, \hat{\boldsymbol{\xi}})$.
+  They are designed to preserve *population* variance for group-level inference
+  (PISA, NAEP, TIMSS). Reporting a single PV to a respondent as "your score"
+  misrepresents the number -- it could be anywhere in a +-2 SE band around
+  their true theta.
+
+- **MI-imputed responses under MAR** similarly yield unbiased *sample* parameter
+  estimates; they are not recoveries of what an individual would have answered.
+  An ability estimate derived solely from imputed responses should not be
+  presented as that person's true standing.
+
+> **Rule of thumb**: for *group-level* statistics (means, variances, regression
+> coefficients) use plausible values and pool across the PV set following
+> Rubin's rules. For *individual* score reporting, use EAP or WLE.
+
+### What inrep uses for individual reporting
+
+| Estimator | Method | Properties |
+|-----------|--------|------------|
+| **EAP** | $\hat{\theta} = E[\theta \mid \mathbf{y}]$ | Shrunk toward prior; lower RMSE; best default |
+| **WLE** | Warm's Weighted Likelihood Estimate | Approximately unbiased; better for extreme scores |
+
+Both give a point estimate plus a standard error. The SE is what `min_SEM` in
+`create_study_config()` monitors. Always report the SE alongside the estimate --
+never more than 2 decimal places (false precision for theta scores).
+
+```{r individual_scores}
+# inrep's deployment-facing scorer works directly with the calibrated bank
+rv_example <- list(
+  responses = c(4, 3, 5, 4, 2),
+  administered = 1:5,
+  current_ability = 0
+)
+ability_est <- estimate_ability(rv_example, extra_bank, config_extra)
+str(ability_est)
+# Returns a list with theta and se
+
+# For calibration diagnostics, you can also extract person estimates from the
+# TAM model object itself:
+person_pars <- TAM::tam.wle(mod_E_anchored)
+head(round(person_pars[, c("theta", "error")], 3))
+# theta = WLE estimate    error = standard error of measurement
+```
+
+```{r plausible_values_group}
+# Group-level inference only: generate plausible values, then pool
+# mod_E_anchored was fitted on items_rc (N = 2436); pvs and gender are row-aligned
+pvs <- TAM::tam.pv(mod_E_anchored, nplausible = 5)$pv
+
+# Pool across PV columns (Rubin's rules); never pick a single PV
+for (pv_col in grep("^PV", names(pvs), value = TRUE)) {
+  cat(pv_col, "- group means:",
+      round(tapply(pvs[[pv_col]], gender, mean, na.rm = TRUE), 3), "\n")
+}
+# Average the 5 group means and pool their SEs via Rubin's rules for inference.
+```
+
+### Practical workflow summary
+
+| Phase | Task | Method |
+|-------|------|--------|
+| Calibration | Estimate item parameters | `tam.mml()` on calibration sample |
+| Deployment | Report individual scores | EAP or WLE from `estimate_ability()` |
+| Post-hoc group analysis | Compare group means / regression | Plausible values + Rubin's rules |

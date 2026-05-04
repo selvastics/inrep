@@ -157,7 +157,7 @@ launch_study(config, bfi_items)
 
 * Stopping Rules
 * Item Selection Criteria
-* Themes and Languages
+* Themes: `Professional`, `Light`, `Midnight`, `Ocean`, `Forest`, `Berry`, `Sunset`, `Sepia`, `Paper`, `Dark-Mode`, `Stripe`, `Notion`, `Linear`, `Vercel`, `Intercom`, `Cal`, `Claude`, `Cursor`, `Mistral`, `Cohere`, `Ollama`, `Replicate`, `Together`, `VoltAgent`, `xAI`, `ElevenLabs`, `MiniMax`, `OpenCode`, `RunwayML`, `Expo`, `Lovable`, `Raycast`, `Superhuman`, `Warp`
 * Session Management
 
 ## Support
