@@ -3771,7 +3771,7 @@ launch_study <- function(
                                         label = NULL,
                                         choices = stats::setNames(choices, labels),
                                         selected = base::character(0),
-                                        direction = "vertical",
+                                        direction = if (isTRUE(config$response_layout == "horizontal")) "horizontal" else "vertical",
                                         status = "default",
                                         individual = TRUE,
                                         width = "100%"
@@ -3782,6 +3782,7 @@ launch_study <- function(
                                         label = NULL,
                                         choices = stats::setNames(choices, labels),
                                         selected = base::character(0),
+                                        inline = isTRUE(config$response_layout == "horizontal"),
                                         width = "100%"
                                       )
                                     }
@@ -3801,6 +3802,7 @@ launch_study <- function(
                           label = NULL,
                           choices = choices,
                           selected = base::character(0),
+                          inline = isTRUE(config$response_layout == "horizontal"),
                           width = "100%"
                         )
                       }

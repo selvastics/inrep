@@ -2149,17 +2149,13 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
         
         # Get current language
         current_lang <- rv$language %||% config$language %||% "de"
-        is_english <- (current_lang == "en")
+        labels <- get_language_labels(current_lang)
         # Return simple thank you message
         html_no <- paste0(
           '<div style="padding:40px; text-align:center; font-family: Arial, sans-serif;">',
           '<div style="background:#f8f9fa; padding:30px; border-radius:10px; border:1px solid #dee2e6; max-width:600px; margin:0 auto;">',
-          '<h2 style="color:#e8041c; margin-bottom:20px;">', 
-          if (is_english) 'Assessment Complete' else 'Vielen Dank f\u00FCr Ihre Teilnahme!',
-          '</h2>',
-          '<p style="color:#666; font-size:16px; margin-bottom:0;">',
-          if (is_english) 'Your data has been saved successfully.' else 'Ihre Daten wurden erfolgreich gespeichert.',
-          '</p>',
+          '<h2 style="color:#e8041c; margin-bottom:20px;">', labels$assessment_complete, '</h2>',
+          '<p style="color:#666; font-size:16px; margin-bottom:0;">', labels$data_saved_message, '</p>',
           '</div>',
           '</div>',
           '<style>',
@@ -2176,11 +2172,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
         # Create auto-close timer UI if not disabled
         auto_close_ui <- NULL
         if (!disable_auto_close && auto_close_seconds > 0) {
-          # Get current language for auto-close messages
-          current_lang <- rv$language %||% config$language %||% "de"
-          
-          # Set language-dependent messages
-          auto_close_title <- if (current_lang == "en") "Session will close automatically" else "Die Sitzung wird automatisch geschlossen"
+          auto_close_title <- labels$auto_close_title
           
           auto_close_ui <- shiny::div(
             id = "auto-close-timer",
@@ -2228,16 +2220,13 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
       })
     }
     current_lang_ob <- rv$language %||% config$language %||% "en"
-    is_en_ob <- identical(current_lang_ob, "en")
+    labels_ob <- get_language_labels(current_lang_ob)
     html_ob <- paste0(
       '<div style="padding:40px;text-align:center;font-family:Arial,sans-serif;">',
       '<div style="background:#f8f9fa;padding:30px;border-radius:10px;',
       'border:1px solid #dee2e6;max-width:600px;margin:0 auto;">',
-      '<h2 style="color:#495057;margin-bottom:20px;">',
-      if (is_en_ob) 'Thank You' else 'Vielen Dank', '</h2>',
-      '<p style="color:#666;font-size:16px;margin-bottom:0;">',
-      if (is_en_ob) 'Your responses have been recorded. Thank you for your participation.'
-                 else 'Ihre Antworten wurden gespeichert. Vielen Dank f\u00FCr Ihre Teilnahme.',
+      '<h2 style="color:#495057;margin-bottom:20px;">', labels_ob$thank_you_title, '</h2>',
+      '<p style="color:#666;font-size:16px;margin-bottom:0;">', labels_ob$thank_you_message,
       '</p></div></div>'
     )
     return(shiny::div(class = "assessment-card results-container", shiny::HTML(html_ob)))
@@ -2385,7 +2374,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
           ))
         })
       } else {
-        results_content <- shiny::HTML("<p>Keine Antworten zur Auswertung verf\u00FCgbar.</p>")
+        results_content <- shiny::HTML(get_language_labels(rv$language %||% config$language %||% "de")$no_responses_available)
       }
     }
     rv$results_page_content_cache[[cache_key]] <- results_content
@@ -2406,11 +2395,8 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
   # Create auto-close timer UI if not disabled
   auto_close_ui <- NULL
   if (!disable_auto_close && auto_close_seconds > 0) {
-    # Get current language for auto-close messages
     current_lang <- rv$language %||% config$language %||% "de"
-    
-    # Set language-dependent messages
-    auto_close_title <- if (current_lang == "en") "Session will close automatically" else "Die Sitzung wird automatisch geschlossen"
+    auto_close_title <- get_language_labels(current_lang)$auto_close_title
     
     auto_close_ui <- shiny::div(
       id = "auto-close-timer",
@@ -2490,16 +2476,13 @@ render_page_navigation <- function(rv, config, current_page_idx) {
   
   # Get current language
   current_lang <- rv$language %||% config$language %||% "de"
+  labels <- get_language_labels(current_lang)
   
-  # Set navigation text based on language
-  back_text <- if (current_lang == "en") "Back" else "Zur\u00FCck"
-  next_text <- if (current_lang == "en") "Next" else "Weiter"
-  submit_text <- if (current_lang == "en") "Submit" else "Abschlie\u00DFen"
-  page_text <- if (current_lang == "en") {
-    sprintf("Page %d of %d", current_page_idx, total_pages)
-  } else {
-    sprintf("Seite %d von %d", current_page_idx, total_pages)
-  }
+  # Navigation button text — all from LANGUAGE_DICTIONARY
+  back_text   <- labels$back_button
+  next_text   <- labels$continue_button
+  submit_text <- labels$complete_button
+  page_text   <- sprintf(labels$page_counter, current_page_idx, total_pages)
   
   shiny::div(
     class = "nav-container",

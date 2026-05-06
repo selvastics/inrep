@@ -86,6 +86,11 @@
 #'   or \code{NULL} for default validation. Should return logical.
 #' @param response_ui_type Character string specifying response input interface.
 #'   Options: \code{"radio"}, \code{"slider"}, \code{"dropdown"}.
+#' @param response_layout Character string specifying how radio button choices are
+#'   displayed. \code{"vertical"} (default) stacks each option on its own line,
+#'   matching standard Shiny output. \code{"horizontal"} places all options side by
+#'   side; works well for short labels (e.g. 2-4 options) but can be crowded for
+#'   5+ options with long labels.
 #' @param session_save Logical indicating whether to enable session state persistence
 #'   for interrupted session recovery.
 #' @param show_session_time Logical indicating whether to display session time remaining
@@ -512,6 +517,7 @@ create_study_config <- function(
     progress_style = "circle",
     response_validation_fun = NULL,
     response_ui_type = "radio",
+    response_layout = "vertical",
     session_save = FALSE,
     show_session_time = FALSE,  # Hide session time display by default
     theme = "Professional",
@@ -651,6 +657,10 @@ create_study_config <- function(
       validation_errors <- c(validation_errors, "response_ui_type must be one of: radio, slider, dropdown")
     }
     
+    if (!response_layout %in% c("vertical", "horizontal")) {
+      validation_errors <- c(validation_errors, "response_layout must be one of: vertical, horizontal")
+    }
+    
     # Use smart theme validation
     tryCatch({
       theme <- validate_theme(theme)
@@ -680,9 +690,9 @@ create_study_config <- function(
       stop("Configuration validation failed:\n", paste("  -", validation_errors, collapse = "\n"))
     }
     
-    # Validate max_items and min_items relationship
-    if (!is.null(max_items) && max_items < min_items) {
-      stop("max_items (", max_items, ") must be at least min_items (", min_items, ")")
+    # Validate max_items and min_items relationship (only meaningful for adaptive CAT)
+    if (isTRUE(adaptive) && !is.null(max_items) && max_items < min_items) {
+      stop("max_items (", max_items, ") must be at least min_items (", min_items, ") for adaptive studies")
     }
     
     # Validate fixed_items
@@ -803,6 +813,7 @@ create_study_config <- function(
       progress_style = progress_style,
       response_validation_fun = response_validation_fun,
       response_ui_type = response_ui_type,
+      response_layout = response_layout,
       session_save = session_save,
       theme = theme,
       language = language,
