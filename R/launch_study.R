@@ -3825,7 +3825,8 @@ launch_study <- function(
                         )
                       }
                      progress_pct <- base::round((base::length(rv$administered) / (config$max_items %||% max(1, nrow(item_bank)))) * 100)
-                     progress_ui <- base::switch(config$progress_style,
+                     progress_ui <- base::switch(config$progress_style %||% "circle",
+                       "none" = NULL,
                        "circle" = {
                          # Get theme primary color for progress arc and tiny circle
                          theme_primary <- if (!is.null(theme_config) && !is.null(theme_config$primary_color)) {
@@ -3948,6 +3949,11 @@ launch_study <- function(
                          )
                        },
                        "bar" = shiny::div(
+                         class = "progress-bar-container",
+                         shiny::div(class = "progress-bar-fill", style = base::sprintf("width: %d%%;", progress_pct))
+                       ),
+                       # Default fallback for unknown style values
+                       shiny::div(
                          class = "progress-bar-container",
                          shiny::div(class = "progress-bar-fill", style = base::sprintf("width: %d%%;", progress_pct))
                        )
