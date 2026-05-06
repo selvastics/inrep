@@ -2403,7 +2403,14 @@ launch_study <- function(
       # Add custom CSS if provided
       if (!is.null(config$custom_css)) {
         shiny::tags$style(shiny::HTML(config$custom_css))
-      }
+      },
+      # CSS for per-item response layout options
+      shiny::tags$style(shiny::HTML("
+        /* Horizontal endpoint-labels only: hide middle labels, keep spacing */
+        .rl-endpoint-only .shiny-options-group .radio-inline:not(:first-child):not(:last-child) span {
+          visibility: hidden;
+        }
+      "))
 
     ),
     # Remove blocking loading screen - let Shiny's natural loading work
@@ -3732,6 +3739,16 @@ launch_study <- function(
                      logger(sprintf("Getting content for item %d", rv$current_item))
                      item <- get_item_content(rv$current_item)
                      logger(sprintf("Item content retrieved - Question: %s", substr(item$Question, 1, 50)))
+                     
+                     # Determine effective layout: per-item column overrides global config
+                     item_layout <- tryCatch({
+                       rl <- item$response_layout
+                       if (!is.null(rl) && length(rl) > 0 && !is.na(rl) && base::nzchar(as.character(rl))) as.character(rl)
+                       else config$response_layout %||% "vertical"
+                     }, error = function(e) config$response_layout %||% "vertical")
+                     is_inline <- item_layout %in% c("horizontal", "horizontal_all", "horizontal_endpoints")
+                     is_endpoint_only <- item_layout == "horizontal_endpoints"
+                     
                      response_ui <- if (config$model == "GRM") {
                        choices <- base::as.numeric(base::unlist(base::strsplit(item$ResponseCategories, ",")))
                        
@@ -3771,20 +3788,21 @@ launch_study <- function(
                                         label = NULL,
                                         choices = stats::setNames(choices, labels),
                                         selected = base::character(0),
-                                        direction = if (isTRUE(config$response_layout == "horizontal")) "horizontal" else "vertical",
+                                        direction = if (is_inline) "horizontal" else "vertical",
                                         status = "default",
                                         individual = TRUE,
                                         width = "100%"
                                       )
                                     } else {
-                                      shiny::radioButtons(
+                                      radio_ui <- shiny::radioButtons(
                                         inputId = "item_response",
                                         label = NULL,
                                         choices = stats::setNames(choices, labels),
                                         selected = base::character(0),
-                                        inline = isTRUE(config$response_layout == "horizontal"),
+                                        inline = is_inline,
                                         width = "100%"
                                       )
+                                      if (is_endpoint_only) shiny::div(class = "rl-endpoint-only", radio_ui) else radio_ui
                                     }
                        )
                                           } else {
@@ -3802,7 +3820,7 @@ launch_study <- function(
                           label = NULL,
                           choices = choices,
                           selected = base::character(0),
-                          inline = isTRUE(config$response_layout == "horizontal"),
+                          inline = is_inline,
                           width = "100%"
                         )
                       }
