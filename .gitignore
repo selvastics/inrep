@@ -81,6 +81,11 @@ test_*.R
 
 # inrep Studio local app (not part of the package)
 app-studio.R
+
+# Local dev/config files — not needed in the public repo
+.Rbuildignore
+.lintr
+tests/
 *_test.R
 temp_*.R
 simple_*.R
