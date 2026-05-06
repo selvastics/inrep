@@ -1853,16 +1853,27 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
     # Get response labels based on scale type and language
     labels <- get_response_labels(page$scale_type %||% "likert", choices, current_lang)
     
-    shiny::div(
-      class = "item-container",
-      shiny::h4(question_text),
-      shiny::radioButtons(
+    # Determine per-item layout (overrides global config)
+    item_layout <- tryCatch({
+      rl <- item$response_layout
+      if (!is.null(rl) && length(rl) > 0 && !is.na(rl) && nzchar(as.character(rl))) as.character(rl)
+      else config$response_layout %||% "vertical"
+    }, error = function(e) config$response_layout %||% "vertical")
+    is_inline       <- item_layout %in% c("horizontal", "horizontal_all", "horizontal_endpoints")
+    is_endpoint_only <- item_layout == "horizontal_endpoints"
+    
+    radio_ui <- shiny::radioButtons(
         inputId = item_id,
         label = NULL,
         choices = setNames(choices, labels),
         selected = rv$item_responses[[item_id]] %||% character(0),
-        inline = TRUE
+        inline = is_inline
       )
+    
+    shiny::div(
+      class = "item-container",
+      shiny::h4(question_text),
+      if (is_endpoint_only) shiny::div(class = "rl-endpoint-only", radio_ui) else radio_ui
     )
   })
   
