@@ -1867,7 +1867,8 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
         label = NULL,
         choices = setNames(choices, labels),
         selected = rv$item_responses[[item_id]] %||% character(0),
-        inline = is_inline
+        inline = is_inline,
+        width = "100%"
       )
     
     shiny::div(

@@ -657,8 +657,8 @@ create_study_config <- function(
       validation_errors <- c(validation_errors, "response_ui_type must be one of: radio, slider, dropdown")
     }
     
-    if (!response_layout %in% c("vertical", "horizontal")) {
-      validation_errors <- c(validation_errors, "response_layout must be one of: vertical, horizontal")
+    if (!response_layout %in% c("vertical", "horizontal", "horizontal_all", "horizontal_endpoints")) {
+      validation_errors <- c(validation_errors, "response_layout must be one of: vertical, horizontal, horizontal_all, horizontal_endpoints")
     }
     
     # Use smart theme validation
