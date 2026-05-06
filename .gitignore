@@ -78,6 +78,9 @@ q.log
 
 # Temporary test files
 test_*.R
+
+# inrep Studio local app (not part of the package)
+app-studio.R
 *_test.R
 temp_*.R
 simple_*.R
