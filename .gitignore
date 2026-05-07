@@ -124,3 +124,8 @@ changelog.txt
 .Rlib/
 Rlibs/
 rlibs/
+
+# Case studies to ignore
+case_studies/rcq/
+case_studies/student_projects/
+case_studies/programming_anxiety_assessment/
