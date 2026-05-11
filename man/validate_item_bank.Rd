@@ -4,12 +4,18 @@
 \alias{validate_item_bank}
 \title{Validate Item Bank Structure}
 \usage{
-validate_item_bank(item_bank, model = "GRM")
+validate_item_bank(item_bank, model = "GRM", adaptive = TRUE)
 }
 \arguments{
 \item{item_bank}{Data frame containing item bank}
 
 \item{model}{IRT model ("GRM", "2PL", "1PL", "3PL")}
+
+\item{adaptive}{Logical. When \code{FALSE} (non-adaptive / fixed-form study),
+IRT parameter columns (\code{a}, \code{b}, \code{b1}–\code{b4}) are not
+required and the column checks are skipped. Only \code{Question} and
+\code{ResponseCategories} are checked. Default \code{TRUE} preserves the
+existing behaviour for adaptive studies.}
 }
 \value{
 List with validation results: is_valid (logical) and messages (character vector)
@@ -21,7 +27,10 @@ Provides detailed feedback on mismatches and suggests appropriate configurations
 \examples{
 \dontrun{
 data(bfi_items)
-validation <- validate_item_bank(bfi_items, "GRM")
+# Adaptive study — IRT columns required
+validation <- validate_item_bank(bfi_items, "GRM", adaptive = TRUE)
+# Fixed-form study — IRT columns optional
+validation <- validate_item_bank(bfi_items, "GRM", adaptive = FALSE)
 print(validation$is_valid)
 print(validation$messages)
 }

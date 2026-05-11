@@ -129,3 +129,7 @@ rlibs/
 case_studies/rcq/
 case_studies/student_projects/
 case_studies/programming_anxiety_assessment/
+
+# Combined studio app files (deployment copies live in inrep-studio/)
+app-studio-comb.R
+test_sim_debug.R

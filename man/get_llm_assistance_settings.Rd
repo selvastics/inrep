@@ -2,7 +2,7 @@
 % Please edit documentation in R/llm_assistance.R
 \name{get_llm_assistance_settings}
 \alias{get_llm_assistance_settings}
-\title{Get LLM Assistance Status}
+\title{Get LLM Assistance Status (Deprecated)}
 \usage{
 get_llm_assistance_settings()
 }

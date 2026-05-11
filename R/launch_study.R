@@ -5664,7 +5664,26 @@ launch_study <- function(
         rv$response_times <- base::c(rv$response_times, response_time)
         rv$responses <- base::c(rv$responses, response_score)
         rv$administered <- base::c(rv$administered, item_index)
-        
+
+        # IMMEDIATE FEEDBACK — only fires when feedback_enabled = TRUE and item has
+        # a correct-answer key in the Answer column. Meaningless for agreement scales
+        # (GRM/Likert) where no item has a right or wrong answer; those items simply
+        # have no Answer value so the block below is silently skipped.
+        if (isTRUE(config$feedback_enabled)) {
+          item_answer <- if ("Answer" %in% names(item_bank)) item_bank$Answer[item_index] else NULL
+          if (!is.null(item_answer) && !is.na(item_answer) &&
+              nchar(trimws(as.character(item_answer))) > 0) {
+            is_correct <- isTRUE(response_score >= 0.5)
+            shiny::showNotification(
+              ui       = if (is_correct) ui_labels$feedback_correct   %||% "\u2714 Correct!"
+                         else            ui_labels$feedback_incorrect %||% "\u2718 Incorrect",
+              type     = if (is_correct) "message" else "warning",
+              duration = 2.5,
+              session  = session
+            )
+          }
+        }
+
         # LOG RESPONSE SUBMISSION WITH ERROR PROTECTION
         if (session_save && exists("log_session_event") && is.function(log_session_event)) {
           tryCatch({

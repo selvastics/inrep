@@ -10,33 +10,23 @@ generate_llm_prompt(config = NULL, focus = "general", item_bank = NULL)
 \item{config}{Study configuration from \code{\link{create_study_config}}.
 If NULL, generates general context.}
 
-\item{focus}{Focus area: "stopping_rules", "selection", "estimation", "general".}
+\item{focus}{Focus area: \code{"stopping_rules"}, \code{"selection"},
+\code{"estimation"}, \code{"general"}.}
 
 \item{item_bank}{Optional item bank for additional context.}
 }
 \value{
-Invisibly returns prompt text.
+Invisibly returns \code{NULL}.
 }
 \description{
 \strong{Deprecated.} Use
 \href{https://selvastics.shinyapps.io/inrep-studio/}{inrep-studio} instead
 to configure studies interactively via a GUI.
-
-Builds a plain-text prompt that summarizes your current configuration and the
-relevant \code{inrep} concepts/parameters.
-}
-\details{
-This function prints the prompt to the console and invisibly returns it.
 }
 \examples{
 \dontrun{
-config <- create_study_config(
-  name = "My Study",
-  model = "GRM",
-  min_items = 5,
-  max_items = 20,
-  min_SEM = 0.3
-)
-generate_llm_prompt(config, focus = "general")
+# Deprecated - use inrep-studio instead:
+# https://selvastics.shinyapps.io/inrep-studio/
+generate_llm_prompt()
 }
 }
