@@ -100,7 +100,7 @@ This selects items that are informative across the *full plausible range* of tru
 - `max_items ≥ 20` (long CATs): use `"MI"` — the estimates converge after ~10 items
 - Early-stage warm-up items: always random regardless of criterion (controlled by `adaptive_start`)
 
-Reference: Veerkamp & Berger (1997). Some new item selection criteria for adaptive testing. *Journal of Educational and Behavioral Statistics*, 22(2), 203–226.
+Reference: Veerkamp & Berger (1997). Some new item selection criteria for adaptive testing. *Journal of Educational and Behavioral Statistics*, 22(2), 203–226. https://doi.org/10.3102/10769986022002203
 
 ```{r mi_config}
 # Short 5-item scale — MEI recommended

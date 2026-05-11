@@ -104,7 +104,7 @@
 #'
 #' Veerkamp, W. J. J., & Berger, M. P. F. (1997). Some new item selection
 #'   criteria for adaptive testing. \emph{Journal of Educational and Behavioral
-#'   Statistics}, 22(2), 203--226.
+#'   Statistics}, 22(2), 203--226. https://doi.org/10.3102/10769986022002203
 run_simulation <- function(config,
                            item_bank,
                            n_sim        = 500L,
