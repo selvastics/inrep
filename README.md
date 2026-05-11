@@ -145,7 +145,6 @@ launch_study(config, bfi_items)
 
 * **Study management:** `launch_study()`, `create_study_config()`
 * **IRT analysis:** `estimate_ability()`, `select_next_item()`, `validate_item_bank()`
-* **Interactive setup:** [inrep-studio](https://selvastics.shinyapps.io/inrep-studio/) (GUI-based configuration)
 
 ## Example Datasets
 
@@ -155,10 +154,8 @@ launch_study(config, bfi_items)
 
 ## Configuration
 
-* Stopping Rules
-* Item Selection Criteria
 * Themes: `Professional`, `Light`, `Midnight`, `Ocean`, `Forest`, `Berry`, `Sunset`, `Sepia`, `Paper`, `Dark-Mode`, `Stripe`, `Notion`, `Linear`, `Vercel`, `Intercom`, `Cal`, `Claude`, `Cursor`, `Mistral`, `Cohere`, `Ollama`, `Replicate`, `Together`, `VoltAgent`, `xAI`, `ElevenLabs`, `MiniMax`, `OpenCode`, `RunwayML`, `Expo`, `Lovable`, `Raycast`, `Superhuman`, `Warp`
-* Session Management
+* Languages: EN, DE, ES, FR, FA
 
 ## Support
 
