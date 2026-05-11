@@ -116,3 +116,7 @@ changelog.txt
 .Rlib/
 Rlibs/
 rlibs/
+
+app-studio-comb.R
+app-studio-onboarding.R
+app-studio.R
