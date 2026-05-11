@@ -1052,11 +1052,24 @@ launch_study <- function(
   if ("discrimination" %in% names(item_bank) && !"a" %in% names(item_bank)) item_bank$a <- item_bank$discrimination
   if ("difficulty" %in% names(item_bank) && !"b" %in% names(item_bank)) item_bank$b <- item_bank$difficulty
   
-  # Validate item bank; stop if critical mismatch detected
-  validation <- inrep::validate_item_bank(item_bank, config$model)
+  # Validate item bank; stop if critical mismatch detected.
+  # IRT column checks are skipped for non-adaptive studies (adaptive = FALSE).
+  validation <- inrep::validate_item_bank(item_bank, config$model, adaptive = isTRUE(config$adaptive))
   if (is.list(validation) && !isTRUE(validation$is_valid)) {
     stop(paste0("Item bank / model mismatch:\n", paste(validation$messages, collapse = "\n")),
          call. = FALSE)
+  }
+
+  # Validate custom page flow early with a direct, actionable error.
+  if (!is.null(config$custom_page_flow) && length(config$custom_page_flow) > 0) {
+    page_types <- vapply(config$custom_page_flow, function(p) p$type %||% NA_character_, character(1))
+    if (!any(page_types == "results", na.rm = TRUE)) {
+      message(
+        "Note: custom_page_flow has no page with type = 'results'. ",
+        "The study will route to the last page after items complete. ",
+        "Add type = 'results' to the final page (or use type = 'custom') to serve as an offboarding page."
+      )
+    }
   }
   
   # DEFER model conversion - will be done in server after UI shows
@@ -2390,7 +2403,14 @@ launch_study <- function(
       # Add custom CSS if provided
       if (!is.null(config$custom_css)) {
         shiny::tags$style(shiny::HTML(config$custom_css))
-      }
+      },
+      # CSS for per-item response layout options
+      shiny::tags$style(shiny::HTML("
+        /* Horizontal endpoint-labels only: hide middle labels, keep spacing */
+        .rl-endpoint-only .shiny-options-group .radio-inline:not(:first-child):not(:last-child) span {
+          visibility: hidden;
+        }
+      "))
 
     ),
     # Remove blocking loading screen - let Shiny's natural loading work
@@ -3719,6 +3739,16 @@ launch_study <- function(
                      logger(sprintf("Getting content for item %d", rv$current_item))
                      item <- get_item_content(rv$current_item)
                      logger(sprintf("Item content retrieved - Question: %s", substr(item$Question, 1, 50)))
+                     
+                     # Determine effective layout: per-item column overrides global config
+                     item_layout <- tryCatch({
+                       rl <- item$response_layout
+                       if (!is.null(rl) && length(rl) > 0 && !is.na(rl) && base::nzchar(as.character(rl))) as.character(rl)
+                       else config$response_layout %||% "vertical"
+                     }, error = function(e) config$response_layout %||% "vertical")
+                     is_inline <- item_layout %in% c("horizontal", "horizontal_all", "horizontal_endpoints")
+                     is_endpoint_only <- item_layout == "horizontal_endpoints"
+                     
                      response_ui <- if (config$model == "GRM") {
                        choices <- base::as.numeric(base::unlist(base::strsplit(item$ResponseCategories, ",")))
                        
@@ -3758,19 +3788,21 @@ launch_study <- function(
                                         label = NULL,
                                         choices = stats::setNames(choices, labels),
                                         selected = base::character(0),
-                                        direction = "vertical",
+                                        direction = if (is_inline) "horizontal" else "vertical",
                                         status = "default",
                                         individual = TRUE,
                                         width = "100%"
                                       )
                                     } else {
-                                      shiny::radioButtons(
+                                      radio_ui <- shiny::radioButtons(
                                         inputId = "item_response",
                                         label = NULL,
                                         choices = stats::setNames(choices, labels),
                                         selected = base::character(0),
+                                        inline = is_inline,
                                         width = "100%"
                                       )
+                                      if (is_endpoint_only) shiny::div(class = "rl-endpoint-only", radio_ui) else radio_ui
                                     }
                        )
                                           } else {
@@ -3788,11 +3820,13 @@ launch_study <- function(
                           label = NULL,
                           choices = choices,
                           selected = base::character(0),
+                          inline = is_inline,
                           width = "100%"
                         )
                       }
                      progress_pct <- base::round((base::length(rv$administered) / (config$max_items %||% max(1, nrow(item_bank)))) * 100)
-                     progress_ui <- base::switch(config$progress_style,
+                     progress_ui <- base::switch(config$progress_style %||% "circle",
+                       "none" = NULL,
                        "circle" = {
                          # Get theme primary color for progress arc and tiny circle
                          theme_primary <- if (!is.null(theme_config) && !is.null(theme_config$primary_color)) {
@@ -3915,6 +3949,11 @@ launch_study <- function(
                          )
                        },
                        "bar" = shiny::div(
+                         class = "progress-bar-container",
+                         shiny::div(class = "progress-bar-fill", style = base::sprintf("width: %d%%;", progress_pct))
+                       ),
+                       # Default fallback for unknown style values
+                       shiny::div(
                          class = "progress-bar-container",
                          shiny::div(class = "progress-bar-fill", style = base::sprintf("width: %d%%;", progress_pct))
                        )
@@ -5029,6 +5068,14 @@ launch_study <- function(
     
     shiny::observeEvent(input$submit_study, {
       if (rv$stage == "custom_page_flow") {
+        # Prevent duplicate submission loops on final pages.
+        if (isTRUE(rv$submission_in_progress)) {
+          logger("Duplicate custom-flow submit detected; ignoring.", level = "WARNING")
+          return()
+        }
+        rv$submission_in_progress <- TRUE
+        on.exit({ rv$submission_in_progress <- FALSE }, add = TRUE)
+
         # Identify results pages (supports multi-part results sections)
         results_indices <- which(vapply(config$custom_page_flow, function(p) identical(p$type, "results"), logical(1)))
         first_results_idx <- if (length(results_indices) > 0) results_indices[1] else length(config$custom_page_flow)
@@ -5212,75 +5259,74 @@ launch_study <- function(
         }
 
         # Generate results summary object (results pages will render; final results page will perform side effects)
-        if (!is.null(config$results_processor)) {
-          # FINAL SAFETY NET: Last-chance collection of ALL demo_* inputs before
-          # building cat_result.  This catches text fields that were never picked up
-          # by any completion_handler for ANY reason.
-          if (!is.null(config$demographics) && length(config$demographics) > 0) {
-            if (is.null(rv$demo_data) || !is.list(rv$demo_data)) {
-              rv$demo_data <- stats::setNames(
-                as.list(rep(NA, length(config$demographics))),
-                config$demographics
-              )
-            }
-            for (dem_name in config$demographics) {
-              input_id <- paste0("demo_", dem_name)
-              val <- tryCatch(input[[input_id]], error = function(e) NULL)
-              if (!is.null(val) && !identical(trimws(as.character(val)), "")) {
-                current_val <- rv$demo_data[[dem_name]]
-                is_current_empty <- is.null(current_val) ||
-                  (length(current_val) == 1 && (is.na(current_val) || trimws(as.character(current_val)) == ""))
-                if (is_current_empty) {
-                  rv$demo_data[[dem_name]] <- trimws(as.character(val))
-                  logger(sprintf("FINAL SAFETY NET: Collected demo field '%s' = '%s'", dem_name, trimws(as.character(val))), level = "INFO")
-                }
-              }
-            }
-            # Warn about any still-missing demographics (respecting exclude_from_recording)
-            excluded_fields <- config$exclude_from_recording %||% character(0)
-            for (dem_name in config$demographics) {
-              if (dem_name %in% excluded_fields) next
-              v <- rv$demo_data[[dem_name]]
-              if (is.null(v) || (length(v) == 1 && (is.na(v) || trimws(as.character(v)) == ""))) {
-                logger(sprintf("WARNING: Demographic field '%s' is still empty at results stage. Check that 'demo_%s' input exists in your custom pages.", dem_name, dem_name), level = "WARNING")
+        # This must run regardless of whether a custom results_processor is provided.
+        # FINAL SAFETY NET: Last-chance collection of ALL demo_* inputs before
+        # building cat_result. This catches text fields that were never picked up
+        # by any completion_handler for any reason.
+        if (!is.null(config$demographics) && length(config$demographics) > 0) {
+          if (is.null(rv$demo_data) || !is.list(rv$demo_data)) {
+            rv$demo_data <- stats::setNames(
+              as.list(rep(NA, length(config$demographics))),
+              config$demographics
+            )
+          }
+          for (dem_name in config$demographics) {
+            input_id <- paste0("demo_", dem_name)
+            val <- tryCatch(input[[input_id]], error = function(e) NULL)
+            if (!is.null(val) && !identical(trimws(as.character(val)), "")) {
+              current_val <- rv$demo_data[[dem_name]]
+              is_current_empty <- is.null(current_val) ||
+                (length(current_val) == 1 && (is.na(current_val) || trimws(as.character(current_val)) == ""))
+              if (is_current_empty) {
+                rv$demo_data[[dem_name]] <- trimws(as.character(val))
+                logger(sprintf("FINAL SAFETY NET: Collected demo field '%s' = '%s'", dem_name, trimws(as.character(val))), level = "INFO")
               }
             }
           }
+          # Warn about any still-missing demographics (respecting exclude_from_recording)
+          excluded_fields <- config$exclude_from_recording %||% character(0)
+          for (dem_name in config$demographics) {
+            if (dem_name %in% excluded_fields) next
+            v <- rv$demo_data[[dem_name]]
+            if (is.null(v) || (length(v) == 1 && (is.na(v) || trimws(as.character(v)) == ""))) {
+              logger(sprintf("WARNING: Demographic field '%s' is still empty at results stage. Check that 'demo_%s' input exists in your custom pages.", dem_name, dem_name), level = "WARNING")
+            }
+          }
+        }
 
-          rv$cat_result <- list(
+        rv$cat_result <- list(
+          theta = rv$current_ability,
+          se = rv$current_se,
+          administered = 1:length(all_responses),
+          responses = all_responses,  # Pass all responses including NAs
+          response_times = rv$response_times,
+          demo_data = rv$demo_data
+        )
+        
+        # Update session dataset with final results
+        tryCatch({
+          results_data <- list(
             theta = rv$current_ability,
             se = rv$current_se,
-            administered = 1:length(all_responses),
-            responses = all_responses,  # Pass all responses including NAs
-            response_times = rv$response_times,
-            demo_data = rv$demo_data
+            administered = 1:length(all_responses)
           )
-          
-          # Update session dataset with final results
-          tryCatch({
-            results_data <- list(
-              theta = rv$current_ability,
-              se = rv$current_se,
-              administered = 1:length(all_responses)
-            )
-            if (exists("update_session_dataset", mode = "function")) {
-              update_session_dataset("results", results_data, stage = "results", current_page = length(config$custom_page_flow), session = session)
-              logger("Updated session dataset with final results", level = "INFO")
-            }
-          }, error = function(e) {
-            logger(sprintf("Failed to update session dataset with final results: %s", e$message), level = "WARNING")
-          })
-          
-          # Route into the FIRST results page (supports multiple results pages)
-          rv$current_page <- first_results_idx
-          rv$stage <- "custom_page_flow"  # Stay in custom flow to show results pages
-          
-          # Scroll to top of page when showing results (enhanced for mobile/app)
-          scroll_to_top_enhanced()
-          
-          # Auto-close timer is started on the last results page when the user finishes.
-          # (See the auto-close countdown observer.)
-        }
+          if (exists("update_session_dataset", mode = "function")) {
+            update_session_dataset("results", results_data, stage = "results", current_page = length(config$custom_page_flow), session = session)
+            logger("Updated session dataset with final results", level = "INFO")
+          }
+        }, error = function(e) {
+          logger(sprintf("Failed to update session dataset with final results: %s", e$message), level = "WARNING")
+        })
+        
+        # Route into the FIRST results page (supports multiple results pages)
+        rv$current_page <- first_results_idx
+        rv$stage <- "custom_page_flow"  # Stay in custom flow to show results pages
+        
+        # Scroll to top of page when showing results (enhanced for mobile/app)
+        scroll_to_top_enhanced()
+        
+        # Auto-close timer is started on the last results page when the user finishes.
+        # (See the auto-close countdown observer.)
         
         logger("Study completed via custom page flow")
       }
@@ -5618,7 +5664,26 @@ launch_study <- function(
         rv$response_times <- base::c(rv$response_times, response_time)
         rv$responses <- base::c(rv$responses, response_score)
         rv$administered <- base::c(rv$administered, item_index)
-        
+
+        # IMMEDIATE FEEDBACK — only fires when feedback_enabled = TRUE and item has
+        # a correct-answer key in the Answer column. Meaningless for agreement scales
+        # (GRM/Likert) where no item has a right or wrong answer; those items simply
+        # have no Answer value so the block below is silently skipped.
+        if (isTRUE(config$feedback_enabled)) {
+          item_answer <- if ("Answer" %in% names(item_bank)) item_bank$Answer[item_index] else NULL
+          if (!is.null(item_answer) && !is.na(item_answer) &&
+              nchar(trimws(as.character(item_answer))) > 0) {
+            is_correct <- isTRUE(response_score >= 0.5)
+            shiny::showNotification(
+              ui       = if (is_correct) ui_labels$feedback_correct   %||% "\u2714 Correct!"
+                         else            ui_labels$feedback_incorrect %||% "\u2718 Incorrect",
+              type     = if (is_correct) "message" else "warning",
+              duration = 2.5,
+              session  = session
+            )
+          }
+        }
+
         # LOG RESPONSE SUBMISSION WITH ERROR PROTECTION
         if (session_save && exists("log_session_event") && is.function(log_session_event)) {
           tryCatch({

@@ -329,7 +329,7 @@ select_next_item <- function(rv, item_bank, config) {
       message(sprintf("Selected item %d (non-adaptive, sequential order)", item))
     } else {
       # For early items before adaptive_start, use random selection
-      item <- sample(available, 1)
+      item <- available[sample.int(length(available), 1L)]
       message(sprintf("Selected random item %d (pre-adaptive phase)", item))
     }
     return(item)
@@ -394,15 +394,22 @@ select_next_item <- function(rv, item_bank, config) {
     compute_item_info_single(current_theta, i, item_bank, config)
   }, numeric(1))
   
+  # ── Safe single-draw helper ──────────────────────────────────────────────
+  # R's sample(x, 1) when length(x)==1 treats x as the integer range 1:x
+  # rather than returning x itself. This caused the duplicate-guard to fire
+  # whenever one item had a uniquely-highest information value.
+  # Fix: always index explicitly via sample.int(length(x), 1L).
+  pick1 <- function(v) v[sample.int(length(v), 1L)]
+
   # Handle invalid information values
   if (length(info) == 0 || all(is.na(info) | info <= 0)) {
     message("No valid information values, selecting random item")
-    return(sample(available, 1))
+    return(pick1(available))
   }
   
   # Item selection from already-computed information values.
   item <- if (config$criteria == "RANDOM") {
-    sample(available, 1)
+    pick1(available)
   } else if (config$criteria == "MI") {
     # Maximum Information at the point estimate hat_theta.
     # Optimal when SE is already small (long tests, late-stage items).
@@ -413,9 +420,9 @@ select_next_item <- function(rv, item_bank, config) {
     top_items <- available[info >= max_info]
     if (length(top_items) == 0) {
       message("No items meet MI criteria, selecting random item")
-      sample(available, 1)
+      pick1(available)
     } else {
-      sample(top_items, 1)
+      pick1(top_items)
     }
   } else if (config$criteria == "MEI") {
     # Maximum Expected Information — integrates Fisher information over the
@@ -451,10 +458,10 @@ select_next_item <- function(rv, item_bank, config) {
     }, numeric(1))
     if (all(is.na(info_mei) | info_mei <= 0)) {
       message("No valid MEI values, falling back to random selection")
-      sample(available, 1)
+      pick1(available)
     } else {
       top_items <- available[info_mei >= max(info_mei, na.rm = TRUE)]
-      if (length(top_items) == 0) sample(available, 1) else sample(top_items, 1)
+      if (length(top_items) == 0L) pick1(available) else pick1(top_items)
     }
   } else if (config$criteria == "WEIGHTED") {
     group_indices <- sapply(available, function(i) {
@@ -466,12 +473,11 @@ select_next_item <- function(rv, item_bank, config) {
     probs <- info * weight_values
     if (length(probs) == 0 || all(is.na(probs) | probs <= 0)) {
       message("Invalid probabilities for WEIGHTED criteria, selecting random item")
-      return(sample(available, 1))
+      return(pick1(available))
     }
     probs <- probs / sum(probs, na.rm = TRUE)
-    sample(available, 1, prob = probs)
+    available[sample.int(length(available), 1L, prob = probs)]
   } else if (config$criteria == "MFI") {
-    message("MFI currently uses an exposure-penalized approximation rather than calibrated Sympson-Hetter exposure control.")
     exposure <- table(rv$administered) / max(1, length(rv$administered))
     exposure_penalty <- vapply(available, function(i) {
       1 - 0.5 * (exposure[as.character(i)] %||% 0)
@@ -479,37 +485,45 @@ select_next_item <- function(rv, item_bank, config) {
     adjusted_info <- info * exposure_penalty
     if (length(adjusted_info) == 0 || all(is.na(adjusted_info) | adjusted_info <= 0)) {
       message("Invalid adjusted information for MFI criteria, selecting random item")
-      return(sample(available, 1))
+      return(pick1(available))
     }
     top_items <- available[adjusted_info >= 0.95 * max(adjusted_info, na.rm = TRUE)]
-    if (length(top_items) == 0) {
+    if (length(top_items) == 0L) {
       message("No items meet MFI criteria, selecting random item")
-      sample(available, 1)
+      pick1(available)
     } else {
-      sample(top_items, 1)
+      pick1(top_items)
     }
   } else {
-    # Default: fast selection similar to MI
-    if (length(available) > 20) {
-      sample_size <- min(15, length(available))
-      sampled_items <- sample(available, sample_size)
-      sampled_info <- info[available %in% sampled_items]
-      top_items <- sampled_items[sampled_info >= 0.9 * max(sampled_info, na.rm = TRUE)]
-      if (length(top_items) == 0) {
-        top_items <- sampled_items[which.max(sampled_info)]
-      }
-      sample(top_items, 1)
+    # Default: MI fallback (criteria unrecognised)
+    top_items <- available[info >= max(info, na.rm = TRUE)]
+    if (length(top_items) == 0L) {
+      message("No items meet default criteria, selecting random item")
+      pick1(available)
     } else {
-      top_items <- available[info >= 0.95 * max(info, na.rm = TRUE)]
-      if (length(top_items) == 0) {
-        message("No items meet default criteria, selecting random item")
-        sample(available, 1)
-      } else {
-        sample(top_items, 1)
-      }
+      pick1(top_items)
     }
   }
   
+  # ── Internal deduplication guard ──────────────────────────────────────────
+  # Belt-and-suspenders: no matter which criteria path ran above, ensure we
+  # never return an already-administered item.  Floating-point ties in MEI/MI
+  # or any future code path cannot cause a re-selection.
+  if (!is.null(item) && (item %in% rv$administered)) {
+    orig_item <- item
+    fallback_pool <- setdiff(seq_len(nrow(item_bank)), rv$administered)
+    if (length(fallback_pool) == 0L) {
+      message("Duplicate guard: no items remaining after dedup")
+      return(NULL)
+    }
+    fb_info <- vapply(fallback_pool,
+      function(j) compute_item_info_single(current_theta, j, item_bank, config),
+      numeric(1L))
+    item <- fallback_pool[which.max(fb_info)]
+    message(sprintf("Duplicate guard: item %d already administered; redirected to item %d",
+                    orig_item, item))
+  }
+
   message(sprintf("Selected item %d with information %f", item, max(info, na.rm = TRUE)))
   # Admin dashboard hook: log selection rationale
   if (!is.null(config$admin_dashboard_hook) && is.function(config$admin_dashboard_hook)) {

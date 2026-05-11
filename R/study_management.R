@@ -1853,16 +1853,28 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
     # Get response labels based on scale type and language
     labels <- get_response_labels(page$scale_type %||% "likert", choices, current_lang)
     
-    shiny::div(
-      class = "item-container",
-      shiny::h4(question_text),
-      shiny::radioButtons(
+    # Determine per-item layout (overrides global config)
+    item_layout <- tryCatch({
+      rl <- item$response_layout
+      if (!is.null(rl) && length(rl) > 0 && !is.na(rl) && nzchar(as.character(rl))) as.character(rl)
+      else config$response_layout %||% "vertical"
+    }, error = function(e) config$response_layout %||% "vertical")
+    is_inline       <- item_layout %in% c("horizontal", "horizontal_all", "horizontal_endpoints")
+    is_endpoint_only <- item_layout == "horizontal_endpoints"
+    
+    radio_ui <- shiny::radioButtons(
         inputId = item_id,
         label = NULL,
         choices = setNames(choices, labels),
         selected = rv$item_responses[[item_id]] %||% character(0),
-        inline = TRUE
+        inline = is_inline,
+        width = "100%"
       )
+    
+    shiny::div(
+      class = "item-container",
+      shiny::h4(question_text),
+      if (is_endpoint_only) shiny::div(class = "rl-endpoint-only", radio_ui) else radio_ui
     )
   })
   
@@ -2149,17 +2161,13 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
         
         # Get current language
         current_lang <- rv$language %||% config$language %||% "de"
-        is_english <- (current_lang == "en")
+        labels <- get_language_labels(current_lang)
         # Return simple thank you message
         html_no <- paste0(
           '<div style="padding:40px; text-align:center; font-family: Arial, sans-serif;">',
           '<div style="background:#f8f9fa; padding:30px; border-radius:10px; border:1px solid #dee2e6; max-width:600px; margin:0 auto;">',
-          '<h2 style="color:#e8041c; margin-bottom:20px;">', 
-          if (is_english) 'Assessment Complete' else 'Vielen Dank f\u00FCr Ihre Teilnahme!',
-          '</h2>',
-          '<p style="color:#666; font-size:16px; margin-bottom:0;">',
-          if (is_english) 'Your data has been saved successfully.' else 'Ihre Daten wurden erfolgreich gespeichert.',
-          '</p>',
+          '<h2 style="color:#e8041c; margin-bottom:20px;">', labels$assessment_complete, '</h2>',
+          '<p style="color:#666; font-size:16px; margin-bottom:0;">', labels$data_saved_message, '</p>',
           '</div>',
           '</div>',
           '<style>',
@@ -2176,11 +2184,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
         # Create auto-close timer UI if not disabled
         auto_close_ui <- NULL
         if (!disable_auto_close && auto_close_seconds > 0) {
-          # Get current language for auto-close messages
-          current_lang <- rv$language %||% config$language %||% "de"
-          
-          # Set language-dependent messages
-          auto_close_title <- if (current_lang == "en") "Session will close automatically" else "Die Sitzung wird automatisch geschlossen"
+          auto_close_title <- labels$auto_close_title
           
           auto_close_ui <- shiny::div(
             id = "auto-close-timer",
@@ -2203,7 +2207,44 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
       }
     }
   }, silent = TRUE)
-  
+
+  # ── show_scale_scores = FALSE ─────────────────────────────────────────────
+  # When reporting is switched off, the results page acts as a pure offboarding
+  # (thank-you) page.  The results_processor is still called for data-upload
+  # side effects on the FINAL results page; its HTML output is discarded.
+  if (!isTRUE(config$show_scale_scores %||% TRUE)) {
+    rp_offboard <- page$results_processor %||% config$results_processor
+    if (isTRUE(is_final_results_page) &&
+        !is.null(rp_offboard) && is.function(rp_offboard) &&
+        !isTRUE(rv$final_results_side_effects_done)) {
+      tryCatch({
+        rp_ob_args  <- list(responses  = rv$cat_result$responses %||% rv$responses,
+                            item_bank  = item_bank)
+        rp_ob_fargs <- names(formals(rp_offboard))
+        if ("demographics" %in% rp_ob_fargs) rp_ob_args$demographics <- rv$demo_data
+        if ("session"      %in% rp_ob_fargs) rp_ob_args$session      <- session
+        if ("rv"           %in% rp_ob_fargs) rp_ob_args$rv           <- rv
+        if ("config"       %in% rp_ob_fargs) rp_ob_args$config       <- config
+        do.call(rp_offboard, rp_ob_args)
+        rv$final_results_side_effects_done <- TRUE
+      }, error = function(e) {
+        message("Results processor side effects (show_scale_scores=FALSE): ", e$message)
+      })
+    }
+    current_lang_ob <- rv$language %||% config$language %||% "en"
+    labels_ob <- get_language_labels(current_lang_ob)
+    html_ob <- paste0(
+      '<div style="padding:40px;text-align:center;font-family:Arial,sans-serif;">',
+      '<div style="background:#f8f9fa;padding:30px;border-radius:10px;',
+      'border:1px solid #dee2e6;max-width:600px;margin:0 auto;">',
+      '<h2 style="color:#495057;margin-bottom:20px;">', labels_ob$thank_you_title, '</h2>',
+      '<p style="color:#666;font-size:16px;margin-bottom:0;">', labels_ob$thank_you_message,
+      '</p></div></div>'
+    )
+    return(shiny::div(class = "assessment-card results-container", shiny::HTML(html_ob)))
+  }
+  # ─────────────────────────────────────────────────────────────────────────
+
   # Page-level override is allowed (e.g., multi-part results)
   results_processor <- page$results_processor %||% config$results_processor
 
@@ -2345,7 +2386,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
           ))
         })
       } else {
-        results_content <- shiny::HTML("<p>Keine Antworten zur Auswertung verf\u00FCgbar.</p>")
+        results_content <- shiny::HTML(get_language_labels(rv$language %||% config$language %||% "de")$no_responses_available)
       }
     }
     rv$results_page_content_cache[[cache_key]] <- results_content
@@ -2366,11 +2407,8 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
   # Create auto-close timer UI if not disabled
   auto_close_ui <- NULL
   if (!disable_auto_close && auto_close_seconds > 0) {
-    # Get current language for auto-close messages
     current_lang <- rv$language %||% config$language %||% "de"
-    
-    # Set language-dependent messages
-    auto_close_title <- if (current_lang == "en") "Session will close automatically" else "Die Sitzung wird automatisch geschlossen"
+    auto_close_title <- get_language_labels(current_lang)$auto_close_title
     
     auto_close_ui <- shiny::div(
       id = "auto-close-timer",
@@ -2450,16 +2488,13 @@ render_page_navigation <- function(rv, config, current_page_idx) {
   
   # Get current language
   current_lang <- rv$language %||% config$language %||% "de"
+  labels <- get_language_labels(current_lang)
   
-  # Set navigation text based on language
-  back_text <- if (current_lang == "en") "Back" else "Zur\u00FCck"
-  next_text <- if (current_lang == "en") "Next" else "Weiter"
-  submit_text <- if (current_lang == "en") "Submit" else "Abschlie\u00DFen"
-  page_text <- if (current_lang == "en") {
-    sprintf("Page %d of %d", current_page_idx, total_pages)
-  } else {
-    sprintf("Seite %d von %d", current_page_idx, total_pages)
-  }
+  # Navigation button text — all from LANGUAGE_DICTIONARY
+  back_text   <- labels$back_button
+  next_text   <- labels$continue_button
+  submit_text <- labels$complete_button
+  page_text   <- sprintf(labels$page_counter, current_page_idx, total_pages)
   
   shiny::div(
     class = "nav-container",

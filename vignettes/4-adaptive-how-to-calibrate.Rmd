@@ -181,12 +181,22 @@ model. The participant then sees a personalized results page.
 Periodic re-calibration (re-running `tam.mml()` on a larger or refreshed dataset) is a
 maintenance task, not a per-participant operation. When genuine new response data are
 available, merge them with the original calibration sample and re-run the workflow from
-Section 6 onwards:
+Section 6 onwards. If you are only testing the workflow and do not yet have a second-wave
+file, use a stand-in subset so the code still runs end to end:
 
 ```{r recalibrate_workflow, eval=FALSE}
 # When genuine new data arrive from a later collection wave:
-data_wave2     <- read.csv("wave2_responses.csv")    # real new participants
-cal_combined   <- rbind(items_rc, data_wave2)         # genuine additional information
+wave2_path <- "wave2_responses.csv"
+
+if (file.exists(wave2_path)) {
+  data_wave2 <- read.csv(wave2_path)
+} else {
+  set.seed(1)
+  data_wave2 <- items_rc[sample(seq_len(nrow(items_rc)), 250), , drop = FALSE]
+  message("Using a stand-in wave 2 sample because wave2_responses.csv is not present yet.")
+}
+
+cal_combined <- rbind(items_rc, data_wave2)
 # ... then re-run from Section 6 with cal_combined as input
 ```
 
@@ -312,70 +322,65 @@ respondents score in the low-to-moderate range on neuroticism items.
 
 ---
 
-## 8. Evaluating Item Fit
+## 8. Adaptive-Bank Readiness
 
-We do not skip item fit -- even if TAM converges cleanly, individual items may misfit.
+For **individual-level adaptive testing**, the first question is not "does every item
+have a nice fit statistic?" but "does this calibrated bank deliver useful information in
+the theta range where I want to stop the test?" For deployment, the practical checks are:
 
-```{r item_fit}
-# Compute fit statistics for each dimension
-fit_stats <- lapply(models, TAM::tam.fit)
+- threshold ordering is monotone,
+- the bank has enough test information across the target theta range,
+- the resulting SEM can realistically reach your stopping rule.
 
-# Infit MNSQ -- primary diagnostic (information-weighted):
-#   Acceptable range: 0.6 - 1.4
-#   > 1.4 : unpredictable / noisy responses
-#   < 0.6 : overly predictable / item redundancy
-#
-# Outfit MNSQ -- unweighted; more sensitive to unexpected extreme responses
+Item-fit statistics can still be useful later as a secondary diagnostic, but they are not
+the core calibration target for an operational CAT bank.
 
-# Aggregate to item level for Agreeableness
-fi_A <- fit_stats$Agreeableness$itemfit
-fi_A$item <- sub("_Cat.*", "", fi_A$parameter)
-item_fit_A <- aggregate(cbind(Infit, Outfit) ~ item, data = fi_A, FUN = mean)
-print(round(item_fit_A, 3))
+```{r adaptive_readiness}
+theta_grid <- seq(-3, 3, by = 0.1)
+target_sem <- 0.35
+target_info <- 1 / target_sem^2
+
+adaptive_readiness <- do.call(rbind, lapply(names(models), function(d) {
+  info_obj <- TAM::IRT.informationCurves(models[[d]], theta = theta_grid)
+  info_vec <- info_obj$test_info_curve
+  theta_vec <- info_obj$theta
+
+  within_target <- theta_vec >= -2 & theta_vec <= 2
+
+  data.frame(
+    domain = d,
+    peak_theta = round(theta_vec[which.max(info_vec)], 2),
+    peak_info = round(max(info_vec), 2),
+    min_sem = round(1 / sqrt(max(info_vec)), 3),
+    points_meeting_sem = sum(info_vec >= target_info),
+    mean_info_target_range = round(mean(info_vec[within_target]), 2),
+    stringsAsFactors = FALSE
+  )
+}))
+
+adaptive_readiness
 ```
 
 ```
-#   item  Infit Outfit
-# 1   A1  0.945  2.928   <- Outfit far outside [0.6, 1.4]; Infit within range
-# 2   A2  0.788  1.214
-# 3   A3  0.777  0.780
-# 4   A4  0.898  1.330
-# 5   A5  0.829  1.436
+#              domain peak_theta peak_info min_sem points_meeting_sem mean_info_target_range
+# 1     Agreeableness       0.10      8.01   0.353                 0                   5.33
+# 2 Conscientiousness       0.40      6.23   0.401                 0                   4.88
+# 3      Extraversion       0.10      6.50   0.392                 0                   4.94
+# 4      Neuroticism       0.90      8.69   0.339                 4                   5.69
+# 5          Openness      -0.10      6.42   0.395                 0                   4.47
 ```
 
-> **A1**: Infit = 0.95 is within the acceptable range; Outfit = 2.93 far exceeds
-> the upper bound of 1.4. Outfit is more sensitive to unexpected responses at the
-> extremes of the trait continuum -- here driven by the very low frequency of
-> "1" responses on A1 (a floor effect). In the function below we flag using
-> **Infit** as the primary criterion, which is standard practice for Rasch-family
-> models. If Outfit elevation is a concern, inspect the category frequency
-> distribution and consider collapsing the lowest two response categories.
+This is the adaptive interpretation:
 
-```{r flag_misfitting}
-flag_misfitting <- function(fit_obj, lo = 0.6, hi = 1.4) {
-  fi <- fit_obj$itemfit
-  fi$item <- sub("_Cat.*", "", fi$parameter)
-  agg     <- aggregate(Infit ~ item, data = fi, FUN = mean)
-  flagged <- agg$item[agg$Infit > hi | agg$Infit < lo]
-  if (length(flagged) == 0) cat("  All items within Infit range [0.6, 1.4].\n")
-  else cat("  Infit-flagged:", paste(flagged, collapse = ", "), "\n")
-}
+- **Peak theta** shows where each short subscale is most informative.
+- **Min SEM** is the best precision the whole subscale can deliver at its peak.
+- **Points meeting SEM** tells you whether a stopping rule like `min_SEM = 0.35`
+  is even achievable on that dimension.
 
-for (d in names(fit_stats)) {
-  cat(d, ":\n"); flag_misfitting(fit_stats[[d]])
-}
-```
-
-```
-# Agreeableness     : All items within Infit range [0.6, 1.4].
-# Conscientiousness : All items within Infit range [0.6, 1.4].
-# Extraversion      : All items within Infit range [0.6, 1.4].
-# Neuroticism       : All items within Infit range [0.6, 1.4].
-# Openness          : All items within Infit range [0.6, 1.4].
-```
-
-All 25 BFI items pass the Infit criterion. The parameters from Section 7 are trustworthy
-for use in an adaptive item bank.
+On this BFI example, Neuroticism can briefly reach the `SEM <= 0.35` region, while the
+other five-item subscales mostly cannot. That is exactly the kind of result you want from
+calibration if the goal is a good adaptive test: it tells you whether to relax the stopping
+rule, add more items, or concentrate new items in poorly covered theta regions.
 
 ---
 
@@ -625,7 +630,7 @@ parameters -- when building an inrep item bank for GRM.
 | Using invented threshold values | Biased theta estimates; meaningless information curves | Extract from `TAM::tam.threshold()` |
 | Skipping `validate_item_bank()` | Structural mismatches reach runtime | Run `validate_item_bank(bank, model = "GRM")` before deployment |
 | Fitting one model to all 25 items | Local independence violated | Fit separate models per dimension |
-| Ignoring item fit | Misfitting items corrupt ability estimates | Check Infit MNSQ; flag outside [0.6, 1.4] |
+| Skipping information-coverage checks | CAT never reaches target SEM or over-focuses one theta region | Plot test information and compare against your stopping rule |
 | Non-monotone thresholds in bank | Negative item information; adaptive selection breaks | Run monotonicity check per item |
 | Deploying on a different population | Parameter drift; SEM underestimated | Re-calibrate or link parameters |
 | Reporting plausible values as individual scores | PVs are random posterior draws, not point estimates | Use EAP or WLE for individual reporting (see Section 16) |
@@ -641,7 +646,7 @@ mod_E     <- models$Extraversion
 theta_seq <- seq(-4, 4, by = 0.1)
 info      <- TAM::IRT.informationCurves(mod_E, theta = theta_seq)
 
-plot(theta_seq, rowSums(info$test_info_curves),
+plot(info$theta, info$test_info_curve,
      type = "l", lwd = 2, col = "#3498db",
      xlab = expression(theta), ylab = "Test Information",
      main = "Extraversion -- Test Information Function (N=2436, PCM)")
@@ -855,6 +860,24 @@ never more than 2 decimal places (false precision for theta scores).
 
 ```{r individual_scores}
 # inrep's deployment-facing scorer works directly with the calibrated bank
+if (!exists("extra_bank")) {
+  extra_bank <- bfi_item_bank[bfi_item_bank$domain == "Extraversion", ]
+}
+
+if (!exists("config_extra")) {
+  config_extra <- create_study_config(
+    name      = "Extraversion Adaptive Assessment",
+    model     = "GRM",
+    adaptive  = TRUE,
+    criteria  = "MI",
+    min_items = 3,
+    max_items = 5,
+    min_SEM   = 0.30,
+    theme     = "hildesheim",
+    language  = "en"
+  )
+}
+
 rv_example <- list(
   responses = c(4, 3, 5, 4, 2),
   administered = 1:5,
