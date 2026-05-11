@@ -81,7 +81,7 @@
 #' @param custom_ui_pre Custom UI elements to display before assessment, 
 #'   or \code{NULL} for standard interface.
 #' @param progress_style Character string specifying progress indicator style.
-#'   Options: \code{"bar"}, \code{"circle"}, \code{"modern-circle"}, \code{"enhanced-bar"}, \code{"segmented"}, \code{"minimal"}, \code{"card"}.
+#'   Options: \code{"bar"}, \code{"circle"}, \code{"modern-circle"}, \code{"enhanced-bar"}, \code{"segmented"}, \code{"minimal"}, \code{"card"}, \code{"none"} (hidden).
 #' @param response_validation_fun Function to validate participant responses, 
 #'   or \code{NULL} for default validation. Should return logical.
 #' @param response_ui_type Character string specifying response input interface.
@@ -649,8 +649,8 @@ create_study_config <- function(
       validation_errors <- c(validation_errors, "theta_prior must be a numeric vector of length 2 with positive standard deviation")
     }
     
-    if (!progress_style %in% c("bar", "circle", "modern-circle", "enhanced-bar", "segmented", "minimal", "card")) {
-      validation_errors <- c(validation_errors, "progress_style must be one of: bar, circle, modern-circle, enhanced-bar, segmented, minimal, card")
+    if (!progress_style %in% c("bar", "circle", "modern-circle", "enhanced-bar", "segmented", "minimal", "card", "none")) {
+      validation_errors <- c(validation_errors, "progress_style must be one of: bar, circle, modern-circle, enhanced-bar, segmented, minimal, card, none")
     }
     
     if (!response_ui_type %in% c("radio", "slider", "dropdown")) {
