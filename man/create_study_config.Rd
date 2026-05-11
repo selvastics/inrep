@@ -27,12 +27,14 @@ create_study_config(
   progress_style = "circle",
   response_validation_fun = NULL,
   response_ui_type = "radio",
+  response_layout = "vertical",
   session_save = FALSE,
   show_session_time = FALSE,
   theme = "Professional",
   language = "en",
   item_translations = NULL,
   report_formats = c("rds", "csv", "json", "pdf"),
+  show_scale_scores = TRUE,
   max_session_duration = 60,
   max_response_time = 300,
   cache_enabled = TRUE,
@@ -98,7 +100,34 @@ Computed by TAM estimation procedures. Typical values: 0.2-0.4.}
 full item bank size. Prevents excessive test length.}
 
 \item{criteria}{Character string specifying item selection criterion. Options:
-\code{"MI"} (Maximum Information), \code{"RANDOM"}, \code{"WEIGHTED"}, \code{"MFI"} (Maximum Fisher Information).}
+  \code{"MI"}, \code{"MEI"}, \code{"RANDOM"}, \code{"WEIGHTED"}, \code{"MFI"}.
+
+  \strong{\code{"MI"} — Maximum Information (default):} Selects the item with the
+  highest Fisher information evaluated at the current point estimate
+  \eqn{\hat{\theta}}. Standard in operational CAT; computationally cheap.
+  \emph{Limitation}: Fisher information is an expected quantity over the response
+  distribution and is evaluated at a single point. When the ability estimate is
+  uncertain (early items, short tests), \eqn{\hat{\theta}} may sit far from the true
+  ability, and MI optimises for the wrong region of the scale.
+
+  \strong{\code{"MEI"} — Maximum Expected Information (recommended for short tests):}
+  Integrates Fisher information over the posterior distribution
+  \eqn{p(\theta \mid \hat{\theta}, SE)}, selecting items that are informative across
+  the entire plausible ability range, not just at the point estimate. Substantially
+  better than MI when \code{max_items < 15} or during the first 5-10 items of any
+  assessment, when \eqn{SE > 0.5} is typical. For long assessments (30+ items) where
+  \eqn{SE < 0.3} by mid-test, MI and MEI converge and the extra computation of MEI
+  is unnecessary. Adds ~21x the per-item computation of MI (still sub-millisecond
+  for typical banks of 10-100 items). Reference: Veerkamp & Berger (1997),
+  \emph{Journal of Educational and Behavioral Statistics}, 22(2), 203-226.
+
+  \strong{\code{"WEIGHTED"}}: Combines information maximisation with content
+  balancing weights. Useful when item groups must be proportionally represented.
+
+  \strong{\code{"MFI"}}: Exposure-penalised MI. Reduces overexposure of
+  high-information items using an empirical frequency penalty.
+
+  \strong{\code{"RANDOM"}}: Random selection; useful as a no-adaptation baseline.}
 
 \item{model}{Character string specifying IRT model passed to TAM functions.
 Options: \code{"1PL"}, \code{"2PL"}, \code{"3PL"}, \code{"GRM"}.
@@ -156,6 +185,12 @@ or \code{NULL} for default validation. Should return logical.}
 
 \item{response_ui_type}{Character string specifying response input interface.
 Options: \code{"radio"}, \code{"slider"}, \code{"dropdown"}.}
+
+\item{response_layout}{Character string specifying how radio button choices are
+displayed. \code{"vertical"} (default) stacks each option on its own line,
+matching standard Shiny output. \code{"horizontal"} places all options side by
+side; works well for short labels (e.g. 2-4 options) but can be crowded for
+5+ options with long labels.}
 
 \item{session_save}{Logical indicating whether to enable session state persistence
 for interrupted session recovery.}

@@ -6,17 +6,25 @@
 #'
 #' @param item_bank Data frame containing item bank
 #' @param model IRT model ("GRM", "2PL", "1PL", "3PL")
+#' @param adaptive Logical. When \code{FALSE} (non-adaptive / fixed-form study),
+#'   IRT parameter columns (\code{a}, \code{b}, \code{b1}–\code{b4}) are not
+#'   required and the column checks are skipped. Only \code{Question} and
+#'   \code{ResponseCategories} are checked. Default \code{TRUE} preserves the
+#'   existing behaviour for adaptive studies.
 #' @return List with validation results: is_valid (logical) and messages (character vector)
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' data(bfi_items)
-#' validation <- validate_item_bank(bfi_items, "GRM")
+#' # Adaptive study — IRT columns required
+#' validation <- validate_item_bank(bfi_items, "GRM", adaptive = TRUE)
+#' # Fixed-form study — IRT columns optional
+#' validation <- validate_item_bank(bfi_items, "GRM", adaptive = FALSE)
 #' print(validation$is_valid)
 #' print(validation$messages)
 #' }
-validate_item_bank <- function(item_bank, model = "GRM") {
+validate_item_bank <- function(item_bank, model = "GRM", adaptive = TRUE) {
   
   if (!is.data.frame(item_bank)) {
     return(list(is_valid = FALSE, messages = "Item bank must be a data frame"))
@@ -29,6 +37,13 @@ validate_item_bank <- function(item_bank, model = "GRM") {
   # Check required columns
   if (!"Question" %in% names(item_bank)) {
     return(list(is_valid = FALSE, messages = "Item bank must have 'Question' column"))
+  }
+  
+  # IRT parameter columns are only required for adaptive studies.
+  # In a fixed-form (non-adaptive) study the item parameters are never read,
+  # so we skip these checks entirely.
+  if (!isTRUE(adaptive)) {
+    return(list(is_valid = TRUE, messages = "Item bank validation passed (non-adaptive: IRT columns not checked)"))
   }
   
   # Model-specific validation with enhanced feedback
