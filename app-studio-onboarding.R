@@ -50,21 +50,20 @@ ONBOARDING_STUDIO_URL <- {
 ONBOARDING_I18N <- list(
   en = list(
     tagline = "studio",
-    intro   = "Answer seven short questions. We'll generate your first inrep study, ready to open in the studio.",
+    intro      = "Answer seven short questions. We'll generate your first inrep study, ready to open in the studio.",
+    intro_note = "The studio preview is an approximation of how your study will look as a Shiny app. The generated R code is what you actually run and refine \u2014 use the code preview or zip export for that. In the preview panel, switch to Edit mode (top corner) to adjust individual elements directly.",
     start   = "Start",
     skip    = "Skip \u2192 Open with defaults",
     footer  = "From the inrep research toolkit, University of Hildesheim",
 
     q_lang_title    = "Choose your language",
-    q_lang_sub      = "You can change this anytime. The studio supports English, German, Spanish, French and Farsi.",
-    q_role_title    = "Tell us about you",
-    q_role_sub      = "This shapes the templates we suggest.",
-    q_role_name     = "Your name (optional)",
-    q_role_role     = "Your role",
-    role_researcher = "Researcher",
-    role_lecturer   = "Lecturer",
-    role_student    = "Student",
-    role_other      = "Other",
+    # FLAG: This language selection applies to the onboarding wizard only.
+    # The Studio UI (inrepStudio) is English-only. Participant-facing study
+    # languages are configured separately in step 6 (Participant Languages).
+    q_lang_sub      = "You can change this anytime. This wizard is available in English, German, Spanish, French and Farsi. Note: the Studio interface is English only.",
+    q_role_title    = "About you",
+    q_role_sub      = "Optional — helps personalise your generated study.",
+    q_role_name     = "Your name",
     q_role_inst     = "Institution",
 
     q_dom_title     = "What will you measure?",
@@ -85,7 +84,6 @@ ONBOARDING_I18N <- list(
     q_pages_title   = "How many item pages to start with?",
     q_pages_sub     = "Each page shows one item. You can add or remove pages later in the studio.",
     q_pages_label   = "Number of item pages",
-    q_pages_tip     = "",
 
     q_part_title    = "Participant languages",
     q_part_sub      = "Which languages will participants see on screen? Multiple is fine.",
@@ -111,21 +109,19 @@ ONBOARDING_I18N <- list(
   ),
   de = list(
     tagline = "studio",
-    intro   = "Beantworte sieben kurze Fragen. Wir erzeugen daraus deine erste inrep-Studie.",
+    intro      = "Beantworte sieben kurze Fragen. Wir erzeugen daraus deine erste inrep-Studie.",
+    intro_note = "Die Vorschau im Studio ist eine Ann\u00e4herung an deine sp\u00e4tere Shiny-App. Den exportierten R-Code f\u00fchrst du lokal aus und verfeinerst ihn dort \u2014 nutze die Code-Vorschau oder den Zip-Export. Im Vorschau-Panel kannst du oben in den Bearbeitungsmodus wechseln, um einzelne Elemente direkt anzupassen.",
     start   = "Loslegen",
     skip    = "\u00dcberspringen \u2192 Mit Standards öffnen",
     footer  = "Aus dem inrep-Toolkit, Universität Hildesheim",
 
     q_lang_title    = "Sprache wählen",
-    q_lang_sub      = "Jederzeit änderbar. Das Studio unterstützt Englisch, Deutsch, Spanisch, Französisch und Farsi.",
-    q_role_title    = "Erzähl uns von dir",
-    q_role_sub      = "Daraus leiten wir passende Vorlagen ab.",
-    q_role_name     = "Dein Name (optional)",
-    q_role_role     = "Deine Rolle",
-    role_researcher = "Forschend",
-    role_lecturer   = "Lehrend",
-    role_student    = "Studierend",
-    role_other      = "Andere",
+    # FLAG: Diese Sprachauswahl gilt nur für den Onboarding-Assistenten.
+    # Die Studio-Oberfläche (inrepStudio) ist ausschließlich auf Englisch.
+    q_lang_sub      = "Jederzeit änderbar. Dieser Assistent ist auf Englisch, Deutsch, Spanisch, Französisch und Farsi verfügbar. Hinweis: Die Studio-Oberfläche ist nur auf Englisch.",
+    q_role_title    = "\u00dcber dich",
+    q_role_sub      = "Optional \u2014 hilft beim Personalisieren deiner Studie.",
+    q_role_name     = "Dein Name",
     q_role_inst     = "Einrichtung",
 
     q_dom_title     = "Was möchtest du erheben?",
@@ -146,7 +142,6 @@ ONBOARDING_I18N <- list(
     q_pages_title   = "Wie viele Item-Seiten möchtest du starten?",
     q_pages_sub     = "Jede Seite zeigt ein Item. Du kannst Seiten später im Studio hinzufügen oder entfernen.",
     q_pages_label   = "Anzahl Item-Seiten",
-    q_pages_tip     = "",
 
     q_part_title    = "Sprachen für Teilnehmende",
     q_part_sub      = "Welche Sprachen sehen Teilnehmende? Mehrfachauswahl möglich.",
@@ -172,22 +167,20 @@ ONBOARDING_I18N <- list(
   ),
   es = list(
     tagline = "studio",
-    intro   = "Responde siete preguntas cortas. Generaremos tu primer estudio inrep.",
+    intro      = "Responde siete preguntas cortas. Generaremos tu primer estudio inrep.",
+    intro_note = "La vista previa del studio es una aproximaci\u00f3n de c\u00f3mo se ver\u00e1 tu estudio como app Shiny. El c\u00f3digo R generado es lo que ejecutas y afinas localmente \u2014 usa la vista previa del c\u00f3digo o el export zip. En el panel de vista previa, cambia al modo Edici\u00f3n (esquina superior) para ajustar elementos.",
     start   = "Empezar",
     skip    = "Saltar \u2192 Abrir con valores predeterminados",
     footer  = "Del kit de investigación inrep, Universidad de Hildesheim",
 
     q_lang_title    = "Elige tu idioma",
-    q_lang_sub      = "Cámbialo cuando quieras. El studio admite inglés, alemán, español, francés y farsi.",
-    q_role_title    = "Cuéntanos sobre ti",
-    q_role_sub      = "Con esto sugerimos plantillas a tu medida.",
-    q_role_name     = "Tu nombre (opcional)",
-    q_role_role     = "Tu rol",
-    role_researcher = "Investigador/a",
-    role_lecturer   = "Docente",
-    role_student    = "Estudiante",
-    role_other      = "Otro",
-    q_role_inst     = "Institución",
+    # FLAG: Esta selección de idioma solo aplica al asistente de configuración.
+    # La interfaz del Studio (inrepStudio) está solo en inglés.
+    q_lang_sub      = "Cámbialo cuando quieras. Este asistente está disponible en inglés, alemán, español, francés y farsi. Nota: la interfaz del Studio es solo en inglés.",
+    q_role_title    = "Sobre ti",
+    q_role_sub      = "Opcional \u2014 ayuda a personalizar tu estudio.",
+    q_role_name     = "Tu nombre",
+    q_role_inst     = "Instituci\u00f3n",
 
     q_dom_title     = "¿Qué quieres medir?",
     q_dom_sub       = "Elige uno o varios. Precargamos los bancos de ítems del paquete inrep.",
@@ -207,7 +200,6 @@ ONBOARDING_I18N <- list(
     q_pages_title   = "¿Cuántas páginas de ítems quieres al inicio?",
     q_pages_sub     = "Cada página muestra un ítem. Puedes añadir o eliminar páginas en el studio.",
     q_pages_label   = "Número de páginas de ítems",
-    q_pages_tip     = "",
 
     q_part_title    = "Idiomas para participantes",
     q_part_sub      = "¿Qué idiomas verán los participantes? Selección múltiple permitida.",
@@ -233,21 +225,19 @@ ONBOARDING_I18N <- list(
   ),
   fr = list(
     tagline = "studio",
-    intro   = "Réponds à sept questions courtes. On génère ta première étude inrep.",
+    intro      = "R\u00e9ponds \u00e0 sept questions courtes. On g\u00e9n\u00e8re ta premi\u00e8re \u00e9tude inrep.",
+    intro_note = "L'aper\u00e7u du studio est une approximation de ton \u00e9tude Shiny. Le code R g\u00e9n\u00e9r\u00e9 est ce que tu ex\u00e9cutes et affines localement \u2014 utilise la pr\u00e9visualisation du code ou l'export zip. Dans le panneau d'aper\u00e7u, bascule en mode \u00c9dition (coin sup\u00e9rieur) pour ajuster les \u00e9l\u00e9ments.",
     start   = "Commencer",
     skip    = "Passer \u2192 Ouvrir avec les réglages par défaut",
     footer  = "Issu de la boîte à outils inrep, Université de Hildesheim",
 
     q_lang_title    = "Choisis ta langue",
-    q_lang_sub      = "Modifiable à tout moment. Le studio gère anglais, allemand, espagnol, français et farsi.",
-    q_role_title    = "Parle-nous de toi",
-    q_role_sub      = "Cela oriente les modèles proposés.",
-    q_role_name     = "Ton nom (optionnel)",
-    q_role_role     = "Ton rôle",
-    role_researcher = "Chercheur·se",
-    role_lecturer   = "Enseignant·e",
-    role_student    = "Étudiant·e",
-    role_other      = "Autre",
+    # FLAG: Ce choix de langue ne s'applique qu'à l'assistant de configuration.
+    # L'interface du Studio (inrepStudio) est exclusivement en anglais.
+    q_lang_sub      = "Modifiable à tout moment. Cet assistant est disponible en anglais, allemand, espagnol, français et farsi. Note : l'interface du Studio est en anglais uniquement.",
+    q_role_title    = "À propos de toi",
+    q_role_sub      = "Optionnel — aide à personnaliser ton étude.",
+    q_role_name     = "Ton nom",
     q_role_inst     = "Établissement",
 
     q_dom_title     = "Que veux-tu mesurer ?",
@@ -268,7 +258,6 @@ ONBOARDING_I18N <- list(
     q_pages_title   = "Combien de pages d'items pour commencer ?",
     q_pages_sub     = "Chaque page affiche un item. Tu peux en ajouter ou supprimer plus tard dans le studio.",
     q_pages_label   = "Nombre de pages d'items",
-    q_pages_tip     = "",
 
     q_part_title    = "Langues pour les participant·es",
     q_part_sub      = "Quelles langues verront-ils ? Sélection multiple possible.",
@@ -294,21 +283,19 @@ ONBOARDING_I18N <- list(
   ),
   fa = list(
     tagline = "studio",
-    intro   = "\u0628\u0647 \u0647\u0641\u062a \u0633\u0648\u0627\u0644 \u06a9\u0648\u062a\u0627\u0647 \u067e\u0627\u0633\u062e \u062f\u0647\u06cc\u062f. \u0645\u0627 \u0627\u0648\u0644\u06cc\u0646 \u0645\u0637\u0627\u0644\u0639\u0647 inrep \u0634\u0645\u0627 \u0631\u0627 \u0622\u0645\u0627\u062f\u0647 \u0645\u06cc\u200c\u06a9\u0646\u06cc\u0645.",
+    intro      = "\u0628\u0647 \u0647\u0641\u062a \u0633\u0648\u0627\u0644 \u06a9\u0648\u062a\u0627\u0647 \u067e\u0627\u0633\u062e \u062f\u0647\u06cc\u062f. \u0645\u0627 \u0627\u0648\u0644\u06cc\u0646 \u0645\u0637\u0627\u0644\u0639\u0647 inrep \u0634\u0645\u0627 \u0631\u0627 \u0622\u0645\u0627\u062f\u0647 \u0645\u06cc\u200c\u06a9\u0646\u06cc\u0645.",
+    intro_note = "\u067e\u06cc\u0634\u200c\u0646\u0645\u0627\u06cc\u0634 \u0627\u0633\u062a\u0648\u062f\u06cc\u0648 \u06cc\u06a9 \u062a\u0642\u0631\u06cc\u0628 \u0627\u0632 \u0627\u067e Shiny \u0634\u0645\u0627\u0633\u062a. \u06a9\u062f R \u062a\u0648\u0644\u06cc\u062f\u0634\u062f\u0647 \u0631\u0627 \u0628\u0627\u06cc\u062f \u0645\u062d\u0644\u06cc \u0627\u062c\u0631\u0627 \u0648 \u0628\u0647\u0628\u0648\u062f \u062f\u0647\u06cc\u062f \u2014 \u0627\u0632 \u067e\u06cc\u0634\u200c\u0646\u0645\u0627\u06cc\u0634 \u06a9\u062f \u06cc\u0627 \u062e\u0631\u0648\u062c\u06cc zip \u0627\u0633\u062a\u0641\u0627\u062f\u0647 \u06a9\u0646\u06cc\u062f. \u062f\u0631 \u067e\u0646\u0644 \u067e\u06cc\u0634\u200c\u0646\u0645\u0627\u06cc\u0634\u060c \u0627\u0632 \u06af\u0648\u0634\u0647 \u0628\u0627\u0644\u0627 \u0628\u0647 \u062d\u0627\u0644\u062a \u0648\u06cc\u0631\u0627\u06cc\u0634 \u0628\u0631\u0648\u06cc\u062f.",
     start   = "\u0634\u0631\u0648\u0639",
     skip    = "\u0631\u062f \u06a9\u0631\u062f\u0646 \u2190 \u0628\u0627\u0632 \u06a9\u0631\u062f\u0646 \u0628\u0627 \u067e\u06cc\u0634\u200c\u0641\u0631\u0636\u200c\u0647\u0627",
     footer  = "\u0627\u0632 \u062c\u0639\u0628\u0647\u200c\u0627\u0628\u0632\u0627\u0631 \u062a\u062d\u0642\u06cc\u0642\u0627\u062a\u06cc inrep\u060c \u062f\u0627\u0646\u0634\u06af\u0627\u0647 \u0647\u06cc\u0644\u062f\u0633\u0647\u0627\u06cc\u0645",
 
     q_lang_title    = "\u0632\u0628\u0627\u0646 \u062e\u0648\u062f \u0631\u0627 \u0627\u0646\u062a\u062e\u0627\u0628 \u06a9\u0646\u06cc\u062f",
-    q_lang_sub      = "\u062f\u0631 \u0647\u0631 \u0632\u0645\u0627\u0646 \u0642\u0627\u0628\u0644 \u062a\u063a\u06cc\u06cc\u0631 \u0627\u0633\u062a. \u0627\u0633\u062a\u0648\u062f\u06cc\u0648 \u0627\u0632 \u0627\u0646\u06af\u0644\u06cc\u0633\u06cc\u060c \u0622\u0644\u0645\u0627\u0646\u06cc\u060c \u0627\u0633\u067e\u0627\u0646\u06cc\u0627\u06cc\u06cc\u060c \u0641\u0631\u0627\u0646\u0633\u0648\u06cc \u0648 \u0641\u0627\u0631\u0633\u06cc \u067e\u0634\u062a\u06cc\u0628\u0627\u0646\u06cc \u0645\u06cc\u200c\u06a9\u0646\u062f.",
-    q_role_title    = "\u062f\u0631\u0628\u0627\u0631\u0647 \u062e\u0648\u062f \u0628\u0647 \u0645\u0627 \u0628\u06af\u0648\u06cc\u06cc\u062f",
-    q_role_sub      = "\u0627\u06cc\u0646 \u0627\u0637\u0644\u0627\u0639\u0627\u062a \u0628\u0647 \u0645\u0627 \u06a9\u0645\u06a9 \u0645\u06cc\u200c\u06a9\u0646\u062f \u062a\u0627 \u0642\u0627\u0644\u0628\u200c\u0647\u0627\u06cc \u0645\u0646\u0627\u0633\u0628 \u0631\u0627 \u067e\u06cc\u0634\u0646\u0647\u0627\u062f \u062f\u0647\u06cc\u0645.",
-    q_role_name     = "\u0646\u0627\u0645 \u0634\u0645\u0627 (\u0627\u062e\u062a\u06cc\u0627\u0631\u06cc)",
-    q_role_role     = "\u0646\u0642\u0634 \u0634\u0645\u0627",
-    role_researcher = "\u0645\u062d\u0642\u0642",
-    role_lecturer   = "\u0645\u062f\u0631\u0633",
-    role_student    = "\u062f\u0627\u0646\u0634\u062c\u0648",
-    role_other      = "\u0633\u0627\u06cc\u0631",
+    # FLAG: این انتخاب زبان فقط برای این دستیار راه‌اندازی است.
+    # رابط کاربری استودیو (inrepStudio) فقط به زبان انگلیسی است.
+    q_lang_sub      = "\u062f\u0631 \u0647\u0631 \u0632\u0645\u0627\u0646 \u0642\u0627\u0628\u0644 \u062a\u063a\u06cc\u06cc\u0631 \u0627\u0633\u062a. \u0627\u06cc\u0646 \u062f\u0633\u062a\u06cc\u0627\u0631 \u0628\u0647 \u0632\u0628\u0627\u0646\u200c\u0647\u0627\u06cc \u0627\u0646\u06af\u0644\u06cc\u0633\u06cc\u060c \u0622\u0644\u0645\u0627\u0646\u06cc\u060c \u0627\u0633\u067e\u0627\u0646\u06cc\u0627\u06cc\u06cc\u060c \u0641\u0631\u0627\u0646\u0633\u0648\u06cc \u0648 \u0641\u0627\u0631\u0633\u06cc \u0645\u0648\u062c\u0648\u062f \u0627\u0633\u062a. \u062a\u0648\u062c\u0647: \u0631\u0627\u0628\u0637 \u06a9\u0627\u0631\u0628\u0631\u06cc \u0627\u0633\u062a\u0648\u062f\u06cc\u0648 \u0641\u0642\u0637 \u0628\u0647 \u0632\u0628\u0627\u0646 \u0627\u0646\u06af\u0644\u06cc\u0633\u06cc \u0627\u0633\u062a.",
+    q_role_title    = "\u062f\u0631\u0628\u0627\u0631\u0647 \u0634\u0645\u0627",
+    q_role_sub      = "\u0627\u062e\u062a\u06cc\u0627\u0631\u06cc \u2014 \u0628\u0647 \u0634\u062e\u0635\u06cc\u200c\u0633\u0627\u0632\u06cc \u0645\u0637\u0627\u0644\u0639\u0647 \u06a9\u0645\u06a9 \u0645\u06cc\u200c\u06a9\u0646\u062f.",
+    q_role_name     = "\u0646\u0627\u0645 \u0634\u0645\u0627",
     q_role_inst     = "\u0645\u0624\u0633\u0633\u0647",
 
     q_dom_title     = "\u0686\u0647 \u0686\u06cc\u0632\u06cc \u0631\u0627 \u0645\u06cc\u200c\u062e\u0648\u0627\u0647\u06cc\u062f \u0627\u0646\u062f\u0627\u0632\u0647\u200c\u06af\u06cc\u0631\u06cc \u06a9\u0646\u06cc\u062f\u061f",
@@ -329,7 +316,6 @@ ONBOARDING_I18N <- list(
     q_pages_title   = "\u062a\u0639\u062f\u0627\u062f \u0635\u0641\u062d\u0627\u062a \u06af\u0648\u06cc\u0647 \u062f\u0631 \u0627\u0628\u062a\u062f\u0627\u061f",
     q_pages_sub     = "\u0647\u0631 \u0635\u0641\u062d\u0647 \u06cc\u06a9 \u06af\u0648\u06cc\u0647 \u0646\u0634\u0627\u0646 \u0645\u06cc\u200c\u062f\u0647\u062f. \u0628\u0639\u062f\u0627\u064b \u0645\u06cc\u200c\u062a\u0648\u0627\u0646\u06cc\u062f \u0635\u0641\u062d\u0627\u062a \u0631\u0627 \u062f\u0631 \u0627\u0633\u062a\u0648\u062f\u06cc\u0648 \u0627\u0636\u0627\u0641\u0647 \u06cc\u0627 \u062d\u0630\u0641 \u06a9\u0646\u06cc\u062f.",
     q_pages_label   = "\u062a\u0639\u062f\u0627\u062f \u0635\u0641\u062d\u0627\u062a \u06af\u0648\u06cc\u0647",
-    q_pages_tip     = "",
 
     q_part_title    = "\u0632\u0628\u0627\u0646\u200c\u0647\u0627\u06cc \u0634\u0631\u06a9\u062a\u200c\u06a9\u0646\u0646\u062f\u06af\u0627\u0646",
     q_part_sub      = "\u0634\u0631\u06a9\u062a\u200c\u06a9\u0646\u0646\u062f\u06af\u0627\u0646 \u0686\u0647 \u0632\u0628\u0627\u0646\u200c\u0647\u0627\u06cc\u06cc \u0631\u0627 \u0631\u0648\u06cc \u0635\u0641\u062d\u0647 \u0645\u06cc\u200c\u0628\u06cc\u0646\u0646\u062f\u061f \u0627\u0646\u062a\u062e\u0627\u0628 \u0686\u0646\u062f\u062a\u0627\u06cc\u06cc \u0645\u062c\u0627\u0632 \u0627\u0633\u062a.",
@@ -355,6 +341,13 @@ ONBOARDING_I18N <- list(
   )
 )
 
+# FLAG: The onboarding wizard supports multiple UI languages (en/de/es/fr/fa).
+# The inrep Studio itself (app.R) is ENGLISH-ONLY — it does not change language
+# based on the researcher's onboarding UI language selection.
+# The "participant languages" (step 6) control the languages shown to *study participants*
+# inside the generated study, NOT the Studio interface language.
+# When the Studio is updated to support multiple UI languages, sync this list and
+# update the q_lang_sub hint text to reflect which languages are available in the Studio.
 ONBOARDING_LANG_LIST <- list(
   list(code = "en", native = "English",   name = "English"),
   list(code = "de", native = "Deutsch",   name = "German"),
@@ -876,18 +869,27 @@ ob_css <- function() {
       letter-spacing: 1px; margin-bottom: 12px; }
     .ob-code { font: 400 12.5px/1.55 var(--mono); color: var(--text); white-space: pre;
       overflow: auto; background: var(--surf2); border: 1px solid var(--bord);
-      border-radius: 12px; padding: 14px 16px; max-height: 420px; }
+      border-radius: 12px; padding: 14px 16px; max-height: 420px;
+      /* R code is ALWAYS left-to-right, regardless of UI language (Farsi/RTL etc.) */
+      direction: ltr !important; text-align: left !important; unicode-bidi: embed; }
     .ob-footer { text-align: center; font: 400 11px/1.4 var(--mono);
       color: var(--text-4); letter-spacing: .2px; margin-top: 22px; }
 
     /* Suppress Shiny's recalculating fade so steps don't flicker */
     .shiny-output-recalculating { opacity: 1 !important; transition: none !important; }
 
-    /* RTL support for Farsi */
+    /* RTL support for Farsi.
+       NOTE: RTL applies to UI text/layout only. Technical content (R code, identifiers,
+       step counters, arrows pointing at content) must stay LTR regardless of UI language.
+       See .ob-code override above and .ob-hint-arrow / .ob-back svg fixes below. */
     .ob-rtl { direction: rtl; text-align: right; }
     .ob-rtl .ob-card { flex-direction: row-reverse; }
     .ob-rtl .ob-actions { flex-direction: row-reverse; }
     .ob-rtl .ob-pill { flex-direction: row-reverse; }
+    /* Flip the back-chevron in RTL: back means going rightward in an RTL flow */
+    .ob-rtl .ob-back svg { transform: scaleX(-1); }
+    /* Flip directional hint arrows in RTL so they point in the correct reading direction */
+    .ob-rtl .ob-hint-arrow { display: inline-block; transform: scaleX(-1); }
   "))
 }
 
@@ -1202,9 +1204,16 @@ onboarding_server <- function(input, output, session) {
     # Top bar: back button + dot progress + dark-mode toggle + lang pill.
     top <- tags$div(class = "ob-top",
       tags$button(class = "ob-back", id = "ob_back_btn",
-        onclick = "Shiny.setInputValue('ob_back', Math.random())",
-        if (s > 0 && s < 8) HTML('<svg width="9" height="16" viewBox="0 0 9 16" fill="none"><path d="M8 1L1 8l7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>') else "",
-        `disabled` = if (s == 0 || s == 8) NA else NULL
+        onclick = if (s == 8)
+          "Shiny.setInputValue('ob_reset_step', Math.random(), {priority:'event'})"
+        else
+          "Shiny.setInputValue('ob_back', Math.random())",
+        if (s > 0 && s < 8)
+          HTML('<svg width="9" height="16" viewBox="0 0 9 16" fill="none"><path d="M8 1L1 8l7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>')
+        else if (s == 8)
+          HTML('<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 2.636-6.364L3 3v6h6"/></svg>')
+        else "",
+        `disabled` = if (s == 0) NA else NULL
       ),
       if (s >= 1 && s <= 7) ob_dots(s, total = 7) else tags$div(),
       tags$div(class = "ob-top-right",
@@ -1225,6 +1234,10 @@ onboarding_server <- function(input, output, session) {
       "8" = ob_step_review(state, t)
     )
 
+    # FLAG: RTL (right-to-left) wrapping applies to the onboarding UI only.
+    # The Studio (app.R) remains LTR regardless of the onboarding language.
+    # R code snippets, identifiers, and technical labels inside the onboarding
+    # must NOT be flipped — see CSS overrides (.ob-code, .ob-hint-arrow, .ob-back svg).
     is_rtl <- isTRUE(state$ui_lang == "fa")
     if (is_rtl) {
       tags$div(class = "ob-rtl", top, body)
@@ -1296,7 +1309,9 @@ ob_step_splash <- function(state, t) {
         tags$span(class = "ob-hero-tag", " Studio")
       ),
       tags$p(style = "font:400 17px/1.4 var(--sans);letter-spacing:-.2px;color:var(--text-2);max-width:420px;margin-top:18px;",
-        t("intro"))
+        t("intro")),
+      tags$p(style = "font:400 13px/1.55 var(--sans);color:var(--text-3);max-width:420px;margin-top:10px;",
+        t("intro_note"))
     ),
     tags$div(class = "ob-actions",
       actionButton("ob_start", t("start"), class = "ob-btn ob-btn-primary"),
@@ -1340,20 +1355,6 @@ ob_step_lang <- function(state, t) {
 }
 
 ob_step_role <- function(state, t) {
-  roles <- list(researcher = t("role_researcher"), lecturer = t("role_lecturer"),
-                student    = t("role_student"),   other    = t("role_other"))
-  role_grid <- tags$div(class = "ob-grid2",
-    lapply(names(roles), function(k) {
-      sel <- identical(state$role, k)
-      tags$div(class = paste("ob-card", if (sel) "sel" else ""),
-        style = "min-height: 50px;",
-        onclick = sprintf("obSet('role', '%s')", k),
-        tags$div(class = "ob-mark", ob_check_svg()),
-        tags$div(class = "ob-card-title", style = "font-size:15px;", roles[[k]])
-      )
-    })
-  )
-
   tagList(
     tags$div(class = "ob-body",
       tags$h1(class = "ob-h1", t("q_role_title")),
@@ -1363,8 +1364,6 @@ ob_step_role <- function(state, t) {
         tags$input(class = "ob-input", id = "name", type = "text",
                    value = isolate(state$name), placeholder = "Jane Doe",
                    oninput = "Shiny.setInputValue('name', this.value)"),
-        tags$div(class = "ob-label", style = "margin-top:18px;", t("q_role_role")),
-        role_grid,
         tags$div(class = "ob-label", style = "margin-top:18px;", t("q_role_inst")),
         tags$input(class = "ob-input", id = "institution", type = "text",
                    value = isolate(state$institution), placeholder = "Universit\u00e4t Hildesheim",
@@ -1448,9 +1447,7 @@ ob_step_pages <- function(state, t) {
           value = cur_val, min = "1", max = "500",
           style = "max-width: 200px;",
           oninput = "Shiny.setInputValue('max_items', parseInt(this.value) || 5)"
-        ),
-        tags$p(style = "font: 400 12px/1.4 var(--mono); color: var(--text-3); margin-top: 8px;",
-          t("q_pages_tip"))
+        )
       )
     ),
     tags$div(class = "ob-actions",
@@ -1554,7 +1551,7 @@ ob_step_review <- function(state, t) {
         ),
         tags$div(
           style = "display: flex; gap: 8px; align-items: flex-start; margin-bottom: 6px;",
-          tags$span(style = "flex-shrink:0; color: var(--mint); font-weight:600;", "→"),
+          tags$span(class = "ob-hint-arrow", style = "flex-shrink:0; color: var(--mint); font-weight:600;", "→"),
           tags$span(t("review_hint_studio"))
         ),
         tags$div(

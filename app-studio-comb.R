@@ -437,20 +437,12 @@ make_svg_progress_ring <- function(
 }
 
 ui <- page_fluid(
-  title = "inrep Studio",
+  title = "inrepStudio",
   theme = bs_theme(version = 5, preset = "zephyr", primary = "#e8041c"),
   
   tags$head(
     tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
-    tags$script(HTML("
-      // Root route = studio. Redirect legacy hash bookmarks to root.
-      (function(){
-        var h = window.location.hash;
-        if (h === '#!/studio' || h === '#/studio' || h === '#!/onboarding' || h === '#/onboarding') {
-          window.location.replace(window.location.href.split('#')[0]);
-        }
-      })();
-    ")),
+
     tags$script(HTML("
       // Show/hide views without URL changes.
       Shiny.addCustomMessageHandler('showView', function(view) {
@@ -459,6 +451,35 @@ ui <- page_fluid(
         if (studio) studio.style.display = (view === 'studio') ? '' : 'none';
         if (ob) ob.style.display = (view === 'onboarding') ? '' : 'none';
       });
+
+      // Suppress all hash fragments (Shiny tab routing writes #!/tabname).
+      // Patch at the history API level so it never reaches the address bar.
+      (function() {
+        function stripHash(url) {
+          if (!url) return url;
+          var s = String(url);
+          var h = s.indexOf('#');
+          return h === -1 ? s : s.slice(0, h);
+        }
+        var _push    = history.pushState.bind(history);
+        var _replace = history.replaceState.bind(history);
+        history.pushState = function(state, title, url) {
+          return _push(state, title, stripHash(url));
+        };
+        history.replaceState = function(state, title, url) {
+          return _replace(state, title, stripHash(url));
+        };
+        // Belt-and-suspenders: clear any hash that slips through.
+        window.addEventListener('hashchange', function() {
+          if (window.location.hash) {
+            _replace(null, '', window.location.pathname + window.location.search);
+          }
+        });
+        // Clear hash present on initial load.
+        if (window.location.hash) {
+          _replace(null, '', window.location.pathname + window.location.search);
+        }
+      })();
     ")),
     tags$style(HTML("
       /* ===== GLOBAL RESET & VARS (inrep Brand Colors) ===== */
@@ -1119,7 +1140,7 @@ ui <- page_fluid(
         gap: 6px;
         white-space: nowrap;
         height: 32px;
-        min-width: 92px;
+        width: 100px;     /* fixed width so Edit ↔ Preview switch causes no layout shift */
         line-height: 1;
         box-sizing: border-box;
       }
@@ -1422,9 +1443,11 @@ ui <- page_fluid(
         width: 100%;
       }
 
-      /* ── Suppress Shiny's default opacity fade inside the preview ── */
+      /* ── Suppress Shiny's default opacity fade on all preview outputs ── */
       .preview-frame-container .shiny-output-recalculating,
-      .preview-frame-container .shiny-output-recalculating.shiny-bound-output {
+      .preview-frame-container .shiny-output-recalculating.shiny-bound-output,
+      #page_content.shiny-output-recalculating,
+      #page_navigation.shiny-output-recalculating {
         opacity: 1 !important;
         transition: none !important;
       }
@@ -2888,7 +2911,7 @@ ui <- page_fluid(
                       div(
                         h4(style = "margin: 0; line-height: 1.1;",
                            span("inrep", style = "text-transform: lowercase; font-weight: 800; color: var(--studio-dark);"),
-                           span(" Studio", style = "font-weight: 400; color: var(--studio-gray);")
+                           span("Studio", style = "font-weight: 400; color: var(--studio-gray);")
                         ),
                         tags$small(style = "color: var(--studio-gray); font-size: 0.7rem;", "inrep Study Configurator"),
                         div(
@@ -2933,7 +2956,6 @@ ui <- page_fluid(
                                     ),
                                     selectInput("theme", NULL, 
                                                 c(
-                                                  "--- Built-in ---" = "hildesheim",
                                                   "Hildesheim" = "hildesheim",
                                                   "Professional" = "Professional",
                                                   "Berry" = "Berry",
@@ -2981,7 +3003,7 @@ ui <- page_fluid(
                                                   "Warp" = "warp",
                                                   "xAI" = "xai"
                                                 ),
-                                                selected = "hildesheim"),
+                                                selected = "Professional"),
                                     hr(),
                                     # Custom color overrides — hidden by default, collapsed like Adaptive Testing
                                     div(style = "display: flex; align-items: center; gap: 8px; margin-bottom: 4px;",
@@ -3232,7 +3254,7 @@ ui <- page_fluid(
                             tags$path(d = "M22 2L11 13"),
                             tags$path(d = "M22 2L15 22l-4-9-9-4 20-7z")
                           ),
-                          tags$span(id = "ob-hint-label", class = "ob-hint-label", " Start onboarding")
+                          tags$span(id = "ob-hint-label", class = "ob-hint-label", " Onboarding")
                       )
                   )
               ),
@@ -3292,13 +3314,11 @@ ui <- page_fluid(
       ),
       tags$div(class = "mobile-overlay"),
       
-      # ── Onboarding handoff: receive config from inrep-studio-onboarding app ──
-      # Two channels:
-      #  (a) URL hash  — standalone apps: ?#inrep-onboarding=<JSON>
-      #  (b) postMessage — framed/same-origin: { type: 'inrep-studio:onboarding-complete', payload }
+      # ── Onboarding handoff: inline postMessage channel only ──
+      # When the embedded onboarding completes, it fires a postMessage that
+      # carries the config payload. No URL hash or localStorage state.
       tags$script(HTML("
     (function() {
-      // Channel (b): postMessage listener (framed onboarding iframe)
       window.addEventListener('message', function(evt) {
         if (!evt.data) return;
         if (evt.data.type === 'inrep-studio:onboarding-complete') {
@@ -3308,70 +3328,12 @@ ui <- page_fluid(
             }
           } catch(e) { console.warn('inrep-studio: postMessage handler error', e); }
         }
-        // Close button in framed/iframe onboarding → navigate back to studio
         if (evt.data.type === 'inrep-studio:close-onboarding') {
           if (window.Shiny && Shiny.setInputValue) {
             Shiny.setInputValue('ob_navigate_to_studio', Math.random(), {priority: 'event'});
           }
         }
       });
-
-      // Channel (a): URL hash on load
-      function readOnboardingHash() {
-        var hash = window.location.hash || '';
-        if (hash.indexOf('#inrep-onboarding=') === 0) {
-          var enc = hash.slice('#inrep-onboarding='.length);
-          try {
-            var payload = JSON.parse(decodeURIComponent(enc));
-            // Clear the hash so it doesn't re-hydrate on every reload
-            history.replaceState(null, '', window.location.pathname + window.location.search);
-            if (window.Shiny && Shiny.setInputValue) {
-              Shiny.setInputValue('ob_hydrate', JSON.stringify(payload), {priority: 'event'});
-            } else {
-              // Shiny not ready yet — retry after session binds
-              document.addEventListener('shiny:sessioninitialized', function() {
-                Shiny.setInputValue('ob_hydrate', JSON.stringify(payload), {priority: 'event'});
-              }, {once: true});
-            }
-          } catch(e) { console.warn('inrep-studio: could not parse onboarding hash', e); }
-        }
-      }
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', readOnboardingHash);
-      } else {
-        readOnboardingHash();
-      }
-
-      // ===== STUDIO STATE PERSISTENCE (localStorage) =====
-      var STUDIO_STATE_KEY = 'inrep_studio_v1';
-      var STUDIO_STATE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
-
-      // Save handler (called from R via sendCustomMessage)
-      Shiny.addCustomMessageHandler('studio_save_state', function(state) {
-        try {
-          state._saved_at = Date.now();
-          localStorage.setItem(STUDIO_STATE_KEY, JSON.stringify(state));
-        } catch(e) { /* quota exceeded or private mode */ }
-      });
-
-      // On session init: restore saved state if no onboarding hash took priority
-      document.addEventListener('shiny:sessioninitialized', function() {
-        // Don't restore if the hash already hydrated via onboarding
-        if (window.location.hash && window.location.hash.indexOf('#inrep-onboarding=') === 0) return;
-        try {
-          var raw = localStorage.getItem(STUDIO_STATE_KEY);
-          if (!raw) return;
-          var state = JSON.parse(raw);
-          if (!state || !state._saved_at) return;
-          if ((Date.now() - state._saved_at) > STUDIO_STATE_TTL) {
-            localStorage.removeItem(STUDIO_STATE_KEY);
-            return;
-          }
-          // Re-use the existing ob_hydrate channel to restore
-          Shiny.setInputValue('ob_hydrate', JSON.stringify(state), {priority: 'event'});
-        } catch(e) { console.warn('inrep-studio: could not restore saved state', e); }
-      }, {once: true});
     })();
   ")),
       
@@ -3895,10 +3857,14 @@ ui <- page_fluid(
       $(document).on('shiny:value', function(e) {
         if (e.target.id !== 'page_content') return;
         if (!_overlay) return;
+        // Double rAF: first frame lets Shiny write the DOM,
+        // second frame waits for the browser to paint before fading the overlay.
         requestAnimationFrame(function() {
-          _overlay.classList.add('fading');
-          var ov = _overlay;
-          setTimeout(function() { if (ov) { ov.innerHTML = ''; ov.style.height = ''; } }, 250);
+          requestAnimationFrame(function() {
+            _overlay.classList.add('fading');
+            var ov = _overlay;
+            setTimeout(function() { if (ov) { ov.innerHTML = ''; ov.style.height = ''; } }, 280);
+          });
         });
       });
     })();
@@ -4521,25 +4487,15 @@ ui <- page_fluid(
       # Click navigates back to the onboarding route.
       # (widget is rendered inside preview-toolbar-right; this script finds it by ID)
       tags$script(HTML("
-    // Hint widget: first-visit label + auto-minimize
-    var OB_HINT_KEY = 'inrep-ob-ever-opened';
+    // Hint widget: auto-minimize after 5s
     function obHintClick() {
-      // Mark as opened so next visit shows 'Return to onboarding'
-      try { localStorage.setItem(OB_HINT_KEY, '1'); } catch(e) {}
-      var lbl = document.getElementById('ob-hint-label');
-      if (lbl) lbl.textContent = ' Return to onboarding';
       if (window.Shiny && Shiny.setInputValue) {
         Shiny.setInputValue('ob_navigate_back', Math.random(), {priority: 'event'});
       }
     }
     (function() {
       function initHint() {
-        var w   = document.getElementById('ob-hint-widget');
-        var lbl = document.getElementById('ob-hint-label');
-        var hasOpened = false;
-        try { hasOpened = !!localStorage.getItem(OB_HINT_KEY); } catch(e) {}
-        if (lbl) lbl.textContent = hasOpened ? ' Return to onboarding' : ' Start onboarding';
-        // Auto-minimize after 5s
+        var w = document.getElementById('ob-hint-widget');
         if (w) setTimeout(function() { w.classList.add('minimized'); }, 5000);
       }
       if (document.readyState === 'loading') {
@@ -4755,7 +4711,7 @@ server <- function(input, output, session) {
     showNotification(
       paste0("Welcome to inrep\u2011studio", greeting,
              "! Your study has been pre-configured from onboarding."),
-      type = "message", duration = 8
+      type = "message", duration = 10
     )
   }
   
@@ -4768,27 +4724,6 @@ server <- function(input, output, session) {
     if (!is.null(ob_data)) restore_from_onboarding(session, ob_data)
   }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
-  # ── Persist studio configuration to localStorage so the next session / tab restores it ──
-  # Debounce: collect all key inputs + reactive state into a list, send to JS every ~2 s.
-  studio_state_to_save <- debounce(reactive({
-    pgs   <- pages()
-    has_results <- any(vapply(pgs, function(p) isTRUE(p$type == "results"), logical(1)))
-    list(
-      study_name   = input$study_name   %||% "",
-      mode         = if (isTRUE(input$adaptive)) "adaptive" else "fixed",
-      max_items    = input$max_items    %||% 5L,
-      irt_model    = input$irt_model    %||% "GRM",
-      primary_lang = input$primary_lang %||% "en",
-      part_langs   = as.list(preview_langs()),
-      report_page  = if (has_results) "yes" else "no",
-      `_ob_n_pages` = sum(vapply(pgs, function(p) isTRUE(p$type == "items"), integer(1)))
-    )
-  }), 2000)
-
-  observe({
-    state <- studio_state_to_save()
-    session$sendCustomMessage("studio_save_state", state)
-  })
   # Cycle preview language when lang switch button clicked (2+ langs active)
   observeEvent(input$lang_switch_click, {
     langs <- preview_langs()
@@ -4845,7 +4780,7 @@ server <- function(input, output, session) {
   # reactive value access MUST be wrapped in isolate() to avoid the
   # "Can't access reactive value outside of reactive consumer" error.
   session$onFlushed(function() {
-    cols <- get_preview_theme_css(isolate(input$theme) %||% "hildesheim")
+    cols <- get_preview_theme_css(isolate(input$theme) %||% "Professional")
     colourpicker::updateColourInput(session, "primary_color_override", value = cols$primary)
     colourpicker::updateColourInput(session, "accent_color_override",  value = cols$accent  %||% cols$primary)
     colourpicker::updateColourInput(session, "text_color_override",    value = cols$text)
@@ -4957,7 +4892,7 @@ server <- function(input, output, session) {
   
   # Get theme colors for preview
   get_theme_colors <- reactive({
-    theme <- input$theme %||% "hildesheim"
+    theme <- input$theme %||% "Professional"
     get_preview_theme_css(theme)
   })
   
@@ -5205,7 +5140,7 @@ server <- function(input, output, session) {
     
     # Push scoped CSS directly into <head> via JS — reliable on all platforms.
     # The JS handler queues any message that arrives before sessioninitialized.
-    theme_key <- normalize_inrep_theme_key(input$theme %||% "hildesheim")
+    theme_key <- normalize_inrep_theme_key(input$theme %||% "Professional")
     raw_css <- read_inrep_theme_css(theme_key)
     scoped <- if (is.null(raw_css)) "" else scope_css_for_preview(raw_css)
     session$sendCustomMessage("updatePreviewThemeCss", list(css = scoped))
@@ -5276,7 +5211,7 @@ server <- function(input, output, session) {
     # On slower hosted environments (e.g., shinyapps.io), JS head updates can race
     # with DOM replacement; this guarantees the new preview always receives CSS.
     scoped_css <- tryCatch({
-      theme_key <- normalize_inrep_theme_key(input$theme %||% "hildesheim")
+      theme_key <- normalize_inrep_theme_key(input$theme %||% "Professional")
       raw_css <- read_inrep_theme_css(theme_key)
       if (is.null(raw_css)) "" else scope_css_for_preview(raw_css)
     }, error = function(e) "")
@@ -5788,7 +5723,7 @@ server <- function(input, output, session) {
         
         results_table <- div(class = "results-academic-section",
                              style = sprintf("background: %s; border-radius: 8px; border: 1px solid %s; overflow: hidden;", theme_light, theme_border),
-                             tags$table(style = "width: 100%; border-collapse: collapse; font-family: 'Segoe UI', system-ui, sans-serif;",
+                             tags$table(style = sprintf("width: 100%%; border-collapse: collapse; font-family: 'Segoe UI', system-ui, sans-serif;%s", if(lang == "fa") " direction: ltr;" else ""),
                                         tags$thead(
                                           tags$tr(class = "results-header-row",
                                                   style = sprintf("background: %s; border-bottom: 2px solid %s;", theme_light, theme_accent),
@@ -7915,7 +7850,7 @@ server <- function(input, output, session) {
     study_name <- input$study_name %||% "My Assessment Study"
     study_id <- input$study_id %||% paste0("study_", format(Sys.Date(), "%Y%m%d"))
     primary_lang <- input$primary_lang %||% "en"
-    theme_name <- input$theme %||% "hildesheim"
+    theme_name <- input$theme %||% "Professional"
     # Adaptive testing settings (only if adaptive enabled)
     adaptive_flag <- isTRUE(input$adaptive)
     irt_model <- if(adaptive_flag) (input$irt_model %||% "GRM") else ""
@@ -8255,7 +8190,7 @@ input_types <- list(
       } else if(pg_type == "items") {
         item_indices <- match(pg$items, itb$id)
         item_indices <- item_indices[!is.na(item_indices)]
-        if(length(item_indices) == 0) item_indices <- seq_len(min(3, nrow(itb)))  # Default to first 3 items
+        if(length(item_indices) == 0) item_indices <- integer(0)
         
         css_code <- if(!is.null(pg$custom_css) && nzchar(pg$custom_css)) sprintf(",\n    custom_css = %s", safe_quote(pg$custom_css)) else ""
         js_code  <- if(!is.null(pg$custom_js)  && nzchar(pg$custom_js))  sprintf(",\n    custom_js = %s",  safe_quote(pg$custom_js))  else ""
@@ -9304,7 +9239,7 @@ output$download_bundle <- downloadHandler(
       ) else "",
       sprintf("Study: %s", input$study_name %||% "Study"),
       sprintf("Language: %s", input$primary_lang %||% "en"),
-      sprintf("Theme: %s", input$theme %||% "hildesheim"),
+      sprintf("Theme: %s", input$theme %||% "Professional"),
       ""
     ), app_readme_file)
     

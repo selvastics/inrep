@@ -4764,11 +4764,11 @@ launch_study <- function(
         if (current_page$type == "items") {
           if (!is.null(item_bank)) {
             page_data <- list()
+            current_page_num <- rv$current_page %||% 1
+            page_id <- current_page$id %||% paste0("page_", current_page_num)
             # Handle NULL item_indices (adaptive selection) - get from page cache
             if (is.null(current_page$item_indices)) {
               # Adaptive selection was used - get from cached page selection
-              current_page_num <- rv$current_page %||% 1
-              page_id <- current_page$id %||% paste0("page_", current_page_num)
               
               cat("RESPONSE COLLECTION DEBUG: Adaptive page", page_id, "\n")
               cat("RESPONSE COLLECTION DEBUG: page_selected_items available:", !is.null(session$userData$page_selected_items), "\n")
@@ -4815,14 +4815,17 @@ launch_study <- function(
               # MUST match UI rendering logic: item_id <- item$id %||% paste0("item_", actual_idx)
               item <- item_bank[idx, ]
               item_id <- item$id %||% paste0("item_", idx)
-              value <- input[[item_id]]
+              input_id <- .inrep_make_page_item_input_id(page_id, item_id)
+              response_key <- .inrep_make_page_item_response_key(page_id, item_id)
+              value <- input[[input_id]]
               
-              cat("RESPONSE COLLECTION: Checking idx", idx, "item_id", item_id, "input_id", item_id, "value", value, "\n")
+              cat("RESPONSE COLLECTION: Checking idx", idx, "item_id", item_id, "input_id", input_id, "value", value, "\n")
               
               if (!is.null(value) && value != "") {
+                rv$item_responses[[response_key]] <- value
                 rv$item_responses[[item_id]] <- value
                 rv$responses[idx] <- as.numeric(value)
-                page_data[[item_id]] <- as.numeric(value)
+                page_data[[response_key]] <- as.numeric(value)
                 
                 # Update rv$administered during response collection (not during rendering)
                 if (is.null(rv$administered)) rv$administered <- integer(0)
@@ -5158,11 +5161,11 @@ launch_study <- function(
           # Collect item responses from final page
           if (!is.null(item_bank)) {
             page_data <- list()
+            current_page_num <- rv$current_page %||% 1
+            page_id <- current_page$id %||% paste0("page_", current_page_num)
             # Handle NULL item_indices (adaptive selection) - get from page cache
             if (is.null(current_page$item_indices)) {
               # Adaptive selection was used - get from cached page selection
-              current_page_num <- rv$current_page %||% 1
-              page_id <- current_page$id %||% paste0("page_", current_page_num)
               
               # First try to get from page_selected_items cache (most reliable, from session$userData)
               if (!is.null(session$userData$page_selected_items) && !is.null(session$userData$page_selected_items[[page_id]])) {
@@ -5184,7 +5187,8 @@ launch_study <- function(
               if (idx <= nrow(item_bank)) {
                 item <- item_bank[idx, ]
                 item_id <- item$id %||% paste0("item_", idx)
-                input_candidates <- c(item_id, paste0("item_", item_id))
+                input_id <- .inrep_make_page_item_input_id(page_id, item_id)
+                input_candidates <- c(input_id, item_id, paste0("item_", item_id))
                 value <- NULL
                 found_input <- NA_character_
                 for (iid in input_candidates) {
@@ -5195,9 +5199,11 @@ launch_study <- function(
                   }
                 }
                 if (!is.null(value) && value != "") {
+                  response_key <- .inrep_make_page_item_response_key(page_id, item_id)
                   rv$responses[idx] <- as.numeric(value)
-                  page_data[[item_id]] <- as.numeric(value)
+                  page_data[[response_key]] <- as.numeric(value)
                   # also store legacy/keyed entry
+                  rv$item_responses[[response_key]] <- value
                   rv$item_responses[[paste0("item_", item_id)]] <- value
                   rv$item_responses[[item_id]] <- value
                   

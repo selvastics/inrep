@@ -1663,6 +1663,18 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
 }
 
 #' @noRd
+.inrep_make_page_item_input_id <- function(page_id, item_id) {
+  clean_page <- gsub("[^A-Za-z0-9_]", "_", as.character(page_id %||% "page"))
+  clean_item <- gsub("[^A-Za-z0-9_]", "_", as.character(item_id %||% "item"))
+  paste0("item__", clean_page, "__", clean_item)
+}
+
+#' @noRd
+.inrep_make_page_item_response_key <- function(page_id, item_id) {
+  paste0(as.character(page_id %||% "page"), "::", as.character(item_id %||% "item"))
+}
+
+#' @noRd
 render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
   # Get current language
   current_lang <- rv$language %||% config$language %||% "de"
@@ -1813,6 +1825,8 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
     page_items <- item_bank[start_idx:end_idx, , drop = FALSE]
   }
   
+  page_id <- page$id %||% paste0("page_", rv$current_page %||% 1)
+
   # Create item UI elements
   # CRITICAL FIX: For adaptive items, we need to preserve the actual item bank row number
   # Get the actual row indices from the item_bank to ensure proper ID mapping
@@ -1833,8 +1847,10 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
     
     # CRITICAL: Use item$id if available, otherwise use actual item bank row number
     item_id <- item$id %||% paste0("item_", actual_idx)
+    input_id <- .inrep_make_page_item_input_id(page_id, item_id)
+    response_key <- .inrep_make_page_item_response_key(page_id, item_id)
     
-    cat("UI DEBUG: Creating input element - loop i:", i, "actual_idx:", actual_idx, "item$id:", item$id, "final item_id:", item_id, "\n")
+    cat("UI DEBUG: Creating input element - loop i:", i, "actual_idx:", actual_idx, "item$id:", item$id, "final item_id:", item_id, "input_id:", input_id, "\n")
     
     # Get question text based on language
     question_text <- if (current_lang == "en" && !is.null(item$Question_EN)) {
@@ -1863,10 +1879,10 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
     is_endpoint_only <- item_layout == "horizontal_endpoints"
     
     radio_ui <- shiny::radioButtons(
-        inputId = item_id,
+        inputId = input_id,
         label = NULL,
         choices = setNames(choices, labels),
-        selected = rv$item_responses[[item_id]] %||% character(0),
+        selected = rv$item_responses[[response_key]] %||% rv$item_responses[[item_id]] %||% character(0),
         inline = is_inline,
         width = "100%"
       )
@@ -3358,6 +3374,7 @@ validate_page_progression <- function(current_page, input, config) {
         # Validate selected items have responses
         if (!is.null(items_to_check) && length(items_to_check) > 0) {
           item_page_error_added <- FALSE
+          page_id <- page$id %||% paste0("page_", current_page)
           for (i in items_to_check) {
             # DEFENSIVE: Skip invalid indices
             if (is.na(i) || i < 1 || i > nrow(item_bank)) {
@@ -3367,9 +3384,10 @@ validate_page_progression <- function(current_page, input, config) {
             # MUST match UI rendering logic at line 1747: item_id <- item$id %||% paste0("item_", actual_idx)
             item <- item_bank[i, , drop = FALSE]
             item_id <- if(!is.null(item$id) && length(item$id) > 0 && !is.na(item$id[1])) item$id[1] else paste0("item_", i)
+            input_id <- .inrep_make_page_item_input_id(page_id, item_id)
             
             # DEFENSIVE: Check for null, empty, or NA values safely
-            item_value <- input[[item_id]]
+            item_value <- input[[input_id]]
             is_missing <- is.null(item_value) || 
                           length(item_value) == 0 || 
                           (length(item_value) == 1 && (is.na(item_value[1]) || identical(item_value, "")))
@@ -3386,7 +3404,7 @@ validate_page_progression <- function(current_page, input, config) {
                 errors <- c(errors, error_msg)
                 item_page_error_added <- TRUE
               }
-              missing_fields <- c(missing_fields, item_id)
+              missing_fields <- c(missing_fields, input_id)
             }
           }
         }
