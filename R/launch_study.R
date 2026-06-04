@@ -1302,7 +1302,7 @@ launch_study <- function(
     
     .progress-bar-container {
       width: 100%;
-      background: var(--progress-bg-color);
+      background: var(--progress-bg-color, #e5e7eb);
       height: 12px;
       border-radius: 6px;
       margin: 25px 0;
@@ -1311,7 +1311,7 @@ launch_study <- function(
     
     .progress-bar-fill {
       height: 100%;
-      background: var(--primary-color);
+      background: var(--primary-color, #2c3e50);
       transition: width 0.3s ease;
       border-radius: 6px;
     }
@@ -3825,41 +3825,42 @@ launch_study <- function(
                         )
                       }
                      progress_pct <- base::round((base::length(rv$administered) / (config$max_items %||% max(1, nrow(item_bank)))) * 100)
+                     # Resolve theme primary color once — used by bar, circle, and other progress styles
+                     progress_theme_primary <- if (!is.null(theme_config) && !is.null(theme_config$primary_color)) {
+                       theme_config$primary_color
+                     } else if (is.character(config$theme) && nzchar(config$theme)) {
+                       theme_name <- tolower(config$theme)
+                       switch(theme_name,
+                         "light" = "#007bff",
+                         "midnight" = "#6366f1",
+                         "sunset" = "#ff6f61",
+                         "forest" = "#2e7d32",
+                         "ocean" = "#0288d1",
+                         "berry" = "#c2185b",
+                         "hildesheim" = "#e8041c",
+                         "professional" = "#2c3e50",
+                         "clinical" = "#A23B72",
+                         "research" = "#007bff",
+                         "sepia" = "#8B4513",
+                         "paper" = "#005073",
+                         "monochrome" = "#333333",
+                         "large-text" = "#2E5BBA",
+                         "inrep" = "#000000",
+                         "high-contrast" = "#000000",
+                         "dyslexia-friendly" = "#005F73",
+                         "darkblue" = "#64ffda",
+                         "dark-mode" = "#00D4AA",
+                         "colorblind-safe" = "#0072B2",
+                         "vibrant" = "#e74c3c",
+                         "#007bff"
+                       )
+                     } else {
+                       "#007bff"
+                     }
                      progress_ui <- base::switch(config$progress_style %||% "circle",
                        "none" = NULL,
                        "circle" = {
-                         # Get theme primary color for progress arc and tiny circle
-                         theme_primary <- if (!is.null(theme_config) && !is.null(theme_config$primary_color)) {
-                           theme_config$primary_color
-                         } else if (is.character(config$theme) && nzchar(config$theme)) {
-                           theme_name <- tolower(config$theme)
-                           switch(theme_name,
-                             "light" = "#007bff",
-                             "midnight" = "#6366f1",
-                             "sunset" = "#ff6f61",
-                             "forest" = "#2e7d32",
-                             "ocean" = "#0288d1",
-                             "berry" = "#c2185b",
-                             "hildesheim" = "#e8041c",
-                             "professional" = "#2c3e50",
-                             "clinical" = "#A23B72",
-                             "research" = "#007bff",
-                             "sepia" = "#8B4513",
-                             "paper" = "#005073",
-                             "monochrome" = "#333333",
-                             "large-text" = "#2E5BBA",
-                             "inrep" = "#000000",
-                             "high-contrast" = "#000000",
-                             "dyslexia-friendly" = "#005F73",
-                             "darkblue" = "#64ffda",
-                             "dark-mode" = "#00D4AA",
-                             "colorblind-safe" = "#0072B2",
-                             "vibrant" = "#e74c3c",
-                             "#007bff"
-                           )
-                         } else {
-                           "#007bff" # Default blue if no theme provided
-                         }
+                         theme_primary <- progress_theme_primary
                          shiny::div(
                            class = "progress-circle progress-circle-gradient",
                            shiny::tags$style(base::sprintf("
@@ -3950,12 +3951,14 @@ launch_study <- function(
                        },
                        "bar" = shiny::div(
                          class = "progress-bar-container",
-                         shiny::div(class = "progress-bar-fill", style = base::sprintf("width: %d%%;", progress_pct))
+                         style = "background: #e5e7eb;",
+                         shiny::div(class = "progress-bar-fill", style = base::sprintf("width: %d%%; background: %s;", progress_pct, progress_theme_primary))
                        ),
                        # Default fallback for unknown style values
                        shiny::div(
                          class = "progress-bar-container",
-                         shiny::div(class = "progress-bar-fill", style = base::sprintf("width: %d%%;", progress_pct))
+                         style = "background: #e5e7eb;",
+                         shiny::div(class = "progress-bar-fill", style = base::sprintf("width: %d%%; background: %s;", progress_pct, progress_theme_primary))
                        )
                      )
                      shiny::tagList(
