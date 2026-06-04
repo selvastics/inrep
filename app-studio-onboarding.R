@@ -82,7 +82,7 @@ ONBOARDING_I18N <- list(
     mode_fixed      = "Fixed order — same items, same order",
 
     q_pages_title   = "How many item pages to start with?",
-    q_pages_sub     = "Each page shows one item. You can add or remove pages later in the studio.",
+    q_pages_sub     = "Items are distributed 3 per page by default. You can adjust pages in the studio.",
     q_pages_label   = "Number of item pages",
 
     q_part_title    = "Participant languages",
@@ -140,7 +140,7 @@ ONBOARDING_I18N <- list(
     mode_fixed      = "Feste Reihenfolge — gleiche Items, gleiche Reihenfolge",
 
     q_pages_title   = "Wie viele Item-Seiten möchtest du starten?",
-    q_pages_sub     = "Jede Seite zeigt ein Item. Du kannst Seiten später im Studio hinzufügen oder entfernen.",
+    q_pages_sub     = "Items werden standardmäßig zu 3 pro Seite verteilt. Du kannst das Layout im Studio anpassen.",
     q_pages_label   = "Anzahl Item-Seiten",
 
     q_part_title    = "Sprachen für Teilnehmende",
@@ -198,7 +198,7 @@ ONBOARDING_I18N <- list(
     mode_fixed      = "Orden fijo — mismos ítems, mismo orden",
 
     q_pages_title   = "¿Cuántas páginas de ítems quieres al inicio?",
-    q_pages_sub     = "Cada página muestra un ítem. Puedes añadir o eliminar páginas en el studio.",
+    q_pages_sub     = "Los ítems se distribuyen en grupos de 3 por página. Puedes ajustar las páginas en el studio.",
     q_pages_label   = "Número de páginas de ítems",
 
     q_part_title    = "Idiomas para participantes",
@@ -256,7 +256,7 @@ ONBOARDING_I18N <- list(
     mode_fixed      = "Ordre fixe — mêmes items, même ordre",
 
     q_pages_title   = "Combien de pages d'items pour commencer ?",
-    q_pages_sub     = "Chaque page affiche un item. Tu peux en ajouter ou supprimer plus tard dans le studio.",
+    q_pages_sub     = "Les items sont répartis par 3 par page par défaut. Tu peux ajuster les pages dans le studio.",
     q_pages_label   = "Nombre de pages d'items",
 
     q_part_title    = "Langues pour les participant·es",
@@ -314,6 +314,7 @@ ONBOARDING_I18N <- list(
     mode_fixed      = "\u062a\u0631\u062a\u06cc\u0628 \u062b\u0627\u0628\u062a \u2014 \u0647\u0645\u0627\u0646 \u06af\u0648\u06cc\u0647\u200c\u0647\u0627\u060c \u0647\u0645\u0627\u0646 \u062a\u0631\u062a\u06cc\u0628",
 
     q_pages_title   = "\u062a\u0639\u062f\u0627\u062f \u0635\u0641\u062d\u0627\u062a \u06af\u0648\u06cc\u0647 \u062f\u0631 \u0627\u0628\u062a\u062f\u0627\u061f",
+    # FLAG: says "each page shows one item" (wrong) \u2014 needs Farsi re-translation for 3-items-per-page
     q_pages_sub     = "\u0647\u0631 \u0635\u0641\u062d\u0647 \u06cc\u06a9 \u06af\u0648\u06cc\u0647 \u0646\u0634\u0627\u0646 \u0645\u06cc\u200c\u062f\u0647\u062f. \u0628\u0639\u062f\u0627\u064b \u0645\u06cc\u200c\u062a\u0648\u0627\u0646\u06cc\u062f \u0635\u0641\u062d\u0627\u062a \u0631\u0627 \u062f\u0631 \u0627\u0633\u062a\u0648\u062f\u06cc\u0648 \u0627\u0636\u0627\u0641\u0647 \u06cc\u0627 \u062d\u0630\u0641 \u06a9\u0646\u06cc\u062f.",
     q_pages_label   = "\u062a\u0639\u062f\u0627\u062f \u0635\u0641\u062d\u0627\u062a \u06af\u0648\u06cc\u0647",
 
@@ -390,7 +391,7 @@ ob_safe_quote <- function(x) {
   paste0('"', x, '"')
 }
 
-# Map onboarding domain key → inrep item-bank object name.
+# Map onboarding domain key → inrep item-bank R variable name.
 ob_domain_to_bank <- function(dom) {
   switch(dom,
          personality = "bfi_items",
@@ -401,11 +402,150 @@ ob_domain_to_bank <- function(dom) {
   )
 }
 
+# Generate the item bank loading section for the given domains vector.
+ob_build_items_section <- function(doms, primary_lang) {
+  doms_vec    <- unlist(doms)
+  primary_dom <- doms_vec[1]
+  other_doms  <- doms_vec[seq_along(doms_vec)[-1]]
+  other_doms  <- other_doms[other_doms != "custom"]
+
+  hdr <- paste0(
+    "\n\n# =============================================================================\n",
+    "# Item Bank\n",
+    "# =============================================================================\n"
+  )
+
+  primary_block <- switch(primary_dom,
+    personality = paste0(
+      "# Big Five Inventory — 30 items, GRM\n",
+      "# Dimensions: Extraversion, Agreeableness, Conscientiousness, Neuroticism, Openness\n",
+      "data(bfi_items, package = \"inrep\")\n"
+    ),
+    cognitive = paste0(
+      "# Cognitive Ability — 50 items, 2PL, adaptive\n",
+      "# Domains: Verbal_Reasoning, Numerical_Reasoning, Spatial_Reasoning,\n",
+      "#          Working_Memory, Processing_Speed\n",
+      "data(cognitive_items, package = \"inrep\")\n",
+      "# Align column names expected by launch_study\n",
+      "if (!\"Question\" %in% names(cognitive_items)) cognitive_items$Question <- cognitive_items$content\n",
+      "if (!\"b\"        %in% names(cognitive_items)) cognitive_items$b        <- cognitive_items$difficulty\n"
+    ),
+    math = paste0(
+      "# Mathematics Assessment — 40 items, GRM\n",
+      "# Domains: Basic_Arithmetic, Fractions_Decimals, Algebra, Geometry\n",
+      "data(math_items, package = \"inrep\")\n"
+    ),
+    resilience = paste0(
+      "# Resilience & Coping Questionnaire — German, GRM\n",
+      "data(rcq_items, package = \"inrep\")    # short version (30 items)\n",
+      "# data(rcqL_items, package = \"inrep\") # long version  (68 items) — swap if preferred\n"
+    ),
+    # default: custom
+    paste0(
+      "# Custom item bank — replace this block with your own data\n",
+      "# my_items <- read.csv(\"path/to/your/items.csv\", stringsAsFactors = FALSE)\n",
+      "# Required columns: Question, ResponseCategories, a, b1, b2, b3, b4 (GRM)\n",
+      "#   or: Question, ResponseCategories, a, b (2PL / 1PL)\n",
+      "# Optional: domain column for subscale breakdown in the participant report\n"
+    )
+  )
+
+  extra_block <- if (length(other_doms) > 0) {
+    lines <- vapply(other_doms, function(d) {
+      bv <- ob_domain_to_bank(d)
+      bn <- switch(d,
+        personality = "bfi_items (BFI, 30 items, GRM)",
+        cognitive   = "cognitive_items (Cognitive ability, 50 items, 2PL)",
+        math        = "math_items (Mathematics, 40 items, GRM)",
+        resilience  = "rcq_items / rcqL_items (Resilience & Coping, GRM)",
+        d
+      )
+      paste0(
+        "# Additional domain — ", bn, ":\n",
+        "# data(", bv, ", package = \"inrep\")\n",
+        "# To combine: ", ob_domain_to_bank(primary_dom), " <- rbind(",
+        ob_domain_to_bank(primary_dom), ", ", bv, ")\n"
+      )
+    }, character(1))
+    paste0(
+      "\n# Additional selected domains (load and combine as needed):\n",
+      paste(lines, collapse = "")
+    )
+  } else ""
+
+  paste0(hdr, primary_block, extra_block)
+}
+
+# Generate the participant_report = list(...) argument for create_study_config().
+# For custom item banks, returns a commented skeleton so the user knows what to fill in.
+ob_build_participant_report_arg <- function(primary_dom, adaptive) {
+  st <- if (adaptive) "TRUE " else "FALSE"
+  switch(primary_dom,
+    personality = paste0(
+      "  participant_report = list(\n",
+      "    show_theta_plot            = ", st, ",  # ability curve — meaningful only in adaptive mode\n",
+      "    show_response_table        = TRUE,\n",
+      "    show_recommendations       = TRUE,\n",
+      "    show_item_difficulty_trend = FALSE,  # bfi_items uses b1-b4 thresholds, not b\n",
+      "    show_domain_breakdown      = FALSE,  # add a 'domain' col to bfi_items to enable\n",
+      "    use_enhanced_report        = TRUE\n",
+      "  )\n"
+    ),
+    cognitive = paste0(
+      "  participant_report = list(\n",
+      "    show_theta_plot            = ", st, ",  # ability progression across items\n",
+      "    show_response_table        = TRUE,\n",
+      "    show_recommendations       = TRUE,\n",
+      "    show_item_difficulty_trend = FALSE,  # cognitive_items uses 'difficulty' col, not 'b'\n",
+      "    show_domain_breakdown      = TRUE,   # domains: Verbal_Reasoning, Numerical_Reasoning,\n",
+      "                                         #   Spatial_Reasoning, Working_Memory, Processing_Speed\n",
+      "    use_enhanced_report        = TRUE\n",
+      "  )\n"
+    ),
+    math = paste0(
+      "  participant_report = list(\n",
+      "    show_theta_plot            = ", st, ",\n",
+      "    show_response_table        = TRUE,\n",
+      "    show_recommendations       = TRUE,\n",
+      "    show_item_difficulty_trend = FALSE,  # math_items uses b1-b4 thresholds, not b\n",
+      "    show_domain_breakdown      = TRUE,   # domains: Basic_Arithmetic, Fractions_Decimals,\n",
+      "                                         #   Algebra, Geometry\n",
+      "    use_enhanced_report        = TRUE\n",
+      "  )\n"
+    ),
+    resilience = paste0(
+      "  participant_report = list(\n",
+      "    show_theta_plot            = ", st, ",\n",
+      "    show_response_table        = TRUE,\n",
+      "    show_recommendations       = TRUE,\n",
+      "    show_item_difficulty_trend = FALSE,\n",
+      "    show_domain_breakdown      = FALSE,\n",
+      "    use_enhanced_report        = TRUE\n",
+      "  )\n"
+    ),
+    # default: custom — commented skeleton with explanation
+    paste0(
+      "  # participant_report: not pre-configured for custom item banks.\n",
+      "  # Your items have their own subscale structure that only you can define.\n",
+      "  # Once you have set up your item bank, add:\n",
+      "  # participant_report = list(\n",
+      "  #   show_theta_plot            = FALSE,\n",
+      "  #   show_response_table        = TRUE,\n",
+      "  #   show_recommendations       = TRUE,\n",
+      "  #   show_item_difficulty_trend = FALSE,\n",
+      "  #   show_domain_breakdown      = FALSE,  # TRUE if items have a 'domain' column\n",
+      "  #   use_enhanced_report        = TRUE\n",
+      "  # )\n"
+    )
+  )
+}
+
 # Build the full studio-format generated script from onboarding answers.
 ob_build_config_code <- function(answers) {
   doms          <- answers$domains %||% list("personality")
   primary_dom   <- if (is.list(doms)) doms[[1]] else doms[[1]]
-  model         <- if (primary_dom %in% c("math", "cognitive")) "2PL" else "GRM"
+  bank_var      <- ob_domain_to_bank(primary_dom)
+  model         <- if (primary_dom == "cognitive") "2PL" else "GRM"
   adaptive      <- isTRUE(identical(answers$mode, "adaptive"))
   langs         <- answers$part_langs %||% list(answers$ui_lang %||% "en")
   primary_lang  <- if (is.list(langs)) langs[[1]] else langs[[1]]
@@ -476,55 +616,7 @@ ob_build_config_code <- function(answers) {
   )
 
   # \u2500\u2500 4. Item bank \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-  items_code <- paste0(
-    "\n\n# =============================================================================\n",
-    "# Item Bank Definition\n",
-    "# =============================================================================\n",
-    "all_items <- data.frame(\n",
-    '  id = c("BFE_01", "BFE_02", "BFE_03", "BFN_01", "BFN_02", "PSQ_01", "PSQ_02"),\n',
-    '  Question = c("Ich gehe aus mir heraus, bin gesellig.",\n',
-    '               "Ich bin eher ruhig und zurueckhaltend.",\n',
-    '               "Ich bin begeisterungsfaehig und kann andere leicht mitreissen.",\n',
-    '               "Ich bleibe auch in stressigen Situationen gelassen.",\n',
-    '               "Ich werde leicht nervoees und unsicher.",\n',
-    '               "Ich fuehle mich gehetzt und unter Zeitdruck.",\n',
-    '               "Ich habe Schwierigkeiten, abzuschalten."),\n',
-    '  Question_DE = c("Ich gehe aus mir heraus, bin gesellig.",\n',
-    '                  "Ich bin eher ruhig und zurueckhaltend.",\n',
-    '                  "Ich bin begeisterungsfaehig und kann andere leicht mitreissen.",\n',
-    '                  "Ich bleibe auch in stressigen Situationen gelassen.",\n',
-    '                  "Ich werde leicht nervoees und unsicher.",\n',
-    '                  "Ich fuehle mich gehetzt und unter Zeitdruck.",\n',
-    '                  "Ich habe Schwierigkeiten, abzuschalten."),\n',
-    '  Question_EN = c("I am outgoing and sociable.",\n',
-    '                  "I am rather quiet and reserved.",\n',
-    '                  "I am enthusiastic and can easily inspire others.",\n',
-    '                  "I remain calm even in stressful situations.",\n',
-    '                  "I get nervous and insecure easily.",\n',
-    '                  "I feel rushed and under time pressure.",\n',
-    '                  "I have difficulty switching off."),\n',
-    '  ResponseCategories = rep("1,2,3,4,5", 7),\n',
-    "  a = c(1.2, 1.1, 1.3, 1.0, 0.9, 1.1, 1.2),\n",
-    "  b = c(0.1, -0.2, 0.3, -0.1, 0.2, 0.4, 0.3),\n",
-    "  stringsAsFactors = FALSE\n",
-    ")\n\n",
-    "if (all(c(\"a\", \"b\") %in% names(all_items)) &&\n",
-    "    !all(c(\"b1\", \"b2\", \"b3\", \"b4\") %in% names(all_items))) {\n",
-    "  all_items$b1 <- all_items$b - 1.5\n",
-    "  all_items$b2 <- all_items$b - 0.5\n",
-    "  all_items$b3 <- all_items$b + 0.5\n",
-    "  all_items$b4 <- all_items$b + 1.5\n",
-    "}\n\n",
-    "get_items_for_language <- function(lang = \"", primary_lang, "\") {\n",
-    "  items <- all_items\n",
-    "  if (lang == \"en\" && \"Question_EN\" %in% names(items)) {\n",
-    "    items$Question <- items$Question_EN\n",
-    "  } else if (\"Question_DE\" %in% names(items)) {\n",
-    "    items$Question <- items$Question_DE\n",
-    "  }\n",
-    "  return(items)\n",
-    "}\n"
-  )
+  items_code <- ob_build_items_section(doms, primary_lang)
 
   # \u2500\u2500 5. Demographics \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   demo_code <- paste0(
@@ -561,7 +653,7 @@ ob_build_config_code <- function(answers) {
       "  list(\n",
       "    id = \"%s\", type = \"items\",\n",
       "    title = \"%s\", title_en = \"%s\",\n",
-      "    item_indices = c(1, 2, 3), scale_type = \"likert\",\n",
+      "    item_indices = c(1, 2, 3), scale_type = \"likert\",  # placeholder — update indices per page\n",
       "    randomize = FALSE, required = FALSE\n",
       "  )"
     ), pid, ttl, ttl)
@@ -663,7 +755,8 @@ ob_build_config_code <- function(answers) {
     "  show_consent      = TRUE,\n",
     "  show_gdpr_compliance = TRUE,\n",
     "  show_debriefing   = ", if (show_debrief) "TRUE" else "FALSE", ",\n",
-    "  enable_back_navigation = TRUE\n",
+    "  enable_back_navigation = TRUE,\n",
+    ob_build_participant_report_arg(primary_dom, adaptive),
     ")\n\n",
     "study_config$theme_config <- theme_config\n\n",
     "# =============================================================================\n",
@@ -671,7 +764,7 @@ ob_build_config_code <- function(answers) {
     "# =============================================================================\n",
     "inrep::launch_study(\n",
     "  config          = study_config,\n",
-    "  item_bank       = all_items,\n",
+    "  item_bank       = ", bank_var, ",\n",
     "  theme_config    = theme_config,\n",
     '  save_format     = "csv",\n',
     "  session_save    = TRUE,\n",
@@ -683,6 +776,7 @@ ob_build_config_code <- function(answers) {
   paste0(hdr, enc, pkgs, items_code, demo_code, page_flow_code, tail_code)
 }
 
+# NOTE: nrow_estimate is not called anywhere — placeholder for future use or remove
 nrow_estimate <- function(dom) {
   switch(dom, personality = 20L, cognitive = 30L, math = 25L, resilience = 30L, custom = 10L, 20L)
 }
@@ -1006,7 +1100,7 @@ ob_js <- function(studio_url = ONBOARDING_STUDIO_URL) {
       var doms = Array.isArray(rawDoms) ? rawDoms
                  : (typeof rawDoms === 'string' && rawDoms.length > 0 ? [rawDoms] : ['personality']);
       var dom = doms.length > 0 ? doms[0] : 'personality';
-      var irtModel = (['cognitive', 'math'].indexOf(dom) >= 0) ? '2PL' : 'GRM';
+      var irtModel = (dom === 'cognitive') ? '2PL' : 'GRM';
       var adaptive  = raw.mode === 'adaptive';
       var rawLangs  = raw.part_langs;
       var partLangs = Array.isArray(rawLangs) ? rawLangs
