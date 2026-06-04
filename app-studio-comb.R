@@ -4638,7 +4638,7 @@ server <- function(input, output, session) {
       else if (!is.null(ob$domains) && length(ob$domains) > 0)
         ob$domains[[1]]
       else "personality"
-      if (dom %in% c("cognitive", "math")) "2PL" else "GRM"
+      if (dom == "cognitive") "2PL" else "GRM"  # math uses GRM (b1-b4 thresholds)
     }
     updateSelectInput(session, "irt_model", selected = irt_model)
     
