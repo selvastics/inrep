@@ -3335,6 +3335,13 @@ launch_study <- function(
           })
         }
       }
+
+      # Single-user local runs (options(inrep.stop_app_on_finish = TRUE)) should
+      # stop the whole app process when the participant's window/tab closes,
+      # not just end their Shiny session.
+      if (isTRUE(getOption("inrep.stop_app_on_finish", FALSE))) {
+        try(shiny::stopApp(), silent = TRUE)
+      }
     })
     
     # Handle browser disconnect (with fallback)

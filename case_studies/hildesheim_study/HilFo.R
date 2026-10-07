@@ -1937,6 +1937,11 @@ study_config <- inrep::create_study_config(
   results_processor = create_hilfo_report
 )
 
+# HilFo läuft lokal mit einer Teilnahme pro Start, daher soll die ganze App
+# (nicht nur die Session) schließen, wenn der Teilnehmer fertig ist oder das
+# Fenster schließt.
+options(inrep.stop_app_on_finish = TRUE)
+
 # Studie starten. debug_mode = TRUE blendet die Testleiste ein (Strg+A füllt
 # die Seite, Strg+Q füllt alles bis zum Bericht) und gehört nicht in den
 # Live-Betrieb.
