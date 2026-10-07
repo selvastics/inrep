@@ -1,34 +1,33 @@
 # =============================================================================
-# HilFo – Hildesheimer Befragung zu Forschungsmethoden
+# HilFo - Hildesheim Research Methods Survey
 # =============================================================================
 #
-# Fragebogen für die Statistik-Seminare im Psychologie-Bachelor (Hildesheim),
-# umgesetzt mit inrep::launch_study(). Nicht adaptiv: 29 Likert-Items plus
-# demografische Angaben und zwei Schieberegler, zweisprachig (de/en).
+# Questionnaire for the statistics seminars in the psychology bachelor program
+# (Hildesheim), built with inrep::launch_study(). Non-adaptive: 29 Likert
+# items plus demographics and two sliders, bilingual (de/en).
 #
-# Seitenablauf (custom_page_flow, 16 Seiten)
-#   1      Begrüßung, Einverständnis, Sprachumschalter
-#   2-5    Demografie (Alter, Geschlecht, Wohnen, Haustier, Rauchen,
-#          Ernährung, Abiturnoten)
-#   6-10   Big Five (BFI, 20 Items) und Stress (PSQ, 5 Items)
-#   11     Studierfähigkeiten (MWS, 4 Items)
-#   12     Statistik-Schieberegler (0-100)
-#   13     Vor-/Nachbereitung, Zufriedenheit
-#   14     Persönlicher Code
-#   15     "Möchten Sie Ihre Ergebnisse sehen?"  -> hier wird gespeichert
-#   16     Ergebnisseite (create_hilfo_report) bzw. Dankeseite
+# Page flow (custom_page_flow, 16 pages)
+#   1      Welcome, consent, language switcher
+#   2-5    Demographics (age, gender, living situation, pets, smoking,
+#          diet, Abitur grades)
+#   6-10   Big Five (BFI, 20 items) and stress (PSQ, 5 items)
+#   11     Study skills (MWS, 4 items)
+#   12     Statistics sliders (0-100)
+#   13     Prep/review time, satisfaction
+#   14     Personal code
+#   15     "Would you like to see your results?" -> data is saved here
+#   16     Results page (create_hilfo_report) or thank-you page
 #
-# Datenspeicherung
-#   Beim Verlassen von Seite 15 baut build_hilfo_record() eine Zeile mit allen
-#   Variablen (feste Spaltenreihenfolge, fehlende Angaben = NA). save_to_cloud()
-#   schreibt sie zuerst lokal nach study_data/hilfo_results/ und lädt sie dann
-#   per WebDAV hoch (mit Wiederholungsversuchen). read_hilfo_data.R liest diese
-#   Dateien wieder ein.
+# Data storage
+#   On leaving page 15, build_hilfo_record() builds one row with all
+#   variables (fixed column order, missing answers = NA). save_to_cloud()
+#   writes it locally first (study_data/hilfo_results/), then uploads it via
+#   WebDAV (with retries). read_hilfo_data.R reads these files back in.
 #
-# Konfiguration
-#   HILFO_WEBDAV_SHARE_TOKEN, HILFO_WEBDAV_PASSWORD  WebDAV-Zugang (z.B. in
-#                                                   .Renviron setzen)
-#   options(hilfo.debug = TRUE)                     ausführliche Konsolenausgabe
+# Configuration
+#   HILFO_WEBDAV_SHARE_TOKEN, HILFO_WEBDAV_PASSWORD  WebDAV credentials
+#                                                   (e.g. set in .Renviron)
+#   options(hilfo.debug = TRUE)                     verbose console output
 # =============================================================================
 
 library(inrep)
@@ -38,12 +37,12 @@ library(ggplot2)
 library(httr)
 library(base64enc)
 
-# Ausgabe nur, wenn options(hilfo.debug = TRUE) gesetzt ist
+# Only prints when options(hilfo.debug = TRUE) is set
 hilfo_log <- function(...) {
   if (isTRUE(getOption("hilfo.debug", FALSE))) message("[HilFo] ", ...)
 }
 
-# Leere Angaben (NULL, NA, "") einheitlich als NA; Mehrfachantworten mit ";"
+# Normalizes empty answers (NULL, NA, "") to NA; multi-select answers join with ";"
 as_record_value <- function(x) {
   if (is.null(x) || length(x) == 0) return(NA)
   x <- x[!is.na(x) & nzchar(trimws(as.character(x)))]
@@ -53,10 +52,10 @@ as_record_value <- function(x) {
 }
 
 # =============================================================================
-# Hilfsfunktionen für die Auswertung
+# SCORING HELPERS
 # =============================================================================
 
-# Dummy-Variablen (0/1) für Mehrfachauswahl, z.B. Haustier_Hund, Haustier_Katze
+# Dummy variables (0/1) for multi-select answers, e.g. Haustier_Hund, Haustier_Katze
 create_dummy_variables <- function(response_values, all_options, prefix) {
   response_values <- if (is.null(response_values)) character(0) else as.character(response_values)
   dummy_vars <- list()
@@ -66,8 +65,8 @@ create_dummy_variables <- function(response_values, all_options, prefix) {
   dummy_vars
 }
 
-# Skalenwerte (mit Umpolung, identisch zum Bericht und zu read_hilfo_data.R)
-# responses: 29 Likert-Antworten (1-5) in Itembank-Reihenfolge
+# Scale scores (with reverse-coding, matching the report and read_hilfo_data.R)
+# responses: 29 Likert answers (1-5) in item bank order
 score_hilfo_scales <- function(responses) {
   responses <- suppressWarnings(as.numeric(responses))
   responses <- c(responses, rep(NA, max(0, 29 - length(responses))))[1:29]
@@ -85,8 +84,9 @@ score_hilfo_scales <- function(responses) {
   )
 }
 
-# Wert eines Schiebereglers, aber nur wenn er bewegt wurde (sonst NA).
-# inrep speichert sonst den Startwert des Reglers, als hätte jemand geantwortet.
+# Slider value, but only if it was actually moved (NA otherwise).
+# Without this check, inrep would save the slider's starting position as if
+# someone had answered.
 slider_value <- function(demo_data, name) {
   d <- as.list(demo_data)
   if (!isTRUE(d[[paste0(name, "_touched")]])) return(NA_real_)
@@ -94,25 +94,25 @@ slider_value <- function(demo_data, name) {
   if (length(x) == 0) NA_real_ else x[1]
 }
 
-# Schieberegler 0-100 -> 1-5 (gleiche Formel in Bericht, Upload und read_hilfo_data.R)
+# Slider 0-100 -> 1-5 (same formula in the report, the upload, and read_hilfo_data.R)
 scale_slider <- function(x) {
   x <- suppressWarnings(as.numeric(x))
   if (length(x) == 0 || is.na(x[1])) NA_real_ else (x[1] / 100) * 4 + 1
 }
 
 # =============================================================================
-# WebDAV-Export
+# WEBDAV EXPORT
 # =============================================================================
-# Ziel ist ein öffentlicher Nextcloud-Share (academiccloud). Benutzername ist das
-# Share-Token, Passwort das Share-Passwort. Beides bitte über Umgebungsvariablen
-# setzen; die Werte hinter "unset =" sind nur Rückfallwerte für lokale Tests.
+# Target is a public Nextcloud share (academiccloud). The username is the
+# share token, the password is the share password. Set both via environment
+# variables; the values after "unset =" are just fallbacks for local testing.
 WEBDAV_URL <- "https://sync.academiccloud.de/public.php/webdav/"
 WEBDAV_SHARE_TOKEN <- Sys.getenv("HILFO_WEBDAV_SHARE_TOKEN", unset = "Y51QPXzJVLWSAcb")
 WEBDAV_PASSWORD <- Sys.getenv("HILFO_WEBDAV_PASSWORD", unset = "inreptest")
 LOCAL_RESULTS_DIR <- file.path("study_data", "hilfo_results")
 
-# Speichert eine Ergebniszeile: erst lokal (Sicherungskopie), dann Upload per
-# WebDAV mit bis zu drei Versuchen. Gibt TRUE zurück, wenn der Upload gelang.
+# Saves one result row: locally first (backup copy), then uploads it via
+# WebDAV with up to three attempts. Returns TRUE if the upload succeeded.
 # If the local write fails (e.g. disk full), we still try uploading the CSV
 # straight from memory instead of just losing the participant's data.
 save_to_cloud <- function(data, filename, attempts = 3) {
@@ -170,7 +170,7 @@ save_to_cloud <- function(data, filename, attempts = 3) {
 }
 
 # =============================================================================
-# Datensatz eines Teilnehmenden
+# ONE PARTICIPANT'S RECORD
 # =============================================================================
 HILFO_ITEM_IDS <- c(
   "BFE_01", "BFE_02", "BFE_03", "BFE_04",
@@ -188,8 +188,8 @@ HAUSTIER_OPTIONS <- c(
   "Sonstiges" = "other"
 )
 
-# Eine Zeile mit allen Variablen. Jede Spalte ist immer vorhanden (NA, wenn
-# nicht beantwortet), damit alle hochgeladenen Dateien dieselbe Struktur haben.
+# One row with all variables. Every column is always present (NA when
+# unanswered), so every uploaded file has the same structure.
 build_hilfo_record <- function(session_id, demo_data, responses, language = "de") {
   d <- if (is.list(demo_data)) demo_data else as.list(demo_data)
   v <- function(name) as_record_value(d[[name]])
@@ -220,7 +220,7 @@ build_hilfo_record <- function(session_id, demo_data, responses, language = "de"
     Statistik_selbstwirksam_scaled = scale_slider(slider_value(d, "Statistik_selbstwirksam")),
     Vor_Nachbereitung = v("Vor_Nachbereitung"),
     Zufrieden_Hi_7st = v("Zufrieden_Hi_7st"),
-    # Großschreibung wie im Eingabefeld angezeigt, damit Codes über Erhebungen vergleichbar sind
+    # Uppercased as shown in the input field, so codes are comparable across waves
     "Persönlicher_Code" = toupper(trimws(v("Persönlicher_Code"))),
     show_personal_results = v("show_personal_results")
   ))
@@ -236,7 +236,7 @@ build_hilfo_record <- function(session_id, demo_data, responses, language = "de"
 }
 
 # =============================================================================
-# Itembank mit konsistenten Variablennamen
+# ITEM BANK WITH CONSISTENT VARIABLE NAMES
 # =============================================================================
 
 all_items_de <- data.frame(
@@ -327,7 +327,7 @@ all_items_de <- data.frame(
 )
 
 # =============================================================================
-# Vollständige demografische Sektion
+# FULL DEMOGRAPHICS SECTION
 # =============================================================================
 
 demographic_configs <- list(
@@ -575,7 +575,7 @@ input_types <- list(
 )
 
 # =============================================================================
-# Ablauf der Seiten im HilFo-Fragebogen
+# PAGE FLOW FOR THE HILFO QUESTIONNAIRE
 # =============================================================================
 
 custom_page_flow <- list(
@@ -704,8 +704,8 @@ custom_page_flow <- list(
         return false;
     }",
     required = FALSE,
-    # Die Checkboxen sind normale HTML-Elemente; Shiny liefert sie als
-    # input$consent_check bzw. input$consent_check_en
+    # The checkboxes are plain HTML elements; Shiny exposes them as
+    # input$consent_check and input$consent_check_en
     completion_handler = function(session, rv, inputs, config) {
       consent <- isTRUE(inputs$consent_check) || isTRUE(inputs$consent_check_en)
       rv$demo_data$Einverständnis <- if (consent) 1 else NA
@@ -897,8 +897,8 @@ custom_page_flow <- list(
     description = "Bewegen Sie den Regler, um Ihre Zustimmung anzugeben (0% = stimme gar nicht zu, 100% = stimme voll zu).",
     description_en = "Move the slider to indicate your agreement (0% = strongly disagree, 100% = strongly agree).",
     demographics = c("Statistik_gutfolgen", "Statistik_selbstwirksam"),
-    # Das JavaScript dieser Seite setzt <name>_touched, sobald jemand den Regler
-    # bewegt. Nur dann zählt der Wert (siehe slider_value()).
+    # This page's JavaScript sets <name>_touched as soon as someone moves the
+    # slider. Only then does the value count (see slider_value()).
     completion_handler = function(session, rv, inputs, config) {
       for (slider in c("Statistik_gutfolgen", "Statistik_selbstwirksam")) {
         touched <- isTRUE(inputs[[paste0(slider, "_touched")]])
@@ -1418,8 +1418,8 @@ custom_page_flow <- list(
     title = "Fast geschafft",
     title_en = "Almost done",
     demographics = c("show_personal_results"),
-    # Hier wird der vollständige Datensatz gespeichert (lokal + WebDAV),
-    # unabhängig davon, ob die Person ihre Ergebnisse sehen möchte.
+    # This is where the full record gets saved (locally + WebDAV),
+    # regardless of whether the person wants to see their results.
     completion_handler = function(session, rv, inputs, config) {
       if (is.null(rv$session_id) || is.na(rv$session_id)) {
         rv$session_id <- if (!is.null(session$token)) session$token else paste0("SESS_", format(Sys.time(), "%Y%m%d_%H%M%S"))
@@ -1464,13 +1464,13 @@ custom_page_flow <- list(
 )
 
 # =============================================================================
-# Auswertungsfunktion mit statischem Radarplot
+# REPORT FUNCTION WITH STATIC RADAR PLOT
 # =============================================================================
 
 create_hilfo_report <- function(responses, item_bank, demographics = NULL, session = NULL, rv = NULL) {
   tryCatch({
-    # Die Daten wurden bereits auf Seite 15 gespeichert; hier nur der Bericht.
-    hilfo_log("create_hilfo_report: ", length(responses), " Antworten")
+    # Data was already saved on page 15; this just builds the report.
+    hilfo_log("create_hilfo_report: ", length(responses), " responses")
     
     current_lang <- "de"
     is_english <- FALSE
@@ -1550,7 +1550,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     
     scores$Studierfaehigkeiten <- safe_mean(responses[26:29], min_items = 2)
     
-    # Statistik = Mittelwert der beiden Schieberegler (nur bewegte Regler zählen)
+    # Statistics score = mean of the two sliders (only moved sliders count)
     demo_list <- if (is.null(demographics)) list() else as.list(demographics)
     stat_vals <- c(scale_slider(slider_value(demo_list, "Statistik_gutfolgen")),
                    scale_slider(slider_value(demo_list, "Statistik_selbstwirksam")))
@@ -1963,7 +1963,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
 }
 
 # =============================================================================
-# Studienkonfiguration
+# STUDY CONFIGURATION
 # =============================================================================
 
 session_uuid <- paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S"))
@@ -1990,14 +1990,14 @@ study_config <- inrep::create_study_config(
   results_processor = create_hilfo_report
 )
 
-# HilFo läuft lokal mit einer Teilnahme pro Start, daher soll die ganze App
-# (nicht nur die Session) schließen, wenn der Teilnehmer fertig ist oder das
-# Fenster schließt.
+# HilFo runs locally with one participant per launch, so the whole app
+# (not just the session) should close once the participant is done or the
+# window is closed.
 options(inrep.stop_app_on_finish = TRUE)
 
-# Studie starten. debug_mode = TRUE blendet die Testleiste ein (Strg+A füllt
-# die Seite, Strg+Q füllt alles bis zum Bericht) und gehört nicht in den
-# Live-Betrieb.
+# Start the study. debug_mode = TRUE shows the test bar (Ctrl+A fills the
+# current page, Ctrl+Q fills everything through to the report) and has no
+# place in live/production use.
 inrep::launch_study(
   config = study_config,
   item_bank = all_items_de,
