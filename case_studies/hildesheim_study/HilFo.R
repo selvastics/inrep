@@ -114,7 +114,10 @@ WEBDAV_PASSWORD <- Sys.getenv("HILFO_WEBDAV_PASSWORD")
 LOCAL_RESULTS_DIR <- file.path("study_data", "hilfo_results")
 
 # Saves one result row: locally first (backup copy), then uploads it via
-# WebDAV with up to three attempts. Returns TRUE if the upload succeeded.
+# WebDAV with up to three attempts. Returns list(cloud = , local = ) so the
+# caller can tell "uploaded" apart from "saved locally, cloud not uploaded"
+# apart from "lost entirely" - those are three very different situations and
+# only the last one should ever alarm the participant.
 # If the local write fails (e.g. disk full), we still try uploading the CSV
 # straight from memory instead of just losing the participant's data.
 save_to_cloud <- function(data, filename, attempts = 3) {
@@ -132,7 +135,7 @@ save_to_cloud <- function(data, filename, attempts = 3) {
   if (!nzchar(WEBDAV_SHARE_TOKEN) || !nzchar(WEBDAV_PASSWORD)) {
     message("[HilFo] HILFO_WEBDAV_SHARE_TOKEN / HILFO_WEBDAV_PASSWORD nicht gesetzt - kein Upload",
             if (local_write_ok) paste0(", Daten liegen lokal in ", local_file) else "")
-    return(FALSE)
+    return(list(cloud = FALSE, local = local_write_ok))
   }
 
   # Upload sends the file content as raw bytes (like the earlier Shiny
@@ -145,7 +148,7 @@ save_to_cloud <- function(data, filename, attempts = 3) {
       error = function(e) NULL
     )
   }
-  if (is.null(upload_body)) return(FALSE)
+  if (is.null(upload_body)) return(list(cloud = FALSE, local = local_write_ok))
 
   for (attempt in seq_len(attempts)) {
     status <- tryCatch({
@@ -163,7 +166,7 @@ save_to_cloud <- function(data, filename, attempts = 3) {
     })
     if (!is.na(status) && status %in% c(200, 201, 204)) {
       message("[HilFo] Hochgeladen: ", filename)
-      return(TRUE)
+      return(list(cloud = TRUE, local = local_write_ok))
     }
     if (!is.na(status) && status %in% c(401, 403)) {
       # Wrong credentials: retrying won't help
@@ -179,7 +182,7 @@ save_to_cloud <- function(data, filename, attempts = 3) {
   } else {
     message("[HilFo] CRITICAL: Upload fehlgeschlagen UND lokales Speichern fehlgeschlagen - Datensatz ist verloren: ", filename)
   }
-  FALSE
+  list(cloud = FALSE, local = local_write_ok)
 }
 
 # =============================================================================
@@ -1449,15 +1452,18 @@ custom_page_flow <- list(
         save_to_cloud(record, filename)
       }, error = function(e) {
         message("[HilFo] CRITICAL: Speichern fehlgeschlagen: ", e$message)
-        FALSE
+        list(cloud = FALSE, local = FALSE)
       })
 
-      if (saved) {
+      if (isTRUE(saved$cloud)) {
         # Tells inrep no extra JSON upload is needed
         rv$csv_uploaded <- TRUE
         rv$data_uploaded_to_cloud <- TRUE
-      } else {
-        # Picked up by create_hilfo_report() to warn on the results page
+      } else if (!isTRUE(saved$local)) {
+        # Neither the cloud upload nor the local copy worked - the record is
+        # genuinely gone. Not uploading to WebDAV (e.g. no credentials set,
+        # or a rejected login) is NOT this case: the data is still safe in
+        # the local CSV, so it doesn't warrant alarming the participant.
         rv$hilfo_save_failed <- TRUE
       }
     }
@@ -1812,9 +1818,10 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
       '</style>',
       '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
 
-      # Shown when save_to_cloud() failed on page 15, so this isn't silently
-      # missed - without it, the participant just sees a normal report even
-      # though their data was never saved.
+      # Shown only when save_to_cloud() couldn't save the record ANYWHERE
+      # (not even the local CSV) - a missing/rejected WebDAV login with a
+      # working local save does NOT set this, since the data is safe either
+      # way and isn't worth alarming the participant about.
       if (!is.null(rv) && isTRUE(shiny::isolate(rv$hilfo_save_failed))) paste0(
         '<div style="background: #fff3cd; border: 2px solid #e8041c; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: center;">',
         if (is_english) {
