@@ -179,11 +179,6 @@ update_session_dataset <- function(section, data, page_id = NULL, stage = NULL, 
   invisible(TRUE)
 }
 
-generate_hilfo_filename <- function(timestamp) {
-  ts <- gsub("[^0-9A-Za-z_.-]", "_", as.character(timestamp))
-  paste0("results_", ts, ".csv")
-}
-
 initialize_enhanced_recovery <- function(...) {
   invisible(FALSE)
 }

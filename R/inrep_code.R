@@ -360,7 +360,6 @@ generate_complete_script <- function(user_code, auto_run, console_ready = FALSE,
     "initialize_session_dataset",
     "get_session_dataset",
     "update_session_dataset",
-    "generate_hilfo_filename",
     "initialize_enhanced_recovery",
     "initialize_enhanced_security",
     

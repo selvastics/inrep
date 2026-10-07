@@ -9,7 +9,7 @@
 # STUDY VERSION: Non-adaptive, 29 Likert items + 2 Slider items
 #
 # IMPORTANT: Statistics items (Statistik_gutfolgen, Statistik_selbstwirksam) are
-# captured as DEMOGRAPHIC SLIDERS (1-100 scale) and must be transformed to 1-5
+# captured as DEMOGRAPHIC SLIDERS (0-100 scale) and must be transformed to 1-5
 # scale for psychometric analysis.
 #
 # FOLDER STRUCTURE:
@@ -44,11 +44,11 @@
 #   - BFI_Offenheit: Mean of items 17-20 (BFO_01 to BFO_04), items 18,20 reversed
 #   - PSQ_Stress: Mean of items 21-25 (PSQ_02, PSQ_04, PSQ_16, PSQ_29, PSQ_30), item 24 (PSQ_29) reversed
 #   - MWS_Studierfaehigkeiten: Mean of items 26-29 (MWS_1_KK to MWS_21_KK), no reverse coding
-#   - Statistik: Mean of demographics Statistik_gutfolgen and Statistik_selbstwirksam (transformed from 1-100 to 1-5)
+#   - Statistik: Mean of demographics Statistik_gutfolgen and Statistik_selbstwirksam (transformed from 0-100 to 1-5)
 #
 # SLIDER TRANSFORMATION:
-#   Statistics sliders (1-100) are transformed to 1-5 scale using:
-#   transformed_value = ((slider_value - 1) / 99) * 4 + 1
+#   Statistics sliders (0-100) are transformed to 1-5 scale using:
+#   transformed_value = (slider_value / 100) * 4 + 1
 #
 # REVERSE CODING:
 #   Applied to items before computing scale scores (6 - value):
@@ -65,7 +65,7 @@
 
 # Load required libraries
 # -----------------------------------------------------------------------------
-required_packages <- c("rstudioapi","haven", "readr", "dplyr", "writexl", "labelled")
+required_packages <- c("haven", "readr", "dplyr", "writexl", "labelled")
 
 # Check and install missing packages
 # Note: Missing packages are automatically installed if not present
@@ -75,22 +75,24 @@ if(length(missing_packages) > 0) {
 }
 
 # Load libraries
-library(rstudioapi)
 library(haven)
 library(readr)
 library(dplyr)
 library(writexl)
 library(labelled)
 
-# Set working directory to the directory of the current script
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+# Set working directory to the directory of the current script (only in RStudio;
+# with Rscript or another editor, start R in this folder instead)
+if (requireNamespace("rstudioapi", quietly = TRUE) && rstudioapi::isAvailable()) {
+  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+}
 
 # =============================================================================
 # ITEM DEFINITIONS AND METADATA (29 LIKERT ITEMS - NO SLIDERS)
 # =============================================================================
 
 # NOTE: Statistik items (Statistik_gutfolgen, Statistik_selbstwirksam) are NOT
-# included here because they are captured as DEMOGRAPHIC SLIDERS (1-100 scale),
+# included here because they are captured as DEMOGRAPHIC SLIDERS (0-100 scale),
 # not as Likert items. They will be handled separately in the demographics section.
 
 # Item labels (German and English)
@@ -269,6 +271,40 @@ wohnstatus_labels <- c(
   "Anders / Other" = "6"
 )
 
+# Demografische Spalten, wie HilFo.R (build_hilfo_record) sie schreibt.
+# "Haustier" stammt aus älteren Dateien; neue Dateien haben stattdessen
+# die 0/1-Spalten Haustier_<Option>.
+HILFO_DEMOGRAPHIC_COLS <- c(
+  "Einverständnis", "Alter_VPN", "Geschlecht", "Wohnstatus", "Wohn_Zusatz", "Haustier",
+  "Haustier_Hund", "Haustier_Katze", "Haustier_Fisch", "Haustier_Vogel", "Haustier_Nager",
+  "Haustier_Reptil", "Haustier_Ich_moechte_kein_Haustier", "Haustier_Sonstiges", "Haustier_Zusatz",
+  "Rauchen", "Ernährung", "Ernährung_Zusatz", "Note_Englisch", "Note_Mathe",
+  "Statistik_gutfolgen", "Statistik_selbstwirksam",
+  "Statistik_gutfolgen_touched", "Statistik_selbstwirksam_touched",
+  "Vor_Nachbereitung", "Zufrieden_Hi_7st", "Persönlicher_Code", "show_personal_results"
+)
+
+# HilFo.R speichert die Option "Anders/Sonstiges/Andere" als "other".
+# Hier wird sie auf die Codes der Wertelabels gesetzt und die codierten
+# Demografie-Spalten werden numerisch, damit alle Dateien zusammenpassen.
+OTHER_CODES <- c(Wohnstatus = 6, Haustier = 8, "Ernährung" = 6)
+CODED_DEMOGRAPHIC_COLS <- c("Einverständnis", "Alter_VPN", "Geschlecht", "Wohnstatus", "Haustier",
+                            "Rauchen", "Ernährung", "Note_Englisch", "Note_Mathe",
+                            "Vor_Nachbereitung", "Zufrieden_Hi_7st",
+                            grep("^Haustier_(?!Zusatz)", HILFO_DEMOGRAPHIC_COLS, value = TRUE, perl = TRUE))
+
+normalize_demographics <- function(data) {
+  for (col in intersect(CODED_DEMOGRAPHIC_COLS, names(data))) {
+    x <- as.character(data[[col]])
+    if (col %in% names(OTHER_CODES)) x[x %in% "other"] <- OTHER_CODES[[col]]
+    data[[col]] <- suppressWarnings(as.numeric(x))
+  }
+  for (col in intersect(c("Statistik_gutfolgen_touched", "Statistik_selbstwirksam_touched"), names(data))) {
+    data[[col]] <- as.numeric(as.logical(data[[col]]))
+  }
+  data
+}
+
 haustier_labels <- c(
   "Hund / Dog" = "1",
   "Katze / Cat" = "2",
@@ -425,12 +461,12 @@ compute_mws_studierfaehigkeiten <- function(data) {
 # -----------------------------------------------------------------------------
 compute_statistik <- function(data) {
   # Statistics: demographic sliders Statistik_gutfolgen and Statistik_selbstwirksam
-  # These are captured on a 1-100 scale and must be transformed to 1-5 scale
-  # Transformation formula: ((value - 1) / 99) * 4 + 1
+  # These are captured on a 0-100 scale and must be transformed to 1-5 scale
+  # Transformation formula: (value / 100) * 4 + 1
   
-  # Transform slider values (1-100) to Likert scale (1-5)
-  stat_gutfolgen_transformed <- ((data$Statistik_gutfolgen - 1) / 99) * 4 + 1
-  stat_selbstwirksam_transformed <- ((data$Statistik_selbstwirksam - 1) / 99) * 4 + 1
+  # Transform slider values (0-100) to Likert scale (1-5)
+  stat_gutfolgen_transformed <- (data$Statistik_gutfolgen / 100) * 4 + 1
+  stat_selbstwirksam_transformed <- (data$Statistik_selbstwirksam / 100) * 4 + 1
   
   # Compute mean of transformed values
   data$Statistik <- rowMeans(cbind(
@@ -633,16 +669,16 @@ add_variable_labels <- function(data, language = "de") {
   # Add labels to Statistics slider variables (demographics)
   if ("Statistik_gutfolgen" %in% names(data)) {
     var_label(data$Statistik_gutfolgen) <- if(language == "de") {
-      "Statistik - Gut folgen können (Slider 1-100)"
+      "Statistik - Gut folgen können (Slider 0-100)"
     } else {
-      "Statistics - Able to follow (Slider 1-100)"
+      "Statistics - Able to follow (Slider 0-100)"
     }
   }
   if ("Statistik_selbstwirksam" %in% names(data)) {
     var_label(data$Statistik_selbstwirksam) <- if(language == "de") {
-      "Statistik - Selbstwirksamkeit (Slider 1-100)"
+      "Statistik - Selbstwirksamkeit (Slider 0-100)"
     } else {
-      "Statistics - Self-efficacy (Slider 1-100)"
+      "Statistics - Self-efficacy (Slider 0-100)"
     }
   }
   
@@ -733,7 +769,9 @@ add_value_labels <- function(data) {
         existing_var_label <- var_label(data[[demo_var]])
         
         # Apply value labels (works for both character and numeric)
-        data[[demo_var]] <- haven::labelled(data[[demo_var]], labels = demographic_label_mapping[[demo_var]])
+        labs <- demographic_label_mapping[[demo_var]]
+        if (is.numeric(data[[demo_var]])) labs <- stats::setNames(as.numeric(labs), names(labs))
+        data[[demo_var]] <- haven::labelled(data[[demo_var]], labels = labs)
         
         # Restore variable label
         if (!is.null(existing_var_label)) {
@@ -875,9 +913,7 @@ process_csv_file <- function(file_path, output_dir = "output") {
   expected_character_cols <- c("timestamp", "session_id", "study_language")
   
   # Define demographic variables (will be preserved as-is from CSV)
-  demographic_cols <- c("Alter_VPN", "Geschlecht", "Wohnstatus", "Wohn_Zusatz", "Haustier",
-                        "Rauchen", "Ernährung", "Ernährung_Zusatz", "Note_Englisch", "Note_Mathe",
-                        "Vor_Nachbereitung", "Zufrieden_Hi_7st", "Persönlicher_Code", "show_personal_results")
+  demographic_cols <- HILFO_DEMOGRAPHIC_COLS
   
   expected_scale_cols <- c("BFI_Extraversion", "BFI_Vertraeglichkeit", "BFI_Gewissenhaftigkeit", 
                            "BFI_Neurotizismus", "BFI_Offenheit", "PSQ_Stress", 
@@ -908,6 +944,7 @@ process_csv_file <- function(file_path, output_dir = "output") {
       data[[col]] <- data_raw[[col]]
     }
   }
+  data <- normalize_demographics(data)
   
   # Ensure character columns are character type
   # Note: Keep NA as NA (don't replace with empty string) for proper handling
@@ -918,7 +955,7 @@ process_csv_file <- function(file_path, output_dir = "output") {
   }
   
   # Ensure item and scale columns are numeric
-  for (col in c(item_ids, expected_scale_cols)) {
+  for (col in c(item_ids, expected_scale_cols, "Statistik_gutfolgen", "Statistik_selbstwirksam")) {
     if (col %in% names(data)) {
       # Convert to numeric, handling character "NA" strings
       data[[col]] <- suppressWarnings(as.numeric(as.character(data[[col]])))
@@ -949,7 +986,7 @@ process_csv_file <- function(file_path, output_dir = "output") {
   
   # Ensure all numeric columns are actually numeric before adding labels
   # This is critical for value label assignment to work correctly
-  for (col in c(item_ids, expected_scale_cols)) {
+  for (col in c(item_ids, expected_scale_cols, "Statistik_gutfolgen", "Statistik_selbstwirksam")) {
     if (col %in% names(data)) {
       if (!is.numeric(data[[col]])) {
         data[[col]] <- suppressWarnings(as.numeric(as.character(data[[col]])))
@@ -1041,9 +1078,7 @@ process_all_csv_files <- function(input_dir = "study_data", output_dir = "output
       expected_character_cols <- c("timestamp", "session_id", "study_language")
       
       # Define demographic variables (will be preserved as-is from CSV)
-      demographic_cols <- c("Alter_VPN", "Geschlecht", "Wohnstatus", "Wohn_Zusatz", "Haustier",
-                            "Rauchen", "Ernährung", "Ernährung_Zusatz", "Note_Englisch", "Note_Mathe",
-                            "Vor_Nachbereitung", "Zufrieden_Hi_7st", "Persönlicher_Code", "show_personal_results")
+      demographic_cols <- HILFO_DEMOGRAPHIC_COLS
       
       expected_scale_cols <- c("BFI_Extraversion", "BFI_Vertraeglichkeit", "BFI_Gewissenhaftigkeit", 
                                "BFI_Neurotizismus", "BFI_Offenheit", "PSQ_Stress", 
@@ -1074,6 +1109,7 @@ process_all_csv_files <- function(input_dir = "study_data", output_dir = "output
           data[[col]] <- data_raw[[col]]
         }
       }
+      data <- normalize_demographics(data)
       
       # Ensure character columns are character type
       for (col in expected_character_cols) {
@@ -1083,7 +1119,7 @@ process_all_csv_files <- function(input_dir = "study_data", output_dir = "output
       }
       
       # Ensure item and scale columns are numeric
-      for (col in c(item_ids, expected_scale_cols)) {
+      for (col in c(item_ids, expected_scale_cols, "Statistik_gutfolgen", "Statistik_selbstwirksam")) {
         if (col %in% names(data)) {
           data[[col]] <- suppressWarnings(as.numeric(as.character(data[[col]])))
         }
@@ -1108,7 +1144,7 @@ process_all_csv_files <- function(input_dir = "study_data", output_dir = "output
       data <- compute_statistik(data)
       
       # Ensure all numeric columns are actually numeric before adding labels
-      for (col in c(item_ids, expected_scale_cols)) {
+      for (col in c(item_ids, expected_scale_cols, "Statistik_gutfolgen", "Statistik_selbstwirksam")) {
         if (col %in% names(data)) {
           if (!is.numeric(data[[col]])) {
             data[[col]] <- suppressWarnings(as.numeric(as.character(data[[col]])))
@@ -1145,7 +1181,7 @@ process_all_csv_files <- function(input_dir = "study_data", output_dir = "output
       expected_scale_cols <- c("BFI_Extraversion", "BFI_Vertraeglichkeit", "BFI_Gewissenhaftigkeit", 
                                "BFI_Neurotizismus", "BFI_Offenheit", "PSQ_Stress", 
                                "MWS_Studierfaehigkeiten", "Statistik")
-      for (col in c(item_ids, expected_scale_cols)) {
+      for (col in c(item_ids, expected_scale_cols, "Statistik_gutfolgen", "Statistik_selbstwirksam")) {
         if (col %in% names(combined_data)) {
           if (!is.numeric(combined_data[[col]])) {
             combined_data[[col]] <- suppressWarnings(as.numeric(as.character(combined_data[[col]])))
@@ -1199,8 +1235,12 @@ process_all_csv_files <- function(input_dir = "study_data", output_dir = "output
 # RUN THE SCRIPT
 # =============================================================================
 # 
-# Process all CSV files in study_data folder:
-process_all_csv_files(input_dir = "study_data")
+# Process all CSV files. HilFo.R keeps a local copy of every upload in
+# study_data/hilfo_results; for files downloaded from the cloud, point
+# input_dir at the folder you downloaded them to.
+if (sys.nframe() == 0L || interactive()) {
+  process_all_csv_files(input_dir = "study_data/hilfo_results")
+}
 #
 # Process a single CSV file:
 #   process_csv_file("study_data/your_file.csv", output_dir = "output")

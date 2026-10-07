@@ -45,6 +45,8 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
         },
         
         triggerShinyUpdate: (id, value) => {
+          // Elements without an id (e.g. selectize's inner search box) are not Shiny inputs
+          if (!id) return;
           if (typeof Shiny !== 'undefined' && Shiny.setInputValue) {
             Shiny.setInputValue(id, value);
             // Double-trigger for reliability
@@ -488,8 +490,8 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
             if (el.disabled || el.readOnly || !utils.isVisible(el)) return;
             
             const id = el.id || '';
-            // Skip demographics (handled separately) and selectize
-            if (id.startsWith('demo_') || 
+            // Skip unnamed inputs, demographics (handled separately) and selectize
+            if (!id || id.startsWith('demo_') || 
                 el.classList.contains('selectize-control') ||
                 id.endsWith('-selectized')) {
               return;
@@ -608,6 +610,13 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
       }
 
       function isReportPage() {
+        // Structural check first: inrep renders every results page inside .results-container
+        if (document.querySelector('.results-container')) return true;
+        // A page that still offers 'next'/'submit' navigation is not the final report,
+        // even if its text mentions results (e.g. an intro or a 'show my results?' page)
+        const navIds = ['next_page', 'submit_study'];
+        if (navIds.some(id => { const b = document.getElementById(id); return b && utils.isVisible(b); })) return false;
+
         const content = (document.getElementById('page_content') || document.body).textContent.toLowerCase();
         
         // Check for download buttons or CSV export functionality (indicates report page)

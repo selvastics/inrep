@@ -103,6 +103,9 @@
 #'   or \code{NULL} for single-language studies.
 #' @param report_formats Character vector specifying supported export formats.
 #'   Options: \code{"rds"}, \code{"csv"}, \code{"json"}, \code{"pdf"}.
+#' @param show_scale_scores Logical. If \code{FALSE}, results pages act as a
+#'   plain thank-you page: the \code{results_processor} still runs on the final
+#'   results page for its side effects (e.g. uploads), but its report is not shown.
 #' @param max_session_duration Integer maximum session duration in minutes for timeout.
 #' @param max_response_time Integer maximum response time per item in seconds.
 #' @param cache_enabled Logical indicating whether to cache item information calculations

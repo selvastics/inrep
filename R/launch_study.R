@@ -2775,89 +2775,10 @@ launch_study <- function(
     shiny::observeEvent(input$download_csv_trigger, {
       if (isTRUE(getOption("inrep.debug", FALSE))) cat("CSV download triggered\n")
       
-      # DEBUG: Check what's available in session
-      if (isTRUE(getOption("inrep.debug", FALSE))) cat("DEBUG: session$userData keys available:", names(session$userData), "\n")
-      if (isTRUE(getOption("inrep.debug", FALSE))) cat("DEBUG: hilfo_complete_data exists:", !is.null(session$userData$hilfo_complete_data), "\n")
-      if (isTRUE(getOption("inrep.debug", FALSE))) cat("DEBUG: hilfo_csv_file exists:", !is.null(session$userData$hilfo_csv_file), "\n")
-      if (!is.null(session$userData$hilfo_csv_file)) {
-        if (isTRUE(getOption("inrep.debug", FALSE))) cat("DEBUG: hilfo_csv_file path:", session$userData$hilfo_csv_file, "\n")
-        if (isTRUE(getOption("inrep.debug", FALSE))) cat("DEBUG: file exists:", file.exists(session$userData$hilfo_csv_file), "\n")
-      }
-      
       shiny::showNotification("Generating CSV export...", type = "message", duration = 2)
       
       tryCatch({
-        # CRITICAL: Check if study-specific complete_data exists (from results processor)
-        # This ensures download uses the EXACT same data that was uploaded to cloud
-        if (!is.null(session$userData$hilfo_complete_data)) {
-          if (isTRUE(getOption("inrep.debug", FALSE))) cat("CRITICAL: Using stored complete_data from results processor (same as cloud upload)\n")
-          csv_data <- session$userData$hilfo_complete_data
-          
-          # If file exists, use it directly (same file that was uploaded)
-          if (!is.null(session$userData$hilfo_csv_file) && file.exists(session$userData$hilfo_csv_file)) {
-            if (isTRUE(getOption("inrep.debug", FALSE))) cat("CRITICAL: Using same CSV file that was uploaded to cloud:", session$userData$hilfo_csv_file, "\n")
-            csv_content <- readLines(session$userData$hilfo_csv_file, warn = FALSE)
-            
-            # Trigger download via JavaScript using the same file
-            if (requireNamespace("shinyjs", quietly = TRUE)) {
-              filename <- basename(session$userData$hilfo_csv_file)
-              shinyjs::runjs(sprintf("
-                var csv = %s;
-                var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
-                var url = window.URL.createObjectURL(blob);
-                var a = document.createElement('a');
-                a.href = url;
-                a.download = '%s';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-              ", jsonlite::toJSON(paste(csv_content, collapse = "\n")), filename))
-              
-              shiny::showNotification("CSV downloaded successfully (same as cloud upload)!", type = "message", duration = 3)
-              return()  # Exit early - we used the stored file
-            }
-          }
-          
-          # If file doesn't exist, generate from stored complete_data
-          if (isTRUE(getOption("inrep.debug", FALSE))) cat("CRITICAL: File not found, generating CSV from stored complete_data\n")
-          temp_csv <- tempfile(fileext = ".csv")
-          write.csv(csv_data, temp_csv, row.names = FALSE, na = "")
-          csv_content <- readLines(temp_csv, warn = FALSE)
-          unlink(temp_csv)
-          
-          # Trigger download
-          if (requireNamespace("shinyjs", quietly = TRUE)) {
-            # CRITICAL: Use consistent HilFo naming convention (same as upload)
-            timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
-            filename <- if (exists("generate_hilfo_filename", mode = "function")) {
-              generate_hilfo_filename(timestamp)
-            } else {
-              # Fallback for non-HilFo studies
-              study_name <- gsub("[^a-zA-Z0-9_]", "_", config$name %||% "study")
-              paste0(study_name, "_results_", timestamp, ".csv")
-            }
-            
-            shinyjs::runjs(sprintf("
-              var csv = %s;
-              var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
-              var url = window.URL.createObjectURL(blob);
-              var a = document.createElement('a');
-              a.href = url;
-              a.download = '%s';
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              window.URL.revokeObjectURL(url);
-            ", jsonlite::toJSON(paste(csv_content, collapse = "\n")), filename))
-            
-            shiny::showNotification("CSV downloaded successfully (same as cloud upload)!", type = "message", duration = 3)
-            return()  # Exit early - we used the stored data
-          }
-        }
-        
-        # Fallback: Collect all data - use same format as cloud storage (for studies without stored data)
-        cat("INFO: No stored complete_data found, generating CSV from scratch\n")
+        # Collect all data - use same format as cloud storage
         csv_data <- data.frame(
           timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
           session_id = rv$unique_session_id %||% paste0("session_", format(Sys.time(), "%Y%m%d_%H%M%S")),
@@ -2947,15 +2868,9 @@ launch_study <- function(
         
         # Trigger download via JavaScript
         if (requireNamespace("shinyjs", quietly = TRUE)) {
-          # CRITICAL: Use consistent HilFo naming convention (same as upload)
           timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
-          filename <- if (exists("generate_hilfo_filename", mode = "function")) {
-            generate_hilfo_filename(timestamp)
-          } else {
-            # Fallback for non-HilFo studies
-            study_name <- gsub("[^a-zA-Z0-9_]", "_", config$name %||% "study")
-            paste0(study_name, "_results_", timestamp, ".csv")
-          }
+          study_name <- gsub("[^a-zA-Z0-9_]", "_", config$name %||% "study")
+          filename <- paste0(study_name, "_results_", timestamp, ".csv")
           
           shinyjs::runjs(sprintf("
             var csv = %s;
@@ -3060,13 +2975,9 @@ launch_study <- function(
     
     # Absolute maximum: 2 hours
     if (session_duration > rv$max_session_duration) {
-      logger(sprintf("WATCHDOG: Maximum session time reached (%.0f seconds) - shutting down", session_duration), level = "INFO")
+      logger(sprintf("WATCHDOG: Maximum session time reached (%.0f seconds) - ending session", session_duration), level = "INFO")
       
-      tryCatch({
-        shiny::stopApp()
-      }, error = function(e) {
-        try({ session$close() }, silent = TRUE)
-      })
+      .inrep_end_session(session)
     }
   })
   
@@ -3292,16 +3203,10 @@ launch_study <- function(
             })
             
             # Stop the Shiny app and terminate R script
-            logger("Stopping Shiny app and terminating R process due to timeout", level = "INFO")
+            logger("Ending participant session due to timeout", level = "INFO")
             tryCatch({
               # Schedule app stop after a brief delay to allow data save
-              later::later(function() {
-                shiny::stopApp()
-                # Force quit R process if running in background
-                if (!interactive()) {
-                  quit(save = "no", status = 0)
-                }
-              }, delay = 2)
+              later::later(function() .inrep_end_session(session), delay = 2)
             }, error = function(e) {
               logger(sprintf("App stop failed: %s", e$message), level = "ERROR")
             })
@@ -4164,12 +4069,18 @@ launch_study <- function(
     # Stored in session$userData to prevent duplicate observers.
     if (is.null(session$userData$countdown_observer)) {
       countdown_observer <- shiny::observe({
-        if (!isTRUE(rv$auto_close_timer_active) || is.null(rv$countdown_time)) {
+        if (!isTRUE(rv$auto_close_timer_active)) {
+          return(NULL)
+        }
+        # Read the countdown in isolate(): writing it below must not re-run this
+        # observer immediately (that drained the whole countdown in an instant).
+        remaining <- shiny::isolate(rv$countdown_time)
+        if (is.null(remaining)) {
           return(NULL)
         }
 
-        if (rv$countdown_time > 0) {
-          rv$countdown_time <- rv$countdown_time - 1
+        if (remaining > 0) {
+          rv$countdown_time <- remaining - 1
           shiny::invalidateLater(1000, session)
           return(NULL)
         }
@@ -4213,17 +4124,12 @@ launch_study <- function(
           logger("shinyjs not available for auto-close", level = "WARNING")
         }
 
-        logger("Stopping Shiny app and terminating R process after study completion", level = "INFO")
+        logger("Ending participant session after study completion", level = "INFO")
         tryCatch({
-          later::later(function() {
-            shiny::stopApp()
-            if (!interactive()) {
-              quit(save = "no", status = 0)
-            }
-          }, delay = 3)
+          later::later(function() .inrep_end_session(session), delay = 3)
         }, error = function(e) {
           logger(sprintf("App stop failed: %s", e$message), level = "ERROR")
-          shiny::stopApp()
+          .inrep_end_session(session)
         })
       })
       session$userData$countdown_observer <- countdown_observer
@@ -4671,6 +4577,35 @@ launch_study <- function(
       }
     })
     
+    # Run a page's completion_handler (used by both "next" and the final submit,
+    # so the last page before the results page gets its handler too).
+    run_page_completion_handler <- function(current_page) {
+      handler <- current_page$completion_handler
+      if (is.null(handler) || !is.function(handler)) return(invisible(NULL))
+      tryCatch({
+        # ROBUST: Inspect handler formals and pass NAMED arguments so that
+        # handlers written as function(input, rv, ...) or
+        # function(session, rv, input, config) both work correctly.
+        handler_args <- tryCatch(names(formals(handler)), error = function(e) NULL)
+        if (!is.null(handler_args)) {
+          call_args <- list()
+          if ("session" %in% handler_args) call_args$session <- session
+          if ("input"   %in% handler_args) call_args$input   <- input
+          if ("inputs"  %in% handler_args) call_args$inputs  <- input   # alias used by some studies (e.g. HilFo)
+          if ("rv"      %in% handler_args) call_args$rv      <- rv
+          if ("config"  %in% handler_args) call_args$config  <- config
+          do.call(handler, call_args)
+        } else {
+          # Fallback: pass all four positionally (legacy behaviour)
+          handler(session, rv, input, config)
+        }
+        logger(sprintf("Called completion handler for %s page", current_page$type), level = "DEBUG")
+      }, error = function(e) {
+        logger(sprintf("Error in completion handler for %s page: %s", current_page$type, e$message), level = "WARNING")
+      })
+      invisible(NULL)
+    }
+
     # Custom page flow navigation observers
     shiny::observeEvent(input$next_page, {
       if (rv$stage == "custom_page_flow" && rv$current_page < rv$total_pages) {
@@ -4887,29 +4822,7 @@ launch_study <- function(
         }
         
         # Call completion handler for ALL page types (custom, demographics, items, etc.)
-        if (!is.null(current_page$completion_handler) && is.function(current_page$completion_handler)) {
-          tryCatch({
-            # ROBUST: Inspect handler formals and pass NAMED arguments so that
-            # handlers written as function(input, rv, ...) or
-            # function(session, rv, input, config) both work correctly.
-            handler_args <- tryCatch(names(formals(current_page$completion_handler)), error = function(e) NULL)
-            if (!is.null(handler_args)) {
-              call_args <- list()
-              if ("session" %in% handler_args) call_args$session <- session
-              if ("input"   %in% handler_args) call_args$input   <- input
-              if ("inputs"  %in% handler_args) call_args$inputs  <- input   # alias used by some studies (e.g. HilFo)
-              if ("rv"      %in% handler_args) call_args$rv      <- rv
-              if ("config"  %in% handler_args) call_args$config  <- config
-              do.call(current_page$completion_handler, call_args)
-            } else {
-              # Fallback: pass all four positionally (legacy behaviour)
-              current_page$completion_handler(session, rv, input, config)
-            }
-            logger(sprintf("Called completion handler for %s page", current_page$type), level = "DEBUG")
-          }, error = function(e) {
-            logger(sprintf("Error in completion handler for %s page: %s", current_page$type, e$message), level = "WARNING")
-          })
-        }
+        run_page_completion_handler(current_page)
 
         # ROBUST FALLBACK: Automatically collect any demo_* text/textarea inputs
         # from custom pages into rv$demo_data. This ensures text fields are never
@@ -5226,6 +5139,9 @@ launch_study <- function(
           }
         }
         
+        # Final page before the results: run its completion_handler as "next" does
+        if (!identical(current_page$type, "results")) run_page_completion_handler(current_page)
+
         # ROBUST: Preserve all responses including NAs for proper indexing
         # Don't remove NAs - they might be valid missing responses that need to be preserved
         all_responses <- rv$responses
@@ -5235,19 +5151,11 @@ launch_study <- function(
         logger(sprintf("Non-NA responses: %d", sum(!is.na(all_responses))))
         logger(sprintf("Response indices with data: %s", paste(which(!is.na(all_responses)), collapse=", ")))
         
-        # FINAL VALIDATION: For UMA study, ensure we have exactly 30 responses
-        if (!is.null(config$fixed_items) && length(config$fixed_items) == 30) {
-          if (length(all_responses) != 30) {
-            logger(sprintf("CRITICAL: UMA study expects 30 responses but got %d. Padding/truncating to 30.", length(all_responses)), level = "WARNING")
-            if (length(all_responses) < 30) {
-              # Pad with NA
-              all_responses <- c(all_responses, rep(NA, 30 - length(all_responses)))
-            } else if (length(all_responses) > 30) {
-              # Truncate
-              all_responses <- all_responses[1:30]
-            }
-            logger("FINAL VALIDATION: Adjusted responses to exactly 30 items", level = "INFO")
-          }
+        # FINAL VALIDATION: fixed-item studies get exactly one response slot per fixed item
+        n_fixed <- length(config$fixed_items %||% integer(0))
+        if (n_fixed > 0 && length(all_responses) != n_fixed) {
+          logger(sprintf("Expected %d responses but got %d; padding/truncating to %d.", n_fixed, length(all_responses), n_fixed), level = "WARNING")
+          all_responses <- c(all_responses, rep(NA, max(0, n_fixed - length(all_responses))))[seq_len(n_fixed)]
         }
         
         # If we're already on a results page, treat this as a final "finish" action

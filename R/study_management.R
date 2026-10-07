@@ -2001,6 +2001,28 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
   }
 }
 
+#' Resolve the results processor for a results page
+#'
+#' A page-level \code{results_processor} overrides the study-level one. Case
+#' studies often reference it by name (e.g. \code{"create_hilfo_report"})
+#' because the function is defined after the page flow. A name is resolved to
+#' the function of that name in the global environment; if none exists, the study-level
+#' \code{config$results_processor} is used instead of silently dropping the
+#' report.
+#' @noRd
+.inrep_resolve_results_processor <- function(page, config) {
+  rp <- page$results_processor
+  if (is.function(rp)) return(rp)
+  if (is.character(rp) && length(rp) == 1L && nzchar(rp)) {
+    found <- get0(rp, envir = globalenv(), mode = "function", inherits = TRUE)
+    if (is.function(found)) return(found)
+    if (is.function(config$results_processor)) return(config$results_processor)
+    warning(sprintf("results_processor '%s' could not be found; no report will be shown.", rp), call. = FALSE)
+    return(NULL)
+  }
+  config$results_processor
+}
+
 #' @noRd
 render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_close_time = 300, auto_close_time_unit = "seconds", disable_auto_close = FALSE, session = NULL, current_page_idx = NULL, total_pages = NULL, is_final_results_page = TRUE) {
   # GENERIC DEBUG HANDLER: Check for show_personal_results preference
@@ -2031,150 +2053,157 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
       if (sp %in% c("no", "n", "false", "0")) {
         .inrep_debug_message("DEBUG: User selected NO - showing thank you message only")
         
-        # CRITICAL: ALWAYS save/send data even when user doesn't want to see results
-        .inrep_debug_message("DEBUG: Ensuring data is saved/sent before showing thank you message")
+        # Side effects (processing, uploads) run ONCE per session. They are isolated so
+        # that the rv writes they make do not re-trigger this render (which previously
+        # re-ran the upload on every re-render).
+        if (!isTRUE(shiny::isolate(rv$no_results_side_effects_done))) shiny::isolate({
+          rv$no_results_side_effects_done <- TRUE
+          # CRITICAL: ALWAYS save/send data even when user doesn't want to see results
+          .inrep_debug_message("DEBUG: Ensuring data is saved/sent before showing thank you message")
         
-        # Ensure cat_result is set if not already set
-        if (is.null(rv$cat_result)) {
-          rv$cat_result <- list(
-            theta = if (config$adaptive) rv$current_ability else (if (length(rv$responses) > 0) mean(rv$responses, na.rm = TRUE) else NULL),
-            se = if (config$adaptive) rv$current_se else NULL,
-            responses = rv$responses,
-            administered = rv$administered,
-            response_times = rv$response_times
-          )
-          .inrep_debug_message("DEBUG: Created cat_result for data saving")
-        }
+          # Ensure cat_result is set if not already set
+          if (is.null(rv$cat_result)) {
+            rv$cat_result <- list(
+              theta = if (config$adaptive) rv$current_ability else (if (length(rv$responses) > 0) mean(rv$responses, na.rm = TRUE) else NULL),
+              se = if (config$adaptive) rv$current_se else NULL,
+              responses = rv$responses,
+              administered = rv$administered,
+              response_times = rv$response_times
+            )
+            .inrep_debug_message("DEBUG: Created cat_result for data saving")
+          }
         
-        # Force data preservation
-        if (exists("preserve_session_data", mode = "function")) {
-          tryCatch({
-            preserve_session_data(force = TRUE)
-            .inrep_debug_message("DEBUG: Data preserved when user selected NO")
-          }, error = function(e) {
-            message("WARNING: Data preservation failed when user selected NO: ", e$message)
-          })
-        }
-        
-        # CRITICAL: Call results processor even when user selects NO
-        # This ensures data is processed and uploaded to cloud (works for ANY study with results_processor)
-        # The results processor will generate CSV/report and upload it, we just won't show the HTML
-        # This is GENERIC - works for any study, not just HilFo
-        # CRITICAL: Use caching to prevent running twice (Shiny may re-render the page)
-        # Check if upload already done by completion handler (e.g., HilFo page14a)
-        csv_upload_succeeded <- isTRUE(rv$csv_uploaded) || isTRUE(rv$data_uploaded_to_cloud)
-        if (csv_upload_succeeded) {
-          .inrep_debug_message("DEBUG: CSV/data upload already completed by completion handler - skipping results processor")
-        }
-        
-        if (!csv_upload_succeeded && !is.null(config$results_processor) && is.function(config$results_processor)) {
-          # Check if results processor has already been called (prevent duplicate execution)
-          results_processor_called <- rv$results_processor_called %||% FALSE
-          if (results_processor_called) {
-            .inrep_debug_message("DEBUG: Results processor already called - skipping duplicate execution")
-            # Check if CSV upload succeeded by looking for CSV files created recently
-            # Pattern matches: study_results_*.csv, hilfo_results_*.csv, etc. (generic for any study)
-            csv_files <- list.files(pattern = ".*_results_.*\\.csv$", full.names = FALSE)
-            if (length(csv_files) > 0) {
-              # Sort by modification time, get most recent
-              csv_files_info <- file.info(csv_files)
-              most_recent <- rownames(csv_files_info)[which.max(csv_files_info$mtime)]
-              # CRITICAL FIX: Increase to 150 seconds to prevent JSON fallback during slow CSV upload
-              file_age <- as.numeric(Sys.time() - csv_files_info[most_recent, "mtime"], units = "secs")
-              if (file_age < 150 && file_age >= 0) {
-                csv_upload_succeeded <- TRUE
-                .inrep_debug_message("DEBUG: CSV upload detected (recent file found: ", most_recent, ", age: ", round(file_age, 2), "s)")
-              }
-            }
-          } else {
-            # Mark as called immediately to prevent duplicate execution
-            rv$results_processor_called <- TRUE
-            
-            .inrep_debug_message("DEBUG: Calling results processor even though user selected NO - to ensure data processing and upload")
+          # Force data preservation
+          if (exists("preserve_session_data", mode = "function")) {
             tryCatch({
-              processor_args <- names(formals(config$results_processor))
-              
-              # Use cat_result if available, otherwise use raw responses
-              responses_to_use <- if (!is.null(rv$cat_result) && !is.null(rv$cat_result$responses)) {
-                rv$cat_result$responses
-              } else {
-                rv$responses
-              }
-              
-              # CRITICAL FIX: Pass REAL session object (not mock) so userData changes persist!
-              # This allows results_processor to store CSV data that download buttons can access
-              # Call results processor - it will process data and upload, but we ignore the HTML return
-              # This is GENERIC - works for any study's results processor
-              # ROBUST: Build named argument list based on what the processor accepts
-              rp_call_args2 <- list(responses = responses_to_use, item_bank = item_bank)
-              if ("demographics" %in% processor_args) rp_call_args2$demographics <- rv$demo_data
-              if ("session"      %in% processor_args) rp_call_args2$session      <- session
-              if ("rv"           %in% processor_args) rp_call_args2$rv           <- rv
-              if ("input"        %in% processor_args) rp_call_args2$input        <- if (!is.null(session)) session$input else NULL
-              if ("config"       %in% processor_args) rp_call_args2$config       <- config
-              do.call(config$results_processor, rp_call_args2)
-              
-              # Check if CSV upload succeeded by looking for recently created CSV files
-              # (R passes lists by value, so mock_session$userData changes won't be visible)
-              # Look for CSV files with generic results pattern (works for any study)
-              # Pattern matches: study_results_*.csv, hilfo_results_*.csv, etc.
+              preserve_session_data(force = TRUE)
+              .inrep_debug_message("DEBUG: Data preserved when user selected NO")
+            }, error = function(e) {
+              message("WARNING: Data preservation failed when user selected NO: ", e$message)
+            })
+          }
+        
+          # CRITICAL: Call results processor even when user selects NO
+          # This ensures data is processed and uploaded to cloud (works for ANY study with results_processor)
+          # The results processor will generate CSV/report and upload it, we just won't show the HTML
+          # This is GENERIC - works for any study, not just HilFo
+          # CRITICAL: Use caching to prevent running twice (Shiny may re-render the page)
+          # Check if upload already done by completion handler (e.g., HilFo page14a)
+          csv_upload_succeeded <- isTRUE(rv$csv_uploaded) || isTRUE(rv$data_uploaded_to_cloud)
+          if (csv_upload_succeeded) {
+            .inrep_debug_message("DEBUG: CSV/data upload already completed by completion handler - skipping results processor")
+          }
+        
+          if (!csv_upload_succeeded && !is.null(config$results_processor) && is.function(config$results_processor)) {
+            # Check if results processor has already been called (prevent duplicate execution)
+            results_processor_called <- rv$results_processor_called %||% FALSE
+            if (results_processor_called) {
+              .inrep_debug_message("DEBUG: Results processor already called - skipping duplicate execution")
+              # Check if CSV upload succeeded by looking for CSV files created recently
+              # Pattern matches: study_results_*.csv, hilfo_results_*.csv, etc. (generic for any study)
               csv_files <- list.files(pattern = ".*_results_.*\\.csv$", full.names = FALSE)
               if (length(csv_files) > 0) {
+                # Sort by modification time, get most recent
                 csv_files_info <- file.info(csv_files)
                 most_recent <- rownames(csv_files_info)[which.max(csv_files_info$mtime)]
-                # CRITICAL FIX: Increase time window to 150 seconds to account for slow WebDAV uploads
-                # Previously 5 seconds caused JSON fallback to trigger while CSV upload was still in progress,
-                # resulting in simultaneous uploads competing for bandwidth
+                # CRITICAL FIX: Increase to 150 seconds to prevent JSON fallback during slow CSV upload
                 file_age <- as.numeric(Sys.time() - csv_files_info[most_recent, "mtime"], units = "secs")
                 if (file_age < 150 && file_age >= 0) {
                   csv_upload_succeeded <- TRUE
-                  .inrep_debug_message("DEBUG: CSV upload detected (file created: ", most_recent, ", age: ", round(file_age, 2), "s)")
+                  .inrep_debug_message("DEBUG: CSV upload detected (recent file found: ", most_recent, ", age: ", round(file_age, 2), "s)")
                 }
               }
+            } else {
+              # Mark as called immediately to prevent duplicate execution
+              rv$results_processor_called <- TRUE
+            
+              .inrep_debug_message("DEBUG: Calling results processor even though user selected NO - to ensure data processing and upload")
+              tryCatch({
+                processor_args <- names(formals(config$results_processor))
               
-              .inrep_debug_message("DEBUG: Results processor called successfully - data processing and upload should have completed")
+                # Use cat_result if available, otherwise use raw responses
+                responses_to_use <- if (!is.null(rv$cat_result) && !is.null(rv$cat_result$responses)) {
+                  rv$cat_result$responses
+                } else {
+                  rv$responses
+                }
+              
+                # CRITICAL FIX: Pass REAL session object (not mock) so userData changes persist!
+                # This allows results_processor to store CSV data that download buttons can access
+                # Call results processor - it will process data and upload, but we ignore the HTML return
+                # This is GENERIC - works for any study's results processor
+                # ROBUST: Build named argument list based on what the processor accepts
+                rp_call_args2 <- list(responses = responses_to_use, item_bank = item_bank)
+                if ("demographics" %in% processor_args) rp_call_args2$demographics <- rv$demo_data
+                if ("session"      %in% processor_args) rp_call_args2$session      <- session
+                if ("rv"           %in% processor_args) rp_call_args2$rv           <- rv
+                if ("input"        %in% processor_args) rp_call_args2$input        <- if (!is.null(session)) session$input else NULL
+                if ("config"       %in% processor_args) rp_call_args2$config       <- config
+                do.call(config$results_processor, rp_call_args2)
+              
+                # Check if CSV upload succeeded by looking for recently created CSV files
+                # (R passes lists by value, so mock_session$userData changes won't be visible)
+                # Look for CSV files with generic results pattern (works for any study)
+                # Pattern matches: study_results_*.csv, hilfo_results_*.csv, etc.
+                csv_files <- list.files(pattern = ".*_results_.*\\.csv$", full.names = FALSE)
+                if (length(csv_files) > 0) {
+                  csv_files_info <- file.info(csv_files)
+                  most_recent <- rownames(csv_files_info)[which.max(csv_files_info$mtime)]
+                  # CRITICAL FIX: Increase time window to 150 seconds to account for slow WebDAV uploads
+                  # Previously 5 seconds caused JSON fallback to trigger while CSV upload was still in progress,
+                  # resulting in simultaneous uploads competing for bandwidth
+                  file_age <- as.numeric(Sys.time() - csv_files_info[most_recent, "mtime"], units = "secs")
+                  if (file_age < 150 && file_age >= 0) {
+                    csv_upload_succeeded <- TRUE
+                    .inrep_debug_message("DEBUG: CSV upload detected (file created: ", most_recent, ", age: ", round(file_age, 2), "s)")
+                  }
+                }
+              
+                .inrep_debug_message("DEBUG: Results processor called successfully - data processing and upload should have completed")
+              }, error = function(e) {
+                message("CRITICAL ERROR: Results processor failed when user selected NO: ", e$message)
+                message("This means data processing/upload may have failed - data preserved locally but may not be in cloud!")
+              })
+            }
+          }
+        
+          # Fallback: Save to cloud via save_session_to_cloud if results processor didn't handle it
+          # (This is for studies where results processor doesn't handle cloud upload)
+          # GENERIC solution - works for any study
+          # Note: If results processor already handled upload (e.g., CSV upload), this is just a backup
+          if (config$session_save) {
+            tryCatch({
+              # Get webdav_url and password from rv (stored there by launch_study)
+              webdav_url_to_use <- rv$webdav_url %||% config$webdav_url
+              webdav_password_to_use <- rv$webdav_password %||% config$webdav_password
+            
+              # Check if CSV upload already succeeded (from results processor OR completion handler)
+              # csv_upload_succeeded is set in the tryCatch block above if results processor stored CSV info
+              # Also check rv$csv_uploaded flag (set by completion handlers like HilFo page14a)
+              upload_already_done <- csv_upload_succeeded || isTRUE(rv$csv_uploaded) || isTRUE(rv$data_uploaded_to_cloud)
+            
+              # Only call JSON fallback if CSV upload didn't happen
+              # This prevents duplicate uploads and authentication errors
+              if (!upload_already_done) {
+                .inrep_debug_message("DEBUG: Attempting JSON fallback cloud save (CSV upload not detected)")
+                result <- save_session_to_cloud(rv, config, webdav_url_to_use, webdav_password_to_use, session = session)
+                if (result) {
+                  .inrep_debug_message("DEBUG: Fallback cloud save (JSON) succeeded when user selected NO")
+                } else {
+                  .inrep_debug_message("DEBUG: Fallback cloud save (JSON) failed - this is OK if CSV upload already succeeded")
+                }
+              } else if (upload_already_done) {
+                .inrep_debug_message("DEBUG: Skipping JSON fallback - CSV/data upload already completed")
+              }
             }, error = function(e) {
-              message("CRITICAL ERROR: Results processor failed when user selected NO: ", e$message)
-              message("This means data processing/upload may have failed - data preserved locally but may not be in cloud!")
+              # Non-critical error - CSV upload already succeeded, so this is just a backup
+              .inrep_debug_message("DEBUG: Fallback cloud save (JSON) failed (non-critical): ", e$message)
+              .inrep_debug_message("DEBUG: This is OK if CSV upload already succeeded")
             })
           }
-        }
         
-        # Fallback: Save to cloud via save_session_to_cloud if results processor didn't handle it
-        # (This is for studies where results processor doesn't handle cloud upload)
-        # GENERIC solution - works for any study
-        # Note: If results processor already handled upload (e.g., CSV upload), this is just a backup
-        if (config$session_save) {
-          tryCatch({
-            # Get webdav_url and password from rv (stored there by launch_study)
-            webdav_url_to_use <- rv$webdav_url %||% config$webdav_url
-            webdav_password_to_use <- rv$webdav_password %||% config$webdav_password
-            
-            # Check if CSV upload already succeeded (from results processor OR completion handler)
-            # csv_upload_succeeded is set in the tryCatch block above if results processor stored CSV info
-            # Also check rv$csv_uploaded flag (set by completion handlers like HilFo page14a)
-            upload_already_done <- csv_upload_succeeded || isTRUE(rv$csv_uploaded) || isTRUE(rv$data_uploaded_to_cloud)
-            
-            # Only call JSON fallback if CSV upload didn't happen
-            # This prevents duplicate uploads and authentication errors
-            if (!upload_already_done) {
-              .inrep_debug_message("DEBUG: Attempting JSON fallback cloud save (CSV upload not detected)")
-              result <- save_session_to_cloud(rv, config, webdav_url_to_use, webdav_password_to_use, session = session)
-              if (result) {
-                .inrep_debug_message("DEBUG: Fallback cloud save (JSON) succeeded when user selected NO")
-              } else {
-                .inrep_debug_message("DEBUG: Fallback cloud save (JSON) failed - this is OK if CSV upload already succeeded")
-              }
-            } else if (upload_already_done) {
-              .inrep_debug_message("DEBUG: Skipping JSON fallback - CSV/data upload already completed")
-            }
-          }, error = function(e) {
-            # Non-critical error - CSV upload already succeeded, so this is just a backup
-            .inrep_debug_message("DEBUG: Fallback cloud save (JSON) failed (non-critical): ", e$message)
-            .inrep_debug_message("DEBUG: This is OK if CSV upload already succeeded")
-          })
-        }
-        
+        })
+
         # Get current language
         current_lang <- rv$language %||% config$language %||% "de"
         labels <- get_language_labels(current_lang)
@@ -2229,7 +2258,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
   # (thank-you) page.  The results_processor is still called for data-upload
   # side effects on the FINAL results page; its HTML output is discarded.
   if (!isTRUE(config$show_scale_scores %||% TRUE)) {
-    rp_offboard <- page$results_processor %||% config$results_processor
+    rp_offboard <- .inrep_resolve_results_processor(page, config)
     if (isTRUE(is_final_results_page) &&
         !is.null(rp_offboard) && is.function(rp_offboard) &&
         !isTRUE(rv$final_results_side_effects_done)) {
@@ -2262,7 +2291,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
   # ─────────────────────────────────────────────────────────────────────────
 
   # Page-level override is allowed (e.g., multi-part results)
-  results_processor <- page$results_processor %||% config$results_processor
+  results_processor <- .inrep_resolve_results_processor(page, config)
 
   # Cache results content per results page to avoid duplicate execution on re-render
   cache_key <- page$id %||% paste0("results_page_", current_page_idx %||% "unknown")

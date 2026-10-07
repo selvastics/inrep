@@ -161,9 +161,9 @@ inrep::launch_study(config = config, item_bank = bfi_items, debug_mode = TRUE)
 
 ## 1.4 Two rules that trip everyone up
 
-**Rule 1:** `results_processor = "minimal_report"` (a string) is **silently ignored**. Pass the function object directly.
+**Rule 1:** Pass the function object at the **config level**: `create_study_config(..., results_processor = minimal_report)`. This is what every results page uses by default.
 
-**Rule 2:** Set the processor at the **config level** only. Setting it inside a `custom_page_flow` entry does nothing.
+**Rule 2:** A `results_processor` inside a `custom_page_flow` results page overrides the config-level one for that page only. It may be a function or the name of one (`"minimal_report"`); a name is looked up in the global environment, and if no such function exists the config-level processor is used.
 
 ------------------------------------------------------------------------
 
@@ -1087,9 +1087,9 @@ inrep::launch_study(
 
 # Common pitfalls
 
-1. **`results_processor = "my_fn"` is silently ignored.** Pass the function object, not a string. `results_processor = my_fn`.
+1. **Passing the processor only by name.** Prefer the function object at the config level: `results_processor = my_fn`. A name (`"my_fn"`) works on a results page, but only if a function of that name exists in the global environment or a config-level processor is set as the fallback.
 
-2. **Setting `results_processor` inside a `custom_page_flow` entry does nothing.** It must be attached at the config level: `study_config$results_processor <- my_fn`.
+2. **Expecting a page-level `results_processor` to apply everywhere.** A processor set inside a `custom_page_flow` results page applies to that page only; other results pages use the config-level one.
 
 3. **Returning anything other than `shiny::HTML(...)`.** Returning a plain string or a list causes the results page to display raw R output. Always wrap the final value.
 

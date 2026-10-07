@@ -1,139 +1,212 @@
+# =============================================================================
+# HilFo – Hildesheimer Befragung zu Forschungsmethoden
+# =============================================================================
+#
+# Fragebogen für die Statistik-Seminare im Psychologie-Bachelor (Hildesheim),
+# umgesetzt mit inrep::launch_study(). Nicht adaptiv: 29 Likert-Items plus
+# demografische Angaben und zwei Schieberegler, zweisprachig (de/en).
+#
+# Seitenablauf (custom_page_flow, 16 Seiten)
+#   1      Begrüßung, Einverständnis, Sprachumschalter
+#   2-5    Demografie (Alter, Geschlecht, Wohnen, Haustier, Rauchen,
+#          Ernährung, Abiturnoten)
+#   6-10   Big Five (BFI, 20 Items) und Stress (PSQ, 5 Items)
+#   11     Studierfähigkeiten (MWS, 4 Items)
+#   12     Statistik-Schieberegler (0-100)
+#   13     Vor-/Nachbereitung, Zufriedenheit
+#   14     Persönlicher Code
+#   15     "Möchten Sie Ihre Ergebnisse sehen?"  -> hier wird gespeichert
+#   16     Ergebnisseite (create_hilfo_report) bzw. Dankeseite
+#
+# Datenspeicherung
+#   Beim Verlassen von Seite 15 baut build_hilfo_record() eine Zeile mit allen
+#   Variablen (feste Spaltenreihenfolge, fehlende Angaben = NA). save_to_cloud()
+#   schreibt sie zuerst lokal nach study_data/hilfo_results/ und lädt sie dann
+#   per WebDAV hoch (mit Wiederholungsversuchen). read_hilfo_data.R liest diese
+#   Dateien wieder ein.
+#
+# Konfiguration
+#   HILFO_WEBDAV_SHARE_TOKEN, HILFO_WEBDAV_PASSWORD  WebDAV-Zugang (z.B. in
+#                                                   .Renviron setzen)
+#   options(hilfo.debug = TRUE)                     ausführliche Konsolenausgabe
+# =============================================================================
+
 library(inrep)
 library(shiny)
-library(ggplot2)
-library(broom)
-library(emmeans)
-library(ggthemes)
-library(DT)
-library(shinycssloaders)
-library(patchwork)
-library(markdown)
 library(shinyjs)
-library(kableExtra)
+library(ggplot2)
 library(httr)
-library(later)
+library(base64enc)
 
-# Helper: Attach an observer to a live Shiny session so that when the client
-# sets the `finish_early` input the server attempts to stop the app.
-attach_finish_early_observer <- function(session) {
-  if (is.null(session)) return(invisible(NULL))
-  tryCatch({
-    session$onFlushed(function() {
-      shiny::observeEvent(session$input$finish_early, {
-        tryCatch({
-          shiny::stopApp()
-        }, error = function(e) {
-          try({ session$close() }, silent = TRUE)
-        })
-      }, ignoreInit = TRUE)
-    }, once = TRUE)
-  }, error = function(e) {
-    message("attach_finish_early_observer: could not attach observer: ", e$message)
-  })
-  invisible(NULL)
+# Ausgabe nur, wenn options(hilfo.debug = TRUE) gesetzt ist
+hilfo_log <- function(...) {
+  if (isTRUE(getOption("hilfo.debug", FALSE))) message("[HilFo] ", ...)
+}
+
+# Leere Angaben (NULL, NA, "") einheitlich als NA; Mehrfachantworten mit ";"
+as_record_value <- function(x) {
+  if (is.null(x) || length(x) == 0) return(NA)
+  x <- x[!is.na(x) & nzchar(trimws(as.character(x)))]
+  if (length(x) == 0) return(NA)
+  if (length(x) > 1) return(paste(x, collapse = ";"))
+  x
 }
 
 # =============================================================================
-# HilFo-Studie – fixe Version ohne Programming-Anxiety-Block
+# Hilfsfunktionen für die Auswertung
 # =============================================================================
 
-if (!requireNamespace("inrep", quietly = TRUE)) {
-  stop("Package 'inrep' is required. Please install it.")
-}
-
-# ============================================================================
-# HELPER FUNCTION: Create dummy variables for multiple choice responses
-# ============================================================================
+# Dummy-Variablen (0/1) für Mehrfachauswahl, z.B. Haustier_Hund, Haustier_Katze
 create_dummy_variables <- function(response_values, all_options, prefix) {
+  response_values <- if (is.null(response_values)) character(0) else as.character(response_values)
   dummy_vars <- list()
-  
-  if (is.null(response_values) || length(response_values) == 0 || all(is.na(response_values))) {
-    for (opt_name in names(all_options)) {
-      dummy_vars[[paste0(prefix, "_", opt_name)]] <- 0L
-    }
-    return(dummy_vars)
-  }
-  
-  response_values <- as.character(response_values)
-  
   for (opt_name in names(all_options)) {
-    opt_value <- as.character(all_options[[opt_name]])
-    dummy_vars[[paste0(prefix, "_", opt_name)]] <- as.integer(opt_value %in% response_values)
+    dummy_vars[[paste0(prefix, "_", opt_name)]] <- as.integer(as.character(all_options[[opt_name]]) %in% response_values)
   }
-  
-  return(dummy_vars)
+  dummy_vars
 }
 
-# Einheitlicher Dateiname für alle Exporte
-generate_hilfo_filename <- function(timestamp = NULL) {
-  if (is.null(timestamp)) {
-    timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
-  }
-  return(paste0("HilFo_results_", timestamp, ".csv"))
+# Skalenwerte (mit Umpolung, identisch zum Bericht und zu read_hilfo_data.R)
+# responses: 29 Likert-Antworten (1-5) in Itembank-Reihenfolge
+score_hilfo_scales <- function(responses) {
+  responses <- suppressWarnings(as.numeric(responses))
+  responses <- c(responses, rep(NA, max(0, 29 - length(responses))))[1:29]
+  rev_items <- c(2, 3, 6, 8, 9, 12, 13, 16, 18, 20, 24)
+  responses[rev_items] <- 6 - responses[rev_items]
+  m <- function(x) if (all(is.na(x))) NA_real_ else mean(x, na.rm = TRUE)
+  list(
+    BFI_Extraversion = m(responses[1:4]),
+    BFI_Vertraeglichkeit = m(responses[5:8]),
+    BFI_Gewissenhaftigkeit = m(responses[9:12]),
+    BFI_Neurotizismus = m(responses[13:16]),
+    BFI_Offenheit = m(responses[17:20]),
+    PSQ_Stress = m(responses[21:25]),
+    MWS_StudySkills = m(responses[26:29])
+  )
+}
+
+# Wert eines Schiebereglers, aber nur wenn er bewegt wurde (sonst NA).
+# inrep speichert sonst den Startwert des Reglers, als hätte jemand geantwortet.
+slider_value <- function(demo_data, name) {
+  d <- as.list(demo_data)
+  if (!isTRUE(d[[paste0(name, "_touched")]])) return(NA_real_)
+  x <- suppressWarnings(as.numeric(d[[name]]))
+  if (length(x) == 0) NA_real_ else x[1]
+}
+
+# Schieberegler 0-100 -> 1-5 (gleiche Formel in Bericht, Upload und read_hilfo_data.R)
+scale_slider <- function(x) {
+  x <- suppressWarnings(as.numeric(x))
+  if (length(x) == 0 || is.na(x[1])) NA_real_ else (x[1] / 100) * 4 + 1
 }
 
 # =============================================================================
-# Zugangsdaten für den Hildesheim-WebDAV-Export
+# WebDAV-Export
 # =============================================================================
+# Ziel ist ein öffentlicher Nextcloud-Share (academiccloud). Benutzername ist das
+# Share-Token, Passwort das Share-Passwort. Beides bitte über Umgebungsvariablen
+# setzen; die Werte hinter "unset =" sind nur Rückfallwerte für lokale Tests.
 WEBDAV_URL <- "https://sync.academiccloud.de/public.php/webdav/"
-# For safety, read credentials from environment variables. If not set, upload will be attempted
-# anonymously which works for truly public shares. Do NOT keep secrets in the script.
-WEBDAV_PASSWORD <- Sys.getenv("HILFO_WEBDAV_PASSWORD", unset = "inreptest")
 WEBDAV_SHARE_TOKEN <- Sys.getenv("HILFO_WEBDAV_SHARE_TOKEN", unset = "Y51QPXzJVLWSAcb")
+WEBDAV_PASSWORD <- Sys.getenv("HILFO_WEBDAV_PASSWORD", unset = "inreptest")
+LOCAL_RESULTS_DIR <- file.path("study_data", "hilfo_results")
 
-# =============================================================================
-# Upload nach WebDAV
-# =============================================================================
-save_to_cloud <- function(data, filename) {
-  csv_text <- paste(capture.output(write.csv(data, row.names = FALSE)), collapse = "\n")
-  
-  webdav_url_converted <- gsub("index.php/s/([^/]+).*", "public.php/webdav/", WEBDAV_URL)
-  full_url <- paste0(webdav_url_converted, filename)
-  
-  # Minimal debug output to avoid leaking credentials
-  message("\n=== WebDAV Upload Debug (credentials masked) ===")
-  message("Original URL: ", WEBDAV_URL)
-  message("Converted URL: ", webdav_url_converted)
-  message("Full upload URL: ", full_url)
-  message("Filename: ", filename)
-  message("Share token set: ", if (nzchar(WEBDAV_SHARE_TOKEN)) "YES" else "NO")
-  message("===========================\n")
-  
-  tryCatch({
-    # Build PUT args dynamically - only include authentication when credentials are provided
-    args <- list(
-      url = full_url,
-      body = csv_text,
-      httr::content_type("text/csv"),
-      encode = "raw"
-    )
-    if (nzchar(WEBDAV_SHARE_TOKEN) || nzchar(WEBDAV_PASSWORD)) {
-      args <- c(
-        args,
-        list(
-          httr::authenticate(
-            user = WEBDAV_SHARE_TOKEN,
-            password = WEBDAV_PASSWORD,
-            type = "basic"
-          )
-        )
+# Speichert eine Ergebniszeile: erst lokal (Sicherungskopie), dann Upload per
+# WebDAV mit bis zu drei Versuchen. Gibt TRUE zurück, wenn der Upload gelang.
+save_to_cloud <- function(data, filename, attempts = 3) {
+  dir.create(LOCAL_RESULTS_DIR, recursive = TRUE, showWarnings = FALSE)
+  local_file <- file.path(LOCAL_RESULTS_DIR, filename)
+  utils::write.csv(data, local_file, row.names = FALSE, na = "", fileEncoding = "UTF-8")
+  hilfo_log("Lokale Kopie: ", local_file)
+
+  for (attempt in seq_len(attempts)) {
+    status <- tryCatch({
+      response <- httr::PUT(
+        url = paste0(WEBDAV_URL, utils::URLencode(filename)),
+        body = httr::upload_file(local_file, type = "text/csv"),
+        httr::authenticate(WEBDAV_SHARE_TOKEN, WEBDAV_PASSWORD, type = "basic"),
+        httr::timeout(30)
       )
-    }
-
-    response <- do.call(httr::PUT, args)
-    
-    if (httr::status_code(response) %in% c(200, 201, 204)) {
-      message("✓ Data successfully uploaded to WebDAV: ", filename)
+      httr::status_code(response)
+    }, error = function(e) {
+      message("[HilFo] WebDAV-Upload Fehler (Versuch ", attempt, "): ", e$message)
+      NA_integer_
+    })
+    if (!is.na(status) && status %in% c(200, 201, 204)) {
+      message("[HilFo] Hochgeladen: ", filename)
       return(TRUE)
-    } else {
-      message("✗ WebDAV upload failed with status ", httr::status_code(response))
-      message("Response: ", httr::content(response, "text"))
-      return(FALSE)
     }
-  }, error = function(e) {
-    message("✗ WebDAV upload error: ", e$message)
-    return(FALSE)
-  })
+    if (!is.na(status)) message("[HilFo] WebDAV-Upload Status ", status, " (Versuch ", attempt, ")")
+    if (attempt < attempts) Sys.sleep(attempt)
+  }
+  message("[HilFo] Upload fehlgeschlagen, Daten liegen lokal in ", local_file)
+  FALSE
+}
+
+# =============================================================================
+# Datensatz eines Teilnehmenden
+# =============================================================================
+HILFO_ITEM_IDS <- c(
+  "BFE_01", "BFE_02", "BFE_03", "BFE_04",
+  "BFV_01", "BFV_02", "BFV_03", "BFV_04",
+  "BFG_01", "BFG_02", "BFG_03", "BFG_04",
+  "BFN_01", "BFN_02", "BFN_03", "BFN_04",
+  "BFO_01", "BFO_02", "BFO_03", "BFO_04",
+  "PSQ_02", "PSQ_04", "PSQ_16", "PSQ_29", "PSQ_30",
+  "MWS_1_KK", "MWS_10_KK", "MWS_17_KK", "MWS_21_KK"
+)
+
+HAUSTIER_OPTIONS <- c(
+  "Hund" = "1", "Katze" = "2", "Fisch" = "3", "Vogel" = "4",
+  "Nager" = "5", "Reptil" = "6", "Ich_moechte_kein_Haustier" = "7",
+  "Sonstiges" = "other"
+)
+
+# Eine Zeile mit allen Variablen. Jede Spalte ist immer vorhanden (NA, wenn
+# nicht beantwortet), damit alle hochgeladenen Dateien dieselbe Struktur haben.
+build_hilfo_record <- function(session_id, demo_data, responses, language = "de") {
+  d <- if (is.list(demo_data)) demo_data else as.list(demo_data)
+  v <- function(name) as_record_value(d[[name]])
+
+  record <- list(
+    session_id = session_id,
+    timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+    study_language = language,
+    "Einverständnis" = v("Einverständnis"),
+    Alter_VPN = v("Alter_VPN"),
+    Geschlecht = v("Geschlecht"),
+    Wohnstatus = v("Wohnstatus"),
+    Wohn_Zusatz = v("Wohn_Zusatz")
+  )
+  record <- c(record, create_dummy_variables(d$Haustier, HAUSTIER_OPTIONS, "Haustier"))
+  record <- c(record, list(
+    Haustier_Zusatz = v("Haustier_Zusatz"),
+    Rauchen = v("Rauchen"),
+    "Ernährung" = v("Ernährung"),
+    "Ernährung_Zusatz" = v("Ernährung_Zusatz"),
+    Note_Englisch = v("Note_Englisch"),
+    Note_Mathe = v("Note_Mathe"),
+    Statistik_gutfolgen = slider_value(d, "Statistik_gutfolgen"),
+    Statistik_selbstwirksam = slider_value(d, "Statistik_selbstwirksam"),
+    Statistik_gutfolgen_touched = isTRUE(d$Statistik_gutfolgen_touched),
+    Statistik_selbstwirksam_touched = isTRUE(d$Statistik_selbstwirksam_touched),
+    Statistik_gutfolgen_scaled = scale_slider(slider_value(d, "Statistik_gutfolgen")),
+    Statistik_selbstwirksam_scaled = scale_slider(slider_value(d, "Statistik_selbstwirksam")),
+    Vor_Nachbereitung = v("Vor_Nachbereitung"),
+    Zufrieden_Hi_7st = v("Zufrieden_Hi_7st"),
+    # Großschreibung wie im Eingabefeld angezeigt, damit Codes über Erhebungen vergleichbar sind
+    "Persönlicher_Code" = toupper(trimws(v("Persönlicher_Code"))),
+    show_personal_results = v("show_personal_results")
+  ))
+
+  responses <- suppressWarnings(as.numeric(responses))
+  responses <- c(responses, rep(NA, max(0, 29 - length(responses))))[1:29]
+  record <- c(record, stats::setNames(as.list(responses), HILFO_ITEM_IDS))
+  record <- c(record, score_hilfo_scales(responses))
+  stat_scaled <- c(record$Statistik_gutfolgen_scaled, record$Statistik_selbstwirksam_scaled)
+  record$Statistics_Confidence <- if (all(is.na(stat_scaled))) NA_real_ else mean(stat_scaled, na.rm = TRUE)
+
+  as.data.frame(record, check.names = FALSE, stringsAsFactors = FALSE)
 }
 
 # =============================================================================
@@ -181,21 +254,51 @@ all_items_de <- data.frame(
     "Kontakte zu Mitstudierenden zu knüpfen (z.B. für Lerngruppen, Freizeit)",
     "im Team zusammen zu arbeiten (z.B. gemeinsam Aufgaben bearbeiten, Referate vorbereiten)"
   ),
+  Question_EN = c(
+    "I am outgoing, sociable.",
+    "I am rather quiet.",
+    "I am rather shy.",
+    "I am talkative.",
+    "I am empathetic, warm-hearted.",
+    "I have little sympathy for others.",
+    "I am helpful and selfless.",
+    "Others are rather indifferent to me.",
+    "I am rather disorganized.",
+    "I am systematic, keep my things in order.",
+    "I like it clean and tidy.",
+    "I am rather the chaotic type, rarely clean up.",
+    "I remain calm even in stressful situations.",
+    "I react easily tensed.",
+    "I often worry.",
+    "I rarely become nervous and insecure.",
+    "I have diverse interests.",
+    "I avoid philosophical discussions.",
+    "I enjoy thinking thoroughly about complex things and understanding them.",
+    "Abstract considerations interest me little.",
+    "I feel that too many demands are placed on me.",
+    "I have too much to do.",
+    "I feel rushed.",
+    "I have enough time for myself.",
+    "I feel under deadline pressure.",
+    "coping with the social climate in the program (e.g., handling competition)",
+    "organizing teamwork (e.g., finding study groups)",
+    "making contacts with fellow students (e.g., for study groups, leisure)",
+    "working together in a team (e.g., working on tasks together, preparing presentations)"
+  ),
+  reverse_coded = c(
+    FALSE, TRUE, TRUE, FALSE,
+    FALSE, TRUE, FALSE, TRUE,
+    TRUE, FALSE, FALSE, TRUE,
+    TRUE, FALSE, FALSE, TRUE,
+    FALSE, TRUE, FALSE, TRUE,
+    FALSE, FALSE, FALSE, TRUE, FALSE,
+    rep(FALSE, 4)
+  ),
   ResponseCategories = rep("1,2,3,4,5", 29),
   b = rep(0, 29),
   a = rep(1, 29),
   stringsAsFactors = FALSE
 )
-
-get_items_for_language <- function(lang = "de") {
-  items <- all_items_de
-  if (lang == "en" && "Question_EN" %in% names(items)) {
-    items$Question <- items$Question_EN
-  }
-  return(items)
-}
-
-all_items <- all_items_de
 
 # =============================================================================
 # Vollständige demografische Sektion
@@ -375,7 +478,7 @@ demographic_configs <- list(
         <p style="margin: 0; font-weight: 500;">Erste 2 Buchstaben des Vornamens Ihrer Mutter + erste 2 Buchstaben Ihres Geburtsortes + Tag Ihres Geburtstags</p>
       </div>
       <div style="text-align: center; margin: 30px 0;">
-        <input type="text" id="Persönlicher_Code" name="Persönlicher_Code" placeholder="z.B. MAHA15" style="padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; text-align: center; width: 200px; text-transform: uppercase;" required>
+        <input type="text" id="demo_Persönlicher_Code" name="demo_Persönlicher_Code" placeholder="z.B. MAHA15" style="padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; text-align: center; width: 200px; text-transform: uppercase;" required>
       </div>
       <div style="text-align: center; color: #666; font-size: 14px;">Beispiel: Maria (MA) + Hamburg (HA) + 15. Tag = MAHA15</div>
     </div>',
@@ -385,7 +488,7 @@ demographic_configs <- list(
         <p style="margin: 0; font-weight: 500;">First 2 letters of your mothers first name + first 2 letters of your birthplace + day of your birthday</p>
       </div>
       <div style="text-align: center; margin: 30px 0;">
-        <input type="text" id="Persönlicher_Code" name="Persönlicher_Code" placeholder="e.g. MAHA15" style="padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; text-align: center; width: 200px; text-transform: uppercase;" required>
+        <input type="text" id="demo_Persönlicher_Code" name="demo_Persönlicher_Code" placeholder="e.g. MAHA15" style="padding: 15px 20px; font-size: 18px; border: 2px solid #e0e0e0; border-radius: 8px; text-align: center; width: 200px; text-transform: uppercase;" required>
       </div>
       <div style="text-align: center; color: #666; font-size: 14px;">Example: Maria (MA) + Hamburg (HA) + 15th day = MAHA15</div>
     </div>'
@@ -574,7 +677,13 @@ custom_page_flow <- list(
         }
         return false;
     }",
-    required = FALSE
+    required = FALSE,
+    # Die Checkboxen sind normale HTML-Elemente; Shiny liefert sie als
+    # input$consent_check bzw. input$consent_check_en
+    completion_handler = function(session, rv, inputs, config) {
+      consent <- isTRUE(inputs$consent_check) || isTRUE(inputs$consent_check_en)
+      rv$demo_data$Einverständnis <- if (consent) 1 else NA
+    }
   ),
   
   list(
@@ -762,23 +871,16 @@ custom_page_flow <- list(
     description = "Bewegen Sie den Regler, um Ihre Zustimmung anzugeben (0% = stimme gar nicht zu, 100% = stimme voll zu).",
     description_en = "Move the slider to indicate your agreement (0% = strongly disagree, 100% = strongly agree).",
     demographics = c("Statistik_gutfolgen", "Statistik_selbstwirksam"),
+    # Das JavaScript dieser Seite setzt <name>_touched, sobald jemand den Regler
+    # bewegt. Nur dann zählt der Wert (siehe slider_value()).
     completion_handler = function(session, rv, inputs, config) {
-      cat("\n=== PAGE 12 COMPLETION HANDLER ===\n")
-      
-      stat1_value <- suppressWarnings(as.numeric(inputs$demo_Statistik_gutfolgen))
-      stat2_value <- suppressWarnings(as.numeric(inputs$demo_Statistik_selbstwirksam))
-      
-      cat("Raw slider values: stat1=", stat1_value, " stat2=", stat2_value, "\n")
-      
-      if (!is.na(stat1_value)) {
-        rv$demo_data$Statistik_gutfolgen <- stat1_value
+      for (slider in c("Statistik_gutfolgen", "Statistik_selbstwirksam")) {
+        touched <- isTRUE(inputs[[paste0(slider, "_touched")]])
+        value <- suppressWarnings(as.numeric(inputs[[paste0("demo_", slider)]]))
+        rv$demo_data[[slider]] <- if (touched && length(value) == 1) value else NA
+        rv$demo_data[[paste0(slider, "_touched")]] <- touched
+        hilfo_log(slider, " = ", rv$demo_data[[slider]], " (bewegt: ", touched, ")")
       }
-      if (!is.na(stat2_value)) {
-        rv$demo_data$Statistik_selbstwirksam <- stat2_value
-      }
-      
-      cat(">>> Statistik_gutfolgen saved:", stat1_value, "\n")
-      cat(">>> Statistik_selbstwirksam saved:", stat2_value, "\n")
     },
     custom_css = '
       .slider-description {
@@ -1290,128 +1392,20 @@ custom_page_flow <- list(
     title = "Fast geschafft",
     title_en = "Almost done",
     demographics = c("show_personal_results"),
+    # Hier wird der vollständige Datensatz gespeichert (lokal + WebDAV),
+    # unabhängig davon, ob die Person ihre Ergebnisse sehen möchte.
     completion_handler = function(session, rv, inputs, config) {
-      cat("\n=== PAGE 15 (page14a_preresults) COMPLETION HANDLER TRIGGERED ===\n")
-      
       if (is.null(rv$session_id) || is.na(rv$session_id)) {
-        if (!is.null(session$token)) {
-          rv$session_id <- session$token
-        } else if (!is.null(session$userData$session_id)) {
-          rv$session_id <- session$userData$session_id
-        } else {
-          rv$session_id <- paste0("SESS_", format(Sys.time(), "%Y%m%d_%H%M%S"))
-        }
+        rv$session_id <- if (!is.null(session$token)) session$token else paste0("SESS_", format(Sys.time(), "%Y%m%d_%H%M%S"))
       }
-      
-      data <- data.frame(
-        session_id = rv$session_id,
-        timestamp = as.character(Sys.time()),
-        stringsAsFactors = FALSE
-      )
-      
-      demo_data <- rv$demo_data
-      if (!is.null(demo_data) && is.list(demo_data)) {
-        data$Einverständnis <- demo_data$Einverständnis
-        data$Alter_VPN <- demo_data$Alter_VPN
-        data$Geschlecht <- demo_data$Geschlecht
-        data$Wohnstatus <- demo_data$Wohnstatus
-        data$Wohn_Zusatz <- demo_data$Wohn_Zusatz
-        
-        haustier_response <- demo_data$Haustier
-        haustier_dummies <- create_dummy_variables(
-          response_values = haustier_response,
-          all_options = c(
-            "Hund" = "1",
-            "Katze" = "2",
-            "Fisch" = "3",
-            "Vogel" = "4",
-            "Nager" = "5",
-            "Reptil" = "6",
-            "Ich_moechte_kein_Haustier" = "7"
-          ),
-          prefix = "Haustier"
-        )
-        for (dummy_name in names(haustier_dummies)) {
-          data[[dummy_name]] <- haustier_dummies[[dummy_name]]
-        }
-        data$Haustier_Zusatz <- demo_data$Haustier_Zusatz
-        data$Rauchen <- demo_data$Rauchen
-        data$Ernährung <- demo_data$Ernährung
-        data$Ernährung_Zusatz <- demo_data$Ernährung_Zusatz
-        data$Note_Englisch <- demo_data$Note_Englisch
-        data$Note_Mathe <- demo_data$Note_Mathe
-        
-        stat1_raw <- suppressWarnings(as.numeric(demo_data$Statistik_gutfolgen))
-        stat2_raw <- suppressWarnings(as.numeric(demo_data$Statistik_selbstwirksam))
-        
-        cat("FINAL FILTER AT UPLOAD: stat1 =", stat1_raw, "stat2 =", stat2_raw, "\n")
-        
-        data$Statistik_gutfolgen <- stat1_raw
-        data$Statistik_selbstwirksam <- stat2_raw
-        
-        data$Statistik_gutfolgen_scaled <- if (!is.na(stat1_raw)) (stat1_raw / 100) * 4 + 1 else NA
-        data$Statistik_selbstwirksam_scaled <- if (!is.na(stat2_raw)) (stat2_raw / 100) * 4 + 1 else NA
-        
-        data$Vor_Nachbereitung <- demo_data$Vor_Nachbereitung
-        data$Zufrieden_Hi_7st <- demo_data$Zufrieden_Hi_7st
-        data$Persönlicher_Code <- demo_data$Persönlicher_Code
-        data$show_personal_results <- demo_data$show_personal_results
-      }
-      
-      responses <- rv$responses
-      if (is.null(responses)) responses <- rep(NA, 29)
-      if (length(responses) < 29) responses <- c(responses, rep(NA, 29 - length(responses)))
-      
-      item_ids <- c(
-        "BFE_01", "BFE_02", "BFE_03", "BFE_04",
-        "BFV_01", "BFV_02", "BFV_03", "BFV_04",
-        "BFG_01", "BFG_02", "BFG_03", "BFG_04",
-        "BFN_01", "BFN_02", "BFN_03", "BFN_04",
-        "BFO_01", "BFO_02", "BFO_03", "BFO_04",
-        "PSQ_02", "PSQ_04", "PSQ_16", "PSQ_29", "PSQ_30",
-        "MWS_1_KK", "MWS_10_KK", "MWS_17_KK", "MWS_21_KK"
-      )
-      
-      for (i in 1:29) {
-        data[[item_ids[i]]] <- responses[i]
-      }
-      
-      if (length(responses) >= 29) {
-        data$BFI_Extraversion <- mean(responses[1:4], na.rm = TRUE)
-        data$BFI_Vertraeglichkeit <- mean(responses[5:8], na.rm = TRUE)
-        data$BFI_Gewissenhaftigkeit <- mean(responses[9:12], na.rm = TRUE)
-        data$BFI_Neurotizismus <- mean(responses[13:16], na.rm = TRUE)
-        data$BFI_Offenheit <- mean(responses[17:20], na.rm = TRUE)
-        
-        data$PSQ_Stress <- mean(responses[21:25], na.rm = TRUE)
-        
-        data$MWS_StudySkills <- mean(responses[26:29], na.rm = TRUE)
-        
-        stat_vals <- c(data$Statistik_gutfolgen_scaled, data$Statistik_selbstwirksam_scaled)
-        data$Statistics_Confidence <- mean(stat_vals, na.rm = TRUE)
-      }
-      
-      timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
-      filename <- paste0("HilFo_results_", timestamp, "_", rv$session_id, ".csv")
-      
-      cat("DEBUG: Calling save_to_cloud with filename:", filename, "\n")
-      
-      upload_success <- save_to_cloud(data, filename)
-      
-      if (upload_success) {
-        cat("=== PAGE 15 UPLOAD SUCCESS ===\n\n")
-        rv$immediate_upload_completed <- TRUE
-        rv$skip_results_upload <- TRUE
+      record <- build_hilfo_record(rv$session_id, rv$demo_data, rv$responses,
+                                   language = if (is.null(rv$language)) "de" else rv$language)
+      filename <- paste0("HilFo_results_", format(Sys.time(), "%Y%m%d_%H%M%S"), "_", rv$session_id, ".csv")
+
+      if (save_to_cloud(record, filename)) {
+        # Signalisiert inrep, dass kein zusätzlicher JSON-Upload nötig ist
         rv$csv_uploaded <- TRUE
         rv$data_uploaded_to_cloud <- TRUE
-        if (!is.null(session$userData)) {
-          session$userData$skip_results_upload <- TRUE
-          session$userData$csv_uploaded <- TRUE
-          session$userData$data_uploaded_to_cloud <- TRUE
-          cat("DEBUG: Set all upload flags to TRUE in session$userData and rv\n")
-        }
-      } else {
-        cat("=== PAGE 15 UPLOAD FAILED ===\n\n")
       }
     }
   ),
@@ -1433,23 +1427,25 @@ custom_page_flow <- list(
 # Auswertungsfunktion mit statischem Radarplot
 # =============================================================================
 
-create_hilfo_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
+create_hilfo_report <- function(responses, item_bank, demographics = NULL, session = NULL, rv = NULL) {
   tryCatch({
-    cat("DEBUG: create_hilfo_report called with", length(responses), "responses\n")
-    
-    cat("\n=== SKIPPING UPLOAD (already done by completion handler) ===\n")
-    skip_upload <- TRUE
+    # Die Daten wurden bereits auf Seite 15 gespeichert; hier nur der Bericht.
+    hilfo_log("create_hilfo_report: ", length(responses), " Antworten")
     
     current_lang <- "de"
     is_english <- FALSE
     
-    if (!is.null(session) && !is.null(session$input) && !is.null(session$input$language)) {
-      current_lang <- session$input$language
-      cat("DEBUG: Using language from session$input$language:", current_lang, "\n")
+    # inrep keeps the participant's language in rv$language (set by the language toggle)
+    lang_from_session <- if (!is.null(rv)) shiny::isolate(rv$language) else NULL
+    if (is.null(lang_from_session) && !is.null(session)) {
+      lang_from_session <- session$userData$language
+      if (is.null(lang_from_session)) lang_from_session <- shiny::isolate(session$input$language)
+    }
+    if (!is.null(lang_from_session) && lang_from_session %in% c("de", "en")) {
+      current_lang <- lang_from_session
     }
     
     is_english <- (current_lang == "en")
-    cat("DEBUG: is_english =", is_english, "\n")
     
     if (is.null(responses) || !is.vector(responses) || length(responses) == 0) {
       if (is_english) {
@@ -1493,41 +1489,6 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     }
     responses <- as.numeric(responses)
     
-    try({
-      non_na_count <- sum(!is.na(responses))
-      cat("DEBUG: responses non-NA count before session recovery:", non_na_count, "\n")
-      
-      if (!is.null(session) && !is.null(session$input) && non_na_count < 5 && !is.null(item_bank)) {
-        item_ids <- NULL
-        if (is.data.frame(item_bank) && "id" %in% names(item_bank)) {
-          item_ids <- as.character(item_bank$id)
-        } else if (is.vector(item_bank) && length(item_bank) >= length(responses)) {
-          item_ids <- as.character(item_bank)
-        }
-        
-        if (!is.null(item_ids)) {
-          L <- min(length(item_ids), length(responses))
-          recovered <- 0
-          for (i in seq_len(L)) {
-            if (is.na(responses[i])) {
-              input_name <- item_ids[i]
-              val <- NULL
-              try({ val <- session$input[[input_name]] }, silent = TRUE)
-              if (!is.null(val) && nzchar(as.character(val))) {
-                num_val <- suppressWarnings(as.numeric(val))
-                if (!is.na(num_val)) {
-                  responses[i] <- num_val
-                  recovered <- recovered + 1
-                  cat("DEBUG: Recovered response for idx", i, "item_id", input_name, "value", num_val, "\n")
-                }
-              }
-            }
-          }
-          cat("DEBUG: Recovered", recovered, "responses from session$input\n")
-        }
-      }
-    }, silent = TRUE)
-    
     safe_mean <- function(items, min_items = 2) {
       valid_count <- sum(!is.na(items))
       if (valid_count >= min_items) {
@@ -1549,21 +1510,11 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     
     scores$Studierfaehigkeiten <- safe_mean(responses[26:29], min_items = 2)
     
-    stat_vals <- c()
-    if (!is.null(demographics) && length(demographics) > 0) {
-      if ("Statistik_gutfolgen" %in% names(demographics)) {
-        val <- as.numeric(demographics["Statistik_gutfolgen"])
-        if (!is.na(val)) {
-          stat_vals <- c(stat_vals, ((val - 1) / 99) * 4 + 1)
-        }
-      }
-      if ("Statistik_selbstwirksam" %in% names(demographics)) {
-        val <- as.numeric(demographics["Statistik_selbstwirksam"])
-        if (!is.na(val)) {
-          stat_vals <- c(stat_vals, ((val - 1) / 99) * 4 + 1)
-        }
-      }
-    }
+    # Statistik = Mittelwert der beiden Schieberegler (nur bewegte Regler zählen)
+    demo_list <- if (is.null(demographics)) list() else as.list(demographics)
+    stat_vals <- c(scale_slider(slider_value(demo_list, "Statistik_gutfolgen")),
+                   scale_slider(slider_value(demo_list, "Statistik_selbstwirksam")))
+    stat_vals <- stat_vals[!is.na(stat_vals)]
     scores$Statistik <- if (length(stat_vals) > 0) mean(stat_vals, na.rm = TRUE) else NA
     
     radar_scores <- list(
@@ -1754,7 +1705,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     bar_plot <- ggplot2::ggplot(all_data, ggplot2::aes(x = dimension, y = score, fill = category)) +
       ggplot2::geom_bar(stat = "identity", width = 0.7) +
       ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", score)), 
-                         vjust = -0.5, size = 6, fontface = "bold", color = "#333") +
+                         vjust = -0.5, size = 6, fontface = "bold", color = "#333333") +
       color_scale +
       ggplot2::scale_y_continuous(limits = c(0, 5.5), breaks = 0:5) +
       ggplot2::theme_minimal(base_size = 14) +
@@ -1808,17 +1759,14 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
       '</style>',
       '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
       
-      '<div class="report-section">',
-      '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
-      '<span data-lang-de="Persönlichkeitsprofil" data-lang-en="Personality Profile">', if (is_english) "Personality Profile" else "Persönlichkeitsprofil", '</span></h2>',
-      tryCatch({
-        if (!is.null(radar_base64) && radar_base64 != "") {
-          paste0('<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">')
-        } else {
-          ""
-        }
-      }, error = function(e) ""),
-      '</div>',
+      # Radar section only when the radar plot exists (it needs the optional ggradar package)
+      if (!is.null(radar_base64) && radar_base64 != "") paste0(
+        '<div class="report-section">',
+        '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
+        '<span data-lang-de="Persönlichkeitsprofil" data-lang-en="Personality Profile">', if (is_english) "Personality Profile" else "Persönlichkeitsprofil", '</span></h2>',
+        '<img src="data:image/png;base64,', radar_base64, '" style="width: 100%; max-width: 700px; display: block; margin: 0 auto; border-radius: 8px;">',
+        '</div>'
+      ) else "",
       
       '<div class="report-section">',
       '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
@@ -1885,8 +1833,8 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
       sds[["Studierfaehigkeiten"]] <- NA
     }
     
-    stat_items <- responses[30:31]
-    valid_stat <- stat_items[!is.na(stat_items)]
+    # Statistik comes from the two page-12 sliders, not from item responses
+    valid_stat <- stat_vals[!is.na(stat_vals)]
     if (length(valid_stat) >= 2) {
       sd_val <- sd(valid_stat, na.rm = TRUE)
       sds[["Statistik"]] <- if(is.na(sd_val) || is.nan(sd_val)) NA else round(sd_val, 2)
@@ -1956,54 +1904,8 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     return(shiny::HTML(html))
     
   }, error = function(e) {
-    cat("ERROR in create_hilfo_report:", e$message, "\n")
+    message("[HilFo] Fehler in create_hilfo_report: ", e$message)
     return(shiny::HTML('<div style="padding: 20px; color: red;"><h2>Fehler beim Generieren des Berichts</h2><p>Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.</p></div>'))
-  })
-}
-
-# =============================================================================
-# CSV-Auswertung
-# =============================================================================
-
-process_hilfo_csv <- function(csv_data, responses, demographics, item_bank) {
-  cat("DEBUG: process_hilfo_csv called with", length(responses), "responses\n")
-  
-  tryCatch({
-    if (is.null(responses) || length(responses) == 0) {
-      cat("WARNING: No responses provided to process_hilfo_csv\n")
-      return(csv_data)
-    }
-    
-    if (length(responses) < 31) {
-      responses <- c(responses, rep(NA, 31 - length(responses)))
-    }
-    
-    if (length(responses) >= 20) {
-      csv_data$BFI_Extraversion <- mean(responses[1:4], na.rm = TRUE)
-      csv_data$BFI_Agreeableness <- mean(responses[5:8], na.rm = TRUE)
-      csv_data$BFI_Conscientiousness <- mean(responses[9:12], na.rm = TRUE)
-      csv_data$BFI_Neuroticism <- mean(responses[13:16], na.rm = TRUE)
-      csv_data$BFI_Openness <- mean(responses[17:20], na.rm = TRUE)
-    }
-    
-    if (length(responses) >= 25) {
-      csv_data$PSQ_Stress <- mean(responses[21:25], na.rm = TRUE)
-    }
-    
-    if (length(responses) >= 29) {
-      csv_data$MWS_StudySkills <- mean(responses[26:29], na.rm = TRUE)
-    }
-    
-    if (length(responses) >= 31) {
-      csv_data$Statistics_Confidence <- mean(responses[30:31], na.rm = TRUE)
-    }
-    
-    cat("DEBUG: Successfully processed CSV data\n")
-    return(csv_data)
-    
-  }, error = function(e) {
-    cat("ERROR in process_hilfo_csv:", e$message, "\n")
-    return(csv_data)
   })
 }
 
@@ -2032,16 +1934,17 @@ study_config <- inrep::create_study_config(
   bilingual = TRUE,
   session_save = TRUE,
   session_timeout = 7200,
-  results_processor = create_hilfo_report,
-  csv_processor = process_hilfo_csv
+  results_processor = create_hilfo_report
 )
 
-# Studie starten
+# Studie starten. debug_mode = TRUE blendet die Testleiste ein (Strg+A füllt
+# die Seite, Strg+Q füllt alles bis zum Bericht) und gehört nicht in den
+# Live-Betrieb.
 inrep::launch_study(
   config = study_config,
   item_bank = all_items_de,
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
   save_format = "csv",
-  debug_mode = TRUE
+  debug_mode = FALSE
 )

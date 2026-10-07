@@ -875,3 +875,19 @@ resume_session <- function(file_path) {
     NULL
   })
 }
+
+#' End one participant's session
+#'
+#' Closes only the given Shiny session, so other participants on the same
+#' deployed app (e.g. shinyapps.io) keep running. Set
+#' \code{options(inrep.stop_app_on_finish = TRUE)} to stop the whole app
+#' instead, which is only sensible for single-user local runs.
+#' @noRd
+.inrep_end_session <- function(session) {
+  if (isTRUE(getOption("inrep.stop_app_on_finish", FALSE))) {
+    try(shiny::stopApp(), silent = TRUE)
+    return(invisible(NULL))
+  }
+  if (!is.null(session)) try(session$close(), silent = TRUE)
+  invisible(NULL)
+}

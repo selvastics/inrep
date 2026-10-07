@@ -1283,9 +1283,8 @@ study_config <- inrep::create_study_config(
     # NOTE: When session times out or study completes:
     # 1. Browser/tab will automatically close
     # 2. All data is saved before closing
-    # 3. Shiny app is stopped with stopApp()
-    # 4. R script terminates completely (if running in background)
-    # This ensures no background R processes remain running
+    # 3. Only this participant's session is closed; the app keeps running for others
+    #    (set options(inrep.stop_app_on_finish = TRUE) to stop the app for local single-user runs)
     results_processor = create_rcq_report
 )
 

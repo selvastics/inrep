@@ -665,9 +665,9 @@ body  { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin:
            xlim = c(1, cat_k), ylim = ylim,
            xlab = "Item", ylab = expression(hat(theta)),
            main = "Ability trajectory", bty = "l", las = 1, cex.axis = .82)
-      abline(h = true_th,  lty = 2, col = "#A23B72", lwd = 1.6)
-      points(s, theta_traj[s], pch = 19, col = col_a, cex = 1.9)
-      legend("topright", bty = "n", cex = .76,
+      graphics::abline(h = true_th,  lty = 2, col = "#A23B72", lwd = 1.6)
+      graphics::points(s, theta_traj[s], pch = 19, col = col_a, cex = 1.9)
+      graphics::legend("topright", bty = "n", cex = .76,
              legend = c(expression(hat(theta) ~ "(EAP)"), "True \u03b8"),
              col = c(col_a, "#A23B72"), lwd = c(2.2, 1.6), lty = c(1, 2))
     }, bg = "white")
@@ -684,7 +684,7 @@ body  { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin:
            xlab = "Item", ylab = "SE",
            main = "Standard error", bty = "l", las = 1, cex.axis = .82)
       if (is.numeric(config$min_SEM))
-        abline(h = config$min_SEM, lty = 3, col = "grey50", lwd = 1.2)
+        graphics::abline(h = config$min_SEM, lty = 3, col = "grey50", lwd = 1.2)
     }, bg = "white")
 
     # ── Results stats UI ──────────────────────────────────────────────────────
@@ -715,7 +715,7 @@ body  { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin:
           shiny::hr(),
           shiny::p(
             shiny::span(class = "cond-tag cond-mcar", "MCAR arm"),
-            " — same individual, random item selection"),
+            " - same individual, random item selection"),
           shiny::fluidRow(
             shiny::column(3,
               stat_box(sprintf("%+.3f", mcar_arm$final_theta), "\u03b8\u0302 MCAR")),
@@ -752,7 +752,7 @@ body  { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin:
       col_a <- "#2E86AB"
       col_m <- "#F18F01"
 
-      par(mfrow = c(1, 2), mar = c(4, 4, 3, 1.5))
+      graphics::par(mfrow = c(1, 2), mar = c(4, 4, 3, 1.5))
 
       # Theta
       ylim <- range(c(theta_traj, true_th,
@@ -763,9 +763,9 @@ body  { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin:
            xlab = "Item", ylab = expression(hat(theta)),
            main = sprintf("Ability: participant #%d", id),
            ylim = ylim, bty = "l", las = 1, cex.axis = .82)
-      abline(h = true_th, lty = 2, col = "#A23B72", lwd = 1.6)
+      graphics::abline(h = true_th, lty = 2, col = "#A23B72", lwd = 1.6)
       if (show_mcar && !is.null(mcar_arm))
-        lines(seq_len(cat_k), mcar_arm$theta_traj,
+        graphics::lines(seq_len(cat_k), mcar_arm$theta_traj,
               col = col_m, lwd = 1.5, lty = 3)
       lgd <- c(expression(hat(theta) ~ "adaptive"), "True \u03b8")
       lcl <- c(col_a, "#A23B72")
@@ -774,7 +774,7 @@ body  { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin:
         lgd <- c(lgd, expression(hat(theta) ~ "MCAR"))
         lcl <- c(lcl, col_m); llw <- c(llw, 1.5); llt <- c(llt, 3)
       }
-      legend("topright", bty = "n", cex = .76,
+      graphics::legend("topright", bty = "n", cex = .76,
              legend = lgd, col = lcl, lwd = llw, lty = llt)
 
       # SE
@@ -787,12 +787,12 @@ body  { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin:
            main = "Standard error",
            ylim = ylim_se, bty = "l", las = 1, cex.axis = .82)
       if (show_mcar && !is.null(mcar_arm))
-        lines(seq_len(cat_k), mcar_arm$se_traj,
+        graphics::lines(seq_len(cat_k), mcar_arm$se_traj,
               col = col_m, lwd = 1.5, lty = 3)
       if (is.numeric(config$min_SEM))
-        abline(h = config$min_SEM, lty = 3, col = "grey50", lwd = 1.2)
+        graphics::abline(h = config$min_SEM, lty = 3, col = "grey50", lwd = 1.2)
       if (show_mcar && !is.null(mcar_arm))
-        legend("topright", bty = "n", cex = .76,
+        graphics::legend("topright", bty = "n", cex = .76,
                legend = c("Adaptive", "MCAR"),
                col = c(col_a, col_m), lwd = c(2.2, 1.5), lty = c(1, 3))
     }, bg = "white")
