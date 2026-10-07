@@ -162,19 +162,19 @@ save_to_cloud <- function(data, filename, attempts = 3) {
 
   for (base_url in WEBDAV_URLS) {
     for (attempt in seq_len(attempts)) {
-      status <- tryCatch({
-        response <- httr::PUT(
+      response <- tryCatch({
+        httr::PUT(
           url = paste0(base_url, utils::URLencode(filename)),
           body = upload_body,
           httr::content_type("text/csv"),
           httr::authenticate(WEBDAV_SHARE_TOKEN, WEBDAV_PASSWORD, type = "basic"),
           httr::timeout(30)
         )
-        httr::status_code(response)
       }, error = function(e) {
         message("[HilFo] WebDAV-Upload Fehler (", base_url, ", Versuch ", attempt, "): ", e$message)
-        NA_integer_
+        NULL
       })
+      status <- if (!is.null(response)) httr::status_code(response) else NA_integer_
       if (!is.na(status) && status %in% c(200, 201, 204)) {
         message("[HilFo] Hochgeladen (", base_url, "): ", filename)
         return(list(cloud = TRUE, local = local_write_ok, attempted = TRUE))
@@ -186,7 +186,15 @@ save_to_cloud <- function(data, filename, attempts = 3) {
                 "Passwort stimmt nicht.")
         break
       }
-      if (!is.na(status)) message("[HilFo] WebDAV-Upload Status ", status, " (", base_url, ", Versuch ", attempt, ")")
+      if (!is.na(status)) {
+        # Log the server's actual error body (Nextcloud/SabreDAV sends a
+        # human-readable reason, e.g. "share does not allow uploads") so a
+        # bare status code doesn't leave us guessing why it failed.
+        body_text <- tryCatch(httr::content(response, "text", encoding = "UTF-8"), error = function(e) "")
+        if (is.null(body_text)) body_text <- ""
+        message("[HilFo] WebDAV-Upload Status ", status, " (", base_url, ", Versuch ", attempt, ")",
+                if (nzchar(trimws(body_text))) paste0(": ", trimws(body_text)) else "")
+      }
       if (attempt < attempts) Sys.sleep(attempt)
     }
   }
