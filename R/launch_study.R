@@ -5160,19 +5160,18 @@ launch_study <- function(
           all_responses <- c(all_responses, rep(NA, max(0, n_fixed - length(all_responses))))[seq_len(n_fixed)]
         }
         
-        # If we're already on a results page, treat this as a final "finish" action
-        # (e.g., start auto-close timer) and do not reset navigation.
+        # If we're already on a results page, the button is the final "finish"
+        # action and does not reset navigation.
         if (!is.null(current_page$type) && identical(current_page$type, "results")) {
-          # Only start auto-close from the last results page.
-          if (isTRUE(rv$current_page == last_results_idx) && !disable_auto_close && auto_close_time > 0) {
-            if (auto_close_time_unit == "minutes") {
-              auto_close_seconds <- auto_close_time * 60
-            } else {
-              auto_close_seconds <- auto_close_time
-            }
-            rv$countdown_time <- auto_close_seconds
+          # On the last results page the participant is done: close right away.
+          # Setting the countdown to 0 lets the auto-close observer run its
+          # close-tab script and end the session (or the app, with
+          # options(inrep.stop_app_on_finish = TRUE)). The automatic countdown
+          # shown on the page still closes it if nobody clicks.
+          if (isTRUE(rv$current_page == last_results_idx)) {
+            rv$countdown_time <- 0
             rv$auto_close_timer_active <- TRUE
-            logger(sprintf("Auto-close timer started: %d seconds", auto_close_seconds), level = "INFO")
+            logger("Finish clicked on the last results page - closing now", level = "INFO")
           }
           return()
         }

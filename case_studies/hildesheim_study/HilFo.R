@@ -25,8 +25,9 @@
 #   WebDAV (with retries). read_hilfo_data.R reads these files back in.
 #
 # Configuration
-#   HILFO_WEBDAV_SHARE_TOKEN, HILFO_WEBDAV_PASSWORD  WebDAV credentials
-#                                                   (e.g. set in .Renviron)
+#   HILFO_WEBDAV_SHARE_TOKEN, HILFO_WEBDAV_PASSWORD  WebDAV credentials. Set
+#     both in ~/.Renviron (usethis::edit_r_environ() opens the file), then
+#     restart R. Without them, data is only saved locally.
 #   options(hilfo.debug = TRUE)                     verbose console output
 # =============================================================================
 
@@ -104,11 +105,12 @@ scale_slider <- function(x) {
 # WEBDAV EXPORT
 # =============================================================================
 # Target is a public Nextcloud share (academiccloud). The username is the
-# share token, the password is the share password. Set both via environment
-# variables; the values after "unset =" are just fallbacks for local testing.
+# share token (the part after /s/ in the share link), the password is the
+# share password. Both come from environment variables; credentials don't
+# belong in the repository.
 WEBDAV_URL <- "https://sync.academiccloud.de/public.php/webdav/"
-WEBDAV_SHARE_TOKEN <- Sys.getenv("HILFO_WEBDAV_SHARE_TOKEN", unset = "Y51QPXzJVLWSAcb")
-WEBDAV_PASSWORD <- Sys.getenv("HILFO_WEBDAV_PASSWORD", unset = "inreptest")
+WEBDAV_SHARE_TOKEN <- Sys.getenv("HILFO_WEBDAV_SHARE_TOKEN")
+WEBDAV_PASSWORD <- Sys.getenv("HILFO_WEBDAV_PASSWORD")
 LOCAL_RESULTS_DIR <- file.path("study_data", "hilfo_results")
 
 # Saves one result row: locally first (backup copy), then uploads it via
@@ -127,25 +129,30 @@ save_to_cloud <- function(data, filename, attempts = 3) {
     FALSE
   })
 
-  # Upload the local file normally; fall back to the in-memory CSV text if
-  # the local write didn't work.
-  if (local_write_ok) {
-    upload_body <- httr::upload_file(local_file, type = "text/csv")
+  if (!nzchar(WEBDAV_SHARE_TOKEN) || !nzchar(WEBDAV_PASSWORD)) {
+    message("[HilFo] HILFO_WEBDAV_SHARE_TOKEN / HILFO_WEBDAV_PASSWORD nicht gesetzt - kein Upload",
+            if (local_write_ok) paste0(", Daten liegen lokal in ", local_file) else "")
+    return(FALSE)
+  }
+
+  # Upload sends the file content as raw bytes (like the earlier Shiny
+  # version did). If the local copy failed, build the CSV in memory instead.
+  upload_body <- if (local_write_ok) {
+    readBin(local_file, "raw", file.info(local_file)$size)
   } else {
-    csv_text <- tryCatch(
+    tryCatch(
       paste(utils::capture.output(utils::write.csv(data, row.names = FALSE, na = "")), collapse = "\n"),
       error = function(e) NULL
     )
-    if (is.null(csv_text)) return(FALSE)
-    upload_body <- csv_text
   }
+  if (is.null(upload_body)) return(FALSE)
 
   for (attempt in seq_len(attempts)) {
     status <- tryCatch({
       response <- httr::PUT(
         url = paste0(WEBDAV_URL, utils::URLencode(filename)),
         body = upload_body,
-        if (!local_write_ok) httr::content_type("text/csv"),
+        httr::content_type("text/csv"),
         httr::authenticate(WEBDAV_SHARE_TOKEN, WEBDAV_PASSWORD, type = "basic"),
         httr::timeout(30)
       )
@@ -157,6 +164,12 @@ save_to_cloud <- function(data, filename, attempts = 3) {
     if (!is.na(status) && status %in% c(200, 201, 204)) {
       message("[HilFo] Hochgeladen: ", filename)
       return(TRUE)
+    }
+    if (!is.na(status) && status %in% c(401, 403)) {
+      # Wrong credentials: retrying won't help
+      message("[HilFo] WebDAV-Upload abgelehnt (Status ", status, "): Share-Token oder ",
+              "Passwort stimmt nicht. HILFO_WEBDAV_SHARE_TOKEN und HILFO_WEBDAV_PASSWORD prüfen.")
+      break
     }
     if (!is.na(status)) message("[HilFo] WebDAV-Upload Status ", status, " (Versuch ", attempt, ")")
     if (attempt < attempts) Sys.sleep(attempt)
