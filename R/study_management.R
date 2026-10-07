@@ -3332,35 +3332,36 @@ validate_page_progression <- function(current_page, input, config) {
     # Check all required demographics
     demo_vars <- page$demographics
     if (!is.null(demo_vars) && length(demo_vars) > 0) {
+      # MAINTENANCE NOTE: Keep this one generic message, same as the "items"
+      # branch above - repeating each field's full question text back in the
+      # error list reads as redundant (the question is already right there
+      # on the page) and gets unwieldy on pages with long questions/options.
+      demo_page_error_added <- FALSE
       for (dem in demo_vars) {
         demo_config <- config$demographic_configs[[dem]]
         if (isTRUE(demo_config$required)) {
           input_id <- paste0("demo_", dem)
           value <- input[[input_id]]
-          
+
           # FIX: Handle vectors (checkboxes) safely - check length first, handle NA properly
-          is_empty <- is.null(value) || length(value) == 0 || 
+          is_empty <- is.null(value) || length(value) == 0 ||
                       all(is.na(value)) ||
-                      (is.character(value) && all(value == "" | is.na(value))) || 
+                      (is.character(value) && all(value == "" | is.na(value))) ||
                       (is.character(value) && length(value) == 1 && !is.na(value) && nchar(trimws(value)) == 0)
-          
+
           # Ensure is_empty is a single logical value
           is_empty <- isTRUE(is_empty)
-          
+
           if (is_empty) {
-            # Use language-appropriate question text
-            question <- if (current_lang == "en" && !is.null(demo_config$question_en)) {
-              demo_config$question_en
-            } else {
-              demo_config$question %||% dem
+            if (!demo_page_error_added) {
+              error_msg <- if (current_lang == "en") {
+                "Please answer all questions on this page."
+              } else {
+                "Bitte beantworten Sie alle Fragen auf dieser Seite."
+              }
+              errors <- c(errors, error_msg)
+              demo_page_error_added <- TRUE
             }
-            # Truncate long questions for error message
-            if (nchar(question) > 50) {
-              question <- paste0(substr(question, 1, 47), "...")
-            }
-            # Use current_lang from top of function
-            error_prefix <- if (current_lang == "en") "Please answer: " else "Bitte beantworten Sie: "
-            errors <- c(errors, paste0(error_prefix, question))
             missing_fields <- c(missing_fields, input_id)
           }
         }

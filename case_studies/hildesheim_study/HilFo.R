@@ -108,16 +108,26 @@ scale_slider <- function(x) {
 # share token (the part after /s/ in the share link), the password is the
 # share password. Both come from environment variables; credentials don't
 # belong in the repository.
-WEBDAV_URL <- "https://sync.academiccloud.de/public.php/webdav/"
+#
+# academiccloud shares can live on the university-specific tenant
+# (uni-hildesheim.files.academiccloud.de) or on the older shared one
+# (sync.academiccloud.de) - a share only exists on one of them, and the
+# wrong host rejects the same token/password with a 401. save_to_cloud()
+# tries them in this order and falls through to the next on failure, so the
+# same credentials work regardless of which tenant actually issued them.
+WEBDAV_URL <- "https://uni-hildesheim.files.academiccloud.de/public.php/webdav/"
+WEBDAV_URLS <- c(WEBDAV_URL, "https://sync.academiccloud.de/public.php/webdav/")
 WEBDAV_SHARE_TOKEN <- Sys.getenv("HILFO_WEBDAV_SHARE_TOKEN")
 WEBDAV_PASSWORD <- Sys.getenv("HILFO_WEBDAV_PASSWORD")
 LOCAL_RESULTS_DIR <- file.path("study_data", "hilfo_results")
 
 # Saves one result row: locally first (backup copy), then uploads it via
-# WebDAV with up to three attempts. Returns list(cloud = , local = ) so the
-# caller can tell "uploaded" apart from "saved locally, cloud not uploaded"
-# apart from "lost entirely" - those are three very different situations and
-# only the last one should ever alarm the participant.
+# WebDAV, trying each host in WEBDAV_URLS with up to `attempts` tries before
+# moving to the next one. Returns list(cloud=, local=, attempted=) so the
+# caller can tell apart: uploaded; saved locally but no credentials were
+# configured (nothing to warn about); and a configured upload that actually
+# failed (wrong password, rejected login, network error - worth warning
+# about even though the local copy is fine).
 # If the local write fails (e.g. disk full), we still try uploading the CSV
 # straight from memory instead of just losing the participant's data.
 save_to_cloud <- function(data, filename, attempts = 3) {
@@ -135,7 +145,7 @@ save_to_cloud <- function(data, filename, attempts = 3) {
   if (!nzchar(WEBDAV_SHARE_TOKEN) || !nzchar(WEBDAV_PASSWORD)) {
     message("[HilFo] HILFO_WEBDAV_SHARE_TOKEN / HILFO_WEBDAV_PASSWORD nicht gesetzt - kein Upload",
             if (local_write_ok) paste0(", Daten liegen lokal in ", local_file) else "")
-    return(list(cloud = FALSE, local = local_write_ok))
+    return(list(cloud = FALSE, local = local_write_ok, attempted = FALSE))
   }
 
   # Upload sends the file content as raw bytes (like the earlier Shiny
@@ -148,41 +158,44 @@ save_to_cloud <- function(data, filename, attempts = 3) {
       error = function(e) NULL
     )
   }
-  if (is.null(upload_body)) return(list(cloud = FALSE, local = local_write_ok))
+  if (is.null(upload_body)) return(list(cloud = FALSE, local = local_write_ok, attempted = TRUE))
 
-  for (attempt in seq_len(attempts)) {
-    status <- tryCatch({
-      response <- httr::PUT(
-        url = paste0(WEBDAV_URL, utils::URLencode(filename)),
-        body = upload_body,
-        httr::content_type("text/csv"),
-        httr::authenticate(WEBDAV_SHARE_TOKEN, WEBDAV_PASSWORD, type = "basic"),
-        httr::timeout(30)
-      )
-      httr::status_code(response)
-    }, error = function(e) {
-      message("[HilFo] WebDAV-Upload Fehler (Versuch ", attempt, "): ", e$message)
-      NA_integer_
-    })
-    if (!is.na(status) && status %in% c(200, 201, 204)) {
-      message("[HilFo] Hochgeladen: ", filename)
-      return(list(cloud = TRUE, local = local_write_ok))
+  for (base_url in WEBDAV_URLS) {
+    for (attempt in seq_len(attempts)) {
+      status <- tryCatch({
+        response <- httr::PUT(
+          url = paste0(base_url, utils::URLencode(filename)),
+          body = upload_body,
+          httr::content_type("text/csv"),
+          httr::authenticate(WEBDAV_SHARE_TOKEN, WEBDAV_PASSWORD, type = "basic"),
+          httr::timeout(30)
+        )
+        httr::status_code(response)
+      }, error = function(e) {
+        message("[HilFo] WebDAV-Upload Fehler (", base_url, ", Versuch ", attempt, "): ", e$message)
+        NA_integer_
+      })
+      if (!is.na(status) && status %in% c(200, 201, 204)) {
+        message("[HilFo] Hochgeladen (", base_url, "): ", filename)
+        return(list(cloud = TRUE, local = local_write_ok, attempted = TRUE))
+      }
+      if (!is.na(status) && status %in% c(401, 403)) {
+        # Wrong credentials for this host: retrying the same host won't
+        # help, but the share might live on the next one in WEBDAV_URLS.
+        message("[HilFo] WebDAV-Upload abgelehnt (", base_url, ", Status ", status, "): Share-Token oder ",
+                "Passwort stimmt nicht.")
+        break
+      }
+      if (!is.na(status)) message("[HilFo] WebDAV-Upload Status ", status, " (", base_url, ", Versuch ", attempt, ")")
+      if (attempt < attempts) Sys.sleep(attempt)
     }
-    if (!is.na(status) && status %in% c(401, 403)) {
-      # Wrong credentials: retrying won't help
-      message("[HilFo] WebDAV-Upload abgelehnt (Status ", status, "): Share-Token oder ",
-              "Passwort stimmt nicht. HILFO_WEBDAV_SHARE_TOKEN und HILFO_WEBDAV_PASSWORD prüfen.")
-      break
-    }
-    if (!is.na(status)) message("[HilFo] WebDAV-Upload Status ", status, " (Versuch ", attempt, ")")
-    if (attempt < attempts) Sys.sleep(attempt)
   }
   if (local_write_ok) {
     message("[HilFo] Upload fehlgeschlagen, Daten liegen lokal in ", local_file)
   } else {
     message("[HilFo] CRITICAL: Upload fehlgeschlagen UND lokales Speichern fehlgeschlagen - Datensatz ist verloren: ", filename)
   }
-  list(cloud = FALSE, local = local_write_ok)
+  list(cloud = FALSE, local = local_write_ok, attempted = TRUE)
 }
 
 # =============================================================================
@@ -1452,18 +1465,19 @@ custom_page_flow <- list(
         save_to_cloud(record, filename)
       }, error = function(e) {
         message("[HilFo] CRITICAL: Speichern fehlgeschlagen: ", e$message)
-        list(cloud = FALSE, local = FALSE)
+        list(cloud = FALSE, local = FALSE, attempted = FALSE)
       })
 
       if (isTRUE(saved$cloud)) {
         # Tells inrep no extra JSON upload is needed
         rv$csv_uploaded <- TRUE
         rv$data_uploaded_to_cloud <- TRUE
-      } else if (!isTRUE(saved$local)) {
-        # Neither the cloud upload nor the local copy worked - the record is
-        # genuinely gone. Not uploading to WebDAV (e.g. no credentials set,
-        # or a rejected login) is NOT this case: the data is still safe in
-        # the local CSV, so it doesn't warrant alarming the participant.
+      } else if (isTRUE(saved$attempted) || !isTRUE(saved$local)) {
+        # Warn whenever an upload was actually attempted (credentials were
+        # configured) and still failed - that's worth knowing about even
+        # though the local copy is safe. The ONLY case that stays silent is
+        # no credentials configured at all + local save worked, since that's
+        # an intentional local-only run, not a failure.
         rv$hilfo_save_failed <- TRUE
       }
     }
@@ -1818,10 +1832,11 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
       '</style>',
       '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
 
-      # Shown only when save_to_cloud() couldn't save the record ANYWHERE
-      # (not even the local CSV) - a missing/rejected WebDAV login with a
-      # working local save does NOT set this, since the data is safe either
-      # way and isn't worth alarming the participant about.
+      # Shown when save_to_cloud() either lost the record entirely, or a
+      # configured WebDAV upload was actually attempted and rejected (wrong
+      # credentials, network error). Skipping the upload because no
+      # credentials were set at all - with a working local save - does NOT
+      # set this; that's an intentional local-only run, not a failure.
       if (!is.null(rv) && isTRUE(shiny::isolate(rv$hilfo_save_failed))) paste0(
         '<div style="background: #fff3cd; border: 2px solid #e8041c; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: center;">',
         if (is_english) {
