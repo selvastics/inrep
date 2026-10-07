@@ -113,17 +113,39 @@ LOCAL_RESULTS_DIR <- file.path("study_data", "hilfo_results")
 
 # Speichert eine Ergebniszeile: erst lokal (Sicherungskopie), dann Upload per
 # WebDAV mit bis zu drei Versuchen. Gibt TRUE zurück, wenn der Upload gelang.
+# If the local write fails (e.g. disk full), we still try uploading the CSV
+# straight from memory instead of just losing the participant's data.
 save_to_cloud <- function(data, filename, attempts = 3) {
-  dir.create(LOCAL_RESULTS_DIR, recursive = TRUE, showWarnings = FALSE)
   local_file <- file.path(LOCAL_RESULTS_DIR, filename)
-  utils::write.csv(data, local_file, row.names = FALSE, na = "", fileEncoding = "UTF-8")
-  hilfo_log("Lokale Kopie: ", local_file)
+  local_write_ok <- tryCatch({
+    dir.create(LOCAL_RESULTS_DIR, recursive = TRUE, showWarnings = FALSE)
+    utils::write.csv(data, local_file, row.names = FALSE, na = "", fileEncoding = "UTF-8")
+    hilfo_log("Lokale Kopie: ", local_file)
+    TRUE
+  }, error = function(e) {
+    message("[HilFo] CRITICAL: Lokales Speichern fehlgeschlagen: ", e$message)
+    FALSE
+  })
+
+  # Upload the local file normally; fall back to the in-memory CSV text if
+  # the local write didn't work.
+  if (local_write_ok) {
+    upload_body <- httr::upload_file(local_file, type = "text/csv")
+  } else {
+    csv_text <- tryCatch(
+      paste(utils::capture.output(utils::write.csv(data, row.names = FALSE, na = "")), collapse = "\n"),
+      error = function(e) NULL
+    )
+    if (is.null(csv_text)) return(FALSE)
+    upload_body <- csv_text
+  }
 
   for (attempt in seq_len(attempts)) {
     status <- tryCatch({
       response <- httr::PUT(
         url = paste0(WEBDAV_URL, utils::URLencode(filename)),
-        body = httr::upload_file(local_file, type = "text/csv"),
+        body = upload_body,
+        if (!local_write_ok) httr::content_type("text/csv"),
         httr::authenticate(WEBDAV_SHARE_TOKEN, WEBDAV_PASSWORD, type = "basic"),
         httr::timeout(30)
       )
@@ -139,7 +161,11 @@ save_to_cloud <- function(data, filename, attempts = 3) {
     if (!is.na(status)) message("[HilFo] WebDAV-Upload Status ", status, " (Versuch ", attempt, ")")
     if (attempt < attempts) Sys.sleep(attempt)
   }
-  message("[HilFo] Upload fehlgeschlagen, Daten liegen lokal in ", local_file)
+  if (local_write_ok) {
+    message("[HilFo] Upload fehlgeschlagen, Daten liegen lokal in ", local_file)
+  } else {
+    message("[HilFo] CRITICAL: Upload fehlgeschlagen UND lokales Speichern fehlgeschlagen - Datensatz ist verloren: ", filename)
+  }
   FALSE
 }
 
@@ -1398,14 +1424,28 @@ custom_page_flow <- list(
       if (is.null(rv$session_id) || is.na(rv$session_id)) {
         rv$session_id <- if (!is.null(session$token)) session$token else paste0("SESS_", format(Sys.time(), "%Y%m%d_%H%M%S"))
       }
-      record <- build_hilfo_record(rv$session_id, rv$demo_data, rv$responses,
-                                   language = if (is.null(rv$language)) "de" else rv$language)
-      filename <- paste0("HilFo_results_", format(Sys.time(), "%Y%m%d_%H%M%S"), "_", rv$session_id, ".csv")
 
-      if (save_to_cloud(record, filename)) {
-        # Signalisiert inrep, dass kein zusätzlicher JSON-Upload nötig ist
+      # Wrapped in its own tryCatch so a thrown error here can't just get
+      # swallowed by inrep's generic completion_handler error log and let
+      # the participant reach the report page without us noticing the save
+      # never happened.
+      saved <- tryCatch({
+        record <- build_hilfo_record(rv$session_id, rv$demo_data, rv$responses,
+                                     language = if (is.null(rv$language)) "de" else rv$language)
+        filename <- paste0("HilFo_results_", format(Sys.time(), "%Y%m%d_%H%M%S"), "_", rv$session_id, ".csv")
+        save_to_cloud(record, filename)
+      }, error = function(e) {
+        message("[HilFo] CRITICAL: Speichern fehlgeschlagen: ", e$message)
+        FALSE
+      })
+
+      if (saved) {
+        # Tells inrep no extra JSON upload is needed
         rv$csv_uploaded <- TRUE
         rv$data_uploaded_to_cloud <- TRUE
+      } else {
+        # Picked up by create_hilfo_report() to warn on the results page
+        rv$hilfo_save_failed <- TRUE
       }
     }
   ),
@@ -1758,7 +1798,20 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
       '.page-title, .study-title, h1:first-child, .results-title { display: none !important; }',
       '</style>',
       '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
-      
+
+      # Shown when save_to_cloud() failed on page 15, so this isn't silently
+      # missed - without it, the participant just sees a normal report even
+      # though their data was never saved.
+      if (!is.null(rv) && isTRUE(shiny::isolate(rv$hilfo_save_failed))) paste0(
+        '<div style="background: #fff3cd; border: 2px solid #e8041c; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: center;">',
+        if (is_english) {
+          '<strong>Warning:</strong> we could not confirm your data was saved. Please contact the study team so your responses aren\'t lost.'
+        } else {
+          '<strong>Achtung:</strong> Ihre Daten konnten nicht gespeichert werden. Bitte melden Sie sich beim Studienteam, damit Ihre Antworten nicht verloren gehen.'
+        },
+        '</div>'
+      ) else "",
+
       # Radar section only when the radar plot exists (it needs the optional ggradar package)
       if (!is.null(radar_base64) && radar_base64 != "") paste0(
         '<div class="report-section">',

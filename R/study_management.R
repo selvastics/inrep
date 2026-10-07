@@ -1655,8 +1655,15 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
     class = "assessment-card",
     style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
     shiny::h3(page_title, class = "card-header"),
-    if (!is.null(page$description)) {
-      shiny::p(page$description, class = "welcome-text")
+    if (!is.null(page$description) || !is.null(page$description_en)) {
+      page_description <- if (current_lang == "en" && !is.null(page$description_en)) {
+        page$description_en
+      } else {
+        page$description
+      }
+      if (!is.null(page_description)) {
+        shiny::p(page_description, class = "welcome-text")
+      }
     },
     demo_inputs
   )
@@ -2454,7 +2461,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
   if (!disable_auto_close && auto_close_seconds > 0) {
     current_lang <- rv$language %||% config$language %||% "de"
     auto_close_title <- get_language_labels(current_lang)$auto_close_title
-    
+
     auto_close_ui <- shiny::div(
       id = "auto-close-timer",
       class = "auto-close-timer",
@@ -2477,26 +2484,21 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
             }
             
             if (timeLeft <= 0) {
-              // Auto-close with multiple methods
-              try {
-                window.close();
-              } catch(e) {
+              // window.close() silently no-ops (does NOT throw) on a tab the
+              // browser opened via normal navigation - which is every
+              // participant's tab. Detect failure via window.closed instead
+              // of relying on a catch that never triggers.
+              try { window.close(); } catch(e) {}
+              setTimeout(function() {
+                if (window.closed) return;
                 try {
-                  if (window.opener) {
-                    window.opener = null;
-                    window.close();
-                  } else {
-                    window.location.href = 'about:blank';
-                  }
+                  window.location.href = 'about:blank';
                 } catch(e2) {
                   try {
-                    alert('Session completed. Please close this tab.');
-                    window.location.href = 'about:blank';
-                  } catch(e3) {
                     document.body.innerHTML = '<div style=\"text-align: center; padding: 50px; font-size: 18px;\">Session completed. Please close this tab.</div>';
-                  }
+                  } catch(e3) {}
                 }
-              }
+              }, 300);
             } else {
               timeLeft--;
               setTimeout(updateCountdown, 1000);
@@ -3456,9 +3458,18 @@ validate_page_progression <- function(current_page, input, config) {
           missing_fields <- c(missing_fields, field)
         }
       }
+    } else {
+      # Custom pages without required_fields but required=TRUE are allowed through
+      # (prevents false positives for pages with no explicit input requirements), but
+      # this is almost always a config mistake: it means NOTHING on this page is
+      # actually enforced, so a blank text/textarea field (e.g. a matching code)
+      # can silently pass through unrecorded. Warn loudly so this is caught while
+      # testing, not after real participant data is lost.
+      logger(sprintf(
+        "Custom page '%s' has required=TRUE but no required_fields set - no input on this page is actually validated. Set required_fields = c(\"input_id\", ...) to enforce required fields.",
+        page$id %||% paste0("page_", current_page)
+      ), level = "WARNING")
     }
-    # NOTE: Custom pages without required_fields but required=TRUE are considered valid
-    # This prevents false positives for pages that don't have explicit input requirements
   }
   
   return(list(

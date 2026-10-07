@@ -132,6 +132,7 @@ custom_page_flow <- list(
     type = "custom",
     title = "",
     required = TRUE,
+    required_fields = c("demo_Teilnahme_Code"),
     content = paste0(
       '<div style="padding: 20px; font-size: 16px; line-height: 1.8;">',
       '<h3 style="color: #2c3e50;">Teilnahme-Code</h3>',

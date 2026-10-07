@@ -3181,20 +3181,18 @@ launch_study <- function(
             # Close browser/tab first
             tryCatch({
               if (requireNamespace("shinyjs", quietly = TRUE)) {
+                # window.close() silently no-ops (no exception) on a tab opened
+                # via normal navigation, so detect failure via window.closed
+                # rather than relying on a catch that never triggers.
                 shinyjs::runjs("
                   (function() {
-                    try {
-                      window.close();
-                    } catch(e) {
+                    try { window.close(); } catch(e) {}
+                    setTimeout(function() {
+                      if (window.closed) return;
                       try {
-                        if (window.opener) {
-                          window.opener = null;
-                          window.close();
-                        }
-                      } catch(e2) {
                         window.location.href = 'about:blank';
-                      }
-                    }
+                      } catch(e2) {}
+                    }, 300);
                   })();
                 ")
               }
@@ -4096,28 +4094,25 @@ launch_study <- function(
         logger("Auto-close timer expired - closing app/tab/browser", level = "INFO")
         rv$auto_close_timer_active <- FALSE
 
-        # Universal auto-close JavaScript (best-effort; browser-dependent)
+        # Universal auto-close JavaScript (best-effort; browser-dependent).
+        # window.close() is a silent no-op (it does NOT throw) on a tab the
+        # browser opened via normal navigation - which is every participant's
+        # tab, since they reach the study through a plain URL, not a
+        # window.open() popup. A try/catch around it therefore never reaches
+        # its fallback. Detect failure via window.closed instead.
         auto_close_js <- "
         (function() {
-          try {
-            window.close();
-          } catch(e) {
+          try { window.close(); } catch(e) {}
+          setTimeout(function() {
+            if (window.closed) return;
             try {
-              if (window.opener) {
-                window.opener = null;
-                window.close();
-              } else {
-                window.location.href = 'about:blank';
-              }
+              window.location.href = 'about:blank';
             } catch(e2) {
               try {
-                alert('Session completed. Please close this tab.');
-                window.location.href = 'about:blank';
-              } catch(e3) {
                 document.body.innerHTML = '<div style=\"text-align: center; padding: 50px; font-size: 18px;\">Session completed. Please close this tab.</div>';
-              }
+              } catch(e3) {}
             }
-          }
+          }, 300);
         })();
         "
 
@@ -4141,7 +4136,7 @@ launch_study <- function(
       })
       session$userData$countdown_observer <- countdown_observer
     }
-    
+
     output$theta_plot <- shiny::renderPlot({
       logger(sprintf("Plot rendering triggered - adaptive: %s, theta_history length: %d", config$adaptive, base::length(rv$theta_history)))
       

@@ -162,6 +162,7 @@ custom_page_flow <- list(
     type     = "custom",
     title    = "",
     required = TRUE,
+    required_fields = c("demo_Teilnahme_Code"),
     content  = "",
     render_function = function(input, output, session, rv) {
       shiny::div(
