@@ -1301,6 +1301,7 @@ inrep::launch_study(
     item_bank = rcq_items_study,
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
+    webdav_share_token = WEBDAV_SHARE_TOKEN,
     save_format = "csv",
     debug_mode = TRUE  # Enable debug mode: STRG+A = fill page, STRG+Q = auto-fill all
 )

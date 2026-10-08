@@ -414,6 +414,14 @@ init_reactive_values <- function(config) {
 #'   \code{"https://server.com/webdav/path/"}.
 #' @param password Character string containing password for WebDAV authentication,
 #'   or \code{NULL} if authentication is not required.
+#' @param share_token Character string with a Nextcloud/ownCloud public share
+#'   token, used as the WebDAV username. Only needed when \code{webdav_url} is
+#'   already the direct \code{.../public.php/webdav/} endpoint (e.g. what
+#'   academiccloud.de's "WebDAV" copy-link button gives you) rather than an
+#'   \code{.../index.php/s/<token>} share page link - the latter has its token
+#'   auto-extracted from the URL and does not need this. If \code{webdav_url}
+#'   is the direct endpoint and \code{share_token} is left \code{NULL}, the
+#'   upload authenticates with an empty username, which public shares reject.
 #'
 #' @details
 #' If \code{rv} or \code{config} is invalid, a fresh object is created via
@@ -431,15 +439,15 @@ init_reactive_values <- function(config) {
 #'   max_items = 15,
 #'   session_timeout = 3600  # 1 hour timeout
 #' )
-#' 
+#'
 #' rv <- init_reactive_values(config)
 #' rv$responses <- list(c(1, 0, 1, 1, 0))  # Add some responses
 #' rv$administered <- c(1, 5, 10, 15, 20)
-#' 
+#'
 #' # Validate without cloud storage
 #' rv_validated <- validate_session(rv, config, NULL, NULL)
 #' rv_validated$session_valid  # TRUE if validation passed
-#' 
+#'
 #' # Optional WebDAV upload (requires httr/jsonlite)
 #' validate_session(
 #'   rv, config,
@@ -448,22 +456,22 @@ init_reactive_values <- function(config) {
 #' )
 #' }
 #'
-#' @seealso 
+#' @seealso
 #' \code{\link{init_reactive_values}} for session initialization,
 #' \code{\link{resume_session}} for session restoration,
 #' \code{\link{save_session_to_cloud}} for manual cloud storage,
 #' \code{\link{create_study_config}} for configuration parameters
 #'
 #' @references
-#' Robitzsch, A., Kiefer, T., & Wu, M. (2020). \emph{TAM: Test Analysis Modules}. 
+#' Robitzsch, A., Kiefer, T., & Wu, M. (2020). \emph{TAM: Test Analysis Modules}.
 #' R package version 3.5-19. \url{https://CRAN.R-project.org/package=TAM}
 #'
-#' Fielding, R., Gettys, J., Mogul, J., Frystyk, H., Masinter, L., Leach, P., & 
-#' Berners-Lee, T. (1999). \emph{Hypertext Transfer Protocol -- HTTP/1.1}. 
+#' Fielding, R., Gettys, J., Mogul, J., Frystyk, H., Masinter, L., Leach, P., &
+#' Berners-Lee, T. (1999). \emph{Hypertext Transfer Protocol -- HTTP/1.1}.
 #' RFC 2616. Internet Engineering Task Force.
 #'
 #' @export
-validate_session <- function(rv, config, webdav_url = NULL, password = NULL) {
+validate_session <- function(rv, config, webdav_url = NULL, password = NULL, share_token = NULL) {
   requireNamespace("logr", quietly = TRUE)
   
   if (!is.list(rv) || !is.list(config)) {
@@ -503,7 +511,7 @@ validate_session <- function(rv, config, webdav_url = NULL, password = NULL) {
   
   # Save to cloud if session is complete
   if (!is.null(rv$cat_result) && isTRUE(config$session_save)) {
-    inrep::save_session_to_cloud(rv, config, webdav_url, password)
+    inrep::save_session_to_cloud(rv, config, webdav_url, password, share_token = share_token)
   }
   
   message("Session validated successfully")
@@ -528,6 +536,15 @@ validate_session <- function(rv, config, webdav_url = NULL, password = NULL) {
 #'   If \code{NULL}, attempts anonymous access.
 #' @param session Optional Shiny session object. When provided, upload success or
 #'   failure will be shown to the user via \code{shiny::showNotification()}.
+#' @param share_token Character string with a Nextcloud/ownCloud public share
+#'   token, used as the WebDAV username. Pass this when \code{webdav_url} is
+#'   already the direct \code{.../public.php/webdav/} endpoint (e.g. from
+#'   academiccloud.de's "WebDAV" copy-link button) - that form has no token
+#'   embedded in the URL, so without this the upload authenticates with an
+#'   empty username and the server rejects it (401/403, or a 409 that looks
+#'   unrelated to auth). Not needed when \code{webdav_url} is an
+#'   \code{.../index.php/s/<token>} share page link, since that token is
+#'   auto-extracted from the URL.
 #'
 #' @details
 #' The function writes the JSON payload to a temporary file and uploads that
@@ -611,7 +628,7 @@ validate_session <- function(rv, config, webdav_url = NULL, password = NULL) {
 #' RFC 2518. Internet Engineering Task Force.
 #'
 #' @export
-save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL, session = NULL) {
+save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL, session = NULL, share_token = NULL) {
   # Helper to notify user in Shiny UI (if session is available)
   notify_user <- function(msg, type = "error") {
     if (!is.null(session) && inherits(session, "ShinySession")) {
@@ -667,9 +684,13 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
     writeLines(json_data, con)
     close(con)
     
-    # Handle different URL formats
-    share_token <- NULL
-    if (grepl("index.php/s/", webdav_url)) {
+    # Handle different URL formats. An explicitly passed share_token always
+    # wins; otherwise try to recover it from an index.php/s/<token> share
+    # page link. A direct .../public.php/webdav/ URL (e.g. from
+    # academiccloud.de's WebDAV copy-link button) has no token embedded in
+    # it at all, so without an explicit share_token there is nothing to
+    # auto-detect and the upload falls back to an empty username below.
+    if (is.null(share_token) && grepl("index.php/s/", webdav_url)) {
       # Extract share token from Nextcloud/ownCloud public share URL
       share_token <- gsub(".*index.php/s/([^/]+).*", "\\1", webdav_url)
       # Convert to WebDAV format for public shares

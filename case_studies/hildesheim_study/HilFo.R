@@ -2046,6 +2046,7 @@ inrep::launch_study(
   item_bank = all_items_de,
   webdav_url = WEBDAV_URL,
   password = WEBDAV_PASSWORD,
+  webdav_share_token = WEBDAV_SHARE_TOKEN,
   save_format = "csv",
   debug_mode = FALSE
 )

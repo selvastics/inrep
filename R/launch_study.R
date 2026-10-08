@@ -23,8 +23,15 @@
 #'   \code{"https://your-institution.edu/webdav/studies/"}. Both \code{webdav_url} and \code{password}
 #'   are required together for cloud storage functionality.
 #' @param password Character string for WebDAV authentication. Required when \code{webdav_url} is specified.
-#'   This should be the access password or token for your WebDAV storage endpoint. 
+#'   This should be the access password or token for your WebDAV storage endpoint.
 #'   For security, consider using environment variables: \code{Sys.getenv("WEBDAV_PASSWORD")}.
+#' @param webdav_share_token Character string with a Nextcloud/ownCloud public
+#'   share token, used as the WebDAV username. Needed when \code{webdav_url} is
+#'   already the direct \code{.../public.php/webdav/} endpoint - e.g. what
+#'   academiccloud.de's "WebDAV" copy-link button gives you - since that form
+#'   has no token embedded in it. Not needed for an
+#'   \code{.../index.php/s/<token>} share page link, since that token is
+#'   extracted from the URL automatically.
 #' @param save_format Character string specifying output format for assessment results.
 #'   Options: \code{"rds"} (default), \code{"csv"}, \code{"json"}, \code{"pdf"}.
 #' @param logger Function for custom logging. Default uses internal \code{logr} implementation.
@@ -376,6 +383,7 @@ launch_study <- function(
     theme_config = NULL,
     webdav_url = NULL,
     password = NULL,
+    webdav_share_token = NULL,
     save_format = "rds",
     logger = function(msg, ...) message(msg),
     study_key = NULL,
@@ -2936,6 +2944,7 @@ launch_study <- function(
   # This ensures cloud save works even when user selects "no" to see results
   rv$webdav_url <- webdav_url
   rv$webdav_password <- password
+  rv$webdav_share_token <- webdav_share_token
 
   # Register session objects for robust preservation (avoid .GlobalEnv scraping)
   tryCatch({
@@ -3153,7 +3162,7 @@ launch_study <- function(
 
     if (isTRUE(include_cloud) && !base::is.null(webdav_url)) {
       tryCatch({
-        save_session_to_cloud(rv, config, webdav_url, password, session = session)
+        save_session_to_cloud(rv, config, webdav_url, password, session = session, share_token = webdav_share_token)
       }, error = function(e) {
         logger(sprintf("Storage pipeline cloud save failed [%s]: %s", trigger, e$message), level = "WARNING")
       })

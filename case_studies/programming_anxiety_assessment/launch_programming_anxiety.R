@@ -1302,6 +1302,7 @@ launch_study(
     item_bank = programming_anxiety_items,
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
+    webdav_share_token = WEBDAV_SHARE_TOKEN,
     save_format = "csv",
     debug=TRUE
 )

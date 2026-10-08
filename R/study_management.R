@@ -2183,6 +2183,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
               # Get webdav_url and password from rv (stored there by launch_study)
               webdav_url_to_use <- rv$webdav_url %||% config$webdav_url
               webdav_password_to_use <- rv$webdav_password %||% config$webdav_password
+              webdav_share_token_to_use <- rv$webdav_share_token %||% config$webdav_share_token
             
               # Check if CSV upload already succeeded (from results processor OR completion handler)
               # csv_upload_succeeded is set in the tryCatch block above if results processor stored CSV info
@@ -2193,7 +2194,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
               # This prevents duplicate uploads and authentication errors
               if (!upload_already_done) {
                 .inrep_debug_message("DEBUG: Attempting JSON fallback cloud save (CSV upload not detected)")
-                result <- save_session_to_cloud(rv, config, webdav_url_to_use, webdav_password_to_use, session = session)
+                result <- save_session_to_cloud(rv, config, webdav_url_to_use, webdav_password_to_use, session = session, share_token = webdav_share_token_to_use)
                 if (result) {
                   .inrep_debug_message("DEBUG: Fallback cloud save (JSON) succeeded when user selected NO")
                 } else {
