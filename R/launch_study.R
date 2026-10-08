@@ -1464,8 +1464,10 @@ launch_study <- function(
         ")))
       },
       shiny::tags$style(shiny::HTML("
-        /* NUCLEAR UNIVERSAL RESET - FORCE EVERYTHING TO CENTER */
-        * {
+        /* NUCLEAR UNIVERSAL RESET - FORCE EVERYTHING TO CENTER.
+           Slider internals (.irs, from shiny::sliderInput) are excluded: they
+           are positioned absolutely by design and break completely otherwise. */
+        *:not(.irs):not(.irs *) {
           box-sizing: border-box !important;
           position: relative !important;
           left: 0 !important;
@@ -1496,8 +1498,8 @@ launch_study <- function(
         }
         
         /* OVERRIDE ANY POSITIONING ATTEMPTS */
-        [style*='position: absolute'], [style*='position: fixed'],
-        [style*='left:'], [style*='right:'], [style*='top:'] {
+        [style*='position: absolute']:not(.irs *), [style*='position: fixed']:not(.irs *),
+        [style*='left:']:not(.irs *), [style*='right:']:not(.irs *), [style*='top:']:not(.irs *) {
           position: relative !important;
           left: 0 !important;
           right: 0 !important;
@@ -1733,6 +1735,45 @@ launch_study <- function(
         }
       ")),
       
+      # ion.rangeSlider (shiny::sliderInput) measures its own width when Shiny
+      # binds it. inrep binds new page content before it is laid out, so the
+      # width is 0 and the handle and value start in the left corner, then jump
+      # into place a few hundred ms later. Keep each slider invisible (its space
+      # stays reserved) until it has been measured with its real width.
+      shiny::tags$style(shiny::HTML("
+        .irs.irs--shiny:not(.inrep-irs-ready) { visibility: hidden; }
+      ")),
+      shiny::tags$script(shiny::HTML("
+        (function() {
+          function settle(tries) {
+            var pending = false;
+            $('.js-range-slider').each(function() {
+              var s = $(this).data('ionRangeSlider');
+              if (!s || !s.$cache || !s.$cache.cont) return;
+              var $cont = s.$cache.cont;
+              if ($cont.hasClass('inrep-irs-ready')) return;
+              // The slider stylesheet arrives with the first page that has a
+              // slider, a moment after the slider itself: wait until it applies
+              // (.irs becomes display: block) and the slider has its real width.
+              var styled = $cont.css('display') === 'block';
+              var width = s.$cache.rs ? s.$cache.rs.outerWidth() : 0;
+              if (styled && width > 0) {
+                if (Math.abs((s.coords.w_rs || 0) - width) > 1) s.update({});
+                s.$cache.cont.addClass('inrep-irs-ready');
+              } else if (tries > 120) {
+                $cont.addClass('inrep-irs-ready');
+              } else {
+                pending = true;
+              }
+            });
+            if (pending) requestAnimationFrame(function() { settle(tries + 1); });
+          }
+          $(document).on('shiny:bound shiny:value', function() {
+            requestAnimationFrame(function() { settle(0); });
+          });
+        })();
+      ")),
+
       # JavaScript to ensure proper positioning
       shiny::tags$script(shiny::HTML("
         // Smooth page transition handler

@@ -2606,6 +2606,230 @@ render_page_navigation <- function(rv, config, current_page_idx) {
   )
 }
 
+#' Visual analogue scale (VAS) slider for demographics pages
+#'
+#' A native \code{<input type="range">} that starts without a value: the
+#' handle is hidden until the participant clicks, taps, drags or uses the
+#' arrow keys, so nobody is nudged towards a preset position and an untouched
+#' slider is stored as missing. Positions are pure CSS (a \code{--pos}
+#' variable), so the slider is drawn in place on the first frame, with no
+#' JavaScript measuring step that could place it in a corner first.
+#'
+#' Sends \code{input[[input_id]]} (the value) and
+#' \code{input[[paste0(input_id, "_touched")]]} (TRUE) to Shiny on the first
+#' interaction. Used when a demographic has \code{type = "slider"} and
+#' \code{start_empty = TRUE}.
+#' @noRd
+.inrep_vas_slider <- function(input_id, min_val, max_val, step_val,
+                              value = NULL, label_min = NULL, label_max = NULL,
+                              suffix = "", hint = NULL, aria_label = NULL) {
+  value <- suppressWarnings(as.numeric(value))
+  has_value <- length(value) == 1 && !is.na(value)
+  start <- if (has_value) value else (min_val + max_val) / 2
+  pos <- (start - min_val) / (max_val - min_val)
+
+  shiny::tagList(
+    shiny::singleton(shiny::tags$head(
+      shiny::tags$style(shiny::HTML(.inrep_vas_css)),
+      shiny::tags$script(shiny::HTML(.inrep_vas_js))
+    )),
+    shiny::div(
+      class = paste("inrep-vas", if (!has_value) "inrep-vas--untouched"),
+      `data-input-id` = input_id,
+      `data-suffix` = suffix,
+      `data-initial` = if (has_value) "set" else "empty",
+      style = sprintf("--pos: %.4f;", pos),
+      shiny::div(
+        class = "inrep-vas__value", `aria-hidden` = "true",
+        if (has_value) paste0(format(start), suffix) else ""
+      ),
+      shiny::tags$input(
+        type = "range", class = "inrep-vas__range",
+        id = paste0(input_id, "__range"),
+        min = min_val, max = max_val, step = step_val, value = start,
+        `aria-label` = aria_label,
+        `aria-valuetext` = if (has_value) paste0(format(start), suffix) else (hint %||% "")
+      ),
+      shiny::div(
+        class = "inrep-vas__labels",
+        shiny::span(label_min %||% ""),
+        shiny::span(label_max %||% "")
+      ),
+      if (!is.null(hint)) shiny::div(class = "inrep-vas__hint", hint)
+    )
+  )
+}
+
+.inrep_vas_css <- "
+/* inrep's base CSS forces * { position: relative; left: 0; right: 0; top: 0;
+   transform: none } and styles every input with a border and background, all
+   with !important. The rules below are scoped under .inrep-vas (higher
+   specificity) and marked !important so the slider keeps its own geometry. */
+.inrep-vas {
+  --vas-color: var(--primary-color, #e8041c);
+  --vas-track: #e3e3e3;
+  --vas-thumb: 28px;
+  --vas-centre: calc(var(--vas-thumb) / 2 + var(--pos) * (100% - var(--vas-thumb)));
+  position: relative !important; left: auto !important; right: auto !important; top: auto !important;
+  padding-top: 44px !important;  /* room for the value bubble */
+  margin: 8px 0 4px 0 !important;
+  touch-action: pan-y;           /* vertical page scroll keeps working on phones */
+  -webkit-tap-highlight-color: transparent;
+  user-select: none; -webkit-user-select: none;
+  cursor: pointer;
+}
+@media (pointer: coarse), (max-width: 600px) { .inrep-vas { --vas-thumb: 34px; } }
+/* Thumb centre = thumb/2 + pos * (track - thumb); the value bubble and the
+   filled part of the track use the same formula, so all three line up. */
+.inrep-vas .inrep-vas__value {
+  position: absolute !important; top: 0 !important; right: auto !important;
+  left: var(--vas-centre) !important;
+  transform: translateX(-50%) !important;
+  min-width: 52px; padding: 4px 10px !important; border-radius: 8px !important;
+  background: var(--vas-color) !important; color: #fff !important;
+  font-weight: 700; font-size: 16px; line-height: 1.4; text-align: center;
+  white-space: nowrap; pointer-events: none;
+  transition: opacity .15s ease;
+}
+.inrep-vas.inrep-vas--untouched .inrep-vas__value { opacity: 0; }
+.inrep-vas input.inrep-vas__range {
+  -webkit-appearance: none !important; appearance: none !important;
+  display: block !important; width: 100% !important; height: 44px !important;
+  margin: 0 !important; padding: 0 !important;
+  border: 0 !important; border-radius: 0 !important; box-shadow: none !important;
+  background: transparent !important; outline: none;
+  pointer-events: none;          /* pointer input is handled by the script */
+}
+.inrep-vas input.inrep-vas__range::-webkit-slider-runnable-track {
+  height: 10px; border-radius: 5px; border: 0;
+  background: linear-gradient(to right,
+    var(--vas-color) 0, var(--vas-color) var(--vas-centre),
+    var(--vas-track) var(--vas-centre), var(--vas-track) 100%);
+}
+.inrep-vas input.inrep-vas__range::-moz-range-track { height: 10px; border-radius: 5px; border: 0; background: var(--vas-track); }
+.inrep-vas input.inrep-vas__range::-moz-range-progress { height: 10px; border-radius: 5px; background: var(--vas-color); }
+.inrep-vas.inrep-vas--untouched input.inrep-vas__range::-webkit-slider-runnable-track { background: var(--vas-track); }
+.inrep-vas.inrep-vas--untouched input.inrep-vas__range::-moz-range-progress { background: transparent; }
+.inrep-vas input.inrep-vas__range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: var(--vas-thumb); height: var(--vas-thumb); border-radius: 50%;
+  margin-top: calc((10px - var(--vas-thumb)) / 2);
+  background: #fff; border: 4px solid var(--vas-color);
+  box-shadow: 0 2px 6px rgba(0,0,0,.25);
+  transition: transform .1s ease;
+}
+.inrep-vas input.inrep-vas__range::-moz-range-thumb {
+  width: var(--vas-thumb); height: var(--vas-thumb); border-radius: 50%;
+  box-sizing: border-box; background: #fff; border: 4px solid var(--vas-color);
+  box-shadow: 0 2px 6px rgba(0,0,0,.25);
+}
+.inrep-vas input.inrep-vas__range:active::-webkit-slider-thumb { transform: scale(1.12); }
+.inrep-vas input.inrep-vas__range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 5px rgba(0,0,0,.18); }
+.inrep-vas input.inrep-vas__range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px rgba(0,0,0,.18); }
+.inrep-vas.inrep-vas--untouched input.inrep-vas__range::-webkit-slider-thumb { opacity: 0; }
+.inrep-vas.inrep-vas--untouched input.inrep-vas__range::-moz-range-thumb { opacity: 0; }
+.inrep-vas .inrep-vas__labels {
+  display: flex !important; justify-content: space-between; gap: 12px;
+  font-size: 13px; color: #666; margin-top: 2px !important;
+}
+.inrep-vas .inrep-vas__labels span:last-child { text-align: right; }
+.inrep-vas .inrep-vas__hint { text-align: center; font-size: 13px; color: #888; margin-top: 6px !important; }
+.inrep-vas:not(.inrep-vas--untouched) .inrep-vas__hint { visibility: hidden; }
+@media (prefers-reduced-motion: reduce) {
+  .inrep-vas .inrep-vas__value, .inrep-vas input.inrep-vas__range::-webkit-slider-thumb { transition: none; }
+}
+"
+
+.inrep_vas_js <- "
+(function() {
+  if (window.__inrepVas) return;
+  window.__inrepVas = true;
+  // Pointer input is handled here, not by the browser's range input:
+  // - iOS Safari only moves a native range by dragging its thumb, so a tap on
+  //   the line would do nothing (or answer 50) while the thumb is hidden.
+  // - On touch screens a vertical swipe over the slider must scroll the page
+  //   without setting an answer.
+  // The range input stays in place for keyboard use, screen readers and the value.
+  function wrap(el) { return el && el.closest ? el.closest('.inrep-vas') : null; }
+  function rangeOf(w) { return w.querySelector('.inrep-vas__range'); }
+  function render(w) {
+    var r = rangeOf(w), min = +r.min, max = +r.max, v = +r.value;
+    var text = v + (w.getAttribute('data-suffix') || '');
+    w.style.setProperty('--pos', ((v - min) / (max - min)).toFixed(4));
+    w.querySelector('.inrep-vas__value').textContent = text;
+    r.setAttribute('aria-valuetext', text);
+  }
+  function commit(w) {
+    w.classList.remove('inrep-vas--untouched');
+    render(w);
+    var id = w.getAttribute('data-input-id'), v = +rangeOf(w).value;
+    if (w.__sent === v) return;
+    w.__sent = v;
+    if (window.Shiny && Shiny.setInputValue) {
+      Shiny.setInputValue(id, v);
+      Shiny.setInputValue(id + '_touched', true);
+    }
+  }
+  function setFromX(w, clientX) {
+    var r = rangeOf(w), box = r.getBoundingClientRect();
+    var thumb = parseFloat(getComputedStyle(w).getPropertyValue('--vas-thumb')) || 28;
+    var p = (clientX - box.left - thumb / 2) / Math.max(1, box.width - thumb);
+    p = Math.min(1, Math.max(0, p));
+    var min = +r.min, max = +r.max, step = +r.step || 1;
+    r.value = Math.round((min + p * (max - min)) / step) * step;
+    commit(w);
+  }
+  var drag = null;  // {w, id, x, y, type, active}
+  document.addEventListener('pointerdown', function(e) {
+    var w = wrap(e.target);
+    if (!w || e.button > 0) return;
+    var box = rangeOf(w).getBoundingClientRect();
+    if (e.clientY < box.top - 8 || e.clientY > box.bottom + 8) return;  // labels, bubble
+    drag = { w: w, id: e.pointerId, x: e.clientX, y: e.clientY, type: e.pointerType, active: false };
+    rangeOf(w).focus({ preventScroll: true });
+    if (e.pointerType === 'mouse') {           // mouse: answer on press, like a normal slider
+      drag.active = true;
+      try { w.setPointerCapture(e.pointerId); } catch (err) {}
+      setFromX(w, e.clientX);
+      e.preventDefault();
+    }
+  }, true);
+  document.addEventListener('pointermove', function(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.active) {
+      var dx = Math.abs(e.clientX - drag.x), dy = Math.abs(e.clientY - drag.y);
+      if (dy > 8 && dy > dx) { drag = null; return; }   // vertical swipe: let the page scroll
+      if (dx > 6 && dx >= dy) {
+        drag.active = true;
+        try { drag.w.setPointerCapture(e.pointerId); } catch (err) {}
+      }
+    }
+    if (drag && drag.active) { setFromX(drag.w, e.clientX); e.preventDefault(); }
+  }, true);
+  document.addEventListener('pointerup', function(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.active) setFromX(drag.w, e.clientX);    // a tap sets the value where it lands
+    drag = null;
+  }, true);
+  document.addEventListener('pointercancel', function(e) {
+    if (drag && e.pointerId === drag.id) drag = null;  // the browser took over (scrolling)
+  }, true);
+  // Keyboard (arrows, Page Up/Down, Home/End) changes the range input natively
+  document.addEventListener('input', function(e) {
+    var w = wrap(e.target);
+    if (w && e.target.classList.contains('inrep-vas__range')) commit(w);
+  }, true);
+  // A value restored from an earlier visit is sent again once Shiny is ready
+  function resend() {
+    document.querySelectorAll('.inrep-vas[data-initial=set]:not([data-resent])').forEach(function(w) {
+      w.setAttribute('data-resent', '1');
+      commit(w);
+    });
+  }
+  $(document).on('shiny:connected shiny:value', function() { setTimeout(resend, 0); });
+})();
+"
+
 #' @noRd
 create_demographic_input <- function(input_id,
                                      demo_config,
@@ -2806,6 +3030,20 @@ create_demographic_input <- function(input_id,
       min_val <- if (!is.null(demo_config$min)) demo_config$min else 0
       max_val <- if (!is.null(demo_config$max)) demo_config$max else 100
       step_val <- if (!is.null(demo_config$step)) demo_config$step else 1
+
+      # start_empty = TRUE: no preset value, handle appears on first touch (VAS)
+      if (isTRUE(demo_config$start_empty)) {
+        pick_lang <- function(de, en) if (language == "en" && !is.null(en)) en else de
+        return(.inrep_vas_slider(
+          input_id, min_val, max_val, step_val,
+          value = current_value,
+          label_min = pick_lang(demo_config$label_min, demo_config$label_min_en),
+          label_max = pick_lang(demo_config$label_max, demo_config$label_max_en),
+          suffix = demo_config$value_suffix %||% "",
+          hint = pick_lang(demo_config$hint, demo_config$hint_en),
+          aria_label = pick_lang(demo_config$question, demo_config$question_en)
+        ))
+      }
       default_val <- NULL
       if (!is.null(current_value) && !is.na(current_value)) {
         suppressWarnings({

@@ -104,33 +104,46 @@ scale_slider <- function(x) {
 # =============================================================================
 # WEBDAV EXPORT
 # =============================================================================
-# Target is a public Nextcloud share (academiccloud). The username is the
-# share token (the part after /s/ in the share link), the password is the
-# share password. Both come from environment variables; credentials don't
-# belong in the repository.
+# ADAPT THIS FOR YOUR OWN STUDY. The addresses below are HilFo's storage: a
+# public Nextcloud share on academiccloud (Universität Hildesheim). Another
+# study replaces WEBDAV_URLS with its own storage. inrep::webdav_upload()
+# accepts any WebDAV server, for example
+#   - a Nextcloud/ownCloud share link:  "https://cloud.example.org/index.php/s/<token>"
+#   - a personal Nextcloud folder:      "https://cloud.example.org/remote.php/dav/files/<user>/<folder>/"
+#     (then pass user = "<user>" and an app password)
+#   - any other WebDAV folder URL:      "https://dav.example.org/path/"
+# See ?inrep::webdav_upload for details.
 #
-# academiccloud shares can live on the university-specific tenant
-# (uni-hildesheim.files.academiccloud.de) or on the older shared one
-# (sync.academiccloud.de) - a share only exists on one of them, and the
-# wrong host rejects the same token/password with a 401. save_to_cloud()
-# tries them in this order and falls through to the next on failure, so the
-# same credentials work regardless of which tenant actually issued them.
-WEBDAV_URL <- "https://uni-hildesheim.files.academiccloud.de/public.php/webdav/"
-WEBDAV_URLS <- c(WEBDAV_URL, "https://sync.academiccloud.de/public.php/webdav/")
+# Credentials come from environment variables, never from this file (it is
+# pushed to a public repository). Set them once in ~/.Renviron
+# (usethis::edit_r_environ() opens it) and restart R, or for one session:
+#   Sys.setenv(HILFO_WEBDAV_SHARE_TOKEN = "...", HILFO_WEBDAV_PASSWORD = "...")
+# The token is the part after /s/ in the share link; the password is the
+# share password.
 WEBDAV_SHARE_TOKEN <- Sys.getenv("HILFO_WEBDAV_SHARE_TOKEN")
 WEBDAV_PASSWORD <- Sys.getenv("HILFO_WEBDAV_PASSWORD")
+
+# Only the server part ("https://host[:port]/") matters here. For a public
+# share webdav_upload() builds the working address itself:
+#   https://<host>/public.php/dav/files/<share token>/<file>
+# with the token as user name and the share password as password (this is
+# the address confirmed to work on academiccloud; the older
+# public.php/webdav/ address answers 409 for upload-only shares).
+# Another university: replace the host (and port, e.g. ":8443", if its
+# server uses one) below; keep "/public.php/webdav/" or paste the share
+# link "https://<host>/s/<token>" instead. Token and password stay in the
+# environment variables above.
+# academiccloud shares live on one of two hosts; the other one answers 401.
+# webdav_upload() tries them in this order.
+WEBDAV_URLS <- c("https://uni-hildesheim.files.academiccloud.de/public.php/webdav/",
+                 "https://sync.academiccloud.de/public.php/webdav/")
 LOCAL_RESULTS_DIR <- file.path("study_data", "hilfo_results")
 
-# Saves one result row: locally first (backup copy), then uploads it via
-# WebDAV, trying each host in WEBDAV_URLS with up to `attempts` tries before
-# moving to the next one. Returns list(cloud=, local=, attempted=) so the
-# caller can tell apart: uploaded; saved locally but no credentials were
-# configured (nothing to warn about); and a configured upload that actually
-# failed (wrong password, rejected login, network error - worth warning
-# about even though the local copy is fine).
-# If the local write fails (e.g. disk full), we still try uploading the CSV
-# straight from memory instead of just losing the participant's data.
-save_to_cloud <- function(data, filename, attempts = 3) {
+# Saves one result row: locally first (backup copy), then uploads the same
+# file with inrep::webdav_upload(). Returns list(cloud=, local=, attempted=) so
+# the caller can tell apart: uploaded; saved locally without credentials
+# configured; and a configured upload that failed (worth warning about).
+save_to_cloud <- function(data, filename) {
   local_file <- file.path(LOCAL_RESULTS_DIR, filename)
   local_write_ok <- tryCatch({
     dir.create(LOCAL_RESULTS_DIR, recursive = TRUE, showWarnings = FALSE)
@@ -148,62 +161,37 @@ save_to_cloud <- function(data, filename, attempts = 3) {
     return(list(cloud = FALSE, local = local_write_ok, attempted = FALSE))
   }
 
-  # Upload sends the file content as raw bytes (like the earlier Shiny
-  # version did). If the local copy failed, build the CSV in memory instead.
-  upload_body <- if (local_write_ok) {
-    readBin(local_file, "raw", file.info(local_file)$size)
-  } else {
-    tryCatch(
-      paste(utils::capture.output(utils::write.csv(data, row.names = FALSE, na = "")), collapse = "\n"),
-      error = function(e) NULL
-    )
-  }
-  if (is.null(upload_body)) return(list(cloud = FALSE, local = local_write_ok, attempted = TRUE))
-
-  for (base_url in WEBDAV_URLS) {
-    for (attempt in seq_len(attempts)) {
-      response <- tryCatch({
-        httr::PUT(
-          url = paste0(base_url, utils::URLencode(filename)),
-          body = upload_body,
-          httr::content_type("text/csv"),
-          httr::authenticate(WEBDAV_SHARE_TOKEN, WEBDAV_PASSWORD, type = "basic"),
-          httr::timeout(30)
-        )
-      }, error = function(e) {
-        message("[HilFo] WebDAV-Upload Fehler (", base_url, ", Versuch ", attempt, "): ", e$message)
-        NULL
-      })
-      status <- if (!is.null(response)) httr::status_code(response) else NA_integer_
-      if (!is.na(status) && status %in% c(200, 201, 204)) {
-        message("[HilFo] Hochgeladen (", base_url, "): ", filename)
-        return(list(cloud = TRUE, local = local_write_ok, attempted = TRUE))
-      }
-      if (!is.na(status) && status %in% c(401, 403)) {
-        # Wrong credentials for this host: retrying the same host won't
-        # help, but the share might live on the next one in WEBDAV_URLS.
-        message("[HilFo] WebDAV-Upload abgelehnt (", base_url, ", Status ", status, "): Share-Token oder ",
-                "Passwort stimmt nicht.")
-        break
-      }
-      if (!is.na(status)) {
-        # Log the server's actual error body (Nextcloud/SabreDAV sends a
-        # human-readable reason, e.g. "share does not allow uploads") so a
-        # bare status code doesn't leave us guessing why it failed.
-        body_text <- tryCatch(httr::content(response, "text", encoding = "UTF-8"), error = function(e) "")
-        if (is.null(body_text)) body_text <- ""
-        message("[HilFo] WebDAV-Upload Status ", status, " (", base_url, ", Versuch ", attempt, ")",
-                if (nzchar(trimws(body_text))) paste0(": ", trimws(body_text)) else "")
-      }
-      if (attempt < attempts) Sys.sleep(attempt)
+  # Upload exactly the file that was saved locally (or the data itself if the
+  # local copy failed).
+  content <- if (local_write_ok) readBin(local_file, "raw", file.info(local_file)$size) else data
+  uploaded <- tryCatch(
+    inrep::webdav_upload(content, filename, url = WEBDAV_URLS,
+                         password = WEBDAV_PASSWORD, share_token = WEBDAV_SHARE_TOKEN),
+    error = function(e) {
+      message("[HilFo] WebDAV-Upload Fehler: ", conditionMessage(e))
+      FALSE
     }
-  }
-  if (local_write_ok) {
+  )
+  if (isTRUE(uploaded)) {
+    message("[HilFo] Hochgeladen: ", filename)
+  } else if (local_write_ok) {
     message("[HilFo] Upload fehlgeschlagen, Daten liegen lokal in ", local_file)
   } else {
     message("[HilFo] CRITICAL: Upload fehlgeschlagen UND lokales Speichern fehlgeschlagen - Datensatz ist verloren: ", filename)
   }
-  list(cloud = FALSE, local = local_write_ok, attempted = TRUE)
+  list(cloud = isTRUE(uploaded), local = local_write_ok, attempted = TRUE)
+}
+
+# Connection test without filling in the questionnaire. In the R console:
+#   hilfo_upload_test()
+# It uploads a one-line file "verbindungstest_<time>.csv" and prints which
+# address worked. (Load the functions first by running the script up to here,
+# or press Esc/Stop once the app has started; the functions stay defined.)
+hilfo_upload_test <- function() {
+  res <- save_to_cloud(data.frame(test = "inrep upload test", zeit = format(Sys.time())),
+                       paste0("verbindungstest_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv"))
+  if (isTRUE(res$cloud)) message("[HilFo] Verbindungstest OK.") else message("[HilFo] Verbindungstest fehlgeschlagen (siehe Meldungen oben).")
+  invisible(res$cloud)
 }
 
 # =============================================================================
@@ -570,7 +558,12 @@ demographic_configs <- list(
     min = 0,
     max = 100,
     step = 1,
-    default = NULL,
+    # start_empty: no preset position; the handle appears where the participant
+    # first clicks or taps, and an untouched slider is stored as missing.
+    start_empty = TRUE,
+    value_suffix = "%",
+    hint = "Tippen oder klicken Sie auf die Linie, um Ihre Antwort zu setzen.",
+    hint_en = "Tap or click on the line to set your answer.",
     label_min = "stimme gar nicht zu",
     label_min_en = "strongly disagree",
     label_max = "stimme voll zu",
@@ -584,7 +577,12 @@ demographic_configs <- list(
     min = 0,
     max = 100,
     step = 1,
-    default = NULL,
+    # start_empty: no preset position; the handle appears where the participant
+    # first clicks or taps, and an untouched slider is stored as missing.
+    start_empty = TRUE,
+    value_suffix = "%",
+    hint = "Tippen oder klicken Sie auf die Linie, um Ihre Antwort zu setzen.",
+    hint_en = "Tap or click on the line to set your answer.",
     label_min = "stimme gar nicht zu",
     label_min_en = "strongly disagree",
     label_max = "stimme voll zu",
@@ -931,506 +929,21 @@ custom_page_flow <- list(
     type = "demographics",
     title = "",
     title_en = "",
-    description = "Bewegen Sie den Regler, um Ihre Zustimmung anzugeben (0% = stimme gar nicht zu, 100% = stimme voll zu).",
-    description_en = "Move the slider to indicate your agreement (0% = strongly disagree, 100% = strongly agree).",
+    description = "Geben Sie auf der Linie an, wie sehr Sie zustimmen (0% = stimme gar nicht zu, 100% = stimme voll zu).",
+    description_en = "Show on the line how much you agree (0% = strongly disagree, 100% = strongly agree).",
     demographics = c("Statistik_gutfolgen", "Statistik_selbstwirksam"),
-    # This page's JavaScript sets <name>_touched as soon as someone moves the
-    # slider. Only then does the value count (see slider_value()).
+    # inrep's start_empty slider sends demo_<name>_touched = TRUE on the first
+    # click, tap, drag or arrow key. Only then does the value count
+    # (see slider_value()).
     completion_handler = function(session, rv, inputs, config) {
       for (slider in c("Statistik_gutfolgen", "Statistik_selbstwirksam")) {
-        touched <- isTRUE(inputs[[paste0(slider, "_touched")]])
+        touched <- isTRUE(inputs[[paste0("demo_", slider, "_touched")]])
         value <- suppressWarnings(as.numeric(inputs[[paste0("demo_", slider)]]))
         rv$demo_data[[slider]] <- if (touched && length(value) == 1) value else NA
         rv$demo_data[[paste0(slider, "_touched")]] <- touched
         hilfo_log(slider, " = ", rv$demo_data[[slider]], " (bewegt: ", touched, ")")
       }
-    },
-    custom_css = '
-      .slider-description {
-        font-size: 15px;
-        color: #666;
-        margin-bottom: 35px;
-        text-align: center;
-      }
-      .demographic-field {
-        margin: 0 auto 50px auto;
-        padding: 25px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        max-width: 650px;
-      }
-      .demographic-field label {
-        font-size: 16px;
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 30px;
-        display: block;
-        text-align: center;
-      }
-      .irs-hidden-input {
-        display: none !important;
-      }
-      .irs {
-        height: 90px !important;
-        margin: 30px 0 !important;
-        position: relative !important;
-        touch-action: pan-x !important;
-      }
-      .irs-line {
-        position: absolute !important;
-        top: 50% !important;
-        left: 0 !important;
-        right: 0 !important;
-        height: 12px !important;
-        background: #e0e0e0 !important;
-        border-radius: 6px !important;
-        border: none !important;
-        transform: translateY(-50%) !important;
-        cursor: pointer !important;
-        z-index: 1 !important;
-      }
-      .irs-bar {
-        position: absolute !important;
-        top: 50% !important;
-        left: 0 !important;
-        right: auto !important;
-        height: 12px !important;
-        transform: translateY(-50%) !important;
-        transform-origin: left center !important;
-        border-radius: 6px !important;
-        border: none !important;
-        background: linear-gradient(to right, #ffcdd2 0%, #e8041c 100%) !important;
-        pointer-events: auto !important;
-        z-index: 2 !important;
-      }
-      .irs-bar-edge {
-        pointer-events: auto !important;
-      }
-      .irs-handle {
-        position: absolute !important;
-        width: 140px !important;
-        height: 140px !important;
-        top: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        transform-origin: center center !important;
-        background: #ffffff !important;
-        border: 6px solid #e8041c !important;
-        box-shadow: 0 10px 26px rgba(232, 4, 28, 0.35) !important;
-        border-radius: 50% !important;
-        cursor: grab !important;
-        z-index: 100 !important;
-        touch-action: pan-x !important;
-        pointer-events: auto !important;
-      }
-      .irs-handle::after {
-        content: "" !important;
-        display: none !important;
-      }
-      .irs-from, .irs-to {
-        display: none !important;
-      }
-      .irs-min, .irs-max {
-        padding: 5px 0 !important;
-        font-size: 13px !important;
-        color: #666 !important;
-      }
-      .irs-grid {
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-      }
-      .irs-grid-pol {
-        left: 0 !important;
-        right: 0 !important;
-        width: 100% !important;
-      }
-      .irs-handle:hover {
-        box-shadow: 0 8px 20px rgba(232, 4, 28, 0.55) !important;
-      }
-      .irs-handle:active {
-        cursor: grabbing !important;
-        box-shadow: 0 4px 12px rgba(232, 4, 28, 0.5) !important;
-      }
-      .irs-single {
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 140px !important;
-        height: 140px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        font-size: 34px !important;
-        font-weight: 700 !important;
-        color: #e8041c !important;
-        background: transparent !important;
-        border: none !important;
-        padding: 0 !important;
-        z-index: 102 !important;
-        line-height: 1 !important;
-        white-space: nowrap !important;
-        text-align: center !important;
-        pointer-events: none !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-      }
-      @media (max-width: 768px) {
-        .demographic-field {
-          padding: 20px 15px;
-        }
-        .inrep-slider-wrapper .irs-handle,
-        .demographic-field .irs-handle,
-        .irs-handle {
-          width: 125px !important;
-          height: 125px !important;
-        }
-        .inrep-slider-wrapper .irs-single,
-        .demographic-field .irs-single,
-        .irs-single {
-          font-size: 28px !important;
-        }
-        .irs {
-          height: 120px !important;
-        }
-        .inrep-slider-wrapper .irs-line,
-        .inrep-slider-wrapper .irs-bar,
-        .demographic-field .irs-line,
-        .demographic-field .irs-bar,
-        .irs-line,
-        .irs-bar {
-          height: 14px !important;
-        }
-      }
-      @media (pointer: coarse) {
-        .inrep-slider-wrapper .irs-handle,
-        .demographic-field .irs-handle,
-        .irs-handle {
-          width: 155px !important;
-          height: 155px !important;
-        }
-        .inrep-slider-wrapper .irs-single,
-        .demographic-field .irs-single,
-        .irs-single {
-          font-size: 32px !important;
-        }
-        .irs {
-          height: 130px !important;
-        }
-        .inrep-slider-wrapper .irs-line,
-        .inrep-slider-wrapper .irs-bar,
-        .demographic-field .irs-line,
-        .demographic-field .irs-bar,
-        .irs-line,
-        .irs-bar {
-          height: 14px !important;
-        }
-      }
-    ',
-    custom_js = '
-      var sliderTouched = {};
-      var sliderInitialized = {};
-      
-      console.log("INIT: JavaScript code running - will block Statistik slider initial sends");
-      
-      var blockSliderAttempts = 0;
-      var maxBlockAttempts = 10; // reduce attempts to avoid long-running loops
-      var blockSent = {};
-      var blockStart = Date.now();
-      
-      var blockSliderInitial = function() {
-        blockSliderAttempts++;
-        console.log("BLOCK ATTEMPT " + blockSliderAttempts + ": Looking for demo_Statistik inputs...");
-
-        $("input[id*=demo_Statistik]").each(function() {
-          var id = $(this).attr("id");
-          if (!sliderTouched[id]) {
-            var oldVal = $(this).val();
-            $(this).val("");
-            console.log("CLEARED " + id + ": was " + oldVal + ", now empty");
-
-            // Only notify Shiny once per input to avoid flooding the server
-            if (Shiny && Shiny.setInputValue && !blockSent[id]) {
-              try {
-                Shiny.setInputValue(id, null);
-                blockSent[id] = true;
-                console.log("NOTIFIED SHINY ONCE: " + id + " set to null");
-              } catch (e) {
-                console.warn("Failed to set input to null for", id, e && e.message);
-              }
-            }
-          }
-        });
-
-        // Stop attempts after maxBlockAttempts or after 5 seconds
-        if (blockSliderAttempts < maxBlockAttempts && (Date.now() - blockStart) < 5000) {
-          setTimeout(blockSliderInitial, 100);
-        } else {
-          console.log("blockSliderInitial finished after", blockSliderAttempts, "attempts");
-        }
-      };
-
-      blockSliderInitial();
-      
-      var observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-          if (mutation.addedNodes.length) {
-            mutation.addedNodes.forEach(function(node) {
-              if (node.nodeType === 1) {
-                var $node = $(node);
-                if ($node.hasClass("js-range-slider") || $node.find(".js-range-slider").length) {
-                  var $input = $node.hasClass("js-range-slider") ? $node : $node.find(".js-range-slider");
-                  $input.each(function() {
-                    var id = $(this).attr("id");
-                    if (id && id.indexOf("Statistik") !== -1) {
-                      $(this).val("");
-                      console.log("CLEARED: Initial value for " + id + " cleared before Shiny binding");
-                    }
-                  });
-                }
-              }
-            });
-          }
-        });
-      });
-      
-      observer.observe(document.body, {childList: true, subtree: true});
-      // Disconnect the observer after a short timeout to avoid long-running mutation loops
-      setTimeout(function() {
-        try {
-          observer.disconnect();
-          console.log("MutationObserver disconnected after timeout to prevent loops");
-        } catch (e) {
-          console.warn("Failed to disconnect observer:", e && e.message);
-        }
-      }, 5000);
-      
-      function updateSliderDisplay(sliderId, $container) {
-        var $singleElement = $container.find(".irs-single");
-        
-        if ($singleElement.length === 0) {
-          console.warn("No .irs-single found for " + sliderId);
-          return;
-        }
-        
-        if (sliderTouched[sliderId]) {
-          var value = parseInt($container.find(".irs-input").val() || 50, 10);
-          $singleElement.text(value + "%");
-          console.log("Display updated: " + sliderId + " = " + value + "%");
-        } else {
-          $singleElement.text("%");
-          console.log("Display updated: " + sliderId + " = % (not touched)");
-        }
-        
-        var $handle = $container.find(".irs-handle");
-        if ($handle.length > 0) {
-          try {
-            var handleRect = $handle[0].getBoundingClientRect();
-            var containerRect = $container[0].getBoundingClientRect();
-            var valueLeft = handleRect.left - containerRect.left + (handleRect.width / 2);
-            var valueTop = handleRect.top - containerRect.top + (handleRect.height / 2);
-            var singleHalfWidth = $singleElement.outerWidth() / 2 || 0;
-            var singleHalfHeight = $singleElement.outerHeight() / 2 || 0;
-            valueLeft = valueLeft - singleHalfWidth;
-            valueTop = valueTop - singleHalfHeight;
-            $singleElement.each(function() {
-              this.style.setProperty("left", valueLeft + "px", "important");
-              this.style.setProperty("top", valueTop + "px", "important");
-            });
-          } catch (e) {
-            console.warn("Failed to align value with handle for", sliderId, e && e.message);
-          }
-        }
-      }
-      
-      function ensureSliderInitialized() {
-        $(".js-range-slider").each(function() {
-          var $input = $(this);
-          var sliderId = $input.attr("id");
-          
-          if (!sliderId || sliderId.indexOf("Statistik") === -1) return;
-          
-          if (sliderInitialized[sliderId]) return;
-          sliderInitialized[sliderId] = true;
-          
-          var instance = $input.data("ionRangeSlider");
-          if (!instance) return;
-          
-          var currentVal = parseInt($input.val(), 10);
-          if (isNaN(currentVal)) {
-            currentVal = parseInt($input.attr("data-default"), 10);
-          }
-          if (isNaN(currentVal)) {
-            currentVal = 50;
-          }
-          
-          var $container = $("#" + sliderId).closest(".irs");
-          
-          sliderTouched[sliderId] = false;
-          $input.val("");
-          
-          instance.update({
-            min: 0,
-            max: 100,
-            from: currentVal,
-            disable: false,
-            hide_min_max: true,
-            hide_from_to: false,
-            force_edges: false,
-            prettify: function(num) {
-              return "";
-            },
-            onStart: function(data) {
-              sliderTouched[sliderId] = true;
-              $container.data("touched", true);
-              $container.data("was-touched", "true");
-              updateSliderDisplay(sliderId, $container);
-              var touchedFlagId = sliderId.replace("demo_", "") + "_touched";
-              console.log(">>> ATTEMPTING Shiny.setInputValue(" + touchedFlagId + ", true)");
-              Shiny.setInputValue(touchedFlagId, true);
-              console.log(">>> SUCCESS: Shiny.setInputValue called for Flag: " + touchedFlagId);
-              console.log("SLIDER TOUCHED (onStart): " + sliderId + " - Flag: " + touchedFlagId);
-            },
-            onChange: function(data) {
-              sliderTouched[sliderId] = true;
-              $container.data("touched", true);
-              $container.data("was-touched", "true");
-              
-              var $singleElement = $container.find(".irs-single");
-              if ($singleElement.length > 0) {
-                $singleElement.text(data.from + "%");
-                console.log("DIRECT UPDATE: " + sliderId + " display set to " + data.from + "%");
-              }
-              
-              updateSliderDisplay(sliderId, $container);
-              
-              var touchedFlagId = sliderId.replace("demo_", "") + "_touched";
-              Shiny.setInputValue(touchedFlagId, true);
-              console.log("Slider " + sliderId + " changed to " + data.from + " (touched) - Flag: " + touchedFlagId);
-              Shiny.setInputValue(sliderId, data.from);
-              $container.find(".irs-bar").css("left", "0px");
-            },
-            onFinish: function(data) {
-              console.log("Slider " + sliderId + " finished at " + data.from + " (touched: " + sliderTouched[sliderId] + ")");
-              $container.find(".irs-bar").css("left", "0px");
-            }
-          });
-          
-          setTimeout(function() {
-            var $singleElement = $container.find(".irs-single");
-            if ($singleElement.length > 0) {
-              $singleElement.text("%");
-              updateSliderDisplay(sliderId, $container);
-              console.log("SUCCESS: Initial display set to % for " + sliderId);
-            } else {
-              console.warn("Could not find .irs-single for " + sliderId);
-            }
-          }, 300);
-          
-          console.log("Slider " + sliderId + " initialized - NOT sending initial value to Shiny");
-          
-          $container.find(".irs-line").off("click").on("click", function(e) {
-            var $line = $(this);
-            var offset = $line.offset();
-            var clickX = e.pageX - offset.left;
-            var lineWidth = $line.width();
-            var newValue = Math.round((clickX / lineWidth) * 100);
-            newValue = Math.max(0, Math.min(100, newValue));
-            
-            instance.update({ from: newValue });
-            Shiny.setInputValue(sliderId, newValue);
-            $container.find(".irs-bar").css("left", "0px");
-          });
-          
-          $container.find(".irs-bar").off("click").on("click", function(e) {
-            var $line = $container.find(".irs-line");
-            var offset = $line.offset();
-            var clickX = e.pageX - offset.left;
-            var lineWidth = $line.width();
-            var newValue = Math.round((clickX / lineWidth) * 100);
-            newValue = Math.max(0, Math.min(100, newValue));
-            
-            instance.update({ from: newValue });
-            Shiny.setInputValue(sliderId, newValue);
-            $container.find(".irs-bar").css("left", "0px");
-          });
-          
-          $container.find(".irs-line, .irs-bar, .irs-handle").css({
-            "pointer-events": "auto",
-            "cursor": "pointer"
-          });
-          
-          var $bar = $container.find(".irs-bar");
-          $bar.css({
-            "left": "0px"
-          });
-          
-          if (instance.result.disabled) {
-            console.log("WARNING: Slider was disabled! Force enabling...");
-            instance.update({ disable: false });
-          }
-          
-          var $handle = $container.find(".irs-handle");
-          $handle.css({
-            "pointer-events": "auto",
-            "cursor": "grab",
-            "user-select": "none",
-            "-webkit-user-drag": "none",
-            "touch-action": "pan-x"
-          });
-          
-          $handle.off("mousedown touchstart");
-          $container.find(".irs-line").css("pointer-events", "auto");
-          $input.prop("disabled", false);
-          $input.prop("readonly", false);
-          
-          var handlePos = $handle.offset();
-          if (handlePos) {
-            var elemAtPos = document.elementFromPoint(handlePos.left + 45, handlePos.top + 45);
-            console.log("Element at handle position:", elemAtPos ? elemAtPos.className : "none");
-          }
-          
-          console.log("Slider " + sliderId + " initialized:");
-          console.log("  Value:", currentVal);
-          console.log("  Disabled:", instance.result.disabled);
-          console.log("  Handle left:", $handle.css("left"));
-          console.log("  Bar left:", $bar.css("left"));
-          console.log("  Bar width:", $bar.css("width"));
-          console.log("  Handle pointer-events:", $handle.css("pointer-events"));
-          console.log("  Input disabled:", $input.prop("disabled"));
-          
-          $handle.on("mousedown", function(e) {
-            console.log("✓ Handle mousedown detected on", sliderId);
-          });
-          
-          $container.find(".irs-line").on("mousedown", function(e) {
-            console.log("✓ Track mousedown detected");
-          });
-        });
-      }
-      
-      setTimeout(ensureSliderInitialized, 100);
-      setTimeout(ensureSliderInitialized, 400);
-      setTimeout(ensureSliderInitialized, 1200);
-      
-      $(document).on("shiny:value", function(ev) {
-        if (ev.name && ev.name.indexOf("Statistik") !== -1) {
-          setTimeout(function() {
-            ensureSliderInitialized();
-          }, 100);
-        }
-      });
-      
-      $(window).on("resize.hilfoSlider", function() {
-        Object.keys(sliderInitialized).forEach(function(sliderId) {
-          if (sliderInitialized[sliderId]) {
-            var $container = $("#" + sliderId).closest(".irs");
-            if ($container.length) {
-              updateSliderDisplay(sliderId, $container);
-            }
-          }
-        });
-      });
-    '
+    }
   ),
   
   list(
@@ -2044,7 +1557,9 @@ options(inrep.stop_app_on_finish = TRUE)
 inrep::launch_study(
   config = study_config,
   item_bank = all_items_de,
-  webdav_url = WEBDAV_URL,
+  # inrep's own session backup (JSON) goes to the same storage. Replace with
+  # your own storage, or remove these three lines for local storage only.
+  webdav_url = WEBDAV_URLS,
   password = WEBDAV_PASSWORD,
   webdav_share_token = WEBDAV_SHARE_TOKEN,
   save_format = "csv",
