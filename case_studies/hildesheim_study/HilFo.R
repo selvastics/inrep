@@ -1,35 +1,32 @@
-# =============================================================================
-# HilFo - Hildesheim Research Methods Survey
-# =============================================================================
+# HilFo: Hildesheimer Forschungsmethoden
 #
-# Questionnaire for the statistics seminars in the psychology bachelor program
-# (Hildesheim), built with inrep::launch_study(). Non-adaptive: 29 Likert
-# items plus demographics and two sliders, bilingual (de/en).
+# First-semester psychology students in Hildesheim answer this survey at the
+# start of the statistics seminars, and the seminars later work with the data
+# their own cohort produced. The survey is not adaptive. It consists of 29
+# Likert items (Big Five 20, PSQ stress 5, MWS study skills 4), a set of
+# demographic questions and two sliders on statistics, in German and English.
+# Wording and value labels of all variables are documented in
+# skalenhandbuch.md.
 #
-# Page flow (custom_page_flow, 16 pages)
-#   1      Welcome, consent, language switcher
-#   2-5    Demographics (age, gender, living situation, pets, smoking,
-#          diet, Abitur grades)
-#   6-10   Big Five (BFI, 20 items) and stress (PSQ, 5 items)
-#   11     Study skills (MWS, 4 items)
-#   12     Statistics sliders (0-100)
-#   13     Prep/review time, satisfaction
-#   14     Personal code
-#   15     "Would you like to see your results?" -> data is saved here
-#   16     Results page (create_hilfo_report) or thank-you page
+# Pages in the order participants see them:
+#    1     welcome, consent, language switch
+#    2-5   demographics (age, gender, living situation, pets, smoking, diet,
+#          Abitur grades)
+#    6-9   Big Five, 10 PSQ, 11 MWS
+#   12     statistics sliders (0-100)
+#   13     preparation time, satisfaction with Hildesheim
+#   14     personal code
+#   15     "Would you like to see your results?"; the data are saved here
+#   16     report (create_hilfo_report) or a short thank-you
 #
-# Data storage
-#   On leaving page 15, build_hilfo_record() builds one row with all
-#   variables (fixed column order, missing answers = NA). save_to_cloud()
-#   writes it locally first (study_data/hilfo_results/), then uploads it via
-#   WebDAV (with retries). read_hilfo_data.R reads these files back in.
+# The record is saved on page 15, whether or not the participant wants to see
+# the results. It is one row with a fixed set of columns, written to
+# study_data/hilfo_results/ first and then uploaded via WebDAV.
+# read_hilfo_data.R reads these files back in.
 #
-# Configuration
-#   HILFO_WEBDAV_SHARE_TOKEN, HILFO_WEBDAV_PASSWORD  WebDAV credentials. Set
-#     both in ~/.Renviron (usethis::edit_r_environ() opens the file), then
-#     restart R. Without them, data is only saved locally.
-#   options(hilfo.debug = TRUE)                     verbose console output
-# =============================================================================
+# The upload needs HILFO_WEBDAV_SHARE_TOKEN and HILFO_WEBDAV_PASSWORD, best
+# set in ~/.Renviron. Without them the data stay on this machine.
+# options(hilfo.debug = TRUE) prints more detail to the console.
 
 library(inrep)
 library(shiny)
@@ -38,12 +35,13 @@ library(ggplot2)
 library(httr)
 library(base64enc)
 
-# Only prints when options(hilfo.debug = TRUE) is set
+# Console output only with options(hilfo.debug = TRUE)
 hilfo_log <- function(...) {
   if (isTRUE(getOption("hilfo.debug", FALSE))) message("[HilFo] ", ...)
 }
 
-# Normalizes empty answers (NULL, NA, "") to NA; multi-select answers join with ";"
+# Skipped answers (NULL, NA, "") become NA; several ticked options are stored
+# as one string, e.g. "1;3"
 as_record_value <- function(x) {
   if (is.null(x) || length(x) == 0) return(NA)
   x <- x[!is.na(x) & nzchar(trimws(as.character(x)))]
@@ -52,11 +50,10 @@ as_record_value <- function(x) {
   x
 }
 
-# =============================================================================
-# SCORING HELPERS
-# =============================================================================
+# Scoring ----
 
-# Dummy variables (0/1) for multi-select answers, e.g. Haustier_Hund, Haustier_Katze
+# One 0/1 column per option of a multiple-choice question (Haustier_Hund,
+# Haustier_Katze, ...)
 create_dummy_variables <- function(response_values, all_options, prefix) {
   response_values <- if (is.null(response_values)) character(0) else as.character(response_values)
   dummy_vars <- list()
@@ -66,8 +63,9 @@ create_dummy_variables <- function(response_values, all_options, prefix) {
   dummy_vars
 }
 
-# Scale scores (with reverse-coding, matching the report and read_hilfo_data.R)
-# responses: 29 Likert answers (1-5) in item bank order
+# Scale means after reverse coding. The report and read_hilfo_data.R use the
+# same keys, so all three arrive at the same scores. `responses` holds the 29
+# Likert answers (1-5) in item bank order.
 score_hilfo_scales <- function(responses) {
   responses <- suppressWarnings(as.numeric(responses))
   responses <- c(responses, rep(NA, max(0, 29 - length(responses))))[1:29]
@@ -85,9 +83,8 @@ score_hilfo_scales <- function(responses) {
   )
 }
 
-# Slider value, but only if it was actually moved (NA otherwise).
-# Without this check, inrep would save the slider's starting position as if
-# someone had answered.
+# A slider counts only if it was moved. Otherwise inrep would store its
+# starting position as if the participant had answered.
 slider_value <- function(demo_data, name) {
   d <- as.list(demo_data)
   if (!isTRUE(d[[paste0(name, "_touched")]])) return(NA_real_)
@@ -95,54 +92,50 @@ slider_value <- function(demo_data, name) {
   if (length(x) == 0) NA_real_ else x[1]
 }
 
-# Slider 0-100 -> 1-5 (same formula in the report, the upload, and read_hilfo_data.R)
+# Puts the 0-100 slider on the 1-5 metric of the Likert items. The report, the
+# upload and read_hilfo_data.R all use this transformation.
 scale_slider <- function(x) {
   x <- suppressWarnings(as.numeric(x))
   if (length(x) == 0 || is.na(x[1])) NA_real_ else (x[1] / 100) * 4 + 1
 }
 
-# =============================================================================
-# WEBDAV EXPORT
-# =============================================================================
-# ADAPT THIS FOR YOUR OWN STUDY. The addresses below are HilFo's storage: a
-# public Nextcloud share on academiccloud (Universität Hildesheim). Another
-# study replaces WEBDAV_URLS with its own storage. inrep::webdav_upload()
-# accepts any WebDAV server, for example
-#   - a Nextcloud/ownCloud share link:  "https://cloud.example.org/index.php/s/<token>"
-#   - a personal Nextcloud folder:      "https://cloud.example.org/remote.php/dav/files/<user>/<folder>/"
-#     (then pass user = "<user>" and an app password)
-#   - any other WebDAV folder URL:      "https://dav.example.org/path/"
-# See ?inrep::webdav_upload for details.
+# Storage ----
 #
-# Credentials come from environment variables, never from this file (it is
-# pushed to a public repository). Set them once in ~/.Renviron
-# (usethis::edit_r_environ() opens it) and restart R, or for one session:
+# ADAPT THIS FOR YOUR OWN STUDY. The addresses below are HilFo's storage, a
+# public Nextcloud share on academiccloud (Universität Hildesheim). Another
+# study replaces WEBDAV_URLS with its own server, or leaves the upload out.
+# inrep::webdav_upload() works with any WebDAV folder, for example
+#   a share link             "https://cloud.example.org/index.php/s/<token>"
+#   a personal Nextcloud     "https://cloud.example.org/remote.php/dav/files/<user>/<folder>/"
+#                            (with user = "<user>" and an app password)
+#   another WebDAV folder    "https://dav.example.org/path/"
+# See ?inrep::webdav_upload.
+#
+# The credentials never go into this file, since the repository is public.
+# Set them once in ~/.Renviron (usethis::edit_r_environ() opens it) and
+# restart R, or for the current session only:
 #   Sys.setenv(HILFO_WEBDAV_SHARE_TOKEN = "...", HILFO_WEBDAV_PASSWORD = "...")
-# The token is the part after /s/ in the share link; the password is the
+# The token is the part after /s/ in the share link, the password is the
 # share password.
 WEBDAV_SHARE_TOKEN <- Sys.getenv("HILFO_WEBDAV_SHARE_TOKEN")
 WEBDAV_PASSWORD <- Sys.getenv("HILFO_WEBDAV_PASSWORD")
 
-# Only the server part ("https://host[:port]/") matters here. For a public
-# share webdav_upload() builds the working address itself:
-#   https://<host>/public.php/dav/files/<share token>/<file>
-# with the token as user name and the share password as password (this is
-# the address confirmed to work on academiccloud; the older
-# public.php/webdav/ address answers 409 for upload-only shares).
-# Another university: replace the host (and port, e.g. ":8443", if its
-# server uses one) below; keep "/public.php/webdav/" or paste the share
-# link "https://<host>/s/<token>" instead. Token and password stay in the
-# environment variables above.
-# academiccloud shares live on one of two hosts; the other one answers 401.
-# webdav_upload() tries them in this order.
+# Only the host matters here. For a public share, webdav_upload() builds
+# https://<host>/public.php/dav/files/<token>/<file> itself and logs in with
+# the token as user name and the share password. This is the combination that
+# works on academiccloud; the older public.php/webdav/ address answers 409 for
+# upload-only shares. A share lives on one of two academiccloud hosts (the
+# other one answers 401), so both are listed and tried in this order. At
+# another university, replace the host (and the port, if the server uses one)
+# or paste the share link "https://<host>/s/<token>".
 WEBDAV_URLS <- c("https://uni-hildesheim.files.academiccloud.de/public.php/webdav/",
                  "https://sync.academiccloud.de/public.php/webdav/")
 LOCAL_RESULTS_DIR <- file.path("study_data", "hilfo_results")
 
-# Saves one result row: locally first (backup copy), then uploads the same
-# file with inrep::webdav_upload(). Returns list(cloud=, local=, attempted=) so
-# the caller can tell apart: uploaded; saved locally without credentials
-# configured; and a configured upload that failed (worth warning about).
+# Writes one record to disk and then uploads the same file. The returned
+# list(cloud, local, attempted) separates three cases: uploaded; kept locally
+# because no credentials were set, which is intended; and an upload that was
+# configured but failed, which the participant should hear about.
 save_to_cloud <- function(data, filename) {
   local_file <- file.path(LOCAL_RESULTS_DIR, filename)
   local_write_ok <- tryCatch({
@@ -161,8 +154,7 @@ save_to_cloud <- function(data, filename) {
     return(list(cloud = FALSE, local = local_write_ok, attempted = FALSE))
   }
 
-  # Upload exactly the file that was saved locally (or the data itself if the
-  # local copy failed).
+  # Upload the file just written, or the data frame if writing failed
   content <- if (local_write_ok) readBin(local_file, "raw", file.info(local_file)$size) else data
   uploaded <- tryCatch(
     inrep::webdav_upload(content, filename, url = WEBDAV_URLS,
@@ -182,11 +174,11 @@ save_to_cloud <- function(data, filename) {
   list(cloud = isTRUE(uploaded), local = local_write_ok, attempted = TRUE)
 }
 
-# Connection test without filling in the questionnaire. In the R console:
-#   hilfo_upload_test()
-# It uploads a one-line file "verbindungstest_<time>.csv" and prints which
-# address worked. (Load the functions first by running the script up to here,
-# or press Esc/Stop once the app has started; the functions stay defined.)
+# Tests the connection without going through the survey: call
+# hilfo_upload_test() in the console. It uploads a one-line file
+# verbindungstest_<time>.csv and reports which address worked. Run the script
+# up to this point first, or stop the running app with Esc; the functions
+# stay defined either way.
 hilfo_upload_test <- function() {
   res <- save_to_cloud(data.frame(test = "inrep upload test", zeit = format(Sys.time())),
                        paste0("verbindungstest_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv"))
@@ -194,9 +186,8 @@ hilfo_upload_test <- function() {
   invisible(res$cloud)
 }
 
-# =============================================================================
-# ONE PARTICIPANT'S RECORD
-# =============================================================================
+# One participant's record ----
+
 HILFO_ITEM_IDS <- c(
   "BFE_01", "BFE_02", "BFE_03", "BFE_04",
   "BFV_01", "BFV_02", "BFV_03", "BFV_04",
@@ -213,8 +204,8 @@ HAUSTIER_OPTIONS <- c(
   "Sonstiges" = "other"
 )
 
-# One row with all variables. Every column is always present (NA when
-# unanswered), so every uploaded file has the same structure.
+# Every column is present even when a question was skipped (NA), so all files
+# share one structure and can simply be stacked.
 build_hilfo_record <- function(session_id, demo_data, responses, language = "de") {
   d <- if (is.list(demo_data)) demo_data else as.list(demo_data)
   v <- function(name) as_record_value(d[[name]])
@@ -245,7 +236,8 @@ build_hilfo_record <- function(session_id, demo_data, responses, language = "de"
     Statistik_selbstwirksam_scaled = scale_slider(slider_value(d, "Statistik_selbstwirksam")),
     Vor_Nachbereitung = v("Vor_Nachbereitung"),
     Zufrieden_Hi_7st = v("Zufrieden_Hi_7st"),
-    # Uppercased as shown in the input field, so codes are comparable across waves
+    # Stored in capitals, as shown in the input field, so that codes can be
+    # matched across survey waves
     "Persönlicher_Code" = toupper(trimws(v("Persönlicher_Code"))),
     show_personal_results = v("show_personal_results")
   ))
@@ -260,9 +252,11 @@ build_hilfo_record <- function(session_id, demo_data, responses, language = "de"
   as.data.frame(record, check.names = FALSE, stringsAsFactors = FALSE)
 }
 
-# =============================================================================
-# ITEM BANK WITH CONSISTENT VARIABLE NAMES
-# =============================================================================
+# Item bank ----
+#
+# Question is shown in German, Question_EN after the switch to English. inrep
+# checks a 2PL bank for the columns a and b; since nothing is estimated here,
+# they only hold placeholder values.
 
 all_items_de <- data.frame(
   id = c(
@@ -351,9 +345,7 @@ all_items_de <- data.frame(
   stringsAsFactors = FALSE
 )
 
-# =============================================================================
-# FULL DEMOGRAPHICS SECTION
-# =============================================================================
+# Demographics ----
 
 demographic_configs <- list(
   Einverständnis = list(
@@ -558,8 +550,8 @@ demographic_configs <- list(
     min = 0,
     max = 100,
     step = 1,
-    # start_empty: no preset position; the handle appears where the participant
-    # first clicks or taps, and an untouched slider is stored as missing.
+    # No preset position: the handle appears where the participant first
+    # clicks or taps, and an untouched slider stays missing
     start_empty = TRUE,
     value_suffix = "%",
     hint = "Tippen oder klicken Sie auf die Linie, um Ihre Antwort zu setzen.",
@@ -577,8 +569,6 @@ demographic_configs <- list(
     min = 0,
     max = 100,
     step = 1,
-    # start_empty: no preset position; the handle appears where the participant
-    # first clicks or taps, and an untouched slider is stored as missing.
     start_empty = TRUE,
     value_suffix = "%",
     hint = "Tippen oder klicken Sie auf die Linie, um Ihre Antwort zu setzen.",
@@ -609,9 +599,7 @@ input_types <- list(
   Statistik_selbstwirksam = "slider"
 )
 
-# =============================================================================
-# PAGE FLOW FOR THE HILFO QUESTIONNAIRE
-# =============================================================================
+# Page flow ----
 
 custom_page_flow <- list(
   list(
@@ -739,7 +727,7 @@ custom_page_flow <- list(
         return false;
     }",
     required = FALSE,
-    # The checkboxes are plain HTML elements; Shiny exposes them as
+    # The consent boxes are plain HTML, but Shiny still sees them as
     # input$consent_check and input$consent_check_en
     completion_handler = function(session, rv, inputs, config) {
       consent <- isTRUE(inputs$consent_check) || isTRUE(inputs$consent_check_en)
@@ -932,9 +920,9 @@ custom_page_flow <- list(
     description = "Geben Sie auf der Linie an, wie sehr Sie zustimmen (0% = stimme gar nicht zu, 100% = stimme voll zu).",
     description_en = "Show on the line how much you agree (0% = strongly disagree, 100% = strongly agree).",
     demographics = c("Statistik_gutfolgen", "Statistik_selbstwirksam"),
-    # inrep's start_empty slider sends demo_<name>_touched = TRUE on the first
-    # click, tap, drag or arrow key. Only then does the value count
-    # (see slider_value()).
+    # The slider sends demo_<name>_touched = TRUE on the first click, tap,
+    # drag or arrow key. Without it the value counts as missing (see
+    # slider_value()).
     completion_handler = function(session, rv, inputs, config) {
       for (slider in c("Statistik_gutfolgen", "Statistik_selbstwirksam")) {
         touched <- isTRUE(inputs[[paste0("demo_", slider, "_touched")]])
@@ -968,17 +956,15 @@ custom_page_flow <- list(
     title = "Fast geschafft",
     title_en = "Almost done",
     demographics = c("show_personal_results"),
-    # This is where the full record gets saved (locally + WebDAV),
-    # regardless of whether the person wants to see their results.
+    # The record is saved here, locally and via WebDAV, whether or not the
+    # participant wants to see the results
     completion_handler = function(session, rv, inputs, config) {
       if (is.null(rv$session_id) || is.na(rv$session_id)) {
         rv$session_id <- if (!is.null(session$token)) session$token else paste0("SESS_", format(Sys.time(), "%Y%m%d_%H%M%S"))
       }
 
-      # Wrapped in its own tryCatch so a thrown error here can't just get
-      # swallowed by inrep's generic completion_handler error log and let
-      # the participant reach the report page without us noticing the save
-      # never happened.
+      # A separate tryCatch, because inrep would only log the error and show
+      # the report as if the data had been saved
       saved <- tryCatch({
         record <- build_hilfo_record(rv$session_id, rv$demo_data, rv$responses,
                                      language = if (is.null(rv$language)) "de" else rv$language)
@@ -990,15 +976,13 @@ custom_page_flow <- list(
       })
 
       if (isTRUE(saved$cloud)) {
-        # Tells inrep no extra JSON upload is needed
+        # inrep skips its own JSON upload when these are set
         rv$csv_uploaded <- TRUE
         rv$data_uploaded_to_cloud <- TRUE
       } else if (isTRUE(saved$attempted) || !isTRUE(saved$local)) {
-        # Warn whenever an upload was actually attempted (credentials were
-        # configured) and still failed - that's worth knowing about even
-        # though the local copy is safe. The ONLY case that stays silent is
-        # no credentials configured at all + local save worked, since that's
-        # an intentional local-only run, not a failure.
+        # A configured upload that failed is reported even though the local
+        # copy exists. A run without credentials and with a working local
+        # copy is a deliberate local run and stays silent.
         rv$hilfo_save_failed <- TRUE
       }
     }
@@ -1017,19 +1001,22 @@ custom_page_flow <- list(
   )
 )
 
-# =============================================================================
-# REPORT FUNCTION WITH STATIC RADAR PLOT
-# =============================================================================
+# Report ----
+#
+# The report shows a radar plot of the Big Five (only if ggradar is
+# installed), a bar chart of all eight scores and a table of means and
+# standard deviations. A scale is scored once at least two of its items are
+# answered (three for stress).
 
 create_hilfo_report <- function(responses, item_bank, demographics = NULL, session = NULL, rv = NULL) {
   tryCatch({
-    # Data was already saved on page 15; this just builds the report.
+    # The data were saved on page 15, here we only build the report
     hilfo_log("create_hilfo_report: ", length(responses), " responses")
     
     current_lang <- "de"
     is_english <- FALSE
     
-    # inrep keeps the participant's language in rv$language (set by the language toggle)
+    # rv$language follows the language switch on page 1
     lang_from_session <- if (!is.null(rv)) shiny::isolate(rv$language) else NULL
     if (is.null(lang_from_session) && !is.null(session)) {
       lang_from_session <- session$userData$language
@@ -1104,7 +1091,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
     
     scores$Studierfaehigkeiten <- safe_mean(responses[26:29], min_items = 2)
     
-    # Statistics score = mean of the two sliders (only moved sliders count)
+    # Statistik is the mean of the two sliders, counting only moved ones
     demo_list <- if (is.null(demographics)) list() else as.list(demographics)
     stat_vals <- c(scale_slider(slider_value(demo_list, "Statistik_gutfolgen")),
                    scale_slider(slider_value(demo_list, "Statistik_selbstwirksam")))
@@ -1353,11 +1340,9 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
       '</style>',
       '<div id="report-content" style="padding: 20px; max-width: 1000px; margin: 0 auto;">',
 
-      # Shown when save_to_cloud() either lost the record entirely, or a
-      # configured WebDAV upload was actually attempted and rejected (wrong
-      # credentials, network error). Skipping the upload because no
-      # credentials were set at all - with a working local save - does NOT
-      # set this; that's an intentional local-only run, not a failure.
+      # Shown when the record was lost, or when a configured upload was
+      # rejected (wrong credentials, no network). A local run without
+      # credentials does not count as a failure.
       if (!is.null(rv) && isTRUE(shiny::isolate(rv$hilfo_save_failed))) paste0(
         '<div style="background: #fff3cd; border: 2px solid #e8041c; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: center;">',
         if (is_english) {
@@ -1368,7 +1353,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
         '</div>'
       ) else "",
 
-      # Radar section only when the radar plot exists (it needs the optional ggradar package)
+      # Radar section only if the plot exists (needs ggradar)
       if (!is.null(radar_base64) && radar_base64 != "") paste0(
         '<div class="report-section">',
         '<h2 style="color: #e8041c; text-align: center; margin-bottom: 25px;">',
@@ -1442,7 +1427,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
       sds[["Studierfaehigkeiten"]] <- NA
     }
     
-    # Statistik comes from the two page-12 sliders, not from item responses
+    # Statistik comes from the two sliders on page 12, not from the items
     valid_stat <- stat_vals[!is.na(stat_vals)]
     if (length(valid_stat) >= 2) {
       sd_val <- sd(valid_stat, na.rm = TRUE)
@@ -1518,9 +1503,7 @@ create_hilfo_report <- function(responses, item_bank, demographics = NULL, sessi
   })
 }
 
-# =============================================================================
-# STUDY CONFIGURATION
-# =============================================================================
+# Study configuration ----
 
 session_uuid <- paste0("hilfo_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 
@@ -1546,19 +1529,17 @@ study_config <- inrep::create_study_config(
   results_processor = create_hilfo_report
 )
 
-# HilFo runs locally with one participant per launch, so the whole app
-# (not just the session) should close once the participant is done or the
-# window is closed.
+# HilFo runs locally with one participant per launch, so the whole app closes
+# once the participant is done or closes the window
 options(inrep.stop_app_on_finish = TRUE)
 
-# Start the study. debug_mode = TRUE shows the test bar (Ctrl+A fills the
-# current page, Ctrl+Q fills everything through to the report) and has no
-# place in live/production use.
+# debug_mode = TRUE adds a test bar (Ctrl+A fills the current page, Ctrl+Q
+# everything up to the report). Keep it FALSE for real data collection.
 inrep::launch_study(
   config = study_config,
   item_bank = all_items_de,
-  # inrep's own session backup (JSON) goes to the same storage. Replace with
-  # your own storage, or remove these three lines for local storage only.
+  # inrep's own session backup (JSON) goes to the same storage. Remove these
+  # three lines to keep everything local.
   webdav_url = WEBDAV_URLS,
   password = WEBDAV_PASSWORD,
   webdav_share_token = WEBDAV_SHARE_TOKEN,

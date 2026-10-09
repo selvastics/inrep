@@ -1,6 +1,6 @@
 ---
 title: "Getting Started with inrep"
-author: "inrep Development Team"
+author: "Clievins Selva"
 date: "`r Sys.Date()`"
 output:
   html_document:
