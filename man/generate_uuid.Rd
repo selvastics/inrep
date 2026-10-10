@@ -7,8 +7,11 @@
 generate_uuid()
 }
 \value{
-Character string containing a UUID.
+Character string in UUID format.
 }
 \description{
-Generates a universally unique identifier using base R random sampling.
+Returns a random identifier in UUID version 4 format, drawn with
+\code{sample()}. It therefore uses and advances R's random number
+generator: after the same \code{set.seed()} the same identifiers are
+produced. It is not suitable as a secret.
 }

@@ -2,11 +2,9 @@
 % Please edit documentation in R/theme_system.R
 \name{theme_system}
 \alias{theme_system}
-\title{Theme System for inrep Package}
+\title{Theme functions}
 \description{
-This file consolidates all theme-related functions including:
-- Theme definitions (from themes.R)
-- CSS loading functions (from get_theme_css.R)
-- Font consistency (from ensure_font_consistency.R)
+Theme definitions as R lists, loading of the CSS theme files in
+\code{inst/themes}, and font rules added to every theme.
 }
 \keyword{internal}

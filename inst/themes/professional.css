@@ -1,6 +1,4 @@
-/* Professional Theme for inrep Assessment Platform */
-/* Designed for corporate, clinical, and institutional use */
-/* Enhanced with advanced functionalities and professional excellence */
+/* Professional theme for inrep: blue-grey palette */
 
 :root {
   /* Primary Colors - Professional Blue-Gray Palette */
@@ -406,12 +404,7 @@ body {
   }
 }
 
-/* 
- * Professional Assessment Interface Components
- * Corporate-grade enhancements for business and clinical environments
- */
-
-/* Enhanced Assessment Interface */
+/* Assessment interface components */
 .assessment-interface {
     background: linear-gradient(135deg, 
         var(--background-color) 0%, 
@@ -866,11 +859,6 @@ body {
     }
 }
 
-/* 
- * Professional Excellence Complete
- * Corporate-grade assessment interface with sophisticated interactions
- * Optimized for business and clinical environments
- */
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   * {

@@ -35,7 +35,7 @@ with \code{rsconnect::deployApp()}.
 \details{
 The function creates a minimal deployment folder containing:
 \itemize{
-  \item \code{app.R} -- sources the study script via \code{inrep::launch_study()}
+  \item \code{app.R}, which \code{source()}s the copied study script
   \item A copy of the original study script
   \item A \code{.rscignore} to exclude unnecessary files
 }

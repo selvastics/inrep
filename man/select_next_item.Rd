@@ -2,218 +2,142 @@
 % Please edit documentation in R/item_selection.R
 \name{select_next_item}
 \alias{select_next_item}
-\title{Select Next Item Using TAM-Based Information}
+\title{Select Next Item}
 \usage{
 select_next_item(rv, item_bank, config)
 }
 \arguments{
-\item{rv}{Reactive values object containing current test state. Required components:
+\item{rv}{List (or Shiny \code{reactiveValues}) with the current test state:
 \describe{
   \item{administered}{Integer vector of administered item indices}
-  \item{responses}{Numeric vector of participant responses}
-  \item{current_ability}{Current ability estimate from TAM}
-  \item{ability_se}{Standard error of current ability estimate}
-  \item{item_info_cache}{Cached item information values (optional)}
-  \item{item_counter}{Integer count of administered items}
-  \item{session_start}{POSIXct timestamp of session start}
-  \item{exposure_rates}{Numeric vector tracking item exposure (optional)}
+  \item{responses}{Vector of responses}
+  \item{current_ability}{Current ability estimate (from \code{\link{estimate_ability}})}
+  \item{current_se}{Posterior SD of the current estimate (used by \code{"MEI"})}
+  \item{session_start}{POSIXct time of session start (optional)}
+  \item{domain_theta_histories}{Named list of per-domain histories
+    (optional; see Details)}
 }}
 
-\item{item_bank}{Data frame containing item parameters compatible with TAM. 
-Structure varies by IRT model:
-\describe{
-  \item{Question}{Character vector of item content or identifiers}
-  \item{a}{Numeric vector of discrimination parameters (2PL, 3PL, GRM)}
-  \item{b, b1, b2, ...}{Numeric vectors of difficulty/threshold parameters}
-  \item{c}{Numeric vector of guessing parameters (3PL only)}
-  \item{ResponseCategories}{Character vector of response options (GRM)}
-  \item{Content_Area}{Character vector for content balancing (optional)}
-  \item{Exposure_Target}{Numeric vector of target exposure rates (optional)}
-}}
+\item{item_bank}{Data frame with item parameters: \code{a}, \code{b} (1PL,
+2PL); \code{a}, \code{b}, \code{c} (3PL); \code{a}, \code{b1}, \code{b2},
+... (GRM). Columns \code{discrimination}, \code{difficulty} and
+\code{content} are accepted as aliases of \code{a}, \code{b} and
+\code{Question}.}
 
-\item{config}{Study configuration object from \code{\link{create_study_config}}. 
-Key selection parameters:
-\describe{
-  \item{criteria}{Selection criterion: "MI", "RANDOM", "WEIGHTED", "MFI"}
-  \item{model}{IRT model specification for TAM}
-  \item{max_session_duration}{Session timeout in minutes}
-  \item{adaptive}{Logical indicating adaptive vs. fixed selection}
-  \item{fixed_items}{Integer vector of required items}
-  \item{item_groups}{Named list of item groupings}
-  \item{content_balancing}{Logical for content area balancing}
-  \item{exposure_control}{Logical for exposure rate control}
-}}
+\item{config}{Study configuration from \code{\link{create_study_config}}.
+Fields used: \code{criteria}, \code{model}, \code{adaptive},
+\code{adaptive_start}, \code{fixed_items}, \code{item_groups},
+\code{max_items}, \code{min_items}, \code{max_session_duration},
+\code{theta_prior}, \code{theta_grid}, and optionally
+\code{item_selection_fun} and \code{admin_dashboard_hook}.}
 }
 \value{
-Integer index of the selected item from the item bank, or \code{NULL} if 
-  no suitable item is available. Returns \code{NULL} when:
-  \itemize{
-    \item Session timeout has been reached
-    \item All items have been administered
-    \item Stopping criteria have been met
-    \item No items meet content balancing constraints
-  }
+Integer index of the selected item, or \code{NULL} if the session
+  time limit (\code{max_session_duration}, in minutes) is exceeded,
+  \code{max_items} is reached, no item is left, or the configuration is
+  invalid.
 }
 \description{
-Selects the next item for administration based on information calculations from TAM.
-This function serves as an interface layer that uses ability estimates from TAM
-to determine optimal item selection according to various psychometric criteria.
-All information calculations utilize TAM's IRT implementations.
+Selects the next item to administer. In adaptive mode the choice is based on
+the Fisher information of each available item, computed by
+\code{\link{compute_item_info_single}} from the item parameters in
+\code{item_bank} at the current ability estimate (see \code{criteria}).
+This function is used when \code{config$fast_item_selection} is
+\code{FALSE}; otherwise \code{\link{launch_study}} calls
+\code{\link{fast_select_next_item}}.
 }
 \details{
-\strong{TAM Integration for Item Selection:} This function implements adaptive item
-selection using ability estimates and item information calculations from TAM:
-
-\strong{Information Calculation Pipeline:}
-\itemize{
-  \item Uses current ability estimate from TAM functions (\code{TAM::tam.wle}, \code{TAM::tam.eap}).
-  \item Calculates item information using TAM's \code{TAM::IRT.informationCurves}.
-  \item Applies selection criteria based on psychometric principles
-  \item Returns item index for \code{inrep} workflow management
+Order of rules for the item number \eqn{k} = number administered + 1:
+\enumerate{
+  \item If \code{fixed_items} is set and \eqn{k \le} \code{length(fixed_items)},
+    the \eqn{k}-th fixed item is returned.
+  \item If the bank has a \code{domain} column and \code{rv} carries
+    \code{domain_theta_histories}, the available items are restricted to the
+    domain with the fewest administered items.
+  \item If \code{config$item_selection_fun} is a function, its result is returned.
+  \item Non-adaptive mode: the lowest-numbered available item (restricted to
+    \code{item_groups} if given). Adaptive mode with \eqn{k <}
+    \code{adaptive_start}: a random available item.
+  \item Otherwise the item is chosen by \code{config$criteria}.
 }
 
-\strong{Selection Criteria Implementation:}
+Criteria (information is evaluated at the current EAP estimate
+\eqn{\hat\theta} unless stated otherwise):
 \describe{
-  \item{\strong{MI (Maximum Information)}}{
-    Selects item with highest Fisher information at current ability estimate.
-    Optimal for measurement precision and standard error minimization.
-    Uses TAM's information function calculations.
-  }
-  \item{\strong{MFI (Maximum Fisher Information)}}{
-    Alternative implementation of information-based selection.
-    Includes additional considerations for model-specific information.
-  }
-  \item{\strong{WEIGHTED}}{
-    Combines information maximization with content balancing and exposure control.
-    Implements Sympson-Hetter exposure control when configured.
-    Balances psychometric efficiency with practical constraints.
-  }
-  \item{\strong{RANDOM}}{
-    Random selection from available items for comparison studies.
-    Useful for evaluating adaptive testing benefits.
-  }
+  \item{\code{"MI"}}{Maximum Fisher information; ties broken at random.}
+  \item{\code{"MEI"}}{Fisher information averaged over a normal
+    approximation \eqn{N(\hat\theta, SE^2)} of the posterior (21 points over
+    \eqn{\pm 3} SE). This is a posterior-weighted information criterion in
+    the sense of van der Linden (1998); it is not the maximum expected
+    information criterion of that paper, which takes the expectation over
+    the predictive distribution of the next response.}
+  \item{\code{"MFI"}}{A random draw among the items whose information is at
+    least 95\% of the maximum. No exposure rates are tracked across sessions.}
+  \item{\code{"WEIGHTED"}}{A random draw with probability proportional to
+    information times a weight \eqn{1 / (1 + p_g)}, where \eqn{p_g} is the
+    share of administered items that belong to the item's group in
+    \code{item_groups}. Without \code{item_groups} all weights are 1.}
+  \item{\code{"RANDOM"}}{A random available item.}
 }
+Information formulas: 1PL/2PL \eqn{a^2 P (1 - P)}; 3PL
+\eqn{a^2 (P - c)^2 (1 - P) / (P (1 - c)^2)}; GRM \eqn{\sum_k P_k'^2 / P_k}
+with Samejima's boundary curves (Samejima, 1969). The logistic metric is
+used without the constant 1.7.
 
-\strong{Content Balancing Features:}
-\itemize{
-  \item Supports content area constraints through \code{item_groups} specification
-  \item Implements proportional content sampling across domains
-  \item Maintains psychometric efficiency while meeting content requirements
-  \item Provides real-time content coverage monitoring
-}
-
-\strong{Exposure Control Mechanisms:}
-\itemize{
-  \item Tracks item exposure rates across sessions
-  \item Implements Sympson-Hetter exposure control algorithm
-  \item Supports target exposure rate specifications
-  \item Balances item security with measurement precision
-}
-
-\strong{Adaptive Testing Logic:}
-\itemize{
-  \item Handles fixed item requirements (anchor items, pretests)
-  \item Supports delayed adaptive start after initial fixed items
-  \item Implements stopping rules based on precision or item count
-  \item Provides session timeout protection
-}
-
-\strong{Performance Optimization:}
-\itemize{
-  \item Caches item information calculations for efficiency
-  \item Implements incremental information updates
-  \item Minimizes TAM function calls through intelligent caching
-  \item Supports parallel processing for large item banks
-}
-
-\strong{Quality Assurance:}
-\itemize{
-  \item Validates item availability and constraints
-  \item Handles edge cases (no available items, timeout)
-  \item Logs selection decisions
-  \item Implements graceful degradation for unusual scenarios
-}
-
-\strong{Model-Specific Considerations:}
-\describe{
-  \item{\strong{1PL/Rasch}}{Information depends only on item difficulty relative to ability}
-  \item{\strong{2PL}}{Information varies by both difficulty and discrimination}
-  \item{\strong{3PL}}{Information affected by guessing parameter, especially at low ability}
-  \item{\strong{GRM (experimental)}}{Uses Samejima boundary-curve information with
-    pre-calibrated threshold parameters. TAM fits GPCM (step parameters) for
-    ability estimation, which is a different parameterization.}
-}
-
-1PL/2PL/3PL information is computed via \code{\link{compute_item_info_single}}.
-Item selection logic, constraint management, and workflow integration are
-handled by inrep.
-
-\strong{Exposure Control:} Automatic exposure rate management:
-\itemize{
-  \item Tracks item usage frequencies
-  \item Implements Sympson-Hetter method for exposure control
-  \item Prevents overexposure of high-information items
-}
-
-\code{inrep} provides the selection logic and workflow coordination, while all
-psychometric computations rely on TAM's validated implementations.
+No content-balancing algorithm beyond the \code{"WEIGHTED"} weights, and no
+exposure control method (such as Sympson-Hetter), is implemented.
 }
 \examples{
 \dontrun{
-# Load sample data
 library(inrep)
 data(bfi_items)
 
-# Create configuration
 config <- create_study_config(
-  model = "GRM", 
+  model = "GRM",
   criteria = "MI",
   max_items = 15,
-  min_SEM = 0.3
+  min_SEM = 0.3,
+  fast_item_selection = FALSE
 )
 
-# Initialize response data
 rv <- list(
   administered = c(1, 5, 12),
   responses = c(3, 4, 2),
   current_ability = 0.5,
-  item_info_cache = list(),
-  item_counter = 3,
+  current_se = 0.8,
   session_start = Sys.time()
 )
 
-# Select next item
 next_item <- select_next_item(rv, bfi_items, config)
 cat("Selected item:", next_item, "\n")
 
-# Content-balanced selection
-config_balanced <- create_study_config(
+config_weighted <- create_study_config(
   model = "GRM",
   criteria = "WEIGHTED",
   item_groups = list(
-    "Extraversion" = 1:10,
-    "Agreeableness" = 11:20, 
-    "Conscientiousness" = 21:30
+    "Group1" = 1:10,
+    "Group2" = 11:20,
+    "Group3" = 21:30
   )
 )
 
-next_item_balanced <- select_next_item(rv, bfi_items, config_balanced)
+next_item_weighted <- select_next_item(rv, bfi_items, config_weighted)
 }
 
 }
 \references{
-Robitzsch A, Kiefer T, Wu M (2024). TAM: Test Analysis Modules. R package version 4.2-21, https://CRAN.R-project.org/package=TAMst Analysis Modules. 
-R package version 3.5-19. \url{https://CRAN.R-project.org/package=TAM}
+Samejima, F. (1969). Estimation of latent ability using a response pattern of
+  graded scores. \emph{Psychometrika Monograph Supplement}, No. 17.
 
-van der Linden, W. J. (2010). Elements of adaptive testing. 
-In W. J. van der Linden & C. A. W. Glas (Eds.), Elements of adaptive testing (pp. 3-30). Springer.
+van der Linden, W. J. (1998). Bayesian item selection criteria for adaptive
+  testing. \emph{Psychometrika}, 63(2), 201--216.
 
-Sympson, J. B., & Hetter, R. D. (1985). Controlling item-exposure rates in computerized 
-adaptive testing. Proceedings of the 27th annual meeting of the Military Testing Association (pp. 973-977).
+van der Linden, W. J., & Glas, C. A. W. (Eds.). (2010). \emph{Elements of
+  adaptive testing}. Springer.
 }
 \seealso{
-\code{\link{estimate_ability}}, \code{\link{create_study_config}}, 
-  \code{\link{launch_study}}
+\code{\link{fast_select_next_item}}, \code{\link{estimate_ability}},
+  \code{\link{create_study_config}}, \code{\link{launch_study}}
 }
 \keyword{adaptive}
 \keyword{item}

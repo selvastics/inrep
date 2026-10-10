@@ -1,5 +1,8 @@
-### Example Cognitive Ability Study with 2PL IRT model — Fully Specified
-# Define a complete item bank with varied correct answers
+# Example: adaptive multiple-choice test with a 2PL model ----
+# Every argument is set explicitly. The items and their a and b values are
+# invented for illustration; they are not calibrated. Two items refer to
+# figures ("Pattern A", "Image A") that this example does not include.
+# The object name masks the cognitive_items data set of the package.
 cognitive_items <- data.frame(
   Question = c(
     "If A>B and B>C, then A_C (fill in: >, <, =)",
@@ -46,20 +49,18 @@ advanced_config <- create_study_config(
   ),
   theme = "Professional",
   session_save = TRUE,
-  parallel_computation = FALSE,  # Disable for stability with small item bank
-  cache_enabled = FALSE,  # Disable for stability
-  # Enable comprehensive reporting with multiple plots
-  # The universal PDF/CSV download system works automatically!
+  parallel_computation = FALSE,
+  cache_enabled = FALSE,
+  # Elements of the built-in results page
   participant_report = list(
-    show_theta_plot = TRUE,          # Ability progression plot
-    show_response_table = TRUE,      # Detailed response table
-    show_item_difficulty_trend = TRUE,  # Item difficulty vs ability plot
-    show_domain_breakdown = TRUE,    # Domain performance breakdown
-    show_recommendations = TRUE     # Performance recommendations (needs to be specified)
+    show_theta_plot = TRUE,             # theta and SE after each item
+    show_response_table = TRUE,
+    show_item_difficulty_trend = TRUE,  # b of the administered items
+    show_domain_breakdown = TRUE,
+    show_recommendations = TRUE         # needs recommendation_fun; none is set here
   )
 )
 
-# Launch the study
 launch_study(
   config = advanced_config,
   item_bank = cognitive_items

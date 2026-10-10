@@ -7,7 +7,7 @@
 get_language_name(language_code)
 }
 \arguments{
-\item{language_code}{Language code (en, de, es, fr)}
+\item{language_code}{Language code (en, de, es, fr, fa)}
 }
 \value{
 Full language name

@@ -2,7 +2,7 @@
 % Please edit documentation in R/zzz.R
 \name{reinstall_inrep}
 \alias{reinstall_inrep}
-\title{Reinstall Package}
+\title{Reinstall inrep}
 \usage{
 reinstall_inrep(source = "github", ...)
 }
@@ -15,7 +15,7 @@ reinstall_inrep(source = "github", ...)
 Invisible NULL
 }
 \description{
-Safely reinstalls the package
+Detaches inrep, reinstalls it from the given source and attaches it again.
 }
 \examples{
 \dontrun{

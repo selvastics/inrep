@@ -1,10 +1,10 @@
 /* =============================================================================
    BASE STRUCTURAL CSS — inrep package
 
-   Loaded BEFORE every theme file.  Theme CSS only overrides visual properties
-   (colour, font-family, shadow, border-radius, border-colour).  All
-   spacing, sizing, and typographic scale live here so every study layout is
-   consistent regardless of theme.
+   Intended to be loaded before a theme file, with the theme overriding only
+   visual properties (colour, font-family, shadow, border-radius,
+   border-colour). Note: get_theme_css() and launch_study() do not load this
+   file at present.
 
    Fluid sizing uses CSS clamp(preferred, viewport-fraction, max) so the UI
    fills whatever window is available — from a narrow 320 px iframe to a

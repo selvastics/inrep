@@ -13,5 +13,9 @@ get_theme_config(theme_name = "light")
 Theme configuration list
 }
 \description{
-Returns complete theme configuration
+Returns the colour, font and border settings of one of the themes defined
+in this function. These lists are used by \code{generate_theme_css()}. They
+are separate from the CSS files in \code{inst/themes} that
+\code{get_theme_css()} and \code{launch_study()} use, and the two sets of
+theme names differ.
 }

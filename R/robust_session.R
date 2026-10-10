@@ -1,10 +1,16 @@
-#' Robust Session Management for Sensitive Participant Data
-#' 
-#' This module provides robust session handling with automatic data preservation,
-#' keep-alive functionality, and  logging to ensure data integrity
-#' during assessments.
+# Session log and temporary data files used by launch_study() ----
+#
+# .session_state is a single environment for the whole R process. On a
+# server where several participants share one R process (e.g. shinyapps.io),
+# the session id, log file and tracked objects in it belong to whichever
+# session wrote last; per-participant state lives in launch_study()'s
+# reactive values, not here.
+#
+# The "keep-alive" and "data preservation" observers are created only when
+# initialize_robust_session() is called inside a running Shiny app.
+# launch_study() calls it before the app runs, so they are not started there.
 
-# Global session state
+# Package-level session state
 .session_state <- new.env()
 .session_state$keep_alive_active <- FALSE
 .session_state$session_start_time <- NULL
@@ -57,9 +63,10 @@ register_session_objects <- function(
   out
 }
 
-#' Clean up old session files to prevent conflicts
-#' 
+#' Delete session log files older than max_age_hours
+#'
 #' @param max_age_hours Maximum age of session files in hours (default: 24)
+#' @noRd
 cleanup_old_sessions <- function(max_age_hours = 24) {
   temp_dir <- tempdir()
   existing_sessions <- list.files(temp_dir, pattern = "inrep_session_.*\\.log", full.names = TRUE)
@@ -88,15 +95,20 @@ cleanup_old_sessions <- function(max_age_hours = 24) {
   }
 }
 
-#' Ensure Complete Data Isolation Between Sessions
-#' 
-#' @param session_id The session ID to check
-#' @return TRUE if session is completely isolated
+#' Prepare per-session temporary storage
+#'
+#' Deletes old session logs, creates an empty directory
+#' \code{tempdir()/session_data_<id>}, resets the logging environment for
+#' this id and warns when other session logs were modified in the last five
+#' minutes. It does not isolate data between concurrent sessions (see the
+#' note at the top of this file) and always returns \code{TRUE}.
+#'
+#' @param session_id The session ID
+#' @return \code{TRUE}
+#' @noRd
 ensure_complete_data_isolation <- function(session_id) {
-  # Clean up old sessions first
   cleanup_old_sessions()
-  
-  # Create session-specific data directory to ensure complete isolation
+
   session_data_dir <- file.path(tempdir(), paste0("session_data_", session_id))
   if (!dir.exists(session_data_dir)) {
     dir.create(session_data_dir, recursive = TRUE)
@@ -125,18 +137,18 @@ ensure_complete_data_isolation <- function(session_id) {
     }
   }
   
-  # Log isolation status
   if (length(active_sessions) > 0) {
-    warning(sprintf("Found %d potentially active sessions. Complete data isolation ensured for: %s", 
+    warning(sprintf("Found %d other session logs modified in the last 5 minutes (new session: %s)",
                    length(active_sessions), session_id))
   }
-  
-  return(TRUE)  # Always allow new sessions with complete isolation
+
+  return(TRUE)
 }
 
-#' Clean up session data on termination to ensure no data leakage
-#' 
+#' Delete the session's temporary directory and logging environment
+#'
 #' @param session_id The session ID to clean up
+#' @noRd
 cleanup_session_data <- function(session_id) {
   tryCatch({
     # Remove session-specific data directory
@@ -159,13 +171,19 @@ cleanup_session_data <- function(session_id) {
   })
 }
 
-#' Initialize Robust Session Management
-#' 
+#' Start the session log
+#'
+#' Sets the session start time and limits in \code{.session_state}, creates a
+#' log file \code{tempdir()/inrep_session_<id>.log} and, inside a running
+#' Shiny app only, starts the two observers. The time limit is counted from
+#' this call, not from a participant's start.
+#'
 #' @param max_session_time Maximum session time in seconds (default: 7200 = 2 hours)
 #' @param data_preservation_interval Interval for automatic data preservation in seconds
-#' @param keep_alive_interval Keep-alive ping interval in seconds
-#' @param enable_logging Whether to enable  logging
+#' @param keep_alive_interval Interval of the log observer in seconds
+#' @param enable_logging Whether to write the session log
 #' @return List with session configuration
+#' @noRd
 initialize_robust_session <- function(
   max_session_time = 7200,
   data_preservation_interval = 30,
@@ -182,9 +200,8 @@ initialize_robust_session <- function(
   .session_state$termination_logged <- FALSE  # Prevent duplicate termination messages
   .session_state$observers_created <- FALSE   # Prevent duplicate observer creation
   
-  # Create session log file with complete data isolation
   session_id <- generate_session_id()
-  ensure_complete_data_isolation(session_id)  # Ensure complete data isolation
+  ensure_complete_data_isolation(session_id)
   .session_state$session_id <- session_id
   .session_state$log_file <- file.path(tempdir(), paste0("inrep_session_", session_id, ".log"))
   
@@ -215,20 +232,18 @@ initialize_robust_session <- function(
   ))
 }
 
-#' Generate Unique Session ID
-#' 
-#' @return Character string with unique session identifier
+#' Session ID
+#'
+#' Time stamp (with milliseconds), process id and eight random hex digits from
+#' R's random number generator.
+#'
+#' @return Character string
+#' @noRd
 generate_session_id <- function() {
-  # Generate a more robust unique session ID with multiple entropy sources
-  timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S_%OS3")  # Include milliseconds
-  process_id <- Sys.getpid()  # Process ID for additional uniqueness
-  random_suffix <- paste(sample(c(letters, LETTERS, 0:9), 12, replace = TRUE), collapse = "")
-  machine_id <- Sys.info()["nodename"]  # Machine identifier
-  
-  # Create a hash of all components for additional uniqueness
-  combined_string <- paste(timestamp, process_id, random_suffix, machine_id, sep = "_")
+  timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S_%OS3")
+  process_id <- Sys.getpid()
   hash_suffix <- substring(paste0(as.hexmode(sample(256, 4, replace = TRUE) - 1L), collapse = ""), 1, 8)
-  
+
   paste0("SESS_", timestamp, "_", process_id, "_", hash_suffix)
 }
 
@@ -237,6 +252,7 @@ generate_session_id <- function() {
 #' @param event_type Type of event (e.g., "SESSION_INIT", "DATA_SAVE", "ERROR")
 #' @param message Event description
 #' @param details Additional event details as list
+#' @noRd
 log_session_event <- function(event_type, message, details = NULL) {
   if (is.null(.session_state$enable_logging) || !.session_state$enable_logging) return()
   
@@ -268,7 +284,8 @@ log_session_event <- function(event_type, message, details = NULL) {
       "[", timestamp, "] ",
       event_type, ": ",
       message,
-      if (!is.null(safe_details)) paste0(" | ", jsonlite::toJSON(safe_details, auto_unbox = TRUE)) else ""
+      if (!is.null(safe_details)) paste0(" | ", jsonlite::toJSON(safe_details, auto_unbox = TRUE)) else "",
+      "\n"
     )
     cat(log_line, file = .session_state$log_file, append = TRUE)
   }, error = function(e) {
@@ -284,24 +301,22 @@ log_session_event <- function(event_type, message, details = NULL) {
 }
 
 #' Update Last Activity Time
-#' 
+#' @noRd
 update_activity <- function() {
-  # Safety check - ensure session state is initialized
-  if (is.null(.session_state$last_activity)) {
-    .session_state$last_activity <- Sys.time()
-  } else {
-    .session_state$last_activity <- Sys.time()
-  }
-  
-  # Only log activity to file, not console (reduces spam)
+  .session_state$last_activity <- Sys.time()
+
   if (!is.null(.session_state$enable_logging) && .session_state$enable_logging) {
     log_session_event("ACTIVITY", "User activity detected")
   }
 }
 
 #' Check Session Validity
-#' 
-#' @return Logical indicating if session is still valid
+#'
+#' \code{FALSE} once \code{max_session_time} seconds have passed since
+#' \code{initialize_robust_session()}.
+#'
+#' @return Logical
+#' @noRd
 is_session_valid <- function() {
   if (is.null(.session_state$session_start_time)) return(FALSE)
   
@@ -320,8 +335,13 @@ is_session_valid <- function() {
   return(TRUE)
 }
 
-#' Start Keep-Alive Monitoring
-#' 
+#' Start the log observer
+#'
+#' Inside a running Shiny app, writes a "KEEP_ALIVE" line to the session log
+#' every \code{keep_alive_interval} seconds until the time limit is reached.
+#' It does not send anything to the browser and does not keep the connection
+#' open.
+#' @noRd
 start_keep_alive_monitoring <- function() {
   if (.session_state$keep_alive_active) return()
   
@@ -339,21 +359,12 @@ start_keep_alive_monitoring <- function() {
     
     shiny::invalidateLater(.session_state$keep_alive_interval * 1000)
     
-    # Check session validity
     if (!is_session_valid()) {
-      # Only log termination once - DISABLED to prevent spam
-      if (!isTRUE(.session_state$termination_logged)) {
-        .session_state$termination_logged <- TRUE
-        # Disabled to prevent repeated messages
-        # if (.session_state$enable_logging) {
-        #   log_session_event("SESSION_TERMINATED", "Session terminated due to time limit")
-        # }
-      }
+      .session_state$termination_logged <- TRUE
       stop_keep_alive_monitoring()
       return()
     }
-    
-      # Log keep-alive ping (minimal console output)
+
   if (.session_state$enable_logging) {
     log_session_event("KEEP_ALIVE", "Keep-alive ping", 
                      list(elapsed_time = as.numeric(difftime(Sys.time(), .session_state$session_start_time, units = "secs"))))
@@ -366,8 +377,8 @@ start_keep_alive_monitoring <- function() {
   }
 }
 
-#' Stop Keep-Alive Monitoring
-#' 
+#' Stop the log observer and delete the session's temporary directory
+#' @noRd
 stop_keep_alive_monitoring <- function() {
   if (!.session_state$keep_alive_active) return()
   
@@ -378,19 +389,17 @@ stop_keep_alive_monitoring <- function() {
     .session_state$keep_alive_observer <- NULL
   }
   
-  # Clean up session data to ensure no data leakage
   if (!is.null(.session_state$session_id)) {
     cleanup_session_data(.session_state$session_id)
   }
-  
-  # Only log to file for background operations
+
   if (.session_state$enable_logging) {
     log_session_event("KEEP_ALIVE_STOPPED", "Keep-alive monitoring deactivated")
   }
 }
 
-#' Start Data Preservation Monitoring
-#' 
+#' Start the periodic save observer (inside a running Shiny app only)
+#' @noRd
 start_data_preservation_monitoring <- function() {
   # Check if we're in a Shiny reactive context
   if (!shiny::isRunning()) {
@@ -415,10 +424,18 @@ start_data_preservation_monitoring <- function() {
   }
 }
 
-#' Preserve Session Data
-#' 
-#' @param force Whether to force preservation even if session is invalid
-#' @return Logical indicating if preservation was successful
+#' Save the tracked session objects to tempdir()
+#'
+#' Writes the objects registered with \code{register_session_objects()}
+#' (reactive values with fields named like passwords or tokens redacted,
+#' configuration, item bank) to \code{tempdir()/inrep_data_<session id>.rds}.
+#' The file is not encrypted and is overwritten on each call. With several
+#' concurrent participants in one R process, the objects of the participant
+#' who registered last are saved (see the note at the top of this file).
+#'
+#' @param force Save even after the session time limit
+#' @return Logical indicating if a file was written
+#' @noRd
 preserve_session_data <- function(force = FALSE) {
   if (!force && !is_session_valid()) {
     # Log data preservation skipped to file only for background operations
@@ -429,10 +446,8 @@ preserve_session_data <- function(force = FALSE) {
   }
   
   tryCatch({
-    # Get current session data from global environment
     session_data <- get_session_data()
-    
-    # More robust length check
+
     if (!is.null(session_data) && length(session_data) > 0) {
       # Save to temporary file
       session_id_safe <- if (!is.null(.session_state$session_id)) .session_state$session_id else "unknown"
@@ -462,13 +477,11 @@ preserve_session_data <- function(force = FALSE) {
   })
 }
 
-#' Get Current Session Data
-#' 
+#' Collect the tracked session objects
+#'
 #' @return List with current session data
+#' @noRd
 get_session_data <- function() {
-  # This function should be customized based on your data structure
-  # For now, we'll collect common session elements
-  
   session_data <- list()
 
   tracked <- .session_state$tracked_objects
@@ -517,11 +530,10 @@ get_session_data <- function() {
   return(session_data)
 }
 
-#' Emergency Data Recovery
-#' 
-#' Attempts to recover data from the most recent preservation point
-#' 
-#' @return List with recovered data or NULL if recovery failed
+#' Read the newest file written by preserve_session_data()
+#'
+#' @return List, or NULL if no file was found
+#' @noRd
 emergency_data_recovery <- function() {
   tryCatch({
     # Look for preserved data files
@@ -562,8 +574,14 @@ emergency_data_recovery <- function() {
 }
 
 #' Clean Up Session
-#' 
+#'
+#' Saves the tracked objects once more, stops the observers, deletes the
+#' temporary directory and resets the package-level session state (start
+#' time, session id). Because that state is shared, this also ends the time
+#' window for any other participant served by the same R process.
+#'
 #' @param save_final_data Whether to save final data before cleanup
+#' @noRd
 cleanup_session <- function(save_final_data = TRUE) {
   # Log cleanup to file only for background operations
   if (.session_state$enable_logging) {
@@ -584,7 +602,6 @@ cleanup_session <- function(save_final_data = TRUE) {
     .session_state$data_preservation_observer <- NULL
   }
   
-  # Complete data cleanup to ensure no data leakage between sessions
   if (!is.null(.session_state$session_id)) {
     cleanup_session_data(.session_state$session_id)
   }
@@ -604,6 +621,7 @@ cleanup_session <- function(save_final_data = TRUE) {
 #' Get Session Status
 #' 
 #' @return List with current session status
+#' @noRd
 get_session_status <- function() {
   if (is.null(.session_state$session_start_time)) {
     return(list(active = FALSE, message = "No active session"))
@@ -629,6 +647,7 @@ get_session_status <- function() {
 #' 
 #' @param additional_time Additional time in seconds
 #' @return Logical indicating if extension was successful
+#' @noRd
 extend_session <- function(additional_time) {
   if (is.null(.session_state$max_session_time)) {
     # Log extension failure to file only for background operations

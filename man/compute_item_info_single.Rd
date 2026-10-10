@@ -20,18 +20,21 @@ for 3PL; a, b1, b2, ... for GRM)}
 Numeric information value (non-negative)
 }
 \description{
-Computes Fisher information for a single item at a given ability level.
-This is the canonical implementation used by all item selection functions.
+Computes Fisher information for a single item at a given ability level,
+using the item parameters in \code{item_bank} as fixed. Used by
+\code{\link{select_next_item}} and \code{\link{fast_select_next_item}}.
 }
 \details{
-Supports 1PL, 2PL, 3PL (dichotomous) and Samejima GRM (polytomous).
-GRM support is experimental: item selection uses Samejima boundary-curve
-formulas with pre-calibrated threshold parameters (b1, b2, ...), but TAM
-fits a GPCM (step parameters) internally, so there is a model mismatch
-for TAM-based ability estimation. 1PL/2PL/3PL are fully supported.
-
-For GRM, uses the Samejima information formula:
-\eqn{I(\theta) = \sum_k [P'_k(\theta)]^2 / P_k(\theta)},
-where \eqn{P_k} are category probabilities derived from boundary
-characteristic curves \eqn{P^*_j(\theta) = 1/(1+\exp(-a(\theta-b_j)))}.
+Formulas (logistic metric without the constant 1.7):
+1PL/2PL \eqn{I(\theta) = a^2 P (1 - P)}; 3PL
+\eqn{I(\theta) = a^2 (P - c)^2 (1 - P) / (P (1 - c)^2)}; GRM
+\eqn{I(\theta) = \sum_k [P'_k(\theta)]^2 / P_k(\theta)}, where \eqn{P_k}
+are category probabilities derived from the boundary curves
+\eqn{P^*_j(\theta) = 1/(1+\exp(-a(\theta-b_j)))} (Samejima, 1969).
+For 1PL a column \code{a} is used if present. Missing parameters are filled
+with the same arbitrary defaults as in \code{\link{estimate_ability}}.
+}
+\references{
+Samejima, F. (1969). Estimation of latent ability using a response pattern of
+  graded scores. \emph{Psychometrika Monograph Supplement}, No. 17.
 }

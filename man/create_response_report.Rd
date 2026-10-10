@@ -2,22 +2,27 @@
 % Please edit documentation in R/enhanced_features.R
 \name{create_response_report}
 \alias{create_response_report}
-\title{Create Enhanced Response Report}
+\title{Create Response Report}
 \usage{
 create_response_report(config, cat_result, item_bank, include_labels = TRUE)
 }
 \arguments{
 \item{config}{Study configuration object}
 
-\item{cat_result}{CAT result object with responses}
+\item{cat_result}{List with \code{administered}, \code{responses} and
+\code{response_times}}
 
 \item{item_bank}{Item bank dataset}
 
-\item{include_labels}{Include response labels}
+\item{include_labels}{Include response labels (GRM only)}
 }
 \value{
 Data frame with response report
 }
 \description{
-Create Enhanced Response Report
+Builds a table of the administered items with the responses and response
+times. For GRM, optional labels are taken from a fixed five-point agreement
+scale in the study language; they are only correct for items with that
+scale. For other models, responses coded 1 are shown as "Correct" when the
+bank has an \code{Answer} column.
 }

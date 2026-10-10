@@ -1,22 +1,19 @@
-#' UI Components for inrep Package
-#' 
-#' This file consolidates all UI component functions including:
-#' - UI helper functions (from ui_helper.R)
-#' - Complete UI functions (from complete_ui.R)
-#' 
+#' Stand-alone UI helpers
+#'
+#' Small Shiny UI builders for an item or a demographics form. They are not
+#' used by \code{launch_study()}, which builds its own UI.
+#'
 #' @name ui_components
 #' @keywords internal
 
 NULL
 
-# ============================================================================
-# SECTION 1: UI HELPER FUNCTIONS (from ui_helper.R)
-# ============================================================================
+# UI helpers ----
 
-#' Unified INREP UI Generator
+#' Item or demographics UI
 #'
-#' Generates all UI components for assessment items and demographics in one function.
-#' Maintains accessibility, validation, and configuration features.
+#' Returns the Shiny input for one item (\code{type = "assessment"}) or a
+#' simple demographics form (\code{type = "demographics"}).
 #'
 #' @param type UI type: "assessment" or "demographics"
 #' @param item Data frame row for assessment item (if type = "assessment")
@@ -105,7 +102,6 @@ inrep_ui <- function(type = c("assessment", "demographics"),
     return(tagList(inputs, actionButton("start_test", get_label("start_button"))))
   }
 }
-# File: ui_helpers.R
 
 #' Create Response UI Component for Assessment Items
 #'
@@ -119,11 +115,14 @@ inrep_ui <- function(type = c("assessment", "demographics"),
 #'   Additional options (Option5, Option6, etc.) are supported.
 #' @param response_ui_type Character string specifying the type of response
 #'   interface. Options: \code{"radio"} for radio buttons, \code{"slider"} for
-#'   slider input, \code{"dropdown"} for dropdown selection. Default is \code{"radio"}.
+#'   slider input, \code{"dropdown"} for dropdown selection.
 #'
 #' @details
 #' The returned UI element is intended to be used inside the study UI where the
 #' server code reads the value from \code{input$item_response}.
+#' Radio buttons and the dropdown return the option text; the slider returns
+#' the position (1 to the number of options). The dropdown starts with an
+#' empty choice so that a missing response can be detected.
 #'
 #' @return A Shiny UI element (\code{radioButtons}, \code{sliderInput}, or \code{selectInput}).
 #'
@@ -169,36 +168,18 @@ inrep_ui <- function(type = c("assessment", "demographics"),
 #' response_interface <- create_response_ui(current_item, config$response_ui_type)
 #' }
 #'
-#' @section Response Validation:
-#' The function creates interfaces with built-in validation features:
-#' \itemize{
-#'   \item Radio buttons: Single selection enforcement, clear visual feedback
-#'   \item Dropdown: Placeholder option ("") for missing response detection
-#'   \item Slider: Numeric validation with defined min/max bounds
-#' }
-#'
-#' @section Integration with TAM:
-#' Response values are formatted for direct use with TAM functions:
-#' \itemize{
-#'   \item Consistent option indexing (1, 2, 3, ...) for TAM parameter matrices
-#'   \item Proper handling of missing responses for TAM's missing data procedures
-#'   \item Response time integration for speed-accuracy analysis
-#' }
-#'
-#' @seealso 
-#' \code{create_demographic_input()} for demographic interface components,
-#' \code{\link{launch_study}} for complete assessment workflow,
-#' \code{\link{select_next_item}} for adaptive item selection,
-#' \code{\link{estimate_ability}} for TAM-based ability estimation
+#' @seealso
+#' \code{\link{create_demographics_ui}},
+#' \code{\link{launch_study}} for the full study workflow
 #'
 #' @export
 create_response_ui <- function(item, response_ui_type) {
   if (!requireNamespace("shiny", quietly = TRUE)) {
     stop("Package 'shiny' is required but not available. Please install it with: install.packages('shiny')")
   }
-  
-  choices <- as.character(item[paste0("Option", 1:4)])
-  choices <- choices[!is.na(choices)]
+
+  choices <- as.character(item[grep("^Option[0-9]+$", names(item))])
+  choices <- choices[!is.na(choices) & choices != ""]
   names(choices) <- choices
   
   if (response_ui_type == "radio") {
@@ -246,14 +227,13 @@ create_response_ui <- function(item, response_ui_type) {
 #' @details
 #' If \code{demographics} is \code{NULL}, the function returns only the start
 #' button to proceed directly to the assessment.
+#' Numeric fields accept 0 to 120. Every \code{"select"} field offers the same
+#' fixed choices ("Male", "Female", "Other"), whatever the field is, so it is
+#' only suitable for gender. No input is validated or required.
 #'
-#' @return A Shiny UI element containing:
-#' \describe{
-#'   \item{Input components}{Formatted demographic inputs based on specified types}
-#'   \item{Start button}{Action button to proceed to assessment ("Start Test")}
-#'   \item{Validation}{Basic client-side structure for required fields}
-#' }
-#' If \code{demographics} is \code{NULL}, returns only the "Start Test" button.
+#' @return A Shiny \code{tagList} with one input per field and a start button
+#'   (\code{inputId = "start_test"}). If \code{demographics} is \code{NULL},
+#'   only the start button.
 #'
 #' @examples
 #' \dontrun{
@@ -290,26 +270,7 @@ create_response_ui <- function(item, response_ui_type) {
 #' research_ui <- create_demographics_ui(research_demographics, research_types)
 #' }
 #'
-#' @section Data Validation:
-#' The function creates inputs with built-in validation:
-#' \itemize{
-#'   \item Numeric inputs: Range validation and type checking
-#'   \item Select inputs: Predefined options with placeholder handling
-#'   \item Text inputs: Length limits and character validation
-#'   \item Required field checking before assessment proceeds
-#' }
-#'
-#' @section Integration with Assessment:
-#' The demographics UI integrates with the main assessment workflow:
-#' \itemize{
-#'   \item Automatic transition to test items after completion
-#'   \item Data storage in reactive values for analysis
-#'   \item Session state management for interruption recovery
-#'   \item Integration with TAM-based ability estimation context
-#' }
-#'
-#' @seealso 
-#' \code{create_demographic_input()} for individual demographic components,
+#' @seealso
 #' \code{\link{create_response_ui}} for assessment item interfaces,
 #' \code{\link{launch_study}} for complete assessment workflow,
 #' \code{\link{create_study_config}} for demographic configuration setup
@@ -353,16 +314,17 @@ create_demographics_ui <- function(demographics, input_types) {
   tagList(inputs, actionButton("start_test", get_label("start_button")))
 }
 
-# ============================================================================
-# SECTION 2: COMPLETE UI FUNCTIONS (from complete_ui.R)
-# ============================================================================
+# Single-page UI ----
 
-# File: complete_ui.R
-#' Complete Unified UI Function - All Aspects in One
+#' Single-page study UI (not used by launch_study)
 #'
-#' Ultimate single function that handles all UI aspects for adaptive testing.
-#' Includes themes, accessibility, responsive design, demographics, assessment items,
-#' progress tracking, and complete study flow in one function.
+#' Returns a \code{fluidPage} with one \code{conditionalPanel} per study phase
+#' (introduction, consent, information, instructions, demographics,
+#' assessment, results). The panels are switched by \code{input.phase}, which
+#' no inrep server function sets, so the function only produces a static
+#' layout. \code{launch_study()} does not use it. The page loads Tailwind CSS
+#' and the Inter font from external CDNs (jsdelivr, Google Fonts), which sends
+#' participants' IP addresses to those providers.
 #'
 #' @param config Study configuration object
 #' @param item_bank Item bank data frame
@@ -386,20 +348,16 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
   if (is.null(config$max_items)) config$max_items <- nrow(item_bank)
   if (is.null(config$language)) config$language <- "en"
   
-  # Calculate progress
+  ui_labels <- get_language_labels(config$language %||% "en")
+
   total_items <- nrow(item_bank)
   progress_percent <- min(100, round((current_item / config$max_items) * 100, 1))
   current_item_data <- if (current_item <= nrow(item_bank) && current_item > 0) {
     item_bank[current_item, ]
   } else {
-          list(Question = ui_labels$loading_question, ResponseCategories = "1,2,3,4,5")
+    list(Question = ui_labels$loading_question, ResponseCategories = "1,2,3,4,5")
   }
-  
-  # Get language labels from the multilingual system
-  ui_labels <- get_language_labels(config$language %||% "en")
-  
 
-  
   shiny::fluidPage(
     shinyjs::useShinyjs(),
     shiny::tags$head(
@@ -413,7 +371,7 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
         
 
         
-        # ORIGINAL INTRODUCTION PHASE - PRESERVED
+        # Introduction
         shiny::conditionalPanel(
           condition = "input.phase === 'introduction'",
           shiny::div(class = "text-center p-8",
@@ -442,7 +400,7 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
           )
         ),
         
-        # ORIGINAL CONSENT PHASE - PRESERVED
+        # Consent
         shiny::conditionalPanel(
           condition = "input.phase === 'consent'",
           shiny::div(class = "text-center p-8",
@@ -464,7 +422,7 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
           )
         ),
         
-        # ORIGINAL INFO PHASE - PRESERVED
+        # Study information
         shiny::conditionalPanel(
           condition = "input.phase === 'info'",
           shiny::div(class = "text-center p-8",
@@ -481,7 +439,7 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
           )
         ),
         
-        # ORIGINAL INSTRUCTIONS PHASE - PRESERVED
+        # Instructions
         shiny::conditionalPanel(
           condition = "input.phase === 'instructions'",
           shiny::div(class = "text-center p-8",
@@ -498,7 +456,7 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
           )
         ),
         
-        # ORIGINAL DEMOGRAPHICS PHASE - PRESERVED
+        # Demographics
         shiny::conditionalPanel(
           condition = "input.phase === 'demographics'",
           shiny::div(class = "text-center p-8",
@@ -512,7 +470,7 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
           )
         ),
         
-        # CUSTOM STUDY FLOW SUPPORT - NEW
+        # Custom instructions page
         shiny::conditionalPanel(
           condition = "input.phase === 'custom_instructions'",
           shiny::div(class = "text-center p-8",
@@ -531,7 +489,7 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
           )
         ),
         
-        # ORIGINAL ASSESSMENT PHASE - PRESERVED
+        # Assessment
         shiny::conditionalPanel(
           condition = "input.phase === 'assessment'",
           shiny::div(class = "text-center p-8",
@@ -591,7 +549,7 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
           )
         ),
         
-        # ORIGINAL RESULTS PHASE - PRESERVED
+        # Results
         shiny::conditionalPanel(
           condition = "input.phase === 'results'",
           shiny::div(class = "text-center p-8",
@@ -600,7 +558,7 @@ complete_ui <- function(config, item_bank, current_item = 1, responses = NULL, p
               "Thank you for participating in our study. Your responses have been recorded."
             ),
             
-            # HILDESHEIM STUDY RESULTS - INTEGRATED PLOTS
+            # Output slots of one specific study (HilFo); no inrep server fills them
             if (is.character(config$theme) && tolower(config$theme) == "hildesheim") {
               shiny::div(class = "mt-8",
                 shiny::h3(class = "text-xl font-bold mb-4 text-blue-600", "Hildesheim Psychologie Studie 2025 - Results"),

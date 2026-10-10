@@ -1,14 +1,12 @@
-# Purpose: Demonstrates various use cases of the inrep package following vignette patterns
-# This script provides clear, self-contained examples that guide users from basic to advanced configurations.
-# Each example launches a study and includes detailed explanations for educational purposes.
-# Based on patterns from vignettes and case studies.
+# inrep examples ----
+# Each example starts a Shiny app; run them one at a time. All item
+# parameters in this file are invented or simulated, so the adaptive
+# examples only show the mechanics and the scores carry no meaning.
 
-# Required packages
 library(inrep)
 
-# =============================================================================
-# HELPER: Simple Results Processor (following vignette patterns)
-# =============================================================================
+# Results processor shared by the examples: mean response and a bar chart.
+# For the right/wrong test in Example 3 the mean is the proportion correct.
 
 create_simple_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
   tryCatch({
@@ -18,7 +16,6 @@ create_simple_report <- function(responses, item_bank, demographics = NULL, sess
 
     mean_score <- mean(responses, na.rm = TRUE)
 
-    # Create basic visualization (following vignette approach)
     plot_base64 <- ""
     if (requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("base64enc", quietly = TRUE)) {
       tryCatch({
@@ -39,7 +36,6 @@ create_simple_report <- function(responses, item_bank, demographics = NULL, sess
       }, error = function(e) invisible(NULL))
     }
 
-    # Simple HTML report (following vignette style)
     html <- paste0(
       '<div style="font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px;">',
       '<h1 style="color: #4A90E2; text-align: center;">Study Results</h1>',
@@ -65,12 +61,7 @@ create_simple_report <- function(responses, item_bank, demographics = NULL, sess
   })
 }
 
-# =============================================================================
-# Example 1: Basic Adaptive Test with GRM (from vignettes)
-# =============================================================================
-# Purpose: Introduce beginners to a simple adaptive test using the Graded Response Model (GRM).
-
-# Create a basic configuration (from getting-started vignette)
+# Example 1: adaptive test with the GRM and bfi_items ----
 config <- create_study_config(
   name = "A First Adaptive Test",
   model = "GRM",
@@ -80,20 +71,16 @@ config <- create_study_config(
   results_processor = create_simple_report
 )
 
-# Launch the adaptive test
 launch_study(config, bfi_items)
 
-# =============================================================================
-# Example 2: Custom Work Personality Assessment (from vignettes)
-# =============================================================================
-# Purpose: Demonstrate creating a custom item bank for workplace personality assessment.
-
-# Custom personality item bank for work-related traits (from vignette)
+# Example 2: your own GRM item bank ----
+# The a and b values are invented. The CAT treats the 20 items as one
+# dimension, so the bank has no domain or reverse-coding columns: reverse-
+# keyed items would need negative discriminations or recoding before
+# calibration.
   work_personality_items <- data.frame(
-    # Unique identifiers
     item_id = paste0("WORK_", sprintf("%03d", 1:20)),
 
-    # Question text
     Question = c(
       "I prefer working in teams rather than alone.",
       "I enjoy taking on leadership responsibilities.",
@@ -117,11 +104,10 @@ launch_study(config, bfi_items)
       "I am good at organizing tasks and projects."
     ),
 
-    # IRT parameters
     a = c(1.2, 1.4, 1.1, 1.3, 1.5, 1.2, 1.4, 1.1, 1.3, 1.2,
           1.3, 1.1, 1.4, 1.2, 1.5, 1.1, 1.3, 1.2, 1.4, 1.1),
 
-    # Threshold parameters for 5-point scale
+    # Thresholds for five categories
     b1 = c(-1.8, -1.5, -1.9, -1.6, -1.4, -1.7, -1.5, -1.8, -1.6, -1.7,
            -1.5, -1.9, -1.4, -1.8, -1.3, -1.9, -1.6, -1.7, -1.5, -1.8),
     b2 = c(-0.8, -0.5, -0.9, -0.6, -0.4, -0.7, -0.5, -0.8, -0.6, -0.7,
@@ -131,28 +117,11 @@ launch_study(config, bfi_items)
     b4 = c(1.2, 1.5, 1.1, 1.4, 1.6, 1.3, 1.5, 1.2, 1.4, 1.3,
            1.5, 1.1, 1.6, 1.2, 1.7, 1.1, 1.4, 1.3, 1.5, 1.2),
 
-    # Response categories (5-point Likert scale)
     ResponseCategories = rep("1,2,3,4,5", 20),
-
-    # Domain classification
-    domain = c(
-      rep("Extraversion", 4),
-      rep("Conscientiousness", 4),
-      rep("Openness", 4),
-      rep("Agreeableness", 4),
-      rep("Neuroticism", 4)
-    ),
-
-    # Reverse coded items (negative wording)
-    reverse_coded = c(FALSE, FALSE, FALSE, FALSE, FALSE,
-                      FALSE, FALSE, FALSE, TRUE, FALSE,
-                      FALSE, FALSE, FALSE, FALSE, FALSE,
-                      TRUE, FALSE, FALSE, FALSE, FALSE),
 
     stringsAsFactors = FALSE
   )
 
-# Launch study with custom item bank
 config <- create_study_config(
   name = "Work Personality Assessment",
   model = "GRM",
@@ -165,95 +134,41 @@ config <- create_study_config(
 
 launch_study(config, work_personality_items)
 
-# =============================================================================
-# Example 3: Binary Math Knowledge Test (from vignettes)
-# =============================================================================
-# Purpose: Demonstrate binary item bank for knowledge assessment.
+# Example 3: multiple-choice test with the 2PL ----
+# For 1PL/2PL/3PL items inrep shows the options in Option1 to Option4 and
+# scores a response as correct when it equals Answer. The a and b values are
+# fixed, invented numbers, not a calibration.
+math_knowledge_items <- data.frame(
+  item_id = paste0("MATH_", sprintf("%03d", 1:10)),
+  Question = c(
+    "What is 15 + 27?",
+    "What is 7 x 9?",
+    "What is 25% of 200?",
+    "What is 1/2 + 1/4?",
+    "Solve: 2x + 3 = 11",
+    "If y = 2x + 1, what is y when x = 3?",
+    "What is the area of a rectangle with length 8 and width 5?",
+    "What is the sum of the angles of a triangle, in degrees?",
+    "What is the square root of 144?",
+    "What is 5! (5 factorial)?"
+  ),
+  Option1 = c("32", "56", "25", "3/4", "3", "6", "13", "90", "11", "25"),
+  Option2 = c("42", "63", "50", "2/6", "4", "7", "26", "180", "12", "60"),
+  Option3 = c("52", "72", "75", "1/8", "5", "8", "40", "270", "14", "120"),
+  Option4 = c("44", "81", "100", "2/4", "7", "9", "45", "360", "72", "720"),
+  Answer  = c("42", "63", "50", "3/4", "4", "7", "40", "180", "12", "120"),
+  a = c(0.9, 1.1, 1.3, 1.2, 1.4, 1.0, 1.2, 0.8, 1.1, 1.5),
+  b = c(-2.0, -1.5, -1.0, -0.5, 0.0, 0.2, 0.5, -0.8, 0.8, 1.5),
+  domain = c("Arithmetic", "Arithmetic", "Arithmetic", "Fractions", "Algebra",
+             "Algebra", "Geometry", "Geometry", "Arithmetic", "Arithmetic"),
+  stringsAsFactors = FALSE
+)
 
-# Binary item bank for mathematics knowledge test (from vignette)
-  math_knowledge_items <- data.frame(
-    item_id = paste0("MATH_", sprintf("%03d", 1:30)),
-
-    Question = c(
-      # Basic arithmetic
-      "What is 15 + 27?",
-      "What is 84 ÷ 12?",
-      "What is 7 × 9?",
-      "What is 144 ÷ 16?",
-      "What is 25% of 200?",
-
-      # Fractions
-      "What is 1/2 + 1/4?",
-      "What is 3/4 - 1/2?",
-      "What is 2/3 × 3/4?",
-      "What is 5/6 ÷ 1/3?",
-      "What is 40% as a fraction?",
-
-      # Algebra
-      "Solve: 2x + 3 = 11",
-      "What is x if 3x - 7 = 14?",
-      "Simplify: 4x + 2x - x",
-      "If y = 2x + 1, what is y when x = 3?",
-      "What is the slope of y = 3x + 2?",
-
-      # Geometry
-      "What is the area of a rectangle (length 8, width 5)?",
-      "What is the circumference of a circle (radius 4)?",
-      "What is the area of a triangle (base 6, height 8)?",
-      "How many degrees in a triangle?",
-      "What is the volume of a cube (side 3)?",
-
-      # Advanced topics
-      "What is √144?",
-      "What is 2³ (2 cubed)?",
-      "What is the perimeter of a square (side 6)?",
-      "What is 30% of 150?",
-      "Solve: x² = 36",
-      "What is the area of a circle (radius 5)?",
-      "What is 5! (5 factorial)?",
-      "What is log₁₀(100)?",
-      "What is sin(90°)?",
-      "What is the hypotenuse of a 3-4-5 triangle?"
-    ),
-
-    # IRT parameters for 2PL model
-    a = round(runif(30, 0.8, 2.5), 2),
-    b = round(rnorm(30, 0, 1.2), 2),
-
-    # Correct answers (for scoring)
-    Answer = c(
-      42, 7, 63, 9, 50,    # Basic arithmetic
-      0.75, 0.25, 0.5, 2.5, 0.4,  # Fractions
-      4, 7, 5, 7, 3,       # Algebra
-      40, 25.12, 24, 180, 27,  # Geometry
-      12, 8, 36, 45, 6, 78.5, 120, 2, 1, 5  # Advanced
-    ),
-
-    # Domain classification
-    domain = c(
-      rep("Arithmetic", 5),
-      rep("Fractions", 5),
-      rep("Algebra", 5),
-      rep("Geometry", 5),
-      rep("Advanced", 10)
-    ),
-
-    # Difficulty levels
-    difficulty_level = c(
-      rep("Easy", 10),
-      rep("Medium", 10),
-      rep("Hard", 10)
-    ),
-
-    stringsAsFactors = FALSE
-  )
-
-# Launch binary assessment
 config <- create_study_config(
   name = "Math Knowledge Test",
   model = "2PL",
-  max_items = 15,
-  min_items = 8,
+  max_items = 8,
+  min_items = 5,
   criteria = "MI",
   theme = "Midnight",
   results_processor = create_simple_report
@@ -261,12 +176,7 @@ config <- create_study_config(
 
 launch_study(config, math_knowledge_items)
 
-# =============================================================================
-# Example 4: Hildesheim University Theme (from case studies)
-# =============================================================================
-# Purpose: Demonstrate university-branded assessment with custom styling.
-
-# Use Hildesheim theme (from case study)
+# Example 4: Hildesheim theme and demographic questions ----
 config <- create_study_config(
   name = "Big Five Personality Assessment",
   model = "GRM",
@@ -278,12 +188,11 @@ config <- create_study_config(
   results_processor = create_simple_report
 )
 
-# Add demographic collection
+# Demographic questions: question text, input type and options
 demographic_configs <- list(
   Age = list(
-    field_name = "Age",
-    question_text = "What is your age?",
-    input_type = "radio",
+    question = "What is your age?",
+    type = "radio",
     options = c(
       "18 or younger" = 1, "19-20" = 2, "21-25" = 3,
       "26-30" = 4, "31-40" = 5, "41-50" = 6,
@@ -293,9 +202,8 @@ demographic_configs <- list(
   ),
 
   Gender = list(
-    field_name = "Gender",
-    question_text = "How do you identify your gender?",
-    input_type = "radio",
+    question = "How do you identify your gender?",
+    type = "radio",
     options = c(
       "Female" = 1, "Male" = 2, "Non-binary" = 3,
       "Other" = 4, "Prefer not to say" = 5
@@ -310,12 +218,11 @@ config$input_types <- list(Age = "radio", Gender = "radio")
 
 launch_study(config, bfi_items)
 
-# =============================================================================
-# Example 5: Accessibility-Focused Assessment (from theme system)
-# =============================================================================
-# Purpose: Demonstrate accessibility features for users with different needs.
+# Example 5: readability themes ----
+# These themes change colours, fonts and spacing. They have not been tested
+# against an accessibility standard.
 
-# Dyslexia-friendly assessment
+# Dyslexia-friendly theme (cream background, OpenDyslexic font if installed)
 config <- create_study_config(
   name = "Dyslexia-Friendly Assessment",
   model = "GRM",
@@ -329,7 +236,7 @@ config <- create_study_config(
 
 launch_study(config, bfi_items)
 
-# High contrast assessment
+# High-contrast theme
 config_hc <- create_study_config(
   name = "High Contrast Assessment",
   model = "GRM",
@@ -342,55 +249,7 @@ config_hc <- create_study_config(
 
 launch_study(config_hc, bfi_items)
 
-# =============================================================================
-# Example 6: Mixed Parameter Item Bank (from vignettes)
-# =============================================================================
-# Purpose: Demonstrate handling of item banks with mixed known/unknown parameters.
-
-# Item bank with mixed known/unknown parameters (from vignette)
-mixed_items <- data.frame(
-  item_id = paste0("MIX_", sprintf("%03d", 1:15)),
-
-  Question = c(
-    "I enjoy working in teams.",           # Known parameters
-    "I am detail-oriented.",               # Known parameters
-    "I prefer challenging tasks.",         # Known parameters
-    "I am comfortable with uncertainty.",  # Unknown - will use defaults
-    "I enjoy learning new things.",        # Unknown - will use defaults
-    "I handle stress well.",               # Unknown - will use defaults
-    "I am organized.",                     # Known parameters
-    "I am creative.",                      # Known parameters
-    "I am reliable.",                      # Known parameters
-    "I enjoy routine work.",               # Unknown - will use defaults
-    "I am patient.",                       # Unknown - will use defaults
-    "I am decisive.",                      # Unknown - will use defaults
-    "I am analytical.",                    # Known parameters
-    "I am empathetic.",                    # Known parameters
-    "I am ambitious."                      # Known parameters
-  ),
-
-  # Mix of known and unknown parameters
-  a = c(1.3, 1.4, 1.2, NA, NA, NA, 1.5, 1.1, 1.3, NA, NA, NA, 1.4, 1.2, 1.1),
-  b1 = c(-1.5, -1.2, -1.8, NA, NA, NA, -1.1, -1.7, -1.4, NA, NA, NA, -1.3, -1.6, -1.9),
-  b2 = c(-0.5, -0.2, -0.8, NA, NA, NA, -0.1, -0.7, -0.4, NA, NA, NA, -0.3, -0.6, -0.9),
-  b3 = c(0.5, 0.8, 0.2, NA, NA, NA, 0.9, 0.3, 0.6, NA, NA, NA, 0.7, 0.4, 0.1),
-  b4 = c(1.5, 1.8, 1.2, NA, NA, NA, 1.9, 1.3, 1.6, NA, NA, NA, 1.7, 1.4, 1.1),
-
-  ResponseCategories = rep("1,2,3,4,5", 15),
-  domain = rep(c("Known", "Unknown"), c(9, 6)),
-
-  stringsAsFactors = FALSE
-)
-
-# This will work perfectly - inrep handles the NA values automatically
-config <- create_study_config(
-  name = "Mixed Parameter Assessment",
-  model = "GRM",
-  max_items = 10,
-  min_items = 5,
-  criteria = "MI",
-  theme = "Forest",
-  results_processor = create_simple_report
-)
-
-launch_study(config, mixed_items)
+# Note on missing item parameters ----
+# validate_item_bank() accepts NA in a, b1, b2, ... and estimate_ability()
+# then substitutes fixed default values without a warning. Scores based on
+# such items are not meaningful; calibrate all items before an adaptive study.

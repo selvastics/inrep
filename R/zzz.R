@@ -28,23 +28,18 @@ utils::globalVariables(c(
 #' @param pkgname Package name
 #' @keywords internal
 .onLoad <- function(libname, pkgname) {
-  # Store package state
   .inrep_env$loaded <- TRUE
   .inrep_env$load_time <- Sys.time()
-  
-  # Register S3 methods if any
+
   register_s3_methods()
-  
-  # Initialize package options
-  options(
-    inrep.auto_unload = TRUE,
-    inrep.verbose = FALSE,
-    inrep.max_sessions = 100
-  )
-  
-  # Clean up any leftover temporary files
+
+  # Set the default only when the user has not set the option already.
+  if (is.null(getOption("inrep.verbose"))) {
+    options(inrep.verbose = FALSE)
+  }
+
   clean_temp_files()
-  
+
   invisible(NULL)
 }
 
@@ -59,14 +54,9 @@ utils::globalVariables(c(
   # Only show message if not in quiet mode and not during installation
   if (!isTRUE(getOption("inrep.quiet")) && 
       !isTRUE(getOption("inrep.installing"))) {
-    
-    # Check if running in RStudio or terminal
-    is_rstudio <- Sys.getenv("RSTUDIO") == "1"
-    
-    # Simple, clean startup message
     packageStartupMessage(
-      "inrep ", utils::packageVersion("inrep"), " ready.\n",
-      "For help, use: ?inrep or vignette('inrep')"
+      "inrep ", utils::packageVersion("inrep"), ". ",
+      "Help: ?inrep, browseVignettes(\"inrep\")"
     )
   }
   
@@ -80,21 +70,8 @@ utils::globalVariables(c(
 #' @param libpath Library path
 #' @keywords internal
 .onUnload <- function(libpath) {
-  # Clean up all package state
   cleanup_package_state()
-  
-  # Remove temporary files
   clean_temp_files()
-  
-  # Clear options
-  options(
-    inrep.auto_unload = NULL,
-    inrep.verbose = NULL,
-    inrep.max_sessions = NULL
-  )
-  
-  # Clear environment
-  rm(list = ls(.inrep_env), envir = .inrep_env)
   
   invisible(NULL)
 }
@@ -105,26 +82,22 @@ utils::globalVariables(c(
 #' 
 #' @keywords internal
 cleanup_package_state <- function() {
-  # Clean up internal environments used by modules (package namespace only)
+  # State environments defined at the top level of the package namespace
   envs_to_clean <- c(
     ".session_state",
-    ".security_state",
-    ".performance_state",
-    ".recovery_state",
-    ".survey_state",
-    ".ux_state"
+    ".error_handling_state"
   )
+  ns <- environment(cleanup_package_state)
 
   for (env_name in envs_to_clean) {
-    if (exists(env_name, inherits = FALSE)) {
-      env <- get(env_name, inherits = FALSE)
+    if (exists(env_name, envir = ns, inherits = FALSE)) {
+      env <- get(env_name, envir = ns, inherits = FALSE)
       if (is.environment(env)) {
         rm(list = ls(env), envir = env)
       }
     }
   }
   
-  # Close any open connections
   cons <- showConnections()
   if (nrow(cons) > 0) {
     for (i in seq_len(nrow(cons))) {
@@ -134,8 +107,7 @@ cleanup_package_state <- function() {
     }
   }
   
-  # Clear internal cached data
-  if (exists(".inrep_env", inherits = FALSE) && is.environment(.inrep_env)) {
+  if (is.environment(.inrep_env)) {
     rm(list = ls(.inrep_env), envir = .inrep_env)
   }
   
@@ -149,11 +121,12 @@ cleanup_package_state <- function() {
 #' @keywords internal
 clean_temp_files <- function() {
   temp_dir <- tempdir()
+  # Regular expressions (list.files() does not take glob patterns)
   temp_patterns <- c(
-    "inrep_session_*",
-    "inrep_cache_*",
-    "inrep_backup_*",
-    "inrep_export_*"
+    "^inrep_session_",
+    "^inrep_cache_",
+    "^inrep_backup_",
+    "^inrep_export_"
   )
   
   for (pattern in temp_patterns) {
@@ -164,7 +137,7 @@ clean_temp_files <- function() {
     )
     
     if (length(files) > 0) {
-      # Only remove files older than 24 hours
+      # Remove only files older than 24 hours
       for (file in files) {
         file_info <- file.info(file)
         if (!is.na(file_info$mtime)) {
@@ -198,9 +171,9 @@ register_s3_methods <- function() {
   invisible(NULL)
 }
 
-#' Force Detach Package
-#' 
-#' Forcefully detaches and unloads the package
+#' Detach and unload inrep
+#'
+#' Detaches and unloads the package, for example before reinstalling it.
 #' 
 #' @param restart Whether to restart R session after detaching
 #' @return Invisible NULL
@@ -243,9 +216,9 @@ force_detach_inrep <- function(restart = FALSE) {
   invisible(NULL)
 }
 
-#' Reinstall Package
-#' 
-#' Safely reinstalls the package
+#' Reinstall inrep
+#'
+#' Detaches inrep, reinstalls it from the given source and attaches it again.
 #' 
 #' @param source Source of installation ("github", "local", "cran")
 #' @param ... Additional arguments passed to installation function
@@ -277,7 +250,9 @@ reinstall_inrep <- function(source = "github", ...) {
     local = {
       args <- list(...)
       path <- args$path %||% "."
-      install.packages(path, repos = NULL, type = "source", ...)
+      args$path <- NULL
+      do.call(utils::install.packages,
+              c(list(pkgs = path, repos = NULL, type = "source"), args))
     },
     cran = {
       install.packages("inrep", ...)
@@ -288,6 +263,6 @@ reinstall_inrep <- function(source = "github", ...) {
   # Reload the package
   library(inrep)
   
-  message("Package 'inrep' has been successfully reinstalled and loaded.")
+  message("Package 'inrep' has been reinstalled and loaded.")
   invisible(NULL)
 }

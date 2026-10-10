@@ -22,8 +22,8 @@ A list containing:
   }
 }
 \description{
-Initializes the logging system for assessment sessions and research workflows.
-This function creates a log file connection and configures inrep's internal logger.
+Checks that the log file can be written and sets \code{log_print()} to
+append lines to it.
 }
 \examples{
 \dontrun{

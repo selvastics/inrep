@@ -31,11 +31,7 @@ The vignette builds on Vignette 1 (item banks and page flow) and Vignette 2 (the
 
 # What inrep computes and what it does not
 
-inrep presents items, records the responses, and carries out the study logic: the page flow, the checks for missing answers and the storage of the data. It does not estimate item parameters, it does not test whether a model fits, and it does not draw plausible values. All of this is done in a package for psychometric modelling. Here we use TAM (Robitzsch et al., 2024), and the results are passed to inrep.
-
-There is one place where inrep does compute something itself. In an adaptive study (Vignette 3) inrep updates an ability estimate after every response and uses it to choose the next item. For this it takes the item parameters in the item bank as fixed and known, and evaluates the likelihood on a grid (an EAP estimate with a normal prior). This applies a calibration that was done elsewhere; it does not estimate one. If the parameters in the item bank are wrong, inrep has no way to notice.
-
-In the design below inrep computes nothing of this kind. The items are presented in booklets, and the score each participant sees is computed by TAM inside the `results_processor`.
+inrep presents items, records the responses, and carries out the study logic: the page flow, the checks for missing answers and the storage of the data. It does not estimate item parameters, test model fit, or draw plausible values. These steps belong to a package for psychometric modelling, and researchers can use the one they prefer (for example TAM, mirt or software outside R). Here we use TAM (Robitzsch et al., 2024). The only estimate inrep computes itself is the running EAP in an adaptive study (Vignette 3). In the booklet design below, the score each participant sees is computed by TAM inside the `results_processor`.
 
 ------------------------------------------------------------------------
 
@@ -45,7 +41,7 @@ A measurement model such as the partial credit model (PCM; Masters, 1982) makes 
 
 The same constraints are what makes a planned missingness design possible. If the model holds and the item parameters are known from a calibration, every subset of items places a person on the same scale. A participant who answered items 1, 2 and 3 can then be compared with one who answered items 3, 4 and 5, without either having answered all five. The missing responses are missing because of the design, at random, so they carry no information about the person and can be ignored in the estimation. Large-scale assessments such as PISA rely on this idea and use rotated booklets in which no student works on all tasks.
 
-What the design gives up is precision at the level of the individual. Three items say less about a person than five. At the level of the population, however, the means, variances and correlations of the latent variables can still be estimated without bias from the incomplete data, because the model connects the booklets. Selva and Heine (2026) compared plausible values, multiple imputation and full information maximum likelihood for data of this kind in the PISA 2022 Creative Thinking assessment, where parts of the assessment are missing by design. In their analyses plausible values suited comparisons between groups of the population, multiple imputation suited situations in which auxiliary variables could justifiably be varied, and full information maximum likelihood suited confirmatory models. Where the methods led to comparable results, they recommended the simpler one, because it is easier to follow.
+What the design gives up is precision at the level of the individual. Three items say less about a person than five. At the level of the population, however, the means, variances and correlations of the latent variables can still be estimated without bias from the incomplete data, because the model connects the booklets. Selva and Heine (2026) compared plausible values, multiple imputation and full information maximum likelihood for data of this kind in the PISA 2022 Creative Thinking assessment, where parts of the assessment are missing by design. In their analyses plausible values suited comparisons between groups of the population, multiple imputation suited questions about item- or factor-level relations when auxiliary information is substantively meaningful, and full information maximum likelihood suited confirmatory models of the internal structure. Which method fits depends on the aim of the analysis, and more complexity is only worth it when the question requires it.
 
 Two consequences for this vignette follow from this aim.
 
@@ -440,7 +436,7 @@ study_config <- create_study_config(
   results_processor = pm_report
 )
 
-launch_study(study_config, item_bank)
+launch_study(study_config, item_bank, save_data = TRUE)
 ```
 
 Two details are easy to overlook. The responses arrive in the order of the item bank, with the values 1 to 6 of `ResponseCategories`, so they must be reversed and shifted in the same way as in the calibration. And the item pages use inrep's English agreement labels, while the SAPA participants answered on an accuracy scale. A change in the response labels can shift the thresholds. For a real study the labels should be the same as in the calibration, or the items should be recalibrated.
@@ -449,7 +445,7 @@ Two details are easy to overlook. The responses arrive in the order of the item 
 
 # Part 7: Analysing the data afterwards
 
-The WLE serves the participant. For the analysis, the researcher works with the stored responses, which contain the `NA`s of the design. TAM estimates the model from these incomplete data directly. As an example we fit a two-dimensional model for Extraversion and Agreeableness to the simulated booklet data from Part 5.2, and compare it with the same model on the complete data.
+The WLE serves the participant. For the analysis, the researcher works with the stored responses, which contain the `NA`s of the design. With `save_data = TRUE`, inrep writes one file per participant, and `read_study_data()` returns them as one data frame: the items by `id` with `NA` where not shown, the items in the order shown (which identifies the booklet), and the demographics. Before the analysis the responses are reversed and shifted as in Part 2. TAM estimates the model from these incomplete data directly. As an example we fit a two-dimensional model for Extraversion and Agreeableness to the simulated booklet data from Part 5.2, and compare it with the same model on the complete data.
 
 ```{r latent_correlation}
 ea <- c(scales$E, scales$A)
@@ -479,13 +475,13 @@ If further analyses need person-level values, for example a regression in anothe
 # draws from the grid itself would slightly overstate the correlation.
 # tam.pv() prints a progress bar, which capture.output() hides.
 invisible(capture.output(
-  pv <- tam.pv(fit_pm, nplausible = 10, normal.approx = TRUE)$pv))
-r  <- sapply(1:10, function(k)
+  pv <- tam.pv(fit_pm, nplausible = 50, normal.approx = TRUE)$pv))
+r  <- sapply(1:50, function(k)
   cor(pv[[paste0("PV", k, ".Dim1")]], pv[[paste0("PV", k, ".Dim2")]]))
 round(c(mean = mean(r), min = min(r), max = max(r)), 3)
 ```
 
-The correlation of the plausible values reproduces the latent correlation, unlike the correlation of the WLE scores. Each analysis is run once per set of plausible values, and the results are combined with Rubin's rules. Whether plausible values, multiple imputation or full information maximum likelihood fits a question best depends on its aim (Selva & Heine, 2026). If two of them give comparable results, we recommend the simpler one.
+The correlation of the plausible values reproduces the latent correlation, unlike the correlation of the WLE scores. Each analysis is run once per set of plausible values, and the results are combined with Rubin's rules. We draw 50 sets here; PISA provides 10, which Selva and Heine (2026) consider too few to stabilise variance estimates, and they recommend 50 to 100. If two methods give comparable results, we prefer the simpler one, because its assumptions are easier to check.
 
 ------------------------------------------------------------------------
 
@@ -495,7 +491,7 @@ The correlation of the plausible values reproduces the latent correlation, unlik
 - **Forgetting to reverse items.** Reversed items must be recoded before the calibration and, in the same way, before scoring in the study.
 - **Re-estimating the parameters for each participant.** A model fitted to one person's responses has no information about the items. The parameters come from the calibration and stay fixed (Part 4).
 - **Analysing the WLE as if it were the trait.** Correlations and variances of WLE scores are biased by measurement error, and more so with fewer items. Use the latent model or plausible values (Part 7).
-- **Reporting a plausible value as a person's score.** A plausible value is one random draw. Another draw gives another value.
+- **Reporting a plausible value as a person's score, or averaging plausible values into one score.** A plausible value is one random draw, and the average of several draws shrinks the differences between persons, which biases variances and group comparisons.
 - **Treating the PCM as the best-fitting model.** It is a constraint we chose for the design (Part 3.4). Report the comparison with the GPCM.
 
 ------------------------------------------------------------------------

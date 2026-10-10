@@ -10,8 +10,10 @@ ensure_font_consistency(theme_css)
 \item{theme_css}{The base theme CSS}
 }
 \value{
-Enhanced CSS with font consistency rules
+The theme CSS with these rules appended
 }
 \description{
-Adds font consistency CSS to ensure all elements use the theme's font-family
+Appends rules that apply the theme's body font to all text elements, and
+rules that map both CSS variable naming schemes (\code{--primary-color} and
+\code{--color-primary}) onto buttons, cards and form elements.
 }

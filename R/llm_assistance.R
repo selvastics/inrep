@@ -1,4 +1,4 @@
-﻿#' Generate Customization Prompt (Deprecated)
+#' Generate Customization Prompt (Deprecated)
 #'
 #' @description
 #' \strong{Deprecated.} Use

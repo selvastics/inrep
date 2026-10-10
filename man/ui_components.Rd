@@ -2,10 +2,9 @@
 % Please edit documentation in R/ui_components.R
 \name{ui_components}
 \alias{ui_components}
-\title{UI Components for inrep Package}
+\title{Stand-alone UI helpers}
 \description{
-This file consolidates all UI component functions including:
-- UI helper functions (from ui_helper.R)
-- Complete UI functions (from complete_ui.R)
+Small Shiny UI builders for an item or a demographics form. They are not
+used by \code{launch_study()}, which builds its own UI.
 }
 \keyword{internal}

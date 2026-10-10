@@ -1,10 +1,10 @@
-# Create math_items dataset for mathematics assessment
-# Generate a comprehensive mathematics item bank
+# Example: build a mathematics item bank with simulated GRM parameters.
+# The parameters are random draws, not calibrations. This script does not
+# reproduce data/math_items.rda exactly (the shipped data set has placeholder
+# item texts and different thresholds).
 
-# Set seed for reproducibility
 set.seed(123)
 
-# Create mathematics items with GRM parameters (5-point scale)
 math_items <- data.frame(
   item_id = paste0("MATH_", sprintf("%03d", 1:40)),
   
@@ -75,16 +75,16 @@ math_items <- data.frame(
     rep("Hard", 10)
   ),
   
-  # IRT parameters for GRM model (5-point scale: 1=Very Difficult, 5=Very Easy)
-  a = round(runif(40, 0.8, 2.2), 2),  # Discrimination parameters
-  
-  # Threshold parameters (b1 < b2 < b3 < b4)
+  # Simulated GRM parameters for five ordered categories. A math problem is
+  # normally scored right/wrong, so a 2PL bank would usually fit better.
+  a = round(runif(40, 0.8, 2.2), 2),
+
+  # Thresholds, sorted below so that b1 < b2 < b3 < b4
   b1 = round(rnorm(40, -1.5, 0.4), 2),  # Threshold 1 (1|2)
   b2 = round(rnorm(40, -0.5, 0.4), 2),  # Threshold 2 (2|3)  
   b3 = round(rnorm(40, 0.5, 0.4), 2),   # Threshold 3 (3|4)
   b4 = round(rnorm(40, 1.5, 0.4), 2),   # Threshold 4 (4|5)
   
-  # Response categories (5-point Likert scale)
   ResponseCategories = rep("1,2,3,4,5", 40),
   
   # Grade level appropriateness
@@ -110,7 +110,7 @@ for (i in 1:nrow(math_items)) {
 # Save to data directory
 save(math_items, file = "../../data/math_items.rda")
 
-cat("Math items dataset created successfully!\n")
+cat("Math items dataset created.\n")
 cat("Items:", nrow(math_items), "\n")
 cat("Columns:", names(math_items), "\n")
 cat("Domains:", paste(unique(math_items$domain), collapse = ", "), "\n")

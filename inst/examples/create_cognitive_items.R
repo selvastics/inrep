@@ -1,12 +1,12 @@
-# Create cognitive_items dataset for advanced examples
-# Generate a comprehensive cognitive assessment item bank
+# Example: build a small cognitive item bank with simulated 2PL parameters.
+# The parameters are random draws, not calibrations, and the items are informal
+# examples (some need figures that do not exist, some have no single correct
+# answer). This script does not reproduce data/cognitive_items.rda, which has
+# the columns item_id, content, domain, difficulty and discrimination.
 
-# Set seed for reproducibility
 set.seed(42)
 
-# Create cognitive items with 2PL parameters for binary responses
 cognitive_items <- data.frame(
-  # Required columns for inrep 2PL model
   Question = c(
     "Complete the analogy: Cat is to Kitten as Dog is to ___",
     "Which word does not belong: Apple, Orange, Banana, Carrot",
@@ -64,11 +64,9 @@ cognitive_items <- data.frame(
     "How many eyes do you have?"
   ),
 
-  # 2PL IRT parameters
-  a = round(runif(50, 0.8, 2.5), 3),  # Discrimination parameters
-  b = round(rnorm(50, 0, 1.2), 3),    # Difficulty parameters
+  a = round(runif(50, 0.8, 2.5), 3),
+  b = round(rnorm(50, 0, 1.2), 3),
 
-  # Correct answers (for scoring)
   Answer = c(
     "Puppy", "Carrot", "Some roses are red", "32", "The dog ran quickly",
     "Plentiful", ">", "8", "Destroy", "Omega",

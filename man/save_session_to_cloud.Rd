@@ -9,7 +9,9 @@ save_session_to_cloud(
   config,
   webdav_url = NULL,
   password = NULL,
-  session = NULL
+  session = NULL,
+  share_token = NULL,
+  user = NULL
 )
 }
 \arguments{
@@ -19,15 +21,22 @@ a completed assessment with \code{cat_result} populated.}
 \item{config}{A study configuration object created by \code{\link{create_study_config}}
 containing study metadata and storage parameters.}
 
-\item{webdav_url}{Character string specifying WebDAV URL for cloud storage.
-Should follow format \code{"https://server.com/webdav/path/"}. If \code{NULL},
-cloud saving is skipped.}
+\item{webdav_url}{Where to store the file: a Nextcloud/ownCloud share link,
+a public share WebDAV address, or any WebDAV folder URL. Several URLs may
+be given and are tried in order. See \code{\link{webdav_upload}} for the
+accepted forms. If \code{NULL}, cloud saving is skipped.}
 
-\item{password}{Character string containing password for WebDAV authentication.
-If \code{NULL}, attempts anonymous access.}
+\item{password}{Share password (public shares) or account/app password
+(plain WebDAV). \code{NULL} or \code{""} for no password.}
 
 \item{session}{Optional Shiny session object. When provided, upload success or
 failure will be shown to the user via \code{shiny::showNotification()}.}
+
+\item{share_token}{Token of a public share. Only needed when
+\code{webdav_url} is a bare \code{.../public.php/webdav/} address; share
+links contain the token already.}
+
+\item{user}{User name for a plain (non-share) WebDAV folder.}
 }
 \value{
 Logical value indicating upload success:
@@ -42,18 +51,18 @@ Uploads completed session data as JSON to a WebDAV endpoint using
 client-side encryption.
 }
 \details{
-The function writes the JSON payload to a temporary file and uploads that
-file. It can also convert a Nextcloud/ownCloud public share URL to the
-corresponding WebDAV endpoint.
+Writes the JSON payload to a temporary file and uploads it with
+\code{\link{webdav_upload}}, which handles share links, upload-only
+shares, plain WebDAV servers and fallback hosts.
 }
 \section{Data Structure}{
 
 The uploaded JSON contains:
 \itemize{
   \item \code{study_key}: Study identifier for data organization
-  \item \code{timestamp}: Upload timestamp in ISO format
-  \item \code{cat_result}: Complete TAM-derived assessment results
-  \item \code{demographics}: Collected demographic information
+  \item \code{timestamp}: Upload time (local time, \code{"YYYY-MM-DD HH:MM:SS"})
+  \item \code{cat_result}: \code{rv$cat_result} (final estimate and SE, as stored by the study)
+  \item \code{demographics}: \code{rv$demo_data}
   \item \code{response_times}: Item-level response times in seconds
   \item \code{theta_history}: Ability estimate progression across items
   \item \code{se_history}: Standard error progression across items
@@ -105,15 +114,6 @@ save_session_to_cloud(rv, config,
   password = NULL)
 }
 
-}
-\references{
-Fielding, R., Gettys, J., Mogul, J., Frystyk, H., Masinter, L., Leach, P., & 
-Berners-Lee, T. (1999). \emph{Hypertext Transfer Protocol -- HTTP/1.1}. 
-RFC 2616. Internet Engineering Task Force.
-
-Goland, Y., Whitehead, E., Faizi, A., Carter, S., & Jensen, D. (1999). 
-\emph{HTTP Extensions for Distributed Authoring -- WEBDAV}. 
-RFC 2518. Internet Engineering Task Force.
 }
 \seealso{
 \code{\link{validate_session}} for session validation,

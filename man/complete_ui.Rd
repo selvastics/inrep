@@ -2,7 +2,7 @@
 % Please edit documentation in R/ui_components.R
 \name{complete_ui}
 \alias{complete_ui}
-\title{Complete Unified UI Function - All Aspects in One}
+\title{Single-page study UI (not used by launch_study)}
 \usage{
 complete_ui(
   config,
@@ -30,9 +30,13 @@ complete_ui(
 Complete Shiny UI object
 }
 \description{
-Ultimate single function that handles all UI aspects for adaptive testing.
-Includes themes, accessibility, responsive design, demographics, assessment items,
-progress tracking, and complete study flow in one function.
+Returns a \code{fluidPage} with one \code{conditionalPanel} per study phase
+(introduction, consent, information, instructions, demographics,
+assessment, results). The panels are switched by \code{input.phase}, which
+no inrep server function sets, so the function only produces a static
+layout. \code{launch_study()} does not use it. The page loads Tailwind CSS
+and the Inter font from external CDNs (jsdelivr, Google Fonts), which sends
+participants' IP addresses to those providers.
 }
 \examples{
 \dontrun{

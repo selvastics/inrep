@@ -39,17 +39,16 @@ responses, and live-updating \eqn{\hat{\theta}} / SE trajectory of a single
 simulated participant from an \code{\link{run_simulation}} result.
 }
 \details{
-This bridges population-level simulation findings with individual-level
-understanding: you can inspect \emph{why} a particular participant received
-certain items, how the ability estimate evolved, and how the adaptive arm
-compared to a random draw.
+The app shows which items the participant received, the responses, and how
+the estimate and its posterior SD changed, and compares the final values with
+the random-selection arm.
 }
 \section{Individual vs. population}{
 
-The replay shows one person's data.  Differences between adaptive and MCAR
-SE at the individual level are not statistically meaningful — adaptive
-\emph{consistently} outperforms MCAR on RMSE(\eqn{\theta}) only at the
-population level (Liu & Loken, 2025).  The summary page includes a reminder.
+The replay shows one simulated person. A difference between the two arms for
+one person says little about the selection methods; compare them with the
+RMSE and bias over all simulated persons in \code{sim_object$summary}. The
+summary page includes a reminder.
 }
 
 \examples{

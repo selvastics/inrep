@@ -648,7 +648,7 @@ cat('</div>')
 
 # Part 5: The csv_processor
 
-A report can offer participants their own data as a CSV file. inrep builds this file when the page sends `download_csv_trigger`, usually from a button in the report HTML (RCQ.R and the programming anxiety case study contain one):
+A report can offer participants their own data as a CSV file. inrep builds this file when the page sends `download_csv_trigger`, usually from a button in the report HTML (the programming anxiety case study contains one):
 
 ```html
 <button onclick="Shiny.setInputValue('download_csv_trigger', Math.random(), {priority: 'event'})">

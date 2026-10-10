@@ -2,11 +2,22 @@
 % Please edit documentation in R/debugmode.R
 \name{generate_debug_mode_js}
 \alias{generate_debug_mode_js}
-\title{Debug Mode Functions for inrep Package}
+\title{JavaScript for debug mode}
 \usage{
 generate_debug_mode_js(debug_mode = FALSE)
 }
+\arguments{
+\item{debug_mode}{Logical. If \code{FALSE}, returns \code{NULL}.}
+}
+\value{
+A \code{shiny::tags$script} object, or \code{NULL}.
+}
 \description{
-Debug Mode Functions for inrep Package
+Returns a script tag that adds hotkeys for testing a study in the browser:
+Ctrl+A fills the current page, Ctrl+Q and Ctrl+Y click through the whole
+study (normal and fast). The script fills inputs with synthetic values,
+ticks consent checkboxes and overrides the browser's Ctrl+A (select all).
+Data collected with debug mode on are not participant data; keep
+\code{debug_mode = FALSE} for real data collection.
 }
 \keyword{internal}

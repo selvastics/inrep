@@ -9,7 +9,7 @@ get_label(label_key, language = "en", fallback = NULL)
 \arguments{
 \item{label_key}{Label key to retrieve}
 
-\item{language}{Language code (en, de, es, fr)}
+\item{language}{Language code (en, de, es, fr, fa)}
 
 \item{fallback}{Fallback value if label not found}
 }

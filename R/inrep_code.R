@@ -1,28 +1,31 @@
-#' Generate Standalone R Script for Assessment App
+#' Write an R script from a launch_study() call
 #'
-#' Creates a completely self-contained R script that includes all inrep functionality
-#' needed to run an assessment independently. This function extracts and packages
-#' all dependencies, helper functions, data, and the complete Shiny app logic.
-#' 
+#' Writes an R script that contains the given \code{launch_study()} call,
+#' \code{library()} calls, and the deparsed source of a fixed list of inrep
+#' functions. \code{launch_study()} calls many internal helpers that are not
+#' in that list, so the script runs only when inrep is installed and attached;
+#' it is not independent of the package.
+#'
+#' With \code{console_ready = TRUE} the script instead contains
+#' \code{launch_study_compact()}, a small separate Shiny app (text
+#' demographics, one radio-button page per item in bank order, mean response
+#' at the end, no adaptive selection, no ability estimation and no data
+#' saving). The \code{launch_study()} call in that script still refers to
+#' inrep's \code{launch_study()}.
+#'
 #' @section Limitations:
-#' - Console deployment is limited to ~4,094 characters (R console input limit)
-#' - Very complex server logic (>50,000 characters) may be impractical for standalone deployment
-#' - For extensive studies, consider professional hosting via the inrep platform
-#' 
-#' @section Professional Hosting:
-#' Researchers planning to use inrep for published papers and assessments can contact
-#' the package author for professional hosting via the inrep platform. Contact 
-#' selva@uni-hildesheim.de with a brief description of your study aim and publication plan.
+#' Scripts longer than 50,000 characters trigger a message. R's console
+#' limits the length of a single input line (4096 bytes), not of a pasted
+#' multi-line script.
 #'
 #' @param expr The launch_study() call expression
 #' @param output_file Optional file path to save the script. If NULL, returns script as string.
 #'   Can be a filename (saves to current directory) or full path.
 #' @param auto_run Logical. If TRUE, adds code to automatically run the assessment.
 #'   If FALSE (default), user must uncomment the launch line.
-#' @param console_ready Logical. If TRUE, generates compact code for console copy-paste.
-#'   When TRUE, creates minimal executable code under R's 4094 character limit.
-#' @param minimal Logical. If TRUE, generates only essential code for faster deployment.
-#' @return Character string containing the complete standalone R script, invisibly if 
+#' @param console_ready Logical. If TRUE, writes the compact script described above.
+#' @param minimal Logical. With \code{console_ready = TRUE}, loads fewer packages.
+#' @return Character string containing the generated R script, invisibly if
 #'   output_file is specified
 #' @examples
 #' \dontrun{
@@ -30,23 +33,17 @@
 #' config <- create_study_config(name = "My Study", model = "GRM")
 #' script <- inrep_code(launch_study(config, bfi_items))
 #' 
-#' # Console-ready - compact code for copy-paste (RECOMMENDED)
-#' console_script <- inrep_code(launch_study(config, bfi_items), 
+#' # Compact script (separate simple app, see Details)
+#' console_script <- inrep_code(launch_study(config, bfi_items),
 #'                              console_ready = TRUE)
-#' # Copy and paste console_script directly into R console!
-#' 
-#' # Save to file automatically
-#' inrep_code(launch_study(config, bfi_items), 
+#'
+#' # Save to file
+#' inrep_code(launch_study(config, bfi_items),
 #'            output_file = "my_assessment.R")
-#' 
-#' # Minimal version for quick deployment
+#'
+#' # Compact script with fewer packages
 #' inrep_code(launch_study(config, bfi_items),
 #'            console_ready = TRUE, minimal = TRUE)
-#'            
-#' # For complex studies with extensive server logic:
-#' # Consider professional hosting via inrep platform
-#' # Contact: selva@uni-hildesheim.de
-#' # Include: study description, publication plan, participant numbers
 #' }
 #' @export
 inrep_code <- function(expr, output_file = NULL, auto_run = FALSE, console_ready = FALSE, minimal = FALSE) {
@@ -69,60 +66,23 @@ inrep_code <- function(expr, output_file = NULL, auto_run = FALSE, console_ready
     compact_script <- generate_compact_script(user_code, auto_run, minimal)
     script_length <- nchar(compact_script)
     
-    # Check for console length limitations
-    if (script_length > 4000) {
-      message("WARNING: Script length (", script_length, " characters) may exceed R console limits!")
-      message("   R console maximum is typically 4,094 characters per input.")
-      message("   Consider using:")
-      message("   1. minimal = TRUE for more compact code")
-      message("   2. output_file to save and source() the script instead")
-      message("   3. Contact inrep platform for hosting (see below)")
-      message("")
-    }
-    
     if (!is.null(output_file)) {
       writeLines(compact_script, output_file)
-      message("Compact standalone script saved to: ", basename(output_file))
+      message("Compact script saved to: ", basename(output_file))
       message("Script length: ", script_length, " characters")
-      if (script_length <= 4000) {
-        message("Console-safe: Ready for copy-paste deployment")
-      }
       return(invisible(compact_script))
     }
-    
-    message("Compact standalone script generated!")
-    message("Script length: ", script_length, " characters")
-    if (script_length <= 4000) {
-      message("Console-safe: Ready for copy-paste deployment")
-      message("READY: Copy-paste the output directly into R console")
-    } else {
-      message("Too long for console: Use output_file parameter or minimal = TRUE")
-    }
+
+    message("Compact script generated (", script_length, " characters)")
     return(compact_script)
   }
-  
-  # FULL MODE: Generate complete standalone script for file deployment
-  complete_script <- generate_complete_script(user_code, auto_run, console_ready = console_ready, output_file = output_file)
+
+  # The file is written below, not inside generate_complete_script()
+  complete_script <- generate_complete_script(user_code, auto_run, console_ready = console_ready, output_file = NULL)
   script_length <- nchar(complete_script)
-  
-  # Warning for very large scripts (extensive server logic)
+
   if (script_length > 50000) {
-    message("WARNING: Generated script is very large (", script_length, " characters)!")
-    message("   This may indicate complex server logic that could be difficult to deploy standalone.")
-    message("   For complex studies with extensive logic, consider professional hosting:")
-    message("")
-    message("INREP PLATFORM HOSTING SERVICE:")
-    message("   Researchers planning to use inrep for published papers and assessments")
-    message("   can contact the package author for professional hosting via the inrep platform.")
-    message("")
-    message("   Contact: selva@uni-hildesheim.de")
-    message("   Please provide:")
-    message("      - Brief description of your study aim")
-    message("      - Publication plan details")
-    message("      - Expected participant numbers")
-    message("")
-    message("   Benefits: Professional hosting, scalability, data security, technical support")
-    message("")
+    message("Note: the generated script has ", script_length, " characters.")
   }
   
   if (!is.null(output_file)) {
@@ -135,7 +95,7 @@ inrep_code <- function(expr, output_file = NULL, auto_run = FALSE, console_ready
     # Write the script to file
     tryCatch({
       writeLines(complete_script, output_file)
-      message("Complete standalone script saved to: ", basename(output_file))
+      message("Script saved to: ", basename(output_file))
       message("Script size: ", nchar(complete_script), " characters")
       message("Auto-run enabled: ", auto_run)
     }, error = function(e) {
@@ -146,10 +106,6 @@ inrep_code <- function(expr, output_file = NULL, auto_run = FALSE, console_ready
     return(invisible(complete_script))
   }
   
-  # Return the complete script
-  message("Complete standalone script generated!")
-  message("Script size: ", nchar(complete_script), " characters")
-  message("Save with: writeLines(result, 'filename.R')")
   return(complete_script)
 }
 
@@ -169,27 +125,19 @@ generate_compact_script <- function(user_code, auto_run, minimal) {
 logger<-function(m,l='INFO'){try(message(sprintf('[%s] %s: %s',Sys.time(),l,m)), silent=TRUE)}
 "
   
-  # Essential inrep functions - extract only the most critical ones
   essential_code <- '
-# Core inrep functions (compact) - using main create_study_config function
-# create_study_config function is defined in create_study_config.R
+# Simple fixed-order questionnaire app (no adaptive selection, no ability
+# estimation, no data saving). Not the same as inrep::launch_study().
 
 launch_study_compact<-function(config,item_bank,webdav_url=NULL,password=NULL,save_format="json",study_key=NULL,...){
   if(is.null(item_bank)||nrow(item_bank)==0)stop("Item bank required")
-  
-  # Basic item bank validation
+
   if(!"Question"%in%names(item_bank))stop("Item bank must have Question column")
-  
-  # Ensure basic GRM structure
+
   if(config$model=="GRM"&&!"ResponseCategories"%in%names(item_bank)){
     item_bank$ResponseCategories<-rep("1,2,3,4,5",nrow(item_bank))
-    item_bank$a<-rep(1.5,nrow(item_bank))
-    item_bank$b1<-rnorm(nrow(item_bank),-1,0.5)
-    item_bank$b2<-rnorm(nrow(item_bank),0,0.5)
-    item_bank$b3<-rnorm(nrow(item_bank),0.5,0.5)
-    item_bank$b4<-rnorm(nrow(item_bank),1,0.5)
   }
-  
+
   # Simple UI
   ui<-fluidPage(
     tags$head(tags$style("body{font-family:Arial;margin:20px;}")),
@@ -288,7 +236,7 @@ launch_study_compact<-function(config,item_bank,webdav_url=NULL,password=NULL,sa
   
   # Combine all parts
   final_script <- paste(
-    "# Compact inrep assessment - Ready for console",
+    "# Compact questionnaire script generated by inrep::inrep_code()",
     libs,
     utils,
     essential_code,
@@ -346,6 +294,14 @@ generate_complete_script <- function(user_code, auto_run, console_ready = FALSE,
     # Session management  
     "init_reactive_values",
     "save_session_to_cloud",
+    "webdav_upload",
+    ".webdav_body",
+    ".webdav_content_type",
+    ".webdav_targets",
+    ".webdav_parse_share",
+    ".webdav_user_kind",
+    ".webdav_reason",
+    ".webdav_status_hint",
     "resume_session",
     
     # Utilities
@@ -360,8 +316,6 @@ generate_complete_script <- function(user_code, auto_run, console_ready = FALSE,
     "initialize_session_dataset",
     "get_session_dataset",
     "update_session_dataset",
-    "initialize_enhanced_recovery",
-    "initialize_enhanced_security",
     
     # Study flow helpers
     "create_default_introduction_content",
@@ -401,10 +355,6 @@ generate_complete_script <- function(user_code, auto_run, console_ready = FALSE,
 # data(bfi_items)  # Load Big Five Inventory items
 # data(cognitive_items)  # Load cognitive assessment items
 # data(math_items)  # Load mathematics assessment items
-# data(rcq_old_items)  # Load RCQ resilience and coping items (30 items)
-# data(rcqL_old_items)  # Load RCQL long-form resilience items (68 items)
-# data(rcq_items)  # Load customizable RCQ items (copy of rcq_old_items)
-# data(rcqL_items)  # Load customizable RCQL items (copy of rcqL_old_items)
 
 # Note: Built-in datasets should be loaded with data() function
 
@@ -553,7 +503,7 @@ if (length(missing_packages) > 0) {
 
 # Runtime diagnostics
 message('')
-message('=== INREP STANDALONE APP DIAGNOSTICS ===')
+message('=== Package check ===')
 message('R Version: ', R.version.string)
 message('Platform: ', R.version$platform)
 message('Required packages status:')
@@ -573,10 +523,7 @@ message('')
       "# ============================================================================",
       "",
       "message('')",
-      "message('Starting standalone inrep assessment application...')",
-      "message('This script will automatically launch your assessment.')",
-      "message('Access the application in your web browser at the displayed URL.')",
-      "message('Press Ctrl+C or Esc to stop the application.')",
+      "message('Starting the study...')",
       "message('')",
       "",
       "# Auto-launch the assessment:",
@@ -591,17 +538,11 @@ message('')
       "# ============================================================================",
       "",
       "message('')",
-      "message('Standalone inrep assessment application ready!')",
-      "message('To start your assessment, uncomment and run the line below:')",
-      "message('Access the application in your web browser at the displayed URL.')",
-      "message('Press Ctrl+C or Esc to stop the application.')",
+      "message('Script loaded. To start the study, uncomment and run the call below.')",
       "message('')",
       "",
-      "# Uncomment the line below to launch the assessment:",
-      paste("#", user_code),
-      "",
-      "# Alternative: Copy and paste this line to launch:",
-      paste("#", user_code),
+      "# Uncomment to launch the study:",
+      paste(paste("#", user_code), collapse = "\n"),
       "",
       sep = "\n"
     )
@@ -623,7 +564,7 @@ message('')
       "#",
       "# QUICK LAUNCH:",
       "# After pasting this script, run:",
-      paste("# ", user_code),
+      paste(paste("# ", user_code), collapse = "\n"),
       "#",
       "# ============================================================================",
       "",
@@ -632,14 +573,14 @@ message('')
   } else {
     ""
   }
-  # Compose the complete standalone script
+  # Compose the script
   complete_script <- paste(
     "# ============================================================================",
-    "# STANDALONE INREP ASSESSMENT APPLICATION",
+    "# INREP ASSESSMENT SCRIPT",
     "# ============================================================================",
     "#",
-    "# This script was auto-generated by inrep_code() and contains all necessary",
-    "# components to run an inrep assessment independently of the inrep package.",
+    "# Generated by inrep_code(). It contains copies of some inrep functions;",
+    "# launch_study() needs further inrep internals, so install and attach inrep.",
     "#",
     "# Generated on:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
     "# Original call:", paste(user_code, collapse = " "),
@@ -674,13 +615,13 @@ message('')
     "# USER APPLICATION CODE",
     "# ============================================================================",
     "",
-    "# Original launch_study call:",
-    paste(user_code, collapse = "\n"),
+    "# Original launch_study call (run below only when auto_run = TRUE):",
+    paste(paste("#", user_code), collapse = "\n"),
     "",
     execution_section,
     "",
     "# ============================================================================",
-    "# END OF STANDALONE SCRIPT", 
+    "# END OF SCRIPT",
     "# ============================================================================",
     sep = "\n"
   )
@@ -711,30 +652,15 @@ message('')
     "#",
     if (console_ready) {
       paste(
-        "# CONSOLE DEPLOYMENT:",
-        "# - This script is optimized for copy-paste into R console",
-        "# - Simply select all, copy, and paste into your R session",
-        "#"
+        "# The script can be pasted into the R console or run with source().",
+        "#",
+        sep = "\n"
       )
     } else {
       ""
     },
     "# For cloud storage, make sure webdav_url and password are defined",
-    "# For custom data, make sure your item_bank data.frame is defined", 
-    "#",
-    "# ============================================================================",
-    "# PROFESSIONAL HOSTING AVAILABLE",
-    "# ============================================================================",
-    "#",
-    "# For published research and complex assessments, consider professional",
-    "# hosting via the inrep platform. Benefits include:",
-    "# - Scalable infrastructure for large participant numbers",
-    "# - Professional data security and backup",
-    "# - Technical support and maintenance",
-    "# - Advanced analytics and reporting features",
-    "#",
-    "# Contact: selva@uni-hildesheim.de",
-    "# Please provide: study description, publication plan, participant numbers",
+    "# For custom data, make sure your item_bank data.frame is defined",
     "#",
     "# ============================================================================",
     sep = "\n"
@@ -753,7 +679,7 @@ message('')
     # Write the script to file
     tryCatch({
       writeLines(final_script, output_file)
-      message("Standalone script successfully saved to: ", output_file)
+      message("Script saved to: ", output_file)
       message("Script size: ", nchar(final_script), " characters")
       message("Auto-run enabled: ", auto_run)
       message("Console-ready: ", console_ready)
@@ -782,20 +708,7 @@ message('')
     return(invisible(final_script))
   }
   
-  # If no output file, return the script visibly
-  message("Standalone script generated successfully!")
-  message("Script size: ", nchar(final_script), " characters")
-  message("Auto-run enabled: ", auto_run)
-  message("Console-ready: ", console_ready)
-  
-  if (console_ready) {
-    message("")
-    message("CONSOLE-READY: You can copy-paste this output directly into R console")
-  } else {
-    message("")
-    message("Save with: writeLines(result, 'filename.R')")
-  }
-  
-  # Return the complete standalone script
+  message("Script generated (", nchar(final_script), " characters). ",
+          "Save with: writeLines(result, 'filename.R')")
   return(final_script)
 }

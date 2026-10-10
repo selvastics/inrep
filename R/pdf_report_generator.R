@@ -2,28 +2,36 @@
 
 #' Generate PDF Report for inrep Studies
 #'
-#' Creates  PDF reports with images, charts, and detailed analysis
-#' for inrep study results.
+#' Writes an R Markdown file with the study name, number of items, the ability
+#' estimate and its standard error (if present in \code{study_data}), optional
+#' plots and Big Five or programming-anxiety scores found in \code{study_data},
+#' and renders it to PDF with \code{rmarkdown::render()} (a LaTeX installation
+#' is required).
 #'
-#' @param study_data List containing study results and participant data
+#' @param study_data List containing study results and participant data, e.g.
+#'   \code{responses}, \code{theta_history}, \code{theta_estimate},
+#'   \code{theta_se}, and scores named \code{BFI_*}.
 #' @param study_config Study configuration object
 #' @param output_file Path to output PDF file
 #' @param include_images Logical indicating whether to include generated plots
 #' @param language Language for report ("en" or "de")
 #' @return Path to generated PDF file
 #' @export
-generate_inrep_pdf_report <- function(study_data, study_config, output_file, 
+generate_inrep_pdf_report <- function(study_data, study_config, output_file,
                                     include_images = TRUE, language = "en") {
-  
-  # Check required packages
-  required_packages <- c("rmarkdown", "knitr", "ggplot2", "DT", "plotly")
+
+  required_packages <- c("rmarkdown", "knitr", "ggplot2")
   missing_packages <- required_packages[!sapply(required_packages, requireNamespace, quietly = TRUE)]
   
   if (length(missing_packages) > 0) {
     stop("Missing required packages for PDF generation: ", paste(missing_packages, collapse = ", "))
   }
   
-  # Create temporary directory for report generation
+  # render() resolves a relative output_file against the Rmd's directory, which
+  # is deleted below, so make the path absolute first.
+  output_file <- file.path(normalizePath(dirname(output_file), mustWork = FALSE),
+                           basename(output_file))
+
   temp_dir <- tempdir()
   report_dir <- file.path(temp_dir, "inrep_report")
   dir.create(report_dir, showWarnings = FALSE)
@@ -41,11 +49,7 @@ generate_inrep_pdf_report <- function(study_data, study_config, output_file,
   rmd_file <- file.path(report_dir, "report.Rmd")
   writeLines(rmd_content, rmd_file)
   
-  # Create CSS file for styling
-  css_file <- file.path(report_dir, "report.css")
-  writeLines(create_report_css(), css_file)
-  
-  # Render PDF
+  # pdf_document() has no css argument, so no stylesheet is passed.
   tryCatch({
     rmarkdown::render(
       input = rmd_file,
@@ -56,8 +60,7 @@ generate_inrep_pdf_report <- function(study_data, study_config, output_file,
         toc_depth = 2,
         number_sections = TRUE,
         fig_width = 8,
-        fig_height = 6,
-        css = css_file
+        fig_height = 6
       ),
       quiet = TRUE
     )
@@ -140,15 +143,16 @@ create_rmd_content <- function(study_data, study_config, plot_files, language = 
   # Extract data
   study_name <- study_config$name %||% "inrep Study"
   responses <- study_data$responses %||% numeric(0)
-  theta_estimate <- study_data$theta_estimate %||% 0
-  theta_se <- study_data$theta_se %||% 1
-  demographics <- study_data$demographics %||% list()
-  
-  # Create content
+  # No default values: the ability lines are only written when an estimate exists
+  theta_estimate <- study_data$theta_estimate
+  theta_se <- study_data$theta_se
+  has_theta <- is.numeric(theta_estimate) && length(theta_estimate) == 1 && is.finite(theta_estimate)
+  has_se <- is.numeric(theta_se) && length(theta_se) == 1 && is.finite(theta_se)
+
   content <- c(
     "---",
     paste0("title: '", study_name, " - ", ifelse(is_english, "Results Report", "Ergebnisbericht"), "'"),
-    paste0("author: '", ifelse(is_english, "inrep Assessment System", "inrep Bewertungssystem"), "'"),
+    "author: 'inrep'",
     paste0("date: '`r format(Sys.Date(), \"", ifelse(is_english, "%B %d, %Y", "%d. %B %Y"), "\")`'"),
     "output:",
     "  pdf_document:",
@@ -157,28 +161,25 @@ create_rmd_content <- function(study_data, study_config, plot_files, language = 
     "    number_sections: true",
     "    fig_width: 8",
     "    fig_height: 6",
-    "    css: report.css",
     "---",
     "",
     "```{r setup, include=FALSE}",
     "knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)",
-    "library(ggplot2)",
-    "library(DT)",
     "```",
     "",
-    ifelse(is_english, "# Executive Summary", "# Zusammenfassung"),
+    ifelse(is_english, "# Summary", "# Zusammenfassung"),
     "",
-    ifelse(is_english, 
-           "This report presents the results of your participation in the inrep assessment study. The assessment utilized advanced psychometric methods to provide accurate and reliable measurements of your abilities and characteristics.",
-           "Dieser Bericht pr\u00E4sentiert die Ergebnisse Ihrer Teilnahme an der inrep-Bewertungsstudie. Die Bewertung nutzte fortgeschrittene psychometrische Methoden, um genaue und zuverl\u00E4ssige Messungen Ihrer F\u00E4higkeiten und Eigenschaften zu liefern."),
+    ifelse(is_english,
+           "This report summarises your results in this study.",
+           "Dieser Bericht fasst Ihre Ergebnisse in dieser Studie zusammen."),
     "",
-    "## " %+% ifelse(is_english, "Assessment Details", "Bewertungsdetails"),
+    "## " %+% ifelse(is_english, "Details", "Details"),
     "",
     "- **" %+% ifelse(is_english, "Study Name", "Studienname") %+% ":** " %+% study_name,
     "- **" %+% ifelse(is_english, "Date", "Datum") %+% ":** `r format(Sys.Date(), \"%Y-%m-%d\")`",
-    "- **" %+% ifelse(is_english, "Items Administered", "Verwaltete Items") %+% ":** " %+% length(responses),
-    "- **" %+% ifelse(is_english, "Ability Estimate (\u03B8)", "F\u00E4higkeitssch\u00E4tzung (\u03B8)") %+% ":** " %+% sprintf("%.3f", theta_estimate),
-    "- **" %+% ifelse(is_english, "Standard Error", "Standardfehler") %+% ":** " %+% sprintf("%.3f", theta_se),
+    "- **" %+% ifelse(is_english, "Items Administered", "Vorgelegte Items") %+% ":** " %+% length(responses),
+    if (has_theta) "- **" %+% ifelse(is_english, "Ability Estimate (\u03B8)", "F\u00E4higkeitssch\u00E4tzung (\u03B8)") %+% ":** " %+% sprintf("%.3f", theta_estimate),
+    if (has_theta && has_se) "- **" %+% ifelse(is_english, "Standard Error", "Standardfehler") %+% ":** " %+% sprintf("%.3f", theta_se),
     ""
   )
   
@@ -207,20 +208,17 @@ create_rmd_content <- function(study_data, study_config, plot_files, language = 
     }
   }
   
-  # Add results section
-  content <- c(content,
-    "",
-    "## " %+% ifelse(is_english, "Detailed Results", "Detaillierte Ergebnisse"),
-    "",
-    "### " %+% ifelse(is_english, "Ability Estimation", "F\u00E4higkeitssch\u00E4tzung"),
-    "",
-    "Your estimated ability level is **" %+% sprintf("%.3f", theta_estimate) %+% "** with a standard error of **" %+% sprintf("%.3f", theta_se) %+% "**.",
-    "",
-    ifelse(is_english,
-           "This estimate is based on your responses to " %+% length(responses) %+% " items using advanced Item Response Theory (IRT) methods.",
-           "Diese Sch\u00E4tzung basiert auf Ihren Antworten zu " %+% length(responses) %+% " Items unter Verwendung fortgeschrittener Item-Response-Theory (IRT) Methoden."),
-    ""
-  )
+  if (has_theta) {
+    content <- c(content,
+      "",
+      "## " %+% ifelse(is_english, "Ability Estimate", "F\u00E4higkeitssch\u00E4tzung"),
+      "",
+      ifelse(is_english,
+             "The estimate is based on your responses to " %+% length(responses) %+% " items and was computed with an item response theory model whose item parameters were fixed in advance.",
+             "Die Sch\u00E4tzung beruht auf Ihren Antworten zu " %+% length(responses) %+% " Items und wurde mit einem Item-Response-Modell mit vorab festgelegten Itemparametern berechnet."),
+      ""
+    )
+  }
   
   # Add personality results if available
   if (any(grepl("BFI_", names(study_data)))) {
@@ -268,27 +266,13 @@ create_rmd_content <- function(study_data, study_config, plot_files, language = 
     content <- c(content, "")
   }
   
-  # Add recommendations
-  content <- c(content,
-    "",
-    "## " %+% ifelse(is_english, "Recommendations", "Empfehlungen"),
-    "",
-    ifelse(is_english,
-           "Based on your assessment results, we recommend:",
-           "Basierend auf Ihren Bewertungsergebnissen empfehlen wir:"),
-    "",
-    generate_recommendations(study_data, is_english),
-    ""
-  )
-  
-  # Add technical details
   content <- c(content,
     "",
     "## " %+% ifelse(is_english, "Technical Information", "Technische Informationen"),
     "",
     ifelse(is_english,
-           "This report was generated using the inrep (Instant Reports) package for adaptive psychological assessments. The assessment utilized Item Response Theory (IRT) methods for ability estimation and item selection.",
-           "Dieser Bericht wurde mit dem inrep (Instant Reports) Paket f\u00FCr adaptive psychologische Bewertungen erstellt. Die Bewertung nutzte Item-Response-Theory (IRT) Methoden f\u00FCr F\u00E4higkeitssch\u00E4tzung und Itemauswahl."),
+           "This report was generated with the R package inrep.",
+           "Dieser Bericht wurde mit dem R-Paket inrep erstellt."),
     "",
     "---",
     "",
@@ -301,6 +285,9 @@ create_rmd_content <- function(study_data, study_config, plot_files, language = 
 }
 
 #' Create Report CSS
+#'
+#' Returns a stylesheet for HTML output. It is not used by
+#' \code{\link{generate_inrep_pdf_report}}, since PDF output ignores CSS.
 #'
 #' @return CSS content as character vector
 #' @export
@@ -396,13 +383,15 @@ get_trait_name <- function(trait, is_english) {
   return(names[[trait]] %||% trait)
 }
 
+# Fixed cut-offs on a 1-5 mean score, not norms: the labels describe the
+# position on the response scale only.
 get_score_interpretation <- function(score, trait, is_english) {
   if (score < 2.5) {
-    return(ifelse(is_english, "Low", "Niedrig"))
+    return(ifelse(is_english, "below 2.5 on the 1-5 scale", "unter 2,5 auf der Skala 1-5"))
   } else if (score > 3.5) {
-    return(ifelse(is_english, "High", "Hoch"))
+    return(ifelse(is_english, "above 3.5 on the 1-5 scale", "\u00fcber 3,5 auf der Skala 1-5"))
   } else {
-    return(ifelse(is_english, "Average", "Durchschnittlich"))
+    return(ifelse(is_english, "between 2.5 and 3.5 on the 1-5 scale", "zwischen 2,5 und 3,5 auf der Skala 1-5"))
   }
 }
 
@@ -434,24 +423,6 @@ extract_anxiety_scores <- function(study_data) {
   return(scores)
 }
 
-generate_recommendations <- function(study_data, is_english) {
-  # Placeholder — replace with study-specific recommendations
-  if (is_english) {
-    recommendations <- c(
-      "- Recommendation 1",
-      "- Recommendation 2",
-      "- Recommendation 3"
-    )
-  } else {
-    recommendations <- c(
-      "- Empfehlung 1",
-      "- Empfehlung 2",
-      "- Empfehlung 3"
-    )
-  }
-  return(paste(recommendations, collapse = "\n"))
-}
-
 # Plot creation functions
 create_theta_progression_plot <- function(theta_history) {
   if (length(theta_history) < 2) return(NULL)
@@ -462,7 +433,7 @@ create_theta_progression_plot <- function(theta_history) {
   )
   
   ggplot2::ggplot(df, ggplot2::aes(x = Item, y = Theta)) +
-    ggplot2::geom_line(color = "#3498db", size = 1) +
+    ggplot2::geom_line(color = "#3498db", linewidth = 1) +
     ggplot2::geom_point(color = "#2980b9", size = 2) +
     ggplot2::labs(
       title = "Ability Progression During Assessment",

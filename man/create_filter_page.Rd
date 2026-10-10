@@ -17,5 +17,9 @@ create_filter_page(input, config, language = "de")
 A Shiny UI object.
 }
 \description{
-Builds a study-specific filter page used in some custom page flows.
+Builds the filter page of one specific study (psychology students,
+Bachelor or Master). The German text is hard-coded and the page reads
+\code{input$demo_Studiengang} (\code{"1"} = Bachelor, anything else =
+Master). \code{render_custom_page()} uses it for any custom page whose
+\code{id} is \code{"page3"} or whose \code{title} is \code{"Filter"}.
 }

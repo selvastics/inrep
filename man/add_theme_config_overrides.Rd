@@ -9,11 +9,15 @@ add_theme_config_overrides(css, config)
 \arguments{
 \item{css}{Existing CSS string}
 
-\item{config}{Theme configuration overrides}
+\item{config}{Theme configuration overrides: a list with optional
+elements \code{colors}, \code{fonts} and \code{borders}, named as in
+\code{generate_theme_css_from_config()}.}
 }
 \value{
 Modified CSS string
 }
 \description{
-Add theme configuration overrides to existing CSS
+Appends a \code{:root} block that sets only the variables given in
+\code{config}. Because it comes after the theme's own \code{:root} block,
+these values take precedence; all other theme variables are kept.
 }

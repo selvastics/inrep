@@ -1,16 +1,11 @@
-# INREP Package - Basic Examples
-# ==============================
-# 
-# This file contains simple, clean examples for using the inrep package
-# for adaptive testing and psychological assessment.
+# inrep: basic examples ----
+# Each example starts a Shiny app; run them one at a time. The item
+# parameters used here (bfi_items and the custom bank) are simulated, so the
+# adaptive examples only show the mechanics.
 
 library(inrep)
 
-# Example 1: Basic Study Launch
-# -----------------------------
-# Launch a study with default settings using the built-in BFI item bank
-
-# Basic study launch (interactive - opens in browser)
+# Example 1: adaptive study with the built-in bank ----
 config <- create_study_config(
   name = "Personality Assessment Study",
   model = "GRM",
@@ -22,39 +17,27 @@ config <- create_study_config(
 
 launch_study(config, inrep::bfi_items)
 
-# Example 2: Customized Study Configuration
-# -----------------------------------------
-# Create a more customized study with specific parameters
-
-# Configure study parameters
+# Example 2: more settings ----
+# Response labels follow the study language; the stopping rule is
+# max_items or a standard error below min_SEM.
 study_config <- create_study_config(
-  study_title = "Big Five Personality Assessment",
+  name = "Big Five Personality Assessment",
   instructions = "Please respond to the following statements based on how accurately they describe you.",
   max_items = 25,
   min_items = 10,
-  theta_range = c(-4, 4),
-  se_threshold = 0.3,
-  response_format = list(
-    type = "likert",
-    scale = 1:5,
-    labels = c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree")
-  )
+  min_SEM = 0.3,
+  theta_grid = seq(-4, 4, length.out = 100),
+  theme = "Professional"
 )
 
-# Launch study with custom configuration
 launch_study(
   item_bank = inrep::bfi_items,
-  config = study_config,
-  theme = "professional"
+  config = study_config
 )
 
-# Example 3: Advanced Features
-# ----------------------------
-# Demonstrate advanced adaptive testing features
-
-# Advanced study with comprehensive configuration
+# Example 3: EAP estimation and session saving ----
 config <- create_study_config(
-  name = "Advanced Adaptive Assessment",
+  name = "Adaptive Assessment",
   model = "GRM",
   max_items = 30,
   min_items = 15,
@@ -62,17 +45,17 @@ config <- create_study_config(
   theme = "Midnight",
   estimation_method = "EAP",
   adaptive = TRUE,
-  show_progress = TRUE,
+  progress_style = "bar",
   session_save = TRUE
 )
 
 launch_study(config, inrep::bfi_items)
 
-# Example 4: Custom Item Bank
-# ---------------------------
-# Using your own item bank
-
-# Example item bank structure for GRM model
+# Example 4: your own item bank ----
+# Structure for the GRM: a, b1 to b4 for five categories. The values are
+# invented; in practice they come from a calibration (e.g. with TAM or mirt).
+# The domain column is only descriptive here: the CAT treats all items as
+# one dimension.
 custom_items <- data.frame(
   Question = c(
     "I enjoy working in teams.",
@@ -111,23 +94,21 @@ config <- create_study_config(
 
 launch_study(config, custom_items)
 
-# Example 5: Theme Customization
-# ------------------------------
-# Creating and using custom themes
+# Example 5: themes ----
 
-# Option 1: Use built-in themes
+# Option 1: a built-in theme
 config <- create_study_config(
   name = "Dyslexia-Friendly Assessment",
   model = "GRM",
   max_items = 20,
   min_items = 10,
   criteria = "MI",
-  theme = "Dyslexia-Friendly"  # Built-in accessibility theme
+  theme = "Dyslexia-Friendly"  # cream background, OpenDyslexic font if installed; not tested for accessibility
 )
 
 launch_study(config, inrep::bfi_items)
 
-# Option 2: Custom theme configuration
+# Option 2: a theme given as a list of colours, fonts and borders
 custom_theme_config <- list(
   colors = list(
     primary = "#2E5984",

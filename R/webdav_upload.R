@@ -6,7 +6,7 @@
 #' it directly for their own result files.
 #'
 #' It works with any server that accepts HTTP \code{PUT} (Nextcloud, ownCloud,
-#' Seafile, Apache/nginx WebDAV, Box, institutional storage, ...). Public
+#' Seafile, Apache/nginx WebDAV, institutional storage, ...). Public
 #' Nextcloud/ownCloud share links get special handling, because the address
 #' a browser shows for a share is not the address that accepts uploads.
 #'

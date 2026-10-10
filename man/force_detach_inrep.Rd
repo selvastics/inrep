@@ -2,7 +2,7 @@
 % Please edit documentation in R/zzz.R
 \name{force_detach_inrep}
 \alias{force_detach_inrep}
-\title{Force Detach Package}
+\title{Detach and unload inrep}
 \usage{
 force_detach_inrep(restart = FALSE)
 }
@@ -13,7 +13,7 @@ force_detach_inrep(restart = FALSE)
 Invisible NULL
 }
 \description{
-Forcefully detaches and unloads the package
+Detaches and unloads the package, for example before reinstalling it.
 }
 \examples{
 \dontrun{

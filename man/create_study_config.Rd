@@ -23,7 +23,6 @@ create_study_config(
   fixed_items = NULL,
   adaptive = TRUE,
   item_groups = NULL,
-  custom_ui_pre = NULL,
   progress_style = "circle",
   response_validation_fun = NULL,
   response_ui_type = "radio",
@@ -36,9 +35,6 @@ create_study_config(
   report_formats = c("rds", "csv", "json", "pdf"),
   show_scale_scores = TRUE,
   max_session_duration = 60,
-  max_response_time = 300,
-  cache_enabled = TRUE,
-  parallel_computation = TRUE,
   fast_item_selection = TRUE,
   feedback_enabled = FALSE,
   theta_grid = seq(-4, 4, length.out = 100),
@@ -57,14 +53,6 @@ create_study_config(
   custom_study_flow = NULL,
   custom_page_configs = NULL,
   enable_custom_navigation = FALSE,
-  study_phases = c("introduction", "briefing", "consent", "demographics", "survey",
-    "debriefing"),
-  page_transitions = "fade",
-  enable_back_navigation = TRUE,
-  unknown_param_handling = TRUE,
-  param_initialization_method = "smart_defaults",
-  auto_initialize_unknowns = TRUE,
-  calibration_mode = FALSE,
   study_pages = NULL,
   page_contents = NULL,
   advanced_demographics = NULL,
@@ -92,7 +80,8 @@ or \code{NULL} for no demographic data collection.}
 Defaults to auto-generated UUID for session tracking.}
 
 \item{min_SEM}{Numeric value specifying minimum standard error for stopping criterion.
-Computed by TAM estimation procedures. Typical values: 0.2-0.4.}
+The standard error is the posterior standard deviation of inrep's EAP estimate.
+Typical values: 0.2-0.4.}
 
 \item{min_items}{Integer minimum number of items to administer before stopping rules apply.}
 
@@ -102,54 +91,54 @@ full item bank size. Prevents excessive test length.}
 \item{criteria}{Character string specifying item selection criterion. Options:
   \code{"MI"}, \code{"MEI"}, \code{"RANDOM"}, \code{"WEIGHTED"}, \code{"MFI"}.
 
-  \strong{\code{"MI"} — Maximum Information (default):} Selects the item with the
-  highest Fisher information evaluated at the current point estimate
-  \eqn{\hat{\theta}}. Standard in operational CAT; computationally cheap.
-  \emph{Limitation}: Fisher information is an expected quantity over the response
-  distribution and is evaluated at a single point. When the ability estimate is
-  uncertain (early items, short tests), \eqn{\hat{\theta}} may sit far from the true
-  ability, and MI optimises for the wrong region of the scale.
+  These options only apply when \code{fast_item_selection = FALSE}.
 
-  \strong{\code{"MEI"} — Maximum Expected Information (recommended for short tests):}
-  Integrates Fisher information over the posterior distribution
-  \eqn{p(\theta \mid \hat{\theta}, SE)}, selecting items that are informative across
-  the entire plausible ability range, not just at the point estimate. Substantially
-  better than MI when \code{max_items < 15} or during the first 5-10 items of any
-  assessment, when \eqn{SE > 0.5} is typical. For long assessments (30+ items) where
-  \eqn{SE < 0.3} by mid-test, MI and MEI converge and the extra computation of MEI
-  is unnecessary. Adds ~21x the per-item computation of MI (still sub-millisecond
-  for typical banks of 10-100 items). Reference: Veerkamp & Berger (1997),
-  \emph{Journal of Educational and Behavioral Statistics}, 22(2), 203-226.
+  \strong{\code{"MI"} (default):} the item with the highest Fisher information
+  at the current EAP estimate \eqn{\hat{\theta}}. Early in a test, when
+  \eqn{\hat{\theta}} is uncertain, information at this single point may be a
+  poor guide.
 
-  \strong{\code{"WEIGHTED"}}: Combines information maximisation with content
-  balancing weights. Useful when item groups must be proportionally represented.
+  \strong{\code{"MEI"}:} Fisher information averaged over a normal
+  approximation \eqn{N(\hat{\theta}, SE^2)} of the posterior. Despite the
+  label, this is a posterior-weighted information criterion in the sense of
+  van der Linden (1998, \emph{Psychometrika}, 63, 201--216), not the maximum
+  expected information criterion of that paper. It may help early in a test
+  or in short tests; for long tests it gives results close to \code{"MI"}.
 
-  \strong{\code{"MFI"}}: Exposure-penalised MI. Reduces overexposure of
-  high-information items using an empirical frequency penalty.
+  \strong{\code{"WEIGHTED"}}: a random draw with probability proportional to
+  information times a group weight that is larger for groups in
+  \code{item_groups} with fewer administered items.
 
-  \strong{\code{"RANDOM"}}: Random selection; useful as a no-adaptation baseline.}
+  \strong{\code{"MFI"}}: a random draw among the items within 95\% of the
+  maximum information. No exposure rates are tracked.
 
-\item{model}{Character string specifying IRT model passed to TAM functions.
-Options: \code{"1PL"}, \code{"2PL"}, \code{"3PL"}, \code{"GRM"}.
-1PL/2PL/3PL are fully supported via TAM. GRM is experimental: TAM
-internally fits a GPCM (step parameters), which differs from the
-Samejima GRM parameterization (boundary thresholds b1, b2, ...) used in
-the item bank. The EAP fallback and item selection use correct Samejima
-formulas with pre-calibrated parameters.}
+  \strong{\code{"RANDOM"}}: random selection.}
 
-\item{estimation_method}{Character string specifying TAM ability estimation method.
-Options: \code{"EAP"} (Expected A Posteriori - Bayesian, stable with few items, default) or
-\code{"WLE"} (Weighted Likelihood Estimation - frequentist, accurate with many items).
-Both methods use the TAM package exclusively.}
+\item{model}{Character string naming the IRT model of the item parameters in
+the item bank. Options: \code{"1PL"}, \code{"2PL"}, \code{"3PL"}, \code{"GRM"}
+(Samejima's graded response model with thresholds \code{b1}, \code{b2}, ...).
+The parameters come from a calibration done beforehand, with the software
+the researcher prefers (TAM fits partial credit models, not the GRM; mirt
+fits both).}
 
-\item{recommendation_fun}{Function to generate personalized recommendations based on 
-ability estimates and demographics, or \code{NULL} for default recommendations.}
+\item{estimation_method}{Character string, \code{"EAP"} (default) or \code{"WLE"}.
+Kept for compatibility. During administration inrep always computes an EAP
+estimate on \code{theta_grid} with the item parameters held fixed. A WLE or any
+other final score can be computed in the \code{results_processor}, for example
+with \code{TAM::tam.wle()} and a calibrated model.}
+
+\item{recommendation_fun}{Function called as \code{recommendation_fun(theta, demographics)}
+that returns recommendation texts for the results page, or \code{NULL}. With
+\code{NULL}, no recommendations are generated and the recommendations section
+is hidden unless \code{participant_report$show_recommendations} is set.}
 
 \item{theta_prior}{Numeric vector of length 2 specifying prior mean and standard deviation
-for ability distribution. Used in TAM's Bayesian estimation procedures.}
+of the ability distribution, used for inrep's EAP estimate. It should match the
+population distribution of the calibration.}
 
 \item{stopping_rule}{Custom function implementing stopping logic, or \code{NULL} for 
-default SEM-based stopping. Function should accept theta, SE, and item count.}
+default SEM-based stopping. It is called as \code{stopping_rule(theta, se, n_items, rv)}
+and returns \code{TRUE} to stop.}
 
 \item{input_types}{Named list specifying input types for demographic fields.
 Options: \code{"text"}, \code{"numeric"}, \code{"select"}, \code{"radio"}, \code{"checkbox"}.}
@@ -158,27 +147,26 @@ Options: \code{"text"}, \code{"numeric"}, \code{"select"}, \code{"radio"}, \code
 Should accept response and correct answer, return numeric score.}
 
 \item{adaptive_start}{Integer item number at which adaptive (Fisher-information)
-selection begins. Items before this threshold are selected randomly for warm-up.
-Defaults to \code{min_items} (typically 3--5). Set to 1 for immediate adaptive selection.}
+selection begins. Items before it are selected at random. Defaults to
+\code{min_items} (5 by default, so items 1 to 4 are random). Set to 1 for
+adaptive selection from the first item.}
 
-\item{fixed_items}{Integer vector of item indices that must be administered, 
-or \code{NULL} for no fixed items. Useful for anchor items or content requirements.}
+\item{fixed_items}{Integer vector of item indices administered first, in this
+order, or \code{NULL} for no fixed items.}
 
 \item{adaptive}{Logical indicating whether to use adaptive item selection based on 
-TAM ability estimates. When \code{TRUE} (default), items are selected dynamically 
+inrep's running EAP estimate. When \code{TRUE} (default), items are selected dynamically 
 based on the participant's estimated ability to maximize information. When \code{FALSE}, 
 items are administered in sequential order from the item bank (non-adaptive mode).
 Note: When \code{adaptive = FALSE}, the assessment simply presents items 1 through 
 \code{max_items} in order, making it a standard fixed-form questionnaire.}
 
-\item{item_groups}{Named list defining item groups for content balancing, 
-or \code{NULL} for no grouping constraints.}
-
-\item{custom_ui_pre}{Custom UI elements to display before assessment, 
-or \code{NULL} for standard interface.}
+\item{item_groups}{Named list of item index vectors. Used by the
+\code{"WEIGHTED"} criterion and, in non-adaptive mode, to restrict the items
+administered; \code{NULL} for none.}
 
 \item{progress_style}{Character string specifying progress indicator style.
-Options: \code{"bar"}, \code{"circle"}, \code{"modern-circle"}, \code{"enhanced-bar"}, \code{"segmented"}, \code{"minimal"}, \code{"card"}.}
+Options: \code{"bar"}, \code{"circle"}, \code{"modern-circle"}, \code{"enhanced-bar"}, \code{"segmented"}, \code{"minimal"}, \code{"card"}, \code{"none"} (hidden).}
 
 \item{response_validation_fun}{Function to validate participant responses, 
 or \code{NULL} for default validation. Should return logical.}
@@ -192,8 +180,9 @@ matching standard Shiny output. \code{"horizontal"} places all options side by
 side; works well for short labels (e.g. 2-4 options) but can be crowded for
 5+ options with long labels.}
 
-\item{session_save}{Logical indicating whether to enable session state persistence
-for interrupted session recovery.}
+\item{session_save}{Logical. Together with \code{launch_study(session_save = TRUE)},
+the session state is written to \code{study_data/}. inrep cannot currently
+restore an interrupted session from this file.}
 
 \item{show_session_time}{Logical indicating whether to display session time remaining
 in the top-right corner. Defaults to FALSE for cleaner interface.}
@@ -207,8 +196,9 @@ Options: \code{"en"}, \code{"de"}, \code{"es"}, \code{"fr"}.}
 \item{item_translations}{Named list of item translations by language code, 
 or \code{NULL} for single-language studies.}
 
-\item{report_formats}{Character vector specifying supported export formats.
-Options: \code{"rds"}, \code{"csv"}, \code{"json"}, \code{"pdf"}.}
+\item{report_formats}{Character vector, a subset of \code{"rds"}, \code{"csv"},
+\code{"json"}, \code{"pdf"}. Validated and stored; currently not read
+elsewhere in inrep.}
 
 \item{show_scale_scores}{Logical. If \code{FALSE}, results pages act as a
 plain thank-you page: the \code{results_processor} still runs on the final
@@ -216,22 +206,16 @@ results page for its side effects (e.g. uploads), but its report is not shown.}
 
 \item{max_session_duration}{Integer maximum session duration in minutes for timeout.}
 
-\item{max_response_time}{Integer maximum response time per item in seconds.}
-
-\item{cache_enabled}{Logical indicating whether to cache item information calculations
-for performance optimization.}
-
-\item{parallel_computation}{Logical indicating whether to enable parallel processing
-for TAM estimation procedures when computationally intensive.}
-
-\item{fast_item_selection}{Logical indicating whether to use fast item selection
-algorithm for improved performance in large item banks.}
+\item{fast_item_selection}{Logical. When \code{TRUE} (default), each selection step
+evaluates Fisher information at the current estimate for a random subset of at
+most 15 available items and draws among those within 90\% of the maximum, for
+every \code{criteria}. Set to \code{FALSE} to select by \code{criteria} as described.}
 
 \item{feedback_enabled}{Logical indicating whether to provide immediate feedback
 after each item response.}
 
-\item{theta_grid}{Numeric vector specifying theta grid for TAM's numerical integration,
-or \code{NULL} for TAM's default grid specification.}
+\item{theta_grid}{Numeric vector, the grid on which inrep evaluates the posterior
+for its EAP estimate.}
 
 \item{show_introduction}{Logical indicating whether to display introduction page
 with study overview and briefing information.}
@@ -282,27 +266,6 @@ Defaults to NULL for standard flow.}
 \item{enable_custom_navigation}{Logical indicating whether to enable custom page navigation
 for studies requiring specific flow control. Defaults to FALSE for backward compatibility.}
 
-\item{study_phases}{Character vector specifying order of study phases.
-Default: c("introduction", "briefing", "consent", "demographics", "survey", "debriefing").}
-
-\item{page_transitions}{Character string specifying transition animations
-between study phases. Options: "fade", "slide", "none".}
-
-\item{enable_back_navigation}{Logical indicating whether participants can
-navigate back to previous pages.}
-
-\item{unknown_param_handling}{Logical indicating whether to allow and handle missing
-item parameters by applying defaults.}
-
-\item{param_initialization_method}{Character string specifying how missing parameters
-are initialized (for example, \code{"smart_defaults"}).}
-
-\item{auto_initialize_unknowns}{Logical indicating whether missing parameters are
-filled automatically when possible.}
-
-\item{calibration_mode}{Logical indicating whether to enable calibration-oriented
-settings (for example, relaxed stopping rules).}
-
 \item{study_pages}{Optional list defining an explicit page structure.}
 
 \item{page_contents}{Optional list of per-page content definitions.}
@@ -337,8 +300,7 @@ to exclude from data-recording validation. By default every field listed in
 \code{demographics} must map to a recorded variable in the final data; listing
 a field here suppresses the warning for that specific field.}
 
-\item{...}{Additional parameters captured and included in configuration object
-for custom extensions and advanced features.}
+\item{...}{Additional named values, appended to the configuration as they are.}
 }
 \value{
 Named list containing complete study configuration with all specified parameters
@@ -346,65 +308,35 @@ Named list containing complete study configuration with all specified parameters
 }
 \description{
 Creates a configuration object for adaptive (or fixed-form) assessment studies.
-Psychometric computations can be performed by optional backends (for example, TAM)
-when available. The configuration controls assessment workflow, session handling,
-and reporting.
+The configuration controls assessment workflow, session handling, and reporting.
 }
 \details{
-\strong{TAM Integration Architecture:} This configuration object serves as the primary
-interface layer between \code{inrep}'s workflow management and TAM's psychometric functions:
+\strong{What inrep computes:} inrep administers items, records responses and
+carries out the study logic. It does not estimate item parameters, test model fit
+or draw plausible values; these steps belong to a psychometric package such as TAM,
+and their results can be passed to inrep (as item parameters in the item bank, or
+as a calibrated model used in the \code{results_processor}).
 
-\strong{Core TAM Parameters:}
+\strong{Adaptive Testing Configuration:} When \code{adaptive = TRUE}, inrep
 \itemize{
-  \item \code{model}: Determines which TAM function to invoke (\code{TAM::tam.mml},
-    \code{TAM::tam.mml.2pl}, \code{TAM::tam.mml.3pl}).
-  \item \code{estimation_method}: Controls TAM's ability estimation procedures 
-    (\code{TAM::tam.wle}, \code{TAM::tam.eap}).
-  \item \code{theta_prior}: Prior distribution parameters passed to TAM's Bayesian procedures
-  \item \code{min_SEM}: Stopping criterion based on TAM's standard error calculations
-  \item \code{theta_grid}: Grid specification for TAM's numerical integration algorithms
+  \item computes an EAP estimate and its posterior standard deviation after every
+    response, on \code{theta_grid} with the prior \code{theta_prior} and the item
+    parameters held fixed,
+  \item selects the next item by Fisher information at that estimate (see
+    \code{criteria} and \code{fast_item_selection}),
+  \item stops by \code{stopping_rule}, or by default once \code{min_items} are
+    answered and either \code{max_items} is reached or the standard error is at most
+    \code{min_SEM}.
 }
 
-\strong{Framework Responsibilities:} \code{inrep} provides workflow orchestration while
-TAM performs all psychometric computations:
-\itemize{
-  \item Session management and state persistence across assessment sessions
-  \item User interface rendering and interaction handling via Shiny
-  \item Data flow coordination between UI components and TAM functions
-  \item Result formatting, reporting, and export in multiple formats
-  \item Quality monitoring, logging, and administrative features
-}
+Response times are recorded per item; no rapid-response screening is done.
 
-\strong{Adaptive Testing Configuration:} When \code{adaptive = TRUE}, the system:
-\itemize{
-  \item Uses TAM ability estimates to drive item selection algorithms
-  \item Applies stopping rules based on TAM-computed standard errors
-  \item Implements content balancing with psychometric optimization
-  \item Provides real-time ability tracking throughout the assessment
-}
+\strong{Language:} \code{language} selects the built-in interface texts
+(navigation, messages, progress and default demographic labels). Item texts
+are only translated if \code{item_translations} provides them.
 
-\strong{Quality Assurance Features:}
-\itemize{
-  \item Automatic validation of parameter ranges for TAM compatibility
-  \item Response time monitoring and rapid-response detection
-  \item Session timeout management and graceful degradation
-  \item Optional event logging for troubleshooting and monitoring
-}
-
-\strong{Multilingual Support:} Language configuration affects:
-\itemize{
-  \item Interface text and navigation elements
-  \item Error messages and validation feedback
-  \item Progress indicators and completion messages
-  \item Demographic field labels and response options
-}
-
-All psychometric modeling is performed exclusively by TAM (Robitzsch et al., 2024).
-\code{inrep} focuses on providing the technological infrastructure and user experience
-layer around TAM's validated statistical procedures.
-
-\strong{HTML Customization:} All page types in custom page flows now support optional
-HTML customization parameters for enhanced styling and layout control:
+\strong{HTML customization:} Pages in custom page flows accept these optional
+fields:
 \itemize{
   \item \code{custom_css}/\code{custom_css_en}: Inline CSS for page styling
   \item \code{html_prefix}/\code{html_prefix_en}: HTML content before main page
@@ -416,11 +348,10 @@ Parameters with \code{_en} suffix are used when language is English.
 }
 \examples{
 \dontrun{
-# Example 1: Basic Personality Assessment Configuration
+# Example 1: Adaptive GRM study
 basic_config <- create_study_config(
-  name = "Big Five Personality Assessment",
+  name = "Big Five Example",
   model = "GRM",
-  estimation_method = "EAP",
   demographics = c("Age", "Gender", "Education"),
   max_items = 15,
   min_SEM = 0.3,
@@ -428,29 +359,25 @@ basic_config <- create_study_config(
   theme = "Light"
 )
 
-# Example 1b: Non-Adaptive (Fixed Order) Assessment
-# Items are presented sequentially: 1, 2, 3, 4, 5 from the item bank
-# This creates a standard questionnaire without adaptive item selection
+# Example 1b: Non-adaptive (fixed order) questionnaire
+# Items 1 to 5 of the item bank are presented in order
 fixed_config <- create_study_config(
   name = "Personality Questionnaire",
-  adaptive = FALSE,  # Disable adaptive testing
-  max_items = 5,     # Present exactly 5 items in order
-  theme = "hildesheim",
+  adaptive = FALSE,
+  max_items = 5,
   session_save = TRUE
 )
 
-# Example 2: Advanced Research Configuration with Full Customization
+# Example 2: 2PL study with selection by criteria and a recommendation function
 research_config <- create_study_config(
-  name = "Cognitive Ability Validation Study",
+  name = "Cognitive Ability Study",
   model = "2PL",
-  estimation_method = "EAP",
   min_items = 12,
   max_items = 25,
   min_SEM = 0.25,
-  criteria = "MI",  # Maximum Information selection
-  theta_prior = c(0, 1.2),  # Slightly wider prior for diverse population
-  
-  #  demographics
+  criteria = "MEI",
+  fast_item_selection = FALSE,
+  theta_prior = c(0, 1),
   demographics = c("Age", "Gender", "Education", "Native_Language", "Country"),
   input_types = list(
     Age = "numeric",
@@ -459,128 +386,43 @@ research_config <- create_study_config(
     Native_Language = "text",
     Country = "select"
   ),
-  
-  # Advanced features
   theme = "Professional",
   language = "en",
   session_save = TRUE,
-  parallel_computation = TRUE,
-  cache_enabled = TRUE,
-  feedback_enabled = TRUE,
-  
-  # Performance optimization
   max_session_duration = 45,
-  max_response_time = 120,
-  
-  # Custom recommendation function
-  recommendation_fun = function(theta, demographics, item_responses) {
-    ability_level <- cut(theta, breaks = c(-Inf, -0.5, 0.5, Inf), 
-                        labels = c("Developing", "Proficient", "Advanced"))
-    
-    # Replace placeholders with study-specific recommendations
-    recommendations <- switch(ability_level,
-      "Developing" = c("Recommendation 1 (developing)",
-                      "Recommendation 2 (developing)"),
-      "Proficient" = c("Recommendation 1 (proficient)",
-                      "Recommendation 2 (proficient)"),
-      "Advanced" = c("Recommendation 1 (advanced)",
-                    "Recommendation 2 (advanced)")
-    )
-    
-    return(recommendations)
+  recommendation_fun = function(theta, demographics) {
+    # Replace with texts written for the study
+    if (theta < -0.5) "Text for lower scores" else "Text for other scores"
   }
 )
 
-# Example 3: Clinical Assessment Example
-clinical_config <- create_study_config(
-  name = "Depression Screening Instrument",
-  model = "GRM",
-  estimation_method = "EAP",
-  min_items = 8,
-  max_items = 15,
-  min_SEM = 0.4,  # Slightly higher for clinical screening
-  criteria = "WEIGHTED",  # Balanced selection
-  
-  # Clinical demographics
-  demographics = c("Age", "Gender", "Previous_Treatment", "Referral_Source"),
-  input_types = list(
-    Age = "numeric",
-    Gender = "select",
-    Previous_Treatment = "radio",
-    Referral_Source = "select"
-  ),
-  
-  # Clinical interface settings
-  theme = "Clinical",
-  language = "en",
-  response_ui_type = "radio",
-  progress_style = "bar",
-  
-  # Session settings
-  session_save = TRUE,
-  max_session_duration = 20,
-  
-  # Custom validation for clinical context
-  response_validation_fun = function(response) {
-    # Ensure response is provided and within expected range
-    if (is.null(response) || is.na(response)) {
-      return(FALSE)
-    }
-    # Clinical scale typically 0-3 or 1-4
-    return(response \%in\% 0:3)
-  }
-)
-
-# Example 4: Educational Assessment with Content Balancing
+# Example 3: Group weights with the WEIGHTED criterion
 education_config <- create_study_config(
-  name = "Mathematics Proficiency Assessment",
+  name = "Mathematics Example",
   model = "2PL",
-  estimation_method = "EAP",
   min_items = 15,
   max_items = 30,
   min_SEM = 0.3,
-  criteria = "MI",
-  
-  # Educational demographics
-  demographics = c("Grade", "School", "Teacher", "Previous_Score"),
-  input_types = list(
-    Grade = "select",
-    School = "text",
-    Teacher = "text",
-    Previous_Score = "numeric"
-  ),
-  
-  # Content balancing
+  criteria = "WEIGHTED",
+  fast_item_selection = FALSE,
+  demographics = c("Grade", "School"),
+  input_types = list(Grade = "select", School = "text"),
   item_groups = list(
     "Algebra" = c(1, 3, 5, 7, 9, 11, 13, 15),
     "Geometry" = c(2, 4, 6, 8, 10, 12, 14, 16),
     "Statistics" = c(17, 18, 19, 20, 21, 22, 23, 24)
   ),
-  
-  # Educational interface
-  theme = "Educational",
-  language = "en",
-  response_ui_type = "radio",
-  progress_style = "circle",
-  feedback_enabled = TRUE,
-  
-  # Performance settings
-  cache_enabled = TRUE,
-  parallel_computation = TRUE,
-  max_session_duration = 50
+  language = "en"
 )
 
-# Example 5: Multilingual Cross-Cultural Study
+# Example 4: Item translations
 multilingual_config <- create_study_config(
   name = "Cross-Cultural Personality Study",
   model = "GRM",
-  estimation_method = "EAP",
   min_items = 20,
   max_items = 40,
   min_SEM = 0.25,
-  
-  # Multilingual setup
-  language = "en",  # Default language
+  language = "en",
   item_translations = list(
     "de" = list(
       "I see myself as someone who is talkative" = "Ich sehe mich als jemanden, der gesprächig ist",
@@ -591,59 +433,28 @@ multilingual_config <- create_study_config(
       "I see myself as someone who is reserved" = "Me veo como alguien que es reservado"
     )
   ),
-  
-  # Cross-cultural demographics
-  demographics = c("Age", "Gender", "Country", "Native_Language", "Education"),
-  input_types = list(
-    Age = "numeric",
-    Gender = "select",
-    Country = "select",
-    Native_Language = "text",
-    Education = "select"
-  ),
-  
-  # Research features
-  theme = "Research",
-  session_save = TRUE,
-  parallel_computation = TRUE,
-  report_formats = c("rds", "csv", "json"),
-  
-  # Extended session for international participants
-  max_session_duration = 60,
-  max_response_time = 180
+  demographics = c("Age", "Gender", "Country"),
+  session_save = TRUE
 )
 
-# View configuration structure
 str(basic_config)
-cat("Configuration created for:", basic_config$name, "\n")
-cat("Model:", basic_config$model, "\n")
-cat("Max items:", basic_config$max_items, "\n")
 }
 
 }
 \references{
-\itemize{
-  \item Robitzsch, A., Kiefer, T., & Wu, M. (2020). \emph{TAM: Test Analysis Modules}. 
-    R package version 3.5-19. \url{https://CRAN.R-project.org/package=TAM}
-  \item van der Linden, W. J., & Glas, C. A. W. (Eds.). (2010). 
-    \emph{Elements of adaptive testing}. Springer.
-  \item Chalmers, R. P. (2012). mirt: A multidimensional item response theory package 
-    for the R environment. \emph{Journal of Statistical Software}, 48(6), 1-29.
-  \item Embretson, S. E., & Reise, S. P. (2000). 
-    \emph{Item response theory for psychologists}. Lawrence Erlbaum Associates.
-}
-
-Robitzsch A, Kiefer T, Wu M (2024). TAM: Test Analysis Modules. 
+Robitzsch, A., Kiefer, T., & Wu, M. (2024). \emph{TAM: Test Analysis Modules}.
   R package version 4.2-21. \url{https://CRAN.R-project.org/package=TAM}
+
+Samejima, F. (1969). Estimation of latent ability using a response pattern of
+  graded scores. \emph{Psychometrika Monograph Supplement}, No. 17.
+
+van der Linden, W. J. (1998). Bayesian item selection criteria for adaptive
+  testing. \emph{Psychometrika}, 63(2), 201--216.
+
+van der Linden, W. J., & Glas, C. A. W. (Eds.). (2010). \emph{Elements of
+  adaptive testing}. Springer.
 }
 \seealso{
-\itemize{
-  \item \code{\link{launch_study}} for running assessments with this configuration
-  \item \code{\link{validate_item_bank}} for validating item banks with configuration
-  \item \code{\link{estimate_ability}} for ability estimation using configuration
-  \item \code{\link{select_next_item}} for item selection using configuration
-}
-
-\code{\link{launch_study}}, \code{\link{estimate_ability}}, 
-  \code{\link{validate_item_bank}}
+\code{\link{launch_study}}, \code{\link{validate_item_bank}},
+  \code{\link{estimate_ability}}, \code{\link{select_next_item}}
 }

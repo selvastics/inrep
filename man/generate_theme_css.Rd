@@ -13,5 +13,7 @@ generate_theme_css(theme_name = "light")
 CSS string
 }
 \description{
-Generates CSS from theme configuration
+Builds a stylesheet from one of the themes in \code{get_theme_config()}.
+Not used by \code{launch_study()}, which reads the CSS files through
+\code{get_theme_css()}.
 }

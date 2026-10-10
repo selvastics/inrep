@@ -2,7 +2,7 @@
 % Please edit documentation in R/inrep_code.R
 \name{inrep_code}
 \alias{inrep_code}
-\title{Generate Standalone R Script for Assessment App}
+\title{Write an R script from a launch_study() call}
 \usage{
 inrep_code(
   expr,
@@ -21,32 +21,34 @@ Can be a filename (saves to current directory) or full path.}
 \item{auto_run}{Logical. If TRUE, adds code to automatically run the assessment.
 If FALSE (default), user must uncomment the launch line.}
 
-\item{console_ready}{Logical. If TRUE, generates compact code for console copy-paste.
-When TRUE, creates minimal executable code under R's 4094 character limit.}
+\item{console_ready}{Logical. If TRUE, writes the compact script described above.}
 
-\item{minimal}{Logical. If TRUE, generates only essential code for faster deployment.}
+\item{minimal}{Logical. With \code{console_ready = TRUE}, loads fewer packages.}
 }
 \value{
-Character string containing the complete standalone R script, invisibly if 
+Character string containing the generated R script, invisibly if
   output_file is specified
 }
 \description{
-Creates a completely self-contained R script that includes all inrep functionality
-needed to run an assessment independently. This function extracts and packages
-all dependencies, helper functions, data, and the complete Shiny app logic.
+Writes an R script that contains the given \code{launch_study()} call,
+\code{library()} calls, and the deparsed source of a fixed list of inrep
+functions. \code{launch_study()} calls many internal helpers that are not
+in that list, so the script runs only when inrep is installed and attached;
+it is not independent of the package.
+}
+\details{
+With \code{console_ready = TRUE} the script instead contains
+\code{launch_study_compact()}, a small separate Shiny app (text
+demographics, one radio-button page per item in bank order, mean response
+at the end, no adaptive selection, no ability estimation and no data
+saving). The \code{launch_study()} call in that script still refers to
+inrep's \code{launch_study()}.
 }
 \section{Limitations}{
 
-- Console deployment is limited to ~4,094 characters (R console input limit)
-- Very complex server logic (>50,000 characters) may be impractical for standalone deployment
-- For extensive studies, consider professional hosting via the inrep platform
-}
-
-\section{Professional Hosting}{
-
-Researchers planning to use inrep for published papers and assessments can contact
-the package author for professional hosting via the inrep platform. Contact 
-selva@uni-hildesheim.de with a brief description of your study aim and publication plan.
+Scripts longer than 50,000 characters trigger a message. R's console
+limits the length of a single input line (4096 bytes), not of a pasted
+multi-line script.
 }
 
 \examples{
@@ -55,22 +57,16 @@ selva@uni-hildesheim.de with a brief description of your study aim and publicati
 config <- create_study_config(name = "My Study", model = "GRM")
 script <- inrep_code(launch_study(config, bfi_items))
 
-# Console-ready - compact code for copy-paste (RECOMMENDED)
-console_script <- inrep_code(launch_study(config, bfi_items), 
+# Compact script (separate simple app, see Details)
+console_script <- inrep_code(launch_study(config, bfi_items),
                              console_ready = TRUE)
-# Copy and paste console_script directly into R console!
 
-# Save to file automatically
-inrep_code(launch_study(config, bfi_items), 
+# Save to file
+inrep_code(launch_study(config, bfi_items),
            output_file = "my_assessment.R")
 
-# Minimal version for quick deployment
+# Compact script with fewer packages
 inrep_code(launch_study(config, bfi_items),
            console_ready = TRUE, minimal = TRUE)
-           
-# For complex studies with extensive server logic:
-# Consider professional hosting via inrep platform
-# Contact: selva@uni-hildesheim.de
-# Include: study description, publication plan, participant numbers
 }
 }

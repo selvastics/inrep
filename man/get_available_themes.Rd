@@ -10,5 +10,6 @@ get_available_themes()
 Character vector of theme names
 }
 \description{
-Lists all available theme files
+Lists the CSS theme files in \code{inst/themes} (names usable as
+\code{theme} in \code{create_study_config()}).
 }

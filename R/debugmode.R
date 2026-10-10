@@ -1,4 +1,14 @@
-#' Debug Mode Functions for inrep Package
+#' JavaScript for debug mode
+#'
+#' Returns a script tag that adds hotkeys for testing a study in the browser:
+#' Ctrl+A fills the current page, Ctrl+Q and Ctrl+Y click through the whole
+#' study (normal and fast). The script fills inputs with synthetic values,
+#' ticks consent checkboxes and overrides the browser's Ctrl+A (select all).
+#' Data collected with debug mode on are not participant data; keep
+#' \code{debug_mode = FALSE} for real data collection.
+#'
+#' @param debug_mode Logical. If \code{FALSE}, returns \code{NULL}.
+#' @return A \code{shiny::tags$script} object, or \code{NULL}.
 #' @keywords internal
 #' @export
 generate_debug_mode_js <- function(debug_mode = FALSE) {
@@ -372,9 +382,8 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
           
           console.log('DEBUG: Filled', count, 'radio groups');
           
-          // CRITICAL: After ALL radio buttons are selected, check for conditional fields
-          // UNIVERSAL: Works for ANY language including German - uses multiple detection methods
-          // Check multiple times with increasing delays to catch fields that appear later
+          // After all radio buttons are selected, look for conditional fields that
+          // appear later (several passes with increasing delays)
           const checkConditionalFields = (attempt = 1, maxAttempts = 5) => {
             console.log('DEBUG: Post-radio conditional field check, attempt', attempt, '(language-agnostic)...');
             let filledCount = 0;
@@ -684,8 +693,8 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
                   return;
                 }
 
-          // CRITICAL FIX: Wait for Shiny input binding to complete before filling
-          // This prevents race condition where adaptive items are filled before Shiny binds handlers
+          // Wait for Shiny's input bindings before filling; otherwise adaptive
+          // items can be filled before Shiny listens to them
           const bindingDelay = fastMode ? 300 : 500;
           console.log('DEBUG: Waiting ' + bindingDelay + 'ms for Shiny input binding...');
           
@@ -812,7 +821,7 @@ generate_debug_mode_js <- function(debug_mode = FALSE) {
         progressStep();
       }
 
-      // CRITICAL: Debouncing to prevent crashes from rapid key presses
+      // Debounce: ignore repeated key presses within one second
       let lastKeyPress = {
         'a': 0,
         'q': 0,

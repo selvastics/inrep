@@ -14,7 +14,7 @@ Additional options (Option5, Option6, etc.) are supported.}
 
 \item{response_ui_type}{Character string specifying the type of response
 interface. Options: \code{"radio"} for radio buttons, \code{"slider"} for
-slider input, \code{"dropdown"} for dropdown selection. Default is \code{"radio"}.}
+slider input, \code{"dropdown"} for dropdown selection.}
 }
 \value{
 A Shiny UI element (\code{radioButtons}, \code{sliderInput}, or \code{selectInput}).
@@ -26,27 +26,10 @@ Supports multiple response formats (radio buttons, dropdown, slider).
 \details{
 The returned UI element is intended to be used inside the study UI where the
 server code reads the value from \code{input$item_response}.
+Radio buttons and the dropdown return the option text; the slider returns
+the position (1 to the number of options). The dropdown starts with an
+empty choice so that a missing response can be detected.
 }
-\section{Response Validation}{
-
-The function creates interfaces with built-in validation features:
-\itemize{
-  \item Radio buttons: Single selection enforcement, clear visual feedback
-  \item Dropdown: Placeholder option ("") for missing response detection
-  \item Slider: Numeric validation with defined min/max bounds
-}
-}
-
-\section{Integration with TAM}{
-
-Response values are formatted for direct use with TAM functions:
-\itemize{
-  \item Consistent option indexing (1, 2, 3, ...) for TAM parameter matrices
-  \item Proper handling of missing responses for TAM's missing data procedures
-  \item Response time integration for speed-accuracy analysis
-}
-}
-
 \examples{
 \dontrun{
 # Personality item with radio buttons
@@ -91,8 +74,6 @@ response_interface <- create_response_ui(current_item, config$response_ui_type)
 
 }
 \seealso{
-\code{create_demographic_input()} for demographic interface components,
-\code{\link{launch_study}} for complete assessment workflow,
-\code{\link{select_next_item}} for adaptive item selection,
-\code{\link{estimate_ability}} for TAM-based ability estimation
+\code{\link{create_demographics_ui}},
+\code{\link{launch_study}} for the full study workflow
 }

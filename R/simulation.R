@@ -1,57 +1,62 @@
-# File: simulation.R
-# Population-level simulation and individual-level Shiny replay.
-#
-# Public API:
-#   run_simulation()        — Monte Carlo adaptive vs. MCAR comparison
-#   launch_study_sim()      — Shiny replay of one simulated participant
-#   print.inrep_simulation  — S3 print method
+# Population-level simulation (run_simulation) and Shiny replay of one
+# simulated participant (launch_study_sim).
 
-# ─────────────────────────────────────────────────────────────────────────────
-
-#' Run Population Simulation: Adaptive vs. MCAR
+#' Simulate Adaptive versus Random Item Selection
 #'
-#' Runs a Monte Carlo simulation comparing adaptive (CAT) item selection with
-#' Missing Completely At Random (MCAR / random) item selection.  Both arms
-#' administer exactly \code{cat_k} items per participant — a fixed-length
-#' design that eliminates the stopping-rule confound and keeps the information
-#' budget equal.
+#' Monte Carlo simulation that compares adaptive item selection with random
+#' item selection. Both arms administer exactly \code{cat_k} items per
+#' simulated person, so precision is compared at equal test length. The random
+#' arm is labelled \code{"mcar"} because the items not administered are then
+#' missing completely at random.
 #'
-#' The returned \code{inrep_simulation} object stores full per-participant
+#' Responses are generated from the model in \code{config$model} with the item
+#' parameters in \code{item_bank} (GRM: categories \code{1, ..., K + 1};
+#' dichotomous models: 0/1). After each response the ability is estimated with
+#' \code{\link{estimate_ability}} (EAP with the bank parameters as fixed), and
+#' the adaptive arm selects items with \code{\link{select_next_item}}, i.e. by
+#' \code{config$criteria}, not by \code{\link{fast_select_next_item}}. The
+#' first \code{config$adaptive_start - 1} items of the adaptive arm are drawn
+#' at random, as in a live study. Because the same item parameters generate and
+#' score the data, the results show precision under a correctly specified model
+#' with known parameters.
+#'
+#' The returned \code{inrep_simulation} object stores per-participant
 #' trajectories (item sequence, responses, \eqn{\hat{\theta}}, SE) and can be
-#' passed to \code{\link{launch_study_sim}()} to replay any individual's
-#' assessment in an interactive Shiny app.
+#' passed to \code{\link{launch_study_sim}()} to replay one simulated
+#' participant.
 #'
 #' @param config Study configuration from \code{\link{create_study_config}}.
-#'   The fields \code{model}, \code{criteria}, \code{theta_prior}, and
-#'   \code{estimation_method} drive the simulation.  \code{max_items} is
+#'   The fields \code{model}, \code{criteria}, \code{theta_prior},
+#'   \code{theta_grid} and \code{adaptive_start} are used. \code{max_items} is
 #'   overridden internally by \code{cat_k}.
 #' @param item_bank Data frame with item parameters compatible with
 #'   \code{config$model}.
-#' @param n_sim Integer.  Number of simulated participants.  Default 500.
-#'   Set to at least 200 for stable RMSE estimates.
-#' @param cat_k Integer.  Fixed items per participant (both arms).  Must not
-#'   exceed \code{nrow(item_bank)}.  Default 15.
-#' @param seed Integer random seed for reproducibility.  Default 42.
-#' @param include_mcar Logical.  Also run the MCAR (random selection) arm?
-#'   Default \code{TRUE}.  MCAR collects a full per-step trajectory so it can
-#'   be replayed with \code{launch_study_sim(condition = "mcar")}.
-#' @param true_theta_dist Optional numeric vector of length \code{n_sim}
-#'   providing true ability values.  When \code{NULL} (default), draws from
-#'   \eqn{N(\mu, \sigma^2)} where \eqn{(\mu, \sigma)} = \code{config$theta_prior}.
-#' @param progress Logical.  Print progress dots to console?  Default
+#' @param n_sim Integer. Number of simulated participants. Default 500.
+#' @param cat_k Integer. Fixed number of items per participant (both arms).
+#'   Must not exceed \code{nrow(item_bank)}. Default 15.
+#' @param seed Integer random seed. Default 42.
+#' @param include_mcar Logical. Also run the random-selection arm? Default
 #'   \code{TRUE}.
-#' @param ... Reserved for future arguments.
+#' @param true_theta_dist Optional numeric vector of length \code{n_sim}
+#'   providing true ability values. When \code{NULL} (default), draws from
+#'   \eqn{N(\mu, \sigma^2)} where \eqn{(\mu, \sigma)} = \code{config$theta_prior}.
+#' @param progress Logical. Print progress dots to console? Default
+#'   \code{TRUE}.
+#' @param ... Not used.
 #'
 #' @return An object of class \code{inrep_simulation} (a named list):
 #' \describe{
-#'   \item{\code{participants}}{List of length \code{n_sim}.  Each element is
+#'   \item{\code{participants}}{List of length \code{n_sim}. Each element is
 #'     a list with fields: \code{id}, \code{true_theta},
 #'     \code{adaptive} (and \code{mcar} if \code{include_mcar = TRUE}).
 #'     Both arm sub-lists contain: \code{item_seq}, \code{responses},
-#'     \code{theta_traj}, \code{se_traj}, \code{info_traj},
-#'     \code{final_theta}, \code{final_se}.}
-#'   \item{\code{summary}}{Data frame with population metrics: RMSE, bias,
-#'     mean SE, mean Fisher info per item, and (if MCAR) gain percentages.}
+#'     \code{theta_traj}, \code{se_traj}, \code{info_traj} (Fisher information
+#'     of each administered item at the true ability), \code{final_theta},
+#'     \code{final_se}.}
+#'   \item{\code{summary}}{Data frame with RMSE and bias of the final EAP
+#'     estimates, mean final posterior SD, mean information per item at the
+#'     true ability, and (if the random arm is run) the percentage gains of the
+#'     adaptive arm.}
 #'   \item{\code{config}}{The config object used.}
 #'   \item{\code{item_bank}}{The item bank used.}
 #'   \item{\code{n_sim}, \code{cat_k}, \code{seed}, \code{include_mcar}}{
@@ -60,18 +65,21 @@
 #' }
 #'
 #' @section Design rationale:
-#' A common error in adaptive-vs-fixed comparisons is allowing the adaptive
-#' test to stop early (via a SE threshold) while the MCAR test runs a fixed
-#' number of items.  The resulting SE difference is a tautology, not a finding.
-#' \code{run_simulation} enforces equal item counts (\code{cat_k}) in both
-#' arms; SE and RMSE become the sole outcome, measuring precision for a fixed
-#' information budget.
+#' If the adaptive arm may stop early through an SE threshold while the random
+#' arm runs a fixed number of items, a smaller SE in the adaptive arm follows
+#' from the design and is not a finding. \code{run_simulation} therefore gives
+#' both arms the same number of items (\code{cat_k}), so SE and RMSE compare
+#' precision at the same test length.
 #'
-#' @section Duplicate-selection guard:
-#' A defensive re-selection guard wraps every \code{select_next_item()} call.
-#' If floating-point ties in MEI/MI values cause an already-administered item
-#' to be returned, the guard falls back to the unadministered item with the
-#' highest point-estimate Fisher information.
+#' @references
+#' Liu, X., & Loken, E. (2025). The impact of missing data on parameter
+#'   estimation: three examples in computerized adaptive testing.
+#'   \emph{Educational and Psychological Measurement}, 85(3), 617--635.
+#'   \doi{10.1177/00131644241306990}
+#'
+#' Veerkamp, W. J. J., & Berger, M. P. F. (1997). Some new item selection
+#'   criteria for adaptive testing. \emph{Journal of Educational and Behavioral
+#'   Statistics}, 22(2), 203--226. \doi{10.3102/10769986022002203}
 #'
 #' @export
 #'
@@ -95,16 +103,6 @@
 #'
 #' @seealso \code{\link{launch_study_sim}}, \code{\link{select_next_item}},
 #'   \code{\link{estimate_ability}}
-#'
-#' @references
-#' Liu, X., & Loken, E. (2025). The impact of missing data on parameter
-#'   estimation: three examples in computerized adaptive testing.
-#'   \emph{Educational and Psychological Measurement}, 85(3), 617--635.
-#'   \doi{10.1177/00131644241306990}
-#'
-#' Veerkamp, W. J. J., & Berger, M. P. F. (1997). Some new item selection
-#'   criteria for adaptive testing. \emph{Journal of Educational and Behavioral
-#'   Statistics}, 22(2), 203--226. https://doi.org/10.3102/10769986022002203
 run_simulation <- function(config,
                            item_bank,
                            n_sim        = 500L,
@@ -115,7 +113,7 @@ run_simulation <- function(config,
                            progress     = TRUE,
                            ...) {
 
-  # ── Validate inputs ────────────────────────────────────────────────────────
+  # Validate inputs ----
   if (!is.list(config) || is.null(config$model))
     stop("config must be a create_study_config() object.")
   if (!is.data.frame(item_bank) || nrow(item_bank) == 0L)
@@ -133,7 +131,7 @@ run_simulation <- function(config,
   # Override max_items so select_next_item respects cat_k
   config$max_items <- cat_k
 
-  # ── Setup ──────────────────────────────────────────────────────────────────
+  # Setup ----
   set.seed(seed)
   pool_size <- nrow(item_bank)
   prior_mu  <- if (!is.null(config$theta_prior) && length(config$theta_prior) >= 1)
@@ -149,11 +147,15 @@ run_simulation <- function(config,
     true_thetas <- as.numeric(true_theta_dist)
   }
 
-  # Threshold column names for GRM
+  # Same column aliases as select_next_item()
+  if (!"a" %in% names(item_bank) && "discrimination" %in% names(item_bank)) item_bank$a <- item_bank$discrimination
+  if (!"b" %in% names(item_bank) && "difficulty" %in% names(item_bank)) item_bank$b <- item_bank$difficulty
+  has_c <- "c" %in% names(item_bank)
+
   b_cols <- grep("^b[0-9]+$", names(item_bank), value = TRUE)
   model_upper <- toupper(config$model %||% "2PL")
 
-  # ── Internal response simulators ──────────────────────────────────────────
+  # Internal response simulators ----
   sim_grm <- function(theta, row) {
     a      <- row$a
     b      <- as.numeric(row[, b_cols, drop = TRUE])
@@ -164,9 +166,9 @@ run_simulation <- function(config,
   }
 
   sim_binary <- function(theta, row) {
-    a <- if (!is.null(row$a)) row$a else 1
+    a <- if ("a" %in% names(row) && !is.na(row$a)) row$a else 1
     b <- row$b
-    c_par <- if (!is.null(row$c) && !is.na(row$c)) row$c else 0
+    c_par <- if (has_c && !is.na(row$c)) row$c else 0
     p <- c_par + (1 - c_par) / (1 + exp(-a * (theta - b)))
     sample.int(2L, 1L, prob = c(1 - p, p)) - 1L
   }
@@ -176,7 +178,7 @@ run_simulation <- function(config,
   else
     function(theta, row) sim_binary(theta, row)
 
-  # ── Defensive item selection (silent in simulation context) ────────────────
+  # Item selection, messages suppressed ----
   safe_select <- function(rv_s) {
     suppressMessages(select_next_item(rv_s, item_bank, config))
   }
@@ -186,14 +188,12 @@ run_simulation <- function(config,
       administered    = integer(0L),
       responses       = integer(0L),
       current_ability = prior_mu,
-      ability_se      = prior_sd,
-      item_counter    = 0L,
-      item_info_cache = list(),
+      current_se      = prior_sd,
       session_start   = Sys.time()
     )
   }
 
-  # ── Main loop ──────────────────────────────────────────────────────────────
+  # Main loop ----
   if (progress) {
     cat(sprintf(
       "\nrun_simulation: N = %d, K = %d items, model = %s, criteria = %s\n",
@@ -208,7 +208,7 @@ run_simulation <- function(config,
 
     true_th <- true_thetas[sim_i]
 
-    # ── Adaptive arm ──────────────────────────────────────────────────────────
+    # Adaptive arm ----
     rv_a         <- fresh_rv()
     item_seq_a   <- integer(cat_k)
     resp_seq_a   <- integer(cat_k)
@@ -217,12 +217,11 @@ run_simulation <- function(config,
     info_traj_a  <- numeric(cat_k)
 
     for (step in seq_len(cat_k)) {
-      rv_a$item_counter <- length(rv_a$administered)
       ni <- safe_select(rv_a)
       if (is.null(ni)) break
 
       info_traj_a[step] <- tryCatch(
-        compute_item_info_single(rv_a$current_ability, ni, item_bank, config),
+        compute_item_info_single(true_th, ni, item_bank, config),
         error = function(e) NA_real_)
 
       resp <- sim_response(true_th, item_bank[ni, , drop = FALSE])
@@ -232,7 +231,7 @@ run_simulation <- function(config,
 
       est               <- suppressMessages(estimate_ability(rv_a, item_bank, config))
       rv_a$current_ability <- est$theta
-      rv_a$ability_se      <- est$se
+      rv_a$current_se      <- est$se
 
       item_seq_a[step]   <- ni
       resp_seq_a[step]   <- resp
@@ -254,7 +253,7 @@ run_simulation <- function(config,
       )
     )
 
-    # ── MCAR arm ──────────────────────────────────────────────────────────────
+    # MCAR arm ----
     if (include_mcar) {
       rv_m         <- fresh_rv()
       item_seq_m   <- sample(pool_size, cat_k, replace = FALSE)
@@ -269,11 +268,10 @@ run_simulation <- function(config,
 
         rv_m$administered <- c(rv_m$administered, ni_m)
         rv_m$responses    <- c(rv_m$responses,    resp_m)
-        rv_m$item_counter <- k
 
         est_m               <- suppressMessages(estimate_ability(rv_m, item_bank, config))
         rv_m$current_ability <- est_m$theta
-        rv_m$ability_se      <- est_m$se
+        rv_m$current_se      <- est_m$se
 
         resp_seq_m[k]   <- resp_m
         theta_traj_m[k] <- est_m$theta
@@ -299,7 +297,7 @@ run_simulation <- function(config,
 
   if (progress) cat("\n")
 
-  # ── Population summary ─────────────────────────────────────────────────────
+  # Population summary ----
   fin_theta_a <- vapply(participants, function(p) p$adaptive$final_theta, numeric(1L))
   fin_se_a    <- vapply(participants, function(p) p$adaptive$final_se,    numeric(1L))
   mean_info_a <- vapply(participants, function(p) mean(p$adaptive$info_traj, na.rm = TRUE), numeric(1L))
@@ -360,7 +358,6 @@ run_simulation <- function(config,
 }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 #' Print an inrep_simulation Object
 #'
 #' @param x An \code{inrep_simulation} object.
@@ -384,7 +381,6 @@ print.inrep_simulation <- function(x, ...) {
 }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
 
 #' Replay a Simulated Participant's Assessment in Shiny
 #'
@@ -392,10 +388,9 @@ print.inrep_simulation <- function(x, ...) {
 #' responses, and live-updating \eqn{\hat{\theta}} / SE trajectory of a single
 #' simulated participant from an \code{\link{run_simulation}} result.
 #'
-#' This bridges population-level simulation findings with individual-level
-#' understanding: you can inspect \emph{why} a particular participant received
-#' certain items, how the ability estimate evolved, and how the adaptive arm
-#' compared to a random draw.
+#' The app shows which items the participant received, the responses, and how
+#' the estimate and its posterior SD changed, and compares the final values with
+#' the random-selection arm.
 #'
 #' @param sim_object An \code{inrep_simulation} object from
 #'   \code{\link{run_simulation}}.
@@ -411,10 +406,10 @@ print.inrep_simulation <- function(x, ...) {
 #' @return Launches a Shiny app.  Does not return a value.
 #'
 #' @section Individual vs. population:
-#' The replay shows one person's data.  Differences between adaptive and MCAR
-#' SE at the individual level are not statistically meaningful — adaptive
-#' \emph{consistently} outperforms MCAR on RMSE(\eqn{\theta}) only at the
-#' population level (Liu & Loken, 2025).  The summary page includes a reminder.
+#' The replay shows one simulated person. A difference between the two arms for
+#' one person says little about the selection methods; compare them with the
+#' RMSE and bias over all simulated persons in \code{sim_object$summary}. The
+#' summary page includes a reminder.
 #'
 #' @export
 #'
@@ -438,7 +433,7 @@ launch_study_sim <- function(sim_object,
                              launch_browser  = TRUE,
                              ...) {
 
-  # ── Validate ───────────────────────────────────────────────────────────────
+  # Validate ----
   if (!inherits(sim_object, "inrep_simulation"))
     stop("sim_object must be an inrep_simulation from run_simulation().")
 
@@ -450,7 +445,7 @@ launch_study_sim <- function(sim_object,
   if (condition == "mcar" && !sim_object$include_mcar)
     stop("MCAR arm was not included (run_simulation(..., include_mcar = TRUE)).")
 
-  # ── Extract data ───────────────────────────────────────────────────────────
+  # Extract data ----
   p         <- sim_object$participants[[id]]
   arm       <- p[[condition]]
   item_bank <- sim_object$item_bank
@@ -469,7 +464,7 @@ launch_study_sim <- function(sim_object,
   show_mcar <- show_comparison && sim_object$include_mcar && condition == "adaptive"
   mcar_arm  <- if (show_mcar) p$mcar else NULL
 
-  # ── Response label helper ──────────────────────────────────────────────────
+  # Response label helper ----
   has_resp_cats <- "ResponseCategories" %in% names(item_bank)
   get_resp_labels <- function(idx) {
     if (has_resp_cats) {
@@ -480,14 +475,14 @@ launch_study_sim <- function(sim_object,
     c("0", "1")
   }
 
-  # ── Item ID helper ─────────────────────────────────────────────────────────
+  # Item ID helper ----
   get_item_id <- function(idx) {
     if ("item_id" %in% names(item_bank))
       return(as.character(item_bank$item_id[idx]))
     as.character(idx)
   }
 
-  # ── CSS ────────────────────────────────────────────────────────────────────
+  # CSS ----
   sim_css <- "
 body  { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin: 0; }
 .sim-header { background: #1a4f72; color: #fff; padding: 11px 22px;
@@ -525,14 +520,14 @@ body  { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin:
 .cond-mcar  { background: #fde8c8; color: #7a3e00; }
 "
 
-  # ── UI ─────────────────────────────────────────────────────────────────────
+  # UI ----
   ui <- shiny::fluidPage(
     shiny::tags$head(shiny::tags$style(shiny::HTML(sim_css))),
 
     # Header
     shiny::div(class = "sim-header",
       shiny::h4(sprintf(
-        "Simulation Replay \u2014 Participant #%d  |  %s arm  |  K\u202f=\u202f%d items",
+        "Simulation replay: participant #%d  |  %s arm  |  K\u202f=\u202f%d items",
         id, toupper(condition), cat_k)),
       shiny::h5(sprintf(
         "True \u03b8 = %+.3f  |  Pool = %d items  |  Model = %s  |  Criteria = %s  |  N_sim = %d",
@@ -545,16 +540,16 @@ body  { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin:
     shiny::uiOutput("main_content")
   )
 
-  # ── Server ─────────────────────────────────────────────────────────────────
+  # Server ----
   server <- function(input, output, session) {
 
     step <- shiny::reactiveVal(1L)
     view <- shiny::reactiveVal("assessment")   # "assessment" | "results"
 
-    # ── Main content switch ──────────────────────────────────────────────────
+    # Main content switch ----
     output$main_content <- shiny::renderUI({
       if (view() == "results") {
-        # ─── Results page ────────────────────────────────────────────────────
+        # Results page ----
         shiny::fluidRow(
           shiny::column(8, offset = 2,
             shiny::div(class = "res-card",
@@ -572,7 +567,7 @@ body  { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin:
           )
         )
       } else {
-        # ─── Assessment page ─────────────────────────────────────────────────
+        # Assessment page ----
         s   <- step()
         idx <- item_seq[s]
 
@@ -595,7 +590,7 @@ body  { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin:
 
         info_ui <- if (has_info && !is.na(info_traj[s])) {
           shiny::div(class = "info-chip",
-            sprintf("Fisher info at \u03b8\u0302 = %.4f", info_traj[s]))
+            sprintf("Fisher information at true \u03b8 = %.4f", info_traj[s]))
         } else shiny::tagList()
 
         prog_pct <- round(100 * s / cat_k)
@@ -652,7 +647,7 @@ body  { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin:
       }
     })
 
-    # ── Trajectory plots ─────────────────────────────────────────────────────
+    # Trajectory plots ----
     output$theta_plot <- shiny::renderPlot({
       if (view() == "results") return(invisible(NULL))
       s     <- step()
@@ -687,7 +682,7 @@ body  { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin:
         graphics::abline(h = config$min_SEM, lty = 3, col = "grey50", lwd = 1.2)
     }, bg = "white")
 
-    # ── Results stats UI ──────────────────────────────────────────────────────
+    # Results stats UI ----
     output$results_stats <- shiny::renderUI({
       ft   <- arm$final_theta
       fse  <- arm$final_se
@@ -734,8 +729,8 @@ body  { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin:
             sprintf(
               "Note: this is one participant from N\u202f=\u202f%d. Individual-level SE ",
               n_sim),
-            "differences are not statistically meaningful. The adaptive advantage ",
-            "operates at the population level \u2014 see sim$summary for RMSE(\u03b8) gains.")
+            "differences say little about the selection methods. Compare the arms ",
+            "with RMSE and bias over all simulated persons in sim$summary.")
         )
       } else shiny::tagList()
 
@@ -747,7 +742,7 @@ body  { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin:
       )
     })
 
-    # ── Final trajectory plot (results page) ─────────────────────────────────
+    # Final trajectory plot (results page) ----
     output$final_traj_plot <- shiny::renderPlot({
       col_a <- "#2E86AB"
       col_m <- "#F18F01"
@@ -797,7 +792,7 @@ body  { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin:
                col = c(col_a, col_m), lwd = c(2.2, 1.5), lty = c(1, 3))
     }, bg = "white")
 
-    # ── Navigation observers ──────────────────────────────────────────────────
+    # Navigation observers ----
     shiny::observeEvent(input$btn_next, {
       s <- step()
       if (s < cat_k) step(s + 1L) else view("results")

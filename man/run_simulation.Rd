@@ -2,7 +2,7 @@
 % Please edit documentation in R/simulation.R
 \name{run_simulation}
 \alias{run_simulation}
-\title{Run Population Simulation: Adaptive vs. MCAR}
+\title{Simulate Adaptive versus Random Item Selection}
 \usage{
 run_simulation(
   config,
@@ -18,45 +18,46 @@ run_simulation(
 }
 \arguments{
 \item{config}{Study configuration from \code{\link{create_study_config}}.
-The fields \code{model}, \code{criteria}, \code{theta_prior}, and
-\code{estimation_method} drive the simulation.  \code{max_items} is
+The fields \code{model}, \code{criteria}, \code{theta_prior},
+\code{theta_grid} and \code{adaptive_start} are used. \code{max_items} is
 overridden internally by \code{cat_k}.}
 
 \item{item_bank}{Data frame with item parameters compatible with
 \code{config$model}.}
 
-\item{n_sim}{Integer.  Number of simulated participants.  Default 500.
-Set to at least 200 for stable RMSE estimates.}
+\item{n_sim}{Integer. Number of simulated participants. Default 500.}
 
-\item{cat_k}{Integer.  Fixed items per participant (both arms).  Must not
-exceed \code{nrow(item_bank)}.  Default 15.}
+\item{cat_k}{Integer. Fixed number of items per participant (both arms).
+Must not exceed \code{nrow(item_bank)}. Default 15.}
 
-\item{seed}{Integer random seed for reproducibility.  Default 42.}
+\item{seed}{Integer random seed. Default 42.}
 
-\item{include_mcar}{Logical.  Also run the MCAR (random selection) arm?
-Default \code{TRUE}.  MCAR collects a full per-step trajectory so it can
-be replayed with \code{launch_study_sim(condition = "mcar")}.}
-
-\item{true_theta_dist}{Optional numeric vector of length \code{n_sim}
-providing true ability values.  When \code{NULL} (default), draws from
-\eqn{N(\mu, \sigma^2)} where \eqn{(\mu, \sigma)} = \code{config$theta_prior}.}
-
-\item{progress}{Logical.  Print progress dots to console?  Default
+\item{include_mcar}{Logical. Also run the random-selection arm? Default
 \code{TRUE}.}
 
-\item{...}{Reserved for future arguments.}
+\item{true_theta_dist}{Optional numeric vector of length \code{n_sim}
+providing true ability values. When \code{NULL} (default), draws from
+\eqn{N(\mu, \sigma^2)} where \eqn{(\mu, \sigma)} = \code{config$theta_prior}.}
+
+\item{progress}{Logical. Print progress dots to console? Default
+\code{TRUE}.}
+
+\item{...}{Not used.}
 }
 \value{
 An object of class \code{inrep_simulation} (a named list):
 \describe{
-  \item{\code{participants}}{List of length \code{n_sim}.  Each element is
+  \item{\code{participants}}{List of length \code{n_sim}. Each element is
     a list with fields: \code{id}, \code{true_theta},
     \code{adaptive} (and \code{mcar} if \code{include_mcar = TRUE}).
     Both arm sub-lists contain: \code{item_seq}, \code{responses},
-    \code{theta_traj}, \code{se_traj}, \code{info_traj},
-    \code{final_theta}, \code{final_se}.}
-  \item{\code{summary}}{Data frame with population metrics: RMSE, bias,
-    mean SE, mean Fisher info per item, and (if MCAR) gain percentages.}
+    \code{theta_traj}, \code{se_traj}, \code{info_traj} (Fisher information
+    of each administered item at the true ability), \code{final_theta},
+    \code{final_se}.}
+  \item{\code{summary}}{Data frame with RMSE and bias of the final EAP
+    estimates, mean final posterior SD, mean information per item at the
+    true ability, and (if the random arm is run) the percentage gains of the
+    adaptive arm.}
   \item{\code{config}}{The config object used.}
   \item{\code{item_bank}}{The item bank used.}
   \item{\code{n_sim}, \code{cat_k}, \code{seed}, \code{include_mcar}}{
@@ -65,34 +66,36 @@ An object of class \code{inrep_simulation} (a named list):
 }
 }
 \description{
-Runs a Monte Carlo simulation comparing adaptive (CAT) item selection with
-Missing Completely At Random (MCAR / random) item selection.  Both arms
-administer exactly \code{cat_k} items per participant — a fixed-length
-design that eliminates the stopping-rule confound and keeps the information
-budget equal.
+Monte Carlo simulation that compares adaptive item selection with random
+item selection. Both arms administer exactly \code{cat_k} items per
+simulated person, so precision is compared at equal test length. The random
+arm is labelled \code{"mcar"} because the items not administered are then
+missing completely at random.
 }
 \details{
-The returned \code{inrep_simulation} object stores full per-participant
+Responses are generated from the model in \code{config$model} with the item
+parameters in \code{item_bank} (GRM: categories \code{1, ..., K + 1};
+dichotomous models: 0/1). After each response the ability is estimated with
+\code{\link{estimate_ability}} (EAP with the bank parameters as fixed), and
+the adaptive arm selects items with \code{\link{select_next_item}}, i.e. by
+\code{config$criteria}, not by \code{\link{fast_select_next_item}}. The
+first \code{config$adaptive_start - 1} items of the adaptive arm are drawn
+at random, as in a live study. Because the same item parameters generate and
+score the data, the results show precision under a correctly specified model
+with known parameters.
+
+The returned \code{inrep_simulation} object stores per-participant
 trajectories (item sequence, responses, \eqn{\hat{\theta}}, SE) and can be
-passed to \code{\link{launch_study_sim}()} to replay any individual's
-assessment in an interactive Shiny app.
+passed to \code{\link{launch_study_sim}()} to replay one simulated
+participant.
 }
 \section{Design rationale}{
 
-A common error in adaptive-vs-fixed comparisons is allowing the adaptive
-test to stop early (via a SE threshold) while the MCAR test runs a fixed
-number of items.  The resulting SE difference is a tautology, not a finding.
-\code{run_simulation} enforces equal item counts (\code{cat_k}) in both
-arms; SE and RMSE become the sole outcome, measuring precision for a fixed
-information budget.
-}
-
-\section{Duplicate-selection guard}{
-
-A defensive re-selection guard wraps every \code{select_next_item()} call.
-If floating-point ties in MEI/MI values cause an already-administered item
-to be returned, the guard falls back to the unadministered item with the
-highest point-estimate Fisher information.
+If the adaptive arm may stop early through an SE threshold while the random
+arm runs a fixed number of items, a smaller SE in the adaptive arm follows
+from the design and is not a finding. \code{run_simulation} therefore gives
+both arms the same number of items (\code{cat_k}), so SE and RMSE compare
+precision at the same test length.
 }
 
 \examples{
@@ -122,7 +125,7 @@ Liu, X., & Loken, E. (2025). The impact of missing data on parameter
 
 Veerkamp, W. J. J., & Berger, M. P. F. (1997). Some new item selection
   criteria for adaptive testing. \emph{Journal of Educational and Behavioral
-  Statistics}, 22(2), 203--226.
+  Statistics}, 22(2), 203--226. \doi{10.3102/10769986022002203}
 }
 \seealso{
 \code{\link{launch_study_sim}}, \code{\link{select_next_item}},

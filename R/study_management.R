@@ -1,11 +1,8 @@
-#' Study Management for inrep Package
-#' 
-#' This file consolidates all study management functions including:
-#' - Study flow helpers (from study_flow_helpers.R)
-#' - Study simulations (from study_simulations.R)
-#' - Custom page flow (from custom_page_flow.R)
-#' - Flow validation (from custom_page_flow_validation.R)
-#' 
+#' Study flow, custom page flow and page validation
+#'
+#' Default text templates for study pages, demographic inputs, the custom
+#' page flow renderer, response-label helpers and page validation.
+#'
 #' @name study_management
 #' @keywords internal
 
@@ -21,12 +18,9 @@
   if (.inrep_is_debug()) message(...)
 }
 
-# ============================================================================
-# SECTION 1: STUDY FLOW HELPERS (from study_flow_helpers.R)
-# ============================================================================
-
-# Enhanced Study Flow Helper Functions
-# Functions to create default content for introduction, briefing, consent, GDPR, and debriefing
+# Default page content ----
+# Placeholder texts. Researchers are expected to replace them with the
+# information that applies to their own study.
 
 #' Create Default Introduction Content
 #'
@@ -187,7 +181,7 @@ create_default_consent_content <- function(ui_labels = NULL) {
     '</div>',
     '<div class="data-use">',
     paste0('<h3>', ui_labels$data_use_and_storage, '</h3>'),
-    '<p>Your anonymous responses will be:</p>',
+    '<p>Your responses will be:</p>',
     '<ul>',
     '<li>Stored on systems used to run the study (review and edit for your deployment)</li>',
     '<li>Used for the purposes described in the study information</li>',
@@ -221,9 +215,9 @@ create_default_gdpr_content <- function(ui_labels = NULL) {
     ui_labels <- list(
       data_controller = "Data Controller",
       legal_basis_for_processing = "Legal Basis for Processing",
-      article_6_gdpr = "Article 6 GDPR - Legitimate Interest",
-      article_9_gdpr = "Article 9 GDPR - Research Purposes",
-      legitimate_interest = "Legitimate Interest",
+      article_6_gdpr = "Article 6(1)(a) GDPR: Your explicit consent",
+      article_9_gdpr = "Article 9(2)(a) GDPR: Explicit consent for special categories of data (if applicable)",
+      legitimate_interest = "Legitimate interest: Scientific research purposes",
       categories_of_data = "Categories of Data",
       we_may_process_data = "We may process the following categories of data:",
       response_data_questionnaires = "Response data from questionnaires",
@@ -343,7 +337,7 @@ create_default_debriefing_content <- function(ui_labels = NULL) {
     '<h2 class="section-title">Study Debriefing</h2>',
     '<div class="debriefing-content">',
     '<div class="thank-you">',
-    '<p class="lead">Thank you for participating in this research study. Your contribution is valuable for advancing scientific knowledge.</p>',
+    '<p class="lead">Thank you for participating in this research study.</p>',
     '</div>',
     '<div class="study-purpose">',
     paste0('<h3>', ui_labels$study_purpose, '</h3>'),
@@ -356,13 +350,7 @@ create_default_debriefing_content <- function(ui_labels = NULL) {
     '</div>',
     '<div class="methodology">',
     paste0('<h3>', ui_labels$research_methodology, '</h3>'),
-    '<p>This study used validated psychological instruments and advanced statistical methods to:</p>',
-    '<ul>',
-    '<li>Measure psychological constructs accurately</li>',
-    '<li>Adapt questions to your response patterns</li>',
-    '<li>Provide personalized feedback</li>',
-    '<li>Contribute to scientific understanding</li>',
-    '</ul>',
+    '<p>[Describe the instruments used in this study and, if applicable, whether items were selected adaptively and whether feedback was given.]</p>',
     '</div>',
     '<div class="implications">',
     paste0('<h3>', ui_labels$research_implications, '</h3>'),
@@ -378,7 +366,7 @@ create_default_debriefing_content <- function(ui_labels = NULL) {
     paste0('<h3>', ui_labels$next_steps, '</h3>'),
     '<p>Following this study:</p>',
     '<ul>',
-    '<li>Data will be analyzed using advanced statistical methods</li>',
+    '<li>Data will be analyzed as described in the study information</li>',
     '<li>Results will be prepared for publication in academic journals</li>',
     '<li>Findings will be presented at scientific conferences</li>',
     '<li>Summary results may be made available to participants</li>',
@@ -679,7 +667,8 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
       config$options
     }
     
-    # Create UI element based on input type
+    labels <- get_language_labels(current_lang)
+
     if (config$input_type == "text") {
       ui_elements[[demo_name]] <- shiny::div(
         class = "demographic-field",
@@ -689,7 +678,7 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
           label = NULL,
           placeholder = config$placeholder %||% ""
         ),
-        if (config$allow_skip) shiny::div(
+        if (isTRUE(config$allow_skip)) shiny::div(
           class = "skip-option",
           shiny::checkboxInput(
             inputId = paste0(demo_name, "_skip"),
@@ -710,7 +699,7 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
           min = config$validation_rules$min_value %||% NA,
           max = config$validation_rules$max_value %||% NA
         ),
-        if (config$allow_skip) shiny::div(
+        if (isTRUE(config$allow_skip)) shiny::div(
           class = "skip-option",
           shiny::checkboxInput(
             inputId = paste0(demo_name, "_skip"),
@@ -722,12 +711,10 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
       
     } else if (config$input_type == "select") {
       choices <- options_to_use %||% config$options
-      if (config$allow_skip) {
+      if (isTRUE(config$allow_skip)) {
         choices <- c(choices, "Prefer not to answer" = "skip")
       }
       
-      # Translate "Please select..." based on language
-      labels <- get_language_labels(current_lang)
       placeholder_text <- labels$please_select
       
       ui_elements[[demo_name]] <- shiny::div(
@@ -739,7 +726,7 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
           choices = c(setNames("", placeholder_text), choices),
           selected = ""
         ),
-        if (config$allow_other_text) shiny::conditionalPanel(
+        if (isTRUE(config$allow_other_text)) shiny::conditionalPanel(
           condition = paste0("input.", demo_name, " == 'other'"),
           shiny::textInput(
             inputId = paste0(demo_name, "_other"),
@@ -751,7 +738,7 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
       
     } else if (config$input_type == "radio") {
       choices <- options_to_use %||% config$options
-      if (config$allow_skip) {
+      if (isTRUE(config$allow_skip)) {
         choices <- c(choices, "Prefer not to answer" = "skip")
       }
       
@@ -764,7 +751,7 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
           choices = choices,
           selected = character(0)
         ),
-        if (config$allow_other_text) shiny::conditionalPanel(
+        if (isTRUE(config$allow_other_text)) shiny::conditionalPanel(
           condition = paste0("input.", demo_name, " == 'other'"),
           shiny::textInput(
             inputId = paste0(demo_name, "_other"),
@@ -823,567 +810,15 @@ create_custom_demographic_ui <- function(demographic_configs, theme = NULL, ui_l
   ))
 }
 
-# ============================================================================
-# SECTION 2: STUDY SIMULATIONS (from study_simulations.R)
-# ============================================================================
-
-#' Study Simulation Framework
-#' 
-#' Simulates various real-world study scenarios to identify and fix potential errors
-#' 
-#' @name study_simulations
-#' @docType data
-NULL
-
-#' Simulate Educational Assessment Studies
-#' 
-#' Tests various educational assessment scenarios that users might create
-#' 
-#' @return List of simulation results with errors and fixes
-#' @export
-simulate_educational_studies <- function() {
-  results <- list()
-  
-  # Scenario 1: Math test with adaptive branching
-  tryCatch({
-    config1 <- create_study_config(
-      name = "Adaptive Math Assessment Grade 5-8",
-      model = "2PL",
-      max_items = 45,
-      min_items = 15,
-      min_SEM = 0.25,
-      criteria = "MI",
-      start_theta = -2,  # Students might start below average
-      demographics = c("Grade", "School_ID", "Teacher", "Previous_Score"),
-      input_types = list(
-        Grade = "select",
-        School_ID = "text", 
-        Teacher = "text",
-        Previous_Score = "numeric"
-      ),
-      language = "en"
-    )
-    
-    # Simulate item bank with grade-specific items
-    item_bank1 <- data.frame(
-      item_id = paste0("MATH_", 1:200),
-      content = rep(c("What is 2+2?", "Solve for x: 2x=10"), 100),
-      difficulty = c(rnorm(50, -2, 0.5), rnorm(50, 0, 0.5), 
-                    rnorm(50, 1, 0.5), rnorm(50, 2, 0.5)),
-      discrimination = runif(200, 0.5, 2.5),
-      grade_level = rep(5:8, each = 50),
-      topic = rep(c("Arithmetic", "Algebra", "Geometry", "Statistics"), 50)
-    )
-    
-    results$educational_math <- list(status = "success", config = config1)
-  }, error = function(e) {
-    results$educational_math <- list(status = "error", message = e$message)
-  })
-  
-  # Scenario 2: Language assessment with multimedia items
-  tryCatch({
-    config2 <- create_study_config(
-      name = "English Proficiency Test",
-      model = "GRM",
-      max_items = 60,
-      min_items = 30,
-      min_SEM = 0.3,
-      demographics = c("Native_Language", "Years_Study", "Age", "Country"),
-      input_types = list(
-        Native_Language = "select",
-        Years_Study = "numeric",
-        Age = "numeric",
-        Country = "select"
-      ),
-      theme = "Academic",
-      language = "en",
-      time_limit = 7200  # 2 hour time limit
-    )
-    
-    # Items with audio/video components (URLs)
-    item_bank2 <- data.frame(
-      item_id = paste0("ENG_", 1:150),
-      content = c(
-        rep("Listen to audio and answer: [AUDIO_URL]", 30),
-        rep("Watch video and respond: [VIDEO_URL]", 30),
-        rep("Read passage and answer questions", 90)
-      ),
-      difficulty = rnorm(150, 0, 1),
-      discrimination = runif(150, 0.8, 2.0),
-      skill = rep(c("Listening", "Speaking", "Reading", "Writing"), length.out = 150),
-      media_url = c(
-        paste0("https://example.com/audio/", 1:30, ".mp3"),
-        paste0("https://example.com/video/", 1:30, ".mp4"),
-        rep(NA, 90)
-      )
-    )
-    
-    results$educational_language <- list(status = "success", config = config2)
-  }, error = function(e) {
-    results$educational_language <- list(status = "error", message = e$message)
-  })
-  
-  # Scenario 3: Special education assessment with accommodations
-  tryCatch({
-    config3 <- create_study_config(
-      name = "Special Education Screening",
-      model = "1PL",  # Simpler model for special needs
-      max_items = 20,
-      min_items = 10,
-      min_SEM = 0.4,  # More lenient stopping criterion
-      demographics = c("IEP_Status", "Accommodations", "Disability_Type"),
-      input_types = list(
-        IEP_Status = "select",
-        Accommodations = "checkbox",  # Multiple accommodations
-        Disability_Type = "select"
-      ),
-      accessibility_enhanced = TRUE,
-      font_size_adjustable = TRUE,
-      high_contrast_available = TRUE,
-      screen_reader_compatible = TRUE,
-      extended_time_factor = 2.0  # Double time for special needs
-    )
-    
-    results$educational_special <- list(status = "success", config = config3)
-  }, error = function(e) {
-    results$educational_special <- list(status = "error", message = e$message)
-  })
-  
-  return(results)
-}
-
-#' Simulate Clinical Psychology Studies
-#' 
-#' Tests various clinical assessment scenarios
-#' 
-#' @return List of simulation results
-#' @export
-simulate_clinical_studies <- function() {
-  results <- list()
-  
-  # Scenario 1: Depression screening with skip logic
-  tryCatch({
-    config1 <- create_study_config(
-      name = "PHQ-9 Depression Screening",
-      model = "GRM",
-      max_items = 9,
-      min_items = 9,  # Fixed length assessment
-      min_SEM = 999,  # Disable adaptive stopping
-      demographics = c("Patient_ID", "Clinician", "Session_Number", "Medication"),
-      input_types = list(
-        Patient_ID = "text",
-        Clinician = "select",
-        Session_Number = "numeric",
-        Medication = "checkbox"
-      ),
-      save_format = "json",  # Example format
-      data_retention_days = 90,
-      require_consent = TRUE,
-      suicide_item_alert = c(9)  # Alert on item 9 (suicide ideation)
-    )
-    
-    # Clinical items with severity levels
-    item_bank1 <- data.frame(
-      item_id = paste0("PHQ_", 1:9),
-      content = c(
-        "Little interest or pleasure in doing things",
-        "Feeling down, depressed, or hopeless",
-        "Trouble falling asleep or sleeping too much",
-        "Feeling tired or having little energy",
-        "Poor appetite or overeating",
-        "Feeling bad about yourself",
-        "Trouble concentrating",
-        "Moving or speaking slowly",
-        "Thoughts of self-harm"
-      ),
-      difficulty = seq(-2, 2, length.out = 9),
-      discrimination = rep(1.5, 9),
-      clinical_flag = c(rep(FALSE, 8), TRUE),  # Item 9 is flagged
-      response_options = rep(4, 9)  # 0-3 scale
-    )
-    
-    results$clinical_depression <- list(status = "success", config = config1)
-  }, error = function(e) {
-    results$clinical_depression <- list(status = "error", message = e$message)
-  })
-  
-  # Scenario 2: Anxiety assessment with branching
-  tryCatch({
-    config2 <- create_study_config(
-      name = "Anxiety Assessment",
-      model = "2PL",
-      max_items = 50,
-      min_items = 20,
-      min_SEM = 0.3,
-      branching_rules = list(
-        high_anxiety = list(theta_threshold = 1.5, next_module = "panic_items"),
-        low_anxiety = list(theta_threshold = -1.5, next_module = "screening_only")
-      ),
-      demographics = c("Age", "Gender", "Diagnosis", "Treatment_History"),
-      clinical_cutoffs = list(
-        mild = -0.5,
-        moderate = 0.5,
-        severe = 1.5
-      )
-    )
-    
-    results$clinical_anxiety <- list(status = "success", config = config2)
-  }, error = function(e) {
-    results$clinical_anxiety <- list(status = "error", message = e$message)
-  })
-  
-  # Scenario 3: Neuropsychological battery
-  tryCatch({
-    config3 <- create_study_config(
-      name = "Cognitive Function Battery",
-      model = "3PL",  # Include guessing parameter
-      max_items = 120,
-      min_items = 60,
-      min_SEM = 0.25,
-      modules = c("Memory", "Attention", "Executive", "Language", "Visuospatial"),
-      demographics = c("Age", "Education", "Medical_History", "Medications"),
-      time_per_item = 30,  # 30 seconds per item
-      break_after_items = 30,  # Mandatory break every 30 items
-      practice_items = TRUE,
-      warm_up_items = 5
-    )
-    
-    # Complex item bank with multiple domains
-    item_bank3 <- data.frame(
-      item_id = paste0("COG_", 1:300),
-      content = rep("Cognitive task", 300),
-      difficulty = rnorm(300, 0, 1.5),
-      discrimination = runif(300, 0.5, 2.5),
-      guessing = runif(300, 0.1, 0.3),
-      domain = rep(c("Memory", "Attention", "Executive", "Language", "Visuospatial"), 60),
-      item_type = rep(c("Recognition", "Recall", "Problem_Solving"), 100),
-      requires_timer = sample(c(TRUE, FALSE), 300, replace = TRUE)
-    )
-    
-    results$clinical_neuropsych <- list(status = "success", config = config3)
-  }, error = function(e) {
-    results$clinical_neuropsych <- list(status = "error", message = e$message)
-  })
-  
-  return(results)
-}
-
-#' Simulate Corporate HR Assessments
-#' 
-#' Tests various workplace assessment scenarios
-#' 
-#' @return List of simulation results
-#' @export
-simulate_corporate_studies <- function() {
-  results <- list()
-  
-  # Scenario 1: Pre-employment screening
-  tryCatch({
-    config1 <- create_study_config(
-      name = "Technical Skills Assessment",
-      model = "2PL",
-      max_items = 40,
-      min_items = 25,
-      min_SEM = 0.3,
-      demographics = c("Applicant_ID", "Position", "Experience_Years", "Education"),
-      proctoring_enabled = TRUE,
-      webcam_monitoring = TRUE,
-      prevent_copy_paste = TRUE,
-      randomize_items = TRUE,
-      time_limit = 3600,  # 1 hour
-      passing_score = 0.5  # Theta > 0.5 to pass
-    )
-    
-    # Technical items with categories
-    item_bank1 <- data.frame(
-      item_id = paste0("TECH_", 1:200),
-      content = rep("Technical question", 200),
-      difficulty = c(
-        rnorm(50, -1, 0.5),  # Easy
-        rnorm(100, 0, 0.5),   # Medium
-        rnorm(50, 1, 0.5)     # Hard
-      ),
-      discrimination = runif(200, 1.0, 2.5),
-      category = rep(c("Programming", "Database", "Networking", "Security"), 50),
-      job_level = rep(c("Junior", "Mid", "Senior"), length.out = 200),
-      contains_code = sample(c(TRUE, FALSE), 200, replace = TRUE)
-    )
-    
-    results$corporate_technical <- list(status = "success", config = config1)
-  }, error = function(e) {
-    results$corporate_technical <- list(status = "error", message = e$message)
-  })
-  
-  # Scenario 2: 360-degree feedback assessment
-  tryCatch({
-    config2 <- create_study_config(
-      name = "Leadership 360 Feedback",
-      model = "GRM",
-      max_items = 60,
-      min_items = 60,  # Fixed length
-      min_SEM = 999,
-      demographics = c("Rater_ID", "Relationship", "Department", "Time_Known"),
-      input_types = list(
-        Rater_ID = "text",
-        Relationship = "select",  # Self, Manager, Peer, Direct Report
-        Department = "select",
-        Time_Known = "numeric"
-      ),
-      anonymous_mode = TRUE,
-      aggregate_results = TRUE,
-      minimum_raters = 5,
-      rater_categories = c("Self", "Manager", "Peer", "Direct_Report", "Customer")
-    )
-    
-    # 360 feedback items
-    item_bank2 <- data.frame(
-      item_id = paste0("LEAD_", 1:60),
-      content = rep("Leadership behavior", 60),
-      difficulty = rep(seq(-2, 2, length.out = 5), 12),
-      discrimination = runif(60, 1.0, 2.0),
-      competency = rep(c("Communication", "Decision_Making", "Team_Building", 
-                        "Strategic_Thinking", "Innovation"), 12),
-      reverse_scored = sample(c(TRUE, FALSE), 60, replace = TRUE, prob = c(0.2, 0.8))
-    )
-    
-    results$corporate_360 <- list(status = "success", config = config2)
-  }, error = function(e) {
-    results$corporate_360 <- list(status = "error", message = e$message)
-  })
-  
-  # Scenario 3: Personality assessment for team building
-  tryCatch({
-    config3 <- create_study_config(
-      name = "Team Dynamics Assessment",
-      model = "GRM",
-      max_items = 100,
-      min_items = 50,
-      min_SEM = 0.35,
-      demographics = c("Employee_ID", "Team", "Role", "Tenure"),
-      facets = c("Extraversion", "Agreeableness", "Conscientiousness", 
-                "Neuroticism", "Openness"),
-      report_type = "comprehensive",
-      include_norms = TRUE,
-      norm_group = "corporate_professionals",
-      team_report = TRUE,
-      gap_analysis = TRUE
-    )
-    
-    results$corporate_personality <- list(status = "success", config = config3)
-  }, error = function(e) {
-    results$corporate_personality <- list(status = "error", message = e$message)
-  })
-  
-  return(results)
-}
-
-#' Simulate Research Studies with Extreme Parameters
-#' 
-#' Tests edge cases and extreme configurations
-#' 
-#' @return List of simulation results
-#' @export
-simulate_extreme_studies <- function() {
-  results <- list()
-  
-  # Scenario 1: Massive item bank
-  tryCatch({
-    config1 <- create_study_config(
-      name = "Large Scale International Study",
-      model = "2PL",
-      max_items = 500,  # Very long assessment
-      min_items = 100,
-      min_SEM = 0.1,  # Very strict criterion
-      demographics = paste0("Var_", 1:50),  # 50 demographic variables
-      language = "multi",  # Multiple languages
-      countries = 50,  # 50 countries
-      expected_n = 100000  # 100k participants
-    )
-    
-    # Huge item bank
-    item_bank1 <- data.frame(
-      item_id = paste0("ITEM_", 1:10000),  # 10,000 items
-      content = rep("Item content", 10000),
-      difficulty = rnorm(10000, 0, 1.5),
-      discrimination = runif(10000, 0.3, 3.0),
-      language = rep(c("en", "es", "fr", "de", "zh"), 2000),
-      translation_verified = sample(c(TRUE, FALSE), 10000, replace = TRUE)
-    )
-    
-    results$extreme_massive <- list(status = "success", config = config1)
-  }, error = function(e) {
-    results$extreme_massive <- list(status = "error", message = e$message)
-  })
-  
-  # Scenario 2: Minimal configuration
-  tryCatch({
-    config2 <- create_study_config(
-      name = "A",  # Minimal name
-      model = "1PL",
-      max_items = 1,  # Single item
-      min_items = 1,
-      min_SEM = 999  # No adaptive stopping
-    )
-    
-    # Single item bank
-    item_bank2 <- data.frame(
-      item_id = "Q1",
-      content = "?",  # Minimal content
-      difficulty = 0,
-      discrimination = 1
-    )
-    
-    results$extreme_minimal <- list(status = "success", config = config2)
-  }, error = function(e) {
-    results$extreme_minimal <- list(status = "error", message = e$message)
-  })
-  
-  # Scenario 3: Unusual characters and encoding
-  tryCatch({
-    config3 <- create_study_config(
-      name = "\u6D4B\u8BD5 \u03C4\u03B5\u03C3\u03C4 \u0442\u0435\u0441\u0442 \u0E17\u0E14\u0E2A\u0E2D\u0E1A",  # Unicode characters
-      model = "GRM",
-      max_items = 30,
-      min_items = 15,
-      min_SEM = 0.3,
-      demographics = c("\u540D\u524D", "\u00C2ge", "\u0413\u043E\u0440\u043E\u0434"),  # Non-ASCII demographics
-      special_characters = TRUE
-    )
-    
-    # Items with special characters
-    item_bank3 <- data.frame(
-      item_id = paste0("\u9898\u76EE_", 1:50),
-      content = c(
-        rep("\u00BFC\u00F3mo est\u00E1?", 10),
-        rep("Qu'est-ce que c'est?", 10),
-        rep("Was ist das?", 10),
-        rep("\u3053\u308C\u306F\u4F55\u3067\u3059\u304B\uFF1F", 10),
-        rep("\u0427\u0442\u043E \u044D\u0442\u043E?", 10)
-      ),
-      difficulty = rnorm(50, 0, 1),
-      discrimination = runif(50, 0.8, 2.0)
-    )
-    
-    results$extreme_unicode <- list(status = "success", config = config3)
-  }, error = function(e) {
-    results$extreme_unicode <- list(status = "error", message = e$message)
-  })
-  
-  # Scenario 4: Rapid fire assessment
-  tryCatch({
-    config4 <- create_study_config(
-      name = "Speed Test",
-      model = "1PL",
-      max_items = 1000,  # Many items
-      min_items = 500,
-      min_SEM = 0.5,
-      time_per_item = 2,  # 2 seconds per item
-      no_review_allowed = TRUE,
-      auto_advance = TRUE,
-      rapid_mode = TRUE
-    )
-    
-    results$extreme_speed <- list(status = "success", config = config4)
-  }, error = function(e) {
-    results$extreme_speed <- list(status = "error", message = e$message)
-  })
-  
-  # Scenario 5: Complex branching logic
-  tryCatch({
-    config5 <- create_study_config(
-      name = "Complex Adaptive Design",
-      model = "3PL",
-      max_items = 100,
-      min_items = 20,
-      min_SEM = 0.2,
-      branching_rules = list(
-        rule1 = list(condition = "theta > 2", action = "skip_to_end"),
-        rule2 = list(condition = "theta < -2", action = "add_easy_items"),
-        rule3 = list(condition = "se > 0.5", action = "continue"),
-        rule4 = list(condition = "items_answered > 50", action = "check_fatigue"),
-        rule5 = list(condition = "time_elapsed > 3600", action = "save_and_exit")
-      ),
-      multi_stage = TRUE,
-      stages = 5,
-      routing_rules = "complex"
-    )
-    
-    results$extreme_branching <- list(status = "success", config = config5)
-  }, error = function(e) {
-    results$extreme_branching <- list(status = "error", message = e$message)
-  })
-  
-  return(results)
-}
-
-#' Run All Study Simulations
-#' 
-#' Executes all simulation scenarios and identifies errors
-#' 
-#' @return Results list with error analysis
-#' @export
-run_all_simulations <- function() {
-  all_results <- list()
-  errors_found <- list()
-  
-  # Run educational simulations
-  message("Running educational study simulations...")
-  edu_results <- simulate_educational_studies()
-  all_results$educational <- edu_results
-  
-  # Run clinical simulations
-  message("Running clinical study simulations...")
-  clinical_results <- simulate_clinical_studies()
-  all_results$clinical <- clinical_results
-  
-  # Run corporate simulations
-  message("Running corporate study simulations...")
-  corporate_results <- simulate_corporate_studies()
-  all_results$corporate <- corporate_results
-  
-  # Run extreme simulations
-  message("Running extreme parameter simulations...")
-  extreme_results <- simulate_extreme_studies()
-  all_results$extreme <- extreme_results
-  
-  # Analyze errors
-  for (category in names(all_results)) {
-    for (scenario in names(all_results[[category]])) {
-      if (all_results[[category]][[scenario]]$status == "error") {
-        errors_found[[paste(category, scenario, sep = "_")]] <- 
-          all_results[[category]][[scenario]]$message
-      }
-    }
-  }
-  
-  # Summary
-  total_scenarios <- sum(sapply(all_results, length))
-  total_errors <- length(errors_found)
-  success_rate <- (total_scenarios - total_errors) / total_scenarios * 100
-  
-  return(list(
-    results = all_results,
-    errors = errors_found,
-    summary = list(
-      total_scenarios = total_scenarios,
-      total_errors = total_errors,
-      success_rate = success_rate,
-      categories_tested = names(all_results)
-    )
-  ))
-}
-
-# ============================================================================
-# SECTION 3: CUSTOM PAGE FLOW (from custom_page_flow.R)
-# ============================================================================
+# Custom page flow ----
 
 #' Create custom page flow configuration
 #'
-#' This function provides support for custom page flows in studies,
-#' allowing for complex multi-page questionnaires with progressive display.
+#' Checks that every page has the fields \code{id}, \code{type} and
+#' \code{title} and returns the pages with class \code{"custom_page_flow"}.
 #'
 #' @param pages List of page configurations
-#' @return A custom page flow configuration object
+#' @return The list of pages with class \code{c("custom_page_flow", "list")}
 #' @export
 create_custom_page_flow <- function(pages) {
   # Validate page structure
@@ -1572,8 +1007,7 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
         demo_config$question %||% demo_config$question_de %||% dem
       }
       
-      # Check if this demographic item has custom HTML content - LANGUAGE AWARE
-      # FIX: Add length check to prevent vector comparison error
+      # Custom HTML content replaces the generated input
       html_content_to_use <- NULL
       if (current_lang == "en" && !is.null(demo_config$html_content_en) && 
           is.character(demo_config$html_content_en) && length(demo_config$html_content_en) == 1 && 
@@ -1598,8 +1032,8 @@ render_demographics_page <- function(page, config, rv, ui_labels) {
       input_id <- paste0("demo_", dem)
     input_type <- config$input_types[[dem]] %||% "text"
     
-    # AUTO-DETECT input type from config if not explicitly set
-    # CRITICAL: Always prioritize demo_config$type for slider to ensure it's not overridden
+    # demo_config$type = "slider" always wins; otherwise demo_config$type or
+    # the presence of options decides when input_types gives "text" or nothing.
     if (!is.null(demo_config$type) && demo_config$type == "slider") {
       input_type <- "slider"
     } else if (is.null(input_type) || input_type == "text") {
@@ -1691,8 +1125,26 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
   if (!is.null(page$item_indices)) {
     # Check if item_indices is a function (for dynamic selection)
     if (is.function(page$item_indices)) {
-      computed_indices <- page$item_indices(rv, item_bank, config)
-      if (!is.null(computed_indices) && length(computed_indices) > 0) {
+      # The function runs once per participant and page. Its result is cached so
+      # that a random draw (for example a booklet in a planned missingness
+      # design) stays the same on re-render and is used when responses are
+      # validated and collected.
+      page_id <- page$id %||% paste0("page_", rv$current_page %||% 1)
+      if (is.null(session$userData$page_selected_items)) {
+        session$userData$page_selected_items <- list()
+      }
+      computed_indices <- session$userData$page_selected_items[[page_id]]
+      if (is.null(computed_indices)) {
+        computed_indices <- page$item_indices(rv, item_bank, config)
+        computed_indices <- as.integer(computed_indices)
+        computed_indices <- computed_indices[!is.na(computed_indices) &
+                                             computed_indices >= 1 &
+                                             computed_indices <= nrow(item_bank)]
+        session$userData$page_selected_items[[page_id]] <- computed_indices
+        session$userData$administered <- union(session$userData$administered %||% integer(0),
+                                               computed_indices)
+      }
+      if (length(computed_indices) > 0) {
         page_items <- item_bank[computed_indices, , drop = FALSE]
       } else {
         # Fallback: no items available
@@ -1706,14 +1158,14 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
         if (!is.null(selected_item) && selected_item > 0 && selected_item <= nrow(item_bank)) {
           page_items <- item_bank[selected_item, , drop = FALSE]
           
-          # CRITICAL: Cache selected item for response collection using session$userData (non-reactive)
-          # This ensures adaptive responses can be properly saved to rv$responses[selected_item]
+          # Cache the selected item in session$userData (non-reactive) so that the
+          # response can be stored under rv$responses[selected_item]
           page_id <- page$id %||% paste0("page_", rv$current_page %||% 1)
           if (is.null(session$userData$page_selected_items)) {
             session$userData$page_selected_items <- list()
           }
           session$userData$page_selected_items[[page_id]] <- selected_item
-          cat("ADAPTIVE: Cached", page_id, "->", selected_item, "for response collection\n")
+          .inrep_debug_cat("ADAPTIVE: Cached", page_id, "->", selected_item, "for response collection\n")
           
           # Update rv$administered using isolate() to prevent re-render but track selection
           shiny::isolate({
@@ -1739,7 +1191,7 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
             session$userData$page_selected_items <- list()
           }
           session$userData$page_selected_items[[page_id]] <- selected_item
-          cat("ADAPTIVE FALLBACK: Cached", page_id, "->", selected_item, "for response collection\n")
+          .inrep_debug_cat("ADAPTIVE FALLBACK: Cached", page_id, "->", selected_item, "for response collection\n")
           
           # Update rv$administered using isolate() to prevent re-render
           shiny::isolate({
@@ -1780,19 +1232,19 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
         page_items <- item_bank[integer(0), , drop = FALSE]
       }
     } else {
-      # First time rendering this page - select item ONCE
-      # CRITICAL FIX: Check for custom_item_selection function first (for HilFo study)
+      # First render of this page: select one item. A study-supplied
+      # config$custom_item_selection takes precedence over select_next_item().
       selected_item <- NULL
 
       custom_selector <- config$custom_item_selection %||% NULL
       if (is.function(custom_selector)) {
         # Use config-provided custom item selection function
-        cat("ADAPTIVE: Using config$custom_item_selection for page", page_id, "\n")
+        .inrep_debug_cat("ADAPTIVE: Using config$custom_item_selection for page", page_id, "\n")
         tryCatch({
           selected_item <- custom_selector(rv, item_bank, config, session)
-          cat("ADAPTIVE: custom selection returned item:", selected_item, "\n")
+          .inrep_debug_cat("ADAPTIVE: custom selection returned item:", selected_item, "\n")
         }, error = function(e) {
-          cat("ERROR: custom item selection failed:", e$message, "\n")
+          message("Custom item selection failed: ", e$message)
           selected_item <- NULL
         })
       } else if (exists("select_next_item", mode = "function")) {
@@ -1801,22 +1253,21 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
       }
       
       if (!is.null(selected_item) && selected_item > 0 && selected_item <= nrow(item_bank)) {
-        # CRITICAL FIX: Use session$userData for ALL adaptive state (100% non-reactive)
         if (is.null(session$userData$page_selected_items)) {
           session$userData$page_selected_items <- list()
         }
         session$userData$page_selected_items[[page_id]] <- selected_item
-        cat("ADAPTIVE: Cached item", selected_item, "for page", page_id, "\n")
+        .inrep_debug_cat("ADAPTIVE: Cached item", selected_item, "for page", page_id, "\n")
         
-        # CRITICAL: Track administered items in session$userData ONLY (not rv)
-        # Updating rv$administered triggers re-renders even with isolate()!
-        # custom_item_selection will read from session$userData$administered instead
+        # Administered items are tracked in session$userData, not rv: writing
+        # rv$administered here re-triggers rendering. custom_item_selection
+        # reads session$userData$administered.
         if (is.null(session$userData$administered)) {
           session$userData$administered <- integer(0)
         }
         if (!selected_item %in% session$userData$administered) {
           session$userData$administered <- c(session$userData$administered, selected_item)
-          cat("ADAPTIVE: Updated session$userData$administered (non-reactive) ->", paste(session$userData$administered, collapse=", "), "\n")
+          .inrep_debug_cat("ADAPTIVE: Updated session$userData$administered ->", paste(session$userData$administered, collapse=", "), "\n")
         }
         
         page_items <- item_bank[selected_item, , drop = FALSE]
@@ -1834,9 +1285,7 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
   
   page_id <- page$id %||% paste0("page_", rv$current_page %||% 1)
 
-  # Create item UI elements
-  # CRITICAL FIX: For adaptive items, we need to preserve the actual item bank row number
-  # Get the actual row indices from the item_bank to ensure proper ID mapping
+  # Input ids use the item bank row number, not the position on the page
   actual_row_indices <- if (!is.null(rownames(page_items)) && all(grepl("^[0-9]+$", rownames(page_items)))) {
     as.integer(rownames(page_items))
   } else {
@@ -1848,16 +1297,18 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
     }
   }
   
+  # Items in the order shown, for the participant data file (save_data)
+  session$userData$items_shown <- union(session$userData$items_shown %||% integer(0),
+                                        actual_row_indices[!is.na(actual_row_indices)])
+
   item_elements <- lapply(seq_len(nrow(page_items)), function(i) {
     item <- page_items[i, ]
-    actual_idx <- actual_row_indices[i]  # Use actual item bank index, not loop index
-    
-    # CRITICAL: Use item$id if available, otherwise use actual item bank row number
+    actual_idx <- actual_row_indices[i]
     item_id <- item$id %||% paste0("item_", actual_idx)
     input_id <- .inrep_make_page_item_input_id(page_id, item_id)
     response_key <- .inrep_make_page_item_response_key(page_id, item_id)
     
-    cat("UI DEBUG: Creating input element - loop i:", i, "actual_idx:", actual_idx, "item$id:", item$id, "final item_id:", item_id, "input_id:", input_id, "\n")
+    .inrep_debug_cat("UI DEBUG: Creating input element - loop i:", i, "actual_idx:", actual_idx, "item$id:", item$id, "final item_id:", item_id, "input_id:", input_id, "\n")
     
     # Get question text based on language
     question_text <- if (current_lang == "en" && !is.null(item$Question_EN)) {
@@ -1875,6 +1326,25 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
     
     # Get response labels based on scale type and language
     labels <- get_response_labels(page$scale_type %||% "likert", choices, current_lang)
+
+    # Multiple-choice items: the texts in Option1, Option2, ... (Option1_EN, ...
+    # in English) are shown, and the position of the chosen option (1, 2, ...)
+    # is stored. Scoring against Answer is left to the analysis or the
+    # results_processor.
+    if (identical(page$scale_type, "options")) {
+      opt_cols <- grep("^Option[0-9]+$", names(item), value = TRUE)
+      opt_cols <- opt_cols[order(as.integer(sub("Option", "", opt_cols)))]
+      opt_text <- vapply(opt_cols, function(col) {
+        en <- paste0(col, "_EN")
+        val <- if (current_lang == "en" && en %in% names(item) && !is.na(item[[en]])) item[[en]] else item[[col]]
+        if (is.null(val) || is.na(val)) "" else as.character(val)
+      }, character(1))
+      opt_text <- opt_text[nzchar(opt_text)]
+      if (length(opt_text) > 0) {
+        choices <- seq_along(opt_text)
+        labels <- unname(opt_text)
+      }
+    }
     
     # Determine per-item layout (overrides global config)
     item_layout <- tryCatch({
@@ -1951,26 +1421,17 @@ convert_markdown_to_html <- function(text) {
 
 #' @noRd
 render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
-  # Special handling for filter page
-  if (page$id == "page3" || page$title == "Filter") {
-    # Load validation module if needed for filter functionality
-    if (!exists("create_filter_page")) {
-      validation_file <- system.file("R", "custom_page_flow_validation.R", package = "inrep")
-      if (file.exists(validation_file)) {
-        source(validation_file)
-      }
-    }
-    
-    if (exists("create_filter_page") && !is.null(input)) {
+  # A page with id "page3" or title "Filter" is rendered by create_filter_page(),
+  # which holds content written for one specific study (see its documentation).
+  if (identical(page$id, "page3") || identical(page$title, "Filter")) {
+    if (!is.null(input)) {
       current_lang <- rv$language %||% config$language %||% "de"
       return(create_filter_page(input, config, current_lang))
     }
   }
   
-  # GENERIC approach: Check if page has a render_function that handles language
   if (!is.null(page$render_function) && is.function(page$render_function)) {
-    # Pass rv (which contains language) to the render function
-    # The study-specific render function should handle language switching
+    # The render function receives rv and is responsible for language switching
     tryCatch({
       page$render_function(input, NULL, NULL, rv)
     }, error = function(e) {
@@ -1986,7 +1447,6 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
       )
     })
   } else if (!is.null(page$content_en) && !is.null(rv$language) && rv$language == "en") {
-    # GENERIC: If page provides content_en and we're in English mode, use it
     shiny::div(
       class = "assessment-card",
       style = "margin: 0 auto !important; position: relative !important; left: auto !important; right: auto !important;",
@@ -2032,8 +1492,8 @@ render_custom_page <- function(page, config, rv, ui_labels, input = NULL) {
 
 #' @noRd
 render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_close_time = 300, auto_close_time_unit = "seconds", disable_auto_close = FALSE, session = NULL, current_page_idx = NULL, total_pages = NULL, is_final_results_page = TRUE) {
-  # GENERIC DEBUG HANDLER: Check for show_personal_results preference
-  # This applies to ALL studies, not just specific ones
+  # If the participant answered "no" to a demographic named
+  # show_personal_results, show a thank-you page instead of the report.
   show_pref <- NULL
   try({
     # Debug: Print all available data
@@ -2065,7 +1525,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
         # re-ran the upload on every re-render).
         if (!isTRUE(shiny::isolate(rv$no_results_side_effects_done))) shiny::isolate({
           rv$no_results_side_effects_done <- TRUE
-          # CRITICAL: ALWAYS save/send data even when user doesn't want to see results
+          # Data are still saved and uploaded when no report is shown
           .inrep_debug_message("DEBUG: Ensuring data is saved/sent before showing thank you message")
         
           # Ensure cat_result is set if not already set
@@ -2090,12 +1550,9 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
             })
           }
         
-          # CRITICAL: Call results processor even when user selects NO
-          # This ensures data is processed and uploaded to cloud (works for ANY study with results_processor)
-          # The results processor will generate CSV/report and upload it, we just won't show the HTML
-          # This is GENERIC - works for any study, not just HilFo
-          # CRITICAL: Use caching to prevent running twice (Shiny may re-render the page)
-          # Check if upload already done by completion handler (e.g., HilFo page14a)
+          # The results processor is still called for its side effects (CSV
+          # creation, upload); its HTML is discarded. Skip it if a completion
+          # handler already uploaded the data.
           csv_upload_succeeded <- isTRUE(rv$csv_uploaded) || isTRUE(rv$data_uploaded_to_cloud)
           if (csv_upload_succeeded) {
             .inrep_debug_message("DEBUG: CSV/data upload already completed by completion handler - skipping results processor")
@@ -2113,7 +1570,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
                 # Sort by modification time, get most recent
                 csv_files_info <- file.info(csv_files)
                 most_recent <- rownames(csv_files_info)[which.max(csv_files_info$mtime)]
-                # CRITICAL FIX: Increase to 150 seconds to prevent JSON fallback during slow CSV upload
+                # A results CSV written in the last 150 s is taken as evidence of a successful upload
                 file_age <- as.numeric(Sys.time() - csv_files_info[most_recent, "mtime"], units = "secs")
                 if (file_age < 150 && file_age >= 0) {
                   csv_upload_succeeded <- TRUE
@@ -2135,11 +1592,9 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
                   rv$responses
                 }
               
-                # CRITICAL FIX: Pass REAL session object (not mock) so userData changes persist!
-                # This allows results_processor to store CSV data that download buttons can access
-                # Call results processor - it will process data and upload, but we ignore the HTML return
-                # This is GENERIC - works for any study's results processor
-                # ROBUST: Build named argument list based on what the processor accepts
+                # Pass the real session so that userData written by the processor
+                # (e.g. CSV data for download buttons) persists. Only arguments the
+                # processor declares are passed.
                 rp_call_args2 <- list(responses = responses_to_use, item_bank = item_bank)
                 if ("demographics" %in% processor_args) rp_call_args2$demographics <- rv$demo_data
                 if ("session"      %in% processor_args) rp_call_args2$session      <- session
@@ -2148,17 +1603,13 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
                 if ("config"       %in% processor_args) rp_call_args2$config       <- config
                 do.call(config$results_processor, rp_call_args2)
               
-                # Check if CSV upload succeeded by looking for recently created CSV files
-                # (R passes lists by value, so mock_session$userData changes won't be visible)
-                # Look for CSV files with generic results pattern (works for any study)
-                # Pattern matches: study_results_*.csv, hilfo_results_*.csv, etc.
+                # Upload success is inferred from a recently written *_results_*.csv
+                # in the working directory.
                 csv_files <- list.files(pattern = ".*_results_.*\\.csv$", full.names = FALSE)
                 if (length(csv_files) > 0) {
                   csv_files_info <- file.info(csv_files)
                   most_recent <- rownames(csv_files_info)[which.max(csv_files_info$mtime)]
-                  # CRITICAL FIX: Increase time window to 150 seconds to account for slow WebDAV uploads
-                  # Previously 5 seconds caused JSON fallback to trigger while CSV upload was still in progress,
-                  # resulting in simultaneous uploads competing for bandwidth
+                  # 150 s window, so that a slow WebDAV upload is not followed by a JSON upload
                   file_age <- as.numeric(Sys.time() - csv_files_info[most_recent, "mtime"], units = "secs")
                   if (file_age < 150 && file_age >= 0) {
                     csv_upload_succeeded <- TRUE
@@ -2168,33 +1619,27 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
               
                 .inrep_debug_message("DEBUG: Results processor called successfully - data processing and upload should have completed")
               }, error = function(e) {
-                message("CRITICAL ERROR: Results processor failed when user selected NO: ", e$message)
-                message("This means data processing/upload may have failed - data preserved locally but may not be in cloud!")
+                message("Results processor failed (no report requested): ", e$message)
+                message("Data processing or upload may not have completed.")
               })
             }
           }
         
-          # Fallback: Save to cloud via save_session_to_cloud if results processor didn't handle it
-          # (This is for studies where results processor doesn't handle cloud upload)
-          # GENERIC solution - works for any study
-          # Note: If results processor already handled upload (e.g., CSV upload), this is just a backup
+          # Fallback: JSON upload via save_session_to_cloud() when no CSV upload was detected
           if (config$session_save) {
             tryCatch({
               # Get webdav_url and password from rv (stored there by launch_study)
               webdav_url_to_use <- rv$webdav_url %||% config$webdav_url
               webdav_password_to_use <- rv$webdav_password %||% config$webdav_password
               webdav_share_token_to_use <- rv$webdav_share_token %||% config$webdav_share_token
+              webdav_user_to_use <- rv$webdav_user %||% config$webdav_user
             
-              # Check if CSV upload already succeeded (from results processor OR completion handler)
-              # csv_upload_succeeded is set in the tryCatch block above if results processor stored CSV info
-              # Also check rv$csv_uploaded flag (set by completion handlers like HilFo page14a)
               upload_already_done <- csv_upload_succeeded || isTRUE(rv$csv_uploaded) || isTRUE(rv$data_uploaded_to_cloud)
             
-              # Only call JSON fallback if CSV upload didn't happen
-              # This prevents duplicate uploads and authentication errors
               if (!upload_already_done) {
                 .inrep_debug_message("DEBUG: Attempting JSON fallback cloud save (CSV upload not detected)")
-                result <- save_session_to_cloud(rv, config, webdav_url_to_use, webdav_password_to_use, session = session, share_token = webdav_share_token_to_use)
+                result <- save_session_to_cloud(rv, config, webdav_url_to_use, webdav_password_to_use, session = session,
+                                                share_token = webdav_share_token_to_use, user = webdav_user_to_use)
                 if (result) {
                   .inrep_debug_message("DEBUG: Fallback cloud save (JSON) succeeded when user selected NO")
                 } else {
@@ -2204,7 +1649,6 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
                 .inrep_debug_message("DEBUG: Skipping JSON fallback - CSV/data upload already completed")
               }
             }, error = function(e) {
-              # Non-critical error - CSV upload already succeeded, so this is just a backup
               .inrep_debug_message("DEBUG: Fallback cloud save (JSON) failed (non-critical): ", e$message)
               .inrep_debug_message("DEBUG: This is OK if CSV upload already succeeded")
             })
@@ -2261,7 +1705,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
     }
   }, silent = TRUE)
 
-  # ── show_scale_scores = FALSE ─────────────────────────────────────────────
+  # show_scale_scores = FALSE
   # When reporting is switched off, the results page acts as a pure offboarding
   # (thank-you) page.  The results_processor is still called for data-upload
   # side effects on the FINAL results page; its HTML output is discarded.
@@ -2296,7 +1740,6 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
     )
     return(shiny::div(class = "assessment-card results-container", shiny::HTML(html_ob)))
   }
-  # ─────────────────────────────────────────────────────────────────────────
 
   # Page-level override is allowed (e.g., multi-part results)
   results_processor <- .inrep_resolve_results_processor(page, config)
@@ -2340,11 +1783,9 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
         })
       }
       
-      # Wrap results processor in tryCatch to ALWAYS preserve data on error
       results_content <- tryCatch({
-        # ROBUST: Build a named argument list based on what the processor accepts.
-        # This ensures rv, input und other params are passed when the processor
-        # defines them, without breaking processors that only accept (responses, item_bank).
+        # Only arguments the processor declares are passed, so processors with
+        # the signature (responses, item_bank) keep working.
         rp_call_args <- list(responses = rv$cat_result$responses, item_bank = item_bank)
         if ("demographics" %in% processor_args) rp_call_args$demographics <- rv$demo_data
         if ("session"      %in% processor_args) rp_call_args$session      <- processor_session
@@ -2354,9 +1795,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
         if ("config"       %in% processor_args) rp_call_args$config       <- config
         do.call(results_processor, rp_call_args)
       }, error = function(e) {
-        # CRITICAL: ALWAYS preserve data on error BEFORE returning error message
-        message("CRITICAL ERROR in results processor: ", e$message)
-        message("ALWAYS preserving data before returning error...")
+        message("Error in results processor: ", e$message)
         if (allow_side_effects && exists("preserve_session_data", mode = "function")) {
           tryCatch({
             preserve_session_data(force = TRUE)
@@ -2369,14 +1808,13 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
         shiny::HTML(paste0(
           '<div style="padding: 20px; color: red;">',
           '<h2>Error generating report</h2>',
-          '<p>An error occurred while generating your results, but your data has been saved.</p>',
+          '<p>An error occurred while generating your results.</p>',
           '<p>Error: ', gsub("'", "&apos;", e$message), '</p>',
           '</div>'
         ))
       })
     } else {
-      # ROBUST: Ensure all responses are collected before processing
-      # Don't remove NA values - they might be valid missing responses
+      # NA values are kept: they mark items that were not answered
       all_responses <- rv$responses
       
       # Log response collection status
@@ -2406,9 +1844,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
           })
         }
         
-        # Wrap results processor in tryCatch to ALWAYS preserve data on error
         results_content <- tryCatch({
-          # ROBUST: Build named argument list based on what the processor accepts
           rp_call_args3 <- list(responses = all_responses, item_bank = item_bank)
           if ("demographics" %in% processor_args) rp_call_args3$demographics <- rv$demo_data
           if ("session"      %in% processor_args) rp_call_args3$session      <- processor_session
@@ -2418,9 +1854,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
           if ("config"       %in% processor_args) rp_call_args3$config       <- config
           do.call(results_processor, rp_call_args3)
         }, error = function(e) {
-          # CRITICAL: ALWAYS preserve data on error BEFORE returning error message
-          message("CRITICAL ERROR in results processor: ", e$message)
-          message("ALWAYS preserving data before returning error...")
+          message("Error in results processor: ", e$message)
           if (allow_side_effects && exists("preserve_session_data", mode = "function")) {
             tryCatch({
               preserve_session_data(force = TRUE)
@@ -2433,7 +1867,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
           shiny::HTML(paste0(
             '<div style="padding: 20px; color: red;">',
             '<h2>Error generating report</h2>',
-            '<p>An error occurred while generating your results, but your data has been saved.</p>',
+            '<p>An error occurred while generating your results.</p>',
             '<p>Error: ', gsub("'", "&apos;", e$message), '</p>',
             '</div>'
           ))
@@ -2538,7 +1972,7 @@ render_page_navigation <- function(rv, config, current_page_idx) {
   current_lang <- rv$language %||% config$language %||% "de"
   labels <- get_language_labels(current_lang)
   
-  # Navigation button text — all from LANGUAGE_DICTIONARY
+  # Navigation button texts come from LANGUAGE_DICTIONARY
   back_text   <- labels$back_button
   next_text   <- labels$continue_button
   submit_text <- labels$complete_button
@@ -3130,8 +2564,8 @@ create_demographic_input <- function(input_id,
     
     "checkbox" = {
       if (length(demo_config$options) == 1) {
-        # Single checkbox - extract label with maximum safety
-        label_text <- "Please confirm"  # Absolute fallback
+        # Single checkbox: label from the option name, else the option value
+        label_text <- "Please confirm"
         
         # Try to get label from names
         tryCatch({
@@ -3169,7 +2603,6 @@ create_demographic_input <- function(input_id,
           checkbox_value <- FALSE
         })
         
-        # Final safety check before creating checkbox
         final_label <- tryCatch({
           if (is.null(label_text) || is.na(label_text) || !is.character(label_text) || nchar(label_text) == 0) {
             "Please confirm"
@@ -3186,7 +2619,6 @@ create_demographic_input <- function(input_id,
           }
         }, error = function(e) FALSE)
         
-        # Create checkbox with non-NA parameters
         shiny::checkboxInput(
           inputId = input_id,
           label = final_label,
@@ -3317,10 +2749,10 @@ generate_likert_labels <- function(n_choices, language = "de") {
         c("Stimme \u00FCberhaupt nicht zu", "Stimme nicht zu", "Stimme eher nicht zu", 
           "Weder noch", "Stimme eher zu", "Stimme zu", "Stimme voll und ganz zu")
       } else if (n_choices == 10) {
-        c("1 - Stimme \u00FCberhaupt nicht zu", "2", "3", "4", "5 - Neutral", 
+        c("1 - Stimme \u00FCberhaupt nicht zu", "2", "3", "4", "5",
           "6", "7", "8", "9", "10 - Stimme voll und ganz zu")
       } else if (n_choices == 20) {
-        c("1 - Stimme \u00FCberhaupt nicht zu", "2", "3", "4", "5", "6", "7", "8", "9", "10 - Neutral",
+        c("1 - Stimme \u00FCberhaupt nicht zu", "2", "3", "4", "5", "6", "7", "8", "9", "10",
           "11", "12", "13", "14", "15", "16", "17", "18", "19", "20 - Stimme voll und ganz zu")
       } else {
         # Generic labels for any number of choices
@@ -3357,10 +2789,10 @@ generate_likert_labels <- function(n_choices, language = "de") {
         c("Strongly Disagree", "Disagree", "Somewhat Disagree", 
           "Neither Agree nor Disagree", "Somewhat Agree", "Agree", "Strongly Agree")
       } else if (n_choices == 10) {
-        c("1 - Strongly Disagree", "2", "3", "4", "5 - Neutral", 
+        c("1 - Strongly Disagree", "2", "3", "4", "5",
           "6", "7", "8", "9", "10 - Strongly Agree")
       } else if (n_choices == 20) {
-        c("1 - Strongly Disagree", "2", "3", "4", "5", "6", "7", "8", "9", "10 - Neutral",
+        c("1 - Strongly Disagree", "2", "3", "4", "5", "6", "7", "8", "9", "10",
           "11", "12", "13", "14", "15", "16", "17", "18", "19", "20 - Strongly Agree")
       } else {
         # Generic labels for any number of choices
@@ -3386,6 +2818,18 @@ generate_likert_labels <- function(n_choices, language = "de") {
   )
 }
 
+# Positions of a five-label set to use for a scale with fewer points, so that
+# both end labels are kept (e.g. 3 points -> labels 1, 3, 5).
+.inrep_five_point_subset <- function(n_choices) {
+  switch(as.character(n_choices),
+    "1" = 3L,
+    "2" = c(1L, 5L),
+    "3" = c(1L, 3L, 5L),
+    "4" = c(1L, 2L, 4L, 5L),
+    seq_len(5L)
+  )
+}
+
 #' Generate difficulty scale labels for any number of points
 #' 
 #' @param n_choices Number of response options
@@ -3396,7 +2840,7 @@ generate_difficulty_labels <- function(n_choices, language = "de") {
   switch(language,
     "de" = {
       if (n_choices <= 5) {
-        c("sehr schwer", "eher schwer", "teils-teils", "eher leicht", "sehr leicht")[1:n_choices]
+        c("sehr schwer", "eher schwer", "teils-teils", "eher leicht", "sehr leicht")[.inrep_five_point_subset(n_choices)]
       } else {
         # Generic labels for more choices
         labels <- paste0(1:n_choices)
@@ -3411,7 +2855,7 @@ generate_difficulty_labels <- function(n_choices, language = "de") {
     },
     "en" = {
       if (n_choices <= 5) {
-        c("Very Difficult", "Difficult", "Neutral", "Easy", "Very Easy")[1:n_choices]
+        c("Very Difficult", "Difficult", "Neutral", "Easy", "Very Easy")[.inrep_five_point_subset(n_choices)]
       } else {
         # Generic labels for more choices
         labels <- paste0(1:n_choices)
@@ -3439,7 +2883,7 @@ generate_frequency_labels <- function(n_choices, language = "de") {
   switch(language,
     "de" = {
       if (n_choices <= 5) {
-        c("Nie", "Selten", "Manchmal", "Oft", "Immer")[1:n_choices]
+        c("Nie", "Selten", "Manchmal", "Oft", "Immer")[.inrep_five_point_subset(n_choices)]
       } else {
         # Generic labels for more choices
         labels <- paste0(1:n_choices)
@@ -3450,7 +2894,7 @@ generate_frequency_labels <- function(n_choices, language = "de") {
     },
     "en" = {
       if (n_choices <= 5) {
-        c("Never", "Rarely", "Sometimes", "Often", "Always")[1:n_choices]
+        c("Never", "Rarely", "Sometimes", "Often", "Always")[.inrep_five_point_subset(n_choices)]
       } else {
         # Generic labels for more choices
         labels <- paste0(1:n_choices)
@@ -3522,9 +2966,7 @@ update_item_bank_scale <- function(item_bank, n_points, start_value = 1) {
   return(item_bank)
 }
 
-# ============================================================================
-# SECTION 4: FLOW VALIDATION (from custom_page_flow_validation.R)
-# ============================================================================
+# Page validation ----
 
 #' Validate a Page Before Navigation
 #'
@@ -3548,7 +2990,6 @@ validate_page_progression <- function(current_page, input, config) {
   # Get current language from config (passed from launch_study)
   current_lang <- config$current_language %||% config$language %||% "de"
   
-  # DEFENSIVE: Ensure page$type is a valid string
   page_type <- page$type
   if (is.null(page_type) || length(page_type) == 0 || is.na(page_type)) {
     page_type <- "custom"  # Default to custom page type
@@ -3559,11 +3000,10 @@ validate_page_progression <- function(current_page, input, config) {
     # Check consent checkbox - ensure single logical result
     consent_checked <- isTRUE(input$consent_checkbox)
     if (!consent_checked) {
-      # CRITICAL: Use language-aware consent message
       consent_msg <- if (current_lang == "en") {
         "Please confirm your consent to participate."
       } else {
-        "Bitte best\u00E4tigen Sie Ihre Einverst\u00E4ndnis zur Teilnahme."
+        "Bitte best\u00E4tigen Sie Ihr Einverst\u00E4ndnis zur Teilnahme."
       }
       errors <- c(errors, consent_msg)
     }
@@ -3571,8 +3011,7 @@ validate_page_progression <- function(current_page, input, config) {
     # Check all required demographics
     demo_vars <- page$demographics
     if (!is.null(demo_vars) && length(demo_vars) > 0) {
-      # MAINTENANCE NOTE: Keep this one generic message, same as the "items"
-      # branch above - repeating each field's full question text back in the
+      # One page-level message, as in the "items" branch below: repeating each field's full question text back in the
       # error list reads as redundant (the question is already right there
       # on the page) and gets unwieldy on pages with long questions/options.
       demo_page_error_added <- FALSE
@@ -3582,7 +3021,7 @@ validate_page_progression <- function(current_page, input, config) {
           input_id <- paste0("demo_", dem)
           value <- input[[input_id]]
 
-          # FIX: Handle vectors (checkboxes) safely - check length first, handle NA properly
+          # value can be a vector (checkbox group)
           is_empty <- is.null(value) || length(value) == 0 ||
                       all(is.na(value)) ||
                       (is.character(value) && all(value == "" | is.na(value))) ||
@@ -3619,7 +3058,8 @@ validate_page_progression <- function(current_page, input, config) {
         # Determine which items to check
         items_to_check <- NULL
         
-        if (!is.null(page$item_indices)) {
+        if (!is.null(page$item_indices) && !is.function(page$item_indices) &&
+            !identical(page$item_indices, "adaptive")) {
           # Fixed items page
           items_to_check <- page$item_indices
         } else {
@@ -3632,32 +3072,28 @@ validate_page_progression <- function(current_page, input, config) {
             if (!is.null(session$userData$page_selected_items) && 
                 !is.null(session$userData$page_selected_items[[page_id]])) {
               items_to_check <- session$userData$page_selected_items[[page_id]]
-              cat("VALIDATION: Adaptive page", page_id, "- checking item", items_to_check, "\n")
+              .inrep_debug_cat("VALIDATION: Adaptive page", page_id, "- checking item", items_to_check, "\n")
             }
           }
         }
         
-        # MAINTENANCE NOTE (2026-05-03): Keep item-page errors de-duplicated.
-        # The UI should show one page-level message ("answer all questions")
-        # while still collecting ALL missing_fields for per-input highlighting.
-        # Re-adding per-item identical messages causes repeated bullet lines and
-        # confusing validation output.
-        # Validate selected items have responses
+        # One page-level message; every missing input is still listed in
+        # missing_fields so that the UI can highlight it.
         if (!is.null(items_to_check) && length(items_to_check) > 0) {
           item_page_error_added <- FALSE
           page_id <- page$id %||% paste0("page_", current_page)
           for (i in items_to_check) {
-            # DEFENSIVE: Skip invalid indices
+            # Skip invalid indices
             if (is.na(i) || i < 1 || i > nrow(item_bank)) {
               next
             }
             
-            # MUST match UI rendering logic at line 1747: item_id <- item$id %||% paste0("item_", actual_idx)
+            # Must match render_items_page(): item_id <- item$id %||% paste0("item_", actual_idx)
             item <- item_bank[i, , drop = FALSE]
             item_id <- if(!is.null(item$id) && length(item$id) > 0 && !is.na(item$id[1])) item$id[1] else paste0("item_", i)
             input_id <- .inrep_make_page_item_input_id(page_id, item_id)
             
-            # DEFENSIVE: Check for null, empty, or NA values safely
+            # Missing: NULL, empty, NA or ""
             item_value <- input[[input_id]]
             is_missing <- is.null(item_value) || 
                           length(item_value) == 0 || 
@@ -3687,7 +3123,7 @@ validate_page_progression <- function(current_page, input, config) {
     if (!is.null(page$required_fields) && length(page$required_fields) > 0) {
       for (field in page$required_fields) {
         value <- input[[field]]
-        # DEFENSIVE: Safely check for empty values
+        # Empty: NULL, length 0, NA or blank text
         is_empty <- is.null(value) || length(value) == 0 || 
                     (length(value) == 1 && (is.na(value[1]) || (is.character(value) && nchar(trimws(value)) == 0)))
         if (isTRUE(is_empty)) {
@@ -3721,7 +3157,11 @@ validate_page_progression <- function(current_page, input, config) {
 
 #' Create Filter Page
 #'
-#' Builds a study-specific filter page used in some custom page flows.
+#' Builds the filter page of one specific study (psychology students,
+#' Bachelor or Master). The German text is hard-coded and the page reads
+#' \code{input$demo_Studiengang} (\code{"1"} = Bachelor, anything else =
+#' Master). \code{render_custom_page()} uses it for any custom page whose
+#' \code{id} is \code{"page3"} or whose \code{title} is \code{"Filter"}.
 #'
 #' @param input Shiny \code{input} object.
 #' @param config Study configuration (used for language and flow context).
