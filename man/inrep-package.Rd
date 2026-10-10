@@ -67,10 +67,6 @@ Built-in example item banks:
   \item \code{cognitive_items}: 50 cognitive items with simulated difficulty and
     discrimination values (columns \code{content}, \code{difficulty}, \code{discrimination},
     not in the format \code{launch_study()} expects)
-  \item \code{rcq_old_items}: RCQ resilience and coping items (30 items, original version)
-  \item \code{rcqL_old_items}: RCQL long-form resilience and coping items (68 items)
-  \item \code{rcq_items}: Copy of rcq_old_items for user customization
-  \item \code{rcqL_items}: Copy of rcqL_old_items for user customization
 }
 }
 

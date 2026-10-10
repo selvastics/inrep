@@ -355,10 +355,6 @@ generate_complete_script <- function(user_code, auto_run, console_ready = FALSE,
 # data(bfi_items)  # Load Big Five Inventory items
 # data(cognitive_items)  # Load cognitive assessment items
 # data(math_items)  # Load mathematics assessment items
-# data(rcq_old_items)  # Load RCQ resilience and coping items (30 items)
-# data(rcqL_old_items)  # Load RCQL long-form resilience items (68 items)
-# data(rcq_items)  # Load customizable RCQ items (copy of rcq_old_items)
-# data(rcqL_items)  # Load customizable RCQL items (copy of rcqL_old_items)
 
 # Note: Built-in datasets should be loaded with data() function
 

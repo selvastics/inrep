@@ -2,8 +2,6 @@
 #'
 #' Creates a configuration object for adaptive (or fixed-form) assessment studies.
 #' The configuration controls assessment workflow, session handling, and reporting.
-#' inrep does not calibrate items. In adaptive mode it uses the item parameters in
-#' the item bank as fixed and known (see Details).
 #'
 #' @param name Character string specifying the study name for identification and reporting.
 #' @param demographics Character vector of demographic field names to collect, 
@@ -44,8 +42,9 @@
 #' @param model Character string naming the IRT model of the item parameters in
 #'   the item bank. Options: \code{"1PL"}, \code{"2PL"}, \code{"3PL"}, \code{"GRM"}
 #'   (Samejima's graded response model with thresholds \code{b1}, \code{b2}, ...).
-#'   The parameters must come from a calibration done beforehand, for example with
-#'   TAM or mirt. Note that TAM fits partial credit models, not the GRM.
+#'   The parameters come from a calibration done beforehand, with the software
+#'   the researcher prefers (TAM fits partial credit models, not the GRM; mirt
+#'   fits both).
 #' @param estimation_method Character string, \code{"EAP"} (default) or \code{"WLE"}.
 #'   Kept for compatibility. During administration inrep always computes an EAP
 #'   estimate on \code{theta_grid} with the item parameters held fixed. A WLE or any
@@ -80,7 +79,6 @@
 #' @param item_groups Named list of item index vectors. Used by the
 #'   \code{"WEIGHTED"} criterion and, in non-adaptive mode, to restrict the items
 #'   administered; \code{NULL} for none.
-#' @param custom_ui_pre Stored in the configuration; currently not used by inrep.
 #' @param progress_style Character string specifying progress indicator style.
 #'   Options: \code{"bar"}, \code{"circle"}, \code{"modern-circle"}, \code{"enhanced-bar"}, \code{"segmented"}, \code{"minimal"}, \code{"card"}, \code{"none"} (hidden).
 #' @param response_validation_fun Function to validate participant responses, 
@@ -92,8 +90,9 @@
 #'   matching standard Shiny output. \code{"horizontal"} places all options side by
 #'   side; works well for short labels (e.g. 2-4 options) but can be crowded for
 #'   5+ options with long labels.
-#' @param session_save Logical indicating whether to enable session state persistence
-#'   for interrupted session recovery.
+#' @param session_save Logical. Together with \code{launch_study(session_save = TRUE)},
+#'   the session state is written to \code{study_data/}. inrep cannot currently
+#'   restore an interrupted session from this file.
 #' @param show_session_time Logical indicating whether to display session time remaining
 #'   in the top-right corner. Defaults to FALSE for cleaner interface.
 #' @param theme Character string specifying built-in UI theme. Options: \code{"Light"}, 
@@ -109,9 +108,6 @@
 #'   plain thank-you page: the \code{results_processor} still runs on the final
 #'   results page for its side effects (e.g. uploads), but its report is not shown.
 #' @param max_session_duration Integer maximum session duration in minutes for timeout.
-#' @param max_response_time Stored in the configuration; currently not used by inrep.
-#' @param cache_enabled Stored in the configuration; currently not used by inrep.
-#' @param parallel_computation Stored in the configuration; currently not used by inrep.
 #' @param fast_item_selection Logical. When \code{TRUE} (default), each selection step
 #'   evaluates Fisher information at the current estimate for a random subset of at
 #'   most 15 available items and draws among those within 90\% of the maximum, for
@@ -154,16 +150,6 @@
 #'   Defaults to NULL for standard flow.
 #' @param enable_custom_navigation Logical indicating whether to enable custom page navigation
 #'   for studies requiring specific flow control. Defaults to FALSE for backward compatibility.
-#' @param study_phases Stored in the configuration; currently not used by inrep.
-#' @param page_transitions Stored in the configuration; currently not used by inrep.
-#' @param enable_back_navigation Stored in the configuration; currently not used by inrep.
-#' @param unknown_param_handling Stored in the configuration; currently not used.
-#'   Missing item parameters are always replaced by fixed defaults in
-#'   \code{\link{estimate_ability}} and \code{\link{compute_item_info_single}}.
-#' @param param_initialization_method Stored in the configuration; currently not used.
-#' @param auto_initialize_unknowns Stored in the configuration; currently not used.
-#' @param calibration_mode Stored in the configuration; currently not used. inrep
-#'   does not calibrate items.
 #' @param study_pages Optional list defining an explicit page structure.
 #' @param page_contents Optional list of per-page content definitions.
 #' @param advanced_demographics Optional list providing advanced demographic collection
@@ -354,7 +340,6 @@ create_study_config <- function(
     fixed_items = NULL,
     adaptive = TRUE,
     item_groups = NULL,
-    custom_ui_pre = NULL,
     progress_style = "circle",
     response_validation_fun = NULL,
     response_ui_type = "radio",
@@ -367,9 +352,6 @@ create_study_config <- function(
     report_formats = c("rds", "csv", "json", "pdf"),
     show_scale_scores = TRUE,
     max_session_duration = 60,
-    max_response_time = 300,
-    cache_enabled = TRUE,
-    parallel_computation = TRUE,
     fast_item_selection = TRUE,
     feedback_enabled = FALSE,
     theta_grid = seq(-4, 4, length.out = 100),
@@ -390,16 +372,6 @@ create_study_config <- function(
     custom_study_flow = NULL,
     custom_page_configs = NULL,
     enable_custom_navigation = FALSE,
-    
-    study_phases = c("introduction", "briefing", "consent", "demographics", "survey", "debriefing"),
-    page_transitions = "fade",
-    enable_back_navigation = TRUE,
-    
-    # Unknown parameter support
-    unknown_param_handling = TRUE,
-    param_initialization_method = "smart_defaults",
-    auto_initialize_unknowns = TRUE,
-    calibration_mode = FALSE,
     # Optional customization lists
     study_pages = NULL,
     page_contents = NULL,
@@ -522,9 +494,6 @@ create_study_config <- function(
       validation_errors <- c(validation_errors, "max_session_duration must be a positive number")
     }
     
-    if (!is.numeric(max_response_time) || max_response_time <= 0) {
-      validation_errors <- c(validation_errors, "max_response_time must be a positive number")
-    }
     
     # Check for validation errors
     if (length(validation_errors) > 0) {
@@ -643,7 +612,6 @@ create_study_config <- function(
       fixed_items = fixed_items,
       adaptive = adaptive,
       item_groups = item_groups,
-      custom_ui_pre = custom_ui_pre,
       progress_style = progress_style,
       response_validation_fun = response_validation_fun,
       response_ui_type = response_ui_type,
@@ -656,10 +624,7 @@ create_study_config <- function(
       report_formats = report_formats,
       show_scale_scores = show_scale_scores,
       max_session_duration = max_session_duration,
-      max_response_time = max_response_time,
       fast_item_selection = fast_item_selection,
-      cache_enabled = cache_enabled,
-      parallel_computation = parallel_computation,
       feedback_enabled = feedback_enabled,
       theta_grid = theta_grid,
       
@@ -696,17 +661,7 @@ create_study_config <- function(
       # Custom study flow support for specific studies (e.g., Hildesheim)
       custom_study_flow = custom_study_flow,
       custom_page_configs = custom_page_configs,
-      enable_custom_navigation = enable_custom_navigation,
-      
-      study_phases = study_phases,
-      page_transitions = page_transitions,
-      enable_back_navigation = enable_back_navigation,
-      
-      # Unknown parameter support
-      unknown_param_handling = unknown_param_handling,
-      param_initialization_method = param_initialization_method,
-      auto_initialize_unknowns = auto_initialize_unknowns,
-      calibration_mode = calibration_mode
+      enable_custom_navigation = enable_custom_navigation
     )
     
     # Options such as multidimensional, advanced_selection, quality_monitoring,

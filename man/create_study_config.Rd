@@ -23,7 +23,6 @@ create_study_config(
   fixed_items = NULL,
   adaptive = TRUE,
   item_groups = NULL,
-  custom_ui_pre = NULL,
   progress_style = "circle",
   response_validation_fun = NULL,
   response_ui_type = "radio",
@@ -36,9 +35,6 @@ create_study_config(
   report_formats = c("rds", "csv", "json", "pdf"),
   show_scale_scores = TRUE,
   max_session_duration = 60,
-  max_response_time = 300,
-  cache_enabled = TRUE,
-  parallel_computation = TRUE,
   fast_item_selection = TRUE,
   feedback_enabled = FALSE,
   theta_grid = seq(-4, 4, length.out = 100),
@@ -57,14 +53,6 @@ create_study_config(
   custom_study_flow = NULL,
   custom_page_configs = NULL,
   enable_custom_navigation = FALSE,
-  study_phases = c("introduction", "briefing", "consent", "demographics", "survey",
-    "debriefing"),
-  page_transitions = "fade",
-  enable_back_navigation = TRUE,
-  unknown_param_handling = TRUE,
-  param_initialization_method = "smart_defaults",
-  auto_initialize_unknowns = TRUE,
-  calibration_mode = FALSE,
   study_pages = NULL,
   page_contents = NULL,
   advanced_demographics = NULL,
@@ -129,8 +117,9 @@ full item bank size. Prevents excessive test length.}
 \item{model}{Character string naming the IRT model of the item parameters in
 the item bank. Options: \code{"1PL"}, \code{"2PL"}, \code{"3PL"}, \code{"GRM"}
 (Samejima's graded response model with thresholds \code{b1}, \code{b2}, ...).
-The parameters must come from a calibration done beforehand, for example with
-TAM or mirt. Note that TAM fits partial credit models, not the GRM.}
+The parameters come from a calibration done beforehand, with the software
+the researcher prefers (TAM fits partial credit models, not the GRM; mirt
+fits both).}
 
 \item{estimation_method}{Character string, \code{"EAP"} (default) or \code{"WLE"}.
 Kept for compatibility. During administration inrep always computes an EAP
@@ -176,8 +165,6 @@ Note: When \code{adaptive = FALSE}, the assessment simply presents items 1 throu
 \code{"WEIGHTED"} criterion and, in non-adaptive mode, to restrict the items
 administered; \code{NULL} for none.}
 
-\item{custom_ui_pre}{Stored in the configuration; currently not used by inrep.}
-
 \item{progress_style}{Character string specifying progress indicator style.
 Options: \code{"bar"}, \code{"circle"}, \code{"modern-circle"}, \code{"enhanced-bar"}, \code{"segmented"}, \code{"minimal"}, \code{"card"}, \code{"none"} (hidden).}
 
@@ -193,8 +180,9 @@ matching standard Shiny output. \code{"horizontal"} places all options side by
 side; works well for short labels (e.g. 2-4 options) but can be crowded for
 5+ options with long labels.}
 
-\item{session_save}{Logical indicating whether to enable session state persistence
-for interrupted session recovery.}
+\item{session_save}{Logical. Together with \code{launch_study(session_save = TRUE)},
+the session state is written to \code{study_data/}. inrep cannot currently
+restore an interrupted session from this file.}
 
 \item{show_session_time}{Logical indicating whether to display session time remaining
 in the top-right corner. Defaults to FALSE for cleaner interface.}
@@ -217,12 +205,6 @@ plain thank-you page: the \code{results_processor} still runs on the final
 results page for its side effects (e.g. uploads), but its report is not shown.}
 
 \item{max_session_duration}{Integer maximum session duration in minutes for timeout.}
-
-\item{max_response_time}{Stored in the configuration; currently not used by inrep.}
-
-\item{cache_enabled}{Stored in the configuration; currently not used by inrep.}
-
-\item{parallel_computation}{Stored in the configuration; currently not used by inrep.}
 
 \item{fast_item_selection}{Logical. When \code{TRUE} (default), each selection step
 evaluates Fisher information at the current estimate for a random subset of at
@@ -284,23 +266,6 @@ Defaults to NULL for standard flow.}
 \item{enable_custom_navigation}{Logical indicating whether to enable custom page navigation
 for studies requiring specific flow control. Defaults to FALSE for backward compatibility.}
 
-\item{study_phases}{Stored in the configuration; currently not used by inrep.}
-
-\item{page_transitions}{Stored in the configuration; currently not used by inrep.}
-
-\item{enable_back_navigation}{Stored in the configuration; currently not used by inrep.}
-
-\item{unknown_param_handling}{Stored in the configuration; currently not used.
-Missing item parameters are always replaced by fixed defaults in
-\code{\link{estimate_ability}} and \code{\link{compute_item_info_single}}.}
-
-\item{param_initialization_method}{Stored in the configuration; currently not used.}
-
-\item{auto_initialize_unknowns}{Stored in the configuration; currently not used.}
-
-\item{calibration_mode}{Stored in the configuration; currently not used. inrep
-does not calibrate items.}
-
 \item{study_pages}{Optional list defining an explicit page structure.}
 
 \item{page_contents}{Optional list of per-page content definitions.}
@@ -344,8 +309,6 @@ Named list containing complete study configuration with all specified parameters
 \description{
 Creates a configuration object for adaptive (or fixed-form) assessment studies.
 The configuration controls assessment workflow, session handling, and reporting.
-inrep does not calibrate items. In adaptive mode it uses the item parameters in
-the item bank as fixed and known (see Details).
 }
 \details{
 \strong{What inrep computes:} inrep administers items, records responses and

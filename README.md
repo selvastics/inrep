@@ -23,7 +23,9 @@ Try it out: [inrep-studio](https://selvastics.shinyapps.io/inrep-studio/)
 
 ![inrep demo](man/figures/prev2025-12-06_181825.png)
 
-**inrep** (instant reports) provides Shiny-based test administration, adaptive item selection, and reporting. inrep does not calibrate items or fit IRT models itself. Item parameters come from a calibration done elsewhere (for example with TAM or mirt), and inrep uses them during administration and, if you supply a scoring function, in the report. It supports adaptive and fixed questionnaires, session recovery, and export of responses as RDS, CSV or JSON, plus a PDF report. Themes and translated interface labels allow the UI to be adapted to a study.
+**inrep** (instant reports) runs questionnaires and tests as Shiny apps in R and gives each participant a report at the end of the session. Because the study runs in R, the report can use the same scoring as the later analysis, for example a person estimate from a calibrated IRT model.
+
+inrep does not calibrate items. Researchers calibrate with the software they prefer, for example TAM or mirt; the vignettes show it with TAM (Robitzsch, Kiefer & Wu). With a calibration, a study can give each participant only part of the items, in booklets or adaptively, and still report everyone on the same scale.
 
 <!-- Demo: See the package in action! -->
 ![inrep demo](man/figures/inrep_previewer.gif)
@@ -31,12 +33,11 @@ Try it out: [inrep-studio](https://selvastics.shinyapps.io/inrep-studio/)
 
 ### Key features
 
-- Fixed and adaptive administration. Adaptive mode uses externally calibrated item parameters (1PL, 2PL, 3PL or GRM), selects the next item by maximum Fisher information (the default `fast_item_selection = TRUE` ignores `criteria`), estimates ability by EAP on a grid with the parameters held fixed, and stops at `max_items` or when the standard error falls below `min_SEM`.
-- Page flows (`custom_page_flow`) with custom HTML pages, demographics, item pages and results pages; `item_indices` can be a function, for example for random item order or booklet designs.
+- Fixed, booklet and adaptive designs. In adaptive mode inrep selects items by Fisher information and estimates ability by EAP, with the item parameters (1PL, 2PL, 3PL or GRM) held fixed.
+- Page flows (`custom_page_flow`) with custom HTML pages, demographics, item pages and results pages; `item_indices` can be a function, for example to draw a booklet per participant.
 - Interface labels in English, German, Spanish and French; item and page text can be given in a second language with `_en` fields.
 - Themes, including high-contrast, large-text and dyslexia-friendly variants. These are style sheets, not a tested accessibility standard.
 - Results pages filled by your own `results_processor` function; export as RDS, CSV or JSON, a PDF report, and optional upload to a WebDAV server.
-- Optional session saving and resumption.
 
 ## Installation
 
@@ -108,8 +109,7 @@ config_fixed <- create_study_config(
   name = "Personality Questionnaire",
   adaptive = FALSE,        # Disable adaptive testing
   max_items = 5,          # Show the first 5 items in order
-  theme = "hildesheim",
-  session_save = TRUE     # Enable recovery
+  theme = "hildesheim"
 )
 
 # Launch the study
@@ -150,7 +150,6 @@ launch_study(config, bfi_items)
 * `bfi_items`: 30 Big Five style items with simulated GRM parameters
 * `math_items`: 40 placeholder items (no real item text) with simulated GRM parameters
 * `cognitive_items`: 50 items with simulated 2PL values (different column names; not directly usable in `launch_study()`)
-* `rcq_items`, `rcqL_items` (and the identical `rcq_old_items`, `rcqL_old_items`): German resilience and coping items with seven response categories; their a and b1-b4 columns are illustrative values, not calibrated parameters (a GRM for seven categories would need six thresholds)
 
 ## Configuration
 
