@@ -1,6 +1,6 @@
 ---
 title: "Scoring and Reporting in inrep"
-author: "inrep Development Team"
+author: "Clievins Selva"
 date: "`r Sys.Date()`"
 output:
   html_document:
@@ -18,15 +18,22 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 library(inrep)
 data(bfi_items)
 
-# Add helper columns used throughout this vignette
+# bfi_items has no id, domain or keying column, so we add them here. The items
+# are not ordered by domain; the assignment below follows the item content.
 bfi_items$id <- paste0("BFI_", sprintf("%02d", seq_len(nrow(bfi_items))))
-bfi_items$domain <- rep(
-  c("Extraversion", "Agreeableness", "Conscientiousness", "Neuroticism", "Openness"),
-  each = 6
+bfi_domains <- list(
+  Extraversion      = c(1, 2, 3, 14, 18, 22, 25),
+  Agreeableness     = c(4, 5, 11, 12, 13, 19, 26),
+  Conscientiousness = c(6, 17, 24, 27, 30),
+  Neuroticism       = c(7, 8, 16, 21, 23, 28),
+  Openness          = c(9, 10, 15, 20, 29)
 )
-bfi_items$reverse_coded <- rep(c(FALSE, TRUE, FALSE, TRUE, FALSE, FALSE), times = 5)
+bfi_items$domain <- NA_character_
+for (d in names(bfi_domains)) bfi_items$domain[bfi_domains[[d]]] <- d
+# reserved, rude, emotionally stable, starts quarrels, shy, relaxed, calm
+bfi_items$reverse_coded <- seq_len(nrow(bfi_items)) %in% c(2, 5, 8, 12, 14, 21, 28)
 
-# One simulated participant — used in every live preview below
+# One simulated participant for all previews below
 set.seed(42)
 responses    <- sample(1:5, nrow(bfi_items), replace = TRUE)
 demographics <- list(
@@ -36,7 +43,7 @@ demographics <- list(
   show_personal_results = "yes"
 )
 
-# Shared scoring helper defined once, called from every processor
+# Mean of a scale after reverse coding; NA when fewer than two items were answered
 score_scale <- function(ids, responses, item_bank, max_response = 5) {
   idx <- match(ids, item_bank$id)
   raw <- responses[idx]
@@ -45,10 +52,10 @@ score_scale <- function(ids, responses, item_bank, max_response = 5) {
   if (sum(!is.na(raw)) < 2) NA_real_ else mean(raw, na.rm = TRUE)
 }
 
-# SD helper used in Part 7
+# Used in Part 7
 safe_sd <- function(x) { v <- x[!is.na(x)]; if (length(v) < 2) NA_real_ else sd(v) }
 
-# Reference population — used in Part 6 and the Part 3 norm curve preview
+# Simulated reference sample for Part 6 and the norm curve in Part 3
 set.seed(100)
 norm_pop <- data.frame(
   Extraversion      = pmin(5, pmax(1, rnorm(300, 3.2, 0.7))),
@@ -62,57 +69,60 @@ pct_rank <- function(score, reference) {
   round(mean(reference < score, na.rm = TRUE) * 100)
 }
 
-# Dimension names and scores for previews
+# Writes a preview into the page. Line breaks are removed first, since pandoc
+# would otherwise read indented HTML lines as code blocks.
+show_html <- function(x) cat(gsub("\\s*\n\\s*", " ", as.character(x)))
+
+# Scores of the simulated participant
 dims   <- c("Extraversion", "Agreeableness", "Conscientiousness", "Neuroticism", "Openness")
 scores <- setNames(lapply(dims, function(d)
   score_scale(bfi_items$id[bfi_items$domain == d], responses, bfi_items)), dims)
 ```
 
-# Why a results page matters
+# Why a results page
 
-Participants in mandatory-credit studies have no inherent reason to engage. Filtering — attention checks, response-time thresholds — removes the least careful but shrinks the sample without fixing the root cause.
+Many participants, in particular those who take part for course credit, have little reason to read every item carefully. Attention checks and response-time thresholds can remove careless responses afterwards, but they reduce the sample and do not change why people responded carelessly in the first place.
 
-A results page creates an incentive to engage before responses are recorded: a profile participants can keep, a score chart that communicates something real, a simple confirmation that their data was saved. This vignette explains the two functions that build that page and how to go from a plain score table to embedded charts.
+A results page approaches the problem from the other side. If participants know that they will receive something in return, a profile of their own scores or at least a confirmation that their answers arrived, the survey becomes less of a one-sided exchange. We use this in the HilFo study (`case_studies/hildesheim_study/HilFo.R`), where first-semester students see their Big Five, stress and study skill scores at the end. This vignette describes how inrep builds such a page, starting from a plain table and moving on to charts.
 
 ------------------------------------------------------------------------
 
-# Two processors at a glance
+# Two optional functions
 
-inrep gives you two optional functions:
+The report is controlled by two functions, both optional and independent of each other.
 
-| Function | Runs when | Returns | For whom |
+| Function | Called when | Returns | Read by |
 |---|---|---|---|
-| `results_processor` | Participant reaches the results page | `shiny::HTML()` | The participant |
-| `csv_processor` | Each row is written to disk | Modified `csv_data` data frame | The researcher |
+| `results_processor` | the participant reaches a results page | `shiny::HTML()` | the participant |
+| `csv_processor` | the participant downloads a CSV from the report | the modified `csv_data` | the participant |
 
-Skip both and participants see a plain thank-you screen; the saved CSV contains only raw item responses. Add them and you get personalized feedback and analysis-ready scale scores in the download. Neither is required; each is independent of the other.
+Without a `results_processor`, participants see inrep's default results page. The `csv_processor` only shapes the file participants can download; it does not change the data inrep stores for the researcher (Part 5 explains how to add scale scores to those).
 
 ------------------------------------------------------------------------
 
 # Part 1: The results_processor
 
-## 1.1 Signature — what you receive
+## 1.1 What the function receives
 
 ```{r p1_sig, eval = FALSE}
-my_report <- function(
-    responses,           # numeric vector; one value per item_bank row
-    item_bank,           # the data frame you passed to launch_study()
-    demographics = NULL, # named list from the demographics page
-    session      = NULL  # live Shiny session (NULL when testing offline)
-) {
-  # ... compute scores, build HTML ...
-  shiny::HTML("<p>...</p>")   # MUST return shiny::HTML()
-  # shiny::HTML() tells Shiny it is safe to insert this content as raw HTML.
-  # Returning a plain character string will silently produce nothing.
+my_report <- function(responses, item_bank, demographics = NULL,
+                      session = NULL, rv = NULL) {
+  # compute scores, build the HTML
+  shiny::HTML("<p>...</p>")
 }
 ```
 
-What each argument contains:
+inrep looks at the argument names and passes only those the function asks for. `responses` and `item_bank` are always passed.
 
-- **`responses`** — numeric, aligned to `item_bank` row order. In adaptive studies the vector may be shorter than `nrow(item_bank)`. Always pad defensively before scoring.
-- **`item_bank`** — the same data frame passed to `launch_study()`. Match items by `id`, not by hard-coded position.
-- **`demographics`** — named list. Visual analogue sliders arrive here, **not** in `responses`.
-- **`session`** — the live Shiny session. `session$input$language` gives the current UI language for bilingual reports (Part 4).
+- `responses` is numeric and follows the row order of `item_bank`. In adaptive studies, or when a participant skipped the last pages, it can be shorter than `nrow(item_bank)`, so we pad it before scoring.
+- `item_bank` is the data frame given to `launch_study()`. We look up items by `id` rather than by position.
+- `demographics` is a named list with everything from the demographics pages, including sliders, which are not part of `responses`.
+- `session` is the Shiny session on the final results page.
+- `rv` holds the state of the running study. `rv$language` is the language the participant currently sees, which a bilingual report needs (Part 4).
+
+`input`, `page` and `config` can be requested in the same way. When testing a processor outside a running study, all optional arguments are simply `NULL`.
+
+The function has to return `shiny::HTML()`. A plain character string is shown as text, with the HTML tags visible.
 
 ## 1.2 A minimal working example
 
@@ -131,39 +141,37 @@ minimal_report <- function(responses, item_bank,
     "<div style='padding:40px;text-align:center;font-family:sans-serif;'>",
     "<h2>Thank you for participating!</h2>",
     "<p>You completed <strong>", n_done, "</strong> items.</p>",
-    "<p>Overall mean response: <strong>", overall, "</strong> (scale 1–5)</p>",
+    "<p>Overall mean response: <strong>", overall, "</strong> (scale 1-5)</p>",
     "<p style='color:#888;font-size:0.9em;'>Your responses have been saved.</p>",
     "</div>"
   ))
 }
 ```
 
-Here is exactly what the participant sees on the last page:
+This is what the participant sees on the last page:
 
 ```{r p1_preview, results = "asis", echo = FALSE}
 cat('<div style="border:2px solid #4A90D9;border-radius:6px;margin:20px 0;overflow:hidden;">')
 cat('<div style="background:#4A90D9;color:white;padding:6px 16px;font-size:12px;font-weight:bold;letter-spacing:.5px;">PARTICIPANT VIEW</div>')
-cat(as.character(minimal_report(responses, bfi_items, demographics, NULL)))
+show_html(minimal_report(responses, bfi_items, demographics, NULL))
 cat('</div>')
 ```
 
-## 1.3 How to wire it up
+## 1.3 Passing it to the study
 
 ```{r p1_wire, eval = FALSE}
 config <- inrep::create_study_config(
   name              = "BFI pilot",
   model             = "GRM",
   max_items         = 10,
-  results_processor = minimal_report   # function object, NOT "minimal_report"
+  results_processor = minimal_report   # the function itself, not its name
 )
 inrep::launch_study(config = config, item_bank = bfi_items, debug_mode = TRUE)
 ```
 
-## 1.4 Two rules that trip everyone up
+## 1.4 Study level and page level
 
-**Rule 1:** Pass the function object at the **config level**: `create_study_config(..., results_processor = minimal_report)`. This is what every results page uses by default.
-
-**Rule 2:** A `results_processor` inside a `custom_page_flow` results page overrides the config-level one for that page only. It may be a function or the name of one (`"minimal_report"`); a name is looked up in the global environment, and if no such function exists the config-level processor is used.
+The processor given to `create_study_config()` is used on every results page. A results page in `custom_page_flow` can set its own `results_processor`, which then applies to that page only. On the page it may also be the name of a function (`"minimal_report"`), which is useful when the page flow is defined before the function, as in HilFo. inrep looks the name up in the global environment and falls back to the study-level processor if no such function exists.
 
 ------------------------------------------------------------------------
 
@@ -171,9 +179,9 @@ inrep::launch_study(config = config, item_bank = bfi_items, debug_mode = TRUE)
 
 ## 2.1 Scoring by item ID
 
-The `responses` vector is aligned to `item_bank` row order. The safest scoring strategy looks up items by ID, not by position. If you add items, reorder rows, or run an adaptive study that selects items in a different sequence each time, positions shift but IDs do not.
+Since `responses` follows the row order of the item bank, it is tempting to score by position (`responses[1:6]`). This works until items are added or reordered, and in an adaptive study it does not work at all. We therefore look items up by their `id`, which stays the same however the rows are arranged.
 
-`score_scale()` and `scores` are defined in this document's setup chunk. They look up items by ID, apply reverse coding from the `reverse_coded` column, and return the mean:
+`score_scale()` in the setup chunk of this vignette does this: it finds the items by ID, reverses the items flagged in `reverse_coded`, and returns the mean. A scale with fewer than two answered items is left missing. For the simulated participant:
 
 ```{r p2_scores}
 round(unlist(scores), 2)
@@ -181,11 +189,11 @@ round(unlist(scores), 2)
 
 ## 2.2 Reverse coding
 
-Items flagged `reverse_coded = TRUE` are handled automatically by `score_scale()`. The rule is `(max + 1) − response`. Apply reverse coding before aggregating — reversing after averaging produces wrong results.
+A reverse-coded item is recoded as `(max + 1) - response`, so on a 1-5 scale a 2 becomes a 4. This has to happen before the items are averaged. `score_scale()` takes the information from the `reverse_coded` column, so the keying is defined once in the item bank and not again in every function that scores.
 
-## 2.3 Slider data is not in `responses`
+## 2.3 Sliders are not in `responses`
 
-This bites everyone the first time. Visual analogue sliders (0–100) are demographic items; they arrive in `demographics`, not `responses`. To put them on a 1–5 scale alongside Likert items:
+Visual analogue sliders (0-100) are defined as demographic questions in inrep, so their values arrive in `demographics` and not in `responses`. To report them next to Likert items, we put them on the same 1-5 metric:
 
 ```{r p2_slider}
 slider_raw <- as.numeric(demographics$stress_level)   # 0-100
@@ -193,57 +201,57 @@ stat_score <- round((slider_raw / 100) * 4 + 1, 2)   # rescale 0-100 to 1-5
 stat_score
 ```
 
-## 2.4 The defensive skeleton every processor needs
+With `start_empty = TRUE`, a slider has no handle until the participant clicks on it, and inrep additionally sends `demo_<name>_touched`. HilFo uses this flag so that a slider nobody moved is stored as missing rather than as its starting value (see `slider_value()` in `HilFo.R`).
 
-`tryCatch()` is R's way of catching errors: if anything inside it throws, execution jumps to the `error = function(e)` block instead of crashing the whole results page. Without it, one unexpected `NA` or type mismatch kills the entire participant-facing display. Without padding, partial responses produce silently wrong scores. Use this as the outer shell:
+## 2.4 A frame for every processor
+
+If the processor fails, inrep catches the error, keeps the data and shows a short error message in English that includes the R error text. That is fine while testing, but participants should rather see a message in their own language. We therefore wrap the processor in its own `tryCatch()` and pad the responses before scoring, since a shorter vector would otherwise shift the item positions without any warning.
 
 ```{r p2_skeleton, eval = FALSE}
-my_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
+my_report <- function(responses, item_bank, demographics = NULL, rv = NULL) {
+  is_english <- is.null(rv) || identical(shiny::isolate(rv$language), "en")
   tryCatch({
-
-    # 1. Detect language (NULL session = offline testing = default to English)
-    is_english <- is.null(session) || identical(session$input$language, "en")
-
-    # 2. Pad and coerce — always, before any scoring
     n <- nrow(item_bank)
     if (length(responses) < n)
       responses <- c(responses, rep(NA, n - length(responses)))
     responses <- as.numeric(responses)
 
-    # 3. Score, build HTML ...
+    # score and build the HTML here
 
     shiny::HTML("<div>...</div>")
-
   }, error = function(e) {
-    shiny::HTML(sprintf(
-      "<div style='padding:20px;color:#900;'>
-         <h3>Report could not be generated</h3>
-         <p>%s</p></div>", e$message))
+    message("Report failed: ", conditionMessage(e))
+    shiny::HTML(if (is_english)
+      "<p>Your answers were saved, but the report could not be shown.</p>"
+    else
+      "<p>Ihre Antworten wurden gespeichert, die Auswertung konnte aber nicht angezeigt werden.</p>")
   })
 }
 ```
+
+`rv` is `NULL` when the function is called outside a running study, so the report then defaults to English. `shiny::isolate()` reads the language without making the report depend on it reactively.
 
 ------------------------------------------------------------------------
 
 # Part 3: Visualizing scores
 
-Five techniques cover essentially everything participants ever need to see. They go from cheapest (HTML, no library, instant) to most powerful (embedded ggplot, full plotting capability, ~50 KB per chart). Pick the cheapest one that does what you need.
+We show five ways to present the scores, ordered from the simplest to the most flexible. Our recommendation is to use the simplest one that answers the participant's question. A table is easy to check against the data, works with screen readers and cannot be misread because of an axis; a chart is worth adding when it shows something the table does not, such as the shape of a profile.
 
-> **These helper functions are not built in to inrep.** They are defined as code in this vignette for you to copy. Copy the function bodies you want into your own study script (or into a separate `helpers.R` file that you `source()` before calling `launch_study()`).
+The helper functions below are not part of inrep. They are written out here so that they can be copied into a study script, or into a separate file that is `source()`d before `launch_study()`.
 
-| Technique | Library? | Best for |
+| Presentation | Needs | Suited for |
 |---|---|---|
-| HTML table | none | Score summaries, M / SD tables |
-| HTML/CSS progress bars | none | Score-relative-to-max, quick profiles |
-| Inline SVG radar | none | Profile shape across three or more scales |
-| Inline SVG norm curve | none | "Where you fall" on a bell curve against a reference sample |
-| Embedded ggplot PNG | ggplot2 + base64enc | Anything ggplot does |
+| HTML table | nothing | means and standard deviations |
+| HTML/CSS bars | nothing | scores relative to the scale maximum |
+| SVG radar | nothing | the shape of a profile across three or more scales |
+| SVG norm curve | nothing | the position of a score in a reference sample |
+| ggplot as PNG | ggplot2, base64enc | anything ggplot2 can draw |
 
-All examples below assume the `scores` list computed in Part 2.
+All examples use the `scores` from Part 2.
 
-## 3.1 HTML table (the baseline)
+## 3.1 HTML table
 
-Always include a table. It survives screenshots, screen readers, and copy-paste in a way no chart does.
+We would include a table in every report, even next to charts, since it is the one format that survives screenshots, screen readers and copying.
 
 ```{r p3_table_fn}
 score_table_html <- function(scores, lang = "en") {
@@ -274,21 +282,21 @@ score_table_html <- function(scores, lang = "en") {
 
 ```{r p3_table_preview, results = "asis", echo = FALSE}
 cat('<div style="border:2px solid #4A90D9;border-radius:6px;margin:20px 0;overflow:hidden;">')
-cat('<div style="background:#4A90D9;color:white;padding:6px 16px;font-size:12px;font-weight:bold;">PARTICIPANT VIEW — score table</div>')
-cat(score_table_html(scores))
+cat('<div style="background:#4A90D9;color:white;padding:6px 16px;font-size:12px;font-weight:bold;">PARTICIPANT VIEW: score table</div>')
+show_html(score_table_html(scores))
 cat('</div>')
 ```
 
 ## 3.2 HTML/CSS progress bars
 
-No library. A `<div>` with a colored inner `<div>`. Looks crisp on every device.
+A bar is simply a `<div>` inside another `<div>`, with the width of the inner one set to the score as a percentage of the scale maximum. No package is needed, and the bars scale with the screen.
 
 ```{r p3_bars_fn}
 score_row_with_bar <- function(label, score, sd_val = NA_real_,
                                max_response = 5, color = "#4A90D9") {
   pct      <- if (is.na(score)) 0 else round(100 * score / max_response)
-  m_str    <- if (is.na(score))  "—" else sprintf("%.2f", score)
-  sd_str   <- if (is.na(sd_val)) "—" else sprintf("%.2f", sd_val)
+  m_str    <- if (is.na(score))  "&mdash;" else sprintf("%.2f", score)
+  sd_str   <- if (is.na(sd_val)) "&mdash;" else sprintf("%.2f", sd_val)
 
   sprintf(
     "<tr style='border-bottom:1px solid #f3f4f6;'>
@@ -323,7 +331,7 @@ scores_bar_table <- function(scores, sds = NULL, lang = "en") {
     "</tr></thead><tbody>", paste(rows, collapse = ""), "</tbody></table>",
     "<div style='padding:8px 14px;background:#f9fafb;border-top:1px solid #e5e7eb;",
     "font-size:0.75rem;color:#9ca3af;'><em>",
-    if (lang == "en") "M = Mean. Scale: 1–5." else "M = Mittelwert. Skala: 1–5.",
+    if (lang == "en") "M = Mean. Scale: 1-5." else "M = Mittelwert. Skala: 1-5.",
     "</em></div></div>"
   )
 }
@@ -335,14 +343,14 @@ sds_example <- setNames(
     sd(responses[match(bfi_items$id[bfi_items$domain == d], bfi_items$id)], na.rm = TRUE)),
   dims)
 cat('<div style="border:2px solid #27AE60;border-radius:6px;margin:20px 0;overflow:hidden;">')
-cat('<div style="background:#27AE60;color:white;padding:6px 16px;font-size:12px;font-weight:bold;">PARTICIPANT VIEW — M/SD bar table</div>')
-cat(scores_bar_table(scores, sds_example))
+cat('<div style="background:#27AE60;color:white;padding:6px 16px;font-size:12px;font-weight:bold;">PARTICIPANT VIEW: M/SD bar table</div>')
+show_html(scores_bar_table(scores, sds_example))
 cat('</div>')
 ```
 
 ## 3.3 Inline SVG radar
 
-When you have three or more scales, a radar chart shows the shape of a profile in a way bars do not. No library required — the chart is built as a plain HTML string.
+With three or more scales, a radar chart shows the shape of a profile, which bars show less directly. The chart below is built as an SVG string, again without any package.
 
 ```{r p3_radar_fn}
 svg_radar <- function(scores, max_response = 5, color = "#4A90D9",
@@ -382,7 +390,8 @@ svg_radar <- function(scores, max_response = 5, color = "#4A90D9",
 
   rgb_str <- paste(col2rgb(color), collapse = ",")
   paste0(
-    "<svg viewBox='0 0 ", vb, " ", vb, "' xmlns='http://www.w3.org/2000/svg' ",
+    # the margin around the 240 x 240 plot leaves room for long axis labels
+    "<svg viewBox='-50 -10 ", vb + 100, " ", vb + 20, "' xmlns='http://www.w3.org/2000/svg' ",
     "style='width:100%;max-width:", size, "px;display:block;margin:16px auto;'>",
     bg, paste(axes, collapse = ""),
     sprintf("<polygon points='%s' fill='rgba(%s,0.22)' stroke='%s'
@@ -391,19 +400,18 @@ svg_radar <- function(scores, max_response = 5, color = "#4A90D9",
 }
 ```
 
-The radar gracefully degrades: fewer than three non-NA scales returns an empty string instead of a broken one-axis chart.
+With fewer than three scored scales the function returns an empty string, since a radar chart with one or two axes says nothing a table would not say better.
 
 ```{r p3_radar_preview, results = "asis", echo = FALSE}
 cat('<div style="border:2px solid #E74C3C;border-radius:6px;margin:20px 0;overflow:hidden;">')
-cat('<div style="background:#E74C3C;color:white;padding:6px 16px;font-size:12px;font-weight:bold;">PARTICIPANT VIEW — SVG radar chart</div>')
-cat(svg_radar(scores))
+cat('<div style="background:#E74C3C;color:white;padding:6px 16px;font-size:12px;font-weight:bold;">PARTICIPANT VIEW: SVG radar chart</div>')
+show_html(svg_radar(scores))
 cat('</div>')
 ```
 
 ## 3.4 Inline SVG norm curve
 
-A bell curve with the participant's score marked and the area to the left shaded shows
-"where you fall" in a reference population at a glance. No library needed.
+A normal curve with the participant's score marked and the area to its left shaded shows where the score lies in a reference sample.
 
 ```{r p3_normcurve_fn}
 svg_norm_curve <- function(score, norm_mean, norm_sd,
@@ -414,7 +422,7 @@ svg_norm_curve <- function(score, norm_mean, norm_sd,
                            width = 480, height = 130) {
   if (is.na(score) || is.na(norm_mean) || is.na(norm_sd) || norm_sd <= 0) return("")
 
-  # Draw \u00b13.5 SD around the norm mean, clipped to valid scale bounds
+  # +/- 3.5 SD around the mean, but not beyond the ends of the scale
   x_lo <- max(1, norm_mean - 3.5 * norm_sd)
   x_hi <- min(max_response, norm_mean + 3.5 * norm_sd)
   score <- max(x_lo, min(x_hi, score))   # clip score to drawn range
@@ -493,20 +501,18 @@ svg_norm_curve <- function(score, norm_mean, norm_sd,
 
 ```{r p3_normcurve_preview, results = "asis", echo = FALSE}
 cat('<div style="border:2px solid #8E44AD;border-radius:6px;margin:20px 0;overflow:hidden;">')
-cat('<div style="background:#8E44AD;color:white;padding:6px 16px;font-size:12px;font-weight:bold;">PARTICIPANT VIEW \u2014 SVG norm curve (Extraversion)</div>')
+cat('<div style="background:#8E44AD;color:white;padding:6px 16px;font-size:12px;font-weight:bold;">PARTICIPANT VIEW: SVG norm curve (Extraversion)</div>')
 norm_E <- norm_pop$Extraversion
-cat(svg_norm_curve(scores$Extraversion, mean(norm_E), sd(norm_E),
+show_html(svg_norm_curve(scores$Extraversion, mean(norm_E), sd(norm_E),
                    label = "Reference population (N = 300)"))
 cat('</div>')
 ```
 
-The shaded region is the proportion of the reference sample scoring **at or below** this
-participant. The percentage shown at the marker (e.g. 72%) is a directly readable
-percentile — no additional explanation needed on the page.
+The shaded area and the percentage at the marker come from a normal distribution with the mean and standard deviation of the reference sample. They are an approximation of the percentile rank: when the reference scores are skewed or bounded by the scale, the empirical rank from `pct_rank()` (Part 6) can differ noticeably, and that is the number we would report in a table.
 
 ## 3.5 Embedding a ggplot
 
-When inline SVG is not enough — boxplots, density curves, scatter — render a ggplot to a temporary PNG and base64-encode it. Every embedded chart adds roughly 20–50 KB; for five charts on one page, prefer SVG.
+For anything the SVG helpers do not cover, such as boxplots, densities or scatter plots, a ggplot can be saved to a temporary PNG and embedded as base64. This is what HilFo does for its radar and bar charts. Each PNG adds tens of kilobytes to the page, while the SVG functions above add a few, so with several charts on one page SVG loads noticeably faster on a phone.
 
 ```{r p3_ggplot, eval = FALSE}
 gg_to_html <- function(p, width = 8, height = 4, dpi = 150) {
@@ -521,20 +527,17 @@ gg_to_html <- function(p, width = 8, height = 4, dpi = 150) {
      style='width:100%%;max-width:760px;display:block;margin:16px auto;'>", b64)
 }
 
-# Inside results_processor:
+# inside the results_processor
 sdf <- data.frame(dim = names(scores), score = unlist(scores))
 p   <- ggplot2::ggplot(sdf, ggplot2::aes(x = dim, y = score)) +
   ggplot2::geom_col(fill = "#4A90D9", width = 0.6) +
   ggplot2::geom_hline(yintercept = 3, linetype = "dashed", color = "#aaa") +
   ggplot2::scale_y_continuous(limits = c(0, 5.5), breaks = 1:5) +
-  ggplot2::labs(x = NULL, y = "Score (1–5)") +
+  ggplot2::labs(x = NULL, y = "Score (1-5)") +
   ggplot2::theme_minimal(base_size = 13)
 
 img_html <- gg_to_html(p)
 ```
-
-For five charts on one page, prefer SVG — each ggplot PNG adds 20\u201350 KB,
-whereas the SVG functions above add roughly 2\u20135 KB each.
 
 ------------------------------------------------------------------------
 
@@ -542,14 +545,13 @@ whereas the SVG functions above add roughly 2\u20135 KB each.
 
 ## 4.1 Privacy opt-out
 
-Some participants want to contribute data without receiving personal feedback. Add a yes/no demographic field and check it **before any scoring or plotting** — there is no point building charts the participant will never see.
+Some participants are happy to contribute their data but do not want to see their own scores. HilFo asks about this on the page before the report (`show_personal_results`). The answer is checked before anything is scored or plotted, since there is no reason to build charts nobody will see.
 
 ```{r p4_privacy}
 privacy_aware_report <- function(responses, item_bank,
-                                 demographics = NULL, session = NULL) {
-  is_english <- is.null(session) || identical(session$input$language, "en")
+                                 demographics = NULL, rv = NULL) {
+  is_english <- is.null(rv) || identical(shiny::isolate(rv$language), "en")
 
-  # Check first; build nothing if opted out
   opted_out <- isTRUE(
     tolower(as.character(demographics$show_personal_results)) %in%
       c("no", "n", "false", "0")
@@ -567,19 +569,19 @@ privacy_aware_report <- function(responses, item_bank,
     ))
   }
 
-  # Participant opted in — proceed with scoring and display
+  # the participant wants the report
   shiny::HTML("<p>... personalized report here ...</p>")
 }
 ```
 
-## 4.2 Language detection
+## 4.2 Two languages
 
-Build one labels list at the top of the processor and reference `L$title`, `L$note`, etc. throughout. Never scatter `if (is_english) "Score" else "Wert"` through the HTML strings — you will miss one.
+In a bilingual study the report follows the language the participant chose, which inrep keeps in `rv$language`. We collect all texts of the report in one list `L` at the top of the function and use `L$title`, `L$note` and so on further down. The alternative, an `if (is_english) ... else ...` in every HTML string, is how the HilFo report is written, and it is easy to overlook one of them.
 
 ```{r p4_labels}
 bilingual_report <- function(responses, item_bank,
-                             demographics = NULL, session = NULL) {
-  is_english <- is.null(session) || identical(session$input$language, "en")
+                             demographics = NULL, rv = NULL) {
+  is_english <- is.null(rv) || identical(shiny::isolate(rv$language), "en")
 
   L <- if (is_english) {
     list(
@@ -637,8 +639,8 @@ bilingual_report <- function(responses, item_bank,
 
 ```{r p4_bilingual_preview, results = "asis", echo = FALSE}
 cat('<div style="border:2px solid #27AE60;border-radius:6px;margin:20px 0;overflow:hidden;">')
-cat('<div style="background:#27AE60;color:white;padding:6px 16px;font-size:12px;font-weight:bold;">PARTICIPANT VIEW — bilingual report (English branch)</div>')
-cat(as.character(bilingual_report(responses, bfi_items, demographics, NULL)))
+cat('<div style="background:#27AE60;color:white;padding:6px 16px;font-size:12px;font-weight:bold;">PARTICIPANT VIEW: bilingual report, English</div>')
+show_html(bilingual_report(responses, bfi_items, demographics, NULL))
 cat('</div>')
 ```
 
@@ -646,23 +648,26 @@ cat('</div>')
 
 # Part 5: The csv_processor
 
-`results_processor` decides what the participant sees. `csv_processor` decides what goes into the saved CSV file. They are independent — you can have either, both, or neither.
+A report can offer participants their own data as a CSV file. inrep builds this file when the page sends `download_csv_trigger`, usually from a button in the report HTML (RCQ.R and the programming anxiety case study contain one):
 
-## 5.1 Signature
+```html
+<button onclick="Shiny.setInputValue('download_csv_trigger', Math.random(), {priority: 'event'})">
+  Download my data
+</button>
+```
+
+The file contains one row with the session information, the demographic answers and the item responses under their IDs (`BFI_01 = 4`, `BFI_02 = 2`, ...). A `csv_processor` receives this row before it is written and can add columns, for example the participant's scale scores.
+
+The `csv_processor` does not change the data inrep stores for the researcher. If the stored data should contain scale scores as well, the simplest way is to build the record yourself in the `completion_handler` of the last page before the report, as HilFo does with `build_hilfo_record()` and `score_hilfo_scales()`. The record then has a fixed set of columns, already scored, and can be saved wherever the study keeps its data.
+
+## 5.1 What the function receives
 
 ```{r p5_sig, eval = FALSE}
-my_csv <- function(
-    csv_data,     # one-row data.frame — will be written to the CSV
-    responses,    # same vector as in results_processor
-    demographics, # same list
-    item_bank     # same data frame
-) {
-  # Add columns to csv_data, then return it
+my_csv <- function(csv_data, responses, demographics, item_bank) {
+  # csv_data is the one-row data frame described above; add columns and return it
   csv_data
 }
 ```
-
-Without a `csv_processor`, your CSV contains raw item responses (`BFI_01 = 4`, `BFI_02 = 2`, …). With one, it can also contain scale scores, subscale means, or any derived variable you want analysis-ready in the download.
 
 ## 5.2 Example: adding BFI scale scores
 
@@ -681,7 +686,7 @@ bfi_csv_processor <- function(csv_data, responses, demographics, item_bank) {
     csv_data[[paste0("BFI_", d)]] <- score_scale(ids, responses, item_bank)
   }
 
-  # Slider: rescale 0-100 → 1-5 and store alongside item responses
+  # slider from 0-100 to 1-5, as in Part 2
   sl <- suppressWarnings(as.numeric(demographics$stress_level))
   csv_data$stress_1to5 <- if (!is.na(sl)) round(sl / 100 * 4 + 1, 2) else NA_real_
 
@@ -689,7 +694,7 @@ bfi_csv_processor <- function(csv_data, responses, demographics, item_bank) {
 }
 ```
 
-Verify what would be added for the simulated participant:
+The columns added for the simulated participant:
 
 ```{r p5_check}
 dummy_row  <- data.frame(participant_id = "demo", stringsAsFactors = FALSE)
@@ -709,22 +714,22 @@ config <- inrep::create_study_config(
 )
 ```
 
-Define `score_scale()` once (in a shared helper or a setup chunk) and call it from both processors. If you change a reverse-coding rule, you change it in one place.
+Both processors call the same `score_scale()`. If the keying of an item changes, it changes in one place, and the report and the download cannot disagree.
 
 ------------------------------------------------------------------------
 
 # Part 6: Comparing against norms
 
-"Your score is 3.4" is informative. "Your score is 3.4 — higher than 68 % of participants who completed this study" is engaging. Two approaches cover all situations:
+A mean of 3.4 on a 1-5 scale is hard to interpret without a reference. Participants usually understand a comparison more easily: a score of 3.4 that is higher than that of 68% of the other participants. There are two sources for such a reference.
 
-| Approach | Works on day 1? | Gets richer over time? |
+| Reference | Available from the first participant | Changes during the study |
 |---|---|---|
-| Fixed norm data | Yes | No — fixed reference |
-| Live data folder | After first participant | Yes, automatically |
+| a fixed norm sample | yes | no |
+| the data collected so far | only after enough participants | yes |
 
-## 6.1 Fixed norm data
+## 6.1 A fixed norm sample
 
-Generate a reference population once and ship it with the study. `norm_pop`, `pct_rank()`, and `safe_sd()` are defined in this document's setup chunk and available throughout. Current percentiles for the simulated participant:
+The reference scores are prepared once and shipped with the study. In this vignette `norm_pop` is simulated in the setup chunk; in a real study it would be a published norm sample or the data of an earlier cohort. `pct_rank()` returns the percentage of reference scores below the participant's score. For the simulated participant:
 
 ```{r p6_norms}
 percentiles <- sapply(names(norm_pop),
@@ -732,11 +737,11 @@ percentiles <- sapply(names(norm_pop),
 percentiles
 ```
 
-Part 7 shows a complete implementation combining `pct_rank()` with the SVG radar and norm curve.
+Part 7 combines `pct_rank()` with the radar chart and the norm curve.
 
-## 6.2 Live data folder
+## 6.2 The data collected so far
 
-As your study runs, inrep writes one CSV per participant to an export folder. Each new participant's report can compare against **all prior participants** by reading that folder at report-generation time:
+If the study saves one file per participant, as HilFo does in `study_data/hilfo_results/`, the report can compare each new participant with everyone before them by reading that folder when the report is built. The folder and the score columns are those of your own record; inrep does not write such a folder by itself.
 
 ```{r p6_live_loader}
 load_prior_data <- function(data_folder, score_cols) {
@@ -752,7 +757,7 @@ load_prior_data <- function(data_folder, score_cols) {
 }
 ```
 
-The processor is a **closure** that captures the folder path. Every time it fires it reads the current state of the folder — including all responses written since the study started — and falls back to the fixed norm population until enough real data accumulates:
+The processor below is created by a function that remembers the folder (a closure). Each time a report is built, it reads the folder as it is at that moment, and until ten participants have been saved it uses the fixed norm sample instead. Ten is an arbitrary minimum; with very few reference scores a percentile mostly reflects who happened to take part first.
 
 ```{r p6_live_processor, eval = FALSE}
 make_live_processor <- function(data_folder = NULL, norm_fallback = norm_pop) {
@@ -780,17 +785,16 @@ make_live_processor <- function(data_folder = NULL, norm_fallback = norm_pop) {
     else
       paste0("Compared to a reference population (N = ", nrow(ref), ")")
 
-    # ... build HTML table the same way as norm_report() above ...
+    # build the table as in Part 3, with pcts as an additional column
     shiny::HTML(paste0("<p>", note, "</p>"))
   }
 }
 
-# Wire up — switches from fixed norms to real data automatically after 10 responses
 config <- inrep::create_study_config(
   name              = "BFI longitudinal",
   model             = "GRM",
   max_items         = 10,
-  results_processor = make_live_processor(data_folder = "data/collected",
+  results_processor = make_live_processor(data_folder = "study_data/my_results",
                                           norm_fallback = norm_pop),
   csv_processor     = bfi_csv_processor
 )
@@ -798,27 +802,31 @@ config <- inrep::create_study_config(
 
 ------------------------------------------------------------------------
 
-# Part 7: A complete assembled example
+# Part 7: A complete example
 
-Everything above in one runnable study. Bilingual Big Five study with demographics, two item blocks, privacy opt-out, SVG radar, M/SD bar table, and an enriched CSV. Copy it, save as `app.R`, and run.
+The script below puts the parts together: a short Big Five study in English with demographics, two item pages, the opt-out from Part 4, and a report with radar chart, table with percentiles and a norm curve. It expects `svg_radar()` and `svg_norm_curve()` from Part 3 in a file `report_helpers.R` next to the script.
 
 ```{r p7_full, eval = FALSE}
-# ============================================================
-# Big Five study — runnable inrep launch script
-# ============================================================
+# Big Five study with a personal report
 library(inrep)
 library(shiny)
+source("report_helpers.R")   # svg_radar(), svg_norm_curve() from Part 3
 
-# ---- 1. Item bank ----
+# Item bank ----
 data(bfi_items)
 bfi_items$id <- paste0("BFI_", sprintf("%02d", seq_len(nrow(bfi_items))))
-bfi_items$domain <- rep(
-  c("Extraversion", "Agreeableness", "Conscientiousness", "Neuroticism", "Openness"),
-  each = 6
+bfi_domains <- list(
+  Extraversion      = c(1, 2, 3, 14, 18, 22, 25),
+  Agreeableness     = c(4, 5, 11, 12, 13, 19, 26),
+  Conscientiousness = c(6, 17, 24, 27, 30),
+  Neuroticism       = c(7, 8, 16, 21, 23, 28),
+  Openness          = c(9, 10, 15, 20, 29)
 )
-bfi_items$reverse_coded <- rep(c(FALSE, TRUE, FALSE, TRUE, FALSE, FALSE), times = 5)
+bfi_items$domain <- NA_character_
+for (d in names(bfi_domains)) bfi_items$domain[bfi_domains[[d]]] <- d
+bfi_items$reverse_coded <- seq_len(nrow(bfi_items)) %in% c(2, 5, 8, 12, 14, 21, 28)
 
-# ---- 2. Scoring helpers — defined once, used by both processors ----
+# Scoring, used by both processors ----
 score_scale <- function(ids, responses, item_bank, max_response = 5) {
   idx <- match(ids, item_bank$id)
   raw <- responses[idx]
@@ -832,7 +840,7 @@ pct_rank <- function(score, reference) {
   round(mean(reference < score, na.rm = TRUE) * 100)
 }
 
-# ---- 3. Reference population (300 synthetic participants) ----
+# Reference sample (simulated, N = 300) ----
 set.seed(100)
 norm_pop <- data.frame(
   Extraversion      = pmin(5, pmax(1, rnorm(300, 3.2, 0.7))),
@@ -842,11 +850,11 @@ norm_pop <- data.frame(
   Openness          = pmin(5, pmax(1, rnorm(300, 3.4, 0.6)))
 )
 
-# ---- 4. Demographics ----
+# Demographics ----
 demographic_configs <- list(
   age = list(
     question    = "How old are you?", question_en = "How old are you?",
-    type = "number", required = TRUE
+    type = "numeric", required = TRUE
   ),
   gender = list(
     question    = "What is your gender?", question_en = "What is your gender?",
@@ -865,9 +873,10 @@ demographic_configs <- list(
   )
 )
 
-# ---- 5. Page flow ----
-ext_idx <- which(bfi_items$domain == "Extraversion")
-neu_idx <- which(bfi_items$domain == "Neuroticism")
+# Page flow ----
+# all five domains on two pages, so that the radar has five axes
+idx_1 <- which(bfi_items$domain %in% c("Extraversion", "Agreeableness", "Conscientiousness"))
+idx_2 <- which(bfi_items$domain %in% c("Neuroticism", "Openness"))
 
 custom_page_flow <- list(
   list(id = "intro",  type = "custom",
@@ -879,22 +888,19 @@ custom_page_flow <- list(
        demographics = names(demographic_configs), required = TRUE),
   list(id = "block_1", type = "items",
        title = "Block 1", title_en = "Block 1",
-       item_indices    = ext_idx, scale_type = "likert",
+       item_indices    = idx_1, scale_type = "likert",
        instructions    = "Rate how well each statement describes you.",
        instructions_en = "Rate how well each statement describes you."),
   list(id = "block_2", type = "items",
        title = "Block 2", title_en = "Block 2",
-       item_indices    = neu_idx, scale_type = "likert",
+       item_indices    = idx_2, scale_type = "likert",
        instructions    = "Rate how well each statement describes you.",
        instructions_en = "Rate how well each statement describes you."),
   list(id = "results", type = "results",
-       title = "Your profile", title_en = "Your profile",
-       show_radar_chart  = FALSE,
-       show_scale_scores = FALSE,
-       results_text_en = "Thank you for participating.")
+       title = "Your profile", title_en = "Your profile")
 )
 
-# ---- 6. Study config ----
+# Study configuration ----
 study_config <- inrep::create_study_config(
   name                = "Big Five Study",
   custom_page_flow    = custom_page_flow,
@@ -902,8 +908,8 @@ study_config <- inrep::create_study_config(
   demographic_configs = demographic_configs,
   model               = "GRM",
   adaptive            = FALSE,
-  min_items           = length(c(ext_idx, neu_idx)),
-  max_items           = length(c(ext_idx, neu_idx)),
+  min_items           = nrow(bfi_items),
+  max_items           = nrow(bfi_items),
   language            = "en",
   bilingual           = FALSE,
   response_ui_type    = "radio",
@@ -911,23 +917,15 @@ study_config <- inrep::create_study_config(
   session_save        = TRUE
 )
 
-# ---- 7. results_processor: radar + M/SD bar table + norm distribution ----
+# Report ----
 #
-# This processor assembles three complementary visualizations on a single page:
-#   1. SVG radar — shows profile shape across all dimensions at a glance
-#   2. M/SD bar table with percentile column — precise numbers + comparison
-#   3. SVG norm curve for the highest-scoring dimension — "where you fall"
-#
-# Together they answer the three questions every participant asks:
-#   "What are my scores?" → table
-#   "What does my profile look like?" → radar
-#   "How do I compare?" → norm curve + percentile column
+# Three parts: the radar shows the shape of the profile, the table the exact
+# scores with their percentile in the reference sample, and the norm curve
+# where the highest score lies in that sample.
 study_config$results_processor <- function(responses, item_bank,
-                                           demographics = NULL, session = NULL) {
+                                           demographics = NULL) {
   tryCatch({
-    is_english <- is.null(session) || identical(session$input$language, "en")
-
-    # Privacy check before anything else
+    # opt-out first (Part 4)
     opted_out <- isTRUE(
       tolower(as.character(demographics$show_personal_results)) %in%
         c("no", "n", "false", "0"))
@@ -938,14 +936,12 @@ study_config$results_processor <- function(responses, item_bank,
       ))
     }
 
-    # Pad and coerce
     n <- nrow(item_bank)
     if (length(responses) < n)
       responses <- c(responses, rep(NA, n - length(responses)))
     responses <- as.numeric(responses)
     n_done    <- sum(!is.na(responses))
 
-    # Score all five dimensions
     dims <- c("Extraversion", "Agreeableness", "Conscientiousness",
               "Neuroticism",  "Openness")
     sc   <- setNames(sapply(dims, function(d)
@@ -957,22 +953,22 @@ study_config$results_processor <- function(responses, item_bank,
     pcts <- setNames(sapply(dims, function(d)
       pct_rank(sc[d], norm_pop[[d]])), dims)
 
-    # -- Plot 1: SVG radar (profile shape) -----------------------------------
+    # radar
     radar_html <- paste0(
       "<h3 style='text-align:center;font-family:system-ui,sans-serif;",
       "color:#2c3e50;margin:24px 0 4px;'>Profile</h3>",
       "<p style='text-align:center;font-family:system-ui,sans-serif;",
       "font-size:.85em;color:#9ca3af;margin:0 0 4px;'>",
-      "Profile shape across all five dimensions (scale 1–5)</p>",
+      "Profile shape across all five dimensions (scale 1-5)</p>",
       svg_radar(sc)
     )
 
-    # -- Plot 2: M/SD bar table with percentile column -----------------------
+    # table with percentiles
     rows <- vapply(dims, function(d) {
       pct    <- if (!is.na(pcts[d])) pcts[d] else 0
       bar_w  <- max(0, min(100, pct))
-      m_str  <- if (is.na(sc[d]))   "—" else sprintf("%.2f", sc[d])
-      sd_str <- if (is.na(sds[d]))  "—" else sprintf("%.2f", sds[d])
+      m_str  <- if (is.na(sc[d]))   "-" else sprintf("%.2f", sc[d])
+      sd_str <- if (is.na(sds[d]))  "-" else sprintf("%.2f", sds[d])
       p_str  <- if (is.na(pcts[d])) "?" else paste0(pcts[d], "%")
       sprintf(
         "<tr style='border-bottom:1px solid #f3f4f6;'>
@@ -1009,12 +1005,12 @@ study_config$results_processor <- function(responses, item_bank,
       "</tr></thead><tbody>", paste(rows, collapse = ""), "</tbody></table>",
       "<div style='padding:8px 14px;background:#f9fafb;border-top:1px solid #e5e7eb;",
       "font-size:0.75rem;color:#9ca3af;font-family:system-ui;'><em>",
-      "M = Mean. SD = Standard deviation. Scale: 1–5. ",
+      "M = Mean. SD = Standard deviation. Scale: 1-5. ",
       "Pct. = percentile relative to reference population (N = 300).",
       "</em></div></div>"
     )
 
-    # -- Plot 3: SVG norm curve for the highest-scoring dimension ------------
+    # norm curve for the highest score
     top_dim  <- dims[which.max(sc)]
     curve_html <- ""
     if (!is.na(sc[top_dim]) && top_dim %in% names(norm_pop)) {
@@ -1037,7 +1033,6 @@ study_config$results_processor <- function(responses, item_bank,
       )
     }
 
-    # -- Assemble all three panels -------------------------------------------
     shiny::HTML(paste0(
       "<div style='max-width:760px;margin:0 auto;padding:24px 16px;'>",
       "<h2 style='text-align:center;color:#2c3e50;margin:0 0 4px 0;",
@@ -1059,7 +1054,7 @@ study_config$results_processor <- function(responses, item_bank,
   })
 }
 
-# ---- 8. csv_processor — adds BFI scale scores to the saved CSV ----
+# Scale scores in the CSV participants can download ----
 study_config$csv_processor <- function(csv_data, responses, demographics, item_bank) {
   if (is.null(responses) || length(responses) == 0) return(csv_data)
   n <- nrow(item_bank)
@@ -1075,7 +1070,7 @@ study_config$csv_processor <- function(csv_data, responses, demographics, item_b
   csv_data
 }
 
-# ---- 9. Launch ----
+# Start ----
 inrep::launch_study(
   config     = study_config,
   item_bank  = bfi_items,
@@ -1085,24 +1080,26 @@ inrep::launch_study(
 
 ------------------------------------------------------------------------
 
-# Common pitfalls
+# Common mistakes
 
-1. **Passing the processor only by name.** Prefer the function object at the config level: `results_processor = my_fn`. A name (`"my_fn"`) works on a results page, but only if a function of that name exists in the global environment or a config-level processor is set as the fallback.
+Most problems with reports we have seen come from a few recurring mistakes.
 
-2. **Expecting a page-level `results_processor` to apply everywhere.** A processor set inside a `custom_page_flow` results page applies to that page only; other results pages use the config-level one.
+1. **Returning a character string.** The processor has to return `shiny::HTML(...)`; a plain string is displayed as text, tags included.
 
-3. **Returning anything other than `shiny::HTML(...)`.** Returning a plain string or a list causes the results page to display raw R output. Always wrap the final value.
+2. **Not padding `responses`.** In adaptive studies and after skipped pages the vector is shorter than the item bank. Without padding, positions shift and scores are computed from the wrong items without any error.
 
-4. **Forgetting `tryCatch`.** A single exception in the processor kills the entire results page. Wrap everything.
+3. **Scoring by position.** `responses[1:6]` is only correct as long as nobody reorders the item bank. Looking items up with `match(ids, item_bank$id)` stays correct.
 
-5. **Not padding `responses`.** In adaptive studies and partial completions, `length(responses)` is less than `nrow(item_bank)`. Pad with `rep(NA, ...)` before scoring.
+4. **Assuming the item order of a built-in bank.** `bfi_items` is not sorted by domain; its keys are set in the setup chunk of this vignette.
 
-6. **Scoring sliders from `responses`.** Slider values are in `demographics`, not `responses`. Reading `responses[30]` for a slider silently returns `NA`.
+5. **Looking for sliders in `responses`.** Slider values are in `demographics`; `responses[30]` for a slider is simply `NA`.
 
-7. **Building the entire report before the privacy opt-out check.** Check `show_personal_results` at the very top of the processor, before any scoring or plotting. A participant who declines feedback should not trigger 60 KB of chart generation.
+6. **Reading the language from `session$input`.** On the final results page `session$input` has no `language` element. The participant's language is in `rv$language`.
 
-8. **Hard-coding language strings inside HTML.** Define one `L` (labels) list at the top of the processor and reference `L$title`, `L$note`, etc. throughout. Scattering `if (is_english) "Score" else "Wert"` through the HTML strings means you will miss one.
+7. **Scoring before the opt-out check.** Check `show_personal_results` first. Participants who declined the report should not wait for charts they will not see.
 
-9. **Using position-based scoring (`responses[1:6]`).** Positions shift when items are reordered or an adaptive study selects items in a different sequence. Always use `match(ids, item_bank$id)` to look up items by ID.
+8. **Writing `if (is_english)` into every string.** One list of labels per language at the top of the processor is easier to keep complete.
 
-10. **Two results pages, one custom processor, expecting different content on each.** The same `results_processor` runs on every results page. Pin rich content to one results page at the end; use `report_metrics` for intermediate summary pages.
+9. **Expecting the `csv_processor` to change the stored data.** It only shapes the CSV participants download. Scores for the researcher belong in the record the study saves (Part 5).
+
+10. **Expecting different content on two results pages from one processor.** The study-level processor runs on every results page. A page that should show something else needs its own `results_processor` (Part 1.4).
