@@ -1322,6 +1322,25 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
     
     # Get response labels based on scale type and language
     labels <- get_response_labels(page$scale_type %||% "likert", choices, current_lang)
+
+    # Multiple-choice items: the texts in Option1, Option2, ... (Option1_EN, ...
+    # in English) are shown, and the position of the chosen option (1, 2, ...)
+    # is stored. Scoring against Answer is left to the analysis or the
+    # results_processor.
+    if (identical(page$scale_type, "options")) {
+      opt_cols <- grep("^Option[0-9]+$", names(item), value = TRUE)
+      opt_cols <- opt_cols[order(as.integer(sub("Option", "", opt_cols)))]
+      opt_text <- vapply(opt_cols, function(col) {
+        en <- paste0(col, "_EN")
+        val <- if (current_lang == "en" && en %in% names(item) && !is.na(item[[en]])) item[[en]] else item[[col]]
+        if (is.null(val) || is.na(val)) "" else as.character(val)
+      }, character(1))
+      opt_text <- opt_text[nzchar(opt_text)]
+      if (length(opt_text) > 0) {
+        choices <- seq_along(opt_text)
+        labels <- unname(opt_text)
+      }
+    }
     
     # Determine per-item layout (overrides global config)
     item_layout <- tryCatch({

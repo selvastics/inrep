@@ -111,7 +111,7 @@ my_items <- data.frame(
 )
 ```
 
-For a two-category item, use `ResponseCategories = "0,1"`. With `scale_type = "likert"` the two categories are labelled No and Yes. inrep does not score open answers, so a knowledge question needs its answer options in the item text or a custom page. Here we get a six-row item bank with two domains.
+For a two-category item, use `ResponseCategories = "0,1"`. With `scale_type = "likert"` the two categories are labelled No and Yes. For a multiple-choice item, put the answer texts in `Option1`, `Option2`, ... and use `scale_type = "options"` on the page (Part 2). inrep stores the position of the chosen option; scoring against your key happens in the analysis or in a `results_processor` (Vignette 2). Here we get a six-row item bank with two domains.
 
 ```{r custom_binary}
 knowledge_items <- data.frame(
@@ -177,7 +177,7 @@ demos_page <- list(
 
 ### Item block page (`type = "items"`)
 
-Items are referenced by **row index** in the item bank. `scale_type` chooses the response labels: `"likert"` (agreement labels in the study language), `"frequency"`, `"difficulty"`, or `"numeric"` / `"custom"` (the category values themselves). Any other value also shows the category values.
+Items are referenced by **row index** in the item bank. `scale_type` chooses the response labels: `"likert"` (agreement labels in the study language), `"frequency"`, `"difficulty"`, `"options"` (the texts in `Option1`, `Option2`, ...), or `"numeric"` / `"custom"` (the category values themselves). Any other value also shows the category values.
 
 ```{r page_items}
 items_page <- list(
