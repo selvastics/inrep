@@ -194,7 +194,7 @@ select_next_item_basic_internal <- function(rv, item_bank, config) {
     return(NULL)
   }
   if (rv$item_counter <= config$adaptive_start) {
-    item <- sample(available, 1)
+    item <- available[sample.int(length(available), 1L)]
           message(sprintf("Selecting random item %d: %d", rv$item_counter, item))
     return(item)
   }
@@ -226,7 +226,7 @@ select_next_item_basic_internal <- function(rv, item_bank, config) {
     top_items <- available[info >= 0.95 * max(info, na.rm = TRUE)]
     item <- sample(top_items, 1)
   } else if (config$criteria == "RANDOM") {
-    item <- sample(available, 1)
+    item <- available[sample.int(length(available), 1L)]
   } else if (config$criteria == "WEIGHTED") {
     group_indices <- sapply(available, function(i) {
       for (g in names(config$item_groups)) if (i %in% config$item_groups[[g]]) return(g)
@@ -409,19 +409,13 @@ init_reactive_values <- function(config) {
 #'   created by \code{\link{init_reactive_values}}.
 #' @param config A study configuration object created by \code{\link{create_study_config}}
 #'   containing assessment parameters and validation rules.
-#' @param webdav_url Character string specifying WebDAV URL for cloud storage,
-#'   or \code{NULL} to disable cloud saving. Should follow format
-#'   \code{"https://server.com/webdav/path/"}.
+#' @param webdav_url WebDAV address(es) for cloud storage, or \code{NULL} to
+#'   disable cloud saving. Any form accepted by \code{\link{webdav_upload}}.
 #' @param password Character string containing password for WebDAV authentication,
 #'   or \code{NULL} if authentication is not required.
-#' @param share_token Character string with a Nextcloud/ownCloud public share
-#'   token, used as the WebDAV username. Only needed when \code{webdav_url} is
-#'   already the direct \code{.../public.php/webdav/} endpoint (e.g. what
-#'   academiccloud.de's "WebDAV" copy-link button gives you) rather than an
-#'   \code{.../index.php/s/<token>} share page link - the latter has its token
-#'   auto-extracted from the URL and does not need this. If \code{webdav_url}
-#'   is the direct endpoint and \code{share_token} is left \code{NULL}, the
-#'   upload authenticates with an empty username, which public shares reject.
+#' @param share_token Token of a public Nextcloud/ownCloud share. Only needed
+#'   when \code{webdav_url} is a bare \code{.../public.php/webdav/} address;
+#'   share links contain the token already. See \code{\link{webdav_upload}}.
 #'
 #' @details
 #' If \code{rv} or \code{config} is invalid, a fresh object is created via
@@ -529,27 +523,23 @@ validate_session <- function(rv, config, webdav_url = NULL, password = NULL, sha
 #'   a completed assessment with \code{cat_result} populated.
 #' @param config A study configuration object created by \code{\link{create_study_config}}
 #'   containing study metadata and storage parameters.
-#' @param webdav_url Character string specifying WebDAV URL for cloud storage.
-#'   Should follow format \code{"https://server.com/webdav/path/"}. If \code{NULL},
-#'   cloud saving is skipped.
-#' @param password Character string containing password for WebDAV authentication.
-#'   If \code{NULL}, attempts anonymous access.
+#' @param webdav_url Where to store the file: a Nextcloud/ownCloud share link,
+#'   a public share WebDAV address, or any WebDAV folder URL. Several URLs may
+#'   be given and are tried in order. See \code{\link{webdav_upload}} for the
+#'   accepted forms. If \code{NULL}, cloud saving is skipped.
+#' @param password Share password (public shares) or account/app password
+#'   (plain WebDAV). \code{NULL} or \code{""} for no password.
 #' @param session Optional Shiny session object. When provided, upload success or
 #'   failure will be shown to the user via \code{shiny::showNotification()}.
-#' @param share_token Character string with a Nextcloud/ownCloud public share
-#'   token, used as the WebDAV username. Pass this when \code{webdav_url} is
-#'   already the direct \code{.../public.php/webdav/} endpoint (e.g. from
-#'   academiccloud.de's "WebDAV" copy-link button) - that form has no token
-#'   embedded in the URL, so without this the upload authenticates with an
-#'   empty username and the server rejects it (401/403, or a 409 that looks
-#'   unrelated to auth). Not needed when \code{webdav_url} is an
-#'   \code{.../index.php/s/<token>} share page link, since that token is
-#'   auto-extracted from the URL.
+#' @param share_token Token of a public share. Only needed when
+#'   \code{webdav_url} is a bare \code{.../public.php/webdav/} address; share
+#'   links contain the token already.
+#' @param user User name for a plain (non-share) WebDAV folder.
 #'
 #' @details
-#' The function writes the JSON payload to a temporary file and uploads that
-#' file. It can also convert a Nextcloud/ownCloud public share URL to the
-#' corresponding WebDAV endpoint.
+#' Writes the JSON payload to a temporary file and uploads it with
+#' \code{\link{webdav_upload}}, which handles share links, upload-only
+#' shares, plain WebDAV servers and fallback hosts.
 #'
 #' @return Logical value indicating upload success:
 #' \describe{
@@ -628,7 +618,8 @@ validate_session <- function(rv, config, webdav_url = NULL, password = NULL, sha
 #' RFC 2518. Internet Engineering Task Force.
 #'
 #' @export
-save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL, session = NULL, share_token = NULL) {
+save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL, session = NULL,
+                                  share_token = NULL, user = NULL) {
   # Helper to notify user in Shiny UI (if session is available)
   notify_user <- function(msg, type = "error") {
     if (!is.null(session) && inherits(session, "ShinySession")) {
@@ -684,99 +675,35 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
     writeLines(json_data, con)
     close(con)
     
-    # Handle different URL formats. An explicitly passed share_token always
-    # wins; otherwise try to recover it from an index.php/s/<token> share
-    # page link. A direct .../public.php/webdav/ URL (e.g. from
-    # academiccloud.de's WebDAV copy-link button) has no token embedded in
-    # it at all, so without an explicit share_token there is nothing to
-    # auto-detect and the upload falls back to an empty username below.
-    if (is.null(share_token) && grepl("index.php/s/", webdav_url)) {
-      # Extract share token from Nextcloud/ownCloud public share URL
-      share_token <- gsub(".*index.php/s/([^/]+).*", "\\1", webdav_url)
-      # Convert to WebDAV format for public shares
-      base_url <- gsub("(https?://[^/]+).*", "\\1", webdav_url)
-      webdav_url <- paste0(base_url, "/public.php/webdav/")
-      message(sprintf("Converted public share URL to WebDAV endpoint: %s", webdav_url))
-    }
-    
-    # Ensure URL ends with /
-    if (!grepl("/$", webdav_url)) webdav_url <- paste0(webdav_url, "/")
-    upload_url <- paste0(webdav_url, filename)
-    
-    message(sprintf("Attempting to upload to: %s", upload_url))
-    
-    # Set up authentication for public shares
-    auth <- if (!is.null(share_token) && nzchar(share_token)) {
-      # For public shares, use the share token as username and password as password
-      httr::authenticate(user = share_token, password = password %||% "")
-    } else if (!is.null(password) && nzchar(password)) {
-      # For regular WebDAV, use empty username and password
-      httr::authenticate(user = "", password = password)
-    } else {
-      # Try without authentication for public shares
-      NULL
-    }
-    
-    if (!is.null(auth)) {
-      message("Authentication configured")
-    } else {
-      message("No authentication configured")
-    }
-    
-    # Upload file
-    response <- httr::PUT(
-      url = upload_url,
-      body = httr::upload_file(temp_file),
-      httr::add_headers("Content-Type" = "application/json"),
-      config = auth,
-      httr::timeout(30)  # 30 second timeout
+    # All URL handling (share links, public share endpoints, plain WebDAV
+    # folders, several hosts) lives in webdav_upload().
+    ok <- webdav_upload(
+      content = readBin(temp_file, "raw", file.info(temp_file)$size),
+      filename = filename,
+      url = webdav_url,
+      password = password,
+      share_token = share_token,
+      user = user,
+      content_type = "application/json; charset=utf-8"
     )
-    
-    message(sprintf("Upload response status: %d", httr::status_code(response)))
-    
-    # Detailed error reporting
-    if (httr::status_code(response) %in% c(200, 201, 204)) {
-      message(sprintf("Session data successfully uploaded to %s as %s", webdav_url, filename))
+    upload_filename <- filename
+
+    if (isTRUE(ok)) {
       notify_user(
         paste0("\u2713 Data successfully uploaded to cloud! (File: ", filename, ")"),
         type = "message"
       )
       return(TRUE)
-    } else {
-      status_code <- httr::status_code(response)
-      message(sprintf("Failed to upload session data to %s: HTTP %d", webdav_url, status_code))
-      
-      # Provide specific error messages based on status code
-      error_msg <- switch(as.character(status_code),
-        "401" = "Authentication failed - check share token and password",
-        "403" = "Access forbidden - check share permissions (upload not allowed)",
-        "404" = "URL not found - check WebDAV URL format",
-        "405" = "Method not allowed - server doesn't support PUT",
-        "409" = "Conflict - file may already exist",
-        "422" = "Unprocessable entity - check file format",
-        "500" = "Server error - contact administrator",
-        "503" = "Service unavailable - try again later",
-        sprintf("HTTP %d - check server configuration", status_code)
-      )
-      
-      message(sprintf("Error details: %s", error_msg))
-      notify_user(
-        paste0("\u2717 Cloud upload FAILED (HTTP ", status_code, "): ", error_msg),
-        type = "error"
-      )
-      
-      # Try to get response body for more details
-      tryCatch({
-        response_text <- httr::content(response, "text")
-        if (nzchar(response_text)) {
-          message(sprintf("Server response: %s", substr(response_text, 1, 500)))
-        }
-      }, error = function(e) {
-        message("Could not retrieve server response details")
-      })
-      
-      return(FALSE)
     }
+    tried <- attr(ok, "attempts")
+    last_status <- if (nrow(tried)) utils::tail(stats::na.omit(tried$status), 1) else integer(0)
+    notify_user(
+      paste0("\u2717 Cloud upload FAILED",
+             if (length(last_status)) paste0(" (HTTP ", last_status, ")") else "",
+             ". See the R console for details."),
+      type = "error"
+    )
+    return(FALSE)
   }, error = function(e) {
     message(sprintf("Error saving session to cloud: %s", e$message))
     notify_user(

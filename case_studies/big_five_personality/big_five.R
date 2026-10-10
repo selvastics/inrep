@@ -19,6 +19,10 @@ suppressPackageStartupMessages({
 # Convert public share URL to WebDAV format
 # Public share: https://sync.academiccloud.de/index.php/s/TOKEN
 # WebDAV endpoint: https://sync.academiccloud.de/public.php/webdav/
+# ADAPT THIS FOR YOUR OWN STUDY: the WebDAV address and credentials below are
+# this case study's own storage (academiccloud). Replace them with your
+# storage - any WebDAV server works, see ?inrep::webdav_upload - and read the
+# password from an environment variable instead of writing it here.
 WEBDAV_URL <- "https://sync.academiccloud.de/public.php/webdav/"
 WEBDAV_PASSWORD <- "inreptest"
 

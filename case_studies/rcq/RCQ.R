@@ -41,6 +41,10 @@ attach_finish_early_observer <- function(session) {
 # =============================================================================
 # CLOUD STORAGE CONFIGURATION
 # =============================================================================
+# ADAPT THIS FOR YOUR OWN STUDY: the WebDAV address and credentials below are
+# this case study's own storage (academiccloud). Replace them with your
+# storage - any WebDAV server works, see ?inrep::webdav_upload - and read the
+# password from an environment variable instead of writing it here.
 WEBDAV_URL <- "https://sync.academiccloud.de/public.php/webdav/"
 WEBDAV_PASSWORD <- "inreptest"
 WEBDAV_SHARE_TOKEN <- "Y51QPXzJVLWSAcb"

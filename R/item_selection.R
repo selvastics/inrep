@@ -445,8 +445,10 @@ select_next_item <- function(rv, item_bank, config) {
     # Algorithm: 21-point Normal quadrature spanning ±3 posterior SDs.
     # Posterior approximated as N(hat_theta, SE^2) — exact under normal-normal
     # conjugacy, a good approximation for EAP estimates.
-    se_post <- if (!is.null(rv$ability_se) && is.numeric(rv$ability_se) &&
-                    is.finite(rv$ability_se) && rv$ability_se > 0) rv$ability_se else 1.0
+    # the standard error of the current estimate is stored in rv$current_se
+    se_now  <- rv$current_se %||% rv$ability_se
+    se_post <- if (!is.null(se_now) && is.numeric(se_now) &&
+                    is.finite(se_now) && se_now > 0) se_now else 1.0
     mei_grid    <- seq(current_theta - 3 * se_post,
                        current_theta + 3 * se_post,
                        length.out = 21)
@@ -479,8 +481,10 @@ select_next_item <- function(rv, item_bank, config) {
     available[sample.int(length(available), 1L, prob = probs)]
   } else if (config$criteria == "MFI") {
     exposure <- table(rv$administered) / max(1, length(rv$administered))
+    # items not administered yet have no entry in the table (NA), i.e. exposure 0
     exposure_penalty <- vapply(available, function(i) {
-      1 - 0.5 * (exposure[as.character(i)] %||% 0)
+      ex <- unname(exposure[as.character(i)])
+      1 - 0.5 * (if (length(ex) == 0 || is.na(ex)) 0 else ex)
     }, numeric(1))
     adjusted_info <- info * exposure_penalty
     if (length(adjusted_info) == 0 || all(is.na(adjusted_info) | adjusted_info <= 0)) {
@@ -564,7 +568,9 @@ fast_select_next_item <- function(rv, item_bank, config, max_compute = 15) {
   n_administered <- length(rv$administered)
   adaptive_start <- config$adaptive_start %||% config$min_items %||% 5
   if (isTRUE(config$adaptive) && n_administered < adaptive_start) {
-    item <- sample(available, 1)
+    # sample(x, 1) draws from 1:x when x is a single number, which could return
+    # an item that was already administered; sample.int() avoids this
+    item <- available[sample.int(length(available), 1L)]
     message(sprintf("Selected random item %d (pre-adaptive phase, %d/%d)", item, n_administered + 1, adaptive_start))
     return(item)
   }
@@ -596,7 +602,7 @@ fast_select_next_item <- function(rv, item_bank, config, max_compute = 15) {
 
   # Quick selection
   if (all(is.na(info) | info <= 0)) {
-    return(sample(available, 1))
+    return(available[sample.int(length(available), 1L)])
   }
   
   # Select item with highest information
@@ -605,7 +611,7 @@ fast_select_next_item <- function(rv, item_bank, config, max_compute = 15) {
     best_items <- available[which.max(info)]
   }
   
-  return(sample(best_items, 1))
+  return(best_items[sample.int(length(best_items), 1L)])
 }
 
 # Utility operator for null-coalescing

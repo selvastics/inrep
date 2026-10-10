@@ -17,21 +17,31 @@
 #'   When provided, overrides both built-in themes and \code{theme_config} settings.
 #' @param theme_config Named list of theme parameters for custom theming.
 #'   Contains CSS variable definitions like \code{primary_color}, \code{font_family}, etc.
-#' @param webdav_url Character string specifying WebDAV URL for cloud-based result storage,
-#'   or \code{NULL} to disable cloud functionality. When provided, \code{password} must also be specified.
-#'   Example URLs: \code{"https://sync.academiccloud.de/index.php/s/YourSharedFolder/"} or 
-#'   \code{"https://your-institution.edu/webdav/studies/"}. Both \code{webdav_url} and \code{password}
-#'   are required together for cloud storage functionality.
-#' @param password Character string for WebDAV authentication. Required when \code{webdav_url} is specified.
-#'   This should be the access password or token for your WebDAV storage endpoint.
-#'   For security, consider using environment variables: \code{Sys.getenv("WEBDAV_PASSWORD")}.
-#' @param webdav_share_token Character string with a Nextcloud/ownCloud public
-#'   share token, used as the WebDAV username. Needed when \code{webdav_url} is
-#'   already the direct \code{.../public.php/webdav/} endpoint - e.g. what
-#'   academiccloud.de's "WebDAV" copy-link button gives you - since that form
-#'   has no token embedded in it. Not needed for an
-#'   \code{.../index.php/s/<token>} share page link, since that token is
-#'   extracted from the URL automatically.
+#' @param webdav_url Where inrep stores each participant's session file
+#'   (JSON) on a WebDAV server, or \code{NULL} for local storage only. Any
+#'   WebDAV server works; the accepted forms are:
+#'   \itemize{
+#'     \item a Nextcloud/ownCloud share link as shown in the browser, e.g.
+#'       \code{"https://cloud.example.org/index.php/s/AbCdEf123"};
+#'     \item a public share WebDAV address, \code{".../public.php/webdav/"}
+#'       (then also give \code{webdav_share_token}) or
+#'       \code{".../public.php/dav/files/<token>/"};
+#'     \item any WebDAV folder, e.g.
+#'       \code{"https://cloud.example.org/remote.php/dav/files/jdoe/study/"}
+#'       (then also give \code{webdav_user}).
+#'   }
+#'   A character vector of URLs is tried in order (for a share that may live
+#'   on one of several hosts). The academiccloud URLs in the case studies are
+#'   those studies' own storage: replace them with yours. See
+#'   \code{\link{webdav_upload}} for how each form is handled.
+#' @param password Share password (public shares) or account/app password
+#'   (plain WebDAV); \code{NULL} or \code{""} for none. Do not write it into
+#'   scripts that are shared or pushed; use e.g.
+#'   \code{Sys.getenv("WEBDAV_PASSWORD")} with the value in \code{~/.Renviron}.
+#' @param webdav_share_token Token of a public share (the part after
+#'   \code{/s/} in the share link). Only needed when \code{webdav_url} is a
+#'   bare \code{.../public.php/webdav/} address.
+#' @param webdav_user User name for a plain (non-share) WebDAV folder.
 #' @param save_format Character string specifying output format for assessment results.
 #'   Options: \code{"rds"} (default), \code{"csv"}, \code{"json"}, \code{"pdf"}.
 #' @param logger Function for custom logging. Default uses internal \code{logr} implementation.
@@ -132,11 +142,20 @@
 #' # Local storage only (default)
 #' launch_study(config, item_bank)
 #' 
-#' # With cloud backup
+#' # With cloud backup to a Nextcloud/ownCloud share (replace with your own)
 #' launch_study(
-#'   config, 
+#'   config,
 #'   item_bank,
-#'   webdav_url = "https://sync.academiccloud.de/index.php/s/YourFolder/",
+#'   webdav_url = "https://cloud.example.org/index.php/s/YourShareToken",
+#'   password = Sys.getenv("WEBDAV_PASSWORD")
+#' )
+#'
+#' # With cloud backup to a personal WebDAV folder
+#' launch_study(
+#'   config,
+#'   item_bank,
+#'   webdav_url = "https://cloud.example.org/remote.php/dav/files/jdoe/study/",
+#'   webdav_user = "jdoe",
 #'   password = Sys.getenv("WEBDAV_PASSWORD")
 #' )
 #' }
@@ -368,8 +387,8 @@
 #'   config = hildesheim_config,
 #'   item_bank = bfi_items,
 #'   save_format = "json",
-#'   webdav_url = "https://sync.academiccloud.de/index.php/s/Y51QPXzJVLWSAcb",
-#'   password = "inreptest",
+#'   webdav_url = "https://cloud.example.org/index.php/s/YourShareToken",
+#'   password = Sys.getenv("WEBDAV_PASSWORD"),
 #'   study_key = paste0("HILDESHEIM_", generate_uuid())
 #' )
 #' }
@@ -384,6 +403,7 @@ launch_study <- function(
     webdav_url = NULL,
     password = NULL,
     webdav_share_token = NULL,
+    webdav_user = NULL,
     save_format = "rds",
     logger = function(msg, ...) message(msg),
     study_key = NULL,
@@ -912,24 +932,18 @@ launch_study <- function(
                  "Or remove both arguments to use local storage only.")
     }
     if (!base::is.null(webdav_url) && base::is.null(password)) {
-      logger("WebDAV URL provided without password", level = "ERROR")
-      base::stop("Cloud storage requires both 'webdav_url' and 'password' arguments.\n",
-                 "You provided a WebDAV URL but no password.\n",
-                 "Please provide both arguments together:\n",
-                 "  webdav_url = \"", webdav_url, "\"\n",
-                 "  password = \"your-access-password\"\n",
-                 "For security, consider using: password = Sys.getenv(\"WEBDAV_PASSWORD\")")
+      # Public shares without a password accept anonymous uploads
+      logger("WebDAV URL without password - uploading anonymously", level = "INFO")
     }
-    if (!base::is.null(webdav_url) && !base::is.null(password)) {
+    if (!base::is.null(webdav_url)) {
       # Validate URL format
-      if (!grepl("^https?://", webdav_url)) {
+      if (!all(grepl("^https?://", webdav_url))) {
         logger("Invalid WebDAV URL format", level = "ERROR")
         base::stop("WebDAV URL must start with 'http://' or 'https://'\n",
-                   "Provided: ", webdav_url, "\n",
-                   "Example: webdav_url = \"https://sync.academiccloud.de/index.php/s/YourFolder/\"")
+                   "Provided: ", paste(webdav_url, collapse = ", "), "\n",
+                   "Example: webdav_url = \"https://cloud.example.org/index.php/s/YourShareToken\"")
       }
-      logger("Cloud storage enabled with WebDAV URL and password", level = "INFO")
-      logger(paste("Cloud storage enabled:", webdav_url), level = "INFO")
+      logger(paste("Cloud storage enabled:", paste(webdav_url, collapse = ", ")), level = "INFO")
     }
   } else {
     logger("Using local storage only (no cloud backup)", level = "INFO")
@@ -2986,6 +3000,7 @@ launch_study <- function(
   rv$webdav_url <- webdav_url
   rv$webdav_password <- password
   rv$webdav_share_token <- webdav_share_token
+  rv$webdav_user <- webdav_user
 
   # Register session objects for robust preservation (avoid .GlobalEnv scraping)
   tryCatch({
@@ -3203,7 +3218,8 @@ launch_study <- function(
 
     if (isTRUE(include_cloud) && !base::is.null(webdav_url)) {
       tryCatch({
-        save_session_to_cloud(rv, config, webdav_url, password, session = session, share_token = webdav_share_token)
+        save_session_to_cloud(rv, config, webdav_url, password, session = session,
+                              share_token = webdav_share_token, user = webdav_user)
       }, error = function(e) {
         logger(sprintf("Storage pipeline cloud save failed [%s]: %s", trigger, e$message), level = "WARNING")
       })
@@ -3968,7 +3984,34 @@ launch_study <- function(
                    },
                    "results" = {
                      if (base::is.null(rv$cat_result)) return()
-                     
+
+                     # A results_processor replaces the default summary here as
+                     # well, not only on a results page of a custom_page_flow.
+                     # The responses are passed in item bank order, with NA for
+                     # items that were not administered.
+                     if (base::is.function(config$results_processor)) {
+                       resp_full <- base::rep(NA_real_, base::nrow(item_bank))
+                       n_given <- base::min(base::length(rv$cat_result$administered),
+                                            base::length(rv$cat_result$responses))
+                       if (n_given > 0) {
+                         idx <- rv$cat_result$administered[base::seq_len(n_given)]
+                         resp_full[idx] <- base::as.numeric(rv$cat_result$responses[base::seq_len(n_given)])
+                       }
+                       rp <- config$results_processor
+                       rp_formals <- base::names(base::formals(rp))
+                       rp_args <- base::list(responses = resp_full, item_bank = item_bank)
+                       if ("demographics" %in% rp_formals) rp_args$demographics <- rv$demo_data
+                       if ("session"      %in% rp_formals) rp_args$session      <- session
+                       if ("rv"           %in% rp_formals) rp_args$rv           <- rv
+                       if ("input"        %in% rp_formals) rp_args$input        <- input
+                       if ("config"       %in% rp_formals) rp_args$config       <- config
+                       report <- base::tryCatch(base::do.call(rp, rp_args), error = function(e) {
+                         logger(base::sprintf("results_processor failed: %s", e$message), level = "ERROR")
+                         shiny::p(base::paste("The report could not be created:", e$message))
+                       })
+                       return(shiny::div(class = "assessment-card", report))
+                     }
+
                      results_content <- base::list(
                        shiny::h3(ui_labels$results_title, class = "card-header"),
                        shiny::div(class = "results-section",
@@ -4757,7 +4800,11 @@ launch_study <- function(
             current_page_num <- rv$current_page %||% 1
             page_id <- current_page$id %||% paste0("page_", current_page_num)
             # Handle NULL item_indices (adaptive selection) - get from page cache
-            if (is.null(current_page$item_indices)) {
+            # Pages whose items were chosen at render time (adaptive, or a
+            # function such as a booklet draw) are read from the page cache
+            if (is.null(current_page$item_indices) ||
+                is.function(current_page$item_indices) ||
+                identical(current_page$item_indices, "adaptive")) {
               # Adaptive selection was used - get from cached page selection
               
               cat("RESPONSE COLLECTION DEBUG: Adaptive page", page_id, "\n")
@@ -4771,7 +4818,7 @@ launch_study <- function(
               if (!is.null(session$userData$page_selected_items) && !is.null(session$userData$page_selected_items[[page_id]])) {
                 item_indices_to_collect <- session$userData$page_selected_items[[page_id]]
                 cat("RESPONSE COLLECTION: Using cached item selection for page", page_id, "-> item", item_indices_to_collect, "\n")
-                logger(sprintf("Using cached item selection for page %s: item %d", page_id, item_indices_to_collect))
+                logger(sprintf("Using cached item selection for page %s: items %s", page_id, paste(item_indices_to_collect, collapse = ", ")))
               } else if (!is.null(rv$administered) && length(rv$administered) > 0) {
                 # Fallback: get the last administered item
                 item_indices_to_collect <- tail(rv$administered, 1)
@@ -5132,13 +5179,17 @@ launch_study <- function(
             current_page_num <- rv$current_page %||% 1
             page_id <- current_page$id %||% paste0("page_", current_page_num)
             # Handle NULL item_indices (adaptive selection) - get from page cache
-            if (is.null(current_page$item_indices)) {
+            # Pages whose items were chosen at render time (adaptive, or a
+            # function such as a booklet draw) are read from the page cache
+            if (is.null(current_page$item_indices) ||
+                is.function(current_page$item_indices) ||
+                identical(current_page$item_indices, "adaptive")) {
               # Adaptive selection was used - get from cached page selection
               
               # First try to get from page_selected_items cache (most reliable, from session$userData)
               if (!is.null(session$userData$page_selected_items) && !is.null(session$userData$page_selected_items[[page_id]])) {
                 item_indices_to_collect <- session$userData$page_selected_items[[page_id]]
-                logger(sprintf("Using cached item selection for final page %s: item %d", page_id, item_indices_to_collect))
+                logger(sprintf("Using cached item selection for final page %s: items %s", page_id, paste(item_indices_to_collect, collapse = ", ")))
               } else if (!is.null(rv$administered) && length(rv$administered) > 0) {
                 # Fallback: get the last administered item
                 item_indices_to_collect <- tail(rv$administered, 1)

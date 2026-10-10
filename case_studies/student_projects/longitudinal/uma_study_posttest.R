@@ -12,6 +12,10 @@ suppressPackageStartupMessages({
 # Define the %||% operator for null coalescing
 `%||%` <- function(x, y) if (is.null(x)) y else x
 # WebDAV configuration
+# ADAPT THIS FOR YOUR OWN STUDY: the WebDAV address and credentials below are
+# this case study's own storage (academiccloud). Replace them with your
+# storage - any WebDAV server works, see ?inrep::webdav_upload - and read the
+# password from an environment variable instead of writing it here.
 #WEBDAV_BASE   <- "https://sync.academiccloud.de/public.php/webdav/"
 #WEBDAV_USER   <- "Km4R44qFHamr9zS"   # share token
 #WEBDAV_PASS   <- "inreptest"         # password (if set for the public link)

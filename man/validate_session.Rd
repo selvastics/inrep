@@ -4,7 +4,13 @@
 \alias{validate_session}
 \title{Validate Assessment Session State and Handle Cloud Storage}
 \usage{
-validate_session(rv, config, webdav_url = NULL, password = NULL)
+validate_session(
+  rv,
+  config,
+  webdav_url = NULL,
+  password = NULL,
+  share_token = NULL
+)
 }
 \arguments{
 \item{rv}{A reactive values object containing current session state, typically
@@ -13,12 +19,15 @@ created by \code{\link{init_reactive_values}}.}
 \item{config}{A study configuration object created by \code{\link{create_study_config}}
 containing assessment parameters and validation rules.}
 
-\item{webdav_url}{Character string specifying WebDAV URL for cloud storage,
-or \code{NULL} to disable cloud saving. Should follow format
-\code{"https://server.com/webdav/path/"}.}
+\item{webdav_url}{WebDAV address(es) for cloud storage, or \code{NULL} to
+disable cloud saving. Any form accepted by \code{\link{webdav_upload}}.}
 
 \item{password}{Character string containing password for WebDAV authentication,
 or \code{NULL} if authentication is not required.}
+
+\item{share_token}{Token of a public Nextcloud/ownCloud share. Only needed
+when \code{webdav_url} is a bare \code{.../public.php/webdav/} address;
+share links contain the token already. See \code{\link{webdav_upload}}.}
 }
 \value{
 An updated reactive values object.
@@ -60,11 +69,11 @@ validate_session(
 
 }
 \references{
-Robitzsch, A., Kiefer, T., & Wu, M. (2020). \emph{TAM: Test Analysis Modules}. 
+Robitzsch, A., Kiefer, T., & Wu, M. (2020). \emph{TAM: Test Analysis Modules}.
 R package version 3.5-19. \url{https://CRAN.R-project.org/package=TAM}
 
-Fielding, R., Gettys, J., Mogul, J., Frystyk, H., Masinter, L., Leach, P., & 
-Berners-Lee, T. (1999). \emph{Hypertext Transfer Protocol -- HTTP/1.1}. 
+Fielding, R., Gettys, J., Mogul, J., Frystyk, H., Masinter, L., Leach, P., &
+Berners-Lee, T. (1999). \emph{Hypertext Transfer Protocol -- HTTP/1.1}.
 RFC 2616. Internet Engineering Task Force.
 }
 \seealso{

@@ -346,6 +346,14 @@ generate_complete_script <- function(user_code, auto_run, console_ready = FALSE,
     # Session management  
     "init_reactive_values",
     "save_session_to_cloud",
+    "webdav_upload",
+    ".webdav_body",
+    ".webdav_content_type",
+    ".webdav_targets",
+    ".webdav_parse_share",
+    ".webdav_user_kind",
+    ".webdav_reason",
+    ".webdav_status_hint",
     "resume_session",
     
     # Utilities

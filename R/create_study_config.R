@@ -1,9 +1,9 @@
 #' Create Study Configuration
 #'
 #' Creates a configuration object for adaptive (or fixed-form) assessment studies.
-#' Psychometric computations can be performed by optional backends (for example, TAM)
-#' when available. The configuration controls assessment workflow, session handling,
-#' and reporting.
+#' The configuration controls assessment workflow, session handling, and reporting.
+#' inrep does not calibrate items. In adaptive mode it uses the item parameters in
+#' the item bank as fixed and known (see Details).
 #'
 #' @param name Character string specifying the study name for identification and reporting.
 #' @param demographics Character vector of demographic field names to collect, 
@@ -11,7 +11,8 @@
 #' @param study_key Character string providing unique identifier for the study. 
 #'   Defaults to auto-generated UUID for session tracking.
 #' @param min_SEM Numeric value specifying minimum standard error for stopping criterion.
-#'   Computed by TAM estimation procedures. Typical values: 0.2-0.4.
+#'   The standard error is the posterior standard deviation of inrep's EAP estimate.
+#'   Typical values: 0.2-0.4.
 #' @param min_items Integer minimum number of items to administer before stopping rules apply.
 #' @param max_items Integer maximum number of items to administer, or \code{NULL} to use 
 #'   full item bank size. Prevents excessive test length.
@@ -44,23 +45,24 @@
 #'   high-information items using an empirical frequency penalty.
 #'
 #'   \strong{\code{"RANDOM"}}: Random selection; useful as a no-adaptation baseline.
-#' @param model Character string specifying IRT model passed to TAM functions.
-#'   Options: \code{"1PL"}, \code{"2PL"}, \code{"3PL"}, \code{"GRM"}.
-#'   1PL/2PL/3PL are fully supported via TAM. GRM is experimental: TAM
-#'   internally fits a GPCM (step parameters), which differs from the
-#'   Samejima GRM parameterization (boundary thresholds b1, b2, ...) used in
-#'   the item bank. The EAP fallback and item selection use correct Samejima
-#'   formulas with pre-calibrated parameters.
-#' @param estimation_method Character string specifying TAM ability estimation method.
-#'   Options: \code{"EAP"} (Expected A Posteriori - Bayesian, stable with few items, default) or
-#'   \code{"WLE"} (Weighted Likelihood Estimation - frequentist, accurate with many items).
-#'   Both methods use the TAM package exclusively.
+#' @param model Character string naming the IRT model of the item parameters in
+#'   the item bank. Options: \code{"1PL"}, \code{"2PL"}, \code{"3PL"}, \code{"GRM"}
+#'   (Samejima's graded response model with thresholds \code{b1}, \code{b2}, ...).
+#'   The parameters must come from a calibration done beforehand, for example with
+#'   TAM or mirt. Note that TAM fits partial credit models, not the GRM.
+#' @param estimation_method Character string, \code{"EAP"} (default) or \code{"WLE"}.
+#'   Kept for compatibility. During administration inrep always computes an EAP
+#'   estimate on \code{theta_grid} with the item parameters held fixed. A WLE or any
+#'   other final score can be computed in the \code{results_processor}, for example
+#'   with \code{TAM::tam.wle()} and a calibrated model.
 #' @param recommendation_fun Function to generate personalized recommendations based on 
 #'   ability estimates and demographics, or \code{NULL} for default recommendations.
 #' @param theta_prior Numeric vector of length 2 specifying prior mean and standard deviation
-#'   for ability distribution. Used in TAM's Bayesian estimation procedures.
+#'   of the ability distribution, used for inrep's EAP estimate. It should match the
+#'   population distribution of the calibration.
 #' @param stopping_rule Custom function implementing stopping logic, or \code{NULL} for 
-#'   default SEM-based stopping. Function should accept theta, SE, and item count.
+#'   default SEM-based stopping. It is called as \code{stopping_rule(theta, se, n_items, rv)}
+#'   and returns \code{TRUE} to stop.
 #' @param input_types Named list specifying input types for demographic fields.
 #'   Options: \code{"text"}, \code{"numeric"}, \code{"select"}, \code{"radio"}, \code{"checkbox"}.
 #' @param scoring_fun Function to score item responses, or \code{NULL} for default scoring.
@@ -71,7 +73,7 @@
 #' @param fixed_items Integer vector of item indices that must be administered, 
 #'   or \code{NULL} for no fixed items. Useful for anchor items or content requirements.
 #' @param adaptive Logical indicating whether to use adaptive item selection based on 
-#'   TAM ability estimates. When \code{TRUE} (default), items are selected dynamically 
+#'   inrep's running EAP estimate. When \code{TRUE} (default), items are selected dynamically 
 #'   based on the participant's estimated ability to maximize information. When \code{FALSE}, 
 #'   items are administered in sequential order from the item bank (non-adaptive mode).
 #'   Note: When \code{adaptive = FALSE}, the assessment simply presents items 1 through 
@@ -111,13 +113,15 @@
 #' @param cache_enabled Logical indicating whether to cache item information calculations
 #'   for performance optimization.
 #' @param parallel_computation Logical indicating whether to enable parallel processing
-#'   for TAM estimation procedures when computationally intensive.
-#' @param fast_item_selection Logical indicating whether to use fast item selection
-#'   algorithm for improved performance in large item banks.
+#'   where available.
+#' @param fast_item_selection Logical. When \code{TRUE} (default), each selection step
+#'   evaluates Fisher information at the current estimate for a random subset of at
+#'   most 15 available items and draws among those within 90\% of the maximum, for
+#'   every \code{criteria}. Set to \code{FALSE} to select by \code{criteria} as described.
 #' @param feedback_enabled Logical indicating whether to provide immediate feedback
 #'   after each item response.
-#' @param theta_grid Numeric vector specifying theta grid for TAM's numerical integration,
-#'   or \code{NULL} for TAM's default grid specification.
+#' @param theta_grid Numeric vector, the grid on which inrep evaluates the posterior
+#'   for its EAP estimate.
 #' @param show_introduction Logical indicating whether to display introduction page
 #'   with study overview and briefing information.
 #' @param introduction_content Character string containing HTML content for 
@@ -203,41 +207,27 @@
 #'   and computed defaults. Compatible with \code{\link{launch_study}} and other inrep functions.
 #' 
 #' @details
-#' \strong{TAM Integration Architecture:} This configuration object serves as the primary
-#' interface layer between \code{inrep}'s workflow management and TAM's psychometric functions:
-#' 
-#' \strong{Core TAM Parameters:}
+#' \strong{What inrep computes:} inrep administers items, records responses and
+#' carries out the study logic. It does not estimate item parameters, test model fit
+#' or draw plausible values; these steps belong to a psychometric package such as TAM,
+#' and their results can be passed to inrep (as item parameters in the item bank, or
+#' as a calibrated model used in the \code{results_processor}).
+#'
+#' \strong{Adaptive Testing Configuration:} When \code{adaptive = TRUE}, inrep
 #' \itemize{
-#'   \item \code{model}: Determines which TAM function to invoke (\code{TAM::tam.mml},
-#'     \code{TAM::tam.mml.2pl}, \code{TAM::tam.mml.3pl}).
-#'   \item \code{estimation_method}: Controls TAM's ability estimation procedures 
-#'     (\code{TAM::tam.wle}, \code{TAM::tam.eap}).
-#'   \item \code{theta_prior}: Prior distribution parameters passed to TAM's Bayesian procedures
-#'   \item \code{min_SEM}: Stopping criterion based on TAM's standard error calculations
-#'   \item \code{theta_grid}: Grid specification for TAM's numerical integration algorithms
-#' }
-#' 
-#' \strong{Framework Responsibilities:} \code{inrep} provides workflow orchestration while
-#' TAM performs all psychometric computations:
-#' \itemize{
-#'   \item Session management and state persistence across assessment sessions
-#'   \item User interface rendering and interaction handling via Shiny
-#'   \item Data flow coordination between UI components and TAM functions
-#'   \item Result formatting, reporting, and export in multiple formats
-#'   \item Quality monitoring, logging, and administrative features
-#' }
-#' 
-#' \strong{Adaptive Testing Configuration:} When \code{adaptive = TRUE}, the system:
-#' \itemize{
-#'   \item Uses TAM ability estimates to drive item selection algorithms
-#'   \item Applies stopping rules based on TAM-computed standard errors
-#'   \item Implements content balancing with psychometric optimization
-#'   \item Provides real-time ability tracking throughout the assessment
+#'   \item computes an EAP estimate and its posterior standard deviation after every
+#'     response, on \code{theta_grid} with the prior \code{theta_prior} and the item
+#'     parameters held fixed,
+#'   \item selects the next item by Fisher information at that estimate (see
+#'     \code{criteria} and \code{fast_item_selection}),
+#'   \item stops by \code{stopping_rule}, or by default once \code{min_items} are
+#'     answered and either \code{max_items} is reached or the standard error is at most
+#'     \code{min_SEM}.
 #' }
 #' 
 #' \strong{Quality Assurance Features:}
 #' \itemize{
-#'   \item Automatic validation of parameter ranges for TAM compatibility
+#'   \item Automatic validation of item parameter ranges
 #'   \item Response time monitoring and rapid-response detection
 #'   \item Session timeout management and graceful degradation
 #'   \item Optional event logging for troubleshooting and monitoring
@@ -251,9 +241,9 @@
 #'   \item Demographic field labels and response options
 #' }
 #' 
-#' All psychometric modeling is performed exclusively by TAM (Robitzsch et al., 2024).
-#' \code{inrep} focuses on providing the technological infrastructure and user experience
-#' layer around TAM's validated statistical procedures.
+#' The calibration of the items is done outside inrep, for example with TAM
+#' (Robitzsch et al., 2024). \code{inrep} provides the infrastructure to administer
+#' calibrated items and to report scores computed from them.
 #' 
 #' \strong{HTML Customization:} All page types in custom page flows now support optional
 #' HTML customization parameters for enhanced styling and layout control:

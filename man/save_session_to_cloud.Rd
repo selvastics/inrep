@@ -9,7 +9,9 @@ save_session_to_cloud(
   config,
   webdav_url = NULL,
   password = NULL,
-  session = NULL
+  session = NULL,
+  share_token = NULL,
+  user = NULL
 )
 }
 \arguments{
@@ -19,15 +21,22 @@ a completed assessment with \code{cat_result} populated.}
 \item{config}{A study configuration object created by \code{\link{create_study_config}}
 containing study metadata and storage parameters.}
 
-\item{webdav_url}{Character string specifying WebDAV URL for cloud storage.
-Should follow format \code{"https://server.com/webdav/path/"}. If \code{NULL},
-cloud saving is skipped.}
+\item{webdav_url}{Where to store the file: a Nextcloud/ownCloud share link,
+a public share WebDAV address, or any WebDAV folder URL. Several URLs may
+be given and are tried in order. See \code{\link{webdav_upload}} for the
+accepted forms. If \code{NULL}, cloud saving is skipped.}
 
-\item{password}{Character string containing password for WebDAV authentication.
-If \code{NULL}, attempts anonymous access.}
+\item{password}{Share password (public shares) or account/app password
+(plain WebDAV). \code{NULL} or \code{""} for no password.}
 
 \item{session}{Optional Shiny session object. When provided, upload success or
 failure will be shown to the user via \code{shiny::showNotification()}.}
+
+\item{share_token}{Token of a public share. Only needed when
+\code{webdav_url} is a bare \code{.../public.php/webdav/} address; share
+links contain the token already.}
+
+\item{user}{User name for a plain (non-share) WebDAV folder.}
 }
 \value{
 Logical value indicating upload success:
@@ -42,9 +51,9 @@ Uploads completed session data as JSON to a WebDAV endpoint using
 client-side encryption.
 }
 \details{
-The function writes the JSON payload to a temporary file and uploads that
-file. It can also convert a Nextcloud/ownCloud public share URL to the
-corresponding WebDAV endpoint.
+Writes the JSON payload to a temporary file and uploads it with
+\code{\link{webdav_upload}}, which handles share links, upload-only
+shares, plain WebDAV servers and fallback hosts.
 }
 \section{Data Structure}{
 

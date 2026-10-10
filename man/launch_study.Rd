@@ -11,6 +11,8 @@ launch_study(
   theme_config = NULL,
   webdav_url = NULL,
   password = NULL,
+  webdav_share_token = NULL,
+  webdav_user = NULL,
   save_format = "rds",
   logger = function(msg, ...) message(msg),
   study_key = NULL,
@@ -49,15 +51,34 @@ When provided, overrides both built-in themes and \code{theme_config} settings.}
 \item{theme_config}{Named list of theme parameters for custom theming.
 Contains CSS variable definitions like \code{primary_color}, \code{font_family}, etc.}
 
-\item{webdav_url}{Character string specifying WebDAV URL for cloud-based result storage,
-or \code{NULL} to disable cloud functionality. When provided, \code{password} must also be specified.
-Example URLs: \code{"https://sync.academiccloud.de/index.php/s/YourSharedFolder/"} or 
-\code{"https://your-institution.edu/webdav/studies/"}. Both \code{webdav_url} and \code{password}
-are required together for cloud storage functionality.}
+\item{webdav_url}{Where inrep stores each participant's session file
+(JSON) on a WebDAV server, or \code{NULL} for local storage only. Any
+WebDAV server works; the accepted forms are:
+\itemize{
+  \item a Nextcloud/ownCloud share link as shown in the browser, e.g.
+    \code{"https://cloud.example.org/index.php/s/AbCdEf123"};
+  \item a public share WebDAV address, \code{".../public.php/webdav/"}
+    (then also give \code{webdav_share_token}) or
+    \code{".../public.php/dav/files/<token>/"};
+  \item any WebDAV folder, e.g.
+    \code{"https://cloud.example.org/remote.php/dav/files/jdoe/study/"}
+    (then also give \code{webdav_user}).
+}
+A character vector of URLs is tried in order (for a share that may live
+on one of several hosts). The academiccloud URLs in the case studies are
+those studies' own storage: replace them with yours. See
+\code{\link{webdav_upload}} for how each form is handled.}
 
-\item{password}{Character string for WebDAV authentication. Required when \code{webdav_url} is specified.
-This should be the access password or token for your WebDAV storage endpoint. 
-For security, consider using environment variables: \code{Sys.getenv("WEBDAV_PASSWORD")}.}
+\item{password}{Share password (public shares) or account/app password
+(plain WebDAV); \code{NULL} or \code{""} for none. Do not write it into
+scripts that are shared or pushed; use e.g.
+\code{Sys.getenv("WEBDAV_PASSWORD")} with the value in \code{~/.Renviron}.}
+
+\item{webdav_share_token}{Token of a public share (the part after
+\code{/s/} in the share link). Only needed when \code{webdav_url} is a
+bare \code{.../public.php/webdav/} address.}
+
+\item{webdav_user}{User name for a plain (non-share) WebDAV folder.}
 
 \item{save_format}{Character string specifying output format for assessment results.
 Options: \code{"rds"} (default), \code{"csv"}, \code{"json"}, \code{"pdf"}.}
@@ -192,11 +213,20 @@ Optional upload of completed session data to a WebDAV-compatible endpoint.
 # Local storage only (default)
 launch_study(config, item_bank)
 
-# With cloud backup
+# With cloud backup to a Nextcloud/ownCloud share (replace with your own)
 launch_study(
-  config, 
+  config,
   item_bank,
-  webdav_url = "https://sync.academiccloud.de/index.php/s/YourFolder/",
+  webdav_url = "https://cloud.example.org/index.php/s/YourShareToken",
+  password = Sys.getenv("WEBDAV_PASSWORD")
+)
+
+# With cloud backup to a personal WebDAV folder
+launch_study(
+  config,
+  item_bank,
+  webdav_url = "https://cloud.example.org/remote.php/dav/files/jdoe/study/",
+  webdav_user = "jdoe",
   password = Sys.getenv("WEBDAV_PASSWORD")
 )
 }
@@ -435,8 +465,8 @@ launch_study(
   config = hildesheim_config,
   item_bank = bfi_items,
   save_format = "json",
-  webdav_url = "https://sync.academiccloud.de/index.php/s/Y51QPXzJVLWSAcb",
-  password = "inreptest",
+  webdav_url = "https://cloud.example.org/index.php/s/YourShareToken",
+  password = Sys.getenv("WEBDAV_PASSWORD"),
   study_key = paste0("HILDESHEIM_", generate_uuid())
 )
 }

@@ -1691,8 +1691,26 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
   if (!is.null(page$item_indices)) {
     # Check if item_indices is a function (for dynamic selection)
     if (is.function(page$item_indices)) {
-      computed_indices <- page$item_indices(rv, item_bank, config)
-      if (!is.null(computed_indices) && length(computed_indices) > 0) {
+      # The function runs once per participant and page. Its result is cached so
+      # that a random draw (for example a booklet in a planned missingness
+      # design) stays the same on re-render and is used when responses are
+      # validated and collected.
+      page_id <- page$id %||% paste0("page_", rv$current_page %||% 1)
+      if (is.null(session$userData$page_selected_items)) {
+        session$userData$page_selected_items <- list()
+      }
+      computed_indices <- session$userData$page_selected_items[[page_id]]
+      if (is.null(computed_indices)) {
+        computed_indices <- page$item_indices(rv, item_bank, config)
+        computed_indices <- as.integer(computed_indices)
+        computed_indices <- computed_indices[!is.na(computed_indices) &
+                                             computed_indices >= 1 &
+                                             computed_indices <= nrow(item_bank)]
+        session$userData$page_selected_items[[page_id]] <- computed_indices
+        session$userData$administered <- union(session$userData$administered %||% integer(0),
+                                               computed_indices)
+      }
+      if (length(computed_indices) > 0) {
         page_items <- item_bank[computed_indices, , drop = FALSE]
       } else {
         # Fallback: no items available
@@ -2184,6 +2202,7 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
               webdav_url_to_use <- rv$webdav_url %||% config$webdav_url
               webdav_password_to_use <- rv$webdav_password %||% config$webdav_password
               webdav_share_token_to_use <- rv$webdav_share_token %||% config$webdav_share_token
+              webdav_user_to_use <- rv$webdav_user %||% config$webdav_user
             
               # Check if CSV upload already succeeded (from results processor OR completion handler)
               # csv_upload_succeeded is set in the tryCatch block above if results processor stored CSV info
@@ -2194,7 +2213,8 @@ render_results_page <- function(page, config, rv, item_bank, ui_labels, auto_clo
               # This prevents duplicate uploads and authentication errors
               if (!upload_already_done) {
                 .inrep_debug_message("DEBUG: Attempting JSON fallback cloud save (CSV upload not detected)")
-                result <- save_session_to_cloud(rv, config, webdav_url_to_use, webdav_password_to_use, session = session, share_token = webdav_share_token_to_use)
+                result <- save_session_to_cloud(rv, config, webdav_url_to_use, webdav_password_to_use, session = session,
+                                                share_token = webdav_share_token_to_use, user = webdav_user_to_use)
                 if (result) {
                   .inrep_debug_message("DEBUG: Fallback cloud save (JSON) succeeded when user selected NO")
                 } else {
@@ -3619,7 +3639,8 @@ validate_page_progression <- function(current_page, input, config) {
         # Determine which items to check
         items_to_check <- NULL
         
-        if (!is.null(page$item_indices)) {
+        if (!is.null(page$item_indices) && !is.function(page$item_indices) &&
+            !identical(page$item_indices, "adaptive")) {
           # Fixed items page
           items_to_check <- page$item_indices
         } else {

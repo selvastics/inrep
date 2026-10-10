@@ -23,7 +23,7 @@ Try it out: [inrep-studio](https://selvastics.shinyapps.io/inrep-studio/)
 
 ![inrep demo](man/figures/prev2025-12-06_181825.png)
 
-**inrep** (instant reports) provides Shiny-based test administration, adaptive item selection, and reporting, with TAM integration for psychometric estimation. It thereby supports adaptive and fixed questionnaires, session recovery, and export to common formats (CSV, JSON, SPSS, PDF). Themes and multilingual labels allow UI customization for different deployments.
+**inrep** (instant reports) provides Shiny-based test administration, adaptive item selection, and reporting. inrep does not calibrate items or fit IRT models itself. Item parameters and scoring models come from a calibration with a package such as TAM, and inrep uses them during administration and in the report. It thereby supports adaptive and fixed questionnaires, session recovery, and export to common formats (CSV, JSON, SPSS, PDF). Themes and multilingual labels allow UI customization for different deployments.
 
 <!-- Demo: See the package in action! -->
 ![inrep demo](man/figures/inrep_previewer.gif)
@@ -33,7 +33,7 @@ Try it out: [inrep-studio](https://selvastics.shinyapps.io/inrep-studio/)
 
 - Adaptive and fixed testing; IRT models (1PL, 2PL, 3PL, GRM); stopping rules and item-selection criteria.
 - Shiny-based administration; theme system; multilingual labels (EN, DE, ES, FR).
-- TAM integration for IRT estimation in adaptive mode; reporting and validation tools; export to CSV/JSON/SPSS/PDF.
+- Uses externally calibrated item parameters in adaptive mode (EAP on a grid with fixed parameters); scores from a TAM model can be computed in the report; reporting and validation tools; export to CSV/JSON/SPSS/PDF.
 - Branching, randomization, piping, quotas, and participant management.
 - Session recovery and logging; input validation and basic rate limiting; caching and parallel compute options; accessibility support.
 
