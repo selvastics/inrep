@@ -7,7 +7,9 @@ validate_model <- function(model) {
   }
 
   model <- toupper(trimws(model))
-  allowed <- c("GRM", "GPCM", "PCM", "1PL", "2PL", "3PL")
+  # Only these models are handled by estimate_ability() and item selection;
+  # any other polytomous model would be treated as a dichotomous one.
+  allowed <- c("GRM", "1PL", "2PL", "3PL")
   if (!model %in% allowed) {
     stop(
       sprintf(
@@ -179,10 +181,5 @@ update_session_dataset <- function(section, data, page_id = NULL, stage = NULL, 
   invisible(TRUE)
 }
 
-initialize_enhanced_recovery <- function(...) {
-  invisible(FALSE)
-}
-
-initialize_enhanced_security <- function(...) {
-  invisible(FALSE)
-}
+# No-op stubs. launch_study() calls them; they do nothing and enable no
+# recovery or security feature.

@@ -2,7 +2,7 @@
 % Please edit documentation in R/ui_components.R
 \name{inrep_ui}
 \alias{inrep_ui}
-\title{Unified INREP UI Generator}
+\title{Item or demographics UI}
 \usage{
 inrep_ui(
   type = c("assessment", "demographics"),
@@ -30,6 +30,6 @@ inrep_ui(
 Shiny UI element
 }
 \description{
-Generates all UI components for assessment items and demographics in one function.
-Maintains accessibility, validation, and configuration features.
+Returns the Shiny input for one item (\code{type = "assessment"}) or a
+simple demographics form (\code{type = "demographics"}).
 }

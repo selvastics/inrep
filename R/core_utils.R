@@ -1,24 +1,23 @@
-#' Core Utilities for inrep Package
-#' 
-#' This file consolidates all core utility functions including:
-#' - Basic utility functions (from utils.R)
-#' - Custom operators (from utils_operators.R)  
-#' - Session management utilities (from session_utils.R)
-#' 
+#' Core utilities
+#'
+#' Identifiers, logging, the session state list, and saving and reading
+#' session files.
+#'
 #' @name core_utils
 #' @keywords internal
 
 NULL
 
-# ============================================================================
-# SECTION 1: BASIC UTILITY FUNCTIONS (from utils.R)
-# ============================================================================
+# Utilities ----
 
 #' Generate UUID
 #'
-#' Generates a universally unique identifier using base R random sampling.
+#' Returns a random identifier in UUID version 4 format, drawn with
+#' \code{sample()}. It therefore uses and advances R's random number
+#' generator: after the same \code{set.seed()} the same identifiers are
+#' produced. It is not suitable as a secret.
 #'
-#' @return Character string containing a UUID.
+#' @return Character string in UUID format.
 #' @export
 generate_uuid <- function() {
   hex <- c(0:9, "a", "b", "c", "d", "e", "f")
@@ -33,8 +32,8 @@ generate_uuid <- function() {
 
 #' Initialize Logging System
 #'
-#' Initializes the logging system for assessment sessions and research workflows.
-#' This function creates a log file connection and configures inrep's internal logger.
+#' Checks that the log file can be written and sets \code{log_print()} to
+#' append lines to it.
 #'
 #' @param path Optional character string specifying the log file path.
 #'   If NULL, creates a temporary log file in the system temp directory.
@@ -131,144 +130,16 @@ log_open <- function(path) {
 }
 
 
-#' Select Next Item
-#'
-#' Selects the next item for administration in adaptive or non-adaptive mode.
-#'
-#' @param rv Reactive values object containing test state.
-#' @param item_bank Data frame containing item parameters.
-#' @param config Study configuration list.
-#' @return Item index or NULL if no items remain.
-#' @noRd
-select_next_item_basic_internal <- function(rv, item_bank, config) {
-  rv$item_counter <- rv$item_counter + 1
-  if (length(rv$administered) >= config$max_items) {
-    message("Maximum items reached")
-    return(NULL)
-  }
-  
-  # Non-adaptive mode: Use fixed order from item_groups or fixed_items
-  if (!config$adaptive) {
-    if (!is.null(config$fixed_items)) {
-      if (rv$item_counter <= length(config$fixed_items)) {
-        item <- config$fixed_items[rv$item_counter]
-        message(sprintf("Selecting fixed item %d: %d", rv$item_counter, item))
-        return(item)
-      }
-              message("No more fixed items available")
-      return(NULL)
-    }
-    if (!is.null(config$item_groups)) {
-      group_items <- unlist(config$item_groups)
-      available <- setdiff(group_items, rv$administered)
-      if (length(available) == 0 || rv$item_counter > length(group_items)) {
-        message("No more items in item_groups")
-        return(NULL)
-      }
-      item <- group_items[rv$item_counter]
-              message(sprintf("Selecting item %d from group: %d", rv$item_counter, item))
-      return(item)
-    }
-    available <- setdiff(seq_len(nrow(item_bank)), rv$administered)
-    if (length(available) == 0 || rv$item_counter > length(available)) {
-              message("No more items available")
-      return(NULL)
-    }
-    item <- available[1]
-            message(sprintf("Selecting item %d: %d", rv$item_counter, item))
-    return(item)
-  }
-  
-  # Adaptive mode
-  if (!is.null(config$fixed_items) && rv$item_counter <= length(config$fixed_items)) {
-    item <- config$fixed_items[rv$item_counter]
-    message(sprintf("Selecting fixed item %d: %d", rv$item_counter, item))
-    return(item)
-  }
-  available <- setdiff(seq_len(nrow(item_bank)), rv$administered)
-  if (!is.null(config$item_groups)) {
-    available <- intersect(available, unlist(config$item_groups))
-  }
-  if (length(available) == 0) {
-    message("No more items available in specified groups")
-    return(NULL)
-  }
-  if (rv$item_counter <= config$adaptive_start) {
-    item <- available[sample.int(length(available), 1L)]
-          message(sprintf("Selecting random item %d: %d", rv$item_counter, item))
-    return(item)
-  }
-  
-  item_info <- function(theta, item_idx) {
-    cache_key <- paste(theta, item_idx, sep = ":")
-    if (!is.null(rv$item_info_cache[[cache_key]])) {
-      return(rv$item_info_cache[[cache_key]])
-    }
-    # Delegate to canonical implementation in parallel_utils.R
-    info <- compute_item_info_single(theta, item_idx, item_bank, config)
-    rv$item_info_cache[[cache_key]] <- info
-    info
-  }
-  
-  group_weights <- if (!is.null(config$item_groups) && length(rv$administered) > 0) {
-    group_counts <- table(sapply(rv$administered, function(i) {
-      for (g in names(config$item_groups)) if (i %in% config$item_groups[[g]]) return(g)
-      return("Other")
-    }))
-    weights <- 1 / (1 + (group_counts / max(1, length(rv$administered))))
-    setNames(weights[names(config$item_groups)], names(config$item_groups))
-  } else {
-    setNames(rep(1, length(names(config$item_groups))), names(config$item_groups))
-  }
-  
-  info <- vapply(available, function(i) item_info(rv$current_ability, i), numeric(1))
-  if (config$criteria == "MI") {
-    top_items <- available[info >= 0.95 * max(info, na.rm = TRUE)]
-    item <- sample(top_items, 1)
-  } else if (config$criteria == "RANDOM") {
-    item <- available[sample.int(length(available), 1L)]
-  } else if (config$criteria == "WEIGHTED") {
-    group_indices <- sapply(available, function(i) {
-      for (g in names(config$item_groups)) if (i %in% config$item_groups[[g]]) return(g)
-      "Other"
-    })
-    probs <- info * (group_weights[group_indices] %||% 1) / sum(info * (group_weights[group_indices] %||% 1), na.rm = TRUE)
-    item <- sample(available, 1, prob = probs)
-  } else if (config$criteria == "MFI") {
-    exposure <- table(rv$administered) / max(1, length(rv$administered))
-    exposure_penalty <- vapply(available, function(i) {
-      1 - 0.5 * (exposure[as.character(i)] %||% 0)
-    }, numeric(1))
-    adjusted_info <- info * exposure_penalty
-    top_items <- available[adjusted_info >= 0.95 * max(adjusted_info, na.rm = TRUE)]
-    item <- sample(top_items, 1)
-  } else {
-    top_items <- available[info >= 0.95 * max(info, na.rm = TRUE)]
-    item <- sample(top_items, 1)
-  }
-  message(sprintf("Selected item %d with information %f", item, max(info, na.rm = TRUE)))
-  item
-}
+# Operators ----
 
-# ============================================================================
-# SECTION 2: CUSTOM OPERATORS (from utils_operators.R)
-# ============================================================================
-
-# Internal null-coalescing operator (base R >= 4.1.0 provides base::%||%;
-# this definition is kept only for compatibility within the package namespace)
+# Null-coalescing operator. Base R has %||% only from R 4.4.0, so the
+# package defines its own.
 #' @keywords internal
 `%||%` <- function(x, y) {
   if (is.null(x)) y else x
 }
 
-#' @keywords internal
-`%r%` <- function(string, times) {
-  paste(rep(string, times), collapse = "")
-}
-
-# ============================================================================  
-# SECTION 3: SESSION MANAGEMENT UTILITIES (from session_utils.R)
-# ============================================================================
+# Session utilities ----
 
 #' Session Utilities
 #'
@@ -294,25 +165,25 @@ NULL
 #' container (typically a Shiny \code{reactiveValues()} instance) and updates
 #' fields as the session progresses.
 #'
-#' @return A  list containing initialized reactive values:
+#' @return A list containing initialized reactive values:
 #' \describe{
 #'   \item{\code{stage}}{Current assessment stage ("demographics", "assessment", "complete")}
 #'   \item{\code{demographics}}{Named list for demographic data collection (if specified)}
 #'   \item{\code{administered}}{Integer vector of administered item indices}
 #'   \item{\code{responses}}{List of participant responses with timestamps}
-#'   \item{\code{current_ability}}{Real-time ability estimate (theta)}
+#'   \item{\code{current_ability}}{Current ability estimate (theta); starts at the prior mean}
 #'   \item{\code{current_se}}{Current standard error of ability estimate}
 #'   \item{\code{theta_history}}{Vector of ability estimates across items}
 #'   \item{\code{se_history}}{Vector of standard errors across items}
 #'   \item{\code{current_item}}{Currently displayed item information}
-#'   \item{\code{item_info_cache}}{Cached item information values for performance}
+#'   \item{\code{item_info_cache}}{Cache for item information values}
 #'   \item{\code{item_counter}}{Number of items administered}
 #'   \item{\code{response_times}}{Vector of response times in seconds}
 #'   \item{\code{start_time}}{Session start timestamp}
 #'   \item{\code{session_start}}{Assessment start timestamp}
 #'   \item{\code{error_message}}{Current error message (if any)}
 #'   \item{\code{feedback_message}}{Current feedback message}
-#'   \item{\code{cat_result}}{Final CAT results and statistics}
+#'   \item{\code{cat_result}}{Final results (NULL until the assessment ends)}
 #'   \item{\code{loading}}{Boolean indicating processing status}
 #' }
 #'
@@ -354,18 +225,8 @@ NULL
 #' \code{\link{resume_session}} for session restoration,
 #' \code{\link{save_session_to_cloud}} for cloud storage
 #'
-#' @references
-#' Robitzsch, A., Kiefer, T., & Wu, M. (2020). \emph{TAM: Test Analysis Modules}. 
-#' R package version 3.5-19. \url{https://CRAN.R-project.org/package=TAM}
-#'
-#' Chang, W., Cheng, J., Allaire, J., Xie, Y., & McPherson, J. (2021). 
-#' \emph{shiny: Web Application Framework for R}. R package version 1.6.0. 
-#' \url{https://CRAN.R-project.org/package=shiny}
-#'
 #' @export
 init_reactive_values <- function(config) {
-  requireNamespace("logr", quietly = TRUE)
-  
   # Validate config
   if (!is.list(config)) {
     message("Invalid config for reactive values initialization")
@@ -419,8 +280,11 @@ init_reactive_values <- function(config) {
 #'
 #' @details
 #' If \code{rv} or \code{config} is invalid, a fresh object is created via
-#' \code{init_reactive_values()}. If the session exceeds \code{config$max_session_duration},
-#' the session is reset.
+#' \code{init_reactive_values()}. If the session has lasted longer than
+#' \code{config$max_session_duration} minutes, it is reset, and the responses
+#' collected so far are dropped from the returned object.
+#' The upload runs only when \code{rv$cat_result} is set and
+#' \code{config$session_save} is \code{TRUE}.
 #'
 #' @return An updated reactive values object.
 #'
@@ -431,7 +295,7 @@ init_reactive_values <- function(config) {
 #'   name = "Validation Test",
 #'   model = "2PL",
 #'   max_items = 15,
-#'   session_timeout = 3600  # 1 hour timeout
+#'   max_session_duration = 60  # minutes
 #' )
 #'
 #' rv <- init_reactive_values(config)
@@ -440,7 +304,6 @@ init_reactive_values <- function(config) {
 #'
 #' # Validate without cloud storage
 #' rv_validated <- validate_session(rv, config, NULL, NULL)
-#' rv_validated$session_valid  # TRUE if validation passed
 #'
 #' # Optional WebDAV upload (requires httr/jsonlite)
 #' validate_session(
@@ -456,18 +319,8 @@ init_reactive_values <- function(config) {
 #' \code{\link{save_session_to_cloud}} for manual cloud storage,
 #' \code{\link{create_study_config}} for configuration parameters
 #'
-#' @references
-#' Robitzsch, A., Kiefer, T., & Wu, M. (2020). \emph{TAM: Test Analysis Modules}.
-#' R package version 3.5-19. \url{https://CRAN.R-project.org/package=TAM}
-#'
-#' Fielding, R., Gettys, J., Mogul, J., Frystyk, H., Masinter, L., Leach, P., &
-#' Berners-Lee, T. (1999). \emph{Hypertext Transfer Protocol -- HTTP/1.1}.
-#' RFC 2616. Internet Engineering Task Force.
-#'
 #' @export
 validate_session <- function(rv, config, webdav_url = NULL, password = NULL, share_token = NULL) {
-  requireNamespace("logr", quietly = TRUE)
-  
   if (!is.list(rv) || !is.list(config)) {
     message("Invalid rv or config, initializing new reactive values")
     return(inrep::init_reactive_values(config))
@@ -589,9 +442,9 @@ validate_session <- function(rv, config, webdav_url = NULL, password = NULL, sha
 #' The uploaded JSON contains:
 #' \itemize{
 #'   \item \code{study_key}: Study identifier for data organization
-#'   \item \code{timestamp}: Upload timestamp in ISO format
-#'   \item \code{cat_result}: Complete TAM-derived assessment results
-#'   \item \code{demographics}: Collected demographic information
+#'   \item \code{timestamp}: Upload time (local time, \code{"YYYY-MM-DD HH:MM:SS"})
+#'   \item \code{cat_result}: \code{rv$cat_result} (final estimate and SE, as stored by the study)
+#'   \item \code{demographics}: \code{rv$demo_data}
 #'   \item \code{response_times}: Item-level response times in seconds
 #'   \item \code{theta_history}: Ability estimate progression across items
 #'   \item \code{se_history}: Standard error progression across items
@@ -607,15 +460,6 @@ validate_session <- function(rv, config, webdav_url = NULL, password = NULL, sha
 #' \code{\link{resume_session}} for session restoration,
 #' \code{\link{init_reactive_values}} for session initialization,
 #' \code{\link{create_study_config}} for configuration with storage parameters
-#'
-#' @references
-#' Fielding, R., Gettys, J., Mogul, J., Frystyk, H., Masinter, L., Leach, P., & 
-#' Berners-Lee, T. (1999). \emph{Hypertext Transfer Protocol -- HTTP/1.1}. 
-#' RFC 2616. Internet Engineering Task Force.
-#'
-#' Goland, Y., Whitehead, E., Faizi, A., Carter, S., & Jensen, D. (1999). 
-#' \emph{HTTP Extensions for Distributed Authoring -- WEBDAV}. 
-#' RFC 2518. Internet Engineering Task Force.
 #'
 #' @export
 save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL, session = NULL,
@@ -690,7 +534,7 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
 
     if (isTRUE(ok)) {
       notify_user(
-        paste0("\u2713 Data successfully uploaded to cloud! (File: ", filename, ")"),
+        paste0("Data uploaded (file: ", filename, ")"),
         type = "message"
       )
       return(TRUE)
@@ -698,7 +542,7 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
     tried <- attr(ok, "attempts")
     last_status <- if (nrow(tried)) utils::tail(stats::na.omit(tried$status), 1) else integer(0)
     notify_user(
-      paste0("\u2717 Cloud upload FAILED",
+      paste0("Cloud upload failed",
              if (length(last_status)) paste0(" (HTTP ", last_status, ")") else "",
              ". See the R console for details."),
       type = "error"
@@ -707,7 +551,7 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
   }, error = function(e) {
     message(sprintf("Error saving session to cloud: %s", e$message))
     notify_user(
-      paste0("\u2717 Cloud upload FAILED: ", e$message),
+      paste0("Cloud upload failed: ", e$message),
       type = "error"
     )
     return(FALSE)
@@ -715,11 +559,13 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
 
 }
 
-#' Resume Assessment Session from Local Storage
+#' Read a saved session file
 #'
 #' @description
-#' Reads session data from a file created by \code{save_session_to_cloud()}.
-#' Supports plain JSON and (legacy) base64-encoded JSON.
+#' Reads session data from a JSON file as written by
+#' \code{save_session_to_cloud()}. Supports plain JSON and (legacy)
+#' base64-encoded JSON. It returns the data only; it does not restart or
+#' continue a Shiny session.
 #'
 #' @param file_path Character string specifying the path to a JSON file.
 #'   The file may also contain base64-encoded JSON for legacy backups.
@@ -729,17 +575,11 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
 #' back to base64-decoding the file contents (requires the \code{base64enc}
 #' package) and parsing the decoded text as JSON.
 #'
-#' @return A  list containing restored session data, or \code{NULL} if restoration fails:
-#' \describe{
-#'   \item{\code{study_key}}{Original study identifier}
-#'   \item{\code{timestamp}}{Original session timestamp}
-#'   \item{\code{cat_result}}{TAM-derived assessment results and statistics}
-#'   \item{\code{demographics}}{Participant demographic information}
-#'   \item{\code{response_times}}{Item-level response times in seconds}
-#'   \item{\code{theta_history}}{Complete ability estimate progression}
-#'   \item{\code{se_history}}{Standard error progression across items}
-#'   \item{\code{restored_at}}{Restoration timestamp for audit trail}
-#' }
+#' @return The parsed JSON as a list, or \code{NULL} if reading or parsing
+#'   fails. For files from \code{save_session_to_cloud()} it contains
+#'   \code{study_key}, \code{timestamp}, \code{cat_result},
+#'   \code{demographics}, \code{response_times}, \code{theta_history} and
+#'   \code{se_history}. The content is not checked.
 #'
 #' @examples
 #' \dontrun{
@@ -752,13 +592,6 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
 #'   cat("Original session:", session_data$timestamp, "\n")
 #'   cat("Final ability:", session_data$cat_result$final_theta, "\n")
 #'   cat("Items administered:", length(session_data$theta_history), "\n")
-#'   
-#'   # Continue assessment or analyze results
-#'   if (is.null(session_data$cat_result)) {
-#'     message("Incomplete session - can be continued")
-#'   } else {
-#'     message("Complete session - analyze results")
-#'   }
 #' } else {
 #'   warning("Session restoration failed - check file integrity")
 #' }
@@ -783,23 +616,14 @@ save_session_to_cloud <- function(rv, config, webdav_url = NULL, password = NULL
 #' }
 #'
 #' @section Error Handling:
-#' Function returns \code{NULL} and logs detailed error information for:
-#' \itemize{
-#'   \item File accessibility issues (permissions, network, corruption)
-#'   \item Decryption failures (wrong format, corrupted data)
-#'   \item JSON parsing errors (malformed structure)
-#'   \item Data validation failures (missing required fields)
-#' }
+#' If the file cannot be read or parsed, the error message is printed with
+#' \code{message()} and \code{NULL} is returned.
 #'
-#' @seealso 
+#' @seealso
 #' \code{\link{save_session_to_cloud}} for creating session backup files,
 #' \code{\link{validate_session}} for session validation,
 #' \code{\link{init_reactive_values}} for new session initialization,
 #' \code{\link{create_study_config}} for configuration setup
-#'
-#' @references
-#' Robitzsch, A., Kiefer, T., & Wu, M. (2020). \emph{TAM: Test Analysis Modules}. 
-#' R package version 3.5-19. \url{https://CRAN.R-project.org/package=TAM}
 #'
 #' @export
 resume_session <- function(file_path) {

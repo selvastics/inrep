@@ -2,11 +2,9 @@
 % Please edit documentation in R/core_utils.R
 \name{core_utils}
 \alias{core_utils}
-\title{Core Utilities for inrep Package}
+\title{Core utilities}
 \description{
-This file consolidates all core utility functions including:
-- Basic utility functions (from utils.R)
-- Custom operators (from utils_operators.R)  
-- Session management utilities (from session_utils.R)
+Identifiers, logging, the session state list, and saving and reading
+session files.
 }
 \keyword{internal}

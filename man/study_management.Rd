@@ -3,15 +3,12 @@
 \name{study_management}
 \alias{study_management}
 \alias{.inrep_is_debug}
-\title{Study Management for inrep Package}
+\title{Study flow, custom page flow and page validation}
 \usage{
 .inrep_is_debug()
 }
 \description{
-This file consolidates all study management functions including:
-- Study flow helpers (from study_flow_helpers.R)
-- Study simulations (from study_simulations.R)
-- Custom page flow (from custom_page_flow.R)
-- Flow validation (from custom_page_flow_validation.R)
+Default text templates for study pages, demographic inputs, the custom
+page flow renderer, response-label helpers and page validation.
 }
 \keyword{internal}

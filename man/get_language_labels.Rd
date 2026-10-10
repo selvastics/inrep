@@ -7,7 +7,7 @@
 get_language_labels(language = "en")
 }
 \arguments{
-\item{language}{Language code (en, de, es, fr)}
+\item{language}{Language code (en, de, es, fr, fa)}
 }
 \value{
 List of language labels

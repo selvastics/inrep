@@ -2,7 +2,7 @@
 % Please edit documentation in R/core_utils.R
 \name{resume_session}
 \alias{resume_session}
-\title{Resume Assessment Session from Local Storage}
+\title{Read a saved session file}
 \usage{
 resume_session(file_path)
 }
@@ -11,21 +11,17 @@ resume_session(file_path)
 The file may also contain base64-encoded JSON for legacy backups.}
 }
 \value{
-A  list containing restored session data, or \code{NULL} if restoration fails:
-\describe{
-  \item{\code{study_key}}{Original study identifier}
-  \item{\code{timestamp}}{Original session timestamp}
-  \item{\code{cat_result}}{TAM-derived assessment results and statistics}
-  \item{\code{demographics}}{Participant demographic information}
-  \item{\code{response_times}}{Item-level response times in seconds}
-  \item{\code{theta_history}}{Complete ability estimate progression}
-  \item{\code{se_history}}{Standard error progression across items}
-  \item{\code{restored_at}}{Restoration timestamp for audit trail}
-}
+The parsed JSON as a list, or \code{NULL} if reading or parsing
+  fails. For files from \code{save_session_to_cloud()} it contains
+  \code{study_key}, \code{timestamp}, \code{cat_result},
+  \code{demographics}, \code{response_times}, \code{theta_history} and
+  \code{se_history}. The content is not checked.
 }
 \description{
-Reads session data from a file created by \code{save_session_to_cloud()}.
-Supports plain JSON and (legacy) base64-encoded JSON.
+Reads session data from a JSON file as written by
+\code{save_session_to_cloud()}. Supports plain JSON and (legacy)
+base64-encoded JSON. It returns the data only; it does not restart or
+continue a Shiny session.
 }
 \details{
 The function first tries to parse the file as JSON. If that fails, it falls
@@ -43,13 +39,8 @@ Supported file formats:
 
 \section{Error Handling}{
 
-Function returns \code{NULL} and logs detailed error information for:
-\itemize{
-  \item File accessibility issues (permissions, network, corruption)
-  \item Decryption failures (wrong format, corrupted data)
-  \item JSON parsing errors (malformed structure)
-  \item Data validation failures (missing required fields)
-}
+If the file cannot be read or parsed, the error message is printed with
+\code{message()} and \code{NULL} is returned.
 }
 
 \examples{
@@ -63,13 +54,6 @@ if (!is.null(session_data)) {
   cat("Original session:", session_data$timestamp, "\n")
   cat("Final ability:", session_data$cat_result$final_theta, "\n")
   cat("Items administered:", length(session_data$theta_history), "\n")
-  
-  # Continue assessment or analyze results
-  if (is.null(session_data$cat_result)) {
-    message("Incomplete session - can be continued")
-  } else {
-    message("Complete session - analyze results")
-  }
 } else {
   warning("Session restoration failed - check file integrity")
 }
@@ -86,10 +70,6 @@ if (!is.null(restored_session) &&
 }
 }
 
-}
-\references{
-Robitzsch, A., Kiefer, T., & Wu, M. (2020). \emph{TAM: Test Analysis Modules}. 
-R package version 3.5-19. \url{https://CRAN.R-project.org/package=TAM}
 }
 \seealso{
 \code{\link{save_session_to_cloud}} for creating session backup files,

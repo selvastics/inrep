@@ -67,14 +67,14 @@ config <- create_study_config(
 | `model` | model of the item parameters: `"1PL"`, `"2PL"`, `"3PL"` or `"GRM"` | `"GRM"` |
 | `criteria` | selection criterion (Part 1.3) | `"MI"` |
 | `fast_item_selection` | faster selection that ignores `criteria` (Part 1.3) | `TRUE` |
-| `adaptive_start` | number of items drawn at random before selection by information begins | `min_items` |
+| `adaptive_start` | position of the first item selected by information; the items before it are drawn at random | `min_items` |
 | `theta_prior` | mean and SD of the normal prior of the EAP | `c(0, 1)` |
 | `theta_grid` | grid for the EAP | `seq(-4, 4, length.out = 100)` |
 | `min_items`, `max_items` | the shortest and the longest test | 5, size of the bank |
 | `min_SEM` | stop once the standard error is at most this value | 0.3 |
 | `stopping_rule` | a function that replaces the default rule (Part 1.4) | `NULL` |
 
-Two defaults deserve attention. With `fast_item_selection = TRUE`, the default, inrep evaluates the information of a random subset of at most 15 items and draws among those within 90 % of the best one, whatever `criteria` says. This is fast for large banks, but it is not the criterion described below. And by default the first `min_items` items are drawn at random. A random start spreads the use of the items, but in a short test it uses up a large share of the items without adaptation. We therefore set both explicitly.
+Two defaults deserve attention. With `fast_item_selection = TRUE`, the default, inrep evaluates the information of a random subset of at most 15 items and draws among those within 90 % of the best one, whatever `criteria` says. This is fast for large banks, but it is not the criterion described below. And by default the first `min_items - 1` items are drawn at random. A random start spreads the use of the items, but in a short test it uses up a large share of the items without adaptation. We therefore set both explicitly.
 
 ## 1.2 Prior and standard error
 

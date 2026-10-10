@@ -1,10 +1,9 @@
-# Psychological Study on R Package Testing Experience
-# Example implementation using inrep package with Monochrome theme
+# Example: questionnaire on experiences with testing R packages ----
+# Fixed form (not adaptive), six items, Monochrome theme. The items are
+# made up for this demo.
 
-# Load the inrep package
 library(inrep)
 
-# Create the item bank for the psychological study
 r_testing_items <- data.frame(
   item_id = 1:6,
   item_text = c(
@@ -23,18 +22,17 @@ r_testing_items <- data.frame(
     "Motivation to test regularly correlates with higher code reliability and quality.",
     "Clear documentation is critical for effective use of testing tools."
   ),
-  # Graded Response Model parameters for Likert scales
-  a = rep(1.5, 6),  # Discrimination parameter
-  b1 = rep(-2, 6),  # Threshold 1 (Strongly Disagree -> Disagree)
-  b2 = rep(-1, 6),  # Threshold 2 (Disagree -> Neutral)
-  b3 = rep(0, 6),   # Threshold 3 (Neutral -> Agree)
-  b4 = rep(1, 6),   # Threshold 4 (Agree -> Strongly Agree)
+  # GRM parameters: placeholders, not used in a fixed-form study
+  a = rep(1.5, 6),
+  b1 = rep(-2, 6),
+  b2 = rep(-1, 6),
+  b3 = rep(0, 6),
+  b4 = rep(1, 6),
   response_options = I(rep(list(c(
     "Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"
   )), 6))
 )
 
-# Create demographic questions
 demographic_questions <- list(
   age_range = list(
     question = "What is your age range?",
@@ -48,31 +46,23 @@ demographic_questions <- list(
   )
 )
 
-# Create study configuration using the Monochrome theme
 study_config <- create_study_config(
   name = "Psychological Study on R Package Testing Experience",
-
-  # Use the elegant Monochrome theme
   theme = "Monochrome",
-
-  # Study parameters
   study_key = "r_testing_psychology_2025",
-  model = "GRM",  # Graded Response Model for Likert scales
-
-  # Fixed questionnaire (not adaptive)
+  model = "GRM",
   adaptive = FALSE,
   max_items = 6,
   min_items = 6,
 
-  # UI configuration
   response_ui_type = "radio",
   progress_style = "bar",
 
-  # Session management (20-minute timer)
+  # max_session_duration (minutes) is only checked in select_next_item();
+  # the app's time limit is launch_study(max_session_time = ...) in seconds
   session_save = TRUE,
   max_session_duration = 20,
 
-  # Demographic configurations
   demographics = c("age_range", "r_experience"),
   input_types = list(
     age_range = "radio",
@@ -80,17 +70,15 @@ study_config <- create_study_config(
   ),
   demographic_configs = demographic_questions,
   
-  # Results processor function (following vignette patterns)
+  # Mean of the item responses and a bar chart of the six answers
   results_processor = function(responses, item_bank, demographics = NULL, session = NULL) {
     tryCatch({
       if (is.null(responses) || length(responses) == 0) {
         return(shiny::HTML("<p>No responses available.</p>"))
       }
 
-      # Calculate average score
       mean_score <- mean(responses, na.rm = TRUE)
 
-      # Create simple plot (following vignette approach)
       plot_base64 <- ""
       tryCatch({
         if (requireNamespace("ggplot2", quietly = TRUE) && requireNamespace("base64enc", quietly = TRUE)) {
@@ -114,7 +102,6 @@ study_config <- create_study_config(
         message("Plot generation failed: ", e$message)
       })
 
-      # Simple HTML report (following vignette style)
       html_report <- paste0(
         '<div style="font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px;">',
         '<h1 style="color: #2E8B57; text-align: center;">Study Results</h1>',
@@ -143,11 +130,9 @@ study_config <- create_study_config(
   }
 )
 
-# Fix item bank structure to match current API
+# inrep expects the columns Question and ResponseCategories
 r_testing_items$Question <- r_testing_items$item_text
 r_testing_items$ResponseCategories <- rep("1,2,3,4,5", 6)
 r_testing_items <- r_testing_items[, c("Question", "a", "b1", "b2", "b3", "b4", "ResponseCategories")]
-r_testing_items$stringsAsFactors <- FALSE
 
-# Launch the study
 launch_study(study_config, r_testing_items)

@@ -19,7 +19,7 @@ knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 
 inrep runs browser-based questionnaire studies. You describe the questions, page order, and demographic fields. inrep handles the interface, page transitions, and data collection.
 
-This vignette covers a **non-adaptive study** — every participant sees the same items in the same order. For reporting and visualization, see **Vignette 2**. For adaptive item selection, see **Vignette 3**.
+This vignette covers a **non-adaptive study**: every participant sees the same items in the same order. For reporting and visualization, see **Vignette 2**. For adaptive item selection, see **Vignette 3**.
 
 We build up the study one component at a time, assuming a single language throughout. Once each piece is in place, we cover multilingual support and assemble everything into a complete bilingual study at the end.
 
@@ -43,27 +43,27 @@ library(inrep)
 
 Every inrep study script assembles the same four pieces, by default in this order:
 
-1. **Item bank** — a data frame with one row per questionnaire item.
-2. **Demographics** — a named list defining the background questions. Optional.
-3. **Page flow** — a list controlling what participants see on each screen and in what order.
-4. **Config + launch** — `create_study_config()` sets all study-level options; `launch_study()` starts the study.
+1. **Item bank**: a data frame with one row per questionnaire item.
+2. **Demographics**: a named list defining the background questions. Optional.
+3. **Page flow**: a list controlling what participants see on each screen and in what order.
+4. **Config + launch**: `create_study_config()` sets all study-level options; `launch_study()` starts the study.
 
-Parts 1–3 build each piece in isolation. Part 4 introduces multilingual support. Part 5 assembles everything into one complete script.
+Parts 1 to 3 build each piece in isolation. Part 4 introduces multilingual support. Part 5 assembles everything into one complete script.
 
-> **This might look like a lot of configuration.** LLMs (ChatGPT, Claude, etc.) are very effective at drafting and adjusting these lists — paste in a chunk and describe what you want changed. If you prefer a point-and-click starting point, [inrep-studio](https://selvastics.shinyapps.io/inrep-studio/) generates a working study script from a web form that you can run immediately. Think of both as a blank canvas: your specific needs are best addressed through iterative refinement, with or without an LLM.
+> **This might look like a lot of configuration.** A language model can help to draft and adjust these lists: paste in a chunk and describe what you want changed, then check the result. For a point-and-click starting point, [inrep-studio](https://selvastics.shinyapps.io/inrep-studio/) generates a study script from a web form. In both cases the generated script is a draft that you refine for your study.
 
 ---
 
 # Part 1: The item bank
 
-The item bank is a plain R data frame with one row per question. inrep ships two built-in banks:
+The item bank is a plain R data frame with one row per question. inrep ships several example banks, for instance:
 
-- **`bfi_items`** — 30 personality items on a 5-point Likert scale.
-- **`math_items`** — binary mathematics items (correct / incorrect).
+- **`bfi_items`**: 30 Big Five style personality items on a 5-point scale, with simulated GRM parameters.
+- **`math_items`**: 40 placeholder mathematics items (no real item text) with five response categories and simulated GRM parameters.
 
 ## 1.1 Looking at the built-in bank
 
-Here we see the first rows of the item bank: question text and response options. For now, we ignore the other parameter columns because they are only used in adaptive testing (Vignette 3).
+Here we see the first rows of the item bank: question text and response options. For now, we ignore the parameter columns (`a`, `b1` to `b4`) because they are only used in adaptive testing (Vignette 3).
 
 ```{r load_bfi}
 library(inrep)
@@ -74,7 +74,7 @@ head(bfi_items)
 
 ## 1.2 Required columns
 
-Every item bank must have at least these columns:
+An item bank uses these columns:
 
 | Column | Required | What it holds |
 |------------------------|----------|----------------------------------------------|
@@ -83,9 +83,9 @@ Every item bank must have at least these columns:
 | `id` | Recommended | A stable label used to reference this item in scoring. |
 | `domain` | Recommended | Which subscale this item belongs to. Used for grouped scoring. |
 | `reverse_coded` | Recommended | `TRUE` for negatively-worded items that need flipping before averaging. |
-| `a`, `b`, `b1`–`b4` | Adaptive only | IRT parameter columns used for adaptive item selection and ability estimation. Not needed for fixed-form studies — the package skips these checks automatically when `adaptive = FALSE`. See Vignette 3. |
+| `a`, `b`, `b1` to `b4` | Adaptive only | IRT parameter columns used for adaptive item selection and ability estimation. Not needed for fixed-form studies: the parameter checks are skipped when `adaptive = FALSE`. See Vignette 3. |
 
-> **`ResponseCategories` — why a string?** Use `"1,2,3,4,5"` rather than `c(1,2,3,4,5)` so the labels survive CSV export and re-import unchanged. For a 7-point scale: `"1,2,3,4,5,6,7"`.
+> **`ResponseCategories` is a string.** inrep splits it at the commas, so write `"1,2,3,4,5"` rather than `c(1,2,3,4,5)`. For a 7-point scale: `"1,2,3,4,5,6,7"`. Without this column an items page shows five categories.
 
 ## 1.3 Building your own item bank
 
@@ -111,7 +111,7 @@ my_items <- data.frame(
 )
 ```
 
-For a right/wrong knowledge test, use `ResponseCategories = "0,1"`. Here we get a six-row right/wrong item bank with two domains.
+For a two-category item, use `ResponseCategories = "0,1"`. With `scale_type = "likert"` the two categories are labelled No and Yes. inrep does not score open answers, so a knowledge question needs its answer options in the item text or a custom page. Here we get a six-row item bank with two domains.
 
 ```{r custom_binary}
 knowledge_items <- data.frame(
@@ -137,16 +137,16 @@ knowledge_items <- data.frame(
 
 | `type` | What participants see |
 |----------------|-------------------------------------------------------|
-| `"custom"` | Free HTML — intro, consent, transition text, or debriefing. |
+| `"custom"` | Free HTML: intro, consent, transition text, or debriefing. |
 | `"demographics"` | A form built automatically from `demographic_configs`. |
 | `"items"` | Questionnaire items drawn from the item bank by row index. |
-| `"results"` | The final screen — built-in score table and/or a custom results function. |
+| `"results"` | The final screen: output of your `results_processor` function, or a short thank-you message without one. |
 
 Every page entry needs at minimum `id`, `type`, and `title`.
 
 ## 2.2 Defining each page type
 
-Here we define the four page types as standalone objects. Nothing renders yet — they are assembled into `custom_page_flow` in Part 5.
+Here we define the four page types as standalone objects. Nothing renders yet; they are assembled into `custom_page_flow` in Part 5.
 
 ### Welcome page (`type = "custom"`)
 
@@ -177,7 +177,7 @@ demos_page <- list(
 
 ### Item block page (`type = "items"`)
 
-Items are referenced by **row index** in the item bank. `scale_type = "likert"` uses radio buttons; `"binary"` is for 0/1 items.
+Items are referenced by **row index** in the item bank. `scale_type` chooses the response labels: `"likert"` (agreement labels in the study language), `"frequency"`, `"difficulty"`, or `"numeric"` / `"custom"` (the category values themselves). Any other value also shows the category values.
 
 ```{r page_items}
 items_page <- list(
@@ -190,16 +190,16 @@ items_page <- list(
 )
 ```
 
-> **Robust indices.** `item_indices = 1:6` points to rows, not item IDs. If items are added or reordered, those positions shift. Compute from IDs or domain labels instead so they stay correct after any reordering:
+> **Indices from IDs.** `item_indices = 1:6` points to rows, not item IDs. If items are added or reordered, those positions shift. Computing the indices from IDs or domain labels keeps them correct after reordering:
 >
 > ``` r
 > c_idx <- which(my_items$id %in% paste0("C", 1:6))
-> e_idx <- which(bfi_items$domain == "Extraversion")
+> consc_idx <- which(my_items$domain == "Conscientiousness")
 > ```
 
 ### Results page (`type = "results"`)
 
-Shown after the last item block. The built-in version displays a score table; custom feedback is covered in Vignette 2.
+Shown after the last item block. Without a `results_processor` (Vignette 2) the page shows only a short thank-you message. The page uses `title`; `content` and `_en` fields are not used on a results page.
 
 ```{r page_results}
 results_page <- list(
@@ -213,7 +213,7 @@ results_page <- list(
 
 # Part 3: Demographics
 
-`demographic_configs` is a named list — one entry per background question. Entry names are what you reference in page definitions. Field types: `"number"`, `"select"`, `"checkbox"`, `"slider"`, `"text"`.
+`demographic_configs` is a named list with one entry per background question. Entry names are what you reference in page definitions. Field types: `"text"`, `"numeric"`, `"select"`, `"radio"`, `"checkbox"`, `"slider"`. Other values fall back to a text field.
 
 When we run this chunk, we create a named list of demographic fields. It is used later in `create_study_config()`.
 
@@ -222,7 +222,7 @@ demographic_configs <- list(
 
   age = list(
     question = "How old are you?",
-    type     = "number",
+    type     = "numeric",
     required = TRUE
   ),
 
@@ -251,7 +251,7 @@ demographic_configs <- list(
 )
 ```
 
-> **Slider values** are stored in the demographics output, not the responses vector. Reading a slider field from `responses[30]` returns `NA` silently. Vignette 2 covers reading demographic values.
+> **Slider values** are stored with the demographics, not in the item responses, so they have to be read from the demographics (Vignette 2), not from `responses`.
 
 `create_study_config()` takes two related arguments: `demographics` (the field IDs to activate) and `demographic_configs` (the full definitions). Pass both:
 
@@ -269,30 +269,32 @@ study_config <- create_study_config(
 
 Pass one theme name to `create_study_config(theme = ...)`. That is all that is needed.
 
-**Core themes:** `"Light"`, `"Midnight"`, `"Sunset"`, `"Forest"`, `"Ocean"`, `"Berry"`, `"Professional"`, `"hildesheim"`
+Theme names are not case-sensitive. **General themes:** `"Light"`, `"Professional"`, `"Midnight"`, `"Sunset"`, `"Forest"`, `"Ocean"`, `"Berry"`, `"Paper"`, `"Sepia"`, `"Monochrome"`, `"Dark-Mode"`, `"hildesheim"`.
 
-**Additional themes** — inspired by popular AI tool interfaces and sourced from their public design systems: `"claude"`, `"opencode"`, `"xai"`, `"mistral"`, `"notion"`, `"linear"`, `"vercel"`, `"stripe"`, `"raycast"`, `"warp"`, `"paper"`, `"sepia"`, `"dark-mode"`, `"high-contrast"`, `"colorblind-safe"`, `"dyslexia-friendly"`, `"large-text"`, and more.
+**Readability variants:** `"high-contrast"`, `"large-text"`, `"dyslexia-friendly"`, `"colorblind-safe"`. They change colours, font sizes and spacing; they have not been tested against an accessibility standard.
+
+`get_available_themes()` lists all theme files. An unknown name falls back to `"light"` with a warning.
 
 ```{r themes}
 create_study_config(name = "Demo", theme = "Professional", adaptive = FALSE)
 create_study_config(name = "Demo", theme = "hildesheim",   adaptive = FALSE)
-create_study_config(name = "Demo", theme = "claude",       adaptive = FALSE)
+create_study_config(name = "Demo", theme = "large-text",   adaptive = FALSE)
 ```
 
 ---
 
 # Part 4: Multiple languages
 
-So far, we have assumed the study runs in a single language and have written everything — item text, page content, demographic questions — directly in that language. In inrep, it is straightforward to either swap the entire study to a different language or to let participants choose between two languages within the same session.
+So far, we have assumed the study runs in a single language and have written everything (item text, page content, demographic questions) directly in that language. inrep can run the whole study in another language, or let participants choose between two languages within the same session.
 
 Two things are controlled separately:
 
-- **UI language** — navigation buttons, validation messages, and built-in labels. Set via `language = ...` in `create_study_config()`. Supported: `"en"`, `"de"`, `"fr"`, `"es"`.
-- **Content language** — your page text, item questions, demographic questions. You write these yourself in whichever language(s) you need.
+- **UI language**: navigation buttons, validation messages, and built-in labels. Set via `language = ...` in `create_study_config()`. Supported: `"en"`, `"de"`, `"fr"`, `"es"`.
+- **Content language**: your page text, item questions, demographic questions. You write these yourself in whichever language(s) you need.
 
-## 4.1 A single non-English study — just set `language`
+## 4.1 A single non-English study: set `language`
 
-Write all content in the target language in the primary fields and pass `language` to match. Here we build a short French study; navigation buttons will read *Continuer* and *Soumettre*.
+Write all content in the target language in the primary fields and pass `language` to match. Here we build a short French study; navigation buttons will read *Continuer* and *Soumettre*. Note that the agreement labels of `"likert"` items exist only in German and English, so this French study shows English labels (Strongly Disagree to Strongly Agree).
 
 ```{r french_study}
 french_items <- data.frame(
@@ -333,7 +335,7 @@ launch_study(config = french_config, item_bank = french_items, debug_mode = TRUE
 
 ## 4.2 Bilingual studies with a toggle button
 
-When two languages must coexist in the same session — common for studies running across language groups — every participant-facing string gets a second variant with an `_en` suffix. inrep reads the `_en` field whenever English is active and falls back to the primary field otherwise.
+When two languages must coexist in the same session, as in studies running across language groups, every participant-facing string gets a second variant with an `_en` suffix. inrep reads the `_en` field whenever English is active and falls back to the primary field otherwise.
 
 | Primary field | English variant |
 |---|---|
@@ -346,7 +348,7 @@ When two languages must coexist in the same session — common for studies runni
 
 For item text, add a `Question_EN` column to the item bank alongside `Question`. inrep picks the right column based on the active language.
 
-The language is switched client-side by a button on the welcome page that calls `Shiny.setInputValue("store_language_globally", "en")`. From that point on, inrep reads the `_en` fields and switches the UI labels. Place the button on the **first** page so participants set their language before the assessment starts — `store_language_globally` takes effect on the next page render.
+The language is switched client-side by a button on the welcome page that calls `Shiny.setInputValue("store_language_globally", "en")`. From that point on, inrep reads the `_en` fields and switches the UI labels. Place the button on the **first** page so participants set their language before the assessment starts; `store_language_globally` takes effect on the next page render.
 
 Here is the minimal toggle pattern:
 
@@ -394,7 +396,7 @@ function toggleLang() {
 )
 ```
 
-A subsequent page then carries `_en` variants on every string — inrep picks the correct one based on which language is currently active:
+A subsequent page then carries `_en` variants on every string, and inrep picks the correct one based on which language is currently active:
 
 ```{r lang_subsequent_page}
 items_bilingual <- list(
@@ -413,17 +415,17 @@ items_bilingual <- list(
 
 # Part 5: A complete study
 
-Everything from Parts 1–4 comes together here: a bilingual item bank, demographics with `_en` variants, a page flow with a language toggle on the welcome page, a theme, and a config that ties it all to the launcher. Running the chunk opens the study in your browser; the R console shows `Listening on http://127.0.0.1:XXXX` and stays busy until you stop it.
+Everything from Parts 1 to 4 comes together here: a bilingual item bank, demographics with `_en` variants, a page flow with a language toggle on the welcome page, a theme, and a config that ties it all to the launcher. `launch_study()` returns a Shiny app object; run at the console, it is printed and therefore started. The R console shows `Listening on http://127.0.0.1:XXXX` and stays busy until you stop it. Use `launch_browser = TRUE` to open the browser directly.
 
-The study runs in **German by default**. The toggle button on the welcome page switches both content and UI labels to English simultaneously. All five BFI domains are covered across three item blocks using a compact 15-item bilingual bank defined inline. Indices are derived from domain labels so they stay correct after any reordering.
+The study runs in **German by default**. The toggle button on the welcome page switches both content and UI labels to English simultaneously. All five Big Five domains are covered across three item blocks using a 15-item bilingual bank defined inline. Indices are derived from domain labels so they stay correct after any reordering.
 
-**Debug shortcuts** (only when `debug_mode = TRUE`, red indicator bottom-right): **Ctrl+A** fills the current page; **Ctrl+Q** fills all pages and jumps to results.
+**Debug shortcuts** (only when `debug_mode = TRUE`, shown in a grey "DEBUG MODE ACTIVE" panel): **Ctrl+A** fills the current page; **Ctrl+Q** fills all remaining pages with random answers and moves on to the results. Set `debug_mode = FALSE` before collecting data.
 
 ```{r complete_study}
 library(inrep)
 
 # ============================================================
-# 1. Bilingual item bank — 3 items per BFI domain (15 total).
+# 1. Bilingual item bank: 3 items per Big Five domain (15 total).
 #    Question    = German (default; shown when language = "de")
 #    Question_EN = English (used when participant activates the toggle)
 # ============================================================
@@ -476,14 +478,14 @@ bfi_bilingual <- data.frame(
 )
 
 # ============================================================
-# 2. Demographics — German primary text, English _en variants
+# 2. Demographics: German primary text, English _en variants
 # ============================================================
 demographic_configs <- list(
 
   age = list(
     question    = "Wie alt sind Sie?",
     question_en = "How old are you?",
-    type        = "number",
+    type        = "numeric",
     required    = FALSE
   ),
 
@@ -500,7 +502,7 @@ demographic_configs <- list(
 )
 
 # ============================================================
-# 3. Page flow — German primary text + _en variants on every page.
+# 3. Page flow: German primary text + _en variants on every page.
 #    Indices derived from domain labels so they stay correct after
 #    any reordering of the item bank.
 # ============================================================
@@ -607,13 +609,11 @@ function toggleLang() {
   ),
 
   # -- Results --------------------------------------------------------------
+  # Without a results_processor this page shows a short thank-you message.
   list(
-    id         = "results",
-    type       = "results",
-    title      = "Vielen Dank!",
-    title_en   = "Thank you!",
-    content    = "<p>Ihre Antworten wurden gespeichert.</p>",
-    content_en = "<p>Your responses have been saved.</p>"
+    id    = "results",
+    type  = "results",
+    title = "Vielen Dank! / Thank you!"
   )
 )
 

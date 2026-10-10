@@ -23,7 +23,7 @@ Try it out: [inrep-studio](https://selvastics.shinyapps.io/inrep-studio/)
 
 ![inrep demo](man/figures/prev2025-12-06_181825.png)
 
-**inrep** (instant reports) provides Shiny-based test administration, adaptive item selection, and reporting. inrep does not calibrate items or fit IRT models itself. Item parameters and scoring models come from a calibration with a package such as TAM, and inrep uses them during administration and in the report. It thereby supports adaptive and fixed questionnaires, session recovery, and export to common formats (CSV, JSON, SPSS, PDF). Themes and multilingual labels allow UI customization for different deployments.
+**inrep** (instant reports) provides Shiny-based test administration, adaptive item selection, and reporting. inrep does not calibrate items or fit IRT models itself. Item parameters come from a calibration done elsewhere (for example with TAM or mirt), and inrep uses them during administration and, if you supply a scoring function, in the report. It supports adaptive and fixed questionnaires, session recovery, and export of responses as RDS, CSV or JSON, plus a PDF report. Themes and translated interface labels allow the UI to be adapted to a study.
 
 <!-- Demo: See the package in action! -->
 ![inrep demo](man/figures/inrep_previewer.gif)
@@ -31,18 +31,19 @@ Try it out: [inrep-studio](https://selvastics.shinyapps.io/inrep-studio/)
 
 ### Key features
 
-- Adaptive and fixed testing; IRT models (1PL, 2PL, 3PL, GRM); stopping rules and item-selection criteria.
-- Shiny-based administration; theme system; multilingual labels (EN, DE, ES, FR).
-- Uses externally calibrated item parameters in adaptive mode (EAP on a grid with fixed parameters); scores from a TAM model can be computed in the report; reporting and validation tools; export to CSV/JSON/SPSS/PDF.
-- Branching, randomization, piping, quotas, and participant management.
-- Session recovery and logging; input validation and basic rate limiting; caching and parallel compute options; accessibility support.
+- Fixed and adaptive administration. Adaptive mode uses externally calibrated item parameters (1PL, 2PL, 3PL or GRM), selects the next item by maximum Fisher information (the default `fast_item_selection = TRUE` ignores `criteria`), estimates ability by EAP on a grid with the parameters held fixed, and stops at `max_items` or when the standard error falls below `min_SEM`.
+- Page flows (`custom_page_flow`) with custom HTML pages, demographics, item pages and results pages; `item_indices` can be a function, for example for random item order or booklet designs.
+- Interface labels in English, German, Spanish and French; item and page text can be given in a second language with `_en` fields.
+- Themes, including high-contrast, large-text and dyslexia-friendly variants. These are style sheets, not a tested accessibility standard.
+- Results pages filled by your own `results_processor` function; export as RDS, CSV or JSON, a PDF report, and optional upload to a WebDAV server.
+- Optional session saving and resumption.
 
 ## Installation
 
 ### Development Version
 
 ```r
-# Install from GitHub (clean installation with dependency management)
+# Install from GitHub
 devtools::install_github("selvastics/inrep", ref = "main", force = TRUE)
 
 # Load the package
@@ -92,11 +93,7 @@ If you encounter any error during installation, make sure Rtools (on Windows) or
 
 ### Dependencies
 
-The package requires R ≥ 4.1.0 and integrates mainly with the following packages:
-
-* **shiny**
-* **TAM**
-* **ggplot2**
+The package requires R >= 4.1.0 and imports **shiny**, **later** and **jsonlite**. Packages such as **ggplot2** (plots in reports), **TAM** or **mirt** (calibration, done outside inrep) and **pagedown** (PDF reports) are suggested and only needed for the corresponding features.
 
 ## Quick Start
 
@@ -110,8 +107,8 @@ data(bfi_items)
 config_fixed <- create_study_config(
   name = "Personality Questionnaire",
   adaptive = FALSE,        # Disable adaptive testing
-  max_items = 5,          # Show exactly 5 items in order
-  theme = "hildesheim",   # University theme
+  max_items = 5,          # Show the first 5 items in order
+  theme = "hildesheim",
   session_save = TRUE     # Enable recovery
 )
 
@@ -121,11 +118,13 @@ launch_study(config_fixed, bfi_items)
 
 ### Adaptive Testing (IRT-based)
 
+The parameters in `bfi_items` are simulated and all 30 items are treated as one dimension, so this example only shows the mechanics. A real adaptive test needs a calibrated, unidimensional item bank.
+
 ```r
 library(inrep)
 data(bfi_items)
 
-# Adaptive assessment with item selection based on ability
+# Adaptive administration with simulated GRM parameters
 config <- create_study_config(
   name = "Adaptive Personality Assessment",
   model = "GRM",           # Graded Response Model
@@ -144,18 +143,19 @@ launch_study(config, bfi_items)
 ## Main Functions
 
 * **Study management:** `launch_study()`, `create_study_config()`
-* **IRT analysis:** `estimate_ability()`, `select_next_item()`, `validate_item_bank()`
+* **Scoring and item selection (fixed item parameters):** `estimate_ability()`, `select_next_item()`, `validate_item_bank()`
 
 ## Example Datasets
 
-* `bfi_items`
-* `math_items`
-* `cognitive_items`
+* `bfi_items`: 30 Big Five style items with simulated GRM parameters
+* `math_items`: 40 placeholder items (no real item text) with simulated GRM parameters
+* `cognitive_items`: 50 items with simulated 2PL values (different column names; not directly usable in `launch_study()`)
+* `rcq_items`, `rcqL_items` (and the identical `rcq_old_items`, `rcqL_old_items`): German resilience and coping items with seven response categories; their a and b1-b4 columns are illustrative values, not calibrated parameters (a GRM for seven categories would need six thresholds)
 
 ## Configuration
 
-* Themes: `Professional`, `Light`, `Midnight`, `Ocean`, `Forest`, `Berry`, `Sunset`, `Sepia`, `Paper`, `Dark-Mode`, `Stripe`, `Notion`, `Linear`, `Vercel`, `Intercom`, `Cal`, `Claude`, `Cursor`, `Mistral`, `Cohere`, `Ollama`, `Replicate`, `Together`, `VoltAgent`, `xAI`, `ElevenLabs`, `MiniMax`, `OpenCode`, `RunwayML`, `Expo`, `Lovable`, `Raycast`, `Superhuman`, `Warp`
-* Languages: EN, DE, ES, FR, FA
+* Themes (case-insensitive): `Light`, `Professional`, `Midnight`, `Ocean`, `Forest`, `Berry`, `Sunset`, `Sepia`, `Paper`, `Monochrome`, `Vibrant`, `Darkblue`, `Dark-Mode`, `hildesheim`, `inrep`, and the variants `High-Contrast`, `Large-Text`, `Dyslexia-Friendly`, `Colorblind-Safe`, `Accessible-Blue`. `get_available_themes()` lists all theme files.
+* Interface languages (`language` in `create_study_config()`): `en`, `de`, `es`, `fr`
 
 ## Support
 

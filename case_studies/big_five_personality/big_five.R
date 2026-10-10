@@ -1,10 +1,10 @@
-# =============================================================================
-# Big Five Personality Assessment
-# =============================================================================
-# Non-adaptive personality assessment using 25-item Big Five Inventory
-# Based on psych::bfi dataset structure
-# Fixed-form administration with six-point Likert scales
-# =============================================================================
+# Big Five Personality Assessment ----
+# Fixed-form (non-adaptive) administration of the 25 IPIP items in the bfi
+# data set of the R packages psych/psychTools (SAPA project; Revelle), five
+# items per trait, six response categories. Scale scores are item means after
+# reverse coding and are compared with the bfi sample (N = 2800). The bfi
+# sample answered on an accuracy scale (very inaccurate to very accurate);
+# inrep labels six categories as agreement, so the comparison is approximate.
 
 suppressPackageStartupMessages({
   library(inrep)
@@ -12,9 +12,7 @@ suppressPackageStartupMessages({
   library(base64enc)
 })
 
-# =============================================================================
-# WEBDAV CLOUD STORAGE CONFIGURATION
-# =============================================================================
+# WebDAV storage ----
 
 # Convert public share URL to WebDAV format
 # Public share: https://sync.academiccloud.de/index.php/s/TOKEN
@@ -26,7 +24,7 @@ suppressPackageStartupMessages({
 WEBDAV_URL <- "https://sync.academiccloud.de/public.php/webdav/"
 WEBDAV_PASSWORD <- "inreptest"
 
-# Custom save function matching HilFo pattern
+# Upload one participant row as CSV to the WebDAV folder
 save_to_cloud <- function(data, session_id = NULL, study_name = "BigFive") {
   tryCatch({
     if (is.null(session_id)) {
@@ -53,21 +51,22 @@ save_to_cloud <- function(data, session_id = NULL, study_name = "BigFive") {
     unlink(temp_file)
     
     if (httr::status_code(response) %in% c(200, 201, 204)) {
-      cat("✓ Upload successful (Status:", httr::status_code(response), ")\n")
+      cat("Upload successful (status", httr::status_code(response), ")\n")
       return(TRUE)
     } else {
-      cat("✗ Upload failed (Status:", httr::status_code(response), ")\n")
+      cat("Upload failed (status", httr::status_code(response), ")\n")
       return(FALSE)
     }
   }, error = function(e) {
-    cat("✗ Upload error:", e$message, "\n")
+    cat("Upload error:", e$message, "\n")
     return(FALSE)
   })
 }
 
-# =============================================================================
-# ITEM BANK (25 items from psych::bfi)
-# =============================================================================
+# Item bank ----
+# Item texts and keying as in psychTools::bfi.dictionary. The GRM parameters
+# below are placeholders: they are not calibrated and are not used in a
+# fixed-form administration.
 
 bfi_items <- data.frame(
   id = c(
@@ -75,36 +74,40 @@ bfi_items <- data.frame(
     paste0("N", 1:5), paste0("O", 1:5)
   ),
   Question = c(
-    "I am someone who sometimes offends others.",
-    "I am someone who has a forgiving nature.",
-    "I am someone who is considerate and kind to almost everyone.",
-    "I am someone who is helpful and unselfish with others.",
-    "I am someone who starts quarrels with others.",
-    "I am someone who does a thorough job.",
-    "I am someone who tends to be lazy.",
-    "I am someone who does things efficiently.",
-    "I am someone who tends to be disorganized.",
-    "I am someone who makes plans and follows through with them.",
-    "I am someone who is talkative.",
-    "I am someone who is reserved.",
-    "I am someone who is full of energy.",
-    "I am someone who generates a lot of enthusiasm.",
-    "I am someone who is outgoing, sociable.",
-    "I am someone who can be tense.",
-    "I am someone who worries a lot.",
-    "I am someone who is emotionally stable, not easily upset.",
-    "I am someone who can be moody.",
-    "I am someone who remains calm in tense situations.",
-    "I am someone who is original and comes up with new ideas.",
-    "I am someone who is curious about many different things.",
-    "I am someone who is ingenious and a deep thinker.",
-    "I am someone who has an active imagination.",
-    "I am someone who values artistic experiences."
+    "Am indifferent to the feelings of others.",
+    "Inquire about others' well-being.",
+    "Know how to comfort others.",
+    "Love children.",
+    "Make people feel at ease.",
+    "Am exacting in my work.",
+    "Continue until everything is perfect.",
+    "Do things according to a plan.",
+    "Do things in a half-way manner.",
+    "Waste my time.",
+    "Don't talk a lot.",
+    "Find it difficult to approach others.",
+    "Know how to captivate people.",
+    "Make friends easily.",
+    "Take charge.",
+    "Get angry easily.",
+    "Get irritated easily.",
+    "Have frequent mood swings.",
+    "Often feel blue.",
+    "Panic easily.",
+    "Am full of ideas.",
+    "Avoid difficult reading material.",
+    "Carry the conversation to a higher level.",
+    "Spend time reflecting on things.",
+    "Will not probe deeply into a subject."
   ),
   dimension = rep(c("Agreeableness", "Conscientiousness", "Extraversion", "Neuroticism", "Openness"), each = 5),
-  reverse_coded = c(TRUE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE,
-                    FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, TRUE,
-                    FALSE, FALSE, FALSE, FALSE, FALSE),
+  # Reverse-keyed: A1, C4, C5, E1, E2, O2, O5 (Neuroticism items are all
+  # keyed in the direction of Neuroticism)
+  reverse_coded = c(TRUE, FALSE, FALSE, FALSE, FALSE,
+                    FALSE, FALSE, FALSE, TRUE, TRUE,
+                    TRUE, TRUE, FALSE, FALSE, FALSE,
+                    FALSE, FALSE, FALSE, FALSE, FALSE,
+                    FALSE, TRUE, FALSE, FALSE, TRUE),
   a = c(
     rep(1.20, 5), rep(1.30, 5), rep(1.25, 5), rep(1.35, 5), rep(1.22, 5)
   ),
@@ -147,12 +150,10 @@ bfi_items <- data.frame(
   stringsAsFactors = FALSE
 )
 
-# Ensure consistent ordering per trait
+# Row indices per trait, used for the item pages
 dimension_indices <- split(seq_len(nrow(bfi_items)), bfi_items$dimension)
 
-# =============================================================================
-# DEMOGRAPHICS CONFIGURATION
-# =============================================================================
+# Demographics ----
 
 demographic_configs <- list(
   Age = list(
@@ -185,9 +186,7 @@ input_types <- list(
   Gender = "radio"
 )
 
-# =============================================================================
-# PAGE FLOW CONFIGURATION
-# =============================================================================
+# Page flow ----
 
 custom_page_flow <- list(
   list(
@@ -196,7 +195,7 @@ custom_page_flow <- list(
     title = "Big Five",
     content = '<div style="max-width: 780px; margin: 0 auto; padding: 24px;">
       <h1 style="color: #2E8B57; text-align: center;">Big Five Personality Assessment</h1>
-      <p>This fixed-form questionnaire contains the 25-item Big Five battery that ships with the <code>psych</code> package. Each item uses a six-point agreement scale.</p>
+      <p>This questionnaire contains 25 statements from the International Personality Item Pool (IPIP), five for each of the Big Five traits. Please rate how well each statement describes you on a six-point scale.</p>
       <p>Please respond based on how you usually behave; there are no right or wrong answers.</p>
     </div>'
   ),
@@ -254,14 +253,12 @@ custom_page_flow <- list(
   )
 )
 
-# =============================================================================
-# RESULTS PROCESSOR WITH DEBRIEFING
-# =============================================================================
+# Results processor ----
 
 create_bfi_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
   
-  # ===== IMMEDIATE CLOUD UPLOAD =====
-  cat("\n=== UPLOADING BIG FIVE DATA TO CLOUD ===\n")
+  # Upload first, so the data are stored even if the report fails
+  cat("\nUploading Big Five data\n")
   tryCatch({
     # Get session ID
     session_id <- "unknown"
@@ -319,12 +316,10 @@ create_bfi_report <- function(responses, item_bank, demographics = NULL, session
     cat("Upload error:", e$message, "\n")
   })
   
-  # ===== VALIDATE RESPONSES =====
   if (is.null(responses) || length(responses) != nrow(item_bank)) {
     return(shiny::HTML("<div style='max-width: 800px; margin: 0 auto; padding: 24px;'><p>Responses were incomplete. Please restart the questionnaire.</p></div>"))
   }
 
-  # ===== COMPUTE SCORES =====
   scored <- responses
   scored[item_bank$reverse_coded] <- 7 - scored[item_bank$reverse_coded]
 
@@ -332,20 +327,18 @@ create_bfi_report <- function(responses, item_bank, demographics = NULL, session
     mean(scored[idx], na.rm = TRUE)
   }, numeric(1))
 
-  # ===== NORMATIVE DATA FROM BFI DATASET (N=2800) =====
-  # Source: Revelle's psych package BFI dataset (Revelle, 2024)
-  # Sample: General population, mean age 28.78 (SD=11.13), 67% female, 33% male
-  # Scale means calculated as average of item means after reverse-coding
-  # SDs represent typical within-person variation across items in each dimension
-  
+  # Reference values: means and SDs of the scale scores (item means after
+  # reverse coding, available items) in the bfi data set (psychTools::bfi,
+  # N = 2800; mean age 28.78, SD 11.13; 67% female). They apply only to these
+  # 25 items with the same six-point response scale.
   bfi_norms <- data.frame(
     Dimension = c("Agreeableness", "Conscientiousness", "Extraversion", "Neuroticism", "Openness"),
-    Mean = c(4.21, 3.80, 3.79, 3.16, 3.87),  # Mean of item means per dimension
-    SD = c(1.02, 1.12, 1.15, 1.18, 1.09),     # Average SD across items per dimension
+    Mean = c(4.65, 4.27, 4.15, 3.16, 4.59),
+    SD = c(0.90, 0.95, 1.06, 1.20, 0.81),
     stringsAsFactors = FALSE
   )
   
-  # ===== COMPUTE NORM-BASED COMPARISONS =====
+  # z-scores; percentiles assume normally distributed scale scores
   norm_comparisons <- data.frame(
     Dimension = names(scale_scores),
     Your_Score = round(scale_scores, 2),
@@ -378,27 +371,27 @@ create_bfi_report <- function(responses, item_bank, demographics = NULL, session
     }
   }
 
-  # ===== GENERATE RADAR PLOT VISUALIZATION =====
+  # Radar plot (only if the ggradar package is installed)
   radar_base64 <- ""
   
   try({
-    # Normalize scores to 0-1 scale (6-point scale: divide by 6)
+    # Map the 1-6 scale to 0-1 so that the grid labels 1, 3.5, 6 fit
+    to_unit <- function(x) (x - 1) / 5
     radar_data <- data.frame(
       group = "Personality",
-      Extraversion = scale_scores["Extraversion"] / 6,
-      Agreeableness = scale_scores["Agreeableness"] / 6,
-      Conscientiousness = scale_scores["Conscientiousness"] / 6,
-      Neuroticism = scale_scores["Neuroticism"] / 6,
-      Openness = scale_scores["Openness"] / 6,
+      Extraversion = to_unit(scale_scores["Extraversion"]),
+      Agreeableness = to_unit(scale_scores["Agreeableness"]),
+      Conscientiousness = to_unit(scale_scores["Conscientiousness"]),
+      Neuroticism = to_unit(scale_scores["Neuroticism"]),
+      Openness = to_unit(scale_scores["Openness"]),
       stringsAsFactors = FALSE
     )
     
-    # Create radar plot with ggradar
     radar_plot <- ggradar::ggradar(
       radar_data,
       values.radar = c("1", "3.5", "6"),
       grid.min = 0,
-      grid.mid = 0.58,
+      grid.mid = 0.5,
       grid.max = 1,
       group.line.width = 1.5,
       group.point.size = 4,
@@ -409,20 +402,18 @@ create_bfi_report <- function(responses, item_bank, demographics = NULL, session
       plot.title = ""
     )
     
-    # Save to temporary file and encode as base64
     temp <- tempfile(fileext = ".png")
     ggplot2::ggsave(temp, radar_plot, width = 8, height = 8, dpi = 150, bg = "white")
     radar_base64 <- base64enc::base64encode(temp)
     unlink(temp)
   }, silent = TRUE)
 
-  # ===== BUILD HTML REPORT =====
   html <- paste0(
     '<div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 32px; background: #f8f9fa; border-radius: 8px;">',
     
     # Title
     '<h1 style="color: #2E8B57; text-align: center; margin-bottom: 8px; font-size: 28px;">Your Big Five Personality Profile</h1>',
-    '<p style="text-align: center; color: #666; font-size: 14px; margin-bottom: 32px;">Results based on 25-item Big Five Inventory</p>',
+    '<p style="text-align: center; color: #666; font-size: 14px; margin-bottom: 32px;">Results based on 25 IPIP Big Five items</p>',
     
     # Visualization
     if (nzchar(radar_base64)) paste0(
@@ -460,9 +451,9 @@ create_bfi_report <- function(responses, item_bank, demographics = NULL, session
     '<div style="background: white; padding: 24px; border-radius: 8px; margin-bottom: 32px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">',
     '<h2 style="color: #2E8B57; font-size: 20px; margin-bottom: 12px;">Comparison to Normative Sample</h2>',
     '<p style="color: #666; font-size: 14px; margin-bottom: 16px; line-height: 1.6;">',
-    '<strong>Reference Group:</strong> General population sample (N=2,800) from the BFI normative dataset.<br>',
-    '<strong>Demographics:</strong> Mean age 28.78 years (SD=11.13), 67% female, 33% male.<br>',
-    '<strong>Source:</strong> Revelle, W. (2024). <em>psych: Procedures for Psychological, Psychometric, and Personality Research</em>. Northwestern University.',
+    '<strong>Reference group:</strong> Online sample of the SAPA project (N = 2,800), distributed as the bfi data set with the R packages psych and psychTools.<br>',
+    '<strong>Demographics:</strong> Mean age 28.78 years (SD = 11.13), 67% female, 33% male.<br>',
+    '<strong>Source:</strong> Revelle, W. <em>psychTools: Tools to Accompany the psych Package for Psychological Research</em> (R package). Northwestern University.',
     '</p>',
     '<table style="width: 100%; border-collapse: collapse; font-size: 13px;">',
     '<thead>',
@@ -502,8 +493,8 @@ create_bfi_report <- function(responses, item_bank, demographics = NULL, session
     '<p style="color: #666; font-size: 12px; margin-top: 12px; line-height: 1.5;">',
     '<strong>Understanding the metrics:</strong><br>',
     '<strong>Z-Score:</strong> Number of standard deviations from the norm mean. Values between -0.5 and +0.5 are considered average.<br>',
-    '<strong>Percentile:</strong> Percentage of the normative sample that scored below your score.<br>',
-    '<strong>Note:</strong> These norms represent aggregated data across all demographics. Future versions may provide specific norms by age, gender, and education level.',
+    '<strong>Percentile:</strong> Approximate percentage of the reference sample scoring below your score, assuming normally distributed scores.<br>',
+    '<strong>Note:</strong> The reference values pool all ages and genders. The reference sample is a self-selected online sample, not a representative population sample.',
     '</p>',
     '</div>',
     
@@ -512,7 +503,7 @@ create_bfi_report <- function(responses, item_bank, demographics = NULL, session
     '<h2 style="color: #2E8B57; font-size: 20px; margin-bottom: 16px;">Understanding Your Results</h2>',
     
     '<h3 style="color: #2E8B57; font-size: 16px; margin-top: 20px; margin-bottom: 8px;">What is the Big Five?</h3>',
-    '<p style="line-height: 1.6; color: #333;">The Big Five model is a widely accepted framework in psychology that describes personality using five broad dimensions. Your responses have been analyzed to show where you fall on each dimension.</p>',
+    '<p style="line-height: 1.6; color: #333;">The Big Five model describes personality with five broad dimensions. Your scores show your self-ratings on each dimension.</p>',
     
     '<h3 style="color: #2E8B57; font-size: 16px; margin-top: 20px; margin-bottom: 8px;">The Five Dimensions:</h3>',
     '<ul style="line-height: 1.8; color: #333;">',
@@ -524,8 +515,8 @@ create_bfi_report <- function(responses, item_bank, demographics = NULL, session
     '</ul>',
     
     '<h3 style="color: #2E8B57; font-size: 16px; margin-top: 20px; margin-bottom: 8px;">Interpreting Your Scores:</h3>',
-    '<p style="line-height: 1.6; color: #333;"><strong>Raw Scale:</strong> 1 (Strongly Disagree) to 6 (Strongly Agree)</p>',
-    '<p style="line-height: 1.6; color: #333; margin-top: 8px;">Your scores have been compared to a normative sample of 2,800 adults. The <strong>Z-score</strong> shows how many standard deviations you are from the average person:</p>',
+    '<p style="line-height: 1.6; color: #333;"><strong>Raw scale:</strong> 1 (strongly disagree) to 6 (strongly agree)</p>',
+    '<p style="line-height: 1.6; color: #333; margin-top: 8px;">Your scores are compared with a reference sample of 2,800 people. The <strong>z-score</strong> shows how many standard deviations your score lies from the reference mean:</p>',
     '<ul style="line-height: 1.8; color: #333;">',
     '<li><strong>Low (z < -1.0):</strong> Substantially below average for this dimension</li>',
     '<li><strong>Below Average (-1.0 ≤ z < -0.5):</strong> Somewhat lower than typical</li>',
@@ -536,15 +527,14 @@ create_bfi_report <- function(responses, item_bank, demographics = NULL, session
     '<p style="line-height: 1.6; color: #333; margin-top: 8px;">The <strong>percentile</strong> indicates what percentage of people scored below you. For example, a percentile of 75 means you scored higher than 75% of the normative sample.</p>',
     
     '<h3 style="color: #2E8B57; font-size: 16px; margin-top: 20px; margin-bottom: 8px;">About the Normative Sample:</h3>',
-    '<p style="line-height: 1.6; color: #333;">The comparison group consists of 2,800 participants from the BFI normative dataset, with a mean age of 28.78 years and a mix of educational backgrounds. While these provide a useful benchmark, individual variation is normal and expected.</p>',
-    '<p style="line-height: 1.6; color: #333; margin-top: 8px;"><em>Note: Future versions of this assessment may provide more specific norm comparisons based on your demographic characteristics (age, gender, education level).</em></p>',
+    '<p style="line-height: 1.6; color: #333;">The reference group consists of 2,800 participants of an online study (SAPA project), with a mean age of 28.78 years. It is a convenience sample, so the comparison is a rough orientation, not a population norm.</p>',
     
     '<h3 style="color: #2E8B57; font-size: 16px; margin-top: 20px; margin-bottom: 8px;">Important Notes:</h3>',
     '<ul style="line-height: 1.8; color: #333;">',
     '<li>There are no "good" or "bad" scores. Each dimension represents a continuum of normal personality variation.</li>',
     '<li>Your scores reflect your self-perception based on how you responded to the questionnaire items.</li>',
     '<li>Personality traits can vary across situations and may change gradually over time.</li>',
-    '<li>This assessment provides a snapshot of your current self-reported tendencies compared to a general population sample.</li>',
+    '<li>This assessment provides a snapshot of your current self-reported tendencies compared with the reference sample.</li>',
     '</ul>',
     '</div>',
     
@@ -564,9 +554,7 @@ create_bfi_report <- function(responses, item_bank, demographics = NULL, session
   shiny::HTML(html)
 }
 
-# =============================================================================
-# STUDY CONFIGURATION AND LAUNCH
-# =============================================================================
+# Configuration and launch ----
 
 session_uuid <- paste0("BF_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 

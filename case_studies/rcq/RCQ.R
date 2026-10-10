@@ -1,25 +1,16 @@
-# Ensure inrep is installed
-#Note this is still under active development
+# RCQ study (Resilience and Coping Questionnaire) ----
+# Under development. German fixed-form study: RCQ items plus established
+# scales (BFI-2-S, Brief COPE, and others), descriptive scale means in the
+# report. All items use the same seven-point response scale here, also for
+# scales that were developed with other formats (BFI-2-S: five points, Brief
+# COPE: four points), so scores are not comparable with published norms.
 
 library(inrep)
 library(shiny)
 library(ggplot2)
-library(broom)
-library(emmeans)
-library(ggthemes)
-library(DT)
-library(shinycssloaders)
-library(patchwork)
-library(markdown)
-library(shinyjs)
 
-# =============================================================================
-# RCQ STUDY - RESILIENCE AND COPING QUESTIONNAIRE
-# =============================================================================
-# Complete item bank with scoring for resilience, coping, and related constructs
-# German language implementation with full data recording
-
-# Token handling from URL
+# Stops the app when the client sends input$finish_early (not called in
+# this script)
 attach_finish_early_observer <- function(session) {
     if (is.null(session)) return(invisible(NULL))
     tryCatch({
@@ -38,9 +29,7 @@ attach_finish_early_observer <- function(session) {
     invisible(NULL)
 }
 
-# =============================================================================
-# CLOUD STORAGE CONFIGURATION
-# =============================================================================
+# WebDAV storage ----
 # ADAPT THIS FOR YOUR OWN STUDY: the WebDAV address and credentials below are
 # this case study's own storage (academiccloud). Replace them with your
 # storage - any WebDAV server works, see ?inrep::webdav_upload - and read the
@@ -49,9 +38,7 @@ WEBDAV_URL <- "https://sync.academiccloud.de/public.php/webdav/"
 WEBDAV_PASSWORD <- "inreptest"
 WEBDAV_SHARE_TOKEN <- "Y51QPXzJVLWSAcb"
 
-# =============================================================================
-# COMPLETE ITEM BANK - RCQ ITEMS
-# =============================================================================
+# Item bank (281 items; the page flow below uses items 1-100) ----
 
 rcq_items <- data.frame(
     id = c(
@@ -106,7 +93,7 @@ rcq_items <- data.frame(
         "RSA_19", "RSA_20", "RSA_21", "RSA_22", "RSA_23", "RSA_24",
         "RSA_25", "RSA_26", "RSA_27", "RSA_28", "RSA_29", "RSA_30",
         "RSA_31", "RSA_32", "RSA_33",
-        # RCQL: Long RCQ Items (68 items total: 15+15+15+15+8)
+        # RCQL: long RCQ (68 items) plus 12 placeholder items (80 ids)
         "RCQL_01_01", "RCQL_01_02", "RCQL_01_03", "RCQL_01_04", "RCQL_01_05",
         "RCQL_01_06", "RCQL_01_07", "RCQL_01_08", "RCQL_01_09", "RCQL_01_10",
         "RCQL_01_11", "RCQL_01_12", "RCQL_01_13", "RCQL_01_14", "RCQL_01_15",
@@ -396,7 +383,7 @@ rcq_items <- data.frame(
         "Mein Leben wäre viel besser, wenn ich in einem anderen Umfeld geboren wäre.",
         "Ich arbeite an meinen Fähigkeiten, auch dann, wenn sich keine Gelegenheit ergibt, meine Fähigkeiten unter Beweis zu stellen.",
         "Ich fühle mich dazu berufen, alle meine persönlichen Ziele zu erreichen.",
-        # Additional RCQL items (12 items) - Placeholders to be revised by user
+        # 12 placeholder items, not part of the RCQL; replace before use
         "In herausfordernden Zeiten bleibe ich meinen Zielen treu.",
         "Ich finde Wege, auch aus schwierigen Situationen gestärkt hervorzugehen.",
         "Meine Resilienz hilft mir, Rückschläge zu überwinden.",
@@ -416,9 +403,7 @@ rcq_items <- data.frame(
     stringsAsFactors = FALSE
 )
 
-# =============================================================================
-# RCQ OLD ITEMS - 30 ITEMS (SIMILAR TO MATH AND BFI STRUCTURE)
-# =============================================================================
+# RCQ, 30 items (same as the rcq_old_items data set) ----
 
 rcq_old_items <- data.frame(
     id = c(
@@ -471,13 +456,11 @@ rcq_old_items <- data.frame(
     stringsAsFactors = FALSE
 )
 
-# =============================================================================
-# RCQL OLD ITEMS - 68 ITEMS (LONGER VERSION)
-# =============================================================================
+# RCQL, 68 items (same as the rcqL_old_items data set) ----
 
 rcqL_old_items <- data.frame(
     id = c(
-        # RCQL: Long RCQ Items (68 items total: 15+15+15+15+8)
+        # RCQL: 15 + 15 + 15 + 15 + 8 = 68 items
         "RCQL_01_01", "RCQL_01_02", "RCQL_01_03", "RCQL_01_04", "RCQL_01_05",
         "RCQL_01_06", "RCQL_01_07", "RCQL_01_08", "RCQL_01_09", "RCQL_01_10",
         "RCQL_01_11", "RCQL_01_12", "RCQL_01_13", "RCQL_01_14", "RCQL_01_15",
@@ -574,9 +557,7 @@ rcqL_old_items <- data.frame(
 # rcq_old_items (30 items) and rcqL_old_items (68 items) are separate datasets
 # These are exported from the inrep package and can be used independently
 
-# =============================================================================
-# DEMOGRAPHICS CONFIGURATION
-# =============================================================================
+# Demographics ----
 
 demographic_configs <- list(
     alter = list(
@@ -635,9 +616,9 @@ input_types <- list(
     psychotherapie = "radio"
 )
 
-# =============================================================================
-# CUSTOM PAGE FLOW
-# =============================================================================
+# Page flow ----
+# Note: page5 (items 61-80) ends with Brief COPE items 1-2 (rows 79-80), and
+# Brief COPE items 23-28 (rows 101-106) are not shown at all.
 
 custom_page_flow <- list(
     list(
@@ -722,9 +703,7 @@ custom_page_flow <- list(
     )
 )
 
-# =============================================================================
-# RESULTS PROCESSOR - COMPREHENSIVE RCQ REPORT
-# =============================================================================
+# Results processor ----
 
 create_rcq_report <- function(responses, item_bank, demographics = NULL, session = NULL) {
     tryCatch({
@@ -739,9 +718,7 @@ create_rcq_report <- function(responses, item_bank, demographics = NULL, session
         }
         responses <- as.numeric(responses)
         
-        # =============================================================================
-        # RCQ SUBSCALES CALCULATION (Items 1-30)
-        # =============================================================================
+        # RCQ subscales (items 1-30); several are single items
         
         # RCQ_01: Goal-oriented behavior and future planning (items 2, 5, reverse 1, 13)
         rcq_goal_oriented <- mean(c(
@@ -820,9 +797,7 @@ create_rcq_report <- function(responses, item_bank, demographics = NULL, session
             rcq_sociability, rcq_family_loyalty, rcq_solution_oriented
         ), na.rm = TRUE)
         
-        # =============================================================================
-        # BIG FIVE PERSONALITY (Items 31-60)
-        # =============================================================================
+        # BFI-2-S (items 31-60), keying as in Soto & John (2017)
         
         # Extraversion: 1R, 6, 11, 16, 21R, 26R
         bfi_extraversion <- mean(c(
@@ -842,10 +817,10 @@ create_rcq_report <- function(responses, item_bank, demographics = NULL, session
             responses[48], responses[53], 8 - responses[58]
         ), na.rm = TRUE)
         
-        # Neuroticism: 4, 9, 14R, 19R, 24, 29
+        # Neuroticism: 4, 9, 14R, 19R, 24R, 29
         bfi_neuroticism <- mean(c(
             responses[34], responses[39], 8 - responses[44],
-            8 - responses[49], responses[54], responses[59]
+            8 - responses[49], 8 - responses[54], responses[59]
         ), na.rm = TRUE)
         
         # Openness: 5, 10R, 15, 20R, 25, 30R
@@ -854,20 +829,14 @@ create_rcq_report <- function(responses, item_bank, demographics = NULL, session
             8 - responses[50], responses[55], 8 - responses[60]
         ), na.rm = TRUE)
         
-        # =============================================================================
-        # POLITICAL SELF-EFFICACY (Items 61-70)
-        # =============================================================================
+        # Political self-efficacy (items 61-70)
         pse_score <- mean(responses[61:70], na.rm = TRUE)
         
-        # =============================================================================
-        # WORK AND ORGANIZATIONAL CLIMATE (Items 71-78)
-        # =============================================================================
+        # Work and organisational climate (items 71-78)
         woc_score <- mean(responses[71:78], na.rm = TRUE)
         
-        # =============================================================================
-        # BRIEF COPE SUBSCALES (Items 79-106, but we only have up to 100)
-        # =============================================================================
-        # Since we only have items 79-100, we calculate what we can (22 items)
+        # Brief COPE (items 79-106). Only rows 79-100 are shown, so several
+        # subscales rest on one of their two items. Item key as in Carver (1997).
         
         # Active Coping: items 2, 7 (positions 80, 85)
         cope_active <- mean(c(responses[80], responses[85]), na.rm = TRUE)
@@ -914,9 +883,7 @@ create_rcq_report <- function(responses, item_bank, demographics = NULL, session
             cope_humor, cope_support, cope_distraction
         ), na.rm = TRUE)
         
-        # =============================================================================
-        # PREPARE COMPREHENSIVE SCORES
-        # =============================================================================
+        # Scores for the table
         
         all_scores <- list(
             # RCQ Subscales
@@ -958,11 +925,8 @@ create_rcq_report <- function(responses, item_bank, demographics = NULL, session
             "Coping Gesamt" = round(cope_total, 2)
         )
         
-        # =============================================================================
-        # CREATE VISUALIZATIONS
-        # =============================================================================
+        # Plots
         
-        # RCQ Subscales chart (simple bar chart)
         rcq_chart_data <- data.frame(
             dimension = c("Zielorientierung", "Angstbewältigung", "Neubewertung", 
                          "Familie", "Humor", "Aktivität", "Optimismus", "Lösungen"),
@@ -989,7 +953,7 @@ create_rcq_report <- function(responses, item_bank, demographics = NULL, session
             ) +
             ggplot2::labs(title = "RCQ Resilienz-Dimensionen", x = "", y = "Score (1-7)")
         
-        # Big Five RADAR CHART (like HilFo)
+        # Big Five radar chart
         radar_scores <- list(
             Extraversion = bfi_extraversion,
             Verträglichkeit = bfi_agreeableness,
@@ -998,7 +962,6 @@ create_rcq_report <- function(responses, item_bank, demographics = NULL, session
             Offenheit = bfi_openness
         )
         
-        # Create radar plot manually (similar to HilFo fallback approach)
         n_vars <- 5
         angles <- seq(0, 2*pi, length.out = n_vars + 1)[-(n_vars + 1)]
         
@@ -1007,7 +970,7 @@ create_rcq_report <- function(responses, item_bank, demographics = NULL, session
         bfi_labels <- c("Extraversion", "Verträglichkeit", "Gewissenhaftigkeit", 
                        "Neurotizismus", "Offenheit")
         
-        # Normalize to 0-5 scale and calculate positions
+        # Map the 1-7 scale onto radius 0-5
         x_pos <- (bfi_scores_vec / 7 * 5) * cos(angles - pi/2)
         y_pos <- (bfi_scores_vec / 7 * 5) * sin(angles - pi/2)
         
@@ -1057,7 +1020,6 @@ create_rcq_report <- function(responses, item_bank, demographics = NULL, session
             ) +
             ggplot2::labs(title = "Big Five Persönlichkeitsprofil")
         
-        # Coping strategies chart (simple, clean)
         cope_chart_data <- data.frame(
             dimension = c("Aktiv", "Planung", "Umdeutung", "Akzeptanz", "Humor", 
                          "Support", "Ablenkung"),
@@ -1079,7 +1041,7 @@ create_rcq_report <- function(responses, item_bank, demographics = NULL, session
                 panel.grid.major.x = ggplot2::element_blank(),
                 panel.grid.minor = ggplot2::element_blank()
             ) +
-            ggplot2::labs(title = "Bewältigungsstrategien (Brief COPE)", x = "", y = "Score (1-4)")
+            ggplot2::labs(title = "Bewältigungsstrategien (Brief COPE)", x = "", y = "Score (1-7)")
         
         # Save plots
         rcq_file <- tempfile(fileext = ".png")
@@ -1104,9 +1066,7 @@ create_rcq_report <- function(responses, item_bank, demographics = NULL, session
         
         unlink(c(rcq_file, bfi_radar_file, cope_file))
         
-        # =============================================================================
-        # GENERATE HTML REPORT
-        # =============================================================================
+        # HTML report
         
         html <- paste0(
             '<style>',
@@ -1146,7 +1106,7 @@ create_rcq_report <- function(responses, item_bank, demographics = NULL, session
             '<div style="text-align: center; padding: 15px; background: #f8f9fa; margin-top: 15px; border-radius: 4px;">',
             '<span style="font-size: 14px; color: #7f8c8d; font-weight: bold;">COPING GESAMTSCORE</span><br>',
             '<span style="font-size: 28px; font-weight: bold; color: #2c3e50;">', round(cope_total, 2), '</span>',
-            '<span style="font-size: 16px; color: #7f8c8d;"> / 4.00</span>',
+            '<span style="font-size: 16px; color: #7f8c8d;"> / 7.00</span>',
             '</div>',
             '</div>',
             
@@ -1163,7 +1123,7 @@ create_rcq_report <- function(responses, item_bank, demographics = NULL, session
             '<div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 4px;">',
             '<span style="font-size: 13px; color: #7f8c8d; font-weight: bold;">ARBEITSKLIMA</span><br>',
             '<span style="font-size: 24px; font-weight: bold; color: #2c3e50;">', round(woc_score, 2), '</span>',
-            '<span style="font-size: 14px; color: #7f8c8d;"> / 6.00</span>',
+            '<span style="font-size: 14px; color: #7f8c8d;"> / 7.00</span>',
             '</div>',
             '</div>',
             '</div>',
@@ -1260,9 +1220,7 @@ create_rcq_report <- function(responses, item_bank, demographics = NULL, session
     })
 }
 
-# =============================================================================
-# STUDY CONFIGURATION
-# =============================================================================
+# Configuration ----
 
 session_uuid <- paste0("rcq_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 
@@ -1283,22 +1241,16 @@ study_config <- inrep::create_study_config(
     progress_style = "bar",
     language = "de",
     session_save = TRUE,
-    session_timeout = 3600,  # Session will timeout after 3600 seconds (1 hour)
-    # NOTE: When session times out or study completes:
-    # 1. Browser/tab will automatically close
-    # 2. All data is saved before closing
-    # 3. Only this participant's session is closed; the app keeps running for others
-    #    (set options(inrep.stop_app_on_finish = TRUE) to stop the app for local single-user runs)
+    # The session time limit is set by launch_study(max_session_time = ...),
+    # in seconds (default 7200). options(inrep.stop_app_on_finish = TRUE)
+    # stops the whole app at the end, for local single-user runs.
     results_processor = create_rcq_report
 )
 
-# Use only first 100 items from rcq_items for the study
-#rcq_items_study <- rcq_items[1:100, ]
+# The full bank is passed; the page flow selects rows 1-100
 rcq_items_study <- rcq_items
 
-# =============================================================================
-# LAUNCH STUDY
-# =============================================================================
+# Launch ----
 
 inrep::launch_study(
     config = study_config,
@@ -1307,5 +1259,5 @@ inrep::launch_study(
     password = WEBDAV_PASSWORD,
     webdav_share_token = WEBDAV_SHARE_TOKEN,
     save_format = "csv",
-    debug_mode = TRUE  # Enable debug mode: STRG+A = fill page, STRG+Q = auto-fill all
+    debug_mode = TRUE  # Ctrl+A fills the page, Ctrl+Q fills all pages; set FALSE for data collection
 )

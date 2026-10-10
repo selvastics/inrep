@@ -9,6 +9,9 @@
 \strong{inrep} is an R package for building and running assessments with a web UI via
 \pkg{shiny}. It provides helpers to define study configuration, run fixed or adaptive
 workflows, render pages (instructions, demographics, items, results), and export results.
+inrep does not calibrate items: adaptive administration uses item parameters
+estimated elsewhere (1PL, 2PL, 3PL or GRM), selects items by Fisher information and
+estimates ability by EAP on a grid with these parameters held fixed.
 \href{https://selvastics.shinyapps.io/inrep-studio/}{\strong{inrep-studio}} is a separate
 Shiny app that can generate \strong{inrep} configuration code.
 }
@@ -37,8 +40,8 @@ soft-deprecated.
 \itemize{
   \item \code{launch_study()}: Run an assessment
   \item \code{create_study_config()}: Create a study configuration
-  \item \code{estimate_ability()}: Ability estimation
-  \item \code{select_next_item()}: Item selection
+  \item \code{estimate_ability()}: EAP ability estimate with fixed item parameters
+  \item \code{select_next_item()}: Item selection (maximum Fisher information by default)
   \item \code{validate_item_bank()}: Item bank checks
 }
 }
@@ -59,9 +62,11 @@ launch_study(config, bfi_items, session_save = TRUE)
 Built-in example item banks:
 
 \itemize{
-  \item \code{bfi_items}: Big Five Inventory personality assessment items
-  \item \code{math_items}: Mathematics assessment items for cognitive testing
-  \item \code{cognitive_items}: Cognitive ability assessment items
+  \item \code{bfi_items}: 30 Big Five style personality items with simulated GRM parameters
+  \item \code{math_items}: 40 placeholder mathematics items (no real item text) with simulated GRM parameters
+  \item \code{cognitive_items}: 50 cognitive items with simulated difficulty and
+    discrimination values (columns \code{content}, \code{difficulty}, \code{discrimination},
+    not in the format \code{launch_study()} expects)
   \item \code{rcq_old_items}: RCQ resilience and coping items (30 items, original version)
   \item \code{rcqL_old_items}: RCQL long-form resilience and coping items (68 items)
   \item \code{rcq_items}: Copy of rcq_old_items for user customization

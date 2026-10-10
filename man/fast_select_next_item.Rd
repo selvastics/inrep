@@ -2,23 +2,37 @@
 % Please edit documentation in R/item_selection.R
 \name{fast_select_next_item}
 \alias{fast_select_next_item}
-\title{Fast Item Selection for High-Performance Applications}
+\title{Fast Item Selection}
 \usage{
 fast_select_next_item(rv, item_bank, config, max_compute = 15)
 }
 \arguments{
-\item{rv}{Reactive values object containing current test state}
+\item{rv}{List (or Shiny \code{reactiveValues}) with \code{administered} and
+\code{current_ability}.}
 
 \item{item_bank}{Data frame containing item parameters}
 
 \item{config}{Study configuration object}
 
-\item{max_compute}{Maximum number of items to compute information for (default: 15)}
+\item{max_compute}{Maximum number of items for which information is
+computed (default: 15)}
 }
 \value{
-Integer index of the selected item
+Integer index of the selected item, or \code{NULL} if no item is left
+  or \code{max_items} is reached.
 }
 \description{
-Optimized item selection function designed for maximum speed and efficiency.
-Uses advanced caching, parallel processing, and smart sampling strategies.
+Default item selection in \code{\link{launch_study}}
+(\code{config$fast_item_selection = TRUE}). In adaptive mode it computes
+Fisher information at the current estimate for a random subset of at most
+\code{max_compute} available items and draws at random among those whose
+information is at least 90\% of the subset maximum. \code{config$criteria},
+\code{item_groups}, domain balancing and \code{item_selection_fun} are not
+used; use \code{\link{select_next_item}} for those.
+}
+\details{
+Order of rules for item number \eqn{k} = number administered + 1:
+\code{fixed_items} first; then, in non-adaptive mode, the lowest-numbered
+available item; in adaptive mode a random item while \eqn{k <}
+\code{adaptive_start}; then the information rule above.
 }

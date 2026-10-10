@@ -1,7 +1,10 @@
-#  Multilingual Support for inrep Package
+# UI labels for English (en), German (de), Spanish (es), French (fr) and
+# Persian (fa). The hildesheim_* labels exist only in en and de; get_label()
+# falls back to English for keys missing in a language.
 #
-# Provides complete translations for all UI elements, messages, and content
-# Supports: English (en), German (de), Spanish (es), French (fr)
+# The consent and data protection labels are wording aids for templates.
+# They do not make a study GDPR compliant: the legal basis, controller,
+# retention period and rights must be checked for each study.
 
 # Complete language dictionary for all UI elements (internal use only)
 LANGUAGE_DICTIONARY <- list(
@@ -21,8 +24,8 @@ LANGUAGE_DICTIONARY <- list(
     study_procedures = "Study Procedures",
     categories_of_data = "Categories of Data",
     article_9_gdpr = "Article 9(2)(a) GDPR: Explicit consent for special categories of data (if applicable)",
-    article_6_gdpr = "Article 6(1)(a) GDPR: Your explicit consent",
-    legitimate_interest = "Legitimate interest: Scientific research purposes",
+    article_6_gdpr = "Article 6(1)(a) GDPR: Your consent",
+    legitimate_interest = "Article 6(1)(f) GDPR: Legitimate interest (scientific research)",
     objection = "Objection: Object to processing based on legitimate interests",
     rectification = "Rectification: Correct inaccurate data",
     erasure = "Erasure: Request deletion of your data",
@@ -46,7 +49,7 @@ LANGUAGE_DICTIONARY <- list(
     items_administered = "Items Completed",
     recommendations = "Recommendations",
     assessment_complete = "Assessment Complete",
-    analysis_completed = "Advanced psychometric analysis completed with domain-specific reporting",
+    analysis_completed = "Analysis completed",
     return_dashboard = "Return to Dashboard",
     view_backend = "View Analysis Backend",
     
@@ -69,7 +72,7 @@ LANGUAGE_DICTIONARY <- list(
     consent_title = "Research Study Consent",
     consent_welcome = "Welcome to the Cognitive Assessment Study. Please read the information below and provide your consent to participate.",
     consent_purpose_label = "Purpose:",
-    consent_purpose_text = "This study investigates cognitive abilities using standardized assessment items. Your responses will be anonymized and used for research purposes only.",
+    consent_purpose_text = "This study investigates cognitive abilities using standardized assessment items. Your responses will be used for research purposes only.",
     consent_privacy_label = "Data Privacy:",
     consent_privacy_text = "Data handling and storage are described in the study's data protection information.",
     consent_voluntary_label = "Voluntary Participation:",
@@ -124,7 +127,7 @@ LANGUAGE_DICTIONARY <- list(
     
     # Welcome section
     welcome_title = "Welcome to the Cognitive Assessment Study",
-    welcome_description = "Your participation helps advance cognitive science. All data is confidential and used for academic research only.",
+    welcome_description = "Your participation helps advance cognitive science. Your responses are analysed for research purposes.",
     participate_button = "Participate in Study",
     
     # Study flow headings
@@ -189,42 +192,42 @@ LANGUAGE_DICTIONARY <- list(
     provide_optional_demographics = "Optionale demografische Informationen bereitstellen",
     optional_demographics = "Optionale demografische Informationen",
     answer_questions_experiences = "Beantworten Sie Fragen zu Ihren Erfahrungen, Einstellungen und Verhaltensweisen",
-    complete_interactive_questionnaire = "Vervollst\u00E4ndigen Sie einen interaktiven Fragebogen",
+    complete_interactive_questionnaire = "Bearbeiten Sie einen interaktiven Fragebogen",
     receive_personalized_feedback = "Erhalten Sie personalisiertes Feedback zu Ihren Antworten",
     response_data_questionnaires = "Antwortdaten aus Frageb\u00F6gen",
     technical_data = "Technische Daten (Sitzungsdauer, Antwortzeiten)",
-    no_personal_identifiers = "Keine pers\u00F6nlichen Identifikatoren oder Kontaktinformationen",
+    no_personal_identifiers = "Keine direkt identifizierenden Angaben oder Kontaktdaten",
     during_study_you_will = "W\u00E4hrend dieser Studie werden Sie:",
     we_may_process_data = "Wir k\u00F6nnen die folgenden Datenkategorien verarbeiten:",
     study_procedures = "Studienverfahren",
     categories_of_data = "Datenkategorien",
-    article_9_gdpr = "Artikel 9(2)(a) DSGVO: Ausdr\u00FCckliche Einwilligung f\u00FCr besondere Datenkategorien (falls zutreffend)",
-    article_6_gdpr = "Artikel 6(1)(a) DSGVO: Ihre ausdr\u00FCckliche Einwilligung",
-    legitimate_interest = "Berechtigtes Interesse: Wissenschaftliche Forschungszwecke",
-    objection = "Widerspruch: Widersprechen Sie der Verarbeitung auf der Grundlage berechtigter Interessen",
+    article_9_gdpr = "Art. 9 Abs. 2 lit. a DSGVO:Ausdr\u00FCckliche Einwilligung f\u00FCr besondere Datenkategorien (falls zutreffend)",
+    article_6_gdpr = "Art. 6 Abs. 1 lit. a DSGVO: Ihre Einwilligung",
+    legitimate_interest = "Art. 6 Abs. 1 lit. f DSGVO: Berechtigtes Interesse (wissenschaftliche Forschung)",
+    objection = "Widerspruch: Der Verarbeitung auf Grundlage berechtigter Interessen widersprechen",
     rectification = "Berichtigung: Ungenaue Daten korrigieren",
     erasure = "L\u00F6schung: L\u00F6schung Ihrer Daten beantragen",
     portability = "\u00DCbertragbarkeit: Ihre Daten in einem \u00FCbertragbaren Format erhalten",
     restriction = "Einschr\u00E4nkung: Verarbeitung Ihrer Daten einschr\u00E4nken",
-    access = "Zugang: Informationen \u00FCber Ihre Daten anfordern",
-    complaint = "Beschwerde: Beschwerde bei Aufsichtsbeh\u00F6rden einlegen",
-    welcome_text = "Bitte geben Sie Ihre demografischen Daten ein, um die Bewertung zu beginnen.",
-    start_button = "Bewertung beginnen",
+    access = "Auskunft: Auskunft zu Ihren gespeicherten Daten verlangen",
+    complaint = "Beschwerde: Beschwerde bei einer Aufsichtsbeh\u00F6rde einlegen",
+    welcome_text = "Bitte geben Sie Ihre demografischen Daten ein, um zu beginnen.",
+    start_button = "Beginnen",
     submit_button = "Absenden",
     continue_button = "Weiter",
-    begin_button = "Bewertung beginnen",
+    begin_button = "Beginnen",
     restart_button = "Neu starten",
     save_button = "Bericht herunterladen",
     select_option = "Ausw\u00E4hlen...",
     
     # Results section
-    results_title = "Bewertungsergebnisse",
+    results_title = "Ergebnisse",
     proficiency = "Merkmalswert",
     precision = "Messgenauigkeit",
-    items_administered = "Abgeschlossene Elemente",
+    items_administered = "Bearbeitete Items",
     recommendations = "Empfehlungen",
-    assessment_complete = "Bewertung abgeschlossen",
-    analysis_completed = "Psychometrische Analyse abgeschlossen",
+    assessment_complete = "Abgeschlossen",
+    analysis_completed = "Analyse abgeschlossen",
     return_dashboard = "Zum Dashboard zur\u00FCckkehren",
     view_backend = "Analyse-Backend anzeigen",
     
@@ -245,34 +248,34 @@ LANGUAGE_DICTIONARY <- list(
     
     # Consent section
     consent_title = "Einverst\u00E4ndniserkl\u00E4rung zur Forschungsstudie",
-    consent_welcome = "Willkommen zur kognitiven Bewertungsstudie. Bitte lesen Sie die folgenden Informationen und geben Sie Ihre Zustimmung zur Teilnahme.",
+    consent_welcome = "Willkommen zur Studie. Bitte lesen Sie die folgenden Informationen und geben Sie Ihre Zustimmung zur Teilnahme.",
     consent_purpose_label = "Zweck:",
-    consent_purpose_text = "Diese Studie untersucht kognitive F\u00E4higkeiten mit standardisierten Bewertungselementen. Ihre Antworten werden anonymisiert und nur zu Forschungszwecken verwendet.",
+    consent_purpose_text = "Diese Studie untersucht kognitive F\u00E4higkeiten mit standardisierten Aufgaben. Ihre Antworten werden nur zu Forschungszwecken verwendet.",
     consent_privacy_label = "Datenschutz:",
     consent_privacy_text = "Die Antworten werden gespeichert und gem\u00E4\u00DF den angegebenen Datenschutzinformationen verarbeitet.",
     consent_voluntary_label = "Freiwillige Teilnahme:",
-    consent_voluntary_text = "Sie k\u00F6nnen jederzeit ohne Konsequenzen zur\u00FCcktreten.",
+    consent_voluntary_text = "Sie k\u00F6nnen Ihre Teilnahme jederzeit ohne Nachteile beenden.",
     consent_checkbox_text = "Ich habe die obigen Informationen gelesen und verstanden und stimme der Teilnahme zu.",
     
     # Instructions section
     instructions_title = "Anweisungen",
-    instructions_text = "Bitte lesen Sie die Anweisungen sorgf\u00E4ltig durch, bevor Sie mit der Bewertung beginnen.",
-    instructions_read_carefully = "Bitte lesen Sie die Anweisungen sorgf\u00E4ltig durch, bevor Sie mit der Bewertung beginnen.",
-    instructions_cognitive_tasks = "Sie werden eine Reihe von kognitiven Aufgaben absolvieren, die Ged\u00E4chtnis, Geschwindigkeit und exekutive Funktionen bewerten.",
+    instructions_text = "Bitte lesen Sie die Anweisungen sorgf\u00E4ltig durch, bevor Sie beginnen.",
+    instructions_read_carefully = "Bitte lesen Sie die Anweisungen sorgf\u00E4ltig durch, bevor Sie beginnen.",
+    instructions_cognitive_tasks = "Sie werden eine Reihe von kognitiven Aufgaben absolvieren, die Ged\u00E4chtnis, Geschwindigkeit und exekutive Funktionen erfassen.",
     instructions_answer_accurately = "Beantworten Sie jede Frage so genau und schnell wie m\u00F6glich.",
     instructions_progress_display = "Ihr Fortschritt wird oben auf dem Bildschirm angezeigt.",
     instructions_no_right_wrong = "Es gibt keine richtigen oder falschen Antworten; versuchen Sie Ihr Bestes.",
-    instructions_click_begin = "Klicken Sie auf 'Bewertung beginnen', wenn Sie bereit sind.",
+    instructions_click_begin = "Klicken Sie auf 'Beginnen', wenn Sie bereit sind.",
     
     # Assessment section
-    cognitive_assessment = "Kognitive Bewertung",
+    cognitive_assessment = "Kognitiver Test",
     live_analysis_active = "Live-Analyse aktiv",
     participant_id = "ID: %s",
     session_time = "12:34",
     question_progress = "Frage %d von %d",
     completion_percentage = "%d%% abgeschlossen",
     difficulty_load_format = "Schwierigkeit: %s | Belastung: %s",
-    item_number = "Element %d",
+    item_number = "Item %d",
     analysis_type_format = "Analyse: %s",
     loading_question = "Frage wird geladen...",
     preparing = "Wird vorbereitet...",
@@ -287,13 +290,13 @@ LANGUAGE_DICTIONARY <- list(
     enter_age = "Geben Sie Ihr Alter ein",
     enter_field = "Geben Sie %s ein",
     enter_details = "Details eingeben...",
-    please_specify = "Bitte spezifizieren:",
-    prefer_not_to_answer = "Lieber nicht beantworten",
+    please_specify = "Bitte angeben:",
+    prefer_not_to_answer = "Keine Angabe",
     please_select = "Bitte w\u00E4hlen...",
     gender_female = "Weiblich",
     gender_male = "M\u00E4nnlich",
     gender_other = "Andere",
-    gender_prefer_not = "M\u00F6chte nicht sagen",
+    gender_prefer_not = "Keine Angabe",
     education_high_school = "Abitur",
     education_bachelor = "Bachelor-Abschluss",
     education_master = "Master-Abschluss",
@@ -301,8 +304,8 @@ LANGUAGE_DICTIONARY <- list(
     education_other = "Andere",
     
     # Welcome section
-    welcome_title = "Willkommen zur kognitiven Bewertungsstudie",
-    welcome_description = "Ihre Teilnahme hilft dabei, die kognitive Wissenschaft voranzubringen. Die Antworten werden f\u00FCr Forschungszwecke ausgewertet.",
+    welcome_title = "Willkommen zur Studie",
+    welcome_description = "Ihre Teilnahme hilft dabei, die Kognitionswissenschaft voranzubringen. Die Antworten werden f\u00FCr Forschungszwecke ausgewertet.",
     participate_button = "An der Studie teilnehmen",
     
     # Study flow headings
@@ -310,13 +313,13 @@ LANGUAGE_DICTIONARY <- list(
     what_to_expect = "Was zu erwarten ist",
     important_notes = "Wichtige Hinweise",
     research_details = "Forschungsdetails",
-    risks_and_benefits = "Risiken und Vorteile",
+    risks_and_benefits = "Risiken und Nutzen",
     confidentiality = "Vertraulichkeit",
     contact_information = "Kontaktinformationen",
     consent_to_participate = "Zustimmung zur Teilnahme",
     data_use_and_storage = "Datenverwendung und -speicherung",
-    right_to_withdraw = "Recht auf R\u00FCckzug",
-    data_controller = "Datenverantwortlicher",
+    right_to_withdraw = "Widerrufsrecht",
+    data_controller = "Verantwortlicher",
     legal_basis_for_processing = "Rechtliche Grundlage f\u00FCr die Verarbeitung",
     data_retention = "Datenaufbewahrung",
     your_rights_under_gdpr = "Ihre Rechte nach DSGVO",
@@ -333,12 +336,12 @@ LANGUAGE_DICTIONARY <- list(
     voluntary_participation = "Freiwillige Teilnahme",
     data_protection = "Datenschutz",
     technical_requirements = "Technische Anforderungen",
-    principal_investigator = "Hauptuntersucher",
+    principal_investigator = "Studienleitung",
     institution = "Institution",
     study_purpose_label = "Studienzweck",
     publication = "Ver\u00F6ffentlichung",
     risks = "Risiken",
-    benefits = "Vorteile",
+    benefits = "Nutzen",
     research_team = "Forschungsteam",
     ethics_committee = "Ethikkommission",
     address = "Adresse",
@@ -377,7 +380,7 @@ LANGUAGE_DICTIONARY <- list(
     study_procedures = "Procedimientos del Estudio",
     categories_of_data = "Categor\u00EDas de Datos",
     article_9_gdpr = "Art\u00EDculo 9(2)(a) GDPR: Consentimiento expl\u00EDcito para categor\u00EDas especiales de datos (si aplica)",
-    article_6_gdpr = "Art\u00EDculo 6(1)(a) GDPR: Su consentimiento expl\u00EDcito",
+    article_6_gdpr = "Art\u00EDculo 6(1)(a) GDPR: Su consentimiento",
     legitimate_interest = "Inter\u00E9s leg\u00EDtimo: Prop\u00F3sitos de investigaci\u00F3n cient\u00EDfica",
     objection = "Objeci\u00F3n: Objetar al procesamiento basado en intereses leg\u00EDtimos",
     rectification = "Rectificaci\u00F3n: Corregir datos inexactos",
@@ -402,7 +405,7 @@ LANGUAGE_DICTIONARY <- list(
     items_administered = "Elementos Completados",
     recommendations = "Recomendaciones",
     assessment_complete = "Evaluaci\u00F3n Completada",
-    analysis_completed = "An\u00E1lisis psicom\u00E9trico avanzado completado con reportes espec\u00EDficos del dominio",
+    analysis_completed = "An\u00E1lisis completado",
     return_dashboard = "Volver al Panel",
     view_backend = "Ver Backend de An\u00E1lisis",
     
@@ -425,7 +428,7 @@ LANGUAGE_DICTIONARY <- list(
     consent_title = "Consentimiento del Estudio de Investigaci\u00F3n",
     consent_welcome = "Bienvenido al Estudio de Evaluaci\u00F3n Cognitiva. Por favor lea la informaci\u00F3n a continuaci\u00F3n y proporcione su consentimiento para participar.",
     consent_purpose_label = "Prop\u00F3sito:",
-    consent_purpose_text = "Este estudio investiga habilidades cognitivas usando elementos de evaluaci\u00F3n estandarizados. Sus respuestas ser\u00E1n anonimizadas y usadas solo para prop\u00F3sitos de investigaci\u00F3n.",
+    consent_purpose_text = "Este estudio investiga habilidades cognitivas usando elementos de evaluaci\u00F3n estandarizados. Sus respuestas ser\u00E1n usadas solo para prop\u00F3sitos de investigaci\u00F3n.",
     consent_privacy_label = "Privacidad de Datos:",
     consent_privacy_text = "El tratamiento y almacenamiento de los datos se describen en la informaci\u00F3n de protecci\u00F3n de datos del estudio.",
     consent_voluntary_label = "Participaci\u00F3n Voluntaria:",
@@ -480,7 +483,7 @@ LANGUAGE_DICTIONARY <- list(
     
     # Welcome section
     welcome_title = "Bienvenido al Estudio de Evaluaci\u00F3n Cognitiva",
-    welcome_description = "Su participaci\u00F3n ayuda a avanzar en la ciencia cognitiva. Todos los datos son confidenciales y se usan solo para investigaci\u00F3n acad\u00E9mica.",
+    welcome_description = "Su participaci\u00F3n ayuda a avanzar en la ciencia cognitiva. Sus respuestas se analizan con fines de investigaci\u00F3n acad\u00E9mica.",
     participate_button = "Participar en el Estudio",
     
     # Study flow headings
@@ -494,7 +497,7 @@ LANGUAGE_DICTIONARY <- list(
     consent_to_participate = "Consentimiento para Participar",
     data_use_and_storage = "Uso y Almacenamiento de Datos",
     right_to_withdraw = "Derecho a Retirarse",
-    data_controller = "Controlador de Datos",
+    data_controller = "Responsable del Tratamiento",
     legal_basis_for_processing = "Base Legal para el Procesamiento",
     data_retention = "Retenci\u00F3n de Datos",
     your_rights_under_gdpr = "Sus Derechos bajo GDPR",
@@ -521,8 +524,8 @@ LANGUAGE_DICTIONARY <- list(
     ethics_committee = "Comit\u00E9 de \u00C9tica",
     address = "Direcci\u00F3n",
     email = "Correo Electr\u00F3nico",
-    data_protection_officer = "Oficial de Protecci\u00F3n de Datos",
-    supervisory_authority = "Autoridad Supervisora"
+    data_protection_officer = "Delegado de Protecci\u00F3n de Datos",
+    supervisory_authority = "Autoridad de Control"
   ),
   
   fr = list(
@@ -541,7 +544,7 @@ LANGUAGE_DICTIONARY <- list(
     study_procedures = "Proc\u00E9dures de l'\u00C9tude",
     categories_of_data = "Cat\u00E9gories de Donn\u00E9es",
     article_9_gdpr = "Article 9(2)(a) RGPD : Consentement explicite pour les cat\u00E9gories sp\u00E9ciales de donn\u00E9es (si applicable)",
-    article_6_gdpr = "Article 6(1)(a) RGPD : Votre consentement explicite",
+    article_6_gdpr = "Article 6(1)(a) RGPD : Votre consentement",
     legitimate_interest = "Int\u00E9r\u00EAt l\u00E9gitime : Fins de recherche scientifique",
     objection = "Opposition : S'opposer au traitement bas\u00E9 sur des int\u00E9r\u00EAts l\u00E9gitimes",
     rectification = "Rectification : Corriger des donn\u00E9es inexactes",
@@ -566,7 +569,7 @@ LANGUAGE_DICTIONARY <- list(
     items_administered = "\u00C9l\u00E9ments Termin\u00E9s",
     recommendations = "Recommandations",
     assessment_complete = "\u00C9valuation Termin\u00E9e",
-    analysis_completed = "Analyse psychom\u00E9trique avanc\u00E9e termin\u00E9e avec rapports sp\u00E9cifiques au domaine",
+    analysis_completed = "Analyse termin\u00E9e",
     return_dashboard = "Retour au Tableau de Bord",
     view_backend = "Voir le Backend d'Analyse",
     
@@ -589,7 +592,7 @@ LANGUAGE_DICTIONARY <- list(
     consent_title = "Consentement \u00E0 l'\u00C9tude de Recherche",
     consent_welcome = "Bienvenue \u00E0 l'\u00C9tude d'\u00C9valuation Cognitive. Veuillez lire les informations ci-dessous et fournir votre consentement pour participer.",
     consent_purpose_label = "But :",
-    consent_purpose_text = "Cette \u00E9tude examine les capacit\u00E9s cognitives en utilisant des \u00E9l\u00E9ments d'\u00E9valuation standardis\u00E9s. Vos r\u00E9ponses seront anonymis\u00E9es et utilis\u00E9es uniquement \u00E0 des fins de recherche.",
+    consent_purpose_text = "Cette \u00E9tude examine les capacit\u00E9s cognitives en utilisant des \u00E9l\u00E9ments d'\u00E9valuation standardis\u00E9s. Vos r\u00E9ponses seront utilis\u00E9es uniquement \u00E0 des fins de recherche.",
     consent_privacy_label = "Confidentialit\u00E9 des Donn\u00E9es :",
     consent_privacy_text = "Toutes les donn\u00E9es sont stock\u00E9es en toute s\u00E9curit\u00E9 et trait\u00E9es conform\u00E9ment aux directives institutionnelles et RGPD.",
     consent_voluntary_label = "Participation Volontaire :",
@@ -644,7 +647,7 @@ LANGUAGE_DICTIONARY <- list(
     
     # Welcome section
     welcome_title = "Bienvenue \u00E0 l'\u00C9tude d'\u00C9valuation Cognitive",
-    welcome_description = "Votre participation aide \u00E0 faire progresser la science cognitive. Toutes les donn\u00E9es sont confidentielles et utilis\u00E9es uniquement pour la recherche acad\u00E9mique.",
+    welcome_description = "Votre participation aide \u00E0 faire progresser la science cognitive. Toutes les donn\u00E9es sont utilis\u00E9es uniquement pour la recherche acad\u00E9mique.",
     participate_button = "Participer \u00E0 l'\u00C9tude",
     
     # Study flow headings
@@ -658,7 +661,7 @@ LANGUAGE_DICTIONARY <- list(
     consent_to_participate = "Consentement \u00E0 Participer",
     data_use_and_storage = "Utilisation et Stockage des Donn\u00E9es",
     right_to_withdraw = "Droit de Se Retirer",
-    data_controller = "Responsable des Donn\u00E9es",
+    data_controller = "Responsable du Traitement",
     legal_basis_for_processing = "Base L\u00E9gale du Traitement",
     data_retention = "Conservation des Donn\u00E9es",
     your_rights_under_gdpr = "Vos Droits selon le RGPD",
@@ -705,7 +708,7 @@ LANGUAGE_DICTIONARY <- list(
     study_procedures = "\u0631\u0648\u0634\u200c\u0647\u0627\u06cc \u0645\u0637\u0627\u0644\u0639\u0647",
     categories_of_data = "\u062f\u0633\u062a\u0647\u200c\u0628\u0646\u062f\u06cc \u062f\u0627\u062f\u0647\u200c\u0647\u0627",
     article_9_gdpr = "\u0645\u0627\u062f\u0647 \u06f9(\u06f2)(\u0627\u0644\u0641) GDPR: \u0631\u0636\u0627\u06cc\u062a \u0635\u0631\u06cc\u062d",
-    article_6_gdpr = "\u0645\u0627\u062f\u0647 \u06f6(\u06f1)(\u0627\u0644\u0641) GDPR: \u0631\u0636\u0627\u06cc\u062a \u0635\u0631\u06cc\u062d \u0634\u0645\u0627",
+    article_6_gdpr = "\u0645\u0627\u062f\u0647 \u06f6(\u06f1)(\u0627\u0644\u0641) GDPR: \u0631\u0636\u0627\u06cc\u062a \u0634\u0645\u0627",
     legitimate_interest = "\u0645\u0646\u0627\u0641\u0639 \u0645\u0634\u0631\u0648\u0639: \u0627\u0647\u062f\u0627\u0641 \u062a\u062d\u0642\u06cc\u0642\u0627\u062a \u0639\u0644\u0645\u06cc",
     objection = "\u0627\u0639\u062a\u0631\u0627\u0636: \u0645\u062e\u0627\u0644\u0641\u062a \u0628\u0627 \u067e\u0631\u062f\u0627\u0632\u0634",
     rectification = "\u0627\u0635\u0644\u0627\u062d: \u062a\u0635\u062d\u06cc\u062d \u062f\u0627\u062f\u0647\u200c\u0647\u0627\u06cc \u0646\u0627\u062f\u0631\u0633\u062a",
@@ -730,7 +733,7 @@ LANGUAGE_DICTIONARY <- list(
     items_administered = "\u0633\u0648\u0627\u0644\u0627\u062a \u062a\u06a9\u0645\u06cc\u0644\u200c\u0634\u062f\u0647",
     recommendations = "\u062a\u0648\u0635\u06cc\u0647\u200c\u0647\u0627",
     assessment_complete = "\u0627\u0631\u0632\u06cc\u0627\u0628\u06cc \u062a\u06a9\u0645\u06cc\u0644 \u0634\u062f",
-    analysis_completed = "\u062a\u062d\u0644\u06cc\u0644 \u0631\u0648\u0627\u0646\u200c\u0633\u0646\u062c\u06cc \u067e\u06cc\u0634\u0631\u0641\u062a\u0647 \u062a\u06a9\u0645\u06cc\u0644 \u0634\u062f",
+    analysis_completed = "\u062a\u062d\u0644\u06cc\u0644 \u062a\u06a9\u0645\u06cc\u0644 \u0634\u062f",
     return_dashboard = "\u0628\u0627\u0632\u06af\u0634\u062a \u0628\u0647 \u062f\u0627\u0634\u0628\u0648\u0631\u062f",
     view_backend = "\u0645\u0634\u0627\u0647\u062f\u0647 \u062a\u062d\u0644\u06cc\u0644",
 
@@ -858,12 +861,12 @@ LANGUAGE_DICTIONARY <- list(
 #'
 #' Retrieves all labels for a specific language
 #'
-#' @param language Language code (en, de, es, fr)
+#' @param language Language code (en, de, es, fr, fa)
 #' @return List of language labels
 #' @export
 get_language_labels <- function(language = "en") {
   if (!is_supported_language(language)) {
-    warning(paste("Language '", language, "' not supported. Using English (en) as fallback."))
+    warning(paste0("Language '", language, "' not supported. Using English (en) as fallback."))
     language <- "en"
   }
   return(LANGUAGE_DICTIONARY[[language]])
@@ -874,7 +877,7 @@ get_language_labels <- function(language = "en") {
 #' Retrieves a specific label for a given language
 #'
 #' @param label_key Label key to retrieve
-#' @param language Language code (en, de, es, fr)
+#' @param language Language code (en, de, es, fr, fa)
 #' @param fallback Fallback value if label not found
 #' @return Label text
 #' @keywords internal
@@ -913,7 +916,7 @@ is_supported_language <- function(language) {
 
 #' Get Language Name
 #'
-#' @param language_code Language code (en, de, es, fr)
+#' @param language_code Language code (en, de, es, fr, fa)
 #' @return Full language name
 #' @export
 get_language_name <- function(language_code) {
@@ -921,7 +924,8 @@ get_language_name <- function(language_code) {
     en = "English",
     de = "Deutsch",
     es = "Espa\u00F1ol",
-    fr = "Fran\u00E7ais"
+    fr = "Fran\u00E7ais",
+    fa = "\u0641\u0627\u0631\u0633\u06CC"
   )
   return(language_names[[language_code]] %||% language_code)
 }

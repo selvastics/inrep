@@ -10,5 +10,6 @@ create_report_css()
 CSS content as character vector
 }
 \description{
-Create Report CSS
+Returns a stylesheet for HTML output. It is not used by
+\code{\link{generate_inrep_pdf_report}}, since PDF output ignores CSS.
 }

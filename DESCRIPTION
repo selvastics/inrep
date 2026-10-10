@@ -6,10 +6,13 @@ Date: 2026-05-11
 Author: Clievins Selva [aut, cre] (<https://orcid.org/0000-0001-9980-7127>)
 Authors@R: person(given = "Clievins", family = "Selva", email = "selva@uni-hildesheim.de", role = c("aut", "cre"), comment = c(ORCID = "0000-0001-9980-7127"))
 Maintainer: Clievins Selva <selva@uni-hildesheim.de>
-Description: A framework for administering assessments with web-based interfaces via 'Shiny'.
-    Supports fixed and adaptive testing workflows, item bank validation, item selection,
-    reporting utilities, and optional parallel processing helpers. Intended for
-    psychological, educational, and survey research use cases.
+Description: Administers fixed-form and adaptive questionnaires in a web
+    interface built with 'shiny'. In adaptive mode, items are selected by
+    Fisher information and ability is estimated by expected a posteriori
+    (EAP) estimation on a grid, using item parameters calibrated elsewhere
+    (1PL, 2PL, 3PL or graded response model); the package does not estimate
+    item parameters. Also provides item bank checks, configurable page flows,
+    participant reports and data export (RDS, CSV, JSON, PDF).
 URL: https://github.com/selvastics/inrep
 BugReports: https://github.com/selvastics/inrep/issues
 Depends: R (>= 4.1.0)

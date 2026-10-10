@@ -10,9 +10,9 @@ create_custom_page_flow(pages)
 \item{pages}{List of page configurations}
 }
 \value{
-A custom page flow configuration object
+The list of pages with class \code{c("custom_page_flow", "list")}
 }
 \description{
-This function provides support for custom page flows in studies,
-allowing for complex multi-page questionnaires with progressive display.
+Checks that every page has the fields \code{id}, \code{type} and
+\code{title} and returns the pages with class \code{"custom_page_flow"}.
 }

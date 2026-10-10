@@ -2,7 +2,7 @@
 % Please edit documentation in R/launch_study.R
 \name{launch_study}
 \alias{launch_study}
-\title{Launch Adaptive Study Interface}
+\title{Launch a Study}
 \usage{
 launch_study(
   config,
@@ -39,17 +39,20 @@ launch_study(
 )
 }
 \arguments{
-\item{config}{A list containing study configuration parameters created by \code{\link{create_study_config}}.
-Must include essential elements like \code{model}, \code{max_items}, \code{min_SEM}, etc.}
+\item{config}{A study configuration list created by
+\code{\link{create_study_config}}.}
 
-\item{item_bank}{Data frame containing item parameters compatible with TAM package requirements.
-Column structure varies by IRT model (see \strong{Item Bank Requirements} section).}
+\item{item_bank}{Data frame with the items. Required columns depend on the
+model and on whether the study is adaptive (see \strong{Item Bank
+Requirements}). If missing or \code{NULL}, \code{config$items} is used.}
 
-\item{custom_css}{Character string containing CSS code for UI customization. 
-When provided, overrides both built-in themes and \code{theme_config} settings.}
+\item{custom_css}{Character string with CSS. It is appended after the
+theme CSS, so its rules take precedence over the theme.}
 
-\item{theme_config}{Named list of theme parameters for custom theming.
-Contains CSS variable definitions like \code{primary_color}, \code{font_family}, etc.}
+\item{theme_config}{Named list. Only \code{primary_color} is used, as the
+color of the progress indicator, the PDF button and the ability plot.
+Other entries are ignored; use \code{custom_css} or a theme to change
+other colors and fonts.}
 
 \item{webdav_url}{Where inrep stores each participant's session file
 (JSON) on a WebDAV server, or \code{NULL} for local storage only. Any
@@ -80,140 +83,130 @@ bare \code{.../public.php/webdav/} address.}
 
 \item{webdav_user}{User name for a plain (non-share) WebDAV folder.}
 
-\item{save_format}{Character string specifying output format for assessment results.
-Options: \code{"rds"} (default), \code{"csv"}, \code{"json"}, \code{"pdf"}.}
+\item{save_format}{Format of the report file offered by the download
+button on the built-in results page (shown only when
+\code{config$participant_report$show_legacy_buttons = TRUE}). One of
+\code{"rds"} (default), \code{"csv"}, \code{"json"} or \code{"pdf"}.
+\code{"pdf"} needs a LaTeX installation via \pkg{tinytex}; if the PDF
+cannot be built, a JSON file is written instead.}
 
-\item{logger}{Function for custom logging. Default uses internal \code{logr} implementation.
-Should accept \code{message} and \code{level} parameters.}
+\item{logger}{Logging function called as \code{logger(msg, level = ...)}.
+The default passes every message, including debug messages, to
+\code{message()}.}
 
-\item{study_key}{Character string for unique study identification. Overrides config$study_key.}
+\item{study_key}{Character string identifying the study. Overrides
+\code{config$study_key}. Local session files are stored under
+\code{study_data/<study_key>/}.}
 
-\item{accessibility}{Logical indicating whether to enable accessibility features
-including ARIA labels, keyboard navigation, and screen reader support.}
+\item{accessibility}{Currently ignored.}
 
-\item{admin_dashboard_hook}{Optional function receiving real-time assessment updates.
-Called with participant progress, ability estimates, and session metrics.}
+\item{admin_dashboard_hook}{Optional function. In the built-in assessment
+flow (not in a \code{custom_page_flow}) it is called after each response
+and item selection with a list containing \code{participant_id},
+\code{progress} (percent of \code{max_items}), \code{theta}, \code{se},
+\code{items_administered} and \code{responses}.}
 
-\item{max_session_time}{Maximum session time in seconds (default: 7200 = 2 hours).
-The assessment will automatically terminate after this time to limit session duration.}
+\item{max_session_time}{Maximum duration of a participant session in
+seconds (default 7200). The session is checked once per minute and
+closed when this time is exceeded.}
 
-\item{session_save}{Logical indicating whether to enable session saving and recovery
-(default: \code{FALSE}). Enable for production deployments that need crash recovery.}
+\item{session_save}{Logical. If \code{TRUE}, the participant's reactive
+state is written to \code{study_data/<study_key>/session.rds} on page
+changes, on responses and when the session ends (default \code{FALSE}).}
 
-\item{data_preservation_interval}{Interval for automatic data preservation in seconds (default: 30).}
+\item{data_preservation_interval}{Passed to the internal session state
+(seconds, default 30).}
 
-\item{keep_alive_interval}{Keep-alive ping interval in seconds (default: 10).}
+\item{keep_alive_interval}{Passed to the internal session state (seconds,
+default 10).}
 
-\item{enable_error_recovery}{Logical indicating whether to enable automatic error recovery
-with up to 3 recovery attempts before graceful degradation.}
+\item{enable_error_recovery}{Logical, stored in the internal
+error-handling state. \code{launch_study()} does not install the global
+error handler that reads it, so it currently has no visible effect.}
 
-\item{debug_mode}{Logical indicating whether to enable debug mode (default: FALSE).
-When TRUE, enables keyboard shortcuts for rapid testing: STRG+A (CTRL+A) smart fills current page with
-contextual defaults, STRG+Q (CTRL+Q) turbo auto-fills all pages until results are reached.
-A red debug indicator appears in the bottom-right corner. **Use only for development/testing!**}
+\item{debug_mode}{Logical (default \code{FALSE}). If \code{TRUE}, a debug
+panel is shown and keyboard shortcuts are enabled: Ctrl+A fills the
+current page, Ctrl+Q fills and advances through all pages until the
+results, Ctrl+Y does the same with shorter delays. For development and
+testing only.}
 
-\item{ui_render_delay}{Optional numeric delay (in seconds) before rendering the main UI.
-If NULL, no additional delay is applied.}
+\item{ui_render_delay, package_loading_delay, session_init_delay, show_loading_screen}{Currently ignored.}
 
-\item{package_loading_delay}{Optional numeric delay (in seconds) used when deferring
-package loading for immediate UI startup.}
+\item{immediate_ui}{Logical (default \code{FALSE}). If \code{TRUE}, the
+optional packages \pkg{ggplot2}, \pkg{DT} and \pkg{shinyWidgets} are
+treated as unavailable, so plots, interactive tables and button-style
+response options are not used.}
 
-\item{session_init_delay}{Optional numeric delay (in seconds) before initializing
-session state.}
-
-\item{show_loading_screen}{Logical indicating whether to show a simple loading
-screen when using delayed startup.}
-
-\item{immediate_ui}{Logical indicating whether to render the UI immediately and
-load heavier components in the background.}
-
-\item{auto_close_time}{Numeric. Time until auto-close after the final results page.
-Used only for custom page flows that include results pages.}
+\item{auto_close_time}{Numeric. Time until the window is closed after the
+final results page. Used only in a \code{custom_page_flow} with results
+pages.}
 
 \item{auto_close_time_unit}{Character. Either \code{"seconds"} or \code{"minutes"}.}
 
 \item{disable_auto_close}{Logical. If TRUE, disables automatic closing.}
 
-\item{port}{Numeric port number for Shiny application (default: 3838).
-The application will be accessible at http://host:port.}
+\item{port}{Port number (default 3838), used when \code{launch_browser = TRUE}.}
 
-\item{launch_browser}{Logical indicating whether to automatically open browser (default: FALSE).
-When TRUE, automatically launches in browser. When FALSE, returns the Shiny app object for manual execution.}
+\item{launch_browser}{Logical (default \code{FALSE}). If \code{TRUE}, the
+app is run with \code{shiny::runApp()} and opened in the browser. If
+\code{FALSE}, the Shiny app object is returned.}
 
-\item{host}{Character string specifying the host address (default: "127.0.0.1").
-Use "0.0.0.0" for network access or specific IP addresses for remote access.}
+\item{host}{Host address (default \code{"127.0.0.1"}), used when
+\code{launch_browser = TRUE}. Use \code{"0.0.0.0"} to accept connections
+from other machines.}
 
-\item{...}{Additional parameters passed to Shiny application configuration.}
+\item{...}{Not used; any arguments given here are reported and ignored.}
 }
 \value{
-When \code{launch_browser = TRUE}, launches the Shiny application
-  in the default browser. When \code{launch_browser = FALSE} (default), returns the Shiny app
-  object for manual execution with \code{shiny::runApp()}.
-  The app provides an assessment interface with optional adaptation.
+If \code{launch_browser = FALSE} (default), a Shiny app object that
+  can be run with \code{shiny::runApp()}. Otherwise the app is run and the
+  value of \code{shiny::runApp()} is returned when it stops.
 }
 \description{
-Implementation note: currently implemented as a single function and will be
-refactored into smaller internal helpers.
-Launches a Shiny-based adaptive or non-adaptive assessment interface that serves as
-a wrapper around optional psychometric backends (for example, TAM). When available,
-IRT computations (ability estimation, item selection, model fitting) are delegated to
-the backend, while this function provides the interactive interface and workflow
-management.
+Builds the Shiny application for a study and either returns it or runs it.
+The study is either a fixed-form questionnaire or a computerized adaptive
+test (CAT), as set in \code{config}. The function is currently one large
+function and is meant to be split into smaller internal helpers.
 }
 \details{
-\strong{Psychometric Foundation:} All statistical computations are performed by the
-TAM package (Robitzsch et al., 2024). \code{inrep} serves as an integration framework
-that orchestrates TAM's capabilities within an interactive research workflow:
-\itemize{
-  \item IRT model fitting: \code{TAM::tam.mml}, \code{TAM::tam.mml.2pl}, \code{TAM::tam.mml.3pl}
-  \item Ability estimation: \code{TAM::tam.wle}
-  \item Item information: \code{TAM::IRT.informationCurves}
-  \item Model diagnostics: \code{TAM::tam.fit}
-}
+\strong{Psychometric computations.} inrep does not calibrate items. In an
+adaptive study the item parameters in \code{item_bank} are taken as known.
+After each response, ability is estimated by \code{\link{estimate_ability}}
+(expected a posteriori estimate on a grid with the normal prior
+\code{config$theta_prior}; the reported SE is the posterior standard
+deviation), and the next item is chosen by
+\code{\link{fast_select_next_item}} (maximum Fisher information, the
+default) or \code{\link{select_next_item}} when
+\code{config$fast_item_selection = FALSE}. Items before position
+\code{config$adaptive_start} (default: \code{min_items}) are drawn at
+random. The test stops when
+\code{min_items} have been given and either \code{max_items} is reached or
+the SE falls to \code{min_SEM}, unless
+\code{config$stopping_rule} is supplied. Supported models are 1PL, 2PL,
+3PL and the graded response model (GRM).
 
-\strong{Framework Architecture:} \code{inrep} provides the following integration capabilities:
-\itemize{
-  \item Interactive web interface powered by Shiny (Chang et al., 2021)
-  \item Real-time data collection and session management
-  \item Bidirectional interface between user interactions and TAM computations
-  \item Workflow orchestration with logging via \code{logr} package
-  \item Result export in multiple formats with cloud storage integration
-}
-
-\strong{Capabilities:}
-\itemize{
-  \item Runs a Shiny-based assessment flow (fixed or adaptive)
-  \item Optional demographics collection
-  \item Ability estimation and item selection via optional psychometric backends (e.g., TAM)
-  \item Optional session save/restore helpers
-  \item Optional logging when \code{logr} is available
-}
+In a non-adaptive study the items are presented in a fixed order and no
+ability estimate is computed.
 }
 \section{Cloud Storage Configuration}{
 
-Optional upload of completed session data to a WebDAV-compatible endpoint.
-
-\strong{Setup Requirements:}
+Optional upload of completed session data to a WebDAV endpoint.
 \itemize{
-  \item Both \code{webdav_url} and \code{password} must be provided together
-  \item WebDAV URL must be a valid HTTP(S) endpoint with write permissions
-  \item Password should be the access token or credential for your WebDAV service
-  \item Network connectivity required for cloud functionality
+  \item \code{password} without \code{webdav_url} is an error.
+  \item \code{webdav_url} without \code{password} uploads anonymously
+    (public shares that allow uploads).
+  \item The URL must start with \code{http://} or \code{https://};
+    prefer HTTPS.
+  \item Read the password from an environment variable, for example
+    \code{password = Sys.getenv("WEBDAV_PASSWORD")}, and prefer an app
+    password or share password over an account password.
 }
 
-\strong{Operational Notes:}
-\itemize{
-  \item Use environment variables for passwords: \code{password = Sys.getenv("WEBDAV_PASS")}
-  \item Prefer HTTPS endpoints
-  \item Use dedicated access tokens rather than account passwords when possible
-}
-
-\strong{Usage Examples:}
 \preformatted{
 # Local storage only (default)
 launch_study(config, item_bank)
 
-# With cloud backup to a Nextcloud/ownCloud share (replace with your own)
+# With upload to a Nextcloud/ownCloud share (replace with your own)
 launch_study(
   config,
   item_bank,
@@ -221,7 +214,7 @@ launch_study(
   password = Sys.getenv("WEBDAV_PASSWORD")
 )
 
-# With cloud backup to a personal WebDAV folder
+# With upload to a personal WebDAV folder
 launch_study(
   config,
   item_bank,
@@ -232,103 +225,43 @@ launch_study(
 }
 }
 
-\section{Installation and Dependencies}{
-
-\strong{Required Packages:} Ensure all dependencies are installed for full functionality:
-\preformatted{
-# Core psychometric engine
-install.packages("TAM")
-
-# Interface and visualization  
-install.packages(c("shiny", "DT", "ggplot2", "plotly"))
-
-# Data processing and utilities
-install.packages(c("dplyr", "jsonlite", "logr"))
-
-# Install inrep package
-devtools::install_github("selvastics/inrep")
-}
-
-\strong{System Requirements:}
-\itemize{
-  \item R version 4.0.0 or higher for optimal TAM compatibility
-  \item Minimum 4GB RAM for medium-scale assessments (>500 participants)
-  \item Modern web browser with JavaScript enabled for Shiny interface
-  \item Network connectivity for cloud storage features (optional)
-}
-}
-
 \section{Notes}{
 
-Most runtime behavior is configured via \code{create_study_config()} (e.g.,
-caching/parallel settings, theme options, progress display). For WebDAV upload
-behavior and security notes, see \code{save_session_to_cloud()}.
+Most runtime behavior is configured via \code{create_study_config()}. For
+WebDAV upload behavior, see \code{save_session_to_cloud()}.
 }
 
 \section{Item Bank Requirements}{
 
-The \code{item_bank} data frame must conform to TAM package specifications with 
-columns varying by IRT model type:
+Every item bank needs a \code{Question} column with the item text (a
+column \code{content} or \code{item_id} is copied to \code{Question} if
+\code{Question} is missing; \code{discrimination} and \code{difficulty} are
+copied to \code{a} and \code{b}). In a non-adaptive study no parameter
+columns are checked.
 
-\strong{Common Requirements (All Models):}
-\itemize{
-  \item \code{Question}: Character vector containing item text or content identifiers
-  \item Items must be properly formatted for the target language and population
-  \item No missing values in parameter columns required by the specified model
-}
-
-\strong{Model-Specific Requirements:}
+In an adaptive study \code{\link{validate_item_bank}} checks that these
+columns exist (it does not check values, ranges or threshold order):
 \describe{
-  \item{\strong{1PL/Rasch Model}}{
-    \itemize{
-      \item \code{b}: Difficulty parameters (logit scale, typically -3 to +3)
-      \item \code{Answer}: Correct response codes for scoring
-      \item \code{Option1, Option2, ...}: Response options for multiple choice items
-    }
-  }
-  \item{\strong{2PL Model}}{
-    \itemize{
-      \item \code{a}: Discrimination parameters (positive values, typically 0.5 to 3.0)
-      \item \code{b}: Difficulty parameters (logit scale)
-      \item \code{Answer}: Correct response identifiers
-      \item \code{Option1, Option2, ...}: Multiple choice response options
-    }
-  }
-  \item{\strong{3PL Model}}{
-    \itemize{
-      \item \code{a}: Discrimination parameters (positive values)
-      \item \code{b}: Difficulty parameters (logit scale)  
-      \item \code{c}: Guessing parameters (0 to 1, typically 0.1 to 0.3)
-      \item \code{Answer}: Correct response codes
-      \item \code{Option1, Option2, ...}: Distractor options
-    }
-  }
-  \item{\strong{GRM (Graded Response Model)}}{
-    \itemize{
-      \item \code{a}: Discrimination parameters for polytomous items
-      \item \code{b1, b2, b3, ...}: Threshold parameters in ascending order
-      \item \code{ResponseCategories}: Comma-separated response scale (e.g., "1,2,3,4,5")
-      \item Optional: \code{CategoryLabels}: Descriptive labels for scale points
-    }
-  }
+  \item{1PL}{\code{b} (difficulty). \code{a} is set to 1 for all items.}
+  \item{2PL}{\code{a} (discrimination) and \code{b}.}
+  \item{3PL}{\code{a} and \code{b}. A column \code{c} (lower
+    asymptote) is used when present; otherwise \code{c = 0}.}
+  \item{GRM}{\code{a} and thresholds \code{b1} to \code{b4}, which should
+    be in increasing order.}
 }
-
-\strong{Parameter Validation:} The function automatically validates:
-\itemize{
-  \item Parameter ranges appropriate for TAM estimation procedures
-  \item Threshold ordering for polytomous models (b1 < b2 < b3 < ...)
-  \item Consistency between model specification and available parameters
-  \item Data types and missing value patterns that could affect TAM computations
-}
+For dichotomous models the response options are taken from
+\code{Option1} to \code{Option4} and the keyed option from \code{Answer}.
+For the GRM, the response categories are read from
+\code{ResponseCategories}, a comma-separated string such as
+\code{"1,2,3,4,5"}.
 }
 
 \examples{
 \dontrun{
-# Example 1: Basic Personality Assessment with GRM
 library(inrep)
 data(bfi_items)
 
-# Create basic configuration
+# Example 1: adaptive personality assessment with the GRM
 basic_config <- create_study_config(
   name = "Big Five Personality Assessment",
   model = "GRM",
@@ -338,39 +271,23 @@ basic_config <- create_study_config(
   theme = "Light",
   language = "en"
 )
-
-# Launch assessment with default settings
 launch_study(basic_config, bfi_items)
 
-# Example 2: Advanced Cognitive Assessment with 2PL Model
-advanced_config <- create_study_config(
+# Example 2: adaptive cognitive test with the 2PL and a monitoring hook
+data(cognitive_items)
+cog_config <- create_study_config(
   name = "Cognitive Ability Assessment",
-  model = "2PL", 
-  estimation_method = "EAP",
+  model = "2PL",
   max_items = 20,
   min_items = 10,
   min_SEM = 0.25,
-  criteria = "MI",  # Maximum Information selection
   theta_prior = c(0, 1),
-  demographics = c("Age", "Gender", "Education", "Native_Language"),
-  input_types = list(
-    Age = "numeric",
-    Gender = "select", 
-    Education = "select",
-    Native_Language = "text"
-  ),
-  theme = "Professional",
-  session_save = TRUE,
-  parallel_computation = TRUE,
-  cache_enabled = TRUE,
-  accessibility_enhanced = TRUE
+  demographics = c("Age", "Gender"),
+  theme = "Professional"
 )
-
-# Launch with accessibility features and admin monitoring
 launch_study(
-  config = advanced_config,
+  config = cog_config,
   item_bank = cognitive_items,
-  accessibility = TRUE,
   admin_dashboard_hook = function(session_data) {
     cat("Participant ID:", session_data$participant_id, "\n")
     cat("Progress:", session_data$progress, "\%\n")
@@ -379,95 +296,25 @@ launch_study(
   }
 )
 
-# Example 3: Custom Theme with CSS Variables
-custom_theme_config <- list(
-  primary_color = "#2E86AB",
-  secondary_color = "#A23B72", 
-  background_color = "#F5F5F5",
-  text_color = "#333333",
-  font_family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-  border_radius = "8px",
-  button_hover_color = "#1E5A6B"
-)
-
+# Example 3: custom colors via CSS variables
 launch_study(
   config = basic_config,
-  item_bank = bfi_items, 
-  theme_config = custom_theme_config
+  item_bank = bfi_items,
+  theme_config = list(primary_color = "#2E86AB"),
+  custom_css = ":root { --primary-color: #2E86AB; --secondary-color: #A23B72; }"
 )
 
-# Example 4: Clinical Assessment Example
-clinical_config <- create_study_config(
-  name = "Clinical Depression Screening",
-  model = "GRM",
-  max_items = 12,
-  min_SEM = 0.35,
-  demographics = c("Age", "Gender", "Previous_Treatment"),
-  theme = "Clinical",
-  language = "en",
-  session_save = TRUE,
-  max_session_duration = 30
-)
-
-# Launch with cloud storage and logging
+# Example 4: WebDAV upload and a custom logger
 launch_study(
-  config = clinical_config,
-  item_bank = depression_items,
-  save_format = "json",
-  webdav_url = "https://your-webdav.example/assessments/",
+  config = basic_config,
+  item_bank = bfi_items,
+  webdav_url = "https://cloud.example.org/index.php/s/YourShareToken",
   password = Sys.getenv("WEBDAV_PASSWORD"),
+  study_key = paste0("BFI_", generate_uuid()),
   logger = function(msg, level = "INFO") {
     timestamp <- format(Sys.time(), "\%Y-\%m-\%d \%H:\%M:\%S")
     cat(sprintf("[\%s] \%s: \%s\n", timestamp, level, msg))
   }
-)
-
-# Example 5: Research Study with Complete Customization
-research_config <- create_study_config(
-  name = "Psychometric Validation Study",
-  model = "3PL",
-  estimation_method = "EAP",
-  min_items = 15,
-  max_items = 30,
-  min_SEM = 0.2,
-  criteria = "WEIGHTED",
-  theta_prior = c(0, 1.2),
-  demographics = c("Age", "Gender", "Education", "Country", "Language"),
-  response_ui_type = "radio",
-  progress_style = "modern-circle",
-  theme = "Research",
-  language = "en",
-  session_save = TRUE,
-  parallel_computation = TRUE,
-  feedback_enabled = TRUE,
-  recommendation_fun = function(theta, demographics, responses) {
-    # Replace placeholders with study-specific recommendations
-    if (theta > 1.0) {
-      return(c("Recommendation 1 (high)", "Recommendation 2 (high)"))
-    } else if (theta > 0) {
-      return(c("Recommendation 1 (mid)", "Recommendation 2 (mid)"))
-    } else {
-      return(c("Recommendation 1 (low)", "Recommendation 2 (low)"))
-    }
-  }
-)
-
-# Example 6: University of Hildesheim theme with cloud storage
-hildesheim_config <- create_study_config(
-  name = "University of Hildesheim Assessment",
-  model = "GRM",
-  max_items = 10,
-  session_save = TRUE,
-  theme = "Berry"
-)
-
-launch_study(
-  config = hildesheim_config,
-  item_bank = bfi_items,
-  save_format = "json",
-  webdav_url = "https://cloud.example.org/index.php/s/YourShareToken",
-  password = Sys.getenv("WEBDAV_PASSWORD"),
-  study_key = paste0("HILDESHEIM_", generate_uuid())
 )
 }
 }

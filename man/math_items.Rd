@@ -2,35 +2,43 @@
 % Please edit documentation in R/math_items_data.R
 \name{math_items}
 \alias{math_items}
-\title{Mathematics Assessment Item Bank}
+\title{Placeholder Mathematics Item Bank (Simulated Parameters)}
 \format{
-Data frame with 40 rows and 10 columns:
+Data frame with 40 rows and 11 columns:
 \describe{
   \item{\code{item_id}}{Unique identifier (MATH_001 to MATH_040)}
-  \item{\code{Question}}{Problem text}
+  \item{\code{Question}}{Placeholder text}
   \item{\code{domain}}{Basic_Arithmetic, Fractions_Decimals, Algebra, or Geometry}
-  \item{\code{difficulty_level}}{Easy, Medium, or Hard}
-  \item{\code{a}}{Discrimination parameter (0.8--2.2)}
-  \item{\code{b1}, \code{b2}, \code{b3}, \code{b4}}{Threshold parameters}
+  \item{\code{difficulty_level}}{Label Easy, Medium, or Hard; unrelated to
+    the threshold values}
+  \item{\code{a}}{Discrimination parameter, drawn from U(0.8, 2.2)}
+  \item{\code{b1}, \code{b2}, \code{b3}, \code{b4}}{Thresholds, random
+    normal draws sorted within each item}
   \item{\code{ResponseCategories}}{"1,2,3,4,5"}
-  \item{\code{grade_level}}{Recommended grade range}
+  \item{\code{grade_level}}{Label for a grade range}
 }
 }
 \source{
-Simulated data.
+Simulated. \code{inst/examples/create_math_items.R} shows the kind of
+  generating code, but it does not reproduce this data set exactly (the
+  thresholds and item texts differ).
 }
 \description{
-A simulated 40-item mathematics bank across four domains (arithmetic,
-fractions/decimals, algebra, geometry), calibrated for GRM.
+A 40-item placeholder bank with four domain labels (arithmetic,
+fractions/decimals, algebra, geometry). The item texts are placeholders
+("Math item MATH_001 (Basic_Arithmetic): placeholder item text.") and the
+graded response model parameters are random draws, not calibrated values.
+It is meant for trying out the software only.
+}
+\details{
+A five-category graded response model is an unusual choice for mathematics
+problems, which are normally scored right/wrong (or with partial credit).
 }
 \examples{
 \dontrun{
 data(math_items)
 str(math_items)
 table(math_items$domain)
-
-config <- create_study_config(name = "Math Test", model = "GRM", max_items = 20)
-launch_study(config, math_items)
 }
 
 }

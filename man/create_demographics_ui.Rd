@@ -17,13 +17,9 @@ field. Names should match \code{demographics} vector, values should be
 \code{list(Age = "numeric", Gender = "select", Education = "text")}.}
 }
 \value{
-A Shiny UI element containing:
-\describe{
-  \item{Input components}{Formatted demographic inputs based on specified types}
-  \item{Start button}{Action button to proceed to assessment ("Start Test")}
-  \item{Validation}{Basic client-side structure for required fields}
-}
-If \code{demographics} is \code{NULL}, returns only the "Start Test" button.
+A Shiny \code{tagList} with one input per field and a start button
+  (\code{inputId = "start_test"}). If \code{demographics} is \code{NULL},
+  only the start button.
 }
 \description{
 Generates Shiny UI components for demographic data collection as part of the
@@ -32,29 +28,10 @@ assessment workflow.
 \details{
 If \code{demographics} is \code{NULL}, the function returns only the start
 button to proceed directly to the assessment.
+Numeric fields accept 0 to 120. Every \code{"select"} field offers the same
+fixed choices ("Male", "Female", "Other"), whatever the field is, so it is
+only suitable for gender. No input is validated or required.
 }
-\section{Data Validation}{
-
-The function creates inputs with built-in validation:
-\itemize{
-  \item Numeric inputs: Range validation and type checking
-  \item Select inputs: Predefined options with placeholder handling
-  \item Text inputs: Length limits and character validation
-  \item Required field checking before assessment proceeds
-}
-}
-
-\section{Integration with Assessment}{
-
-The demographics UI integrates with the main assessment workflow:
-\itemize{
-  \item Automatic transition to test items after completion
-  \item Data storage in reactive values for analysis
-  \item Session state management for interruption recovery
-  \item Integration with TAM-based ability estimation context
-}
-}
-
 \examples{
 \dontrun{
 # Demographics collection
@@ -92,7 +69,6 @@ research_ui <- create_demographics_ui(research_demographics, research_types)
 
 }
 \seealso{
-\code{create_demographic_input()} for individual demographic components,
 \code{\link{create_response_ui}} for assessment item interfaces,
 \code{\link{launch_study}} for complete assessment workflow,
 \code{\link{create_study_config}} for demographic configuration setup

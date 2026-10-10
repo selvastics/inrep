@@ -1,5 +1,5 @@
 # =============================================================================
-# UMA STUDY - SIMPLE VERSION - BASIC DATA STORAGE (NO COMPREHENSIVE DATASET)
+# UMA STUDY - PRE-SUPERVISION VERSION (VOR DER SUPERVISION)
 # =============================================================================
 
 # Load required packages
@@ -63,7 +63,11 @@ all_items <- data.frame(
     "Ich habe das Gefühl, dass ich die jungen Männer im Stationären Wohnen ausreichend helfen kann.",
     "Ich habe das Gefühl, dass ich positiven Einfluss auf die Entwicklung der langfristigen persönlichen Lebensperspektive der UMA nehmen kann."
   ),
-  # NON-ADAPTIVE: Use Option columns for 7-point scale
+  # The Option columns are not read by inrep for Likert items. Without a
+  # ResponseCategories column inrep shows five categories with its German
+  # default labels (see response_scale in create_uma_report). Adding
+  # ResponseCategories = "1,2,3,4,5,6,7" would show seven, but would make the
+  # data incomparable with responses already collected.
   Option1 = "stimme überhaupt nicht zu",
   Option2 = "stimme nicht zu", 
   Option3 = "stimme eher nicht zu",
@@ -71,7 +75,6 @@ all_items <- data.frame(
   Option5 = "stimme eher zu",
   Option6 = "stimme zu",
   Option7 = "stimme voll und ganz zu",
-  # NON-ADAPTIVE: No Answer column needed for Likert scales
   stringsAsFactors = FALSE
 )
 
@@ -123,7 +126,7 @@ custom_page_flow <- list(
       '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">',
       '<h3 style="color: #2c3e50; margin-bottom: 15px;">Einverständniserklärung</h3>',
       '<p style="color: #d9534f; font-weight: bold;">',
-      '⚠️ WICHTIG: Durch das Klicken auf "Weiter" bestätigen Sie, dass Sie mit der Teilnahme an der Befragung einverstanden sind.',
+      'Wichtig: Durch das Klicken auf "Weiter" bestätigen Sie, dass Sie mit der Teilnahme an der Befragung einverstanden sind.',
       '</p>',
       '</div>',
       '</div>'
@@ -371,7 +374,7 @@ save_to_cloud <- function(data = NULL, filename = NULL, ...) {
     if (!dir.exists("data")) dir.create("data")
     write.csv(data, local_file, row.names = FALSE)
     
-    # Upload to INREP WebDAV
+    # Upload to WebDAV
     if (requireNamespace("httr", quietly = TRUE)) {
       library(httr)
       upload_url <- paste0(WEBDAV_URL, filename)
@@ -387,13 +390,13 @@ save_to_cloud <- function(data = NULL, filename = NULL, ...) {
       )
       
       if (httr::status_code(response) %in% c(200, 201, 204)) {
-        message("✓ Data successfully uploaded to INREP cloud!")
+        message("Data uploaded to WebDAV")
         message("  File: ", filename)
         message("  URL: ", upload_url)
         return(TRUE)
       } else {
         status_code <- httr::status_code(response)
-        message("✗ Cloud upload FAILED (HTTP ", status_code, ")")
+        message("WebDAV upload failed (HTTP ", status_code, ")")
         message("  File: ", filename)
         message("  URL: ", upload_url)
         if (status_code == 403) message("  Reason: Access forbidden - check share permissions (upload not allowed)")
@@ -416,7 +419,7 @@ save_to_cloud <- function(data = NULL, filename = NULL, ...) {
 }
 
 # =============================================================================
-# RESULTS PROCESSOR - ENHANCED TO CAPTURE ALL DATA
+# RESULTS PROCESSOR: writes one CSV row per participant
 # =============================================================================
 create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NULL, input = NULL, ...) {
   # Generate filename with timestamp
@@ -439,7 +442,7 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
   message("DEBUG: rv keys = ", if(is.null(rv)) "NULL" else paste(names(rv), collapse=", "))
   
   # Handle demographics as either list or atomic vector
-  if (!is.null(demographics) && !is.na(demographics)) {
+  if (!is.null(demographics) && length(demographics) > 0 && !all(is.na(unlist(demographics)))) {
     if (is.list(demographics) && !is.null(demographics$Teilnahme_Code)) {
       participant_code <- demographics$Teilnahme_Code
       message("DEBUG: Got participant code from demographics list: ", participant_code)
@@ -527,10 +530,10 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
     }
   }
   
-  # Add response labels for reference
-  data$response_scale <- "1=stimme überhaupt nicht zu, 2=stimme nicht zu, 3=weder noch, 4=stimme eher zu, 5=stimme voll und ganz zu"
+  # Labels of the five categories inrep displays (no ResponseCategories column)
+  data$response_scale <- "1=Stimme \u00fcberhaupt nicht zu, 2=Stimme eher nicht zu, 3=Teils, teils, 4=Stimme eher zu, 5=Stimme voll und ganz zu"
   
-  # Save to INREP cloud
+  # Upload to WebDAV
   save_to_cloud(data, filename)
   
   # Return thank you message
@@ -588,7 +591,7 @@ validate_page <- function(page_id, input, rv) {
 }
 
 # =============================================================================
-# STUDY CONFIGURATION - SIMPLE VERSION (NO COMPREHENSIVE DATASET)
+# STUDY CONFIGURATION
 # =============================================================================
 study_config <- inrep::create_study_config(
   name = "UMA Befragung",
@@ -598,23 +601,21 @@ study_config <- inrep::create_study_config(
   demographic_configs = demographic_configs,
   input_types = input_types,
   results_processor = create_uma_report,
+  # validation_function, cloud_storage, show_progress, bilingual,
+  # enable_audio and initialize_immediately are not read by inrep, so
+  # validate_page() is not called. log_data = FALSE is the default.
   validation_function = validate_page,
-  
-  # NON-ADAPTIVE: No model specification needed (defaults to non-adaptive)
-  # model = "GRM",  # REMOVED - not needed for non-adaptive
-  
-  # DISABLE comprehensive dataset to avoid errors
-  log_data = FALSE,  # Disable logging to avoid comprehensive dataset errors
+  log_data = FALSE,
   
   # Study flow settings
-  adaptive = FALSE,  # EXPLICITLY set to non-adaptive
+  adaptive = FALSE,
   fixed_items = 1:30,
   response_ui_type = "radio",
   language = "de",
   
   # Data management settings
   session_save = TRUE,
-  cloud_storage = FALSE,  # We handle this manually
+  cloud_storage = FALSE,
   
   # UI settings
   show_progress = TRUE,

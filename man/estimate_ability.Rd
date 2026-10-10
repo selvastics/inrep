@@ -2,51 +2,60 @@
 % Please edit documentation in R/estimate_ability.R
 \name{estimate_ability}
 \alias{estimate_ability}
-\title{Estimate Ability Using IRT Models}
+\title{Estimate Ability (EAP with Fixed Item Parameters)}
 \usage{
 estimate_ability(rv, item_bank, config)
 }
 \arguments{
-\item{rv}{Reactive values object or a simple numeric response vector.
-When a list, requires \code{$responses}, \code{$administered},
-and \code{$current_ability}.}
+\item{rv}{A list (or Shiny \code{reactiveValues}) with \code{$responses},
+\code{$administered} (row indices into \code{item_bank}) and
+\code{$current_ability}, or a plain numeric response vector, in which case
+the responses are taken to belong to items \code{1, 2, ...} of the bank.}
 
 \item{item_bank}{Data frame with item parameters. Required columns depend
-on model: \code{a}, \code{b} for 2PL; \code{a}, \code{b}, \code{c} for 3PL;
-\code{a}, \code{b1}, \code{b2}, ... for GRM.}
+on the model: \code{b} (and optionally \code{a}) for 1PL; \code{a}, \code{b}
+for 2PL; \code{a}, \code{b}, \code{c} for 3PL; \code{a}, \code{b1},
+\code{b2}, ... for GRM. Columns \code{discrimination} and \code{difficulty}
+are accepted as aliases of \code{a} and \code{b}.}
 
 \item{config}{Study configuration (from \code{\link{create_study_config}})
 or a model name string (e.g., \code{"2PL"}).}
 }
 \value{
-List with \code{theta} (ability estimate) and \code{se} (standard error).
+List with \code{theta} (EAP estimate) and \code{se} (posterior
+  standard deviation).
 }
 \description{
-Estimates person ability from item responses. Uses TAM for model fitting
-when enough responses are available (>= 3 with variability). Falls back to
-a direct EAP computation using pre-calibrated item parameters otherwise.
+Computes the expected a posteriori (EAP) estimate of a person's ability and
+its posterior standard deviation from the responses given so far. The item
+parameters in \code{item_bank} are treated as fixed and known; nothing is
+calibrated here.
 }
 \details{
-\strong{Adaptive mode}: Uses fast vectorized EAP computation with pre-calibrated
-item parameters. This is the standard CAT approach (item parameters fixed from
-calibration, only theta estimated) and runs in under 5 ms.
+The posterior is evaluated on \code{config$theta_grid} with a normal prior
+\eqn{N(\mu, \sigma^2)}, \code{c(mu, sigma) = config$theta_prior}. The
+estimate is the posterior mean and \code{se} is the posterior standard
+deviation (Bock & Mislevy, 1982). The same computation is used whatever
+\code{config$estimation_method} says; \code{"WLE"} has no effect here.
 
-\strong{Non-adaptive / batch}: When TAM is available and \code{adaptive = FALSE},
-fits a TAM model and extracts person parameters (EAP or WLE).
+Response coding: dichotomous models expect 0/1. The GRM expects categories
+\code{1, ..., K + 1} for \code{K} thresholds \code{b1 < ... < bK}
+(Samejima, 1969). Responses that are \code{NA} or outside this range are
+skipped. The logistic metric is used without the scaling constant 1.7.
 
-TAM model mapping: 1PL -> \code{tam.mml}, 2PL -> \code{tam.mml.2pl},
-3PL -> \code{tam.mml.3pl}. For GRM, TAM fits a GPCM (Generalized Partial
-Credit Model) with step parameters, which differs from Samejima's GRM
-parameterization used in the item bank. The fallback path uses the correct
-Samejima formulation with the pre-calibrated threshold parameters.
-GRM support is experimental; 1PL/2PL/3PL are fully supported.
+Missing parameters are filled with fixed defaults (for example \code{a = 1.2}
+for 2PL, \code{a = 1.5} for GRM, \code{c = 0.15} for 3PL, \code{b = 0},
+evenly spaced GRM thresholds). These values are arbitrary and only keep the
+computation running; a bank with missing parameters should be completed
+before use. For 1PL, a column \code{a} is used if present, so it should be
+constant across items.
 }
 \examples{
 \dontrun{
 library(inrep)
 data(bfi_items)
 
-config <- create_study_config(model = "GRM", estimation_method = "EAP")
+config <- create_study_config(model = "GRM")
 rv <- list(
   responses = c(2, 4, 3, 1, 5),
   administered = c(1, 5, 12, 18, 23),
@@ -58,11 +67,12 @@ cat("Theta:", round(result$theta, 3), "SE:", round(result$se, 3), "\n")
 
 }
 \references{
-Robitzsch, A., Kiefer, T., & Wu, M. (2024). \emph{TAM: Test Analysis Modules}.
-  R package. \url{https://CRAN.R-project.org/package=TAM}
+Bock, R. D., & Mislevy, R. J. (1982). Adaptive EAP estimation of ability in a
+  microcomputer environment. \emph{Applied Psychological Measurement}, 6(4),
+  431--444.
 
-Warm, T. A. (1989). Weighted likelihood estimation of ability in item response theory.
-  \emph{Psychometrika}, 54(3), 427--450.
+Samejima, F. (1969). Estimation of latent ability using a response pattern of
+  graded scores. \emph{Psychometrika Monograph Supplement}, No. 17.
 }
 \seealso{
 \code{\link{create_study_config}}, \code{\link{select_next_item}},

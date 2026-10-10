@@ -12,7 +12,7 @@ validate_item_bank(item_bank, model = "GRM", adaptive = TRUE)
 \item{model}{IRT model ("GRM", "2PL", "1PL", "3PL")}
 
 \item{adaptive}{Logical. When \code{FALSE} (non-adaptive / fixed-form study),
-IRT parameter columns (\code{a}, \code{b}, \code{b1}–\code{b4}) are not
+IRT parameter columns (\code{a}, \code{b}, \code{b1} to \code{b4}) are not
 required and the column checks are skipped. Only \code{Question} and
 \code{ResponseCategories} are checked. Default \code{TRUE} preserves the
 existing behaviour for adaptive studies.}
@@ -21,15 +21,21 @@ existing behaviour for adaptive studies.}
 List with validation results: is_valid (logical) and messages (character vector)
 }
 \description{
-validation of item bank structure and compatibility with IRT model.
-Provides detailed feedback on mismatches and suggests appropriate configurations.
+Checks that the item bank is a non-empty data frame with a \code{Question}
+column and, for adaptive studies, the parameter columns the model needs:
+\code{a}, \code{b1}--\code{b4} for GRM; \code{a}, \code{b} for 2PL and 3PL;
+\code{b} for 1PL. Parameter values are not checked, and for 3PL the
+\code{c} column is not required. For GRM a message is printed when the
+number of thresholds \code{b1, b2, ...} differs from the number of
+categories in \code{ResponseCategories} minus one; the bank is still
+reported as valid in that case.
 }
 \examples{
 \dontrun{
 data(bfi_items)
-# Adaptive study — IRT columns required
+# Adaptive study: IRT columns required
 validation <- validate_item_bank(bfi_items, "GRM", adaptive = TRUE)
-# Fixed-form study — IRT columns optional
+# Fixed-form study: IRT columns optional
 validation <- validate_item_bank(bfi_items, "GRM", adaptive = FALSE)
 print(validation$is_valid)
 print(validation$messages)

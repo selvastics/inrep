@@ -1,16 +1,17 @@
-# =============================================================================
-# PROGRAMMING ANXIETY ASSESSMENT
-# =============================================================================
-# This case study demonstrates programming anxiety assessment using inrep
-# with adaptive testing (GRM model) and comprehensive demographics.
+# Programming Anxiety Assessment ----
+# Case study: bilingual (German/English) questionnaire with a custom adaptive
+# item selection function.
 #
-# NOTE: The programming anxiety items in this assessment are AI-generated
-# placeholder items for demonstration purposes. For actual research, you should
-# use validated, psychometrically tested items from published instruments.
+# The 51 items rephrase the Statistical Anxiety Rating Scale (STARS; Cruise,
+# Cash, & Bolton, 1985), in the wording of its German version, with
+# "statistics" replaced by "programming". This adaptation has not been
+# validated. The item parameters (a, b) are invented for demonstration and
+# were not estimated from data. The items have five response categories but
+# are treated with a dichotomous 2PL model here, which is a simplification; a
+# real application would calibrate a polytomous model (e.g. GRM) first.
 #
 # To run this study:
 #   source("launch_programming_anxiety.R")
-# =============================================================================
 
 # Load required package
 if (!requireNamespace("inrep", quietly = TRUE)) {
@@ -18,9 +19,7 @@ if (!requireNamespace("inrep", quietly = TRUE)) {
 }
   library(inrep)
 
-# =============================================================================
-# WEBDAV STORAGE CREDENTIALS
-# =============================================================================
+# WebDAV storage ----
 # ADAPT THIS FOR YOUR OWN STUDY: the WebDAV address and credentials below are
 # this case study's own storage (academiccloud). Replace them with your
 # storage - any WebDAV server works, see ?inrep::webdav_upload - and read the
@@ -29,24 +28,17 @@ WEBDAV_URL <- "https://sync.academiccloud.de/public.php/webdav/"
 WEBDAV_PASSWORD <- "inreptest"
 WEBDAV_SHARE_TOKEN <- "Y51QPXzJVLWSAcb"
 
-# =============================================================================
-# PROGRAMMING ANXIETY ITEM BANK
-# =============================================================================
-
-# Create programming anxiety item bank - STARS-D adapted (51 items)
-# Part 1: Situational Anxiety (23 items) - situations involving programming
-# Part 2: Attitudinal/Affective Anxiety (28 items) - feelings about programming
+# Item bank ----
+# Part 1: 23 situation items (STARS anxiety part)
+# Part 2: 28 attitude items (STARS attitude part)
 programming_anxiety_items <- data.frame(
     id = c(paste0("PA_Sit_", sprintf("%02d", 1:23)), paste0("PA_Att_", sprintf("%02d", 1:28))),
     
     Question = c(
-        # ==================================================================================
-        # PART 1: SITUATIONAL ANXIETY (23 items)
-        # Source: Adapted from STARS-D (Statistical Anxiety Rating Scale - German)
+        # Part 1: situation items (23)
         # Instruction: "Die folgenden Aussagen beschreiben Situationen, die mit Programmieren 
         # zu tun haben. Wählen Sie bitte die Option, die am besten beschreibt, wie viel Angst 
         # Sie in der entsprechenden Situation erleben würden."
-        # ==================================================================================
         "Sie bereiten sich auf eine Programmierprüfung vor.",
         "Sie müssen Code aus einem Tutorial oder einer Dokumentation interpretieren.",
         "Sie fragen Ihren Programmierdozenten/Ihre Programmierdozentin, ob er/sie Ihnen Inhalte aus der Lehrveranstaltung, die Sie nicht verstehen, noch einmal individuell erklären kann.",
@@ -71,12 +63,10 @@ programming_anxiety_items <- data.frame(
         "Sie gehen eine bereits benotete Programmierprüfung noch einmal durch.",
         "Sie bitten einen Kommilitonen/eine Kommilitonin, Ihnen bei einem Programmierproblem zu helfen.",
         
-        # ==================================================================================
-        # PART 2: ATTITUDINAL/AFFECTIVE ANXIETY (28 items)
+        # Part 2: attitude items (28)
         # Instruction: "Die folgenden Aussagen beziehen sich darauf, was Sie in Bezug auf 
         # Programmieren empfinden. Bitte kreisen Sie die Zahl ein, die am besten auf Sie 
         # zutrifft."
-        # ==================================================================================
         "Ich bin eine kreative Person und kann mit der Logik von Programmieren nichts anfangen.",
         "Ich habe Mathe nicht sehr lange belegt und weiß, dass ich Probleme mit Programmieren haben werde.",
         "Ich frage mich, warum ich Programmieren lernen muss, wenn ich es im Alltag niemals anwenden werde.",
@@ -164,8 +154,7 @@ programming_anxiety_items <- data.frame(
         "I do not think fast enough for programming."
     ),
     
-    # IRT parameters for 2-Parameter Logistic Model (AI-generated based on item content)
-    # NOTE: These parameters are AI-generated estimates for demonstration purposes
+    # 2PL parameters: invented for demonstration, not calibrated
     a = c(
         # PART 1: Situational Anxiety (23 items) - discrimination parameters
         # Items 6, 8, 9, 21, 23 are non-adaptive (marked with comment)
@@ -281,22 +270,20 @@ programming_anxiety_items <- data.frame(
         0.5    # 51: Think slowly - processing speed concern
     ),
     
-    reverse_coded = rep(FALSE, 51),  # No reverse coding
+    reverse_coded = rep(FALSE, 51),
     
     # Response categories for 5-point Likert scale (1-5)
     ResponseCategories = rep("1,2,3,4,5", 51),
     
     stringsAsFactors = FALSE,
-    row.names = 1:51  # Explicit row names for proper indexing
+    row.names = 1:51
 )
 
 cat("Programming Anxiety item bank loaded:", nrow(programming_anxiety_items), "items\n")
 cat("  Part 1 (Situational): 23 items (5 non-adaptive, 18 adaptive pool)\n")
-cat("  Part 2 (Attitudinal): 28 items (all adaptive)\n")
+cat("  Part 2 (Attitudinal): 28 items (all administered, order chosen adaptively)\n")
 
-# =============================================================================
-# DEMOGRAPHIC CONFIGURATIONS
-# =============================================================================
+# Demographics ----
 
 demographic_configs <- list(
     Age = list(
@@ -385,11 +372,9 @@ input_types <- list(
     Field_of_Study = "radio"
 )
 
-# =============================================================================
-# CUSTOM PAGE FLOW WITH INTRO - TWO-PART STRUCTURE
-# Part 1: Situational Anxiety (23 items: 5 non-adaptive + 5 adaptive from pool of 18)
-# Part 2: Attitudinal/Affective Anxiety (28 items: all adaptive)
-# =============================================================================
+# Page flow ----
+# Part 1: 10 of 23 situation items (5 fixed, 5 selected from the other 18)
+# Part 2: all 28 attitude items, one per page; only their order is adaptive
 
 custom_page_flow <- list(
     # Introduction with language switcher
@@ -409,13 +394,13 @@ custom_page_flow <- list(
             <div id="content_de">
                 <h1 style="color: #3f51b5; text-align: center;">Programmierangst-Erhebung</h1>
                 <h2 style="color: #3f51b5;">Liebe Teilnehmende,</h2>
-                <p>Diese Erhebung misst Angst im Zusammenhang mit Programmieren mithilfe eines validierten Instruments, das von STARS-D adaptiert wurde. Ihre Antworten helfen uns, Programmierangst in Bildungskontexten besser zu verstehen.</p>
+                <p>Diese Erhebung erfasst Angst im Zusammenhang mit Programmieren. Die Fragen sind eine nicht validierte Übertragung der Statistikangst-Skala STARS auf das Programmieren. Ihre Antworten helfen uns, Programmierangst in Bildungskontexten besser zu verstehen.</p>
                 <p style="background: #e8f5f9; padding: 15px; border-left: 4px solid #3f51b5;">
-                <strong>Ihre Antworten sind vollständig anonym</strong> und werden nur für Forschungszwecke verwendet.</p>
+                <strong>Wir fragen nicht nach Ihrem Namen.</strong> Ihre Antworten werden nur für Forschungszwecke verwendet.</p>
                 <p style="background: #fff3e0; padding: 15px; border-left: 4px solid #ff9800;">
                 <strong>Struktur der Erhebung:</strong><br>
                 <strong>Teil 1:</strong> Situative Angst (10 Items)<br>
-                <strong>Teil 2:</strong> Einstellungs-/Affektive Angst (adaptiv)</p>
+                <strong>Teil 2:</strong> Einstellungen zum Programmieren (28 Items)</p>
                 <p><strong>Die Erhebung dauert etwa 15-20 Minuten.</strong></p>
             </div>
             
@@ -423,13 +408,13 @@ custom_page_flow <- list(
             <div id="content_en" style="display: none;">
                 <h1 style="color: #3f51b5; text-align: center;">Programming Anxiety Assessment</h1>
                 <h2 style="color: #3f51b5;">Dear Participant,</h2>
-                <p>This assessment measures anxiety related to programming using a validated instrument adapted from STARS-D. Your responses will help us better understand programming anxiety in educational contexts.</p>
+                <p>This assessment measures anxiety related to programming. The questions are an unvalidated adaptation of the statistics anxiety scale STARS to programming. Your responses will help us better understand programming anxiety in educational contexts.</p>
                 <p style="background: #e8f5f9; padding: 15px; border-left: 4px solid #3f51b5;">
-                <strong>Your responses are completely anonymous</strong> and will be used for research purposes only.</p>
+                <strong>We do not ask for your name.</strong> Your responses will be used for research purposes only.</p>
                 <p style="background: #fff3e0; padding: 15px; border-left: 4px solid #ff9800;">
                 <strong>Assessment Structure:</strong><br>
                 <strong>Part 1:</strong> Situational Anxiety (10 items)<br>
-                <strong>Part 2:</strong> Attitudinal/Affective Anxiety (adaptive)</p>
+                <strong>Part 2:</strong> Attitudes towards programming (28 items)</p>
                 <p><strong>The assessment takes about 15-20 minutes.</strong></p>
             </div>
             
@@ -506,13 +491,10 @@ custom_page_flow <- list(
         title_en = "About You"
     ),
     
-    # ===========================================================================
-    # PART 1: SITUATIONAL ANXIETY (23 items total, 10 shown)
-    # Non-adaptive items: 6, 8, 9, 21, 23 (5 items on page 3)
-    # Adaptive items: 5 items from pool of 18 (pages 4-8)
-    # ===========================================================================
-    
-    # Page 3: Part 1 Non-adaptive items (6, 8, 9, 21, 23)
+    # Part 1: fixed items 6, 8, 9, 21, 23 on page 3, then 5 items selected
+    # from the remaining 18 (pages 4-8).
+    # custom_labels / custom_labels_en are not read by inrep at present; the
+    # page shows the generic five-point agreement labels.
     list(
         id = "page3_part1_fixed",
         type = "items",
@@ -520,14 +502,13 @@ custom_page_flow <- list(
       #  title_en = "Part 1: Situational Programming Anxiety",
         instructions = "Die folgenden Aussagen beschreiben Situationen, die mit Programmieren zu tun haben. Wählen Sie bitte die Option, die am besten beschreibt, wie viel Angst Sie in der entsprechenden Situation erleben würden. Es gibt keine richtigen oder falschen Antworten.",
         instructions_en = "The following statements describe situations related to programming. Please select the option that best describes how much anxiety you would experience in that situation. There are no right or wrong answers.",
-        item_indices = c(6, 8, 9, 21, 23),  # Non-adaptive situational items
+        item_indices = c(6, 8, 9, 21, 23),
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
         custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
     ),
     
-    # Pages 4-8: Part 1 Adaptive items (5 items, one per page)
-    # Pool: 1-5, 7, 10-20, 22 (18 items excluding non-adaptive 6, 8, 9, 21, 23)
+    # Pages 4-8: one selected item per page (item_indices = NULL)
     list(
         id = "page4_part1_adapt1",
         type = "items", 
@@ -535,7 +516,7 @@ custom_page_flow <- list(
        # title_en = "Part 1: Situational Programming Anxiety",
         instructions = "Die folgenden Fragen werden basierend auf Ihren vorherigen Antworten ausgewählt.",
         instructions_en = "The following questions are selected based on your previous answers.",
-        item_indices = NULL,  # Adaptive selection
+        item_indices = NULL,
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
         custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
@@ -545,7 +526,7 @@ custom_page_flow <- list(
         type = "items",
        # title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
        # title_en = "Part 1: Situational Programming Anxiety",
-        item_indices = NULL,  # Adaptive selection
+        item_indices = NULL,
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
         custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
@@ -555,7 +536,7 @@ custom_page_flow <- list(
         type = "items",
       #  title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
      #  title_en = "Part 1: Situational Programming Anxiety",
-        item_indices = NULL,  # Adaptive selection
+        item_indices = NULL,
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
         custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
@@ -565,7 +546,7 @@ custom_page_flow <- list(
         type = "items",
        # title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
        # title_en = "Part 1: Situational Programming Anxiety",
-        item_indices = NULL,  # Adaptive selection
+        item_indices = NULL,
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
         custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
@@ -575,19 +556,14 @@ custom_page_flow <- list(
         type = "items",
      #   title = "Teil 1: Situative Programmierangst / Part 1: Situational Programming Anxiety",
      #   title_en = "Part 1: Situational Programming Anxiety",
-        item_indices = NULL,  # Adaptive selection
+        item_indices = NULL,
         scale_type = "likert",
         custom_labels = c("kein Angstgefühl", "2", "3", "4", "starkes Angstgefühl"),
         custom_labels_en = c("no feeling of anxiety", "2", "3", "4", "strong feeling of anxiety")
     ),
     
-    # ===========================================================================
-    # PART 2: ATTITUDINAL/AFFECTIVE ANXIETY (28 items, all adaptive)
-    # Items 24-51: All presented adaptively
-    # ===========================================================================
-    
-    # Pages 9-36: Part 2 Adaptive items (28 items, one per page)
-    # Generate pages programmatically to avoid repetition
+    # Part 2: pages 9-36, one item per page; the first page is written out,
+    # the other 27 are added in the loop below
     list(
         id = "page9_part2_adapt1",
         type = "items",
@@ -612,9 +588,7 @@ for (i in 2:28) {
     )
 }
 
-# =============================================================================
-# REPORTING FUNCTION WITH COMPREHENSIVE ANALYSIS
-# =============================================================================
+# Results processor ----
 
 create_programming_anxiety_report <- function(responses, item_bank, config) {
     
@@ -622,7 +596,6 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
     cat("\nDEBUG: Total responses:", length(responses), "\n")
     cat("DEBUG: Non-NA responses:", sum(!is.na(responses)), "\n")
     cat("DEBUG: Response indices:", paste(which(!is.na(responses)), collapse = ", "), "\n")
-    cat("DEBUG: Results processor called successfully!\n")
     
     # Ensure we have responses vector of correct length (51 items)
     if (is.null(responses) || length(responses) < 51) {
@@ -653,110 +626,50 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
     cat(sprintf("Part 2 (Attitudinal): %d responses, mean = %.2f\n", part2_valid, ifelse(is.na(part2_score), 0, part2_score)))
     cat(sprintf("Overall: %d responses, mean = %.2f\n", num_valid, pa_score))
     
-    # Compute IRT-based ability estimate for Programming Anxiety
-    # This is an adaptive assessment with 51 items (23 situational + 28 attitudinal)
-    pa_theta <- pa_score  # Default to classical score
-    
-    # Fit 2PL IRT model for Programming Anxiety
-    cat("\n================================================================================\n")
-    cat("PROGRAMMING ANXIETY - IRT MODEL (2PL)\n")
-    cat("================================================================================\n")
-    cat(sprintf("Assessment Type: Adaptive (51-item bank)\n"))
-    cat(sprintf("Total items administered: %d\n", num_valid))
-    cat(sprintf("  - Part 1 (Situational): %d items\n", part1_valid))
-    cat(sprintf("  - Part 2 (Attitudinal): %d items\n", part2_valid))
-    cat("\n")
-    
-    # Get indices of administered items (non-NA responses)
+    # Approximate theta under the invented 2PL parameters. The 1-5 responses
+    # are rescaled to 0-1 and treated as expected item scores, and theta is
+    # moved by a fixed step along the score function. This is a rough
+    # illustration, not an EAP or ML estimate. The SE is the inverse square
+    # root of the test information plus 0.25 (the precision of a N(0, 2^2)
+    # prior), so it is approximate as well.
     administered_indices <- which(valid_responses)
-    
-    # Get item parameters for the items that were actually shown
     shown_items <- item_bank[administered_indices, , drop = FALSE]
     a_params <- shown_items$a
     b_params <- shown_items$b
-    
-    # Get responses for administered items only
     pa_responses <- responses[administered_indices]
-    
-    # Convert responses to 0-1 scale for IRT (original 1-5 -> 0-4 -> 0-1)
     pa_responses_irt <- (pa_responses - 1) / 4
     
-    # Simple 2PL IRT estimation (EAP with normal prior)
-    # This is a simplified version - in practice, you'd use TAM or mirt
     theta_est <- 0.0
     se_est <- 1.0
-    
-    # Iterative EAP estimation
     for (iter in 1:10) {
-        # Calculate likelihood
         p <- 1 / (1 + exp(-a_params * (theta_est - b_params)))
         likelihood <- sum(a_params * (pa_responses_irt - p))
-        
-        # Update theta with small step
         theta_est <- theta_est + 0.1 * likelihood
-        
-        # Calculate standard error
         information <- sum(a_params^2 * p * (1 - p))
-        se_est <- 1 / sqrt(information + 0.25)  # Add prior variance
-        
-        # Check convergence
+        se_est <- 1 / sqrt(information + 0.25)
         if (abs(likelihood) < 0.01) break
     }
-    
-    # Bound estimates
     theta_est <- pmax(-3, pmin(3, theta_est))
     se_est <- pmax(0.1, pmin(1.5, se_est))
     
-    cat(sprintf("Classical Score: %.3f (1-5 scale)\n", pa_score))
-    cat(sprintf("IRT Theta Estimate: %.3f (SE = %.3f)\n", theta_est, se_est))
-    cat(sprintf("Reliability: %.3f\n", 1 - se_est^2))
+    cat(sprintf("Mean item score: %.3f (1-5 scale)\n", pa_score))
+    cat(sprintf("Approximate theta: %.3f (approximate SE = %.3f)\n", theta_est, se_est))
     
-    # Population parameters (based on programming anxiety literature)
-    pop_mean <- -0.5  # Slightly below average anxiety
-    pop_sd <- 1.0
+    # The reported overall level is the mean item score (1-5). There are no
+    # reference data for this adaptation, so no percentile is given.
+    pa_theta <- pa_score
     
-    # Calculate z-score and percentile
-    z_score <- (theta_est - pop_mean) / pop_sd
-    percentile <- pnorm(z_score) * 100
-    
-    cat(sprintf("Population Comparison:\n"))
-    cat(sprintf("  Population Mean: %.3f\n", pop_mean))
-    cat(sprintf("  Population SD: %.3f\n", pop_sd))
-    cat(sprintf("  Your Z-Score: %.3f\n", z_score))
-    cat(sprintf("Percentile Rank: %.1f%%\n", percentile))
-    
-    if (theta_est < -1.5) {
-        cat("Interpretation: Very low programming anxiety (bottom 7%)\n")
-    } else if (theta_est < -0.5) {
-        cat("Interpretation: Low programming anxiety (below average)\n")
-    } else if (theta_est < 0.5) {
-        cat("Interpretation: Moderate programming anxiety (average)\n")
-    } else if (theta_est < 1.5) {
-        cat("Interpretation: High programming anxiety (above average)\n")
-    } else {
-        cat("Interpretation: Very high programming anxiety (top 7%)\n")
-    }
-    cat("================================================================================\n\n")
-    
-    # Store IRT estimate (scale to 1-5 for consistency with other scores)
-    # Convert theta to 1-5 scale: theta of -2 = 1, theta of 2 = 5
-    pa_theta_scaled <- 3 + theta_est  # Center at 3, each SD = 1 point
-    pa_theta_scaled <- pmax(1, pmin(5, pa_theta_scaled))  # Bound to 1-5
-    pa_theta <- pa_theta_scaled
-    
-    # Create trace plot showing theta progression
-    # This shows how ability estimate evolved as more items were administered
+    # Theta after each item, with the items taken in item bank order (the
+    # order of administration is not available here)
     theta_trace <- numeric(num_valid)
     se_trace <- numeric(num_valid)
     
-    # More robust theta progression simulation
     for (i in 1:num_valid) {
         # Calculate theta up to item i
         resp_subset <- (pa_responses[1:i] - 1) / 4
         a_subset <- a_params[1:i]
         b_subset <- b_params[1:i]
         
-        # Simple EAP estimation for subset
         theta_sub <- 0.0
         for (iter in 1:5) {
             p_sub <- 1 / (1 + exp(-a_subset * (theta_sub - b_subset)))
@@ -785,26 +698,26 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
     )
     subscales$Color <- c("#667eea", "#e53935")
     
-    # Interpretation
+    # Descriptive label for the mean item score
     if (pa_theta < 2.0) {
         level_color <- "#4caf50"
-        level_text <- "Low Anxiety"
-        interpretation <- "You experience minimal programming anxiety. You likely feel confident and comfortable when coding."
+        level_text <- "Low"
+        interpretation <- "Your mean rating is low: you report little anxiety and few negative attitudes about programming."
     } else if (pa_theta < 3.0) {
         level_color <- "#8bc34a"
-        level_text <- "Mild Anxiety"
-        interpretation <- "You experience some programming anxiety, which is normal. Most programmers feel this way occasionally."
+        level_text <- "Below the scale midpoint"
+        interpretation <- "Your mean rating is below the midpoint of the scale: you report some, but not much, anxiety about programming."
     } else if (pa_theta < 3.7) {
         level_color <- "#ff9800"
-        level_text <- "Moderate Anxiety"
-        interpretation <- "You experience notable programming anxiety. Consider practicing relaxation techniques and seeking peer support."
+        level_text <- "Above the scale midpoint"
+        interpretation <- "Your mean rating is above the midpoint of the scale: you report noticeable anxiety about programming."
     } else {
         level_color <- "#f44336"
-        level_text <- "High Anxiety"
-        interpretation <- "You experience significant programming anxiety. Consider reaching out to instructors or counselors for support strategies."
+        level_text <- "High"
+        interpretation <- "Your mean rating is high: you report strong anxiety about programming. If this affects your studies, instructors or the student counselling service can be a point of contact."
     }
     
-    # Create plots using ggplot2 (following HilFo approach exactly)
+    # Plots
     if (requireNamespace("ggplot2", quietly = TRUE)) {
         
         # 1. Subscale bar plot
@@ -819,7 +732,7 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
             ggplot2::coord_flip() +
             ggplot2::labs(
                 title = "Programming Anxiety Profile",
-                subtitle = paste("Overall Score:", round(pa_theta, 2)),
+                subtitle = paste("Mean item score:", round(pa_theta, 2)),
                 x = "Anxiety Type",
                 y = "Score (1 = Low, 5 = High)"
             ) +
@@ -862,9 +775,7 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
             # Add horizontal line at final theta
             ggplot2::geom_hline(yintercept = theta_est, linetype = "dashed", 
                                 color = "#9b59b6", alpha = 0.5) +
-            # Vertical line separating fixed and adaptive
-            ggplot2::geom_vline(xintercept = 5.5, linetype = "dotted", color = "gray50") +
-            ggplot2::scale_color_manual(values = c("Fixed" = "#e74c3c", "Adaptive" = "#3498db")) +
+            ggplot2::scale_color_manual(values = c("Part 1 (Situational)" = "#e74c3c", "Part 2 (Attitudinal)" = "#3498db")) +
             ggplot2::scale_y_continuous(limits = c(y_min, y_max)) +
             ggplot2::theme_minimal() +
             ggplot2::theme(
@@ -878,10 +789,10 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
             )
         
         # Create trace plot labels
-        trace_title <- "Programming Anxiety - Adaptive Testing Trace"
-        trace_subtitle <- sprintf("Final theta = %.3f (SE = %.3f)", theta_est, se_est)
-        trace_x_label <- "Item Number"
-        trace_y_label <- "Theta Estimate"
+        trace_title <- "Approximate theta as items are added"
+        trace_subtitle <- sprintf("Final theta = %.3f (approximate SE = %.3f); items in item bank order", theta_est, se_est)
+        trace_x_label <- "Number of items"
+        trace_y_label <- "Approximate theta"
         
         trace_plot <- trace_plot + ggplot2::labs(
             title = trace_title,
@@ -890,7 +801,7 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
             y = trace_y_label
         )
         
-        # Save plots to temporary files - following HilFo approach exactly
+        # Save plots and embed them as base64
         bar_file <- tempfile(fileext = ".png")
         trace_file <- tempfile(fileext = ".png")
         
@@ -899,7 +810,6 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
             ggplot2::ggsave(trace_file, trace_plot, width = 10, height = 6, dpi = 150, bg = "white")
         })
         
-        # Encode files as base64 - following HilFo approach exactly
         if (requireNamespace("base64enc", quietly = TRUE)) {
             bar_plot_data <- base64enc::base64encode(bar_file)
             trace_plot_data <- base64enc::base64encode(trace_file)
@@ -924,43 +834,39 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
         trace_plot_data <- ""
     }
     
-    # Create comprehensive HTML report - fixed structure
     html_report <- paste0(
         '<div id="report-content" style="font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px;">',
 
-        # Header - Clean professional styling
         '<div style="background-color: #2c3e50; color: white; padding: 30px; border-radius: 8px; text-align: center; margin-bottom: 30px; border: 1px solid #34495e;">',
         '<h1 style="margin: 0; font-size: 28px; font-weight: 300; letter-spacing: 0.5px;">Programming Anxiety Assessment Results</h1>',
-        '<p style="margin: 15px 0 0 0; font-size: 16px; opacity: 0.9;">Comprehensive Analysis Based on Your Responses</p>',
-        '<p style="margin: 8px 0 0 0; font-size: 12px; opacity: 0.8; font-style: italic;">Assessment completed using Item Response Theory</p>',
+        '<p style="margin: 15px 0 0 0; font-size: 16px; opacity: 0.9;">Summary of your responses</p>',
+        '<p style="margin: 8px 0 0 0; font-size: 12px; opacity: 0.8; font-style: italic;">Item parameters are illustrative; scores are for feedback only</p>',
         '</div>',
 
-        # Overall Score Card - Clean and minimal
         '<div style="background-color: ', level_color, '; color: white; padding: 30px; border-radius: 8px; margin-bottom: 25px; text-align: center; border: 1px solid #ddd;">',
-        '<h2 style="margin: 0 0 15px 0; font-size: 24px; font-weight: 400;">Overall Anxiety Level</h2>',
+        '<h2 style="margin: 0 0 15px 0; font-size: 24px; font-weight: 400;">Mean item score</h2>',
         '<div style="font-size: 56px; font-weight: 300; margin: 15px 0; letter-spacing: -1px;">', round(pa_theta, 2), '</div>',
         '<div style="font-size: 18px; margin-bottom: 8px; font-weight: 400;">', level_text, '</div>',
         '<div style="font-size: 13px; opacity: 0.9; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 8px;">Scale: 1.0 (Low) to 5.0 (High)</div>',
         '</div>',
 
-        # Population Comparison - Clean grid layout
         '<div style="background-color: #f8f9fa; padding: 25px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #e9ecef;">',
-        '<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Population Comparison</h2>',
+        '<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Scores</h2>',
         '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">',
         '<div style="background: white; padding: 20px; border-radius: 6px; text-align: center; border: 1px solid #dee2e6;">',
-        '<div style="font-size: 36px; font-weight: 300; color: #495057;">', round(percentile, 1), '%</div>',
-        '<div style="color: #6c757d; font-size: 14px; margin-top: 8px;">Percentile Rank</div>',
-        '<div style="color: #868e96; font-size: 12px; margin-top: 4px;">Among programming students</div>',
+        '<div style="font-size: 36px; font-weight: 300; color: #495057;">', num_valid, '</div>',
+        '<div style="color: #6c757d; font-size: 14px; margin-top: 8px;">Items answered</div>',
+        '<div style="color: #868e96; font-size: 12px; margin-top: 4px;">Part 1 and Part 2</div>',
         '</div>',
         '<div style="background: white; padding: 20px; border-radius: 6px; text-align: center; border: 1px solid #dee2e6;">',
         '<div style="font-size: 36px; font-weight: 300; color: #495057;">', round(theta_est, 2), '</div>',
-        '<div style="color: #6c757d; font-size: 14px; margin-top: 8px;">IRT Theta Estimate</div>',
-        '<div style="color: #868e96; font-size: 12px; margin-top: 4px;">Latent trait level</div>',
+        '<div style="color: #6c757d; font-size: 14px; margin-top: 8px;">Approximate theta</div>',
+        '<div style="color: #868e96; font-size: 12px; margin-top: 4px;">Under illustrative 2PL parameters</div>',
         '</div>',
         '<div style="background: white; padding: 20px; border-radius: 6px; text-align: center; border: 1px solid #dee2e6;">',
         '<div style="font-size: 36px; font-weight: 300; color: #495057;">', round(se_est, 2), '</div>',
-        '<div style="color: #6c757d; font-size: 14px; margin-top: 8px;">Standard Error</div>',
-        '<div style="color: #868e96; font-size: 12px; margin-top: 4px;">Measurement precision</div>',
+        '<div style="color: #6c757d; font-size: 14px; margin-top: 8px;">Approximate standard error</div>',
+        '<div style="color: #868e96; font-size: 12px; margin-top: 4px;">Of the theta value</div>',
         '</div>',
         '</div>',
         '<div style="margin-top: 20px; padding: 15px; background: white; border-radius: 6px; border: 1px solid #dee2e6;">',
@@ -970,17 +876,16 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
 
         # Subscale Visualization
         '<div style="margin: 25px 0; background-color: #f8f9fa; padding: 25px; border-radius: 8px; border: 1px solid #e9ecef;">',
-        '<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Anxiety Profile by Domain</h2>',
+        '<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Anxiety Profile by Part</h2>',
         '</div>',
 
         # Trace Plot
         '<div style="margin: 25px 0; background-color: #f8f9fa; padding: 25px; border-radius: 8px; border: 1px solid #e9ecef;">',
-        '<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Adaptive Testing Progression</h2>',
+        '<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Theta as Items Are Added</h2>',
         '</div>',
 
-        # Detailed Breakdown - Clean table styling
         '<div style="background-color: #f8f9fa; padding: 25px; border-radius: 8px; margin: 25px 0; border: 1px solid #e9ecef;">',
-        '<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Detailed Subscale Analysis</h2>',
+        '<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Scores by Part</h2>',
         '<table style="width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; border: 1px solid #dee2e6;">',
         '<thead>',
         '<tr style="background-color: #495057; color: white;">',
@@ -991,7 +896,6 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
         '</thead>',
         '<tbody>',
 
-        # Generate table rows - Clean and professional
         paste0(sapply(1:nrow(subscales), function(i) {
             row <- subscales[i, ]
             score <- as.numeric(row[2])
@@ -999,7 +903,7 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
             score_color <- if (score < 2.5) "#28a745" else if (score < 3.5) "#ffc107" else "#dc3545"
             paste0(
                 '<tr style="border-bottom: 1px solid #dee2e6;">',
-                '<td style="padding: 15px; font-weight: 500; color: #495057;">', row[1], ' Anxiety</td>',
+                '<td style="padding: 15px; font-weight: 500; color: #495057;">', row[1], '</td>',
                 '<td style="padding: 15px; text-align: center;"><span style="background-color: ', score_color, '; color: white; padding: 6px 12px; border-radius: 4px; font-weight: 500; font-size: 13px;">', round(score, 2), '</span></td>',
                 '<td style="padding: 15px; color: #6c757d; font-size: 14px;">', interp, '</td>',
                 '</tr>'
@@ -1010,18 +914,16 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
         '</table>',
         '</div>',
 
-        # Technical Information - Clean and minimal
         '<div style="background-color: #f8f9fa; padding: 25px; border-radius: 8px; margin: 25px 0; border: 1px solid #e9ecef;">',
-        '<h3 style="color: #495057; margin-top: 0; font-size: 18px; font-weight: 400; margin-bottom: 15px;">Technical Assessment Details</h3>',
+        '<h3 style="color: #495057; margin-top: 0; font-size: 18px; font-weight: 400; margin-bottom: 15px;">How the Scores Were Computed</h3>',
         '<div style="background: white; padding: 20px; border-radius: 6px; border: 1px solid #dee2e6;">',
-        '<p style="color: #495057; margin: 0 0 12px 0; line-height: 1.6; font-size: 14px;"><strong>Assessment Method:</strong> This evaluation used Item Response Theory (IRT) with a 2-Parameter Logistic model to estimate your programming anxiety level.</p>',
-        '<p style="color: #495057; margin: 0 0 12px 0; line-height: 1.6; font-size: 14px;"><strong>Measurement Model:</strong> The 2PL model accounts for both item discrimination and difficulty, providing a precise estimate of your position on the programming anxiety continuum.</p>',
-        '<p style="color: #495057; margin: 0 0 12px 0; line-height: 1.6; font-size: 14px;"><strong>Population Reference:</strong> Comparison data is based on a normative sample of programming students (mean = ', round(pop_mean, 2), ', SD = ', round(pop_sd, 2), '). Your percentile indicates performance relative to this reference group.</p>',
-        '<p style="color: #495057; margin: 0; line-height: 1.6; font-size: 14px;"><strong>Measurement Precision:</strong> The confidence intervals in the trace plot show estimation uncertainty. Precision improves as more items are administered adaptively.</p>',
+        '<p style="color: #495057; margin: 0 0 12px 0; line-height: 1.6; font-size: 14px;"><strong>Mean item score:</strong> The average of your ratings (1 to 5), overall and for each part. Part scores are labelled low (below 2.5), moderate (2.5 to 3.5) and high (above 3.5) relative to the response scale, not relative to other people.</p>',
+        '<p style="color: #495057; margin: 0 0 12px 0; line-height: 1.6; font-size: 14px;"><strong>Theta:</strong> An approximate position on a latent scale under a 2PL model with illustrative item parameters. The parameters were not estimated from data, so theta and its standard error only illustrate how such a report could look.</p>',
+        '<p style="color: #495057; margin: 0 0 12px 0; line-height: 1.6; font-size: 14px;"><strong>Reference data:</strong> There are no reference data for this questionnaire yet, so no percentile is reported.</p>',
+        '<p style="color: #495057; margin: 0; line-height: 1.6; font-size: 14px;"><strong>Plot:</strong> The band in the theta plot is plus or minus one approximate standard error.</p>',
         '</div>',
         '</div>',
 
-        # Download Section - Clean and minimal
         '<div style="background-color: #f8f9fa; padding: 25px; border-radius: 8px; margin: 25px 0; border: 1px solid #e9ecef;">',
         '<h3 style="color: #495057; margin-top: 0; font-size: 18px; font-weight: 400; margin-bottom: 15px; text-align: center;">Export Your Results</h3>',
         '<div style="background: white; padding: 20px; border-radius: 6px; border: 1px solid #dee2e6;">',
@@ -1035,7 +937,6 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
         '</div>',
         '</div>',
 
-        # Print styles - Clean and minimal
         '<style>',
         '@media print {',
         '  .download-section { display: none !important; }',
@@ -1047,7 +948,6 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
         '}',
         '</style>',
 
-        # Thank You - Clean and professional
         '<div style="background-color: #f8f9fa; padding: 30px; border-radius: 8px; text-align: center; margin-top: 30px; border: 1px solid #e9ecef;">',
         '<h2 style="color: #495057; margin-top: 0; font-size: 22px; font-weight: 400;">Thank You for Participating</h2>',
         '<p style="color: #495057; font-size: 16px; margin: 15px 0; line-height: 1.6;">Your participation contributes to our understanding of programming anxiety and helps improve educational experiences for future students.</p>',
@@ -1072,8 +972,7 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
             '<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Anxiety Profile by Domain</h2>',
             paste0('<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Anxiety Profile by Domain</h2>',
                    '<div style="background: white; padding: 30px; text-align: center; border-radius: 6px; border: 1px solid #dee2e6; margin-top: 20px;">',
-                   '<p style="font-size: 15px; margin: 0 0 10px 0; color: #495057;">Visual analysis will be included in the complete PDF report</p>',
-                   '<p style="font-size: 13px; margin: 0; color: #6c757d;">Download the full report to view detailed charts and visualizations</p>',
+                   '<p style="font-size: 15px; margin: 0 0 10px 0; color: #495057;">The plot could not be created (ggplot2 and base64enc are needed).</p>',
                    '</div>'),
             html_report
         )
@@ -1093,8 +992,7 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
             '<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Adaptive Testing Progression</h2>',
             paste0('<h2 style="color: #495057; margin-top: 0; font-size: 20px; font-weight: 400; text-align: center; margin-bottom: 20px;">Adaptive Testing Progression</h2>',
                    '<div style="background: white; padding: 30px; text-align: center; border-radius: 6px; border: 1px solid #dee2e6; margin-top: 20px;">',
-                   '<p style="font-size: 15px; margin: 0 0 10px 0; color: #495057;">Testing progression analysis will be included in the complete PDF report</p>',
-                   '<p style="font-size: 13px; margin: 0; color: #6c757d;">This visualization shows how your ability estimate evolved during the adaptive assessment</p>',
+                   '<p style="font-size: 15px; margin: 0 0 10px 0; color: #495057;">The plot could not be created (ggplot2 and base64enc are needed).</p>',
                    '</div>'),
             html_report
         )
@@ -1115,20 +1013,17 @@ create_programming_anxiety_report <- function(responses, item_bank, config) {
     return(shiny::HTML(html_report))
 }
 
-# =============================================================================
-# CUSTOM ADAPTIVE ITEM SELECTION
-# =============================================================================
+# Item selection ----
+# Passed as item_selection_fun and called by select_next_item() for the pages
+# with item_indices = NULL. Maximum Fisher information under the 2PL, which
+# ignores that the items have five categories.
 
 custom_item_selection <- function(rv, item_bank, config, session = NULL) {
-    # STARS-D ADAPTED STRUCTURE:
-    # Part 1: 23 situational items (items 1-23)
-    #   - Non-adaptive: 6, 8, 9, 21, 23 (shown fixed on page 3)
-    #   - Adaptive pool: 1-5, 7, 10-20, 22 (18 items)
-    #   - Shows 10 total: 5 non-adaptive + 5 adaptive
-    # Part 2: 28 attitudinal items (items 24-51)
-    #   - All adaptive
-    
-    # CRITICAL: Read administered items from session$userData (non-reactive storage)
+    # Part 1 (items 1-23): 6, 8, 9, 21, 23 are fixed on page 3; 5 more are
+    # chosen from 1-5, 7, 10-20, 22. Part 2 (items 24-51): all 28 are given,
+    # in an order chosen by information.
+    # Administered items are read from session$userData when available
+    # (non-reactive storage).
     administered_items <- if (!is.null(session) && !is.null(session$userData$administered)) {
         session$userData$administered
     } else {
@@ -1147,10 +1042,6 @@ custom_item_selection <- function(rv, item_bank, config, session = NULL) {
     message(sprintf("DEBUG: Administered items: %d, Responses: %d, Effective: %d", 
                     num_items_shown, num_responses, effective_count))
     
-    # =========================================================================
-    # PART 1: SITUATIONAL ANXIETY (items 1-23)
-    # =========================================================================
-    
     # Fixed non-adaptive items (6, 8, 9, 21, 23) - shown on page 3
     fixed_items_part1 <- c(6, 8, 9, 21, 23)
     
@@ -1167,7 +1058,7 @@ custom_item_selection <- function(rv, item_bank, config, session = NULL) {
         
         # Use current ability estimate if available
         current_theta <- rv$current_ability %||% 0
-        current_se <- rv$ability_se %||% 1.0
+        current_se <- rv$current_se %||% 1.0
         
         message(sprintf("Current ability estimate: theta=%.3f, SE=%.3f", current_theta, current_se))
         
@@ -1205,10 +1096,6 @@ custom_item_selection <- function(rv, item_bank, config, session = NULL) {
         return(selected_item)
     }
     
-    # =========================================================================
-    # PART 2: ATTITUDINAL/AFFECTIVE ANXIETY (items 24-51, all adaptive)
-    # =========================================================================
-    
     if (effective_count >= 10 && effective_count < 38) {
         adaptive_item_number <- effective_count - 9  # 11th through 38th item
         message("\n================================================================================")
@@ -1217,7 +1104,7 @@ custom_item_selection <- function(rv, item_bank, config, session = NULL) {
         
         # Use current ability estimate
         current_theta <- rv$current_ability %||% 0
-        current_se <- rv$ability_se %||% 1.0
+        current_se <- rv$current_se %||% 1.0
         
         message(sprintf("Current ability estimate: theta=%.3f, SE=%.3f", current_theta, current_se))
         
@@ -1270,14 +1157,12 @@ custom_page_flow[[length(custom_page_flow) + 1]] <- list(
     results_processor = create_programming_anxiety_report
 )
 
-# =============================================================================
-# STUDY CONFIGURATION
-# =============================================================================
+# Configuration ----
 
 session_uuid <- paste0("prog_anxiety_", format(Sys.time(), "%Y%m%d_%H%M%S"))
 
 study_config <- create_study_config(
-    name = "Programming Anxiety Assessment - STARS-D Adapted",
+    name = "Programming Anxiety Assessment",
     study_key = session_uuid,
     model = "2PL",
     estimation_method = "EAP",
@@ -1285,28 +1170,24 @@ study_config <- create_study_config(
     min_items = 38,  # 10 Part 1 + 28 Part 2
     max_items = 38,  # 10 Part 1 + 28 Part 2
     min_SEM = 0.30,
-    criteria = "MI",  # Maximum Information
-    item_selection_fun = custom_item_selection,  # Enable custom adaptive selection
+    criteria = "MI",
+    item_selection_fun = custom_item_selection,
     demographics = names(demographic_configs),
     demographic_configs = demographic_configs,
     input_types = input_types,
     custom_page_flow = custom_page_flow,
     theme = "Professional",
     session_save = TRUE,
-    language = "de",  # Default to German
-    bilingual = TRUE,  # Enable German/English
+    language = "de",
     results_processor = create_programming_anxiety_report
 )
 
-# =============================================================================
-# LAUNCH THE STUDY
-# =============================================================================
+# Launch ----
 launch_study(
     config = study_config,
     item_bank = programming_anxiety_items,
     webdav_url = WEBDAV_URL,
     password = WEBDAV_PASSWORD,
     webdav_share_token = WEBDAV_SHARE_TOKEN,
-    save_format = "csv",
-    debug=TRUE
+    save_format = "csv"
 )

@@ -12,25 +12,25 @@ Must contain assessment parameters including model specifications, stopping crit
 and optional demographic requirements.}
 }
 \value{
-A  list containing initialized reactive values:
+A list containing initialized reactive values:
 \describe{
   \item{\code{stage}}{Current assessment stage ("demographics", "assessment", "complete")}
   \item{\code{demographics}}{Named list for demographic data collection (if specified)}
   \item{\code{administered}}{Integer vector of administered item indices}
   \item{\code{responses}}{List of participant responses with timestamps}
-  \item{\code{current_ability}}{Real-time ability estimate (theta)}
+  \item{\code{current_ability}}{Current ability estimate (theta); starts at the prior mean}
   \item{\code{current_se}}{Current standard error of ability estimate}
   \item{\code{theta_history}}{Vector of ability estimates across items}
   \item{\code{se_history}}{Vector of standard errors across items}
   \item{\code{current_item}}{Currently displayed item information}
-  \item{\code{item_info_cache}}{Cached item information values for performance}
+  \item{\code{item_info_cache}}{Cache for item information values}
   \item{\code{item_counter}}{Number of items administered}
   \item{\code{response_times}}{Vector of response times in seconds}
   \item{\code{start_time}}{Session start timestamp}
   \item{\code{session_start}}{Assessment start timestamp}
   \item{\code{error_message}}{Current error message (if any)}
   \item{\code{feedback_message}}{Current feedback message}
-  \item{\code{cat_result}}{Final CAT results and statistics}
+  \item{\code{cat_result}}{Final results (NULL until the assessment ends)}
   \item{\code{loading}}{Boolean indicating processing status}
 }
 }
@@ -76,14 +76,6 @@ rv_basic$stage  # "assessment" (skip demographics)
 rv_basic$demographics  # NULL
 }
 
-}
-\references{
-Robitzsch, A., Kiefer, T., & Wu, M. (2020). \emph{TAM: Test Analysis Modules}. 
-R package version 3.5-19. \url{https://CRAN.R-project.org/package=TAM}
-
-Chang, W., Cheng, J., Allaire, J., Xie, Y., & McPherson, J. (2021). 
-\emph{shiny: Web Application Framework for R}. R package version 1.6.0. 
-\url{https://CRAN.R-project.org/package=shiny}
 }
 \seealso{
 \code{\link{create_study_config}} for creating configuration objects,

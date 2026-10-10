@@ -13,7 +13,9 @@ generate_inrep_pdf_report(
 )
 }
 \arguments{
-\item{study_data}{List containing study results and participant data}
+\item{study_data}{List containing study results and participant data, e.g.
+\code{responses}, \code{theta_history}, \code{theta_estimate},
+\code{theta_se}, and scores named \code{BFI_*}.}
 
 \item{study_config}{Study configuration object}
 
@@ -27,6 +29,9 @@ generate_inrep_pdf_report(
 Path to generated PDF file
 }
 \description{
-Creates  PDF reports with images, charts, and detailed analysis
-for inrep study results.
+Writes an R Markdown file with the study name, number of items, the ability
+estimate and its standard error (if present in \code{study_data}), optional
+plots and Big Five or programming-anxiety scores found in \code{study_data},
+and renders it to PDF with \code{rmarkdown::render()} (a LaTeX installation
+is required).
 }

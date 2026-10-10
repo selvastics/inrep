@@ -60,9 +60,9 @@ shares, plain WebDAV servers and fallback hosts.
 The uploaded JSON contains:
 \itemize{
   \item \code{study_key}: Study identifier for data organization
-  \item \code{timestamp}: Upload timestamp in ISO format
-  \item \code{cat_result}: Complete TAM-derived assessment results
-  \item \code{demographics}: Collected demographic information
+  \item \code{timestamp}: Upload time (local time, \code{"YYYY-MM-DD HH:MM:SS"})
+  \item \code{cat_result}: \code{rv$cat_result} (final estimate and SE, as stored by the study)
+  \item \code{demographics}: \code{rv$demo_data}
   \item \code{response_times}: Item-level response times in seconds
   \item \code{theta_history}: Ability estimate progression across items
   \item \code{se_history}: Standard error progression across items
@@ -114,15 +114,6 @@ save_session_to_cloud(rv, config,
   password = NULL)
 }
 
-}
-\references{
-Fielding, R., Gettys, J., Mogul, J., Frystyk, H., Masinter, L., Leach, P., & 
-Berners-Lee, T. (1999). \emph{Hypertext Transfer Protocol -- HTTP/1.1}. 
-RFC 2616. Internet Engineering Task Force.
-
-Goland, Y., Whitehead, E., Faizi, A., Carter, S., & Jensen, D. (1999). 
-\emph{HTTP Extensions for Distributed Authoring -- WEBDAV}. 
-RFC 2518. Internet Engineering Task Force.
 }
 \seealso{
 \code{\link{validate_session}} for session validation,

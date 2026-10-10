@@ -72,10 +72,7 @@ clean_install_inrep <- function(source = "github", branch = "main", path = NULL,
   )
   
   if (verbose) {
-    message("\n===========================================")
-    message("inrep package successfully installed!")
-    message("===========================================")
-    message("You can now load it with: library(inrep)")
+    message("inrep installed. Load it with: library(inrep)")
   }
   
   invisible(TRUE)
@@ -121,7 +118,8 @@ cleanup_inrep_remnants <- function(verbose = TRUE) {
   
   # Clean temporary files
   temp_dir <- tempdir()
-  temp_patterns <- c("inrep_*", "TAM_*")
+  # Regular expressions; only files written by inrep
+  temp_patterns <- c("^inrep_")
   
   for (pattern in temp_patterns) {
     files <- list.files(temp_dir, pattern = pattern, full.names = TRUE)
@@ -135,24 +133,11 @@ cleanup_inrep_remnants <- function(verbose = TRUE) {
 }
 
 #' Clear Package Cache
-#' 
-#' Clears R's package cache to ensure fresh installation
+#'
+#' Runs garbage collection. It does not clear the pak/pkgcache cache or run
+#' renv::clean(), because both affect other projects of the user.
 clear_package_cache <- function() {
-  # Clear pkgcache if available
-  if (requireNamespace("pkgcache", quietly = TRUE)) {
-    try(pkgcache::pkg_cache_delete_files(), silent = TRUE)
-  }
-  
-  # Clear renv cache if in renv project
-  if (requireNamespace("renv", quietly = TRUE)) {
-    if (renv::project() != "") {
-      try(renv::clean(), silent = TRUE)
-    }
-  }
-  
-  # Force garbage collection
   gc(verbose = FALSE)
-  
   invisible(NULL)
 }
 

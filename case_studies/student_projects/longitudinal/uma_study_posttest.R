@@ -12,8 +12,9 @@ suppressPackageStartupMessages({
 # Define the %||% operator for null coalescing
 `%||%` <- function(x, y) if (is.null(x)) y else x
 # WebDAV configuration
-# ADAPT THIS FOR YOUR OWN STUDY: the WebDAV address and credentials below are
-# this case study's own storage (academiccloud). Replace them with your
+# ADAPT THIS FOR YOUR OWN STUDY: the active WebDAV address and credentials
+# below are this student project's own storage (a sciebo share; the
+# commented lines are the academiccloud test share). Replace them with your
 # storage - any WebDAV server works, see ?inrep::webdav_upload - and read the
 # password from an environment variable instead of writing it here.
 #WEBDAV_BASE   <- "https://sync.academiccloud.de/public.php/webdav/"
@@ -24,7 +25,7 @@ WEBDAV_BASE   <- "https://fh-muenster.sciebo.de/public.php/webdav/"
 WEBDAV_USER   <- "83mMpcTASFKH6e3"   # share token
 WEBDAV_PASS   <- "vince"         # password (if set for the public link)
 
-# mind you, this folder needs premission to upload etc. 
+# The share must allow uploads.
 
 
 # =============================================================================
@@ -75,7 +76,11 @@ all_items <- data.frame(
     "Ich habe das Gefühl, dass ich den jungen Männer im Stationären Wohnen ausreichend helfen kann.",
     "Ich habe das Gefühl, dass ich positiven Einfluss auf die Entwicklung der langfristigen persönlichen Lebensperspektive der UMA nehmen kann."
   ),
-  # NON-ADAPTIVE: Use Option columns for 7-point scale
+  # The Option columns are not read by inrep for Likert items. Without a
+  # ResponseCategories column inrep shows five categories with its German
+  # default labels (see response_scale in create_uma_report). Adding
+  # ResponseCategories = "1,2,3,4,5,6,7" would show seven, but would make the
+  # data incomparable with responses already collected.
   Option1 = "stimme überhaupt nicht zu",
   Option2 = "stimme nicht zu",
   Option3 = "stimme eher nicht zu",
@@ -602,7 +607,7 @@ create_uma_report <- function(responses, item_bank, demographics = NULL, rv = NU
     }
   }
   
-  data$response_scale <- "1=stimme \u00fcberhaupt nicht zu, 2=stimme nicht zu, 3=stimme eher nicht zu, 4=weder noch, 5=stimme eher zu, 6=stimme zu, 7=stimme voll und ganz zu"
+  data$response_scale <- "1=Stimme \u00fcberhaupt nicht zu, 2=Stimme eher nicht zu, 3=Teils, teils, 4=Stimme eher zu, 5=Stimme voll und ganz zu"
   
   # Save to cloud
   save_to_cloud(data, filename)
@@ -651,6 +656,9 @@ study_config <- inrep::create_study_config(
   demographic_configs    = demographic_configs,
   input_types            = input_types,
   results_processor      = create_uma_report,
+  # validation_function, log_data, cloud_storage, show_progress, bilingual,
+  # enable_audio and initialize_immediately are not read by inrep (except
+  # log_data, whose default is FALSE); validate_page() is therefore not called.
   validation_function    = validate_page,
   
   # Study flow settings

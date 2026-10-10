@@ -2,7 +2,7 @@
 % Please edit documentation in R/enhanced_features.R
 \name{handle_extreme_parameters}
 \alias{handle_extreme_parameters}
-\title{Handle Extreme Parameters}
+\title{Clamp Configuration Values to Fixed Bounds}
 \usage{
 handle_extreme_parameters(params)
 }
@@ -13,5 +13,7 @@ handle_extreme_parameters(params)
 Sanitized parameters
 }
 \description{
-Handles extreme parameter values gracefully
+Clamps selected numeric configuration values to fixed ranges (for example
+\code{theta_prior} elementwise to -5 to 5), truncates some strings, and
+shortens some vectors.
 }

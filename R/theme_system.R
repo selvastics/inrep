@@ -1,22 +1,22 @@
-#' Theme System for inrep Package
-#' 
-#' This file consolidates all theme-related functions including:
-#' - Theme definitions (from themes.R)
-#' - CSS loading functions (from get_theme_css.R)
-#' - Font consistency (from ensure_font_consistency.R)
-#' 
+#' Theme functions
+#'
+#' Theme definitions as R lists, loading of the CSS theme files in
+#' \code{inst/themes}, and font rules added to every theme.
+#'
 #' @name theme_system
 #' @keywords internal
 NULL
 
-# ============================================================================
-# SECTION 1: THEME DEFINITIONS (from themes.R)
-# ============================================================================
+# Theme definitions ----
 
 #' Get Theme Configuration
-#' 
-#' Returns complete theme configuration
-#' 
+#'
+#' Returns the colour, font and border settings of one of the themes defined
+#' in this function. These lists are used by \code{generate_theme_css()}. They
+#' are separate from the CSS files in \code{inst/themes} that
+#' \code{get_theme_css()} and \code{launch_study()} use, and the two sets of
+#' theme names differ.
+#'
 #' @param theme_name Name of the theme
 #' @return Theme configuration list
 #' @export
@@ -30,10 +30,9 @@ get_theme_config <- function(theme_name = "light") {
   }
   
   themes <- list(
-    # Clean theme - professional and minimal
     clean = list(
       name = "Clean",
-      description = "Clean, professional theme with excellent readability",
+      description = "Dark blue-grey on white",
       colors = list(
         primary = "#2C3E50",
         secondary = "#34495E", 
@@ -140,7 +139,7 @@ get_theme_config <- function(theme_name = "light") {
     # Dark theme
     dark = list(
       name = "Dark",
-      description = "Dark mode theme for reduced eye strain",
+      description = "Light text on a dark background",
       colors = list(
         primary = "#BB86FC",
         secondary = "#03DAC6",
@@ -396,9 +395,11 @@ get_theme_config <- function(theme_name = "light") {
 }
 
 #' Generate Theme CSS
-#' 
-#' Generates CSS from theme configuration
-#' 
+#'
+#' Builds a stylesheet from one of the themes in \code{get_theme_config()}.
+#' Not used by \code{launch_study()}, which reads the CSS files through
+#' \code{get_theme_css()}.
+#'
 #' @param theme_name Name of the theme
 #' @return CSS string
 #' @export
@@ -416,10 +417,9 @@ generate_theme_css <- function(theme_name = "light") {
     style = "solid"
   )
   
-  # Button text color is always white for primary buttons
-  button_text_color <- "white"
-  
-  css <- sprintf('
+  # Only the :root block goes through sprintf(): the rules below contain
+  # literal "%" signs and are longer than sprintf()'s 8192-character limit.
+  root_css <- sprintf('
     :root {
       /* Core Colors */
       --primary-color: %s;
@@ -475,7 +475,43 @@ generate_theme_css <- function(theme_name = "light") {
       --transition-normal: 0.3s ease;
       --transition-slow: 0.5s ease;
     }
-    
+  ',
+    colors$primary %||% "#4A90E2",
+    colors$secondary %||% "#7BB3EC",
+    colors$success %||% "#7ED321",
+    colors$info %||% "#50E3C2",
+    colors$warning %||% "#F5A623",
+    colors$danger %||% "#D0021B",
+    colors$background %||% "#FFFFFF",
+    colors$surface %||% "#F7F9FC",
+    colors$text %||% "#333333",
+    colors$text_secondary %||% "#828282",
+    colors$border %||% "#E1E8ED",
+
+    # Aliases for compatibility
+    colors$primary %||% "#4A90E2",
+    colors$secondary %||% "#7BB3EC",
+    colors$success %||% "#7ED321",
+    colors$info %||% "#50E3C2",
+    colors$warning %||% "#F5A623",
+    colors$danger %||% "#D0021B",
+    colors$background %||% "#FFFFFF",
+    colors$surface %||% "#F7F9FC",
+    colors$text %||% "#333333",
+    colors$text_secondary %||% "#828282",
+    colors$border %||% "#E1E8ED",
+
+    # Typography
+    fonts$heading %||% "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+    fonts$body %||% "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+    fonts$mono %||% "'SF Mono', Monaco, 'Cascadia Code', monospace",
+
+    # Layout
+    borders$radius %||% "8px",
+    borders$width %||% "1px"
+  )
+
+  rules_css <- '
     * {
       border-radius: var(--border-radius) !important;
     }
@@ -542,7 +578,7 @@ generate_theme_css <- function(theme_name = "light") {
     .btn-primary, .btn-klee {
       background-color: var(--primary-color);
       border-color: var(--primary-color);
-      color: %s;
+      color: white;
     }
 
     .btn-primary:hover, .btn-klee:hover {
@@ -847,52 +883,13 @@ generate_theme_css <- function(theme_name = "light") {
         margin-bottom: 1rem;
       }
     }
-  ',
-    colors$primary %||% "#4A90E2",
-    colors$secondary %||% "#7BB3EC",
-    colors$success %||% "#7ED321",
-    colors$info %||% "#50E3C2",
-    colors$warning %||% "#F5A623",
-    colors$danger %||% "#D0021B",
-    colors$background %||% "#FFFFFF",
-    colors$surface %||% "#F7F9FC",
-    colors$text %||% "#333333",
-    colors$text_secondary %||% "#828282",
-    colors$border %||% "#E1E8ED",
+  '
 
-    # Aliases for compatibility
-    colors$primary %||% "#4A90E2",
-    colors$secondary %||% "#7BB3EC",
-    colors$success %||% "#7ED321",
-    colors$info %||% "#50E3C2",
-    colors$warning %||% "#F5A623",
-    colors$danger %||% "#D0021B",
-    colors$background %||% "#FFFFFF",
-    colors$surface %||% "#F7F9FC",
-    colors$text %||% "#333333",
-    colors$text_secondary %||% "#828282",
-    colors$border %||% "#E1E8ED",
-
-    # Typography
-    fonts$heading %||% "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-    fonts$body %||% "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-    fonts$mono %||% "'SF Mono', Monaco, 'Cascadia Code', monospace",
-
-    # Layout
-    borders$radius %||% "8px",
-    borders$width %||% "1px",
-
-    # Button text color
-    button_text_color
-  )
-  
-  return(css)
+  paste0(root_css, rules_css)
 }
 
 
-# ============================================================================
-# SECTION 2: CSS LOADING FUNCTIONS (from get_theme_css.R)
-# ============================================================================
+# CSS loading ----
 
 #' Get Theme CSS
 #'
@@ -926,11 +923,15 @@ get_theme_css <- function(theme = "Light", custom_css = NULL, theme_config = NUL
       theme_file <- system.file("themes", "light.css", package = "inrep")
     }
 
-    # Read the CSS file
     theme_css <- if (file.exists(theme_file)) {
-      paste(readLines(theme_file, warn = FALSE), collapse = "\n")
+      css_lines <- readLines(theme_file, warn = FALSE, encoding = "UTF-8")
+      # A byte order mark inside a <style> element becomes part of the first
+      # selector, so the theme's first rule (usually :root) would not apply.
+      if (length(css_lines) > 0) {
+        css_lines[1] <- sub(paste0("^", intToUtf8(0xFEFF)), "", css_lines[1])
+      }
+      paste(css_lines, collapse = "\n")
     } else {
-      # Fallback CSS if no theme file found
       generate_fallback_css()
     }
   }
@@ -991,32 +992,42 @@ generate_theme_css_from_config <- function(config) {
 
 #' Add theme configuration overrides to existing CSS
 #'
+#' Appends a \code{:root} block that sets only the variables given in
+#' \code{config}. Because it comes after the theme's own \code{:root} block,
+#' these values take precedence; all other theme variables are kept.
+#'
 #' @param css Existing CSS string
-#' @param config Theme configuration overrides
+#' @param config Theme configuration overrides: a list with optional
+#'   elements \code{colors}, \code{fonts} and \code{borders}, named as in
+#'   \code{generate_theme_css_from_config()}.
 #' @return Modified CSS string
 #' @export
 add_theme_config_overrides <- function(css, config) {
-  # Extract existing :root block
-  root_pattern <- ":root\\s*\\{([^{}]*(?:\\{[^{}]*\\}[^{}]*)*)\\}"
-  root_match <- regexpr(root_pattern, css, perl = TRUE)
+  var_map <- list(
+    colors = c(primary = "--primary-color", secondary = "--secondary-color",
+               success = "--success-color", info = "--info-color",
+               warning = "--warning-color", danger = "--danger-color",
+               background = "--background-color", surface = "--surface-color",
+               text = "--text-color", text_secondary = "--text-secondary-color",
+               border = "--border-color"),
+    fonts = c(heading = "--font-heading", body = "--font-body", mono = "--font-mono"),
+    borders = c(radius = "--border-radius", width = "--border-width")
+  )
 
-  if (root_match == -1) {
-    # No :root block found, create one
-    overrides <- generate_theme_css_from_config(config)
-    return(paste(css, overrides, sep = "\n"))
+  declarations <- character(0)
+  for (group in names(var_map)) {
+    values <- config[[group]]
+    if (is.null(values)) next
+    for (key in intersect(names(var_map[[group]]), names(values))) {
+      declarations <- c(declarations,
+                        sprintf("  %s: %s;", var_map[[group]][[key]], values[[key]]))
+    }
   }
 
-  # Get the content inside :root
-  root_content <- substr(css, attr(root_match, "capture.start"),
-                        attr(root_match, "capture.start") + attr(root_match, "capture.length") - 1)
-
-  # Add overrides to existing variables or create new ones
-  overrides <- generate_theme_css_from_config(config)
-
-  # Replace the existing :root block with enhanced version
-  enhanced_css <- sub(root_pattern, overrides, css, perl = TRUE)
-
-  return(enhanced_css)
+  if (length(declarations) == 0) {
+    return(css)
+  }
+  paste(css, paste0(":root {\n", paste(declarations, collapse = "\n"), "\n}"), sep = "\n")
 }
 
 #' Generate fallback CSS
@@ -1056,8 +1067,9 @@ body {
 
 #' Get Available Themes
 #' 
-#' Lists all available theme files
-#' 
+#' Lists the CSS theme files in \code{inst/themes} (names usable as
+#' \code{theme} in \code{create_study_config()}).
+#'
 #' @return Character vector of theme names
 #' @export
 get_available_themes <- function() {
@@ -1065,22 +1077,23 @@ get_available_themes <- function() {
   
   if (dir.exists(theme_dir)) {
     theme_files <- list.files(theme_dir, pattern = "\\.css$", full.names = FALSE)
-    return(gsub("\\.css$", "", theme_files))
+    # base.css holds structural rules, not a theme
+    return(setdiff(gsub("\\.css$", "", theme_files), "base"))
   }
   
   return(c("light", "dark", "hildesheim"))
 }
 
-# ============================================================================
-# SECTION 3: FONT CONSISTENCY (from ensure_font_consistency.R)
-# ============================================================================
+# Font rules ----
 
 #' Ensure Font Consistency in Theme CSS
 #'
-#' Adds font consistency CSS to ensure all elements use the theme's font-family
+#' Appends rules that apply the theme's body font to all text elements, and
+#' rules that map both CSS variable naming schemes (\code{--primary-color} and
+#' \code{--color-primary}) onto buttons, cards and form elements.
 #'
 #' @param theme_css The base theme CSS
-#' @return Enhanced CSS with font consistency rules
+#' @return The theme CSS with these rules appended
 #' @export
 ensure_font_consistency <- function(theme_css) {
   # Check if the theme already defines a font-family variable
@@ -1153,7 +1166,7 @@ ensure_font_consistency <- function(theme_css) {
       font-family: var(--font-body, var(--font-family, system-ui, sans-serif)) !important;
     }
 
-    /* Enhanced focus styles for accessibility */
+    /* Visible keyboard focus */
     *:focus {
       outline: 2px solid var(--primary-color, var(--color-primary, #007bff));
       outline-offset: 2px;

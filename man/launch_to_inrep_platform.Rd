@@ -2,7 +2,7 @@
 % Please edit documentation in R/platform_deployment.R
 \name{launch_to_inrep_platform}
 \alias{launch_to_inrep_platform}
-\title{Create a deployment package for hosting a study}
+\title{Create a deployment folder for hosting a study}
 \usage{
 launch_to_inrep_platform(
   study_config,
@@ -25,43 +25,54 @@ launch_to_inrep_platform(
 
 \item{deployment_type}{Character string specifying deployment target.
 Supported values: \code{"inrep_platform"}, \code{"posit_connect"}, \code{"shinyapps"},
-\code{"custom_server"}, \code{"docker"}.}
+\code{"custom_server"}, \code{"docker"}. It only changes the notes and the
+stored deployment configuration.}
 
 \item{contact_info}{Optional list containing researcher contact information and study details.}
 
-\item{advanced_features}{Optional list of features to include in the generated assets.}
+\item{advanced_features}{Optional list stored in the deployment configuration.}
 
-\item{security_settings}{Optional list of security-related settings to include in the
-generated notes/templates. These are not enforced by the package.}
+\item{security_settings}{Optional list stored in the deployment configuration
+(\code{"inrep_platform"} only). Not enforced by the package.}
 
-\item{backup_settings}{Optional list of backup/recovery settings to include in the
-generated notes/templates. These are not enforced by the package.}
+\item{backup_settings}{Currently unused.}
 
-\item{validate_deployment}{Logical indicating whether to run validation checks (for example,
-item bank validation).}
+\item{validate_deployment}{Logical. If \code{TRUE}, runs
+\code{validate_item_bank()} and checks that the expected files were written.}
 }
 \value{
 A list containing:
 \itemize{
-  \item \code{deployment_package} Path to the generated deployment package
+  \item \code{deployment_package} Path to the generated folder
   \item \code{validation_report} Validation results (if enabled)
-  \item \code{deployment_instructions} Platform-specific deployment guide
-  \item \code{contact_template} Template text for contacting a platform maintainer
-  \item \code{study_metadata} Study metadata for hosting
+  \item \code{deployment_instructions} Path to the instructions file
+  \item \code{contact_template} Path to the contact template (if \code{contact_info} was given)
+  \item \code{study_metadata} Study metadata
 }
 }
 \description{
-Creates a self-contained deployment folder for hosting a study.
-The output includes the study configuration, item bank data, and generated app assets.
+Writes a folder with the study configuration, the item bank, a minimal
+\code{app.R} and Markdown notes for hosting the study on a Shiny server.
 }
 \details{
-The deployment folder contains:
+The folder \code{<output_dir>/inrep_deployment_<timestamp>/} contains:
 \itemize{
-  \item Study configuration and metadata
-  \item Item bank data and (optional) validation output
-  \item Generated app files and resources
-  \item Deployment notes and instructions
+  \item \code{app/app.R}: reads the configuration and item bank and calls
+    \code{inrep::launch_study()}. The server must have inrep and its
+    dependencies installed.
+  \item \code{config/study_config.rds}, \code{config/deployment_config.rds}
+    and \code{data/item_bank.rds}.
+  \item \code{docs/deployment_instructions.md} and, when
+    \code{contact_info} is given, \code{docs/contact_template.md}.
+  \item \code{deployment/manifest.json} and \code{DEPLOYMENT_SUMMARY.md}.
 }
+The function does not upload or deploy anything, and it writes no
+Dockerfile. The \code{security_settings} and \code{backup_settings} are
+stored in the configuration file only; nothing enforces them.
+
+\code{deployment_type = "inrep_platform"} produces a template for
+requesting hosting from the package maintainer. There is no public inrep
+hosting service.
 }
 \examples{
 \dontrun{
@@ -87,12 +98,8 @@ deployment$deployment_package
 }
 
 }
-\references{
-See the project documentation for deployment guidance.
-}
 \seealso{
+\code{\link{prepare_shinyapps_deploy}} for deploying a study script to shinyapps.io,
 \code{\link{create_study_config}} for creating study configurations,
-\code{\link{validate_item_bank}} for item bank validation,
-\code{\link{inrep_ui}} for UI components,
-\code{\link{create_response_report}} for results processing.
+\code{\link{validate_item_bank}} for item bank validation.
 }

@@ -1,22 +1,22 @@
-#' Launch Adaptive Study Interface
+#' Launch a Study
 #'
-#' Implementation note: currently implemented as a single function and will be
-#' refactored into smaller internal helpers.
-#' Launches a Shiny-based adaptive or non-adaptive assessment interface that serves as
-#' a wrapper around optional psychometric backends (for example, TAM). When available,
-#' IRT computations (ability estimation, item selection, model fitting) are delegated to
-#' the backend, while this function provides the interactive interface and workflow
-#' management.
+#' Builds the Shiny application for a study and either returns it or runs it.
+#' The study is either a fixed-form questionnaire or a computerized adaptive
+#' test (CAT), as set in \code{config}. The function is currently one large
+#' function and is meant to be split into smaller internal helpers.
 #'
 #' @export
-#' @param config A list containing study configuration parameters created by \code{\link{create_study_config}}.
-#'   Must include essential elements like \code{model}, \code{max_items}, \code{min_SEM}, etc.
-#' @param item_bank Data frame containing item parameters compatible with TAM package requirements.
-#'   Column structure varies by IRT model (see \strong{Item Bank Requirements} section).
-#' @param custom_css Character string containing CSS code for UI customization. 
-#'   When provided, overrides both built-in themes and \code{theme_config} settings.
-#' @param theme_config Named list of theme parameters for custom theming.
-#'   Contains CSS variable definitions like \code{primary_color}, \code{font_family}, etc.
+#' @param config A study configuration list created by
+#'   \code{\link{create_study_config}}.
+#' @param item_bank Data frame with the items. Required columns depend on the
+#'   model and on whether the study is adaptive (see \strong{Item Bank
+#'   Requirements}). If missing or \code{NULL}, \code{config$items} is used.
+#' @param custom_css Character string with CSS. It is appended after the
+#'   theme CSS, so its rules take precedence over the theme.
+#' @param theme_config Named list. Only \code{primary_color} is used, as the
+#'   color of the progress indicator, the PDF button and the ability plot.
+#'   Other entries are ignored; use \code{custom_css} or a theme to change
+#'   other colors and fonts.
 #' @param webdav_url Where inrep stores each participant's session file
 #'   (JSON) on a WebDAV server, or \code{NULL} for local storage only. Any
 #'   WebDAV server works; the accepted forms are:
@@ -42,107 +42,104 @@
 #'   \code{/s/} in the share link). Only needed when \code{webdav_url} is a
 #'   bare \code{.../public.php/webdav/} address.
 #' @param webdav_user User name for a plain (non-share) WebDAV folder.
-#' @param save_format Character string specifying output format for assessment results.
-#'   Options: \code{"rds"} (default), \code{"csv"}, \code{"json"}, \code{"pdf"}.
-#' @param logger Function for custom logging. Default uses internal \code{logr} implementation.
-#'   Should accept \code{message} and \code{level} parameters.
-#' @param admin_dashboard_hook Optional function receiving real-time assessment updates.
-#'   Called with participant progress, ability estimates, and session metrics.
-#' @param accessibility Logical indicating whether to enable accessibility features
-#'   including ARIA labels, keyboard navigation, and screen reader support.
-#' @param study_key Character string for unique study identification. Overrides config$study_key.
-#' @param max_session_time Maximum session time in seconds (default: 7200 = 2 hours).
-#'   The assessment will automatically terminate after this time to limit session duration.
-#' @param session_save Logical indicating whether to enable session saving and recovery
-#'   (default: \code{FALSE}). Enable for production deployments that need crash recovery.
-#' @param data_preservation_interval Interval for automatic data preservation in seconds (default: 30).
-#' @param keep_alive_interval Keep-alive ping interval in seconds (default: 10).
-#' @param enable_error_recovery Logical indicating whether to enable automatic error recovery
-#'   with up to 3 recovery attempts before graceful degradation.
-#' @param debug_mode Logical indicating whether to enable debug mode (default: FALSE).
-#'   When TRUE, enables keyboard shortcuts for rapid testing: STRG+A (CTRL+A) smart fills current page with
-#'   contextual defaults, STRG+Q (CTRL+Q) turbo auto-fills all pages until results are reached.
-#'   A red debug indicator appears in the bottom-right corner. **Use only for development/testing!**
-#' @param ui_render_delay Optional numeric delay (in seconds) before rendering the main UI.
-#'   If NULL, no additional delay is applied.
-#' @param package_loading_delay Optional numeric delay (in seconds) used when deferring
-#'   package loading for immediate UI startup.
-#' @param session_init_delay Optional numeric delay (in seconds) before initializing
-#'   session state.
-#' @param show_loading_screen Logical indicating whether to show a simple loading
-#'   screen when using delayed startup.
-#' @param immediate_ui Logical indicating whether to render the UI immediately and
-#'   load heavier components in the background.
-#' @param auto_close_time Numeric. Time until auto-close after the final results page.
-#'   Used only for custom page flows that include results pages.
+#' @param save_format Format of the report file offered by the download
+#'   button on the built-in results page (shown only when
+#'   \code{config$participant_report$show_legacy_buttons = TRUE}). One of
+#'   \code{"rds"} (default), \code{"csv"}, \code{"json"} or \code{"pdf"}.
+#'   \code{"pdf"} needs a LaTeX installation via \pkg{tinytex}; if the PDF
+#'   cannot be built, a JSON file is written instead.
+#' @param logger Logging function called as \code{logger(msg, level = ...)}.
+#'   The default passes every message, including debug messages, to
+#'   \code{message()}.
+#' @param admin_dashboard_hook Optional function. In the built-in assessment
+#'   flow (not in a \code{custom_page_flow}) it is called after each response
+#'   and item selection with a list containing \code{participant_id},
+#'   \code{progress} (percent of \code{max_items}), \code{theta}, \code{se},
+#'   \code{items_administered} and \code{responses}.
+#' @param accessibility Currently ignored.
+#' @param study_key Character string identifying the study. Overrides
+#'   \code{config$study_key}. Local session files are stored under
+#'   \code{study_data/<study_key>/}.
+#' @param max_session_time Maximum duration of a participant session in
+#'   seconds (default 7200). The session is checked once per minute and
+#'   closed when this time is exceeded.
+#' @param session_save Logical. If \code{TRUE}, the participant's reactive
+#'   state is written to \code{study_data/<study_key>/session.rds} on page
+#'   changes, on responses and when the session ends (default \code{FALSE}).
+#' @param data_preservation_interval Passed to the internal session state
+#'   (seconds, default 30).
+#' @param keep_alive_interval Passed to the internal session state (seconds,
+#'   default 10).
+#' @param enable_error_recovery Logical, stored in the internal
+#'   error-handling state. \code{launch_study()} does not install the global
+#'   error handler that reads it, so it currently has no visible effect.
+#' @param debug_mode Logical (default \code{FALSE}). If \code{TRUE}, a debug
+#'   panel is shown and keyboard shortcuts are enabled: Ctrl+A fills the
+#'   current page, Ctrl+Q fills and advances through all pages until the
+#'   results, Ctrl+Y does the same with shorter delays. For development and
+#'   testing only.
+#' @param ui_render_delay,package_loading_delay,session_init_delay,show_loading_screen
+#'   Currently ignored.
+#' @param immediate_ui Logical (default \code{FALSE}). If \code{TRUE}, the
+#'   optional packages \pkg{ggplot2}, \pkg{DT} and \pkg{shinyWidgets} are
+#'   treated as unavailable, so plots, interactive tables and button-style
+#'   response options are not used.
+#' @param auto_close_time Numeric. Time until the window is closed after the
+#'   final results page. Used only in a \code{custom_page_flow} with results
+#'   pages.
 #' @param auto_close_time_unit Character. Either \code{"seconds"} or \code{"minutes"}.
 #' @param disable_auto_close Logical. If TRUE, disables automatic closing.
-#' @param port Numeric port number for Shiny application (default: 3838).
-#'   The application will be accessible at http://host:port.
-#' @param launch_browser Logical indicating whether to automatically open browser (default: FALSE).
-#'   When TRUE, automatically launches in browser. When FALSE, returns the Shiny app object for manual execution.
-#' @param host Character string specifying the host address (default: "127.0.0.1").
-#'   Use "0.0.0.0" for network access or specific IP addresses for remote access.
-#' @param ... Additional parameters passed to Shiny application configuration.
+#' @param port Port number (default 3838), used when \code{launch_browser = TRUE}.
+#' @param launch_browser Logical (default \code{FALSE}). If \code{TRUE}, the
+#'   app is run with \code{shiny::runApp()} and opened in the browser. If
+#'   \code{FALSE}, the Shiny app object is returned.
+#' @param host Host address (default \code{"127.0.0.1"}), used when
+#'   \code{launch_browser = TRUE}. Use \code{"0.0.0.0"} to accept connections
+#'   from other machines.
+#' @param ... Not used; any arguments given here are reported and ignored.
 #'
-#' @return When \code{launch_browser = TRUE}, launches the Shiny application
-#'   in the default browser. When \code{launch_browser = FALSE} (default), returns the Shiny app
-#'   object for manual execution with \code{shiny::runApp()}.
-#'   The app provides an assessment interface with optional adaptation.
+#' @return If \code{launch_browser = FALSE} (default), a Shiny app object that
+#'   can be run with \code{shiny::runApp()}. Otherwise the app is run and the
+#'   value of \code{shiny::runApp()} is returned when it stops.
 #'
 #' @details
-#' \strong{Psychometric Foundation:} All statistical computations are performed by the
-#' TAM package (Robitzsch et al., 2024). \code{inrep} serves as an integration framework
-#' that orchestrates TAM's capabilities within an interactive research workflow:
-#' \itemize{
-#'   \item IRT model fitting: \code{TAM::tam.mml}, \code{TAM::tam.mml.2pl}, \code{TAM::tam.mml.3pl}
-#'   \item Ability estimation: \code{TAM::tam.wle}
-#'   \item Item information: \code{TAM::IRT.informationCurves}
-#'   \item Model diagnostics: \code{TAM::tam.fit}
-#' }
-#' 
-#' \strong{Framework Architecture:} \code{inrep} provides the following integration capabilities:
-#' \itemize{
-#'   \item Interactive web interface powered by Shiny (Chang et al., 2021)
-#'   \item Real-time data collection and session management
-#'   \item Bidirectional interface between user interactions and TAM computations
-#'   \item Workflow orchestration with logging via \code{logr} package
-#'   \item Result export in multiple formats with cloud storage integration
-#' }
+#' \strong{Psychometric computations.} inrep does not calibrate items. In an
+#' adaptive study the item parameters in \code{item_bank} are taken as known.
+#' After each response, ability is estimated by \code{\link{estimate_ability}}
+#' (expected a posteriori estimate on a grid with the normal prior
+#' \code{config$theta_prior}; the reported SE is the posterior standard
+#' deviation), and the next item is chosen by
+#' \code{\link{fast_select_next_item}} (maximum Fisher information, the
+#' default) or \code{\link{select_next_item}} when
+#' \code{config$fast_item_selection = FALSE}. Items before position
+#' \code{config$adaptive_start} (default: \code{min_items}) are drawn at
+#' random. The test stops when
+#' \code{min_items} have been given and either \code{max_items} is reached or
+#' the SE falls to \code{min_SEM}, unless
+#' \code{config$stopping_rule} is supplied. Supported models are 1PL, 2PL,
+#' 3PL and the graded response model (GRM).
 #'
-#' \strong{Capabilities:}
-#' \itemize{
-#'   \item Runs a Shiny-based assessment flow (fixed or adaptive)
-#'   \item Optional demographics collection
-#'   \item Ability estimation and item selection via optional psychometric backends (e.g., TAM)
-#'   \item Optional session save/restore helpers
-#'   \item Optional logging when \code{logr} is available
-#' }
-#' 
+#' In a non-adaptive study the items are presented in a fixed order and no
+#' ability estimate is computed.
+#'
 #' @section Cloud Storage Configuration:
-#' Optional upload of completed session data to a WebDAV-compatible endpoint.
-#' 
-#' \strong{Setup Requirements:}
+#' Optional upload of completed session data to a WebDAV endpoint.
 #' \itemize{
-#'   \item Both \code{webdav_url} and \code{password} must be provided together
-#'   \item WebDAV URL must be a valid HTTP(S) endpoint with write permissions
-#'   \item Password should be the access token or credential for your WebDAV service
-#'   \item Network connectivity required for cloud functionality
+#'   \item \code{password} without \code{webdav_url} is an error.
+#'   \item \code{webdav_url} without \code{password} uploads anonymously
+#'     (public shares that allow uploads).
+#'   \item The URL must start with \code{http://} or \code{https://};
+#'     prefer HTTPS.
+#'   \item Read the password from an environment variable, for example
+#'     \code{password = Sys.getenv("WEBDAV_PASSWORD")}, and prefer an app
+#'     password or share password over an account password.
 #' }
 #'
-#' \strong{Operational Notes:}
-#' \itemize{
-#'   \item Use environment variables for passwords: \code{password = Sys.getenv("WEBDAV_PASS")}
-#'   \item Prefer HTTPS endpoints
-#'   \item Use dedicated access tokens rather than account passwords when possible
-#' }
-#' 
-#' \strong{Usage Examples:}
 #' \preformatted{
 #' # Local storage only (default)
 #' launch_study(config, item_bank)
-#' 
-#' # With cloud backup to a Nextcloud/ownCloud share (replace with your own)
+#'
+#' # With upload to a Nextcloud/ownCloud share (replace with your own)
 #' launch_study(
 #'   config,
 #'   item_bank,
@@ -150,7 +147,7 @@
 #'   password = Sys.getenv("WEBDAV_PASSWORD")
 #' )
 #'
-#' # With cloud backup to a personal WebDAV folder
+#' # With upload to a personal WebDAV folder
 #' launch_study(
 #'   config,
 #'   item_bank,
@@ -160,97 +157,39 @@
 #' )
 #' }
 #'
-#' @section Installation and Dependencies:
-#' \strong{Required Packages:} Ensure all dependencies are installed for full functionality:
-#' \preformatted{
-#' # Core psychometric engine
-#' install.packages("TAM")
-#' 
-#' # Interface and visualization  
-#' install.packages(c("shiny", "DT", "ggplot2", "plotly"))
-#' 
-#' # Data processing and utilities
-#' install.packages(c("dplyr", "jsonlite", "logr"))
-#' 
-#' # Install inrep package
-#' devtools::install_github("selvastics/inrep")
-#' }
-#' 
-#' \strong{System Requirements:}
-#' \itemize{
-#'   \item R version 4.0.0 or higher for optimal TAM compatibility
-#'   \item Minimum 4GB RAM for medium-scale assessments (>500 participants)
-#'   \item Modern web browser with JavaScript enabled for Shiny interface
-#'   \item Network connectivity for cloud storage features (optional)
-#' }
-#'
 #' @section Notes:
-#' Most runtime behavior is configured via \code{create_study_config()} (e.g.,
-#' caching/parallel settings, theme options, progress display). For WebDAV upload
-#' behavior and security notes, see \code{save_session_to_cloud()}.
+#' Most runtime behavior is configured via \code{create_study_config()}. For
+#' WebDAV upload behavior, see \code{save_session_to_cloud()}.
 #'
 #' @section Item Bank Requirements:
-#' The \code{item_bank} data frame must conform to TAM package specifications with 
-#' columns varying by IRT model type:
-#' 
-#' \strong{Common Requirements (All Models):}
-#' \itemize{
-#'   \item \code{Question}: Character vector containing item text or content identifiers
-#'   \item Items must be properly formatted for the target language and population
-#'   \item No missing values in parameter columns required by the specified model
-#' }
-#' 
-#' \strong{Model-Specific Requirements:}
+#' Every item bank needs a \code{Question} column with the item text (a
+#' column \code{content} or \code{item_id} is copied to \code{Question} if
+#' \code{Question} is missing; \code{discrimination} and \code{difficulty} are
+#' copied to \code{a} and \code{b}). In a non-adaptive study no parameter
+#' columns are checked.
+#'
+#' In an adaptive study \code{\link{validate_item_bank}} checks that these
+#' columns exist (it does not check values, ranges or threshold order):
 #' \describe{
-#'   \item{\strong{1PL/Rasch Model}}{
-#'     \itemize{
-#'       \item \code{b}: Difficulty parameters (logit scale, typically -3 to +3)
-#'       \item \code{Answer}: Correct response codes for scoring
-#'       \item \code{Option1, Option2, ...}: Response options for multiple choice items
-#'     }
-#'   }
-#'   \item{\strong{2PL Model}}{
-#'     \itemize{
-#'       \item \code{a}: Discrimination parameters (positive values, typically 0.5 to 3.0)
-#'       \item \code{b}: Difficulty parameters (logit scale)
-#'       \item \code{Answer}: Correct response identifiers
-#'       \item \code{Option1, Option2, ...}: Multiple choice response options
-#'     }
-#'   }
-#'   \item{\strong{3PL Model}}{
-#'     \itemize{
-#'       \item \code{a}: Discrimination parameters (positive values)
-#'       \item \code{b}: Difficulty parameters (logit scale)  
-#'       \item \code{c}: Guessing parameters (0 to 1, typically 0.1 to 0.3)
-#'       \item \code{Answer}: Correct response codes
-#'       \item \code{Option1, Option2, ...}: Distractor options
-#'     }
-#'   }
-#'   \item{\strong{GRM (Graded Response Model)}}{
-#'     \itemize{
-#'       \item \code{a}: Discrimination parameters for polytomous items
-#'       \item \code{b1, b2, b3, ...}: Threshold parameters in ascending order
-#'       \item \code{ResponseCategories}: Comma-separated response scale (e.g., "1,2,3,4,5")
-#'       \item Optional: \code{CategoryLabels}: Descriptive labels for scale points
-#'     }
-#'   }
+#'   \item{1PL}{\code{b} (difficulty). \code{a} is set to 1 for all items.}
+#'   \item{2PL}{\code{a} (discrimination) and \code{b}.}
+#'   \item{3PL}{\code{a} and \code{b}. A column \code{c} (lower
+#'     asymptote) is used when present; otherwise \code{c = 0}.}
+#'   \item{GRM}{\code{a} and thresholds \code{b1} to \code{b4}, which should
+#'     be in increasing order.}
 #' }
-#' 
-#' \strong{Parameter Validation:} The function automatically validates:
-#' \itemize{
-#'   \item Parameter ranges appropriate for TAM estimation procedures
-#'   \item Threshold ordering for polytomous models (b1 < b2 < b3 < ...)
-#'   \item Consistency between model specification and available parameters
-#'   \item Data types and missing value patterns that could affect TAM computations
-#' }
+#' For dichotomous models the response options are taken from
+#' \code{Option1} to \code{Option4} and the keyed option from \code{Answer}.
+#' For the GRM, the response categories are read from
+#' \code{ResponseCategories}, a comma-separated string such as
+#' \code{"1,2,3,4,5"}.
 #'
 #' @examples
 #' \dontrun{
-#' # Example 1: Basic Personality Assessment with GRM
 #' library(inrep)
 #' data(bfi_items)
-#' 
-#' # Create basic configuration
+#'
+#' # Example 1: adaptive personality assessment with the GRM
 #' basic_config <- create_study_config(
 #'   name = "Big Five Personality Assessment",
 #'   model = "GRM",
@@ -260,39 +199,23 @@
 #'   theme = "Light",
 #'   language = "en"
 #' )
-#' 
-#' # Launch assessment with default settings
 #' launch_study(basic_config, bfi_items)
-#' 
-#' # Example 2: Advanced Cognitive Assessment with 2PL Model
-#' advanced_config <- create_study_config(
+#'
+#' # Example 2: adaptive cognitive test with the 2PL and a monitoring hook
+#' data(cognitive_items)
+#' cog_config <- create_study_config(
 #'   name = "Cognitive Ability Assessment",
-#'   model = "2PL", 
-#'   estimation_method = "EAP",
+#'   model = "2PL",
 #'   max_items = 20,
 #'   min_items = 10,
 #'   min_SEM = 0.25,
-#'   criteria = "MI",  # Maximum Information selection
 #'   theta_prior = c(0, 1),
-#'   demographics = c("Age", "Gender", "Education", "Native_Language"),
-#'   input_types = list(
-#'     Age = "numeric",
-#'     Gender = "select", 
-#'     Education = "select",
-#'     Native_Language = "text"
-#'   ),
-#'   theme = "Professional",
-#'   session_save = TRUE,
-#'   parallel_computation = TRUE,
-#'   cache_enabled = TRUE,
-#'   accessibility_enhanced = TRUE
+#'   demographics = c("Age", "Gender"),
+#'   theme = "Professional"
 #' )
-#' 
-#' # Launch with accessibility features and admin monitoring
 #' launch_study(
-#'   config = advanced_config,
+#'   config = cog_config,
 #'   item_bank = cognitive_items,
-#'   accessibility = TRUE,
 #'   admin_dashboard_hook = function(session_data) {
 #'     cat("Participant ID:", session_data$participant_id, "\n")
 #'     cat("Progress:", session_data$progress, "%\n")
@@ -300,100 +223,29 @@
 #'     cat("Standard error:", round(session_data$se, 3), "\n")
 #'   }
 #' )
-#' 
-#' # Example 3: Custom Theme with CSS Variables
-#' custom_theme_config <- list(
-#'   primary_color = "#2E86AB",
-#'   secondary_color = "#A23B72", 
-#'   background_color = "#F5F5F5",
-#'   text_color = "#333333",
-#'   font_family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-#'   border_radius = "8px",
-#'   button_hover_color = "#1E5A6B"
-#' )
-#' 
+#'
+#' # Example 3: custom colors via CSS variables
 #' launch_study(
 #'   config = basic_config,
-#'   item_bank = bfi_items, 
-#'   theme_config = custom_theme_config
+#'   item_bank = bfi_items,
+#'   theme_config = list(primary_color = "#2E86AB"),
+#'   custom_css = ":root { --primary-color: #2E86AB; --secondary-color: #A23B72; }"
 #' )
-#' 
-#' # Example 4: Clinical Assessment Example
-#' clinical_config <- create_study_config(
-#'   name = "Clinical Depression Screening",
-#'   model = "GRM",
-#'   max_items = 12,
-#'   min_SEM = 0.35,
-#'   demographics = c("Age", "Gender", "Previous_Treatment"),
-#'   theme = "Clinical",
-#'   language = "en",
-#'   session_save = TRUE,
-#'   max_session_duration = 30
-#' )
-#' 
-#' # Launch with cloud storage and logging
+#'
+#' # Example 4: WebDAV upload and a custom logger
 #' launch_study(
-#'   config = clinical_config,
-#'   item_bank = depression_items,
-#'   save_format = "json",
-#'   webdav_url = "https://your-webdav.example/assessments/",
+#'   config = basic_config,
+#'   item_bank = bfi_items,
+#'   webdav_url = "https://cloud.example.org/index.php/s/YourShareToken",
 #'   password = Sys.getenv("WEBDAV_PASSWORD"),
+#'   study_key = paste0("BFI_", generate_uuid()),
 #'   logger = function(msg, level = "INFO") {
 #'     timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
 #'     cat(sprintf("[%s] %s: %s\n", timestamp, level, msg))
 #'   }
 #' )
-#' 
-#' # Example 5: Research Study with Complete Customization
-#' research_config <- create_study_config(
-#'   name = "Psychometric Validation Study",
-#'   model = "3PL",
-#'   estimation_method = "EAP",
-#'   min_items = 15,
-#'   max_items = 30,
-#'   min_SEM = 0.2,
-#'   criteria = "WEIGHTED",
-#'   theta_prior = c(0, 1.2),
-#'   demographics = c("Age", "Gender", "Education", "Country", "Language"),
-#'   response_ui_type = "radio",
-#'   progress_style = "modern-circle",
-#'   theme = "Research",
-#'   language = "en",
-#'   session_save = TRUE,
-#'   parallel_computation = TRUE,
-#'   feedback_enabled = TRUE,
-#'   recommendation_fun = function(theta, demographics, responses) {
-#'     # Replace placeholders with study-specific recommendations
-#'     if (theta > 1.0) {
-#'       return(c("Recommendation 1 (high)", "Recommendation 2 (high)"))
-#'     } else if (theta > 0) {
-#'       return(c("Recommendation 1 (mid)", "Recommendation 2 (mid)"))
-#'     } else {
-#'       return(c("Recommendation 1 (low)", "Recommendation 2 (low)"))
-#'     }
-#'   }
-#' )
-#' 
-#' # Example 6: University of Hildesheim theme with cloud storage
-#' hildesheim_config <- create_study_config(
-#'   name = "University of Hildesheim Assessment",
-#'   model = "GRM",
-#'   max_items = 10,
-#'   session_save = TRUE,
-#'   theme = "Berry"
-#' )
-#' 
-#' launch_study(
-#'   config = hildesheim_config,
-#'   item_bank = bfi_items,
-#'   save_format = "json",
-#'   webdav_url = "https://cloud.example.org/index.php/s/YourShareToken",
-#'   password = Sys.getenv("WEBDAV_PASSWORD"),
-#'   study_key = paste0("HILDESHEIM_", generate_uuid())
-#' )
 #' }
 #' @importFrom shiny shinyApp fluidPage tags div numericInput selectInput actionButton downloadButton uiOutput renderUI plotOutput h2 h3 h4 p tagList
-
 #' @importFrom jsonlite write_json
 launch_study <- function(
     config,
@@ -414,19 +266,15 @@ launch_study <- function(
     data_preservation_interval = 30,
     keep_alive_interval = 10,
     enable_error_recovery = TRUE,
-    # DEBUG MODE PARAMETERS
-    debug_mode = FALSE,  # Enable debug shortcuts: STRG+A (fill page), STRG+Q (autofill until results)
-    # IMMEDIATE DISPLAY PARAMETERS
+    debug_mode = FALSE,
     ui_render_delay = NULL,
     package_loading_delay = NULL,
     session_init_delay = NULL,
     show_loading_screen = NULL,
     immediate_ui = FALSE,
-    # AUTO-CLOSE PARAMETERS
-    auto_close_time = 300,  # 5 minutes default
-    auto_close_time_unit = "seconds",  # "seconds" or "minutes"
+    auto_close_time = 300,
+    auto_close_time_unit = "seconds",
     disable_auto_close = FALSE,
-    # BROWSER LAUNCH PARAMETERS
     port = 3838,
     launch_browser = FALSE,
     host = "127.0.0.1",
@@ -442,12 +290,10 @@ launch_study <- function(
     }
   }
   
-  # Helper function for robust scroll-to-top functionality (works on desktop and mobile)
+  # Scroll the participant's browser window to the top after a page change.
   scroll_to_top_enhanced <- function() {
-    # Enhanced scroll function that works reliably in web browsers
     scroll_js <- "
     (function() {
-      // Force immediate scroll with multiple methods
       try {
         // Method 1: Modern scrollTo with options
         if (window.scrollTo) {
@@ -473,8 +319,7 @@ launch_study <- function(
           }
         }
       }
-      
-      // Additional methods for stubborn browsers
+
       setTimeout(function() {
         try {
           window.scrollTo(0, 0);
@@ -487,8 +332,7 @@ launch_study <- function(
           }
         }
       }, 10);
-      
-      // Final attempt after a short delay
+
       setTimeout(function() {
         try {
           window.scrollTo(0, 0);
@@ -500,13 +344,11 @@ launch_study <- function(
       }, 100);
     })();
     "
-    
-    # Execute with multiple fallbacks
+
     if (requireNamespace("shinyjs", quietly = TRUE)) {
       tryCatch({
         shinyjs::runjs(scroll_js)
       }, error = function(e) {
-        # shinyjs failed, try simple scroll
         tryCatch({
           shinyjs::runjs("window.scrollTo(0, 0);")
         }, error = function(e2) {
@@ -514,55 +356,13 @@ launch_study <- function(
         })
       })
     } else {
-      # No shinyjs available, skip advanced scrolling
       logger("shinyjs not available, skipping scroll to top", level = "WARNING")
     }
   }
   
-  # AGGRESSIVE LATER PACKAGE IMPLEMENTATION - DISPLAY UI IMMEDIATELY
-  if (immediate_ui) {
-    cat("LATER PACKAGE: Implementing immediate UI display\n")
-    
-    # Step 1: Create private event loop for UI
-    ui_loop <- later::create_loop()
-    
-    # Step 2: Display UI with ZERO delay
-    later::later(function() {
-      cat("LATER: UI displayed IMMEDIATELY\n")
-    }, delay = 0, loop = ui_loop)
-    
-    # Step 3: Force immediate execution
-    later::run_now(loop = ui_loop)
-    
-    # Step 4: Move ALL heavy operations to background using later
-    later::later(function() {
-      cat("LATER: Background loading started\n")
-    }, delay = 0)
-    
-    # Step 5: Force all background operations to run immediately but asynchronously
-    later::run_now(timeoutSecs = 0, all = FALSE)
-  }
-  
-  # Enhanced validation and error handling for robustness
+  # Configuration checks and corrections (R/enhanced_features.R). Errors
+  # here are logged and the study starts with the configuration as given.
   tryCatch({
-    # Source enhanced modules if available
-    enhanced_files <- c(
-      "enhanced_config_handler.R",
-      "enhanced_session_recovery.R", 
-      "enhanced_security.R",
-      "enhanced_performance.R",
-      "custom_page_flow.R",
-      "custom_page_flow_validation.R"
-    )
-    
-    for (file in enhanced_files) {
-      file_path <- system.file("R", file, package = "inrep")
-      if (file.exists(file_path)) {
-        source(file_path, local = TRUE)
-      }
-    }
-    
-    # Validate and fix configuration
     if (exists("validate_and_fix_config")) {
       config <- validate_and_fix_config(config, item_bank)
       
@@ -574,36 +374,12 @@ launch_study <- function(
       }
     }
     
-    # Handle extreme parameters
     if (exists("handle_extreme_parameters")) {
       config <- handle_extreme_parameters(config)
     }
-    
-    # Optimize for scale if needed
-    if (!is.null(config$expected_n) && exists("optimize_for_scale")) {
-      config <- optimize_for_scale(config, config$expected_n)
-    }
-    
-    # Initialize enhanced features if available
-    if (enable_error_recovery && exists("initialize_enhanced_recovery")) {
-      initialize_enhanced_recovery(
-        auto_save_interval = data_preservation_interval,
-        enable_browser_storage = TRUE
-      )
-    }
-    
-    if (exists("initialize_enhanced_security")) {
-      initialize_enhanced_security()
-    }
-    
-    if (exists("initialize_performance_optimization")) {
-      initialize_performance_optimization(
-        max_concurrent_users = config$expected_n %||% 100
-      )
-    }
+
   }, error = function(e) {
-    logger(paste("Enhanced features initialization:", e$message))
-    # Continue with standard functionality
+    logger(paste("Configuration check failed:", e$message))
   })
   
   # Check if shiny is available (required for UI)
@@ -611,22 +387,12 @@ launch_study <- function(
     stop("Package 'shiny' is required but not available. Please install it with: install.packages('shiny')")
   }
   
-  # Check if later package is available (for deferred operations)
+  # 'later' is in Imports, so this is TRUE in an installed package.
   has_later <- requireNamespace("later", quietly = TRUE)
-  if (!has_later) {
-    # Try to install later package for better performance
-    tryCatch({
-      utils::install.packages("later", quiet = TRUE, repos = "https://cran.r-project.org")
-      has_later <- requireNamespace("later", quietly = TRUE)
-    }, error = function(e) {
-      logger("Could not install 'later' package. Performance may be reduced.", level = "INFO")
-    })
-  }
-  
-  # Input validation
+
   extra_params <- list(...)
   if (length(extra_params) > 0) {
-    if (!is.null(extra_params) && length(extra_params) > 0) logger(paste("Ignoring unused parameters:", paste(names(extra_params), collapse = ", ")), level = "INFO")
+    logger(paste("Ignoring unused parameters:", paste(names(extra_params), collapse = ", ")), level = "INFO")
   }
   
   # Wire admin_dashboard_hook into config if provided
@@ -644,23 +410,13 @@ launch_study <- function(
     }
   }
   
-  # ULTRA-FAST PACKAGE LOADING SYSTEM WITH LATER PACKAGE INTEGRATION
+  # Records which optional packages are installed. Namespaces of the deferred
+  # packages are loaded through 'later' after the app has started.
   safe_load_packages <- function(immediate = FALSE) {
-    
-    # If immediate_ui is enabled, use later package for background loading
+
+    # With immediate_ui = TRUE, all optional packages are reported as
+    # unavailable (no plots, no DT tables, no shinyWidgets buttons).
     if (immediate_ui) {
-      cat("LATER: Moving package loading to background\n")
-      
-      # Create background loop for package loading
-      pkg_loop <- later::create_loop()
-      
-      # Schedule package loading in background
-      later::later(function() {
-        cat("LATER: Background package loading started\n")
-        # Package loading happens here without blocking UI
-      }, delay = 0, loop = pkg_loop)
-      
-      # Return minimal packages for immediate UI
       return(list(
         shiny = TRUE,
         ggplot2 = FALSE,
@@ -670,19 +426,14 @@ launch_study <- function(
         TAM = FALSE
       ))
     }
-    # Define package priorities
-    critical_packages <- c("shiny")  # ONLY what's needed for UI
-    deferred_packages <- c("ggplot2", "DT", "dplyr", "shinyWidgets")  # Load later
+    critical_packages <- c("shiny")
+    deferred_packages <- c("ggplot2", "DT", "dplyr", "shinyWidgets")
     optional_packages <- if (isTRUE(config$adaptive)) "TAM" else character(0)
     
-    # Initialize with all packages set to FALSE
     all_packages <- c(critical_packages, deferred_packages, optional_packages)
     loaded_packages <- as.list(setNames(rep(FALSE, length(all_packages)), all_packages))
     
     if (!immediate) {
-      # FASTEST PATH: Don't load ANYTHING except critical packages
-      
-      # Step 1: Only verify critical packages exist (don't load!)
       for (pkg in critical_packages) {
         if (!requireNamespace(pkg, quietly = TRUE)) {
           stop(sprintf("Critical package '%s' is required", pkg))
@@ -690,23 +441,18 @@ launch_study <- function(
         loaded_packages[[pkg]] <- TRUE
       }
       
-      # Step 2: Check availability WITHOUT loading
       for (pkg in c(deferred_packages, optional_packages)) {
         loaded_packages[[pkg]] <- requireNamespace(pkg, quietly = TRUE)
       }
       
-      # Step 3: ADVANCED later package usage with private event loops and immediate execution
       if (has_later) {
-        # Create private event loop for package loading to avoid UI interference
         package_loop <- NULL
         tryCatch({
           package_loop <- later::create_loop()
         }, error = function(e) {
-          # Fallback to global loop if private loops not available
           package_loop <<- later::global_loop()
         })
-        
-        # Priority 1: Load optional packages with ZERO delay for maximum speed
+
         later::later(function() {
           for (pkg in optional_packages) {
             tryCatch({
@@ -717,16 +463,13 @@ launch_study <- function(
               logger(sprintf("Optional package %s not available", pkg), level = "DEBUG")
             })
           }
-          # Force immediate execution of next phase
           later::run_now(timeoutSecs = 0, all = FALSE, loop = package_loop)
-        }, delay = 0, loop = package_loop)  # IMMEDIATE execution
-        
-        # Priority 2: Heavy packages with minimal delay in private loop
+        }, delay = 0, loop = package_loop)
+
         later::later(function() {
           for (pkg in deferred_packages) {
             tryCatch({
               if (loaded_packages[[pkg]]) {
-                # Only load namespace, not attach
                 loadNamespace(pkg)
                 logger(sprintf("Background loaded: %s", pkg), level = "DEBUG")
               }
@@ -734,18 +477,15 @@ launch_study <- function(
               logger(sprintf("Could not load %s: %s", pkg, e$message), level = "DEBUG")
             })
           }
-          # Force completion
           later::run_now(timeoutSecs = 0, all = TRUE, loop = package_loop)
-        }, delay = 0.001, loop = package_loop)  # 1ms - Ultra-fast execution
-        
-        # Execute the private loop immediately without blocking UI
+        }, delay = 0.001, loop = package_loop)
+
+        # The private loop only runs when run_now() is called on it.
         later::later(function() {
           later::run_now(timeoutSecs = 0, all = TRUE, loop = package_loop)
-        }, delay = 0)  # Execute private loop immediately
+        }, delay = 0)
       }
     } else {
-      # Immediate mode - only used when absolutely necessary
-      # Use loadNamespace instead of library for speed
       for (pkg in c(critical_packages, optional_packages)) {
         if (requireNamespace(pkg, quietly = TRUE)) {
           if (!pkg %in% loadedNamespaces()) {
@@ -759,131 +499,10 @@ launch_study <- function(
     return(loaded_packages)
   }
   
-  # ULTRA-FAST STARTUP: Never load packages synchronously
-  # This ensures < 100ms to first page render
   available_packages <- safe_load_packages(immediate = FALSE)
   
-  # Pre-calculate static content AND first page HTML for instant display
-  static_content_cache <- list(
-    has_custom_css = !is.null(custom_css),
-    has_theme_config = !is.null(theme_config),
-    has_custom_flow = !is.null(config$custom_page_flow),
-    is_adaptive = isTRUE(config$adaptive),
-    # Pre-render first page HTML for INSTANT display
-    first_page = if (!is.null(config$custom_page_flow) && length(config$custom_page_flow) > 0) {
-      first_page_config <- config$custom_page_flow[[1]]
-      shiny::div(
-        class = "container",
-        style = "max-width: 800px; margin: 0 auto; padding: 20px;",
-        shiny::div(
-          class = "card",
-          style = "padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);",
-          shiny::h2(first_page_config$title %||% "Welcome", class = "card-header", style = "margin-bottom: 20px;"),
-          if (!is.null(first_page_config$content)) {
-            shiny::HTML(first_page_config$content)
-          } else if (!is.null(first_page_config$instructions)) {
-            shiny::p(first_page_config$instructions, style = "color: var(--text-color); line-height: 1.6; opacity: 0.9;")
-          } else {
-            shiny::p("Loading assessment...", style = "color: var(--text-color); opacity: 0.9;")
-          },
-          shiny::div(
-            style = "margin-top: 30px; text-align: right;",
-            shiny::actionButton("next_page", "Next", 
-              class = "btn btn-primary",
-              style = "padding: 10px 30px; font-size: 16px;",
-              onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 1500);")
-          )
-        )
-      )
-    } else {
-      NULL
-    }
-  )
-  
-  # Check if TAM package is available (only needed for adaptive mode)
-  if (isTRUE(config$adaptive) && !isTRUE(available_packages$TAM)) {
-    message("Package 'TAM' not available. Falling back to basic non-TAM mode for limited checks.")
-  }
-  
-  # Create robust wrapper functions that check package availability
-  safe_tam_mml <- function(...) {
-    if (isTRUE(available_packages$TAM)) {
-      tryCatch({
-        TAM::tam.mml(...)
-      }, error = function(e) {
-        logger(sprintf("TAM::tam.mml error: %s", e$message), level = "ERROR")
-        stop(sprintf("TAM computation failed: %s", e$message))
-      })
-    } else {
-      stop("TAM package not available in runtime")
-    }
-  }
-  
-  safe_tam_mml_2pl <- function(...) {
-    if (available_packages$TAM) {
-      tryCatch({
-        TAM::tam.mml.2pl(...)
-      }, error = function(e) {
-        logger(sprintf("TAM::tam.mml.2pl error: %s", e$message), level = "ERROR")
-        stop(sprintf("TAM computation failed: %s", e$message))
-      })
-    } else {
-      stop("TAM package not available")
-    }
-  }
-  
-  safe_tam_mml_3pl <- function(...) {
-    if (available_packages$TAM) {
-      tryCatch({
-        TAM::tam.mml.3pl(...)
-      }, error = function(e) {
-        logger(sprintf("TAM::tam.mml.3pl error: %s", e$message), level = "ERROR")
-        stop(sprintf("TAM computation failed: %s", e$message))
-      })
-    } else {
-      stop("TAM package not available")
-    }
-  }
-  
-  safe_tam_wle <- function(...) {
-    if (available_packages$TAM) {
-      tryCatch({
-        TAM::tam.wle(...)
-      }, error = function(e) {
-        logger(sprintf("TAM::tam.wle error: %s", e$message), level = "ERROR")
-        stop(sprintf("TAM computation failed: %s", e$message))
-      })
-    } else {
-      stop("TAM package not available")
-    }
-  }
-  
-  # Create safe plotting function
-  safe_render_plot <- function(expr, ...) {
-    if (!is.null(available_packages) && isTRUE(available_packages[["ggplot2"]])) {
-      tryCatch({
-        # Ensure ggplot2 is properly loaded and accessible
-        if (!requireNamespace("ggplot2", quietly = TRUE)) {
-          stop("ggplot2 package not available")
-        }
-        shiny::renderPlot(expr, ...)
-      }, error = function(e) {
-        logger(sprintf("shiny::renderPlot error: %s", e$message), level = "ERROR")
-        # Fallback to text output
-        shiny::renderText({
-          "Plot rendering failed - displaying data as text instead"
-        })
-      })
-    } else {
-      shiny::renderText({
-        "Plotting not available - ggplot2 package not installed"
-      })
-    }
-  }
-  
-  # Create safe DT function
+  # renderDT() when DT is installed, otherwise a text placeholder.
   safe_render_dt <- function(expr, ...) {
-    # Safely check if DT is available
     dt_available <- if (!is.null(available_packages) && is.list(available_packages)) {
       isTRUE(available_packages[["DT"]])
     } else {
@@ -946,8 +565,7 @@ launch_study <- function(
       logger(paste("Cloud storage enabled:", paste(webdav_url, collapse = ", ")), level = "INFO")
     }
   } else {
-    logger("Using local storage only (no cloud backup)", level = "INFO")
-    logger("Cloud storage disabled - results will be saved locally only", level = "INFO")
+    logger("No webdav_url given: data are stored locally only", level = "INFO")
   }
   
   theme_display <- if (is.list(config$theme)) "custom" else (config$theme %||% "Light")
@@ -957,18 +575,17 @@ launch_study <- function(
     logger("Admin dashboard hook registered", level = "INFO")
   }
   
-  # DEFER session initialization to server - don't block startup
+  # Per-participant initialization happens in the server function.
   .needs_session_init <- session_save
   session_config <- NULL
   error_config <- NULL
-  
-  # CRITICAL: Force new session for each user to prevent session sharing
+
+  # Read once by the first server session (see "Per-session state" below).
   .force_new_session <- TRUE
-  
-  # Initialize robust session management
-  logger("Initializing robust session management", level = "INFO")
-  
-  # Initialize robust session management
+
+  # Note: this runs once per launch_study() call, not once per participant,
+  # so the state it creates (R/robust_session.R) is shared by all sessions.
+  logger("Initializing session management", level = "INFO")
   session_config <- tryCatch({
     if (exists("initialize_robust_session") && is.function(initialize_robust_session)) {
       initialize_robust_session(
@@ -987,8 +604,7 @@ launch_study <- function(
       )
     }
       }, error = function(e) {
-        logger(sprintf("Failed to initialize robust session management: %s", e$message), level = "WARNING")
-        # Fallback to basic session management
+        logger(sprintf("Failed to initialize session management: %s", e$message), level = "WARNING")
         list(
           session_id = paste0("SESS_", format(Sys.time(), "%Y%m%d_%H%M%S")),
           start_time = Sys.time(),
@@ -997,7 +613,6 @@ launch_study <- function(
         )
       })
       
-      # Initialize robust error handling
       error_config <- tryCatch({
         if (exists("initialize_robust_error_handling") && is.function(initialize_robust_error_handling)) {
           initialize_robust_error_handling(
@@ -1005,22 +620,19 @@ launch_study <- function(
             enable_auto_recovery = enable_error_recovery
           )
         } else {
-          # Fallback to basic error handling
           list(
             max_recovery_attempts = 3,
             enable_auto_recovery = enable_error_recovery
           )
         }
       }, error = function(e) {
-        logger(sprintf("Failed to initialize robust error handling: %s", e$message), level = "WARNING")
-        # Fallback to basic error handling
+        logger(sprintf("Failed to initialize error handling: %s", e$message), level = "WARNING")
         list(
           max_recovery_attempts = 3,
           enable_auto_recovery = enable_error_recovery
         )
       })
       
-      # Create periodic backup system
       backup_observer <- tryCatch({
         if (exists("create_periodic_backup") && is.function(create_periodic_backup)) {
           create_periodic_backup(backup_interval = 300)  # 5 minutes
@@ -1032,11 +644,9 @@ launch_study <- function(
         NULL
       })
       
-      # Start periodic backup monitoring (with fallback)
       if (session_save && exists("start_data_preservation_monitoring") && is.function(start_data_preservation_monitoring)) {
         tryCatch({
           start_data_preservation_monitoring()
-          # logger("Periodic data preservation monitoring started", level = "INFO") # Disabled to reduce spam
         }, error = function(e) {
           logger(sprintf("Failed to start data preservation monitoring: %s", e$message), level = "WARNING")
         })
@@ -1044,7 +654,6 @@ launch_study <- function(
         logger("Session saving enabled (basic mode)", level = "INFO")
       }
       
-      # Log session initialization (with fallback)
       if (session_save && exists("log_session_event") && is.function(log_session_event)) {
         tryCatch({
           log_session_event(
@@ -1111,7 +720,8 @@ launch_study <- function(
     logger(base::sprintf("Setting default adaptive_start: %d", config$adaptive_start))
   }
 
-  # Use new get_theme_css for all theming
+  # theme_config is not passed on: get_theme_css() expects a nested list
+  # (colors$primary, ...) and would replace the theme's whole :root block.
   theme_css <- get_theme_css(
     theme = config$theme %||% "Light",
     custom_css = custom_css
@@ -1119,7 +729,7 @@ launch_study <- function(
   
   if (config$model == "1PL") item_bank$a <- base::rep(1, base::nrow(item_bank))
   
-  # Enhanced CSS with theme variables
+  # Base layout CSS using the theme's CSS variables
   enhanced_css <- paste0(theme_css, "
     body { 
       font-family: var(--font-family);
@@ -1205,7 +815,7 @@ launch_study <- function(
       background-color: var(--button-hover-color, var(--secondary-color));
     }
     
-    /* Override Bootstrap button colors for Hildesheim theme */
+    /* Use the theme colors for Bootstrap buttons (all themes) */
     .btn-primary {
       background-color: var(--primary-color) !important;
       border-color: var(--primary-color) !important;
@@ -1420,8 +1030,7 @@ launch_study <- function(
     }
   ")
   
-  # Get language labels from the multilingual system
-  # Start with default language (German for Hildesheim)
+  # Interface labels; the default language is German when config$language is unset
   default_language <- config$language %||% "de"
   ui_labels <- get_language_labels(default_language)
   
@@ -1430,9 +1039,11 @@ launch_study <- function(
     if (requireNamespace("shinyjs", quietly = TRUE)) shinyjs::useShinyjs(),
   
     
-    # ULTIMATE CORNER FLASH ELIMINATION - ALL METHODS COMBINED!
+    # Layout CSS/JS that keeps page content centred while Shiny swaps pages
+    # (prevents content from briefly appearing in the top-left corner).
     shiny::tags$head(
-      # Logging JavaScript for testing center data collection
+      # With config$log_data = TRUE: record input changes, button clicks,
+      # tab visibility changes and a count of mouse movements.
       if (config$log_data %||% FALSE) {
         shiny::tags$script(shiny::HTML(paste0("
           $(document).ready(function() {
@@ -1478,7 +1089,7 @@ launch_study <- function(
         ")))
       },
       shiny::tags$style(shiny::HTML("
-        /* NUCLEAR UNIVERSAL RESET - FORCE EVERYTHING TO CENTER.
+        /* Reset positioning of all elements so content stays centred.
            Slider internals (.irs, from shiny::sliderInput) are excluded: they
            are positioned absolutely by design and break completely otherwise. */
         *:not(.irs):not(.irs *) {
@@ -1496,7 +1107,7 @@ launch_study <- function(
           overflow-x: hidden !important;
         }
         
-        /* FORCE ALL SHINY ELEMENTS TO CENTER */
+        /* Centre the Shiny output containers */
         .page-wrapper, .assessment-card, #study_ui, 
         .shiny-html-output, .shiny-bound-output, #stable-page-container,
         .container-fluid, #main-study-container, .shiny-output-binding {
@@ -1511,7 +1122,7 @@ launch_study <- function(
           display: block !important;
         }
         
-        /* OVERRIDE ANY POSITIONING ATTEMPTS */
+        /* Override inline absolute/fixed positioning */
         [style*='position: absolute']:not(.irs *), [style*='position: fixed']:not(.irs *),
         [style*='left:']:not(.irs *), [style*='right:']:not(.irs *), [style*='top:']:not(.irs *) {
           position: relative !important;
@@ -1522,7 +1133,7 @@ launch_study <- function(
           transform: none !important;
         }
         
-        /* PERFECT PROGRESS CIRCLE - MULTIPLE APPROACHES */
+        /* Progress circle */
         .progress-circle-gradient {
           position: relative !important;
           width: 120px !important;
@@ -1567,27 +1178,25 @@ launch_study <- function(
           max-width: 300px !important;
         }
         
-        /* IMMEDIATE VISIBILITY */
+        /* Overridden by the #study_ui rules in the next <head> block */
         #study_ui {
           visibility: visible !important;
           opacity: 1 !important;
         }
         
-        /* SPINNER ANIMATION */
+        /* Spinner animation */
         @keyframes spin {
           0% { transform: rotate(0deg) !important; }
           100% { transform: rotate(360deg) !important; }
         }
       ")),
       
-      # DEBUG MODE: Include optimized debug mode script
+      # Debug shortcuts (empty unless debug_mode = TRUE)
       generate_debug_mode_js(debug_mode),
-      
-      # JAVASCRIPT: ULTIMATE positioning enforcement
+
+      # Re-apply centred positioning to page containers as they are added
       shiny::tags$script(shiny::HTML("
-        // IMMEDIATE EXECUTION - Multiple layers of protection
         (function() {
-          // FORCE CENTER POSITIONING FUNCTION
           function forceCenter(element) {
             if (element && element.style) {
               element.style.position = 'relative';
@@ -1601,13 +1210,11 @@ launch_study <- function(
             }
           }
           
-          // AGGRESSIVE MUTATION OBSERVER
           var observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
               if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach(function(node) {
                   if (node.nodeType === 1) { // Element node
-                    // Apply to ALL main containers
                     var isMainContainer = (
                       (node.classList && (
                         node.classList.contains('page-wrapper') ||
@@ -1658,7 +1265,7 @@ launch_study <- function(
             document.addEventListener('DOMContentLoaded', startCenterObserver, { once: true });
           }
           
-          // PERIODIC ENFORCEMENT - every 100ms
+          // Re-applied every 100 ms for the lifetime of the page
           setInterval(function() {
             var elements = document.querySelectorAll('.page-wrapper, .assessment-card, #study_ui, #stable-page-container');
             for (var i = 0; i < elements.length; i++) {
@@ -1666,7 +1273,6 @@ launch_study <- function(
             }
           }, 100);
           
-                     // IMMEDIATE APPLICATION on DOM ready
            document.addEventListener('DOMContentLoaded', function() {
              setTimeout(function() {
                var elements = document.querySelectorAll('.page-wrapper, .assessment-card, #study_ui, #stable-page-container');
@@ -1675,17 +1281,14 @@ launch_study <- function(
                }
              }, 1);
            });
-           
-                     // DIRECT CONTENT DISPLAY - No loading screens, maximum efficiency
-          console.log('\u2705 Direct content display - no loading animations');
         })();
       "))
     ),
 
           shiny::tags$head(
-      # CRITICAL: Prevent corner flash - must be FIRST CSS rule
+      # Keep #study_ui hidden until it has been positioned (class "positioned")
       shiny::tags$style(shiny::HTML("
-        /* IMMEDIATE CORNER FLASH PREVENTION - Applied before any other CSS */
+        /* Prevents content from flashing in the top-left corner */
         * {
           box-sizing: border-box;
         }
@@ -2460,10 +2063,9 @@ launch_study <- function(
         ")),
         
         shiny::tags$meta(name = "viewport", content = "width=device-width, initial-scale=1, maximum-scale=5"),
+      # Loaded from Google's servers, so participants' browsers contact Google.
       shiny::tags$link(href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap", rel = "stylesheet"),
-      # Include Plotly for interactive plots
-      shiny::tags$script(src = "https://cdn.plot.ly/plotly-latest.min.js"),
-      # Add custom CSS if provided
+      # config$custom_css is added in addition to the custom_css argument
       if (!is.null(config$custom_css)) {
         shiny::tags$style(shiny::HTML(config$custom_css))
       },
@@ -2476,22 +2078,11 @@ launch_study <- function(
       "))
 
     ),
-    # Remove blocking loading screen - let Shiny's natural loading work
-    # shiny::div(
-    #   id = "loading-screen",
-    #   class = "loading-screen",
-    #   style = "display: none;",  # Hidden by default
-    #   shiny::div(
-    #     class = "loading-content",
-    #     shiny::div(class = "loading-spinner")
-    #   )
-    # ),
     if (is.character(config$theme) && tolower(config$theme) == "hildesheim") shiny::div(class = "hildesheim-logo"),
     # Session status indicator for session saving
     if (session_save) {
       shiny::uiOutput("session_status_ui")
     },
-    # DEBUG MODE PANEL - Visible UI for debug mode
     if (isTRUE(debug_mode)) {
       shiny::div(
         id = "debug-mode-panel",
@@ -2503,82 +2094,45 @@ launch_study <- function(
   )
   
   server <- function(input, output, session) {
-    # LATER PACKAGE: IMMEDIATE UI DISPLAY - Show UI first, load everything else later
-    if (immediate_ui) {
-      cat("LATER: Server starting with immediate UI mode\n")
-      
-      # Create immediate UI loop
-      server_loop <- later::create_loop()
-      
-      # Display UI immediately with zero delay
-      later::later(function() {
-        cat("LATER: UI rendered immediately in server\n")
-      }, delay = 0, loop = server_loop)
-      
-      # Force immediate execution
-      later::run_now(loop = server_loop)
-    }
-    
-    # ULTRA-FAST STARTUP: Show UI immediately, initialize everything else later
-    
-    # Smooth stage transition helper
-    smooth_stage_transition <- function(rv, new_stage) {
-      # Prevent rapid stage changes that cause UI flicker
-      rv$stage <- new_stage
-      # Force UI update with minimal delay
-      shiny::invalidateLater(10, session)
-    }
-    
-    # Initialize package loading state
     .packages_loaded <- FALSE
-    
-    # Define package loading function
+
     .load_packages_once <- function() {
       if (!.packages_loaded) {
-        # Load packages immediately without delay
         safe_load_packages(immediate = TRUE)
         .packages_loaded <<- TRUE
       }
     }
     
-    # CRITICAL: Session isolation - ensure each user gets a completely fresh session
+    # Per-session state ----
+    # The flag lives in launch_study()'s environment, so this block runs only
+    # for the first session; it also switches on the per-session
+    # initialization below for all later sessions.
     if (exists(".force_new_session") && .force_new_session) {
-      # Clear any existing session data to prevent session sharing
       session$userData$logging_data <- NULL
       session$userData$session_dataset <- NULL
-      
-      # Force new session initialization
       .needs_session_init <<- TRUE
-      .force_new_session <<- FALSE  # Reset flag
-      
-      logger("CRITICAL: Forcing new session to prevent session sharing", level = "WARNING")
+      .force_new_session <<- FALSE
     }
-    
-    # Step 1: Create minimal reactive values (no computation!)
+
     current_language <- shiny::reactiveVal(default_language)
     reactive_ui_labels <- shiny::reactiveVal(ui_labels)
     heavy_computations_done <- shiny::reactiveVal(FALSE)
     
-    # Step 2: Render UI with ADVANCED later optimization - maximum speed
     output$study_ui <- shiny::renderUI({
-      # ADVANCED later package optimization - background loading
+      # Load optional package namespaces after the first render
       if (!.packages_loaded && has_later) {
-        # Use later for efficient background loading
         later::later(function() {
           .load_packages_once()
-          # Force immediate execution to prevent any delays
           later::run_now(timeoutSecs = 0, all = TRUE)
-        }, delay = 0)  # ZERO delay with later - maximum efficiency
+        }, delay = 0)
       }
-      
-      # Return standard container - preserves existing functionality
+
       shiny::div(
         id = "main-study-container",
         style = "min-height: 500px; width: 100%; max-width: 100%; margin: 0 auto; padding: 0; position: relative; overflow: hidden;",
         shiny::uiOutput("page_content"),
-        # Global scroll-to-top script that runs on every page load
+        # Scroll to the top whenever Shiny updates an output
         shiny::tags$script(shiny::HTML("
-          // Global scroll-to-top function for web browsers
           function forceScrollToTop() {
             try {
               window.scrollTo(0, 0);
@@ -2608,14 +2162,10 @@ launch_study <- function(
       )
     })
     
-    # Step 3: Do initialization AFTER UI is shown
+    # Per-session initialization, run after the first render
     if (has_later) {
       later::later(function() {
-        # Initialize session management if needed (was deferred from startup)
         if (exists(".needs_session_init") && .needs_session_init) {
-          logger("Initializing robust session management", level = "INFO")
-          
-          # Generate unique session ID with enhanced isolation
           timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S_%OS3")
           process_id <- Sys.getpid()
           random_suffix <- paste(sample(c(letters, LETTERS, 0:9), 12, replace = TRUE), collapse = "")
@@ -2631,27 +2181,26 @@ launch_study <- function(
             log_file = NULL
           )
           
-          # Ensure complete data isolation - generate unique participant code for this session
+          # Session-specific key. Stored per session: assigning it to the
+          # shared study_key (as before) appended a new suffix for every
+          # participant.
           if (!is.null(study_key)) {
-            # Create session-specific participant code to prevent conflicts
-            session_specific_key <- paste0(study_key, "_", substr(unique_session_id, -8, -1))
-            study_key <<- session_specific_key
-            logger(sprintf("Generated session-specific participant code: %s", study_key), level = "INFO")
+            session_specific_key <- paste0(study_key, "_", substr(unique_session_id, nchar(unique_session_id) - 7, nchar(unique_session_id)))
+            session$userData$session_study_key <- session_specific_key
+            logger(sprintf("Session-specific study key: %s", session_specific_key), level = "INFO")
           }
-          
-          # Initialize fresh session-specific logging data (server scope)
+
           session$userData$logging_data <- new.env(parent = emptyenv())
           session$userData$logging_data$session_id <- unique_session_id
           session$userData$logging_data$session_start <- Sys.time()
           session$userData$logging_data$current_page_start <- Sys.time()
           
-          logger(sprintf("Complete data isolation ensured for session: %s", unique_session_id), level = "INFO")
-          
           logger(sprintf("Session initialized: %s (max time: %d seconds)", 
                         session_config$session_id, session_config$max_time), level = "INFO")
         }
         
-        # Do model conversion if needed (was deferred from startup)
+        # Note: the assignments to item_bank below create a copy local to
+        # this callback, so they do not change the item bank the app uses.
         if (exists(".needs_conversion") && .needs_conversion) {
           logger("Converting GRM item bank for dichotomous model", level = "INFO")
           
@@ -2672,14 +2221,12 @@ launch_study <- function(
           }
         }
         
-        # Now do the heavy initialization in background
         session$userData$heavy_init_complete <- TRUE
         heavy_computations_done(TRUE)
-        logger("Heavy initialization complete", level = "DEBUG")
-        
-        # Force immediate execution to complete initialization
+        logger("Session initialization complete", level = "DEBUG")
+
         later::run_now(timeoutSecs = 0, all = TRUE)
-      }, delay = 0)  # ZERO delay - immediate execution
+      }, delay = 0)
     }
     
     # Single language observer - handles language switching efficiently
@@ -2760,20 +2307,17 @@ launch_study <- function(
       }
     }, ignoreInit = TRUE)
     
-    # Observe PDF download trigger - Universal solution for all studies
-    # This uses JavaScript to capture the CURRENT HTML DOM and send it to server for PDF conversion
-    # NO recalculation happens - we screenshot what's already rendered
+    # "Download PDF Report": the report's HTML and CSS are sent to the server
+    # (input$pdf_html_content), but no PDF is generated from them; the
+    # observer below only opens the browser's print dialog.
     shiny::observeEvent(input$download_pdf_trigger, {
       if (isTRUE(getOption("inrep.debug", FALSE))) cat("PDF download triggered\n")
       
-      # Show notification that PDF is being generated
       shiny::showNotification("Capturing report for PDF...", type = "message", duration = 3)
-      
+
       tryCatch({
-        # Step 1: Use JavaScript to send the CURRENTLY DISPLAYED HTML to server
         if (requireNamespace("shinyjs", quietly = TRUE)) {
           shinyjs::runjs("
-            // Capture the CURRENT rendered HTML content (no recalculation!)
             var reportContent = document.getElementById('report-content');
             if (!reportContent) {
               // Fallback: try to find main content area
@@ -2781,10 +2325,7 @@ launch_study <- function(
             }
             
             if (reportContent) {
-              // Get the full rendered HTML including computed styles
               var htmlContent = reportContent.outerHTML;
-              
-              // Get all computed styles to preserve appearance
               var styles = Array.from(document.styleSheets)
                 .map(sheet => {
                   try {
@@ -2815,12 +2356,11 @@ launch_study <- function(
       })
     })
     
-    # Step 2: Trigger browser print dialog (simple and always works!)
+    # Open the browser's print dialog, from which the participant can save a PDF
     shiny::observeEvent(input$pdf_html_content, {
       if (isTRUE(getOption("inrep.debug", FALSE))) cat("PDF download: Using browser print dialog\n")
-      
+
       tryCatch({
-        # Just trigger browser print - user can save as PDF
         if (requireNamespace("shinyjs", quietly = TRUE)) {
           shinyjs::runjs("window.print();")
           shiny::showNotification("Use your browser's print dialog to save as PDF (Ctrl+P or Cmd+P)", type = "message", duration = 5)
@@ -2834,14 +2374,13 @@ launch_study <- function(
       })
     })
     
-    # Observe CSV download trigger - Universal solution for all studies
+    # CSV export of the participant's data, triggered from page JavaScript
     shiny::observeEvent(input$download_csv_trigger, {
       if (isTRUE(getOption("inrep.debug", FALSE))) cat("CSV download triggered\n")
       
       shiny::showNotification("Generating CSV export...", type = "message", duration = 2)
       
       tryCatch({
-        # Collect all data - use same format as cloud storage
         csv_data <- data.frame(
           timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
           session_id = rv$unique_session_id %||% paste0("session_", format(Sys.time(), "%Y%m%d_%H%M%S")),
@@ -2960,49 +2499,20 @@ launch_study <- function(
       })
     })
     
-    # IMMEDIATE UI DISPLAY - Show first page before package loading using later package
-    if (isTRUE(list(...)$immediate_ui) || isTRUE(config$immediate_ui)) {
-      cat("IMMEDIATE UI DISPLAY ENABLED - using later package\n")
-      
-      # Create private event loop for immediate display
-      immediate_loop <- later::create_loop()
-      
-      # Display UI immediately with zero delay
-      later::later(function() {
-        cat("IMMEDIATE: First page displayed NOW\n")
-        # Force UI to render immediately
-        if (exists("rv") && !is.null(rv)) {
-          rv$session_active <- TRUE
-          rv$initialized <- TRUE
-        }
-      }, delay = 0, loop = immediate_loop)
-      
-      # Run the immediate display now
-      later::run_now(loop = immediate_loop)
-      
-      # Schedule background loading with later
-      later::later(function() {
-        cat("BACKGROUND: Starting heavy initialization\n")
-        # Heavy initialization happens here in background
-      }, delay = 0.001)
-    }
-    
-      # Generate study key
   generate_study_key <- function() {
     generate_uuid()
   }
-  
-  # IMMEDIATE SYNCHRONOUS INITIALIZATION - No reactive dependencies
+
   rv <- shiny::reactiveValues()
-  
-  # CRITICAL: Store webdav_url and password in rv for later access (e.g., in render_results_page)
-  # This ensures cloud save works even when user selects "no" to see results
+
+  # WebDAV settings are kept in rv so that the results pages
+  # (render_results_page) can upload, also when the participant chooses not
+  # to see the results.
   rv$webdav_url <- webdav_url
   rv$webdav_password <- password
   rv$webdav_share_token <- webdav_share_token
   rv$webdav_user <- webdav_user
 
-  # Register session objects for robust preservation (avoid .GlobalEnv scraping)
   tryCatch({
     if (exists("register_session_objects") && is.function(register_session_objects)) {
       register_session_objects(
@@ -3013,44 +2523,34 @@ launch_study <- function(
     }
   }, error = function(e) {})
   
-  # CRITICAL: Ensure complete session isolation - each user gets fresh data
-  # Generate unique session ID first
-  unique_session_id <- paste0("USER_", format(Sys.time(), "%Y%m%d_%H%M%S_%OS3"), "_", 
+  unique_session_id <- paste0("USER_", format(Sys.time(), "%Y%m%d_%H%M%S_%OS3"), "_",
                               paste0(sample(c(letters, LETTERS, 0:9), 12, replace = TRUE), collapse = ""))
-  
-  # Clear any existing session data to prevent session sharing
+
   rv$session_isolation_enforced <- TRUE
   rv$session_start_time <- Sys.time()
   rv$unique_session_id <- unique_session_id
-  
-  # =============================================================================
-  # WATCHDOG: Simple maximum session time enforcement
-  # =============================================================================
-  # Shuts down session after absolute maximum time (2 hours default)
-  # This prevents stuck sessions from blocking shinyapps.io resources
-  # Does NOT interfere with normal app operation
-  rv$session_start_time <- Sys.time()
-  rv$max_session_duration <- 7200  # 2 hours in seconds
-  
-  # Simple timer check every 60 seconds
+
+  # Maximum session time ----
+  # Checked once a minute; the session is closed after max_session_time
+  # seconds. (This was hard-coded to 7200 s and ignored max_session_time.)
+  rv$max_session_duration <- max_session_time %||% 7200
+
   shiny::observe({
-    shiny::invalidateLater(60000, session)  # Check every minute
-    
+    shiny::invalidateLater(60000, session)
+
     session_duration <- as.numeric(difftime(Sys.time(), rv$session_start_time, units = "secs"))
-    
-    # Absolute maximum: 2 hours
+
     if (session_duration > rv$max_session_duration) {
-      logger(sprintf("WATCHDOG: Maximum session time reached (%.0f seconds) - ending session", session_duration), level = "INFO")
-      
+      logger(sprintf("Maximum session time reached (%.0f seconds) - ending session", session_duration), level = "INFO")
+
       .inrep_end_session(session)
     }
   })
-  
-  # =============================================================================
-  # AUTO-SKIP: Automatically skip forward when landing on a skipped page
-  # =============================================================================
-  # This handles the case where user navigates to a page that should be skipped
-  # (e.g., page 7 when PA items weren't answered on page 6)
+
+  # Skipped pages ----
+  # If the current page is listed in rv$skipped_pages (for example an
+  # adaptive page whose prerequisite items were not answered), move forward
+  # to the next page that is not skipped.
   shiny::observe({
     req(rv$current_page)
     
@@ -3074,36 +2574,31 @@ launch_study <- function(
     }
   })
   
-  # =============================================================================
-  
-  # Log session isolation for security
-  logger(sprintf("CRITICAL: Session isolation enforced. New user session: %s", unique_session_id), level = "WARNING")
-  
-  # Variables needed for session management (define immediately)
+  logger(sprintf("New participant session: %s", unique_session_id), level = "INFO")
+
+  # Local session file ----
+  # All sessions of a study share study_data/<study_key>/session.rds (a new
+  # key is generated per session only when no study_key is given). Any
+  # existing file is deleted when a new session starts.
   effective_study_key <- study_key %||% config$study_key %||% generate_study_key()
   data_dir <- base::file.path("study_data", effective_study_key)
   if (!base::dir.exists(data_dir)) base::dir.create(data_dir, recursive = TRUE)
   session_file <- base::file.path(data_dir, "session.rds")
   
-  # CRITICAL: Check for existing session data and prevent access
   if (base::file.exists(session_file)) {
-    # Check if session file is recent (within last 5 minutes)
     file_time <- file.mtime(session_file)
     time_diff <- as.numeric(difftime(Sys.time(), file_time, units = "mins"))
-    
+
     if (time_diff < 5) {
-      # Recent session exists - this could be session sharing!
-      logger(sprintf("CRITICAL: Recent session file detected (%.1f minutes old). Preventing session sharing!", time_diff), level = "WARNING")
-      
-      # Remove the existing session file to prevent access
+      logger(sprintf("Session file is %.1f minutes old and is removed; another participant may still be writing to it", time_diff), level = "WARNING")
+
       tryCatch({
         file.remove(session_file)
-        logger("Removed existing session file to prevent session sharing", level = "WARNING")
+        logger("Removed existing session file", level = "WARNING")
       }, error = function(e) {
         logger(sprintf("Failed to remove existing session file: %s", e$message), level = "ERROR")
       })
     } else {
-      # Old session file - safe to remove
       tryCatch({
         file.remove(session_file)
         logger("Removed old session file", level = "INFO")
@@ -3113,7 +2608,7 @@ launch_study <- function(
     }
   }
   
-  # POPULATE rv IMMEDIATELY - No observe, no async, no delays
+  # Initial participant state
   rv$demo_data <- base::as.list(stats::setNames(base::rep(NA, base::length(config$demographics)), config$demographics))
   rv$config <- config  # Store config in rv for access by validation functions
   rv$language <- config$language %||% "de"  # Initialize language in rv
@@ -3176,13 +2671,14 @@ launch_study <- function(
   rv$error_message <- NULL
   rv$feedback_message <- NULL
   rv$item_info_cache <- base::list()
-  rv$session_active <- TRUE  # ALWAYS TRUE from start
+  rv$session_active <- TRUE
   rv$submission_in_progress <- FALSE
   rv$submission_lock_time <- NULL
   rv$last_submission_time <- NULL
-  rv$initialized <- TRUE  # ALWAYS initialized from start
-  
-  # Session restoration (immediate, not in observe)
+  rv$initialized <- TRUE
+
+  # Session restoration. Note: an existing session_file was deleted above,
+  # so in practice nothing is restored here.
   if (config$session_save && base::file.exists(session_file)) {
     base::tryCatch({
       saved_state <- base::readRDS(session_file)
@@ -3193,30 +2689,36 @@ launch_study <- function(
     })
   }
 
-  # Unified storage pipeline for all session persistence paths.
+  # Storage for all session persistence paths. Local saving requires
+  # session_save (argument and config); the WebDAV upload at the end of the
+  # built-in assessment only requires webdav_url.
   run_storage_pipeline <- function(trigger = "event", force = FALSE, include_cloud = FALSE) {
-    if (!isTRUE(session_save) || !isTRUE(config$session_save)) {
+    save_local <- isTRUE(session_save) && isTRUE(config$session_save)
+    save_cloud <- isTRUE(include_cloud) && !base::is.null(webdav_url)
+    if (!save_local && !save_cloud) {
       return(invisible(FALSE))
     }
 
     preserved <- FALSE
 
-    if (exists("preserve_session_data") && is.function(preserve_session_data)) {
-      preserved <- isTRUE(tryCatch({
-        preserve_session_data(force = force)
+    if (save_local) {
+      if (exists("preserve_session_data") && is.function(preserve_session_data)) {
+        preserved <- isTRUE(tryCatch({
+          preserve_session_data(force = force)
+        }, error = function(e) {
+          logger(sprintf("Storage pipeline preserve failed [%s]: %s", trigger, e$message), level = "ERROR")
+          FALSE
+        }))
+      }
+
+      tryCatch({
+        base::saveRDS(shiny::reactiveValuesToList(rv), session_file)
       }, error = function(e) {
-        logger(sprintf("Storage pipeline preserve failed [%s]: %s", trigger, e$message), level = "ERROR")
-        FALSE
-      }))
+        logger(sprintf("Storage pipeline local save failed [%s]: %s", trigger, e$message), level = "WARNING")
+      })
     }
 
-    tryCatch({
-      base::saveRDS(shiny::reactiveValuesToList(rv), session_file)
-    }, error = function(e) {
-      logger(sprintf("Storage pipeline local save failed [%s]: %s", trigger, e$message), level = "WARNING")
-    })
-
-    if (isTRUE(include_cloud) && !base::is.null(webdav_url)) {
+    if (save_cloud) {
       tryCatch({
         save_session_to_cloud(rv, config, webdav_url, password, session = session,
                               share_token = webdav_share_token, user = webdav_user)
@@ -3228,23 +2730,20 @@ launch_study <- function(
     invisible(preserved)
   }
   
-  logger("rv initialized IMMEDIATELY (synchronous) - no observe needed", level = "DEBUG")
-    
-    # Defer session monitoring until after first page loads
+  logger("Participant state initialized", level = "DEBUG")
+
     if (session_save) {
-      # Start session monitoring immediately
-      # Session timeout monitoring
+      # Timeout check with data preservation. This observer has no timer:
+      # it re-runs only when rv$session_start changes (start, restart). The
+      # per-minute check above is what enforces max_session_time.
       shiny::observe({
-          # Check session timeout
           if (base::difftime(base::Sys.time(), rv$session_start, units = "secs") > max_session_time) {
             rv$session_active <- FALSE
             rv$stage = "timeout"
             logger("Session timed out due to maximum session time", level = "WARNING")
             
-            # Force final data preservation through unified storage pipeline.
             run_storage_pipeline(trigger = "session_timeout", force = TRUE, include_cloud = FALSE)
-            
-            # Close browser/tab first
+
             tryCatch({
               if (requireNamespace("shinyjs", quietly = TRUE)) {
                 # window.close() silently no-ops (no exception) on a tab opened
@@ -3266,17 +2765,14 @@ launch_study <- function(
               logger(sprintf("Browser close failed: %s", e$message), level = "WARNING")
             })
             
-            # Stop the Shiny app and terminate R script
             logger("Ending participant session due to timeout", level = "INFO")
             tryCatch({
-              # Schedule app stop after a brief delay to allow data save
               later::later(function() .inrep_end_session(session), delay = 2)
             }, error = function(e) {
               logger(sprintf("App stop failed: %s", e$message), level = "ERROR")
             })
           }
         
-        # Update activity tracking
         if (exists("update_activity") && is.function(update_activity)) {
           tryCatch({
             update_activity()
@@ -3284,55 +2780,28 @@ launch_study <- function(
             logger(sprintf("Activity update failed: %s", e$message), level = "WARNING")
           })
         }
-      })  # Close observe
-      
-      # Automatic data preservation - converted to event-based instead of timer-based
-      # This prevents page jumping while still preserving data on important events
+      })
+
+      # Save on page changes and responses (a timer-based save made the page
+      # jump to the top)
       observe_data_preservation <- function() {
         if (rv$session_active) {
           run_storage_pipeline(trigger = "event_monitor", force = FALSE, include_cloud = FALSE)
         }
       }
       
-      # Preserve data on page changes instead of timer
       shiny::observeEvent(rv$current_page, {
         observe_data_preservation()
       }, ignoreInit = TRUE)
-      
-      # Preserve data on responses
+
       shiny::observeEvent(rv$responses, {
         observe_data_preservation()
       }, ignoreInit = TRUE)
     }
-    
-    # Session status monitoring - DISABLED timer-based monitoring
-    # Session is still saved but without constant UI updates that cause page jumping
-    if (session_save) {
-      # Log once that session monitoring is active
-      if (exists("get_session_status") && is.function(get_session_status)) {
-        # logger("Session monitoring active (event-based)", level = "INFO") # Disabled to reduce spam
-      } else {
-        # logger("Session monitoring active (basic mode)", level = "INFO") # Disabled to reduce spam
-      }
-      
-      # Session status is checked on events, not on timer
-      # This prevents the page from jumping to top
-    }
-    
-    
-    # Keep-alive mechanism - DISABLED (already started in initialize_robust_session)
-    # This was causing duplicate observers and SESSION_TERMINATED messages
-    # if (session_save && exists("start_keep_alive_monitoring") && is.function(start_keep_alive_monitoring)) {
-    #   tryCatch({
-    #     start_keep_alive_monitoring()
-    #     # Log once at startup, then run silently
-    #     logger("Keep-alive monitoring started (running silently)", level = "INFO")
-    #   }, error = function(e) {
-    #     logger(sprintf("Failed to start keep-alive monitoring: %s", e$message), level = "WARNING")
-    #   })
-    # }
-    
-    # Session status UI (hidden by default - only shows when explicitly enabled)
+
+    # Keep-alive monitoring is started once in initialize_robust_session().
+
+    # Session status indicator, shown only with config$show_session_time = TRUE
     if (session_save && isTRUE(config$show_session_time)) {
       output$session_status_ui <- shiny::renderUI({
         if (exists("get_session_status") && is.function(get_session_status)) {
@@ -3364,7 +2833,7 @@ launch_study <- function(
             )
           })
         } else {
-          # Basic status when advanced functions not available
+          # Without get_session_status()
           shiny::div(
             class = "session-status-indicator",
             style = "position: fixed; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 6px; font-size: 12px; opacity: 0; animation: fadeInIndicator 0.5s ease-out 0.5s forwards;",
@@ -3380,17 +2849,12 @@ launch_study <- function(
       })
     }
     
-    # Session cleanup when app stops (with fallback)
+    # Save local data when the participant's session ends (session_save only)
     session$onSessionEnded(function() {
-      # CRITICAL: ALWAYS preserve data when session ends, regardless of errors
       if (session_save) {
-        logger("Session ending - cleaning up and preserving final data", level = "INFO")
-        
-        # Always preserve data through unified pipeline first.
+        logger("Session ending - saving final data", level = "INFO")
         run_storage_pipeline(trigger = "session_end", force = TRUE, include_cloud = FALSE)
-        logger("Data preserved on session end", level = "INFO")
-        
-        # Then try cleanup if available
+
         if (exists("cleanup_session") && is.function(cleanup_session)) {
           tryCatch({
             cleanup_session(save_final_data = TRUE)
@@ -3408,7 +2872,7 @@ launch_study <- function(
       }
     })
     
-    # Handle browser disconnect (with fallback)
+    # Record activity after each flush to the browser
     session$onFlush(function() {
       if (session_save && exists("update_activity") && is.function(update_activity)) {
         tryCatch({
@@ -3418,16 +2882,11 @@ launch_study <- function(
         })
       }
     })
-    
-    # Note: Legacy session monitoring removed - all monitoring is now event-based
-    
 
-    
     get_item_content <- function(item_idx) {
-      # Get current language dynamically
       lang <- current_language()
-      
-      # Check for Hildesheim bilingual items first
+
+      # Bilingual item banks: English wording in a Question_EN column
       if ("Question_EN" %in% names(item_bank) && lang == "en") {
         item <- item_bank[item_idx, ]
         item$Question <- item$Question_EN
@@ -3466,22 +2925,14 @@ launch_study <- function(
         (base::length(rv$administered) >= config$max_items || rv$current_se <= config$min_SEM)
     }
     
-    # Package loading function already defined above
-    
-    # REMOVED: Duplicate output$study_ui definition that was overriding the instant one
-    # The first definition now handles everything including package loading
-      
-      # Separate reactive output for page content
+      # Content of the current stage or page
       output$page_content <- shiny::renderUI({
-        # Dependencies
         current_page <- rv$current_page
         stage <- rv$stage
         
         logger(sprintf("page_content rendering: stage=%s, page=%s, session_active=%s, initialized=%s", 
                stage %||% "NULL", current_page %||% "NULL", rv$session_active %||% "NULL", rv$initialized %||% "NULL"), level = "DEBUG")
 
-        # rv is ALWAYS initialized now (synchronous), so no need to check
-        # Check session_active only
         if (!isTRUE(rv$session_active)) {
           logger("Session not active - showing timeout message", level = "DEBUG")
           return(
@@ -3495,9 +2946,10 @@ launch_study <- function(
           )
         }
         
-                  # STABLE container with IMMEDIATE positioning
+          # The container id stays the same across pages; the positioning
+          # scripts in the page head rely on it.
           shiny::div(
-            id = "stable-page-container", # \u2190 NEVER CHANGES!
+            id = "stable-page-container",
             class = "page-wrapper",
             style = "width: 100% !important; max-width: 1200px !important; margin: 0 auto !important; position: relative !important; left: 0 !important; right: 0 !important; top: 0 !important; transform: none !important; display: block !important;",
           base::switch(stage,
@@ -3533,20 +2985,18 @@ launch_study <- function(
                         demo_config <- config$demographic_configs[[dem]]
                       }
                       
-                      # CHECK FOR HTML CONTENT - NEW FEATURE!
+                      # A demographic entry with html_content is shown as raw HTML
                       if (!base::is.null(demo_config) && !base::is.null(demo_config$html_content)) {
                         if (isTRUE(getOption("inrep.debug", FALSE))) cat("DEBUG: Found HTML content in demographics stage for", dem, "\n")
                         if (isTRUE(getOption("inrep.debug", FALSE))) cat("DEBUG: HTML content length:", nchar(demo_config$html_content), "\n")
-                        
-                        # Return raw HTML content instead of normal form field
+
                         return(shiny::div(
                           class = "demographic-field custom-html-content",
                           shiny::HTML(demo_config$html_content)
                         ))
                       }
                       
-                      # NORMAL FIELD CREATION (existing code)
-                      # Use question from config with language support
+                      # Label text: question_en (English), question, label, or the field name
                       current_lang <- rv$language %||% config$language %||% "de"
                       label_text <- if (current_lang == "en" && !base::is.null(demo_config$question_en)) {
                         demo_config$question_en
@@ -3689,7 +3139,8 @@ launch_study <- function(
                        shiny::tagList(
                          shiny::h3(ui_labels$instructions_title, class = "card-header"),
                          shiny::p(ui_labels$instructions_text, class = "welcome-text"),
-                         shiny::p("The assessment will adapt based on your responses.", class = "welcome-text")
+                         # Only true for an adaptive study
+                         if (isTRUE(config$adaptive)) shiny::p("The assessment will adapt based on your responses.", class = "welcome-text")
                        )
                      }
                      
@@ -3706,7 +3157,7 @@ launch_study <- function(
                      logger(sprintf("Rendering assessment UI - stage: %s, current_item: %s", rv$stage, rv$current_item))
                      
                      if (base::is.null(rv$current_item)) {
-                       logger("ERROR: current_item is NULL in assessment stage - this is the problem!", level = "ERROR")
+                       logger("current_item is NULL in assessment stage; showing placeholder", level = "ERROR")
                                                 return(shiny::div(class = "assessment-card",
                                            shiny::h3(ui_labels$preparing, class = "card-header"),
                                          shiny::p(ui_labels$loading_question)))
@@ -3733,7 +3184,6 @@ launch_study <- function(
                          choices <- 1:5
                        }
                        
-                       # Use the enhanced get_response_labels function
                        labels <- get_response_labels(
                          scale_type = "likert",
                          choices = choices,
@@ -3801,7 +3251,7 @@ launch_study <- function(
                         )
                       }
                      progress_pct <- base::round((base::length(rv$administered) / (config$max_items %||% max(1, nrow(item_bank)))) * 100)
-                     # Resolve theme primary color once — used by bar, circle, and other progress styles
+                     # Theme primary color for the progress indicator
                      progress_theme_primary <- if (!is.null(theme_config) && !is.null(theme_config$primary_color)) {
                        theme_config$primary_color
                      } else if (is.character(config$theme) && nzchar(config$theme)) {
@@ -3962,11 +3412,10 @@ launch_study <- function(
                          shiny::div(class = "test-question", item$Question),
                          shiny::div(class = "radio-group-container", response_ui),
                          if (!base::is.null(rv$error_message)) shiny::div(class = "error-message", rv$error_message),
-                         # ROBUST ERROR BOUNDARY UI
                          shiny::uiOutput("error_boundary"),
                          if (!base::is.null(rv$feedback_message)) shiny::div(class = "feedback-message", rv$feedback_message),
                          shiny::div(class = "nav-buttons",
-                           # ROBUST SUBMIT BUTTON WITH DOUBLE-CLICK PROTECTION
+                           # The button is disabled for 2 s after a click
         shiny::div(
           style = "position: relative;",
           shiny::actionButton(
@@ -3975,7 +3424,6 @@ launch_study <- function(
             class = "btn-klee",
             onclick = "this.disabled = true; setTimeout(() => this.disabled = false, 2000);"
           ),
-          # Visual feedback for submission in progress
           shiny::uiOutput("submission_status")
         )
                          )
@@ -4073,8 +3521,7 @@ launch_study <- function(
                        ))
                      }
                      
-                     # Universal PDF Download Button (uses theme color)
-                     # Get theme primary color for button styling
+                     # PDF button in the theme's primary color
                      theme_primary_color <- "#667eea"  # Default color
                      if (!base::is.null(theme_config) && !base::is.null(theme_config$primary_color)) {
                        theme_primary_color <- theme_config$primary_color
@@ -4113,7 +3560,6 @@ launch_study <- function(
                         shiny::h4("Export Your Results", style = "color: var(--text-color); margin-bottom: 15px;"),
                          shiny::div(
                            style = "display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;",
-                           # Universal PDF Download Button (theme-colored)
                            shiny::tags$button(
                              onclick = "if(typeof Shiny !== 'undefined') { Shiny.setInputValue('download_pdf_trigger', Math.random(), {priority: 'event'}); } else { alert('Download not available'); }",
                              class = "btn btn-primary",
@@ -4187,7 +3633,7 @@ launch_study <- function(
         logger("Auto-close timer expired - closing app/tab/browser", level = "INFO")
         rv$auto_close_timer_active <- FALSE
 
-        # Universal auto-close JavaScript (best-effort; browser-dependent).
+        # Auto-close JavaScript (best effort; depends on the browser).
         # window.close() is a silent no-op (it does NOT throw) on a tab the
         # browser opened via normal navigation - which is every participant's
         # tab, since they reach the study through a plain URL, not a
@@ -4451,15 +3897,13 @@ launch_study <- function(
           se_history = if (config$adaptive) rv$se_history else NULL
         ))
         if (save_format == "pdf") {
-          safe_title <- gsub("[_%&#$]", "\\\\\\0", config$name)
+          safe_title <- gsub("([_%&#$])", "\\\\\\1", config$name)
           latex_content <- sprintf('
             \\documentclass{article}
             \\usepackage{geometry}
             \\usepackage{booktabs}
             \\usepackage[utf8]{inputenc}
             \\usepackage{amsmath}
-            \\usepackage{fontspec}
-            \\setmainfont{Inter}
             \\geometry{margin=0.75in}
             \\begin{document}
             
@@ -4610,7 +4054,7 @@ launch_study <- function(
       }
     )
     
-    # Logging observers for testing center data collection
+    # Paradata logging (config$log_data = TRUE), fed by the script in the page head
     if (config$log_data %||% FALSE) {
       # Track input changes
       shiny::observeEvent(input$log_input_change, {
@@ -4678,9 +4122,9 @@ launch_study <- function(
       handler <- current_page$completion_handler
       if (is.null(handler) || !is.function(handler)) return(invisible(NULL))
       tryCatch({
-        # ROBUST: Inspect handler formals and pass NAMED arguments so that
-        # handlers written as function(input, rv, ...) or
-        # function(session, rv, input, config) both work correctly.
+        # Pass arguments by name, according to the handler's formals, so that
+        # function(input, rv, ...) and function(session, rv, input, config)
+        # both work.
         handler_args <- tryCatch(names(formals(handler)), error = function(e) NULL)
         if (!is.null(handler_args)) {
           call_args <- list()
@@ -4774,7 +4218,7 @@ launch_study <- function(
           for (dem in demo_vars) {
             input_id <- paste0("demo_", dem)
             value <- input[[input_id]]
-            # FIX: Handle vectors (checkboxes) safely - check length first
+            # value may be a vector (checkbox group)
             if (!is.null(value) && length(value) > 0 && !all(value == "")) {
               rv$demo_data[[dem]] <- value
               page_data[[dem]] <- value
@@ -4799,52 +4243,48 @@ launch_study <- function(
             page_data <- list()
             current_page_num <- rv$current_page %||% 1
             page_id <- current_page$id %||% paste0("page_", current_page_num)
-            # Handle NULL item_indices (adaptive selection) - get from page cache
             # Pages whose items were chosen at render time (adaptive, or a
             # function such as a booklet draw) are read from the page cache
             if (is.null(current_page$item_indices) ||
                 is.function(current_page$item_indices) ||
                 identical(current_page$item_indices, "adaptive")) {
-              # Adaptive selection was used - get from cached page selection
-              
-              cat("RESPONSE COLLECTION DEBUG: Adaptive page", page_id, "\n")
-              cat("RESPONSE COLLECTION DEBUG: page_selected_items available:", !is.null(session$userData$page_selected_items), "\n")
+              if (isTRUE(getOption("inrep.debug", FALSE))) cat("RESPONSE COLLECTION DEBUG: Adaptive page", page_id, "\n")
+              if (isTRUE(getOption("inrep.debug", FALSE))) cat("RESPONSE COLLECTION DEBUG: page_selected_items available:", !is.null(session$userData$page_selected_items), "\n")
               if (!is.null(session$userData$page_selected_items)) {
-                cat("RESPONSE COLLECTION DEBUG: Cached pages:", names(session$userData$page_selected_items), "\n")
-                cat("RESPONSE COLLECTION DEBUG: page_id cache:", session$userData$page_selected_items[[page_id]], "\n")
+                if (isTRUE(getOption("inrep.debug", FALSE))) cat("RESPONSE COLLECTION DEBUG: Cached pages:", names(session$userData$page_selected_items), "\n")
+                if (isTRUE(getOption("inrep.debug", FALSE))) cat("RESPONSE COLLECTION DEBUG: page_id cache:", session$userData$page_selected_items[[page_id]], "\n")
               }
               
-              # First try to get from page_selected_items cache (most reliable, from session$userData)
               if (!is.null(session$userData$page_selected_items) && !is.null(session$userData$page_selected_items[[page_id]])) {
                 item_indices_to_collect <- session$userData$page_selected_items[[page_id]]
-                cat("RESPONSE COLLECTION: Using cached item selection for page", page_id, "-> item", item_indices_to_collect, "\n")
+                if (isTRUE(getOption("inrep.debug", FALSE))) cat("RESPONSE COLLECTION: Using cached item selection for page", page_id, "-> item", item_indices_to_collect, "\n")
                 logger(sprintf("Using cached item selection for page %s: items %s", page_id, paste(item_indices_to_collect, collapse = ", ")))
               } else if (!is.null(rv$administered) && length(rv$administered) > 0) {
                 # Fallback: get the last administered item
                 item_indices_to_collect <- tail(rv$administered, 1)
-                cat("RESPONSE COLLECTION: Using last administered item as fallback:", item_indices_to_collect, "\n")
+                if (isTRUE(getOption("inrep.debug", FALSE))) cat("RESPONSE COLLECTION: Using last administered item as fallback:", item_indices_to_collect, "\n")
                 logger(sprintf("Using last administered item as fallback: item %d", item_indices_to_collect))
               } else {
                 item_indices_to_collect <- integer(0)
-                cat("RESPONSE COLLECTION: ERROR - No item found for adaptive page!\n")
+                if (isTRUE(getOption("inrep.debug", FALSE))) cat("RESPONSE COLLECTION: ERROR - No item found for adaptive page!\n")
                 logger("WARNING: No item found to collect response for adaptive page")
               }
             } else {
               item_indices_to_collect <- current_page$item_indices
-              cat("RESPONSE COLLECTION: Using fixed item_indices:", paste(item_indices_to_collect, collapse=", "), "\n")
+              if (isTRUE(getOption("inrep.debug", FALSE))) cat("RESPONSE COLLECTION: Using fixed item_indices:", paste(item_indices_to_collect, collapse=", "), "\n")
             }
             
-            cat("RESPONSE COLLECTION: Items to collect:", paste(item_indices_to_collect, collapse=", "), "\n")
+            if (isTRUE(getOption("inrep.debug", FALSE))) cat("RESPONSE COLLECTION: Items to collect:", paste(item_indices_to_collect, collapse=", "), "\n")
             
-            # CRITICAL: Sync session$userData$administered to rv$administered before collection
-            # This ensures rv$administered is up-to-date for results processing
+            # Copy items recorded in session$userData$administered (at render
+            # time) into rv$administered, which the results use
             if (!is.null(session$userData$administered) && length(session$userData$administered) > 0) {
               if (is.null(rv$administered)) rv$administered <- integer(0)
               # Add any items from session that aren't in rv yet
               new_items <- setdiff(session$userData$administered, rv$administered)
               if (length(new_items) > 0) {
                 rv$administered <- c(rv$administered, new_items)
-                cat("RESPONSE COLLECTION: Synced", length(new_items), "items from session$userData to rv$administered\n")
+                if (isTRUE(getOption("inrep.debug", FALSE))) cat("RESPONSE COLLECTION: Synced", length(new_items), "items from session$userData to rv$administered\n")
               }
             }
             
@@ -4856,7 +4296,7 @@ launch_study <- function(
               response_key <- .inrep_make_page_item_response_key(page_id, item_id)
               value <- input[[input_id]]
               
-              cat("RESPONSE COLLECTION: Checking idx", idx, "item_id", item_id, "input_id", input_id, "value", value, "\n")
+              if (isTRUE(getOption("inrep.debug", FALSE))) cat("RESPONSE COLLECTION: Checking idx", idx, "item_id", item_id, "input_id", input_id, "value", value, "\n")
               
               if (!is.null(value) && value != "") {
                 rv$item_responses[[response_key]] <- value
@@ -4872,7 +4312,7 @@ launch_study <- function(
                 
                 logger(sprintf("Saved item response %d: %s", idx, value))
               } else {
-                cat("RESPONSE COLLECTION: No value found for input_id", item_id, "\n")
+                if (isTRUE(getOption("inrep.debug", FALSE))) cat("RESPONSE COLLECTION: No value found for input_id", item_id, "\n")
               }
             }
             
@@ -4895,13 +4335,14 @@ launch_study <- function(
           page_data <- list()
           page_id <- current_page$id %||% paste0("page_", rv$current_page)
           
-          # Try to collect any input data from the page
-          # This is a general approach for text inputs, checkboxes, etc.
+          # Inputs listed in current_page$input_fields (id custom_<page>_<field>)
           if (!is.null(current_page$input_fields)) {
             for (field in current_page$input_fields) {
               field_id <- paste0("custom_", page_id, "_", field)
               value <- input[[field_id]]
-              if (!is.null(value) && value != "") {
+              # value may be a vector (checkbox group); `value != ""` alone
+              # fails in if() for length > 1
+              if (!is.null(value) && length(value) > 0 && !all(value == "")) {
                 page_data[[field]] <- value
               }
             }
@@ -4923,9 +4364,9 @@ launch_study <- function(
         # Call completion handler for ALL page types (custom, demographics, items, etc.)
         run_page_completion_handler(current_page)
 
-        # ROBUST FALLBACK: Automatically collect any demo_* text/textarea inputs
-        # from custom pages into rv$demo_data. This ensures text fields are never
-        # lost even if the completion_handler is missing, mis-signed, or errors out.
+        # Copy demo_<name> inputs on custom pages into rv$demo_data when the
+        # field is still empty (for pages whose completion_handler does not
+        # store them).
         if (!is.null(config$demographics) && length(config$demographics) > 0) {
           if (is.null(rv$demo_data) || !is.list(rv$demo_data)) {
             rv$demo_data <- stats::setNames(
@@ -5153,12 +4594,13 @@ launch_study <- function(
         current_page <- config$custom_page_flow[[rv$current_page]]
         
         if (current_page$type == "demographics") {
-          demo_vars <- current_page$demographics
+          # Same rule as for "next": page fields, else config$demographics
+          demo_vars <- current_page$demographics %||% config$demographics
           page_data <- list()
           for (dem in demo_vars) {
             input_id <- paste0("demo_", dem)
             value <- input[[input_id]]
-            if (!is.null(value) && value != "") {
+            if (!is.null(value) && length(value) > 0 && !all(value == "")) {
               rv$demo_data[[dem]] <- value
               page_data[[dem]] <- value
             }
@@ -5178,15 +4620,11 @@ launch_study <- function(
             page_data <- list()
             current_page_num <- rv$current_page %||% 1
             page_id <- current_page$id %||% paste0("page_", current_page_num)
-            # Handle NULL item_indices (adaptive selection) - get from page cache
             # Pages whose items were chosen at render time (adaptive, or a
             # function such as a booklet draw) are read from the page cache
             if (is.null(current_page$item_indices) ||
                 is.function(current_page$item_indices) ||
                 identical(current_page$item_indices, "adaptive")) {
-              # Adaptive selection was used - get from cached page selection
-              
-              # First try to get from page_selected_items cache (most reliable, from session$userData)
               if (!is.null(session$userData$page_selected_items) && !is.null(session$userData$page_selected_items[[page_id]])) {
                 item_indices_to_collect <- session$userData$page_selected_items[[page_id]]
                 logger(sprintf("Using cached item selection for final page %s: items %s", page_id, paste(item_indices_to_collect, collapse = ", ")))
@@ -5245,16 +4683,17 @@ launch_study <- function(
         # Final page before the results: run its completion_handler as "next" does
         if (!identical(current_page$type, "results")) run_page_completion_handler(current_page)
 
-        # ROBUST: Preserve all responses including NAs for proper indexing
-        # Don't remove NAs - they might be valid missing responses that need to be preserved
+        # rv$responses is indexed by item bank row; NA marks items without a
+        # response, so NAs are kept to preserve the indexing.
         all_responses <- rv$responses
-        
-        # Log response collection status
+
         logger(sprintf("Study completed with %d total responses (including NAs)", length(all_responses)))
         logger(sprintf("Non-NA responses: %d", sum(!is.na(all_responses))))
         logger(sprintf("Response indices with data: %s", paste(which(!is.na(all_responses)), collapse=", ")))
         
-        # FINAL VALIDATION: fixed-item studies get exactly one response slot per fixed item
+        # With config$fixed_items, the vector is cut or padded to one slot per
+        # fixed item. Note: this keeps bank positions 1..n_fixed, which are
+        # the fixed items only if fixed_items is 1:n_fixed.
         n_fixed <- length(config$fixed_items %||% integer(0))
         if (n_fixed > 0 && length(all_responses) != n_fixed) {
           logger(sprintf("Expected %d responses but got %d; padding/truncating to %d.", n_fixed, length(all_responses), n_fixed), level = "WARNING")
@@ -5277,11 +4716,9 @@ launch_study <- function(
           return()
         }
 
-        # Generate results summary object (results pages will render; final results page will perform side effects)
-        # This must run regardless of whether a custom results_processor is provided.
-        # FINAL SAFETY NET: Last-chance collection of ALL demo_* inputs before
-        # building cat_result. This catches text fields that were never picked up
-        # by any completion_handler for any reason.
+        # Build rv$cat_result for the results pages (also when a
+        # results_processor is given). First copy any demo_<name> inputs that
+        # are still missing from rv$demo_data.
         if (!is.null(config$demographics) && length(config$demographics) > 0) {
           if (is.null(rv$demo_data) || !is.list(rv$demo_data)) {
             rv$demo_data <- stats::setNames(
@@ -5298,7 +4735,7 @@ launch_study <- function(
                 (length(current_val) == 1 && (is.na(current_val) || trimws(as.character(current_val)) == ""))
               if (is_current_empty) {
                 rv$demo_data[[dem_name]] <- trimws(as.character(val))
-                logger(sprintf("FINAL SAFETY NET: Collected demo field '%s' = '%s'", dem_name, trimws(as.character(val))), level = "INFO")
+                logger(sprintf("Collected demo field '%s' = '%s' at submit", dem_name, trimws(as.character(val))), level = "INFO")
               }
             }
           }
@@ -5313,11 +4750,14 @@ launch_study <- function(
           }
         }
 
+        # administered is every bank position (1..n), not only the items
+        # shown; responses is aligned with it and holds NA for items not
+        # shown or not answered.
         rv$cat_result <- list(
           theta = rv$current_ability,
           se = rv$current_se,
           administered = 1:length(all_responses),
-          responses = all_responses,  # Pass all responses including NAs
+          responses = all_responses,
           response_times = rv$response_times,
           demo_data = rv$demo_data
         )
@@ -5470,8 +4910,13 @@ launch_study <- function(
         rv$current_item <- first_item
         logger(sprintf("Adaptive mode: Starting with item %s", first_item))
       }
+      # Start the response timer for the first item. Without this, a study that
+      # starts on the demographics page (show_introduction = FALSE) had
+      # rv$start_time = NULL, the response time computation failed and the
+      # response was not stored.
+      rv$start_time <- base::Sys.time()
     })
-    
+
     shiny::observeEvent(input$begin_test, {
       # Log test start
       if (session_save && exists("log_session_event") && is.function(log_session_event)) {
@@ -5529,7 +4974,9 @@ launch_study <- function(
       }
     })
     
-    # CUSTOM STUDY FLOW NAVIGATION - NEW
+    # Button "proceed_from_custom_instructions" (R/ui_components.R). Note:
+    # page_content has no "custom_instructions" or "items" stage, so the
+    # stages set here can render an empty page.
     shiny::observeEvent(input$proceed_from_custom_instructions, {
       if (!is.null(config$custom_study_flow) && config$enable_custom_navigation) {
         # Get next stage from custom flow configuration
@@ -5559,7 +5006,6 @@ launch_study <- function(
       
 
       
-      # Debug: Log the item selection process
       logger("Attempting to select next item...")
       logger(sprintf("rv$current_ability: %s", rv$current_ability))
       logger(sprintf("config$adaptive: %s", config$adaptive))
@@ -5589,8 +5035,7 @@ launch_study <- function(
       logger(sprintf("Item selection result: %s", rv$current_item))
       
       if (is.null(rv$current_item)) {
-        logger("ERROR: select_next_item returned NULL - this is why items don't display!", level = "ERROR")
-        # Fallback: select first available item
+        logger("Item selection returned NULL; using the first item not yet administered", level = "ERROR")
         available_items <- setdiff(seq_len(nrow(item_bank)), rv$administered)
         if (length(available_items) > 0) {
           rv$current_item <- available_items[1]
@@ -5601,27 +5046,27 @@ launch_study <- function(
       logger("Beginning assessment")
     })
     
-    # ROBUST SUBMISSION HANDLER - PREVENTS DOUBLE-CLICKS AND NEVER BREAKS
+    # Response submission in the built-in assessment ----
     shiny::observeEvent(input$submit_response, {
-      # IMMEDIATE DOUBLE-CLICK PROTECTION
+      # Ignore a second click while a submission is processed
       if (rv$submission_in_progress) {
         logger("Double-click detected - ignoring duplicate submission", level = "WARNING")
         return()
       }
-      
-      # IMMEDIATE STATE VALIDATION
+
       if (is.null(rv$current_item) || rv$stage != "assessment") {
         logger("Invalid submission state - ignoring submission", level = "WARNING")
         return()
       }
-      
-      # SET SUBMISSION LOCK WITH TIMESTAMP
+
       rv$submission_in_progress <- TRUE
       rv$submission_lock_time <- Sys.time()
-      
-      # ROBUST ERROR BOUNDARY WITH AUTOMATIC RECOVERY
+
+      # Set to TRUE once the response is stored. If an error occurs before
+      # that, the handler stops below and the same item stays on screen.
+      response_recorded <- FALSE
+
       tryCatch({
-        # VALIDATE INPUT STATE
         if (is.null(input$item_response)) {
           logger("No response selected - resetting submission lock", level = "WARNING")
           rv$submission_in_progress <- FALSE
@@ -5631,7 +5076,6 @@ launch_study <- function(
           return()
         }
 
-        # VALIDATE RESPONSE
         if (!config$response_validation_fun(input$item_response)) {
           logger(sprintf("Invalid response submitted for item %d", rv$current_item), level = "WARNING")
           rv$submission_in_progress <- FALSE
@@ -5641,35 +5085,31 @@ launch_study <- function(
           return()
         }
         
-        # CLEAR ANY PREVIOUS ERRORS
         rv$error_message <- NULL
-        
-        # CALCULATE RESPONSE TIME
+
         response_time <- base::as.numeric(base::difftime(base::Sys.time(), rv$start_time, units = "secs"))
 
-        # LOG QUICK RESPONSES but always record them
+        # Very fast responses are logged but recorded as given
         if (response_time < 0.2) {
           logger(sprintf("Quick response: item %d (%.3fs)", rv$current_item, response_time), level = "DEBUG")
         }
 
-        # STORE RESPONSE DATA WITH ERROR PROTECTION
         item_index <- rv$current_item
         correct_answer <- item_bank$Answer[item_index] %||% NULL
         
-        # ROBUST SCORING WITH FALLBACK
+        # Score with config$scoring_fun; if it fails, use a fallback
         response_score <- base::tryCatch(
           config$scoring_fun(input$item_response, correct_answer),
           error = function(e) {
             logger(base::sprintf("Scoring function error, using fallback: %s", e$message), level = "WARNING")
-            # Fallback scoring methods
             if (config$model == "GRM") {
               as.numeric(input$item_response)
             } else {
-              # Use item_bank row to avoid referencing UI item object
               opts <- base::c(item_bank$Option1[item_index], item_bank$Option2[item_index], item_bank$Option3[item_index], item_bank$Option4[item_index])
               opts <- opts[!is.na(opts) & opts != ""]
               if (is.null(correct_answer) || is.na(correct_answer) || !(correct_answer %in% opts)) {
-                # If no explicit correct answer, assume first non-empty option is correct for scoring consistency
+                # No usable key: the first option is treated as the keyed
+                # answer. This is an assumption, not information from the bank.
                 correct_answer_fallback <- (opts)[1] %||% "1"
                 as.numeric(input$item_response == correct_answer_fallback)
               } else {
@@ -5679,23 +5119,22 @@ launch_study <- function(
           }
         )
         
-        # SAFELY UPDATE RESPONSE VECTORS
         rv$response_times <- base::c(rv$response_times, response_time)
         rv$responses <- base::c(rv$responses, response_score)
         rv$administered <- base::c(rv$administered, item_index)
+        response_recorded <- TRUE
 
-        # IMMEDIATE FEEDBACK — only fires when feedback_enabled = TRUE and item has
-        # a correct-answer key in the Answer column. Meaningless for agreement scales
-        # (GRM/Likert) where no item has a right or wrong answer; those items simply
-        # have no Answer value so the block below is silently skipped.
+        # Correct/incorrect feedback: only with feedback_enabled = TRUE and an
+        # Answer key for the item. Rating-scale (GRM) items have no key, so
+        # no feedback is shown for them.
         if (isTRUE(config$feedback_enabled)) {
           item_answer <- if ("Answer" %in% names(item_bank)) item_bank$Answer[item_index] else NULL
           if (!is.null(item_answer) && !is.na(item_answer) &&
               nchar(trimws(as.character(item_answer))) > 0) {
             is_correct <- isTRUE(response_score >= 0.5)
             shiny::showNotification(
-              ui       = if (is_correct) ui_labels$feedback_correct   %||% "\u2714 Correct!"
-                         else            ui_labels$feedback_incorrect %||% "\u2718 Incorrect",
+              ui       = if (is_correct) ui_labels$feedback_correct   %||% "Correct"
+                         else            ui_labels$feedback_incorrect %||% "Incorrect",
               type     = if (is_correct) "message" else "warning",
               duration = 2.5,
               session  = session
@@ -5703,7 +5142,6 @@ launch_study <- function(
           }
         }
 
-        # LOG RESPONSE SUBMISSION WITH ERROR PROTECTION
         if (session_save && exists("log_session_event") && is.function(log_session_event)) {
           tryCatch({
             log_session_event(
@@ -5727,7 +5165,6 @@ launch_study <- function(
         
         logger(sprintf("Response successfully processed for item %d", item_index), level = "INFO")
         
-        # Notify admin dashboard after response capture
         if (!is.null(config$admin_dashboard_hook) && is.function(config$admin_dashboard_hook)) {
           base::tryCatch({
             config$admin_dashboard_hook(list(
@@ -5744,10 +5181,8 @@ launch_study <- function(
         }
         
       }, error = function(e) {
-        # EMERGENCY ERROR HANDLING WITH AUTOMATIC RECOVERY
-        logger(sprintf("Critical error in response processing: %s", e$message), level = "ERROR")
-        
-        # ATTEMPT EMERGENCY DATA PRESERVATION
+        logger(sprintf("Error in response processing: %s", e$message), level = "ERROR")
+
         if (session_save && exists("emergency_data_preservation") && is.function(emergency_data_preservation)) {
           tryCatch({
             emergency_data_preservation()
@@ -5756,22 +5191,24 @@ launch_study <- function(
             logger(sprintf("Emergency data preservation failed: %s", preserve_error$message), level = "ERROR")
           })
         }
-        
-        # AUTOMATIC RECOVERY - DON'T STOP THE ASSESSMENT
-        rv$error_message <- "A minor error occurred. Your response has been saved and the assessment will continue."
-        logger("Assessment continuing after error recovery", level = "INFO")
-        
-        # RESET SUBMISSION LOCK TO ALLOW CONTINUATION
+
+        # The old message ("Your response has been saved") was shown also
+        # when the response had not been stored.
+        if (!response_recorded) {
+          rv$error_message <- "Your response could not be processed. Please answer this question again."
+        }
         rv$submission_in_progress <- FALSE
-        
-        return()
       })
-      
-      # FINAL SUBMISSION LOCK RESET - ENSURES ASSESSMENT NEVER STOPS
+
+      # Response not stored: keep the current item, do not estimate or advance
+      if (!response_recorded) {
+        rv$submission_in_progress <- FALSE
+        return()
+      }
+
       rv$submission_in_progress <- FALSE
       rv$last_submission_time <- Sys.time()
-      
-      # ROBUST ABILITY ESTIMATION WITH ERROR RECOVERY
+
       if (config$adaptive) {
         base::tryCatch({
           ability <- inrep::estimate_ability(rv, item_bank, config)
@@ -5781,7 +5218,6 @@ launch_study <- function(
           rv$theta_history <- base::c(rv$theta_history, rv$current_ability)
           rv$se_history <- base::c(rv$se_history, rv$current_se)
           
-          # Push update to admin_dashboard_hook if provided
           if (!is.null(config$admin_dashboard_hook) && is.function(config$admin_dashboard_hook)) {
             base::tryCatch({
               config$admin_dashboard_hook(list(
@@ -5799,28 +5235,22 @@ launch_study <- function(
             })
           }
         }, error = function(e) {
-          logger(base::sprintf("Ability estimation failed, using fallback: %s", e$message), level = "WARNING")
-          # Fallback ability estimation - don't break the assessment
-          if (length(rv$responses) > 0) {
-            rv$current_ability <- mean(rv$responses, na.rm = TRUE)
-            rv$current_se <- sd(rv$responses, na.rm = TRUE) / sqrt(length(rv$responses))
-            logger("Using fallback ability estimation", level = "INFO")
-          }
+          # Keep the previous theta and SE. The former fallback used the mean
+          # of the raw item scores as theta and their SD / sqrt(n) as SE,
+          # which are not on the theta scale and were then compared with
+          # min_SEM by the stopping rule.
+          logger(base::sprintf("Ability estimation failed; keeping the previous estimate: %s", e$message), level = "WARNING")
         })
       }
-      
-      # Data preservation handled by observeEvent(rv$responses) to avoid
-      # blocking page transitions with synchronous disk I/O.
-      
-            # FINAL SAFETY NET - ENSURE SUBMISSION LOCK IS ALWAYS RESET
+
+      # Data preservation is handled by observeEvent(rv$responses).
+
       if (rv$submission_in_progress) {
-        logger("Final safety net: resetting submission lock", level = "INFO")
         rv$submission_in_progress <- FALSE
       }
-      
-      # ULTIMATE ERROR BOUNDARY - CATCH ANY REMAINING ERRORS
+
+      # Stop or select the next item
       base::tryCatch({
-        # ROBUST STOPPING CRITERIA CHECK WITH ERROR RECOVERY
         if (base::tryCatch({
           check_stopping_criteria()
         }, error = function(e) {
@@ -5847,7 +5277,7 @@ launch_study <- function(
                 final_theta = if (config$adaptive) rv$current_ability else NULL,
                 final_se = if (config$adaptive) rv$current_se else NULL,
                 total_items = length(rv$administered),
-                total_time = as.numeric(difftime(Sys.time(), rv$start_time, units = "secs")),
+                total_time = as.numeric(difftime(Sys.time(), rv$session_start, units = "secs")),
                 completion_reason = "stopping_criteria_met",
                 timestamp = Sys.time()
               )
@@ -5860,7 +5290,6 @@ launch_study <- function(
         run_storage_pipeline(trigger = "assessment_complete_stopping", force = TRUE, include_cloud = TRUE)
         logger("Final assessment data preserved", level = "INFO")
       } else {
-        # ROBUST NEXT ITEM SELECTION WITH ERROR RECOVERY
         next_item_result <- base::tryCatch({
           if (isTRUE(config$fast_item_selection)) {
             inrep::fast_select_next_item(rv, item_bank, config)
@@ -5868,13 +5297,12 @@ launch_study <- function(
             inrep::select_next_item(rv, item_bank, config)
           }
         }, error = function(e) {
-          logger(sprintf("Next item selection failed, using fallback: %s", e$message), level = "WARNING")
-          # Fallback: select next available item
+          logger(sprintf("Next item selection failed; using the first item not yet administered: %s", e$message), level = "WARNING")
           remaining_items <- setdiff(1:nrow(item_bank), rv$administered)
           if (length(remaining_items) > 0) {
-            remaining_items[1]  # Select first remaining item
+            remaining_items[1]
           } else {
-            NULL  # No more items
+            NULL
           }
         })
         
@@ -5919,7 +5347,7 @@ launch_study <- function(
                   final_theta = if (config$adaptive) rv$current_ability else NULL,
                   final_se = if (config$adaptive) rv$current_se else NULL,
                   total_items = length(rv$administered),
-                  total_time = as.numeric(difftime(Sys.time(), rv$start_time, units = "secs")),
+                  total_time = as.numeric(difftime(Sys.time(), rv$session_start, units = "secs")),
                   completion_reason = "no_more_items",
                   timestamp = Sys.time()
                 )
@@ -5941,54 +5369,47 @@ launch_study <- function(
             if (available_packages$shinyWidgets) {
               shinyWidgets::updateRadioGroupButtons(session, "item_response", selected = base::character(0))
             } else {
-              # Fallback for when shinyWidgets is not available
               shiny::updateRadioButtons(session, "item_response", selected = base::character(0))
             }
           }
         }
       }
       
-      # CLOSE ULTIMATE ERROR BOUNDARY
       }, error = function(e) {
-        # FINAL EMERGENCY RECOVERY - ASSESSMENT MUST CONTINUE
-        logger(sprintf("Ultimate error boundary caught: %s", e$message), level = "ERROR")
-        
-        # Force reset all error states
+        # Errors in stopping or item selection: stay in the assessment
+        logger(sprintf("Error after response processing: %s", e$message), level = "ERROR")
+
         rv$submission_in_progress <- FALSE
         rv$error_message <- NULL
         rv$stage <- "assessment"
-        
-        # Scroll to top of page when recovering from error
+
         scroll_to_top_enhanced()
-        
-        # Ensure we have a current item
+
         if (is.null(rv$current_item)) {
           remaining_items <- setdiff(1:nrow(item_bank), rv$administered)
           if (length(remaining_items) > 0) {
             rv$current_item <- remaining_items[1]
-            logger("Emergency item selection for continuation", level = "WARNING")
+            logger("Selected the first item not yet administered after an error", level = "WARNING")
           }
         }
-        
-        logger("Assessment continuing after ultimate error recovery", level = "INFO")
       })
     })
-    
-    # SUBMISSION STATUS UI - VISUAL FEEDBACK FOR USER
+
     output$submission_status <- shiny::renderUI({
       if (rv$submission_in_progress) {
         shiny::div(
           class = "submission-status",
           style = "color: #007bff; font-weight: bold; margin-top: 10px; padding: 10px; background-color: #f8f9fa; border: 2px solid #007bff; border-radius: 5px;",
-
-          " Processing your response... Please wait."
+          "Processing your response... Please wait."
         )
       } else {
         NULL
       }
     })
-    
-    # ROBUST ERROR BOUNDARY UI - PREVENTS APP FROM STOPPING
+
+    # Error box with recovery buttons. Note: it is only shown when
+    # rv$stage == "error", but it is placed in the assessment page and no
+    # code sets rv$stage to "error", so it is currently never displayed.
     output$error_boundary <- shiny::renderUI({
       if (!is.null(rv$error_message) && rv$stage == "error") {
         shiny::div(
@@ -6007,19 +5428,15 @@ launch_study <- function(
       }
     })
     
-    # AUTO-RECOVERY BUTTON HANDLER
     shiny::observeEvent(input$auto_recover, {
       logger("Auto-recovery initiated by user", level = "INFO")
-      
-      # Force reset all error states
+
       rv$submission_in_progress <- FALSE
       rv$error_message <- NULL
       rv$stage <- "assessment"
-      
-      # Scroll to top of page when auto-recovering from error
+
       scroll_to_top_enhanced()
-      
-      # Ensure we have a current item
+
       if (is.null(rv$current_item)) {
         remaining_items <- setdiff(1:nrow(item_bank), rv$administered)
         if (length(remaining_items) > 0) {
@@ -6031,22 +5448,22 @@ launch_study <- function(
       logger("Assessment continuing after auto-recovery", level = "INFO")
     })
     
-    # MANUAL RECOVERY BUTTON HANDLER
+    # Note: rv$show_recovery_options is not read anywhere
     shiny::observeEvent(input$manual_recover, {
       logger("Manual recovery initiated by user", level = "INFO")
-      
-      # Show recovery options
+
       rv$show_recovery_options <- TRUE
       rv$error_message <- "Select recovery option:"
     })
     
-    # ERROR RECOVERY SYSTEM - ENSURES ASSESSMENT NEVER STOPS
+    # "Continue" button of the "error" stage page
     shiny::observeEvent(input$retry_continue, {
       if (session_save && exists("attempt_error_recovery") && is.function(attempt_error_recovery)) {
         tryCatch({
           recovery_result <- attempt_error_recovery()
-          if (recovery_result$success) {
-            rv$stage <- recovery_result$stage %||% "test"
+          if (isTRUE(recovery_result$success)) {
+            # There is no "test" stage; "assessment" is the item stage
+            rv$stage <- recovery_result$stage %||% "assessment"
             rv$error_message <- NULL
             logger("Error recovery successful, continuing assessment", level = "INFO")
           } else {
@@ -6058,20 +5475,18 @@ launch_study <- function(
           logger(sprintf("Recovery attempt error: %s", e$message), level = "ERROR")
         })
       } else {
-        # Fallback recovery
-        rv$stage <- "assessment"  # Fixed: was "test", now "assessment"
+        rv$stage <- "assessment"
         rv$error_message <- NULL
         logger("Fallback error recovery - returning to assessment", level = "INFO")
-        
-        # Scroll to top of page when fallback recovering from error
+
         scroll_to_top_enhanced()
       }
     })
     
-    # AUTOMATIC ERROR RECOVERY - Event-based instead of timer-based
-    # This prevents page jumping while still handling errors
+    # Checked when rv$stage or rv$submission_in_progress changes (not on a
+    # timer): release a submission lock older than 10 s, leave an "error"
+    # stage after 5 s, and save local data in sessions longer than 1 h.
     check_error_states <- function() {
-      # Automatic recovery from submission lock
       if (rv$submission_in_progress && !is.null(rv$submission_lock_time)) {
         lock_duration <- as.numeric(difftime(Sys.time(), rv$submission_lock_time, units = "secs"))
         if (lock_duration > 10) {  # Reset lock after 10 seconds
@@ -6081,18 +5496,15 @@ launch_study <- function(
         }
       }
       
-      # Automatic recovery from error states
       if (rv$stage == "error" && !is.null(rv$last_submission_time)) {
         error_duration <- as.numeric(difftime(Sys.time(), rv$last_submission_time, units = "secs"))
-        if (error_duration > 5) {  # Auto-recover after 5 seconds
+        if (error_duration > 5) {
           logger("Automatic error recovery - continuing assessment", level = "INFO")
           rv$stage <- "assessment"
           rv$error_message <- NULL
-          
-          # Scroll to top of page when automatically recovering from error
+
           scroll_to_top_enhanced()
-          
-          # Ensure we have a current item
+
           if (is.null(rv$current_item)) {
             remaining_items <- setdiff(1:nrow(item_bank), rv$administered)
             if (length(remaining_items) > 0) {
@@ -6103,18 +5515,17 @@ launch_study <- function(
         }
       }
       
-      # Automatic session health check
+      # Note: rv$start_time is reset for every item, so this measures the
+      # time on the current item, not the session.
       if (rv$session_active && !is.null(rv$start_time)) {
         session_duration <- as.numeric(difftime(Sys.time(), rv$start_time, units = "secs"))
-        if (session_duration > 3600) {  # 1 hour
-          logger("Long session detected - performing health check", level = "INFO")
+        if (session_duration > 3600) {
+          logger("Long session detected - saving data", level = "INFO")
           run_storage_pipeline(trigger = "health_check", force = TRUE, include_cloud = FALSE)
-          logger("Health check data preservation completed", level = "INFO")
         }
       }
     }
-    
-    # Call error checking on specific events instead of timer
+
     shiny::observeEvent(rv$stage, {
       check_error_states()
     }, ignoreInit = TRUE)
@@ -6124,7 +5535,6 @@ launch_study <- function(
     }, ignoreInit = TRUE)
     
     shiny::observeEvent(input$restart_test, {
-      # Clean up robust session before restart
       if (session_save && exists("cleanup_session") && is.function(cleanup_session)) {
         tryCatch({
           cleanup_session(save_final_data = TRUE)
@@ -6133,7 +5543,8 @@ launch_study <- function(
         })
       }
       
-      # Reset to the actual first page: demographics only if they exist, otherwise items
+      # Back to demographics, or to "items" without demographics. Note:
+      # page_content has no "items" stage, so the latter shows an empty page.
       rv$stage = if (!is.null(config$demographics) && length(config$demographics) > 0) {
         "demographics"
       } else {
@@ -6142,7 +5553,6 @@ launch_study <- function(
       rv$current_ability <- config$theta_prior[1]
       rv$current_se <- config$theta_prior[2]
       
-      # Scroll to top of page when restarting
       scroll_to_top_enhanced()
       rv$administered <- base::c()
       rv$responses = base::c()
@@ -6158,7 +5568,6 @@ launch_study <- function(
       rv$session_start <- base::Sys.time()
       rv$session_active <- TRUE
       
-      # Log test restart
       if (session_save && exists("log_session_event") && is.function(log_session_event)) {
         tryCatch({
           log_session_event(
@@ -6183,9 +5592,8 @@ launch_study <- function(
     })
   } # End of server function
   
-  # Final session cleanup setup
+  # Cleanup when the package is unloaded or R exits (session_save only)
   if (session_save) {
-    # Set up global cleanup on package unload
     .inrep_set_cleanup_hook(function() {
       if (exists("cleanup_session") && is.function(cleanup_session)) {
         tryCatch({
@@ -6197,23 +5605,20 @@ launch_study <- function(
       }
     })
     
-    # Register cleanup function
     reg.finalizer(environment(), function(env) {
       .inrep_run_cleanup_hook()
     }, onexit = TRUE)
   }
 
-  # Create the Shiny app
   app <- shiny::shinyApp(ui = ui, server = server)
 
-  # Launch the app with browser control
   if (launch_browser) {
     logger(sprintf("Launching study in browser at http://%s:%d", host, port), level = "INFO")
     tryCatch({
       shiny::runApp(app, port = port, host = host, launch.browser = TRUE)
     }, error = function(e) {
       logger(sprintf("Failed to launch browser: %s", e$message), level = "ERROR")
-      logger("Running app without browser launch. Access at: http://localhost:3838", level = "WARNING")
+      logger(sprintf("Running app without browser launch on port 3838. Access at: http://%s:3838", host), level = "WARNING")
       shiny::runApp(app, port = 3838, host = host, launch.browser = FALSE)
     })
   } else {

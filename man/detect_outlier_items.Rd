@@ -2,43 +2,23 @@
 % Please edit documentation in R/item_bank_utils.R
 \name{detect_outlier_items}
 \alias{detect_outlier_items}
-\title{Detect Outlier Items in TAM-Compatible Item Banks}
+\title{Flag Items with Low Discrimination}
 \usage{
 detect_outlier_items(item_bank, discrimination_threshold = 0.2)
 }
 \arguments{
-\item{item_bank}{Data frame containing item parameters. Must include discrimination
-parameter column \code{a} and threshold parameters for GRM items.}
+\item{item_bank}{Data frame with a discrimination column \code{a}.}
 
-\item{discrimination_threshold}{Numeric minimum acceptable discrimination parameter.
-Default is 0.2. Values below this threshold indicate poor item quality.}
+\item{discrimination_threshold}{Numeric cut-off. Default is 0.2.}
 }
 \value{
-Data frame containing flagged items with their problematic parameters.
-  Returns empty data frame if no items are flagged.
+Data frame with the flagged rows (zero rows if none).
 }
 \description{
-Identifies items with poor psychometric properties that may compromise assessment quality.
-This function flags items with low discrimination parameters or problematic threshold
-ordering that could affect TAM-based ability estimation and adaptive testing performance.
-}
-\details{
-This function checks item banks for potential issues:
-
-\strong{Detection Criteria:}
-\itemize{
-  \item Low discrimination: Items with \code{a} parameters below threshold
-  \item Threshold ordering: GRM items with improperly ordered thresholds
-  \item Extreme parameters: Items with unrealistic parameter values
-  \item Missing values: Items with incomplete parameter specification
-}
-
-\strong{Quality Standards:}
-\itemize{
-  \item Discrimination parameters should typically be above 0.5 for good quality
-  \item Threshold parameters should be in ascending order for GRM items
-  \item Parameters should be within reasonable ranges for stable estimation
-}
+Returns the rows of \code{item_bank} whose discrimination \code{a} is below
+\code{discrimination_threshold}. Nothing else is checked (threshold order,
+parameter ranges and missing values are not examined; items with missing
+\code{a} are not flagged).
 }
 \examples{
 \dontrun{
@@ -56,15 +36,13 @@ if (nrow(outliers) > 0) {
   cat("All items meet quality standards\n")
 }
 
-# Example 2: Stricter Quality Standards
-# Use higher threshold for research-grade assessment
+# Example 2: Higher cut-off
 strict_outliers <- detect_outlier_items(bfi_items, discrimination_threshold = 0.7)
 
 cat("Items below strict threshold (0.7):\n")
 print(strict_outliers[, c("Question", "a")])
 
-# Example 3: Create Clean Item Bank
-# Remove flagged items for high-quality assessment
+# Example 3: Drop flagged items
 clean_items <- bfi_items[!rownames(bfi_items) \%in\% rownames(outliers), ]
 cat("Original items:", nrow(bfi_items), "\n")
 cat("Clean items:", nrow(clean_items), "\n")
@@ -75,10 +53,8 @@ cat("Removed:", nrow(bfi_items) - nrow(clean_items), "items\n")
 \seealso{
 \itemize{
   \item \code{\link{validate_item_bank}} for structural validation
-  \item \code{\link{simulate_item_bank}} for performance testing
   \item \code{bfi_items} for example item bank (use \code{data(bfi_items)})
 }
 }
 \keyword{item-analysis}
 \keyword{psychometrics}
-\keyword{quality-assurance}

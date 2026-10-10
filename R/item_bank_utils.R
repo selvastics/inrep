@@ -1,13 +1,19 @@
 #' Validate Item Bank Structure
 #'
 #' @description
-#' validation of item bank structure and compatibility with IRT model.
-#' Provides detailed feedback on mismatches and suggests appropriate configurations.
+#' Checks that the item bank is a non-empty data frame with a \code{Question}
+#' column and, for adaptive studies, the parameter columns the model needs:
+#' \code{a}, \code{b1}--\code{b4} for GRM; \code{a}, \code{b} for 2PL and 3PL;
+#' \code{b} for 1PL. Parameter values are not checked, and for 3PL the
+#' \code{c} column is not required. For GRM a message is printed when the
+#' number of thresholds \code{b1, b2, ...} differs from the number of
+#' categories in \code{ResponseCategories} minus one; the bank is still
+#' reported as valid in that case.
 #'
 #' @param item_bank Data frame containing item bank
 #' @param model IRT model ("GRM", "2PL", "1PL", "3PL")
 #' @param adaptive Logical. When \code{FALSE} (non-adaptive / fixed-form study),
-#'   IRT parameter columns (\code{a}, \code{b}, \code{b1}–\code{b4}) are not
+#'   IRT parameter columns (\code{a}, \code{b}, \code{b1} to \code{b4}) are not
 #'   required and the column checks are skipped. Only \code{Question} and
 #'   \code{ResponseCategories} are checked. Default \code{TRUE} preserves the
 #'   existing behaviour for adaptive studies.
@@ -17,9 +23,9 @@
 #' @examples
 #' \dontrun{
 #' data(bfi_items)
-#' # Adaptive study — IRT columns required
+#' # Adaptive study: IRT columns required
 #' validation <- validate_item_bank(bfi_items, "GRM", adaptive = TRUE)
-#' # Fixed-form study — IRT columns optional
+#' # Fixed-form study: IRT columns optional
 #' validation <- validate_item_bank(bfi_items, "GRM", adaptive = FALSE)
 #' print(validation$is_valid)
 #' print(validation$messages)
@@ -46,7 +52,6 @@ validate_item_bank <- function(item_bank, model = "GRM", adaptive = TRUE) {
     return(list(is_valid = TRUE, messages = "Item bank validation passed (non-adaptive: IRT columns not checked)"))
   }
   
-  # Model-specific validation with enhanced feedback
   if (model == "GRM") {
     required_cols <- c("a", "b1", "b2", "b3", "b4")
     missing <- setdiff(required_cols, names(item_bank))
@@ -114,10 +119,21 @@ validate_item_bank <- function(item_bank, model = "GRM", adaptive = TRUE) {
     }
   }
 
-  # Additional validation for common issues
   if ("ResponseCategories" %in% names(item_bank)) {
     if (model != "GRM") {
       message("Warning: Your item bank has 'ResponseCategories' column, typically used with GRM for Likert-scale items.")
+    } else {
+      # inrep's GRM uses one category more than there are thresholds; responses
+      # above that are skipped in estimate_ability().
+      n_thresholds <- length(grep("^b[0-9]+$", names(item_bank)))
+      n_categories <- vapply(strsplit(as.character(item_bank$ResponseCategories), ","),
+                             length, integer(1))
+      mismatch <- which(n_categories != n_thresholds + 1L)
+      if (length(mismatch) > 0) {
+        message(sprintf(
+          "Warning: %d item(s) have a number of response categories that does not match the %d threshold columns (expected %d categories), e.g. item %d.",
+          length(mismatch), n_thresholds, n_thresholds + 1L, mismatch[1]))
+      }
     }
   }
 
@@ -126,41 +142,21 @@ validate_item_bank <- function(item_bank, model = "GRM", adaptive = TRUE) {
 }
 
 
-#' Detect Outlier Items in TAM-Compatible Item Banks
+#' Flag Items with Low Discrimination
 #'
 #' @description
-#' Identifies items with poor psychometric properties that may compromise assessment quality.
-#' This function flags items with low discrimination parameters or problematic threshold
-#' ordering that could affect TAM-based ability estimation and adaptive testing performance.
+#' Returns the rows of \code{item_bank} whose discrimination \code{a} is below
+#' \code{discrimination_threshold}. Nothing else is checked (threshold order,
+#' parameter ranges and missing values are not examined; items with missing
+#' \code{a} are not flagged).
 #'
-#' @param item_bank Data frame containing item parameters. Must include discrimination
-#'   parameter column \code{a} and threshold parameters for GRM items.
-#' @param discrimination_threshold Numeric minimum acceptable discrimination parameter.
-#'   Default is 0.2. Values below this threshold indicate poor item quality.
-#' 
-#' @return Data frame containing flagged items with their problematic parameters.
-#'   Returns empty data frame if no items are flagged.
-#' 
+#' @param item_bank Data frame with a discrimination column \code{a}.
+#' @param discrimination_threshold Numeric cut-off. Default is 0.2.
+#'
+#' @return Data frame with the flagged rows (zero rows if none).
+#'
 #' @export
-#' 
-#' @details
-#' This function checks item banks for potential issues:
-#' 
-#' \strong{Detection Criteria:}
-#' \itemize{
-#'   \item Low discrimination: Items with \code{a} parameters below threshold
-#'   \item Threshold ordering: GRM items with improperly ordered thresholds
-#'   \item Extreme parameters: Items with unrealistic parameter values
-#'   \item Missing values: Items with incomplete parameter specification
-#' }
-#' 
-#' \strong{Quality Standards:}
-#' \itemize{
-#'   \item Discrimination parameters should typically be above 0.5 for good quality
-#'   \item Threshold parameters should be in ascending order for GRM items
-#'   \item Parameters should be within reasonable ranges for stable estimation
-#' }
-#' 
+#'
 #' @examples
 #' \dontrun{
 #' # Example 1: Basic Outlier Detection
@@ -177,15 +173,13 @@ validate_item_bank <- function(item_bank, model = "GRM", adaptive = TRUE) {
 #'   cat("All items meet quality standards\n")
 #' }
 #' 
-#' # Example 2: Stricter Quality Standards
-#' # Use higher threshold for research-grade assessment
+#' # Example 2: Higher cut-off
 #' strict_outliers <- detect_outlier_items(bfi_items, discrimination_threshold = 0.7)
 #' 
 #' cat("Items below strict threshold (0.7):\n")
 #' print(strict_outliers[, c("Question", "a")])
 #' 
-#' # Example 3: Create Clean Item Bank
-#' # Remove flagged items for high-quality assessment
+#' # Example 3: Drop flagged items
 #' clean_items <- bfi_items[!rownames(bfi_items) %in% rownames(outliers), ]
 #' cat("Original items:", nrow(bfi_items), "\n")
 #' cat("Clean items:", nrow(clean_items), "\n")
@@ -195,102 +189,15 @@ validate_item_bank <- function(item_bank, model = "GRM", adaptive = TRUE) {
 #' @seealso
 #' \itemize{
 #'   \item \code{\link{validate_item_bank}} for structural validation
-#'   \item \code{\link{simulate_item_bank}} for performance testing
 #'   \item \code{bfi_items} for example item bank (use \code{data(bfi_items)})
 #' }
-#' 
-#' @keywords quality-assurance psychometrics item-analysis
+#'
+#' @keywords psychometrics item-analysis
 detect_outlier_items <- function(item_bank, discrimination_threshold = 0.2) {
-  flagged <- item_bank[item_bank$a < discrimination_threshold, ]
+  # which() drops NA, which would otherwise add all-NA rows
+  flagged <- item_bank[which(item_bank$a < discrimination_threshold), , drop = FALSE]
   if (nrow(flagged) > 0) {
     message(sprintf("%d items flagged for low discrimination.", nrow(flagged)))
   }
   flagged
-}
-
-#' Simulate Adaptive Testing Performance on Item Bank
-#'
-#' @description
-#' Simulates adaptive test administration to assess item bank quality
-#' and identify potential issues before deployment.
-#'
-#' @param item_bank Data frame containing item parameters compatible with TAM.
-#'   Must include all required columns for the specified IRT model.
-#' @param model Character string specifying IRT model for simulation.
-#'   Options: "GRM", "2PL", "1PL", "3PL". Default is "GRM".
-#' @param n Integer specifying number of simulated participants. Default is 100.
-#' 
-#' @return A list of length \code{n}. Each element contains:
-#' \describe{
-#'   \item{\code{theta}}{Simulated ability value.}
-#'   \item{\code{responses}}{Integer vector of simulated responses (one per item).}
-#' }
-#' 
-#' @export
-#' 
-#' @details
-#' Simulation process:
-#' 
-#' \strong{Simulation Process:}
-#' \itemize{
-#'   \item Generates diverse ability levels across specified range
-#'   \item Simulates realistic response patterns based on IRT model
-#'   \item Applies adaptive testing algorithms
-#'   \item Evaluates estimation accuracy and efficiency
-#' }
-#' 
-#' \strong{Validation Metrics:}
-#' \itemize{
-#'   \item Ability estimation bias and precision
-#'   \item Item usage patterns and exposure rates
-#'   \item Assessment length and efficiency
-#'   \item Convergence rates for TAM procedures
-#' }
-#' 
-#' \strong{Quality Indicators:}
-#' \itemize{
-#'   \item Root mean square error (RMSE) for ability estimation
-#'   \item Correlation between true and estimated abilities
-#'   \item Item bank coverage and utilization balance
-#'   \item Stopping criteria effectiveness
-#' }
-#' 
-#' @examples
-#' \dontrun{
-#' # Example 1: Basic Simulation
-#' library(inrep)
-#' data(bfi_items)
-#' 
-#' # Run simulation with default parameters
-#' simulation_results <- simulate_item_bank(bfi_items, model = "GRM", n = 50)
-#' 
-#' # View summary statistics
-#' print(simulation_results$summary)
-#' }
-#' 
-#' @seealso
-#' \itemize{
-#'   \item \code{\link{detect_outlier_items}} for item quality assessment
-#'   \item \code{\link{validate_item_bank}} for structural validation
-#'   \item \code{\link{create_study_config}} for assessment configuration
-#'   \item \code{\link{launch_study}} for actual assessment deployment
-#' }
-#' 
-#' @references
-#' van der Linden, W. J., & Glas, C. A. W. (Eds.). (2010). 
-#' Elements of adaptive testing. Springer.
-#' 
-#' @keywords simulation validation adaptive-testing performance-analysis
-simulate_item_bank <- function(item_bank, model = "GRM", n = 100) {
-  results <- vector("list", n)
-  for (i in seq_len(n)) {
-    theta <- rnorm(1)
-    # Simulate responses (simple random for demo)
-    responses <- sapply(seq_len(nrow(item_bank)), function(j) {
-      sample(1:length(strsplit(as.character(item_bank$ResponseCategories[j]), ",")[[1]]), 1)
-    })
-    results[[i]] <- list(theta = theta, responses = responses)
-  }
-  message(sprintf("Simulated %d adaptive tests.", n))
-  results
 }

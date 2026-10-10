@@ -1,30 +1,23 @@
-#' Essential Enhanced Features for inrep Package
-#' 
-#' This file contains only the essential enhanced features that are actively used:
-#' - Configuration validation and fixing
-#' - Performance optimization initialization
-#' - Response reporting
-#' 
+#' Configuration Checks and Response Report Helpers
+#'
+#' Helpers called by \code{\link{launch_study}}: configuration checks
+#' (\code{validate_and_fix_config}, \code{handle_extreme_parameters}) and
+#' the response table \code{create_response_report}.
+#'
 #' @name enhanced_features
 #' @keywords internal
 
-# ===========================================================================
-# PERFORMANCE STATE
-# ===========================================================================
-
-# Global performance state
-.performance_state <- new.env()
-.performance_state$cache <- list()
-.performance_state$memory_monitor <- list(active = FALSE)
-
-# ===========================================================================
-# CONFIGURATION VALIDATION
-# ===========================================================================
+# Configuration checks ----
 
 #' Validate and Fix Study Configuration
-#' 
-#' Validates study configuration and fixes common issues
-#' 
+#'
+#' Clamps item counts (\code{max_items} to 1 to 1000, \code{min_items} to at
+#' least 1 and at most \code{max_items}), replaces an unsupported \code{model}
+#' by \code{"2PL"}, resets a negative \code{min_SEM} to 0.3, limits and
+#' sanitises demographic names, sets a default study name, and, if an item
+#' bank is given, caps \code{max_items} at the bank size and notes missing
+#' parameter columns. Changes are recorded in \code{validation_warnings}.
+#'
 #' @param config Study configuration list
 #' @param item_bank Item bank data frame (optional)
 #' @return Validated and corrected configuration
@@ -60,8 +53,9 @@ validate_and_fix_config <- function(config, item_bank = NULL) {
     }
   }
   
-  # 2. Handle invalid model specifications
-  valid_models <- c("1PL", "2PL", "3PL", "GRM", "PCM", "RSM", "GPCM")
+  # 2. Handle invalid model specifications (only these four are implemented
+  # in estimate_ability() and compute_item_info_single())
+  valid_models <- c("1PL", "2PL", "3PL", "GRM")
   if (!is.null(fixed_config$model)) {
     if (!(fixed_config$model %in% valid_models)) {
       warnings$model <- paste("Invalid model:", fixed_config$model, "- defaulting to 2PL")
@@ -143,6 +137,9 @@ validate_item_bank_compatibility <- function(config, item_bank) {
       paste("max_items reduced to", n_items, "(item bank size)")
   }
   
+  # Item parameters are only used in adaptive mode
+  if (!isTRUE(config$adaptive)) return(config)
+
   # Check model compatibility
   if (config$model == "GRM") {
     required_cols <- c("Question", "a", "b1", "b2", "b3", "b4")
@@ -161,10 +158,12 @@ validate_item_bank_compatibility <- function(config, item_bank) {
   return(config)
 }
 
-#' Handle Extreme Parameters
-#' 
-#' Handles extreme parameter values gracefully
-#' 
+#' Clamp Configuration Values to Fixed Bounds
+#'
+#' Clamps selected numeric configuration values to fixed ranges (for example
+#' \code{theta_prior} elementwise to -5 to 5), truncates some strings, and
+#' shortens some vectors.
+#'
 #' @param params List of parameters
 #' @return Sanitized parameters
 #' @export
@@ -227,168 +226,22 @@ handle_extreme_parameters <- function(params) {
   return(sanitized)
 }
 
-#' Optimize Configuration for Scale
-#' 
-#' @param config Configuration list
-#' @param expected_users Expected number of users
-#' @return Optimized configuration
-#' @export
-optimize_for_scale <- function(config, expected_users = NULL) {
-  if (is.null(expected_users)) {
-    expected_users <- config$expected_n %||% 100
-  }
-  
-  # Small scale (< 100 users)
-  if (expected_users < 100) {
-    config$cache_enabled <- FALSE
-    config$parallel_computation <- FALSE
-    config$database_mode <- "sqlite"
-    
-  # Medium scale (100-1000 users)
-  } else if (expected_users < 1000) {
-    config$cache_enabled <- TRUE
-    config$parallel_computation <- TRUE
-    config$database_mode <- "postgresql"
-    config$connection_pool_size <- 20
-    
-  # Large scale (1000-10000 users)
-  } else if (expected_users < 10000) {
-    config$cache_enabled <- TRUE
-    config$parallel_computation <- TRUE
-    config$database_mode <- "postgresql"
-    config$connection_pool_size <- 50
-    config$enable_load_balancing <- TRUE
-    config$use_cdn <- TRUE
-    
-  # Massive scale (10000+ users)
-  } else {
-    config$cache_enabled <- TRUE
-    config$parallel_computation <- TRUE
-    config$database_mode <- "distributed"
-    config$connection_pool_size <- 100
-    config$enable_load_balancing <- TRUE
-    config$use_cdn <- TRUE
-    config$enable_queue_system <- TRUE
-    config$horizontal_scaling <- TRUE
-  }
-  
-  return(config)
-}
+# Response report ----
 
-# ===========================================================================
-# PERFORMANCE OPTIMIZATION
-# ===========================================================================
-
-#' Initialize Performance Optimization
-#' 
-#' @param enable_caching Enable result caching
-#' @param enable_memory_management Enable automatic memory management
-#' @param enable_query_optimization Enable query result caching
-#' @param max_cache_size Maximum cache size in MB
-#' @param max_concurrent_users Maximum concurrent users
-#' @return List with performance configuration
-#' @export
-initialize_performance_optimization <- function(
-  enable_caching = TRUE,
-  enable_memory_management = TRUE,
-  enable_query_optimization = TRUE,
-  max_cache_size = 500,
-  max_concurrent_users = 1000
-) {
-  .performance_state$enable_caching <- enable_caching
-  .performance_state$enable_memory_management <- enable_memory_management
-  .performance_state$enable_query_optimization <- enable_query_optimization
-  .performance_state$max_cache_size <- max_cache_size * 1024 * 1024
-  .performance_state$max_concurrent_users <- max_concurrent_users
-  
-  # Start memory monitoring
-  if (enable_memory_management) {
-    start_memory_monitoring()
-  }
-  
-  # Initialize cache cleanup
-  if (enable_caching) {
-    schedule_cache_cleanup()
-  }
-  
-  return(list(
-    caching = enable_caching,
-    memory_management = enable_memory_management,
-    query_optimization = enable_query_optimization,
-    max_cache_size = max_cache_size,
-    max_concurrent_users = max_concurrent_users
-  ))
-}
-
-#' Start Memory Monitoring
-#' @noRd
-start_memory_monitoring <- function() {
-  .performance_state$memory_monitor$active <- TRUE
-  .performance_state$memory_monitor$threshold <- 0.8
-}
-
-#' Check Cache Size
-#' @noRd
-check_cache_size <- function() {
-  if (length(.performance_state$cache) == 0) return(0)
-  
-  total_size <- 0
-  for (key in names(.performance_state$cache)) {
-    entry <- .performance_state$cache[[key]]
-    if (!is.null(entry$size)) {
-      total_size <- total_size + as.numeric(entry$size)
-    }
-  }
-  
-  return(total_size)
-}
-
-#' Evict Old Cache Entries
-#' @noRd
-evict_old_cache_entries <- function() {
-  if (length(.performance_state$cache) == 0) return()
-  
-  # Get cache entries
-  entries <- lapply(names(.performance_state$cache), function(key) {
-    entry <- .performance_state$cache[[key]]
-    list(
-      key = key,
-      created = entry$created,
-      hits = entry$hits %||% 0,
-      size = as.numeric(entry$size)
-    )
-  })
-  
-  # Sort by hits (LRU)
-  entries <- entries[order(sapply(entries, function(x) x$hits))]
-  
-  # Remove bottom 25%
-  n_remove <- ceiling(length(entries) * 0.25)
-  if (n_remove > 0) {
-    for (i in seq_len(n_remove)) {
-      .performance_state$cache[[entries[[i]]$key]] <- NULL
-    }
-  }
-}
-
-#' Schedule Cache Cleanup
-#' @noRd
-schedule_cache_cleanup <- function() {
-  # Placeholder - would use shiny::observe in actual Shiny app
-  .performance_state$cache_cleanup_scheduled <- TRUE
-}
-
-# ===========================================================================
-# RESPONSE REPORTING
-# ===========================================================================
-
-#' Create Enhanced Response Report
+#' Create Response Report
+#'
+#' Builds a table of the administered items with the responses and response
+#' times. For GRM, optional labels are taken from a fixed five-point agreement
+#' scale in the study language; they are only correct for items with that
+#' scale. For other models, responses coded 1 are shown as "Correct" when the
+#' bank has an \code{Answer} column.
 #'
 #' @param config Study configuration object
-#' @param cat_result CAT result object with responses
+#' @param cat_result List with \code{administered}, \code{responses} and
+#'   \code{response_times}
 #' @param item_bank Item bank dataset
-#' @param include_labels Include response labels
-#' 
+#' @param include_labels Include response labels (GRM only)
+#'
 #' @return Data frame with response report
 #' @export
 create_response_report <- function(config, cat_result, item_bank, include_labels = TRUE) {
@@ -411,7 +264,7 @@ create_response_report <- function(config, cat_result, item_bank, include_labels
     )
     
     # Add response labels if requested
-    if (include_labels && config$language %in% c("en", "de", "es", "fr")) {
+    if (include_labels && isTRUE(config$language %in% c("en", "de", "es", "fr"))) {
       response_labels <- switch(config$language,
         "en" = c("Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"),
         "de" = c("Stark ablehnen", "Ablehnen", "Neutral", "Zustimmen", "Stark zustimmen"),
@@ -459,42 +312,4 @@ create_response_report <- function(config, cat_result, item_bank, include_labels
   )
   
   return(dat)
-}
-
-#' Validate Response Report Consistency
-#'
-#' @param original_responses Vector of original responses
-#' @param report_data Response report data frame
-#' @param config Study configuration object
-#' 
-#' @return List with validation results
-#' @export
-validate_response_report <- function(original_responses, report_data, config) {
-
-  if (config$model == "GRM") {
-    # For GRM, responses should match exactly
-    reported_responses <- report_data$Response
-    consistency_check <- all(reported_responses == original_responses)
-  } else {
-    # For binary models, check scoring consistency
-    if ("Correct" %in% names(report_data)) {
-      # Traditional binary model with Answer column
-      reported_binary <- ifelse(report_data$Response == "Correct", 1, 0)
-      consistency_check <- length(reported_binary) == length(original_responses)
-    } else {
-      # For item banks without Answer column (e.g., personality items)
-      reported_responses <- report_data$Response
-      consistency_check <- all(reported_responses == original_responses)
-    }
-  }
-  
-  validation_result <- list(
-    consistent = consistency_check,
-    original_count = length(original_responses),
-    reported_count = nrow(report_data),
-    model = config$model,
-    timestamp = Sys.time()
-  )
-  
-  return(validation_result)
 }

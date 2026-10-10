@@ -1,36 +1,43 @@
-# File: estimate_ability.R
-
-#' Estimate Ability Using IRT Models
+#' Estimate Ability (EAP with Fixed Item Parameters)
 #'
-#' Estimates person ability from item responses. Uses TAM for model fitting
-#' when enough responses are available (>= 3 with variability). Falls back to
-#' a direct EAP computation using pre-calibrated item parameters otherwise.
+#' Computes the expected a posteriori (EAP) estimate of a person's ability and
+#' its posterior standard deviation from the responses given so far. The item
+#' parameters in \code{item_bank} are treated as fixed and known; nothing is
+#' calibrated here.
 #'
-#' @param rv Reactive values object or a simple numeric response vector.
-#'   When a list, requires \code{$responses}, \code{$administered},
-#'   and \code{$current_ability}.
+#' @param rv A list (or Shiny \code{reactiveValues}) with \code{$responses},
+#'   \code{$administered} (row indices into \code{item_bank}) and
+#'   \code{$current_ability}, or a plain numeric response vector, in which case
+#'   the responses are taken to belong to items \code{1, 2, ...} of the bank.
 #' @param item_bank Data frame with item parameters. Required columns depend
-#'   on model: \code{a}, \code{b} for 2PL; \code{a}, \code{b}, \code{c} for 3PL;
-#'   \code{a}, \code{b1}, \code{b2}, ... for GRM.
+#'   on the model: \code{b} (and optionally \code{a}) for 1PL; \code{a}, \code{b}
+#'   for 2PL; \code{a}, \code{b}, \code{c} for 3PL; \code{a}, \code{b1},
+#'   \code{b2}, ... for GRM. Columns \code{discrimination} and \code{difficulty}
+#'   are accepted as aliases of \code{a} and \code{b}.
 #' @param config Study configuration (from \code{\link{create_study_config}})
 #'   or a model name string (e.g., \code{"2PL"}).
 #'
-#' @return List with \code{theta} (ability estimate) and \code{se} (standard error).
+#' @return List with \code{theta} (EAP estimate) and \code{se} (posterior
+#'   standard deviation).
 #'
 #' @details
-#' \strong{Adaptive mode}: Uses fast vectorized EAP computation with pre-calibrated
-#' item parameters. This is the standard CAT approach (item parameters fixed from
-#' calibration, only theta estimated) and runs in under 5 ms.
+#' The posterior is evaluated on \code{config$theta_grid} with a normal prior
+#' \eqn{N(\mu, \sigma^2)}, \code{c(mu, sigma) = config$theta_prior}. The
+#' estimate is the posterior mean and \code{se} is the posterior standard
+#' deviation (Bock & Mislevy, 1982). The same computation is used whatever
+#' \code{config$estimation_method} says; \code{"WLE"} has no effect here.
 #'
-#' \strong{Non-adaptive / batch}: When TAM is available and \code{adaptive = FALSE},
-#' fits a TAM model and extracts person parameters (EAP or WLE).
+#' Response coding: dichotomous models expect 0/1. The GRM expects categories
+#' \code{1, ..., K + 1} for \code{K} thresholds \code{b1 < ... < bK}
+#' (Samejima, 1969). Responses that are \code{NA} or outside this range are
+#' skipped. The logistic metric is used without the scaling constant 1.7.
 #'
-#' TAM model mapping: 1PL -> \code{tam.mml}, 2PL -> \code{tam.mml.2pl},
-#' 3PL -> \code{tam.mml.3pl}. For GRM, TAM fits a GPCM (Generalized Partial
-#' Credit Model) with step parameters, which differs from Samejima's GRM
-#' parameterization used in the item bank. The fallback path uses the correct
-#' Samejima formulation with the pre-calibrated threshold parameters.
-#' GRM support is experimental; 1PL/2PL/3PL are fully supported.
+#' Missing parameters are filled with fixed defaults (for example \code{a = 1.2}
+#' for 2PL, \code{a = 1.5} for GRM, \code{c = 0.15} for 3PL, \code{b = 0},
+#' evenly spaced GRM thresholds). These values are arbitrary and only keep the
+#' computation running; a bank with missing parameters should be completed
+#' before use. For 1PL, a column \code{a} is used if present, so it should be
+#' constant across items.
 #'
 #' @export
 #'
@@ -39,7 +46,7 @@
 #' library(inrep)
 #' data(bfi_items)
 #'
-#' config <- create_study_config(model = "GRM", estimation_method = "EAP")
+#' config <- create_study_config(model = "GRM")
 #' rv <- list(
 #'   responses = c(2, 4, 3, 1, 5),
 #'   administered = c(1, 5, 12, 18, 23),
@@ -50,52 +57,47 @@
 #' }
 #'
 #' @references
-#' Robitzsch, A., Kiefer, T., & Wu, M. (2024). \emph{TAM: Test Analysis Modules}.
-#'   R package. \url{https://CRAN.R-project.org/package=TAM}
+#' Bock, R. D., & Mislevy, R. J. (1982). Adaptive EAP estimation of ability in a
+#'   microcomputer environment. \emph{Applied Psychological Measurement}, 6(4),
+#'   431--444.
 #'
-#' Warm, T. A. (1989). Weighted likelihood estimation of ability in item response theory.
-#'   \emph{Psychometrika}, 54(3), 427--450.
+#' Samejima, F. (1969). Estimation of latent ability using a response pattern of
+#'   graded scores. \emph{Psychometrika Monograph Supplement}, No. 17.
 #'
 #' @seealso \code{\link{create_study_config}}, \code{\link{select_next_item}},
 #'   \code{\link{launch_study}}
 #'
 #' @keywords psychometrics IRT
 estimate_ability <- function(rv, item_bank, config) {
-  # Handle both reactive values and simple vectors
   if (is.list(rv) && !is.null(rv$responses)) {
-    # Standard reactive values object
     responses <- rv$responses
     administered <- rv$administered
     current_ability <- rv$current_ability
   } else if (is.atomic(rv) && !is.null(rv)) {
-    # Simple vector input (for testing)
     responses <- rv
     administered <- seq_along(responses)
     current_ability <- 0
   } else {
-    # Handle other cases
     stop("rv must be either a reactive values object with $responses component or a simple vector")
   }
   
-  # Handle config parameter - if it's a simple string, create a basic config
   if (is.character(config)) {
     model <- config
     config <- list(
       model = model,
-      estimation_method = "TAM",
+      estimation_method = "EAP",
       theta_prior = c(0, 1),
       theta_grid = seq(-4, 4, length.out = 100)
     )
   }
-  
-  # logger(sprintf("Estimating ability for %d responses", length(responses)), level = "INFO")
+  # A config list without a prior gets the standard normal prior
+  if (length(config$theta_prior) != 2) config$theta_prior <- c(0, 1)
   
   if (length(responses) == 0) {
     message("No responses provided, returning prior")
     return(list(theta = config$theta_prior[1], se = config$theta_prior[2]))
   }
   
-  # Use default theta_grid if not properly set
   theta_grid <- if (is.numeric(config$theta_grid) && length(config$theta_grid) >= 2) {
     config$theta_grid
   } else {
@@ -103,67 +105,16 @@ estimate_ability <- function(rv, item_bank, config) {
     seq(-4, 4, length.out = 100)
   }
   
-  # This helper estimates theta for a single respondent. TAM's tam.mml* family
-  # performs marginal maximum likelihood estimation of item parameters and latent
-  # distribution, which is not valid for a single response pattern. For this
-  # single-person path we therefore always use the direct EAP fallback below,
-  # which treats item parameters as fixed calibration inputs.
-  use_tam <- FALSE
-  if (isTRUE(config$estimation_method %in% c("EAP", "WLE")) &&
-      isTRUE(config$model %in% c("1PL", "2PL", "3PL")) &&
-      !isTRUE(config$adaptive) &&
-      length(responses) >= 3 &&
-      requireNamespace("TAM", quietly = TRUE)) {
-    message("estimate_ability(): falling back to direct EAP because TAM tam.mml* is not valid for single-person online estimation.")
-  }
+  # Same column aliases as select_next_item() and launch_study()
+  nms <- names(item_bank)
+  if (!"a" %in% nms && "discrimination" %in% nms) item_bank$a <- item_bank$discrimination
+  if (!"b" %in% nms && "difficulty" %in% nms) item_bank$b <- item_bank$difficulty
+  if (!"a" %in% names(item_bank)) item_bank$a <- NA_real_
   
-  if (use_tam) {
-    # Require variability to avoid degenerate fits
-    if (length(unique(na.omit(as.integer(responses)))) > 1) {
-      tryCatch({
-        dat <- matrix(as.integer(responses), nrow = 1)
-        colnames(dat) <- administered
-        ctrl <- list(snodes = 500, progress = FALSE, verbose = FALSE)
-        
-        # Fit appropriate TAM model
-        if (config$model == "1PL") {
-          mod <- suppressMessages(TAM::tam.mml(resp = dat, irtmodel = "1PL", control = ctrl))
-        } else if (config$model == "2PL") {
-          mod <- suppressMessages(TAM::tam.mml.2pl(resp = dat, irtmodel = "2PL", control = ctrl))
-        } else if (config$model == "3PL") {
-          item_bank_subset <- item_bank[administered, , drop = FALSE]
-          c_params <- if ("c" %in% names(item_bank_subset)) item_bank_subset$c else rep(0, length(administered))
-          slopes <- if ("a" %in% names(item_bank_subset)) item_bank_subset$a else rep(1, length(administered))
-          mod <- suppressMessages(TAM::tam.mml.3pl(resp = dat, gammaslope = slopes, guess = c_params, control = ctrl))
-        }
-        
-        # Apply requested estimation method
-        if (config$estimation_method == "WLE") {
-          est <- suppressMessages(TAM::tam.wle(mod))
-          theta_est <- est$theta[1]
-          se_est <- est$error[1]
-        } else {
-          theta_est <- mod$person$EAP[1]
-          se_est <- mod$person$SE.EAP[1]
-        }
-        
-        if (is.finite(theta_est) && is.finite(se_est)) {
-          return(list(theta = theta_est, se = se_est))
-        }
-      }, error = function(e) {
-        message(sprintf("TAM estimation error: %s, using fallback", e$message))
-      })
-    }
-  }
-  
-  # Direct EAP with pre-calibrated item parameters (vectorized).
-  # This is the standard CAT approach: item parameters are fixed from
-  # calibration, only theta is estimated.
   n_theta <- length(theta_grid)
   prior <- dnorm(theta_grid, config$theta_prior[1], config$theta_prior[2])
   prior <- prior / sum(prior)
   
-  # Pre-extract item parameters once (avoid repeated data frame access)
   default_a <- switch(config$model, "1PL" = 1.0, "2PL" = 1.2, "3PL" = 1.0, "GRM" = 1.5, 1.0)
   b_cols <- grep("^b[0-9]+$", names(item_bank), value = TRUE)
   is_grm <- config$model == "GRM"
@@ -187,20 +138,21 @@ estimate_ability <- function(rv, item_bank, config) {
         for (k in 2:length(b)) if (b[k] <= b[k-1]) b[k] <- b[k-1] + 0.1
       }
       n_cat <- length(b) + 1
-      if (resp < 1 || resp > n_cat || is.na(resp)) next
-      # Vectorized over theta_grid: boundary curves for all theta at once
+      if (is.na(resp) || resp < 1 || resp > n_cat) next
       P_star_mid <- vapply(b, function(bk) 1 / (1 + exp(-a * (theta_grid - bk))), numeric(n_theta))
       if (length(b) == 1) P_star_mid <- matrix(P_star_mid, ncol = 1)
       P_star <- cbind(1, P_star_mid, 0)
       P_cat <- pmax(P_star[, resp] - P_star[, resp + 1L], 1e-10)
       log_likelihood <- log_likelihood + log(P_cat)
     } else {
+      if (is.na(resp) || !resp %in% c(0L, 1L)) next
       b_val <- item_bank$b[item_idx] %||% 0
       if (is.na(b_val)) b_val <- 0
       c_param <- if (has_c) { cv <- item_bank$c[item_idx]; if (is.na(cv)) 0.15 else cv } else 0
-      # Vectorized over theta_grid
       p <- c_param + (1 - c_param) / (1 + exp(-a * (theta_grid - b_val)))
-      p <- pmax(p, 1e-10)
+      # Bound away from 0 and 1: p rounds to exactly 1 for large a * (theta - b),
+      # and 0 * log(0) would then give NaN at those grid points.
+      p <- pmin(pmax(p, 1e-10), 1 - 1e-10)
       log_likelihood <- log_likelihood + resp * log(p) + (1 - resp) * log(1 - p)
     }
   }
@@ -221,226 +173,4 @@ estimate_ability <- function(rv, item_bank, config) {
   }
   
   return(list(theta = theta_est, se = se_est))
-}
-
-#' Advanced MIRT Ability Estimation
-#'
-#' Estimates ability using the mirt package with advanced options.
-#'
-#' @param responses Vector of item responses.
-#' @param administered Vector of administered item indices.
-#' @param item_bank Data frame containing item parameters.
-#' @param model IRT model ("1PL", "2PL", "3PL", "GRM").
-#' @param method Estimation method ("EAP", "MAP", "ML", "WLE").
-#' @param prior_mean Prior mean for ability (default: 0).
-#' @param prior_sd Prior standard deviation for ability (default: 1).
-#' @param n_synthetic Number of synthetic response patterns for model fitting (default: 500).
-#' @param verbose Whether to print detailed output (default: FALSE).
-#' @return List containing theta estimate, standard error, and additional mirt output.
-#' @export
-estimate_ability_mirt <- function(responses, administered, item_bank, model = "2PL", 
-                                  method = "EAP", prior_mean = 0, prior_sd = 1, 
-                                  n_synthetic = 500, verbose = FALSE) {
-  
-  message(sprintf("Starting MIRT ability estimation with %d responses using %s model", 
-                length(responses), model))
-  
-  if (length(responses) == 0 || length(administered) == 0) {
-    message("No responses provided for MIRT estimation")
-    return(list(theta = prior_mean, se = prior_sd, method = "prior"))
-  }
-  
-  if (length(responses) != length(administered)) {
-    message("Length mismatch between responses and administered items")
-    return(list(theta = prior_mean, se = prior_sd, method = "error"))
-  }
-  
-  tryCatch({
-    # Check if mirt package is available
-    if (!requireNamespace("mirt", quietly = TRUE)) {
-      warning("mirt package not available. Falling back to TAM estimation.")
-      return(list(theta = prior_mean, se = prior_sd, method = "error"))
-    }
-    
-    # Prepare response matrix
-    dat <- matrix(as.integer(responses), nrow = 1)
-    colnames(dat) <- paste0("Item", administered)
-    
-    # Get item parameters for administered items
-    item_params <- item_bank[administered, , drop = FALSE]
-    
-    # Handle unknown parameters with initialization
-    for (i in 1:nrow(item_params)) {
-      # Handle unknown discrimination
-      if (is.na(item_params$a[i])) {
-        item_params$a[i] <- switch(model,
-          "1PL" = 1.0,
-          "2PL" = 1.2,
-          "3PL" = 1.0,
-          "GRM" = 1.5,
-          1.0
-        )
-      }
-      
-      # Handle unknown difficulty/threshold parameters
-      if (model == "GRM") {
-        b_cols <- grep("^b[0-9]+$", names(item_params), value = TRUE)
-        for (j in seq_along(b_cols)) {
-          col <- b_cols[j]
-          if (is.na(item_params[[col]][i])) {
-            # Create ordered default threshold
-            item_params[[col]][i] <- (j - (length(b_cols) + 1) / 2) * 1.2
-          }
-        }
-        # Ensure threshold ordering for this item
-        thresholds <- as.numeric(item_params[i, b_cols])
-        if (any(diff(thresholds) <= 0)) {
-          sorted_thresholds <- sort(thresholds)
-          for (k in 2:length(sorted_thresholds)) {
-            if (sorted_thresholds[k] <= sorted_thresholds[k-1]) {
-              sorted_thresholds[k] <- sorted_thresholds[k-1] + 0.1
-            }
-          }
-          item_params[i, b_cols] <- sorted_thresholds
-        }
-      } else {
-        # Handle unknown difficulty for dichotomous models
-        if ("b" %in% names(item_params) && is.na(item_params$b[i])) {
-          item_params$b[i] <- 0
-        }
-      }
-      
-      # Handle unknown guessing parameter
-      if (model == "3PL" && "c" %in% names(item_params) && is.na(item_params$c[i])) {
-        item_params$c[i] <- 0.15
-      }
-    }
-    
-    # Generate synthetic data for model fitting (mirt requires multiple response patterns)
-    theta_sim <- stats::rnorm(n_synthetic, prior_mean, prior_sd)
-    synthetic_data <- matrix(NA, nrow = n_synthetic, ncol = length(administered))
-    colnames(synthetic_data) <- paste0("Item", administered)
-    
-    # Generate synthetic responses based on true item parameters
-    for (i in seq_along(administered)) {
-      a_param <- item_params$a[i]
-      b_param <- item_params$b[i]
-      c_param <- if ("c" %in% names(item_params)) item_params$c[i] else 0
-      
-      if (model == "GRM") {
-        # Graded Response Model
-        max_score <- if ("max_score" %in% names(item_params)) item_params$max_score[i] else 4
-        # Create threshold parameters
-        if ("d1" %in% names(item_params)) {
-          # Use explicit threshold parameters if available
-          thresh_names <- paste0("d", seq_len(max_score))
-          avail_thresh <- thresh_names[thresh_names %in% names(item_params)]
-          thresholds <- vapply(avail_thresh, function(nm) item_params[[nm]][i], numeric(1))
-          if (length(thresholds) == 0) {
-            thresholds <- seq(b_param - 1.5, b_param + 1.5, length.out = max_score)
-          }
-        } else {
-          # Generate thresholds around b parameter
-          thresholds <- seq(b_param - 1.5, b_param + 1.5, length.out = max_score)
-        }
-        
-        # Calculate category probabilities
-        probs <- matrix(0, nrow = n_synthetic, ncol = max_score + 1)
-        
-        # P*(theta) for each threshold
-        for (k in 1:max_score) {
-          probs[, k + 1] <- 1 / (1 + exp(-a_param * (theta_sim - thresholds[k])))
-        }
-        
-        # Convert to category probabilities
-        probs[, 1] <- 1 - probs[, 2]  # P(X=0)
-        for (k in 2:max_score) {
-          probs[, k + 1] <- probs[, k + 1] - probs[, k]  # P(X=k)
-        }
-        
-        # Ensure probabilities are non-negative
-        probs[probs < 0] <- 0
-        
-        # Sample responses
-        synthetic_data[, i] <- apply(probs, 1, function(p) {
-          if (sum(p) == 0) return(0)
-          sample(0:max_score, 1, prob = p / sum(p))
-        })
-        
-      } else {
-        # Dichotomous models (1PL, 2PL, 3PL)
-        prob <- c_param + (1 - c_param) / (1 + exp(-a_param * (theta_sim - b_param)))
-        synthetic_data[, i] <- stats::rbinom(n_synthetic, 1, prob)
-      }
-    }
-    
-    # Combine actual response with synthetic data
-    full_data <- rbind(dat, synthetic_data)
-    
-    # Determine itemtype for mirt
-    itemtype <- switch(model,
-                      "1PL" = "Rasch",
-                      "2PL" = "2PL", 
-                      "3PL" = "3PL",
-                      "GRM" = "graded")
-    
-    # Fit mirt model
-    message(sprintf("Fitting MIRT model with itemtype: %s", itemtype))
-    
-    mirt_model <- mirt::mirt(data = full_data, 
-                            model = 1, 
-                            itemtype = itemtype, 
-                            verbose = verbose,
-                            SE = TRUE,
-                            technical = list(NCYCLES = 500))
-    
-    # Set up prior for ability estimation
-    if (method %in% c("EAP", "MAP")) {
-      prior_params <- list(mean = prior_mean, cov = prior_sd^2)
-    } else {
-      prior_params <- NULL
-    }
-    
-    # Estimate ability for actual response pattern
-    ability_scores <- mirt::fscores(object = mirt_model, 
-                                   response.pattern = dat,
-                                   method = method,
-                                   full.scores = FALSE,
-                                   scores.only = FALSE,
-                                   prior = prior_params)
-    
-    if (!is.null(ability_scores) && nrow(ability_scores) > 0 && !is.na(ability_scores[1, 1])) {
-      theta_est <- ability_scores[1, 1]
-      se_est <- if (ncol(ability_scores) > 1) ability_scores[1, 2] else NA
-      
-      # Extract additional information
-      fit_stats <- mirt::M2(mirt_model, type = "C2")
-      reliability <- mirt::empirical_rxx(ability_scores)
-      
-      result <- list(
-        theta = theta_est,
-        se = se_est,
-        method = paste("MIRT", method),
-        model = model,
-        fit_stats = fit_stats,
-        reliability = reliability,
-        n_items = length(administered),
-        converged = mirt::extract.mirt(mirt_model, "converged")
-      )
-      
-      message(sprintf("MIRT %s estimation successful: theta=%.3f, se=%.3f, reliability=%.3f", 
-                    method, theta_est, se_est, reliability))
-      
-      
-      return(result)
-      
-    } else {
-      message("MIRT ability estimation failed - no valid scores returned")
-      return(list(theta = prior_mean, se = prior_sd, method = "fallback_prior"))
-    }
-    
-  }, error = function(e) {
-    message(sprintf("MIRT estimation error: %s", e$message))
-    return(list(theta = prior_mean, se = prior_sd, method = "error", error_msg = e$message))
-  })
 }
