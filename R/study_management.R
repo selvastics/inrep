@@ -1297,6 +1297,10 @@ render_items_page <- function(page, config, rv, item_bank, ui_labels, session) {
     }
   }
   
+  # Items in the order shown, for the participant data file (save_data)
+  session$userData$items_shown <- union(session$userData$items_shown %||% integer(0),
+                                        actual_row_indices[!is.na(actual_row_indices)])
+
   item_elements <- lapply(seq_len(nrow(page_items)), function(i) {
     item <- page_items[i, ]
     actual_idx <- actual_row_indices[i]

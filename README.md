@@ -143,6 +143,7 @@ launch_study(config, bfi_items)
 ## Main Functions
 
 * **Study management:** `launch_study()`, `create_study_config()`
+* **Data:** `launch_study(save_data = TRUE)` writes one CSV file per participant; `read_study_data()` reads them into one data frame
 * **Scoring and item selection (fixed item parameters):** `estimate_ability()`, `select_next_item()`, `validate_item_bank()`
 
 ## Example Datasets

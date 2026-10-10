@@ -66,6 +66,12 @@
 #' @param session_save Logical. If \code{TRUE}, the participant's reactive
 #'   state is written to \code{study_data/<study_key>/session.rds} on page
 #'   changes, on responses and when the session ends (default \code{FALSE}).
+#' @param save_data \code{TRUE} writes one CSV file per participant to
+#'   \code{study_data/<study_key>/participants/} when the participant reaches
+#'   the results; a character string is used as the folder instead. The file
+#'   holds the responses by item \code{id} (\code{NA} where not shown), the
+#'   items in the order shown, demographics and times. Read all files with
+#'   \code{\link{read_study_data}()}. Default \code{FALSE}.
 #' @param data_preservation_interval Passed to the internal session state
 #'   (seconds, default 30).
 #' @param keep_alive_interval Passed to the internal session state (seconds,
@@ -263,6 +269,7 @@ launch_study <- function(
     admin_dashboard_hook = NULL,
     max_session_time = 7200,
     session_save = FALSE,
+    save_data = FALSE,
     data_preservation_interval = 30,
     keep_alive_interval = 10,
     enable_error_recovery = TRUE,
@@ -2181,9 +2188,8 @@ launch_study <- function(
             log_file = NULL
           )
           
-          # Session-specific key. Stored per session: assigning it to the
-          # shared study_key (as before) appended a new suffix for every
-          # participant.
+          # Session-specific key, stored per session so that the shared
+          # study_key stays unchanged.
           if (!is.null(study_key)) {
             session_specific_key <- paste0(study_key, "_", substr(unique_session_id, nchar(unique_session_id) - 7, nchar(unique_session_id)))
             session$userData$session_study_key <- session_specific_key
@@ -2532,7 +2538,7 @@ launch_study <- function(
 
   # Maximum session time ----
   # Checked once a minute; the session is closed after max_session_time
-  # seconds. (This was hard-coded to 7200 s and ignored max_session_time.)
+  # seconds.
   rv$max_session_duration <- max_session_time %||% 7200
 
   shiny::observe({
@@ -2730,6 +2736,27 @@ launch_study <- function(
     invisible(preserved)
   }
   
+  # Participant data file (save_data), written once when the results are
+  # reached: rv$cat_result is set by both the page flow and the built-in flow.
+  if (!isFALSE(save_data) && !is.null(save_data)) {
+    participant_dir <- if (is.character(save_data)) save_data else .inrep_participant_dir(effective_study_key)
+    shiny::observeEvent(rv$cat_result, {
+      if (isTRUE(session$userData$data_file_written)) return()
+      file <- tryCatch(
+        .inrep_write_participant_file(rv, item_bank, config, participant_dir,
+                                      study_key = effective_study_key,
+                                      items_shown = session$userData$items_shown),
+        error = function(e) {
+          logger(sprintf("Participant data file could not be written: %s", e$message), level = "ERROR")
+          NULL
+        })
+      if (!is.null(file)) {
+        session$userData$data_file_written <- TRUE
+        logger(sprintf("Participant data written to %s", file), level = "INFO")
+      }
+    }, ignoreNULL = TRUE)
+  }
+
   logger("Participant state initialized", level = "DEBUG")
 
     if (session_save) {

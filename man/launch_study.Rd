@@ -20,6 +20,7 @@ launch_study(
   admin_dashboard_hook = NULL,
   max_session_time = 7200,
   session_save = FALSE,
+  save_data = FALSE,
   data_preservation_interval = 30,
   keep_alive_interval = 10,
   enable_error_recovery = TRUE,
@@ -113,6 +114,13 @@ closed when this time is exceeded.}
 \item{session_save}{Logical. If \code{TRUE}, the participant's reactive
 state is written to \code{study_data/<study_key>/session.rds} on page
 changes, on responses and when the session ends (default \code{FALSE}).}
+
+\item{save_data}{\code{TRUE} writes one CSV file per participant to
+\code{study_data/<study_key>/participants/} when the participant reaches
+the results; a character string is used as the folder instead. The file
+holds the responses by item \code{id} (\code{NA} where not shown), the
+items in the order shown, demographics and times. Read all files with
+\code{\link{read_study_data}()}. Default \code{FALSE}.}
 
 \item{data_preservation_interval}{Passed to the internal session state
 (seconds, default 30).}

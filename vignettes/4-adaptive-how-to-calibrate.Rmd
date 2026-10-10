@@ -436,7 +436,7 @@ study_config <- create_study_config(
   results_processor = pm_report
 )
 
-launch_study(study_config, item_bank)
+launch_study(study_config, item_bank, save_data = TRUE)
 ```
 
 Two details are easy to overlook. The responses arrive in the order of the item bank, with the values 1 to 6 of `ResponseCategories`, so they must be reversed and shifted in the same way as in the calibration. And the item pages use inrep's English agreement labels, while the SAPA participants answered on an accuracy scale. A change in the response labels can shift the thresholds. For a real study the labels should be the same as in the calibration, or the items should be recalibrated.
@@ -445,7 +445,7 @@ Two details are easy to overlook. The responses arrive in the order of the item 
 
 # Part 7: Analysing the data afterwards
 
-The WLE serves the participant. For the analysis, the researcher works with the stored responses, which contain the `NA`s of the design. TAM estimates the model from these incomplete data directly. As an example we fit a two-dimensional model for Extraversion and Agreeableness to the simulated booklet data from Part 5.2, and compare it with the same model on the complete data.
+The WLE serves the participant. For the analysis, the researcher works with the stored responses, which contain the `NA`s of the design. With `save_data = TRUE`, inrep writes one file per participant, and `read_study_data()` returns them as one data frame: the items by `id` with `NA` where not shown, the items in the order shown (which identifies the booklet), and the demographics. Before the analysis the responses are reversed and shifted as in Part 2. TAM estimates the model from these incomplete data directly. As an example we fit a two-dimensional model for Extraversion and Agreeableness to the simulated booklet data from Part 5.2, and compare it with the same model on the complete data.
 
 ```{r latent_correlation}
 ea <- c(scales$E, scales$A)

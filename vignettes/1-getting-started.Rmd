@@ -648,3 +648,19 @@ study_config <- create_study_config(
 # ============================================================
 launch_study(config = study_config, item_bank = bfi_bilingual, debug_mode = TRUE)
 ```
+
+------------------------------------------------------------------------
+
+# Part 6: Saving the data
+
+By default inrep keeps the responses only for the participant's session. With `save_data = TRUE`, it writes one CSV file per participant to `study_data/<study_key>/participants/` when the participant reaches the results page:
+
+```{r, eval = FALSE}
+launch_study(study_config, item_bank, study_key = "bigfive_2026", save_data = TRUE)
+
+# later, in a new R session
+dat <- read_study_data("bigfive_2026")
+```
+
+Each row holds the session ID, start and end time, the items in the order shown, the demographics, and one column per item of the bank, named by `id`. Items a participant did not see are `NA`. A character string instead of `TRUE` sets another folder. The files are plain CSV and not encrypted, so store them as your data protection plan requires. For studies on a server without a persistent disk, `webdav_url` uploads each session to a cloud folder instead.
+
